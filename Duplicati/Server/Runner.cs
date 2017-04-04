@@ -33,6 +33,7 @@ namespace Duplicati.Server
             void Abort();
             void Pause();
             void Resume();
+            void SetController(Duplicati.Library.Main.Controller controller);
         }
         
         private class RunnerData : IRunnerData
@@ -48,7 +49,12 @@ namespace Duplicati.Server
             public long TaskID { get { return m_taskID; } }
             
             internal Duplicati.Library.Main.Controller Controller { get; set; }
-            
+
+            public void SetController(Duplicati.Library.Main.Controller controller)
+            {
+                Controller = controller;
+            }
+
             public void Stop()
             {
                 var c = Controller;
@@ -83,6 +89,26 @@ namespace Duplicati.Server
             {
                 m_taskID = System.Threading.Interlocked.Increment(ref RunnerTaskID);
             }
+        }
+
+        private class CustomRunnerTask : RunnerData
+        {
+            public readonly Action Run;
+
+            public CustomRunnerTask(Action runner)
+                : base()
+            {
+                if (runner == null)
+                    throw new ArgumentNullException("runner");
+                Run = runner;
+                Operation = DuplicatiOperation.CustomRunner;
+                Backup = new Database.Backup();
+            }
+        }
+
+        public static IRunnerData CreateCustomTask(Action runner)
+        {
+            return new CustomRunnerTask(runner);
         }
         
         public static IRunnerData CreateTask(Duplicati.Server.Serialization.DuplicatiOperation operation, Duplicati.Server.Serialization.Interface.IBackup backup, IDictionary<string, string> extraOptions = null, string[] filterStrings = null)
@@ -379,6 +405,21 @@ namespace Duplicati.Server
         
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
+            if (data is CustomRunnerTask)
+            {
+                try
+                {
+                    ((CustomRunnerTask)data).Run();
+                }
+                catch(Exception ex)
+                {
+                    Program.DataConnection.LogError(string.Empty, "Failed while executing custom task", ex);
+                }
+
+                return null;
+            }
+
+
             var backup = data.Backup;
             Duplicati.Library.Utility.TempFolder tempfolder = null;
 
@@ -387,14 +428,14 @@ namespace Duplicati.Server
             
             try
             {                
-                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
                 var sink = new MessageSink(data.TaskID, backup.ID);
                 if (fromQueue)
                 {
                     Program.GenerateProgressState = () => sink.Copy();
                     Program.StatusEventNotifyer.SignalNewEvent();            
                 }
-                
+
+                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));                
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
                         options[k.Key] = k.Value;                
@@ -535,25 +576,25 @@ namespace Duplicati.Server
                                 return r;
                             }
 
-                    case DuplicatiOperation.Delete:
-                        {
-                            if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-remote-files"))
-                                controller.DeleteAllRemoteFiles();
-
-                            if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-local-db"))
+                        case DuplicatiOperation.Delete:
                             {
-                                string dbpath;
-                                options.TryGetValue("db-path", out dbpath);
+                                if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-remote-files"))
+                                    controller.DeleteAllRemoteFiles();
 
-                                if (!string.IsNullOrWhiteSpace(dbpath) && System.IO.File.Exists(dbpath))
-                                    System.IO.File.Delete(dbpath);
+                                if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-local-db"))
+                                {
+                                    string dbpath;
+                                    options.TryGetValue("db-path", out dbpath);
+
+                                    if (!string.IsNullOrWhiteSpace(dbpath) && System.IO.File.Exists(dbpath))
+                                        System.IO.File.Delete(dbpath);
+                                }
+                                Program.DataConnection.DeleteBackup(backup);
+                                Program.Scheduler.Reschedule();
+                                return null;
                             }
-                            Program.DataConnection.DeleteBackup(backup);
-                            Program.Scheduler.Reschedule();
-                            return null;
-                        }
 
-                    default:
+                        default:
                             //TODO: Log this
                             return null;
                     }

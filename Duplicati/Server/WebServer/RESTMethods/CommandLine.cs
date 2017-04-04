@@ -18,281 +18,232 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class CommandLine : IRESTMethodGET, IRESTMethodPOST
     {
-        private readonly Dictionary<string, System.Reflection.MethodInfo> m_supportedCommands;
-
-        private class ArgumentCountAttribute : Attribute
+        private class LogWriter : System.IO.TextWriter
         {
-            public int Min = -1;
-            public int Max = -1;
-        }
+            private readonly ActiveRun m_target;
+            private readonly StringBuilder m_sb = new StringBuilder();
+            private int m_newlinechars = 0;
 
-        private class DocumentationAttribute : Attribute
-        {
-            public string Key;
-            public string Description;
-        }
-
-        private class ParsedResults
-        {
-            public List<string> Arguments;
-            public Dictionary<string, string> Options;
-            public Library.Utility.IFilter Filter;
-
-            public ParsedResults(RequestInfo info)
+            public LogWriter(ActiveRun target)
             {
-                using (var sr = new StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
-                    Arguments = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(sr.ReadToEnd());
+                m_target = target;
+            }
 
-                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(Arguments);
-                Options = tmpparsed.Item1;
-                Filter = tmpparsed.Item2;
+            public override Encoding Encoding { get { return System.Text.Encoding.UTF8; } }
+
+            public override void Write(char value)
+            {
+                lock(m_target.Lock)
+                {
+                    m_sb.Append(value);
+                    if (NewLine[m_newlinechars] == value)
+                    {
+                        m_newlinechars++;
+                        if (m_newlinechars == NewLine.Length)
+                            WriteLine(string.Empty);
+                    }
+                    else
+                        m_newlinechars = 0;
+                }
+            }
+
+            public override void WriteLine(string value)
+            {
+                value = value ?? string.Empty;
+                lock(m_target.Lock)
+                {
+                    m_target.LastAccess = DateTime.Now;
+
+                    if (m_sb.Length != 0)
+                    {
+                        m_target.Log.Add(m_sb.ToString() + value);
+                        m_sb.Length = 0;
+                        m_newlinechars = 0;
+                    }
+                    else
+                    {
+                        m_target.Log.Add(value);
+                    }
+                }
             }
         }
 
-        public CommandLine()
+        private class ActiveRun
         {
-            m_supportedCommands = new Dictionary<string, System.Reflection.MethodInfo>(StringComparer.OrdinalIgnoreCase);
-            foreach (var m in this.GetType().GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
-                foreach (var attr in m.GetCustomAttributes(typeof(DocumentationAttribute), true).Cast<DocumentationAttribute>())
-                    m_supportedCommands[attr.Key] = m;
+            public readonly string ID = Guid.NewGuid().ToString();
+            public DateTime LastAccess = DateTime.Now;
+            public Library.Utility.FileBackedStringList Log = new Library.Utility.FileBackedStringList();
+            public Runner.IRunnerData Task;
+            public LogWriter Writer;
+            public readonly object Lock = new object();
+            public bool Finished = false;
+            public bool Started = false;
+            public System.Threading.Thread Thread;
         }
 
-        [ArgumentCount(Min = 0, Max = 0)]
-        [Documentation(Key = "System-Info", Description = "Lists various system properties")]
-        private Duplicati.Library.Interface.IBasicResults System_Info(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller("dummy://", pr.Options, null))
-                return controller.SystemInfo();
-        }
-
-        [ArgumentCount(Min = 1)]
-        [Documentation(Key = "Find", Description = "Finds files in a backup")]
-        private Duplicati.Library.Interface.IBasicResults Find(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.List(pr.Arguments.Skip(1), pr.Filter);
-        }
-
-        [ArgumentCount(Min = 1, Max = 1)]
-        [Documentation(Key = "List", Description = "Lists all remote backup sets")]
-        private Duplicati.Library.Interface.IBasicResults List(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.List(pr.Arguments.Skip(1), pr.Filter);
-        }
-
-        [ArgumentCount(Min = 1, Max = 1)]
-        [Documentation(Key = "Delete", Description = "Deletes specific remote backup sets")]
-        private Duplicati.Library.Interface.IBasicResults Delete(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.Delete();
-        }
-
-        [ArgumentCount(Min = 1, Max = 1)]
-        [Documentation(Key = "Repair", Description = "Performs a repair of the remote data")]
-        private Duplicati.Library.Interface.IBasicResults Repair(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.Repair(pr.Filter);
-        }
-
-        [ArgumentCount(Min = 2)]
-        [Documentation(Key = "Restore-Control-Files", Description = "Restores control files found in the remote backup")]
-        private Duplicati.Library.Interface.IBasicResults Restore_Control_Files(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.RestoreControlFiles(pr.Arguments.Skip(1), pr.Filter);
-        }
-
-        [ArgumentCount(Min = 1)]
-        [Documentation(Key = "List-Control-Files", Description = "Lists control files found in the remote backup")]
-        private Duplicati.Library.Interface.IBasicResults List_Control_Files(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.ListControlFiles(pr.Arguments.Skip(1), pr.Filter);
-        }
-
-        [ArgumentCount(Min = 1, Max = 1)]
-        [Documentation(Key = "List-Remote", Description = "Lists files in the remote folder")]
-        private Duplicati.Library.Interface.IBasicResults List_Remote(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.ListRemote();
-        }
-
-        [ArgumentCount(Min = 1, Max = 1)]
-        [Documentation(Key = "Compact", Description = "Performs a compact procedure")]
-        private Duplicati.Library.Interface.IBasicResults Compact(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.Compact();
-        }
-
-        [ArgumentCount(Min = 2, Max = 2)]
-        [Documentation(Key = "Recreate-Database", Description = "Rebuilds the local database from remote data")]
-        private Duplicati.Library.Interface.IBasicResults Recreate_Database(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.RecreateDatabase(pr.Arguments.Skip(1).First(), pr.Filter);
-        }
-
-        [ArgumentCount(Min = 2, Max = 2)]
-        [Documentation(Key = "Create-Bug-Report", Description = "Creates a bug-report database")]
-        private Duplicati.Library.Interface.IBasicResults Create_Log_Database(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.CreateLogDatabase(pr.Arguments.Skip(1).First());
-        }
-
-        [ArgumentCount(Min = 3)]
-        [Documentation(Key = "List-Changes", Description = "Lists changes between two versions")]
-        private Duplicati.Library.Interface.IBasicResults List_Changes(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.ListChanges(pr.Arguments.Skip(1).First(), pr.Arguments.Skip(2).First(), pr.Arguments.Skip(3), pr.Filter);
-        }
-
-        [ArgumentCount(Min = 2)]
-        [Documentation(Key = "Affected", Description = "Lists files affected by a named remote volume")]
-        private Duplicati.Library.Interface.IBasicResults List_Affected(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.ListAffected(pr.Arguments.Skip(1).ToList());
-        }
-
-        [ArgumentCount(Min = 1, Max = 2)]
-        [Documentation(Key = "Test", Description = "Performs verification on the remote files")]
-        private Duplicati.Library.Interface.IBasicResults Test(ParsedResults pr)
-        {
-            long samples = 1;
-            if (pr.Arguments.Count > 1)
-                samples = long.Parse(pr.Arguments[2]);
-            
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.Test(samples);
-        }
-
-        [ArgumentCount(Min = 2)]
-        [Documentation(Key = "Test-Filter", Description = "Tests filters")]
-        private Duplicati.Library.Interface.IBasicResults Test_Filter(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.TestFilter(pr.Arguments.Skip(1).ToArray(), pr.Filter);
-        }
-
-        [ArgumentCount(Min = 2)]
-        [Documentation(Key = "Backup", Description = "Runs the backup operation")]
-        private Duplicati.Library.Interface.IBasicResults Backup(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.TestFilter(pr.Arguments.Skip(1).ToArray(), pr.Filter);
-        }
-
-        [ArgumentCount(Min = 1, Max = 1)]
-        [Documentation(Key = "Purge", Description = "Purges named files from remote filesets")]
-        private Duplicati.Library.Interface.IBasicResults Purge_Files(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.PurgeFiles(pr.Filter);
-        }
-
-        [ArgumentCount(Min = 1, Max = 1)]
-        [Documentation(Key = "List-Broken-Files", Description = "Lists files that cannot be recovered due to broken or missing remote files")]
-        private Duplicati.Library.Interface.IBasicResults List_Broken_Files(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.ListBrokenFiles(pr.Filter);
-        }
-
-        [ArgumentCount(Min = 1, Max = 1)]
-        [Documentation(Key = "Purge-Broken-Files", Description = "Removes files that cannot be restored from the remote, due to missing or broken files")]
-        private Duplicati.Library.Interface.IBasicResults Purge_Broken_Files(ParsedResults pr)
-        {
-            using (var controller = new Library.Main.Controller(pr.Arguments.First(), pr.Options, null))
-                return controller.ListBrokenFiles(pr.Filter);
-        }
+        private readonly Dictionary<string, ActiveRun> m_activeItems = new Dictionary<string, ActiveRun>();
+        private System.Threading.Tasks.Task m_cleanupTask;
 
         public void POST(string key, RequestInfo info)
         {
-            var pr = new ParsedResults(info);
-
-            if (string.IsNullOrWhiteSpace(key) && pr.Arguments.Count > 0)
+            if (string.IsNullOrWhiteSpace(key))
             {
-                key = pr.Arguments[0];
-                pr.Arguments.RemoveAt(0);
-            }
+                string[] args;
+                using (var sr = new StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
+                    args = Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(sr.ReadToEnd());
 
-            System.Reflection.MethodInfo method;
-            if (!m_supportedCommands.TryGetValue(key ?? string.Empty, out method))
-            {
-                info.ReportClientError("Not Found", System.Net.HttpStatusCode.NotFound);
-                return;
-            }
+                var k = new ActiveRun();
+                k.Writer = new LogWriter(k);
 
-            var limits = method.GetCustomAttributes(typeof(ArgumentCountAttribute), true).Cast<ArgumentCountAttribute>().FirstOrDefault();
-            if (limits != null)
-            {
-                if (limits.Min >= 0 && pr.Arguments.Count < limits.Min)
+                m_activeItems[k.ID] = k;
+                StartCleanupTask();
+
+                k.Task = Runner.CreateCustomTask(() =>
                 {
-                    info.ReportClientError("Too few arguments");
+                    try
+                    {
+                        k.Thread = System.Threading.Thread.CurrentThread;
+                        k.Started = true;
+
+                        var code = Duplicati.CommandLine.Program.RunCommandLine(k.Writer, k.Writer, c => k.Task.SetController(c), args);
+                        k.Writer.WriteLine(string.Format("Return code: {0}", code));
+                    }
+                    catch (Exception ex)
+                    {
+                        var rx = ex;
+                        if (rx is System.Reflection.TargetInvocationException)
+                            rx = rx.InnerException;
+
+                        if (rx is Library.Interface.UserInformationException)
+                            k.Log.Add(rx.Message);
+                        else
+                            k.Log.Add(rx.ToString());
+
+                        throw rx;
+                    }
+                    finally
+                    {
+                        k.Finished = true;
+                        k.Thread = null;
+                    }
+                });
+
+                Program.WorkThread.AddTask(k.Task);
+
+                info.OutputOK(new
+                {
+                    ID = k.ID
+                });
+            }
+            else
+            {
+                if (!key.EndsWith("/abort", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    info.ReportClientError("Only abort commands are allowed");
                     return;
                 }
 
-                if (limits.Max >= 0 && pr.Arguments.Count > limits.Max)
+                key = key.Substring(0, key.Length - "/abort".Length);
+                if (string.IsNullOrWhiteSpace(key))
                 {
-                    info.ReportClientError("Too many arguments");
-                    return;
-                }
-            }
-
-            try
-            {
-                var res = method.Invoke(this, new object[] { pr });
-                info.OutputOK(res.ToString());
-            }
-            catch (Exception ex)
-            {
-                var rx = ex;
-                if (rx is System.Reflection.TargetInvocationException)
-                    rx = rx.InnerException;
-                
-                if (rx is Library.Interface.UserInformationException)
-                {
-                    info.OutputError(rx.Message, System.Net.HttpStatusCode.BadRequest, rx.Message);
+                    info.ReportClientError("No task key found");
                     return;
                 }
 
-                throw rx;
+                ActiveRun t;
+                if (!m_activeItems.TryGetValue(key, out t))
+                {
+                    info.OutputError(code: System.Net.HttpStatusCode.NotFound);
+                    return;
+                }
+
+                var tr = t.Thread;
+                if (tr != null)
+                    tr.Abort();
+
+                info.OutputOK();
+            }
+        }
+
+        private void StartCleanupTask()
+        {
+            if (m_cleanupTask == null || m_cleanupTask.IsCompleted || m_cleanupTask.IsFaulted || m_cleanupTask.IsCanceled)
+                m_cleanupTask = RunCleanupAsync();
+        }
+
+        private async System.Threading.Tasks.Task RunCleanupAsync()
+        {
+            while (m_activeItems.Count > 0)
+            {
+                var oldest = m_activeItems.Values.OrderBy(x => x.LastAccess).FirstOrDefault();
+                if (oldest != null && DateTime.Now - oldest.LastAccess > TimeSpan.FromMinutes(5))
+                {
+                    m_activeItems.Remove(oldest.ID);
+                    oldest.Log.Dispose();
+
+                    // Fix all expired, or stop running
+                    continue;
+                }
+
+                await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(60));
             }
         }
 
         public void GET(string key, RequestInfo info)
         {
-            info.OutputOK(
-                m_supportedCommands
-                .Values
-                .SelectMany(
-                    x =>
-                        x.GetCustomAttributes(typeof(DocumentationAttribute), true)
-                        .Cast<DocumentationAttribute>()
-                        .Select(y => new { Method = x, Attr = y })
-                )
-                .Select(
-                    x =>
-                        new 
-                        {
-                            Key = x.Attr.Key,
-                            Description = x.Attr.Description,
-                        }
-                )
-            );
-                
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                info.OutputOK(
+                    Duplicati.CommandLine.Program.SupportedCommands
+                );
+            }
+            else
+            {
+                ActiveRun t;
+                if (!m_activeItems.TryGetValue(key, out t))
+                {
+                    info.OutputError(code: System.Net.HttpStatusCode.NotFound);
+                    return;
+                }
+
+                int pagesize;
+                int offset;
+
+                int.TryParse(info.Request.QueryString["pagesize"].Value, out pagesize);
+                int.TryParse(info.Request.QueryString["offset"].Value, out offset);
+                pagesize = Math.Max(10, Math.Min(500, pagesize));
+                offset = Math.Max(0, offset);
+                var items = new List<string>();
+                long count;
+                bool started;
+                bool finished;
+
+                lock(t.Lock)
+                {
+                    t.LastAccess = DateTime.Now;
+                    count = t.Log.Count;
+                    offset = Math.Min((int)count, offset);
+                    items.AddRange(t.Log.Skip(offset).Take(pagesize));
+                    finished = t.Finished;
+                    started = t.Started;
+                }
+
+                info.OutputOK(new
+                {
+                    Pagesize = pagesize,
+                    Offset = offset,
+                    Count = count,
+                    Items = items,
+                    Finished = finished,
+                    Started = started
+                });
+            }                
         }
     }
 }

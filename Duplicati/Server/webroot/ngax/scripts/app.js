@@ -80,6 +80,9 @@ backupApp.config(['$routeProvider',
             when('/commandline/:backupid', {
                 templateUrl: 'templates/commandline.html'
             }).
+            when('/commandline/view/:viewid', {
+                templateUrl: 'templates/commandline.html'
+            }).
             otherwise({
                 templateUrl: 'templates/home.html'
                 //redirectTo: '/home'

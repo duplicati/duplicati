@@ -1,5 +1,5 @@
 <div class="commandline form" ng-controller="CommandlineController">
-    <form class="styled">
+    <form class="styled" ng-hide="Mode == 'view'">
         <backup-edit-uri uri="TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
 
         <div ng-hide="EditUriState">
@@ -43,7 +43,28 @@
         </div>
     </form>
 
-    <div class="prewrapped-text fixed-width-font" style="clear: both" ng-repeat="line in outputlines">
-    {{line}}
+    <div ng-show="Mode == 'view'">
+        <h2 translate>Running commandline entry</h2>
+        <div ng-show="serverstate.programState == 'Paused' &amp;&amp; Started != true">
+            {{'Server is currently paused,' | translate}} <a ng-click="ServerStatus.resume()" translate>resume now</a>
+        </div>
+        <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == null" translate="">
+            Connecting to task ....
+        </div>
+        <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == false" translate="">
+            Waiting for task to start ....
+        </div>
+        <div ng-show="Started == true &amp;&amp; Finished == false">
+            <span translate>Running ....</span> <a href ng-click="Abort()" ng-hide="RawFinished">stop now</a>
+        </div>
+        <div ng-show="Started == true &amp;&amp; Finished == true" translate>
+            Finished!
+        </div>
+
+        <div ng-show="Started == true" class="prewrapped-text" style="overflow-x: auto;">
+            <div class="fixed-width-font" style="white-space: pre" ng-repeat="line in ViewLines track by $index">{{line}}</div>
+        </div>
+
     </div>
+
 </div>
