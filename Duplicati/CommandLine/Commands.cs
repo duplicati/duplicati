@@ -143,6 +143,7 @@ namespace Duplicati.CommandLine
 
         public static int Affected(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
+            var fullresult = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose") || Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
             var backend = args[0];
             args.RemoveAt(0);
 
@@ -619,6 +620,7 @@ namespace Duplicati.CommandLine
 
         public static int Test(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
+            var verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose") || Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
             if (args.Count != 1 && args.Count != 2)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
             
@@ -654,7 +656,7 @@ namespace Duplicati.CommandLine
                 }
                 else
                 {
-                    if (Library.Utility.Utility.ParseBoolOption(options, "verbose"))
+                    if (verbose)
                     {
                         foreach(var n in result.Verifications)
                         {
@@ -738,6 +740,8 @@ namespace Duplicati.CommandLine
         
         public static int ListChanges(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
+            var fullresult = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose") || Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
+
             if (args.Count < 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
             
@@ -928,7 +932,7 @@ namespace Duplicati.CommandLine
             var con = new ConsoleOutput(outwriter, options);
             var previd = -1L;
             var outputcount = 0L;
-            var verbose = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose");
+            var verbose = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose") || Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
 
             using (var i = new Library.Main.Controller(args[0], options, con))
             {
@@ -946,7 +950,7 @@ namespace Duplicati.CommandLine
                     outputcount++;
                     if (outputcount >= 5 && !verbose && count != outputcount)
                     {
-                        con.MessageEvent(string.Format("\t ... and {0} more, (use --{1} to list all)", count - outputcount, "verbose"));
+                        con.MessageEvent(string.Format("\t ... and {0} more, (use --{1} to list all)", count - outputcount, "full-result"));
                         return false;
                     }
 
