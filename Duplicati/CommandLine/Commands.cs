@@ -672,28 +672,31 @@ namespace Duplicati.CommandLine
                 }
                 else
                 {
-                    if (verbose)
+                    foreach(var n in result.Verifications)
                     {
-                        foreach(var n in result.Verifications)
+                        var changecount = n.Value.Count();
+                        if (changecount == 0)
                         {
-                            var changecount = n.Value.Count();
-                            if (changecount == 0)
-                                outwriter.WriteLine("{0}: No errors", n.Key);
-                            else
-                            {
-                                outwriter.WriteLine("{0}: {1} errors", n.Key, changecount);
-                                foreach(var c in n.Value)
-                                    outwriter.WriteLine("{0}: {1}", c.Key, c.Value);
-                                outwriter.WriteLine();
-                            }
+                            if (verbose)
+                                Console.WriteLine("{0}: No errors", n.Key);
                         }
-                    }
-                    else
-                    {
-                        outwriter.WriteLine("Examined {0} files and found errors in the following files:", totalFiles);
-                        foreach(var n in filtered)
-                            outwriter.WriteLine(n.Key);
-                        outwriter.WriteLine();
+                        else
+                        {
+                            Console.WriteLine("{0}: {1} errors", n.Key, changecount);
+                            var count = 0;
+                            foreach (var c in n.Value)
+                            {
+                                count++;
+                                Console.WriteLine("\t{0}: {1}", c.Key, c.Value);
+                                if (!verbose && count == 10 && changecount > 10)
+                                {
+                                    Console.WriteLine("\t... and {0} more", changecount - count);
+                                    break;
+                                }
+                            }
+
+                            Console.WriteLine();
+                        }
                     }
 
                     return 3;
