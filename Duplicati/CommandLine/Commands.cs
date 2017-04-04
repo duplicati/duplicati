@@ -175,47 +175,63 @@ namespace Duplicati.CommandLine
             using(var i = new Library.Main.Controller(backend, options, new ConsoleOutput(outwriter, options)))
             {
                 setup(i);
-                var res = i.ListAffected(args);
+                i.ListAffected(args, res => 
+                { 
+                    if (res.Filesets != null && res.Filesets.Count() != 0)
+                    {
+                        outwriter.WriteLine("The following filesets are affected:");
+                        foreach (var e in res.Filesets)
+                            outwriter.WriteLine("{0}\t: {1}", e.Version, e.Time);
+                        outwriter.WriteLine();
+                    }
 
-                if (res.Filesets != null && res.Filesets.Count() != 0)
-                {
-                    outwriter.WriteLine("The following filesets are affected:");
-                    foreach(var e in res.Filesets)
-                        outwriter.WriteLine("{0}\t: {1}", e.Version, e.Time);
-                    outwriter.WriteLine();
-                }
-
-                if (res.RemoteVolumes != null && res.RemoteVolumes.Count() != 0)
-                {
-                }
-           
-
-                var filecount = res.Files.Count();
-                if (filecount == 0 || (filecount > 10 && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose")))
-                    outwriter.WriteLine("A total of {0} file(s) are affected (use --{1} to see filenames)", res.Files.Count(), "verbose");
-                else
-                {
-                    outwriter.WriteLine("The following files are affected:");
-                    foreach(var file in res.Files)
-                        outwriter.WriteLine(file.Path);
-                }
-
-                outwriter.WriteLine();
-
-                var logcount = res.LogMessages.Count();
-                if (logcount == 0 || (logcount > 10 && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose")))
-                    outwriter.WriteLine("Found {0} related log messages (use --{1} to see the data)", res.Files.Count(), "verbose");
-                else
-                {
-                    outwriter.WriteLine("The following related log messages were found:");
-                    foreach(var log in res.LogMessages)
-                        if (log.Message.Length > 100 && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose"))
-                            outwriter.WriteLine("{0}: {1}", log.Timestamp, log.Message.Substring(0, 96) + " ...");
+                    if (res.Files != null)
+                    {
+                        var filecount = res.Files.Count();
+                        if (filecount == 0)
+                        {
+                            outwriter.WriteLine("No files are affected");
+                        }
                         else
-                            outwriter.WriteLine("{0}: {1}", log.Timestamp, log.Message);
-                }
+                        {
+                            var c = 0;
+                            outwriter.WriteLine("A total of {0} file(s) are affected:", filecount);
+                            foreach (var file in res.Files)
+                            {
+                                c++;
+                                outwriter.WriteLine(file.Path);
+                                if (c > 10 && filecount > 10 && !fullresult)
+                                {
+                                    outwriter.WriteLine("  ... and {0} more (use --{1} to see all filenames)", filecount - c, "full-result");
+                                    break;
+                                }
+                            }
 
-                outwriter.WriteLine();
+                        }
+
+                        outwriter.WriteLine();
+                    }
+
+                    if (res.LogMessages != null)
+                    {
+                        var logcount = res.LogMessages.Count();
+                        if (logcount == 0 || (logcount > 10 && !fullresult))
+                            outwriter.WriteLine("Found {0} related log messages (use --{1} to see the data)", res.Files.Count(), "full-result");
+                        else
+                        {
+                            outwriter.WriteLine("The following related log messages were found:");
+                            foreach (var log in res.LogMessages)
+                                if (log.Message.Length > 100 && !fullresult)
+                                    outwriter.WriteLine("{0}: {1}", log.Timestamp, log.Message.Substring(0, 96) + " ...");
+                                else
+                                    outwriter.WriteLine("{0}: {1}", log.Timestamp, log.Message);
+                        }
+
+                        outwriter.WriteLine();
+                    }
+                });
+
+
 
                 return 0;
             }
@@ -763,88 +779,117 @@ namespace Duplicati.CommandLine
                 if (string.IsNullOrEmpty(passphrase))
                     options["no-encryption"] = "true";
             }
+
+            Action<Duplicati.Library.Interface.IListChangesResults, IEnumerable<Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>>> handler = 
+                (result, items) => 
+                { 
+                    outwriter.WriteLine("Listing changes");
+                    outwriter.WriteLine("  {0}: {1}", result.BaseVersionIndex, result.BaseVersionTimestamp);
+                    outwriter.WriteLine("  {0}: {1}", result.CompareVersionIndex, result.CompareVersionTimestamp);
+                    outwriter.WriteLine();
+
+                    outwriter.WriteLine("Size of backup {0}: {1}", result.BaseVersionIndex, Library.Utility.Utility.FormatSizeString(result.PreviousSize));
+
+                    if (items != null)
+                    {
+                        outwriter.WriteLine();
+
+                        var added = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Added);
+                        var deleted = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Deleted);
+                        var modified = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Modified);
+
+                        var count = added.Count();
+                        if (count > 0)
+                        {
+                            var c = 0;
+                            outwriter.WriteLine("  {0} added entries:", count);
+                            foreach (var n in added)
+                            {
+                                c++;
+                                outwriter.WriteLine("  + {0}", n.Item3);
+                                if (c > 10 && count > 10 && !fullresult)
+                                {
+                                    outwriter.WriteLine("  ... and {0} more", count - c);
+                                    break;
+                                }
+                            }
+                            outwriter.WriteLine();
+                        }
+                        count = modified.Count();
+                        if (count > 0)
+                        {
+                            var c = 0;
+                            outwriter.WriteLine("  {0} modified entries:", count);
+                            foreach (var n in modified)
+                            {
+                                c++;
+                                outwriter.WriteLine("  ~ {0}", n.Item3);
+                                if (c > 10 && count > 10 && !fullresult)
+                                {
+                                    outwriter.WriteLine("  ... and {0} more", count - c);
+                                    break;
+                                }
+                            }
+                            outwriter.WriteLine();
+                        }
+                        count = deleted.Count();
+                        if (count > 0)
+                        {
+                            var c = 0;
+                            outwriter.WriteLine("{0} deleted entries:", count);
+                            foreach (var n in deleted)
+                            {
+                                c++;
+                                outwriter.WriteLine("  - {0}", n.Item3);
+                                if (c > 10 && count > 10 && !fullresult)
+                                {
+                                    outwriter.WriteLine("  ... and {0} more", count - c);
+                                    break;
+                                }
+                            }
+                            outwriter.WriteLine();
+                        }
+
+                        outwriter.WriteLine();
+                    }
+
+
+                    if (result.AddedFolders > 0)
+                        outwriter.WriteLine("  Added folders:     {0}", result.AddedFolders);
+                    if (result.AddedSymlinks > 0)
+                        outwriter.WriteLine("  Added symlinks:    {0}", result.AddedSymlinks);
+                    if (result.AddedFiles > 0)
+                        outwriter.WriteLine("  Added files:       {0}", result.AddedFiles);
+                    if (result.DeletedFolders > 0)
+                        outwriter.WriteLine("  Deleted folders:   {0}", result.DeletedFolders);
+                    if (result.DeletedSymlinks > 0)
+                        outwriter.WriteLine("  Deleted symlinks:  {0}", result.DeletedSymlinks);
+                    if (result.DeletedFiles > 0)
+                        outwriter.WriteLine("  Deleted files:     {0}", result.DeletedFiles);
+                    if (result.ModifiedFolders > 0)
+                        outwriter.WriteLine("  Modified folders:  {0}", result.ModifiedFolders);
+                    if (result.ModifiedSymlinks > 0)
+                        outwriter.WriteLine("  Modified symlinka: {0}", result.ModifiedSymlinks);
+                    if (result.ModifiedFiles > 0)
+                        outwriter.WriteLine("  Modified files:    {0}", result.ModifiedFiles);
+
+                    if (result.AddedFolders + result.AddedSymlinks + result.AddedFolders +
+                        result.ModifiedFolders + result.ModifiedSymlinks + result.ModifiedFiles +
+                        result.DeletedFolders + result.DeletedSymlinks + result.DeletedFiles == 0)
+                        outwriter.WriteLine("  No changes found");
+
+                    outwriter.WriteLine("Size of backup {0}: {1}", result.CompareVersionIndex, Library.Utility.Utility.FormatSizeString(result.CurrentSize));                    
+                };
                             
-            Library.Interface.IListChangesResults result;
             using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
             {
                 setup(i);
                 if (args.Count == 2)
-                    result = i.ListChanges(null, args[1], null, filter);
+                    i.ListChanges(null, args[1], null, filter, handler);
                 else
-                    result = i.ListChanges(args.Count > 1 ? args[1] : null, args.Count > 2 ? args[2] : null, null, filter);
+                    i.ListChanges(args.Count > 1 ? args[1] : null, args.Count > 2 ? args[2] : null, null, filter, handler);
             }
-            
-            outwriter.WriteLine("Listing changes");
-            outwriter.WriteLine("  {0}: {1}", result.BaseVersionIndex, result.BaseVersionTimestamp);
-            outwriter.WriteLine("  {0}: {1}", result.CompareVersionIndex, result.CompareVersionTimestamp);
-            outwriter.WriteLine();
-            
-            outwriter.WriteLine("Size of backup {0}: {1}", result.BaseVersionIndex, Library.Utility.Utility.FormatSizeString(result.PreviousSize));
-            
-            if (result.ChangeDetails != null)
-            {
-                outwriter.WriteLine();
-                
-                var added = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Added);
-                var deleted = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Deleted);
-                var modified = result.ChangeDetails.Where(x => x.Item1 == Library.Interface.ListChangesChangeType.Modified);
-            
-                var count = added.Count();
-                if (count > 0)
-                {
-                    outwriter.WriteLine("  {0} added entries:", count);
-                    foreach(var n in added)
-                        outwriter.WriteLine("  + {0}", n.Item3);
-                    outwriter.WriteLine();
-                }
-                count = modified.Count();
-                if (count > 0)
-                {
-                    outwriter.WriteLine("  {0} modified entries:", count);
-                    foreach(var n in modified)
-                        outwriter.WriteLine("  ~ {0}", n.Item3);
-                    outwriter.WriteLine();
-                }
-                count = deleted.Count();
-                if (count > 0)
-                {
-                    outwriter.WriteLine("{0} deleted entries:", count);
-                    foreach(var n in deleted)
-                        outwriter.WriteLine("  - {0}", n.Item3);
-                    outwriter.WriteLine();
-                }
-                
-                outwriter.WriteLine();
-            }
-            else
-            {
-                if (result.AddedFolders > 0)
-                    outwriter.WriteLine("  Added folders:     {0}", result.AddedFolders);
-                if (result.AddedSymlinks > 0)
-                    outwriter.WriteLine("  Added symlinks:    {0}", result.AddedSymlinks);
-                if (result.AddedFiles > 0)
-                    outwriter.WriteLine("  Added files:       {0}", result.AddedFiles);
-                if (result.DeletedFolders > 0)
-                    outwriter.WriteLine("  Deleted folders:   {0}", result.DeletedFolders);
-                if (result.DeletedSymlinks > 0)
-                    outwriter.WriteLine("  Deleted symlinks:  {0}", result.DeletedSymlinks);
-                if (result.DeletedFiles > 0)
-                    outwriter.WriteLine("  Deleted files:     {0}", result.DeletedFiles);
-                if (result.ModifiedFolders > 0)
-                    outwriter.WriteLine("  Modified folders:  {0}", result.ModifiedFolders);
-                if (result.ModifiedSymlinks > 0)
-                    outwriter.WriteLine("  Modified symlinka: {0}", result.ModifiedSymlinks);
-                if (result.ModifiedFiles > 0)
-                    outwriter.WriteLine("  Modified files:    {0}", result.ModifiedFiles);
 
-                if (result.AddedFolders + result.AddedSymlinks + result.AddedFolders +
-                    result.ModifiedFolders + result.ModifiedSymlinks + result.ModifiedFiles +
-                    result.DeletedFolders + result.DeletedSymlinks + result.DeletedFiles == 0)
-                        outwriter.WriteLine("  No changes found");
-            }
-            
-            outwriter.WriteLine("Size of backup {0}: {1}", result.CompareVersionIndex, Library.Utility.Utility.FormatSizeString(result.CurrentSize));
-            
             return 0;
         }
         
