@@ -8,7 +8,6 @@
     <RootNamespace>Duplicati.Library.UsageReporter</RootNamespace>
     <AssemblyName>Duplicati.Library.UsageReporter</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
