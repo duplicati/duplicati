@@ -1,4 +1,4 @@
-backupApp.controller('LogController', function($scope, $routeParams, SystemInfo, ServerStatus, AppService, DialogService, BackupList, gettextCatalog) {
+backupApp.controller('LogController', function($scope, $routeParams, $timeout, SystemInfo, ServerStatus, AppService, DialogService, BackupList, gettextCatalog) {
     $scope.state = ServerStatus.watch($scope);
     $scope.BackupID = $routeParams.backupid;
     $scope.SystemInfo = SystemInfo.watch($scope);
@@ -13,7 +13,7 @@ backupApp.controller('LogController', function($scope, $routeParams, SystemInfo,
         }
 
         if (liveRefreshTimer != null) {
-            clearTimeout(liveRefreshTimer);
+            $timeout.cancel(liveRefreshTimer);
             liveRefreshTimer = null;
         }
 
@@ -39,11 +39,11 @@ backupApp.controller('LogController', function($scope, $routeParams, SystemInfo,
                     updateLivePoll();
                 else
                     if ($scope.Page == 'live' && $scope.LiveLogLevel != '')
-                        liveRefreshTimer = setTimeout(updateLivePoll, 3000);
+                        liveRefreshTimer = $timeout(updateLivePoll, 3000);
 
             }, function(resp) {
                 if ($scope.Page == 'live' && $scope.LiveLogLevel != '')
-                    liveRefreshTimer = setTimeout(updateLivePoll, 3000);
+                    liveRefreshTimer = $timeout(updateLivePoll, 3000);
             }
         );
 

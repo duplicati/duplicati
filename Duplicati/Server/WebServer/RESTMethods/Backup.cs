@@ -119,9 +119,20 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void Export(IBackup backup, RequestInfo info)
         {
             var cmdline = Library.Utility.Utility.ParseBool(info.Request.QueryString["cmdline"].Value, false);
+            var argsonly = Library.Utility.Utility.ParseBool(info.Request.QueryString["argsonly"].Value, false);
             if (cmdline)
             {
                 info.OutputOK(new { Command = Runner.GetCommandLine(Runner.CreateTask(DuplicatiOperation.Backup, backup)) });
+            }
+            else if (argsonly)
+            {
+                var parts = Runner.GetCommandLineParts(Runner.CreateTask(DuplicatiOperation.Backup, backup));
+
+                info.OutputOK(new {
+                    Backend = parts.First(),
+                    Arguments = parts.Skip(1).Where(x => !x.StartsWith("--", StringComparison.Ordinal)),
+                    Options = parts.Skip(1).Where(x => x.StartsWith("--", StringComparison.Ordinal))
+                });
             }
             else
             {

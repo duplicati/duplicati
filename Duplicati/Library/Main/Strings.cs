@@ -179,6 +179,8 @@ namespace Duplicati.Library.Main.Strings
         public static string OverwriteLong { get { return LC.L(@"Use this option to overwrite target files when restoring, if this option is not set the files will be restored with a timestamp and a number appended."); } }
         public static string VerboseShort { get { return LC.L(@"Output more progress information"); } }
         public static string VerboseLong { get { return LC.L(@"Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed."); } }
+        public static string FullresultShort { get { return LC.L(@"Output full results"); } }
+        public static string FullresultLong { get { return LC.L(@"Use this option to increase the amount of output generated as the result of the operation, including all filenames."); } }
         public static string UploadverificationfileShort { get { return LC.L(@"Determine if verification files are uploaded"); } }
         public static string UploadverificationfileLong { get { return LC.L(@"Use this option to upload a verification file after changing the remote storage. The file is not encrypted and contains the size and SHA256 hashes of all the remote files and can be used to verify the integrity of the files."); } }
         public static string BackendtestsamplesShort { get { return LC.L(@"The number of samples to test after a backup"); } }
