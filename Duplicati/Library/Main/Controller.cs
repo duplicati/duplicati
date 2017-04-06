@@ -173,6 +173,18 @@ namespace Duplicati.Library.Main
             m_messageSink = messageSink;
         }
 
+        /// <summary>
+        /// Appends another message sink to the controller
+        /// </summary>
+        /// <param name="sink">The sink to use.</param>
+        public void AppendSink(IMessageSink sink)
+        {
+            if (m_messageSink is MultiMessageSink)
+                ((MultiMessageSink)m_messageSink).Append(sink);
+            else
+                m_messageSink = new MultiMessageSink(m_messageSink, sink);
+        }
+
         public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
         {
             Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);

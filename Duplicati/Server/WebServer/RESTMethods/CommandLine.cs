@@ -104,14 +104,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 m_activeItems[k.ID] = k;
                 StartCleanupTask();
 
-                k.Task = Runner.CreateCustomTask(() =>
+                k.Task = Runner.CreateCustomTask((sink) =>
                 {
                     try
                     {
                         k.Thread = System.Threading.Thread.CurrentThread;
                         k.Started = true;
 
-                        var code = Duplicati.CommandLine.Program.RunCommandLine(k.Writer, k.Writer, c => k.Task.SetController(c), args);
+                        var code = Duplicati.CommandLine.Program.RunCommandLine(k.Writer, k.Writer, c => { 
+                            k.Task.SetController(c);
+                            c.AppendSink(sink);
+                        }, args);
                         k.Writer.WriteLine(string.Format("Return code: {0}", code));
                     }
                     catch (Exception ex)
@@ -162,6 +165,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     info.OutputError(code: System.Net.HttpStatusCode.NotFound);
                     return;
                 }
+
+                var tt = t.Task;
+                if (tt != null)
+                    tt.Abort();
 
                 var tr = t.Thread;
                 if (tr != null)
