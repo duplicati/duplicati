@@ -93,9 +93,9 @@ namespace Duplicati.Server
 
         private class CustomRunnerTask : RunnerData
         {
-            public readonly Action Run;
+            public readonly Action<Library.Main.IMessageSink> Run;
 
-            public CustomRunnerTask(Action runner)
+            public CustomRunnerTask(Action<Library.Main.IMessageSink> runner)
                 : base()
             {
                 if (runner == null)
@@ -106,7 +106,7 @@ namespace Duplicati.Server
             }
         }
 
-        public static IRunnerData CreateCustomTask(Action runner)
+        public static IRunnerData CreateCustomTask(Action<Library.Main.IMessageSink> runner)
         {
             return new CustomRunnerTask(runner);
         }
@@ -409,7 +409,11 @@ namespace Duplicati.Server
             {
                 try
                 {
-                    ((CustomRunnerTask)data).Run();
+                    var sink = new MessageSink(data.TaskID, null);
+                    Program.GenerateProgressState = () => sink.Copy();
+                    Program.StatusEventNotifyer.SignalNewEvent();
+
+                    ((CustomRunnerTask)data).Run(sink);
                 }
                 catch(Exception ex)
                 {
