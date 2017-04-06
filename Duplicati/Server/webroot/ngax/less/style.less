@@ -445,7 +445,12 @@ body {
             line-height: 70px;
             background: @headerBg;
             overflow: hidden;
-            min-height: 70px;
+            height: 70px;
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            z-index: 100;
 
             a {
                 color: @lColor;
@@ -470,11 +475,11 @@ body {
 
             .state {
                 float: left;
-                color: @hColor;
+                color: darken(@hColor, 10%);
                 width: 545px;
                 padding: 13px 15px;
                 margin: 10px 20px;
-                border: 1px @hColor solid;
+                border: 1px darken(@hColor, 10%) solid;
                 font-weight: 300;
                 font-size: 18px;
                 overflow: hidden;
@@ -482,15 +487,67 @@ body {
                 display: inline-block;
                 background-color: white;
                 text-overflow: ellipsis;
+                position: relative;
+                height: 25px;
 
                 strong {
-                    display: inline-block;
+                    display: inline;
                     margin-right: 10px;
+                }
+
+                span { 
+                    display: inline;
                 }
 
                 .button {
                     position: static;
                     margin-top: 70px;
+                }
+
+                .content {
+                    position: relative;
+                    z-index: 10;
+                    margin-right: 40px;
+                    display: block;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
+                }
+
+                .buttons {
+                    position: absolute;
+                    right: 0px;
+                    top: 0px;
+                    bottom: 0px;
+                    width: 26px;
+                    margin: 13px 15px;
+
+                    .stop {
+                        display: block;
+                        width: 26px;
+                        height: 26px;
+                        background: url('../img/progress-stop.png');
+                        background-size: 26px;
+                        cursor: pointer;
+                    }
+
+                    .resume {
+                        display: block;
+                        width: 26px;
+                        height: 26px;
+                        background: url('../img/progress-resume.png');
+                        background-size: 26px;
+                        cursor: pointer;
+                    }
+                }
+
+                .progress-bar {
+                    position: absolute;
+                    top: 0px;
+                    bottom: 0px;
+                    left: 0px;
+                    background: fade(@hColor, 25%);
+                    z-index: 5;
                 }
             }
 
@@ -583,7 +640,7 @@ body {
             width: 100%;
             overflow: hidden;
             min-height: 500px;
-            padding-top: 50px;
+            padding-top: 120px;
             padding-bottom: 70px;
 
             a {
@@ -2043,7 +2100,7 @@ div.modal-dialog {
     body {
         .container {
             .header {
-                min-height: 140px;
+                height: 140px;
 
                 .statepadding {
                     padding-right: 90px;
@@ -2092,7 +2149,7 @@ div.modal-dialog {
 
             .body {
                 position: relative;
-                padding-top: 0;
+                padding-top: 140px;
 
                 .mainmenu {
                     display: none;
@@ -2173,10 +2230,13 @@ div.modal-dialog {
                     padding-left: 10px;
                 }
                 .statepadding {
-                    padding-right: 60px;
+                    padding-right: 50px;
                 }
                 .state {
                     margin-left: 10px;
+                }
+                .menubutton {
+                    margin-right: 5px;
                 }
             }
 
@@ -2503,7 +2563,7 @@ div.modal-dialog {
                 }
 
                 .content {
-                    padding: 50px 15px;
+                    padding: 15px;
 
                     div.add,
                     div.restore {
@@ -2537,6 +2597,62 @@ div.modal-dialog {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 400px) {
+    body {
+        font-size: 15px;
+
+        .container {
+            .header {
+                .menubutton {
+                    margin-right: 0px;
+                    padding-left: 0px;
+                    padding-right: 40px;
+
+                    span {
+                        display: none;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 325px) {
+    body {
+        font-size: 15px;
+
+        .container {
+            .header {
+                .logo {
+                    div {
+                        display: none;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 200px) {
+    body {
+        font-size: 15px;
+
+        .container {
+            .header {
+                .menubutton {
+                    position: static;
+                    margin-top: 0px;
+                }
+
+                .action-icons-small {
+                    clear: right;
+                    margin-top: 0px;
                 }
             }
         }

@@ -1,4 +1,4 @@
-backupApp.controller('StateController', function($scope, $timeout, ServerStatus, BackupList, AppService, AppUtils, gettextCatalog) {
+backupApp.controller('StateController', function($scope, $timeout, ServerStatus, BackupList, AppService, AppUtils, DialogService, gettextCatalog) {
     $scope.state = ServerStatus.watch($scope);
     $scope.backups = BackupList.watch($scope);
     $scope.ServerStatus = ServerStatus;
@@ -6,6 +6,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
     $scope.activeTask = null;
 
     var updateActiveTask = function() {
+        $scope.activeTaskID = $scope.state.activeTask == null ? null : $scope.state.activeTask.Item1;
         $scope.activeBackup = $scope.state.activeTask == null ? null : BackupList.lookup[$scope.state.activeTask.Item2];
         $scope.nextTask = ($scope.state.schedulerQueueIds == null || $scope.state.schedulerQueueIds.length == 0) ? null : BackupList.lookup[$scope.state.schedulerQueueIds[0].Item2];
         $scope.nextScheduledTask = ($scope.state.proposedSchedule == null || $scope.state.proposedSchedule.length == 0) ? null : BackupList.lookup[$scope.state.proposedSchedule[0].Item1];
@@ -72,19 +73,43 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
 
     $scope.$watch('state.lastPgEvent', updateStateDisplay, true);
 
-    $scope.stopTask = function() {
-        var taskId = $scope.state.activeTask.Item1;
-        if ($scope.StopReqId == taskId) {
-            AppService.post('/task/' + taskId + '/abort');
-        } else {
-            AppService.post('/task/' + taskId + '/stop');
-        }
+    $scope.stopDialog = function() {
+        if ($scope.activeTaskID == null)
+            return;
 
-        $scope.StopReqId = taskId;
+        var taskId = $scope.activeTaskID;
+        var txt = $scope.state.lastPgEvent == null ? '' : ($scope.state.lastPgEvent.Phase || '');
+
+        function handleClick(ix) {
+            if (ix == 0) 
+            {
+                AppService.post('/task/' + taskId + '/stop');
+                $scope.StopReqId = taskId;
+            }
+            else if (ix == 1)
+                AppService.post('/task/' + taskId + '/abort');
+        };
+
+        if (txt.indexOf('Backup_') == 0)
+        {
+            DialogService.dialog(
+                gettextCatalog.getString('Stop running backup'),
+                gettextCatalog.getString('You can stop the backup immediately, or stop after the current file has been uploaded.'),
+                [gettextCatalog.getString('Stop after upload'), gettextCatalog.getString('Stop now'), gettextCatalog.getString('Cancel')],
+                handleClick
+            );
+        }
+        else
+        {
+            DialogService.dialog(
+                gettextCatalog.getString('Stop running task'),
+                gettextCatalog.getString('You can stop the task immediately, or allow the process to continue its current file and the stop.'),
+                [gettextCatalog.getString('Stop after the current file'), gettextCatalog.getString('Stop now'), gettextCatalog.getString('Cancel')],
+                handleClick
+            );
+        }
     };
 
     updateStateDisplay();
     updateActiveTask();
-
-
 });
