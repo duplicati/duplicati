@@ -48,7 +48,7 @@ namespace Duplicati.Library.Backend
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
         public static readonly KeyValuePair<string, string>[] KNOWN_S3_LOCATIONS = new KeyValuePair<string, string>[] {
             new KeyValuePair<string, string>("(default)", ""),
-            new KeyValuePair<string, string>("Europe (EU, Ireland)", "EU"),
+            new KeyValuePair<string, string>("Europe (EU)", "EU"),
             new KeyValuePair<string, string>("Europe (EU, Frankfurt)", "eu-central-1"),
             new KeyValuePair<string, string>("Europe (EU, Ireland)", "eu-west-1"),
             new KeyValuePair<string, string>("Europe (EU, London)", "eu-west-2"),
