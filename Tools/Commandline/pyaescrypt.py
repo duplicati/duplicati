@@ -153,7 +153,7 @@ def pyAesCryptStretch(passw, iv1):
     from Crypto.Hash import SHA256
     digest=iv1+(16*b"\x00")
 
-    for i in range(8192):
+    for _ in range(8192):
         passHash=SHA256.new()
         passHash.update(digest)
         passHash.update(bytes(passw,"utf_16_le"))

@@ -46,10 +46,10 @@ class ObjectBuilder(object):
         if event == 'map_key':
             self.key = value
         elif event == 'start_map':
-            map = {}
-            self.containers[-1](map)
+            mapval = {}
+            self.containers[-1](mapval)
             def setter(value):
-                map[self.key] = value
+                mapval[self.key] = value
             self.containers.append(setter)
         elif event == 'start_array':
             array = []
@@ -118,7 +118,7 @@ BUFSIZE = 16 * 1024
 LEXEME_RE = re.compile(r'[a-z0-9eE\.\+-]+|\S')
 
 def Lexer(f, buf_size=BUFSIZE):
-    if type(f.read(0)) == bytetype:
+    if isinstance(f.read(0), bytetype):
         f = getreader('utf-8')(f)
     buf = f.read(buf_size)
     pos = 0
@@ -281,12 +281,8 @@ def parse(file, buf_size=BUFSIZE):
 def items(file, prefix):
     return items_impl(parse(file), prefix)
 
-if sys.version_info[0] < 3:
-    b2s = lambda s: s
-    chr = unichr
-    bytetype = str
-else:
-    def b2s(b):
-        return b.decode('utf-8')
-    chr = chr
-    bytetype = bytes
+def b2s(b):
+    return b.decode('utf-8')
+
+assert sys.version_info[0] >= 3
+bytetype = bytes
