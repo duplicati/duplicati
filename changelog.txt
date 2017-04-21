@@ -1,3 +1,11 @@
+2017-04-21 - 2.0.1.56_canary_2017-04-21
+==========
+* Fixed an issue with duplicate strings in S3 providers
+* Fixed an issue where a file being expanded during backup could cause the file to not be backed up.
+* Changed HTTP requests to not buffer the output to fix out-of-memory errors
+* Added a Python script to do restores completely without using Duplicati, thanks @downpoured !
+* Improved Amazon Cloud Drive by not waiting while performing batched requests
+
 2017-04-06 - 2.0.1.55_canary_2017-04-06
 ==========
 * Updated SharpCompress to support creating zip files larger than 4 GiB
