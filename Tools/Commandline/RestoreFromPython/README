@@ -1,0 +1,23 @@
+
+RestoreFromPython
+by Ben Fisher, https://github.com/downpoured
+a Python script to restore files from Duplicati
+similar to Duplicati.RecoveryTool, but with no dependencies on Mono/.NET
+uses streaming apis to restore a large number of files and use limited RAM.
+
+
+
+Usage:
+1) Confirm that your Duplicati data is on disk in .zip or .zip.aes format.
+if data uses GPG/other encryption, decrypt files to .zip before running this tool.
+
+2) Install Python 3 if it is not already installed.
+
+3) Run restore_from_python.py,
+it will interactively ask for the necessary information.
+
+
+
+Other notes:
+It's possible that an updated version of this script can be located in the repo at
+https://github.com/downpoured/duplicati
