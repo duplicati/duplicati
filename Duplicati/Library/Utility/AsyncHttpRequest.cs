@@ -93,6 +93,10 @@ namespace Duplicati.Library.Utility
                     m_activity_timeout = ((HttpWebRequest)m_request).ReadWriteTimeout;
 
                 ((HttpWebRequest)m_request).ReadWriteTimeout = System.Threading.Timeout.Infinite;
+
+                // Prevent in-memory buffering causing out-of-memory issues
+                ((HttpWebRequest)m_request).AllowReadStreamBuffering = false;
+                ((HttpWebRequest)m_request).AllowWriteStreamBuffering = false;
             }
         }
 
