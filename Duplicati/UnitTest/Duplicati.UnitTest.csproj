@@ -46,6 +46,7 @@
     <Compile Include="BorderTests.cs" />
     <Compile Include="Issue1723.cs" />
     <Compile Include="PurgeTesting.cs" />
+    <Compile Include="CompressionTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

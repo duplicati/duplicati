@@ -625,15 +625,20 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Pause()
         {
-            lock(m_lock)
-                if (m_controlState == TaskControlState.Run)
-                {
-                    m_pauseEvent.Reset();
-                    m_controlState = TaskControlState.Pause;
-                }
-            
-            if (StateChangedEvent != null)
-                StateChangedEvent(m_controlState);
+            if (m_parent != null)
+                m_parent.Pause();
+            else
+            {
+                lock (m_lock)
+                    if (m_controlState == TaskControlState.Run)
+                    {
+                        m_pauseEvent.Reset();
+                        m_controlState = TaskControlState.Pause;
+                    }
+
+                if (StateChangedEvent != null)
+                    StateChangedEvent(m_controlState);
+            }
         }
         
         /// <summary>
@@ -641,15 +646,20 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Resume()
         {
-            lock(m_lock)
-                if (m_controlState == TaskControlState.Pause)
-                {
-                    m_pauseEvent.Set();
-                    m_controlState = TaskControlState.Run;
-                }
-            
-            if (StateChangedEvent != null)
-                StateChangedEvent(m_controlState);
+            if (m_parent != null)
+                m_parent.Resume();
+            else
+            {
+                lock (m_lock)
+                    if (m_controlState == TaskControlState.Pause)
+                    {
+                        m_pauseEvent.Set();
+                        m_controlState = TaskControlState.Run;
+                    }
+
+                if (StateChangedEvent != null)
+                    StateChangedEvent(m_controlState);
+            }
         }
         
         /// <summary>
@@ -657,15 +667,20 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Stop() 
         {
-            lock(m_lock)
-                if (m_controlState != TaskControlState.Abort)
-                {
-                    m_controlState = TaskControlState.Stop;
-                    m_pauseEvent.Set();
-                }
-            
-            if (StateChangedEvent != null)
-                StateChangedEvent(m_controlState);
+            if (m_parent != null)
+                m_parent.Stop();
+            else
+            {
+                lock (m_lock)
+                    if (m_controlState != TaskControlState.Abort)
+                    {
+                        m_controlState = TaskControlState.Stop;
+                        m_pauseEvent.Set();
+                    }
+
+                if (StateChangedEvent != null)
+                    StateChangedEvent(m_controlState);
+            }
         }
         
         /// <summary>
@@ -673,14 +688,19 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Abort()
         {
-            lock(m_lock)
+            if (m_parent != null)
+                m_parent.Abort();
+            else
             {
-                m_controlState = TaskControlState.Abort;
-                m_pauseEvent.Set();
+                lock (m_lock)
+                {
+                    m_controlState = TaskControlState.Abort;
+                    m_pauseEvent.Set();
+                }
+
+                if (StateChangedEvent != null)
+                    StateChangedEvent(m_controlState);
             }
-            
-            if (StateChangedEvent != null)
-                StateChangedEvent(m_controlState);
         }
         
         /// <summary>
@@ -688,16 +708,32 @@ namespace Duplicati.Library.Main
         /// </summary>
         public TaskControlState TaskControlRendevouz()
         {
-            // If we are paused, go into pause mode
-            m_pauseEvent.WaitOne();
-            
-            // If we are aborted, throw exception
-            if (m_controlState == TaskControlState.Abort)
-                System.Threading.Thread.CurrentThread.Abort();
-            
-            return m_controlState;
+            if (m_parent != null)
+                return m_parent.TaskControlRendevouz();
+            else
+            {
+                // If we are paused, go into pause mode
+                m_pauseEvent.WaitOne();
+
+                // If we are aborted, throw exception
+                if (m_controlState == TaskControlState.Abort)
+                    System.Threading.Thread.CurrentThread.Abort();
+
+                return m_controlState;
+            }
         }
-        
+
+        /// <summary>
+        /// Helper method to check if abort is requested
+        /// </summary>
+        public bool IsAbortRequested()
+        {
+            if (m_parent != null)
+                return m_parent.IsAbortRequested();
+            else
+                return m_controlState == TaskControlState.Abort;
+        }
+
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Main.BasicResults"/>.
         /// </summary>

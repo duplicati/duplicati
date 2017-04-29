@@ -1,7 +1,6 @@
 backupApp.controller('DialogController', function($scope, DialogService, gettextCatalog) {
     $scope.state = DialogService.watch($scope);
 
-
     function showTooltip(elem, msg) {
         elem.addEventListener('mouseleave', function(e) {
             e.currentTarget.setAttribute('class', 'button');
@@ -27,7 +26,7 @@ backupApp.controller('DialogController', function($scope, DialogService, gettext
         DialogService.dismissCurrent();
 
         if (cur.callback)
-            cur.callback(index, input);
+            cur.callback(index, input, cur);
     };
     
 });

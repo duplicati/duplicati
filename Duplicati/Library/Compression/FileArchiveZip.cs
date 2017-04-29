@@ -21,13 +21,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Interface;
-using System.Linq;
 using SharpCompress.Common;
 
-using SharpCompress.Archive;
-using SharpCompress.Archive.Zip;
-using SharpCompress.Writer;
-using SharpCompress.Writer.Zip;
+using SharpCompress.Archives;
+using SharpCompress.Archives.Zip;
+using SharpCompress.Writers;
+using SharpCompress.Writers.Zip;
+using SharpCompress.Readers;
+using System.Linq;
 
 namespace Duplicati.Library.Compression
 {
@@ -55,7 +56,7 @@ namespace Duplicati.Library.Compression
         /// <summary>
         /// The default compression level
         /// </summary>
-        private const SharpCompress.Compressor.Deflate.CompressionLevel DEFAULT_COMPRESSION_LEVEL = SharpCompress.Compressor.Deflate.CompressionLevel.Level9;
+        private const SharpCompress.Compressors.Deflate.CompressionLevel DEFAULT_COMPRESSION_LEVEL = SharpCompress.Compressors.Deflate.CompressionLevel.Level9;
 
         /// <summary>
         /// The default compression method
@@ -89,7 +90,7 @@ namespace Duplicati.Library.Compression
         /// <summary>
         /// Lookup table for faster access to entries based on their name.
         /// </summary>
-        private Dictionary<string, IArchiveEntry> m_entryDict;
+        private Dictionary<string, IEntry> m_entryDict;
         
         /// <summary>
         /// The writer instance used when creating archives
@@ -97,40 +98,24 @@ namespace Duplicati.Library.Compression
         private IWriter m_writer;
 
         /// <summary>
-        /// Instance of the CompresisonInfo class, used to hack in compression hints
+        /// A flag indicating if we are using the fail-over reader interface
         /// </summary>
-        private CompressionInfo m_compressionInfo;
+        public bool m_using_reader = false;
 
         /// <summary>
         /// The compression level applied when the hint does not indicate incompressible
         /// </summary>
-        private SharpCompress.Compressor.Deflate.CompressionLevel m_defaultCompressionLevel; 
+        private SharpCompress.Compressors.Deflate.CompressionLevel m_defaultCompressionLevel; 
+
+                /// <summary>
+        /// The compression level applied when the hint does not indicate incompressible
+        /// </summary>
+        private CompressionType m_compressionType;
 
         /// <summary>
         /// The name of the file being read
         /// </summary>
         private string m_filename;
-
-        /// <summary>
-        /// The reflection entry used to manipulate the deflate level on the compressor
-        /// </summary>
-        private static readonly System.Reflection.FieldInfo _zipCompressionInfoField;
-
-        /// <summary>
-        /// Static initializer to read the deflateLevelField
-        /// </summary>
-        static FileArchiveZip()
-        {
-            System.Reflection.FieldInfo fi = null;
-
-            try { fi = typeof(ZipWriter).GetField("zipCompressionInfo", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic); }
-            catch { }
-
-            _zipCompressionInfoField = fi;
-
-            if (fi == null)
-                Logging.Log.WriteMessage("DeflateCompressionLevel is not supported, please report to developers", Duplicati.Library.Logging.LogMessageType.Warning);
-        }
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands
@@ -147,6 +132,50 @@ namespace Duplicati.Library.Compression
                     m_archive = ArchiveFactory.Open(m_stream);
                 return m_archive;
             }
+        }
+
+        public void SwitchToReader()
+        {
+            if (!m_using_reader)
+            {
+                // Close what we have
+                using (m_stream)
+                using (m_archive)
+                { }
+
+                m_using_reader = true;
+            }
+        }
+
+        public Stream GetStreamFromReader(IEntry entry)
+        {
+            Stream fs = null;
+            SharpCompress.Readers.Zip.ZipReader rd = null;
+
+            try
+            {
+                fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+                rd = SharpCompress.Readers.Zip.ZipReader.Open(fs);
+
+                while (rd.MoveToNextEntry())
+                    if (entry.Key == rd.Entry.Key)
+                        return new StreamWrapper(rd.OpenEntryStream(), stream => {
+                            rd.Dispose();
+                            fs.Dispose();
+                        });
+
+                throw new Exception(string.Format("Stream not found: {0}", entry.Key));
+            }
+            catch
+            {
+                if (rd != null)
+                    rd.Dispose();
+                if (fs != null)
+                    fs.Dispose();
+                
+                throw;
+            }
+
         }
 
         /// <summary>
@@ -168,27 +197,29 @@ namespace Duplicati.Library.Compression
             }
             else
             {
-                m_compressionInfo = new CompressionInfo();
-                m_compressionInfo.Type = DEFAULT_COMPRESSION_METHOD;
-                m_compressionInfo.DeflateCompressionLevel = DEFAULT_COMPRESSION_LEVEL;
+                var compression = new ZipWriterOptions(CompressionType.Deflate);
+
+                compression.CompressionType = DEFAULT_COMPRESSION_METHOD;
+                compression.DeflateCompressionLevel = DEFAULT_COMPRESSION_LEVEL;
 
                 string cpmethod;
                 CompressionType tmptype;
                 if (options.TryGetValue(COMPRESSION_METHOD_OPTION, out cpmethod) && Enum.TryParse<SharpCompress.Common.CompressionType>(cpmethod, true, out tmptype))
-                    m_compressionInfo.Type = tmptype;
+                    compression.CompressionType = tmptype;
 
                 string cplvl;
                 int tmplvl;
                 if (options.TryGetValue(COMPRESSION_LEVEL_OPTION, out cplvl) && int.TryParse(cplvl, out tmplvl))
-                    m_compressionInfo.DeflateCompressionLevel = (SharpCompress.Compressor.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
+                    compression.DeflateCompressionLevel = (SharpCompress.Compressors.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
                 else if (options.TryGetValue(COMPRESSION_LEVEL_OPTION_ALIAS, out cplvl) && int.TryParse(cplvl, out tmplvl))
-                    m_compressionInfo.DeflateCompressionLevel = (SharpCompress.Compressor.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
+                    compression.DeflateCompressionLevel = (SharpCompress.Compressors.Deflate.CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
 
-                m_defaultCompressionLevel = m_compressionInfo.DeflateCompressionLevel;
+                m_defaultCompressionLevel = compression.DeflateCompressionLevel;
+                m_compressionType = compression.CompressionType;
 
                 m_isWriting = true;
                 m_stream = new System.IO.FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read);
-                m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, m_compressionInfo);
+                m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, compression);
 
                 //Size of endheader, taken from SharpCompress ZipWriter
                 m_flushBufferSize = 8 + 2 + 2 + 4 + 4 + 2 + 0;
@@ -231,24 +262,7 @@ namespace Duplicati.Library.Compression
         /// <returns>A list of files matching the prefix</returns>
         public string[] ListFiles(string prefix)
         {
-            List<string> results = new List<string>();
-            foreach (IArchiveEntry e in Archive.Entries)
-            {
-                if (prefix == null)
-                {
-                    results.Add(e.Key);
-                }
-                else
-                {
-                    if (e.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(e.Key);
-                    //Some old archives may have been created with windows style paths
-                    else if (e.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(e.Key);
-                }
-            }
-
-            return results.ToArray();
+            return ListFilesWithSize(prefix).Select(x => x.Key).ToArray();
         }
 
         /// <summary>
@@ -258,25 +272,18 @@ namespace Duplicati.Library.Compression
         /// <returns>A list of files matching the prefix</returns>
         public IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix)
         {
-            List<KeyValuePair<string, long>> results = new List<KeyValuePair<string, long>>();
-            foreach (IArchiveEntry e in Archive.Entries)
-            {
-                if (prefix == null)
-                {
-                    results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
-                }
-                else
-                {
-                    if (e.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
-                    //Some old archives may have been created with windows style paths
-                    else if (e.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
-                        results.Add(new KeyValuePair<string, long>(e.Key, e.Size));
-                }
-            }
+            LoadEntryTable();
+            var q = m_entryDict.Values.AsEnumerable();
+            if (!string.IsNullOrEmpty(prefix))
+                q = q.Where(x =>
+                            x.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                            ||
+                            x.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                           );
 
-            return results;
+            return q.Select(x => new KeyValuePair<string, long>(x.Key, x.Size)).ToArray();
         }
+
         /// <summary>
         /// Opens an file for reading
         /// </summary>
@@ -287,9 +294,71 @@ namespace Duplicati.Library.Compression
             if (m_isWriting)
                 throw new InvalidOperationException("Cannot read while writing");
 
-            IArchiveEntry ze = GetEntry(file);
+            var ze = GetEntry(file);
+            if (ze == null)
+                return null;
 
-            return ze == null ? null : ze.OpenEntryStream();
+            if (ze is IArchiveEntry)
+                return ((IArchiveEntry)ze).OpenEntryStream();
+            else if (ze is SharpCompress.Common.Zip.ZipEntry)
+                return GetStreamFromReader(ze);
+
+            throw new Exception(string.Format("Unexpected result: {0}", ze.GetType().FullName));
+
+        }
+
+        /// <summary>
+        /// Helper method to load the entry table
+        /// </summary>
+        private void LoadEntryTable()
+        {
+            if (m_entryDict == null)
+            {
+                try
+                {
+                    var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
+                    foreach (var en in Archive.Entries)
+                        d[en.Key] = en;
+                    m_entryDict = d;
+                }
+                catch (Exception ex)
+                {
+                    // If we get an exception here, it may be caused by the Central Header
+                    // being defect, so we switch to the less efficient reader interface
+                    if (m_using_reader)
+                        throw;
+
+                    Logging.Log.WriteMessage("Zip archive appears to have a broken Central Record Header, switching to stream mode", Logging.LogMessageType.Warning, ex);
+                    SwitchToReader();
+
+                    var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
+
+                    try
+                    {
+                        using (var fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(fs, new ReaderOptions() { LookForHeader = false }))
+                            while (rd.MoveToNextEntry())
+                            {
+                                d[rd.Entry.Key] = rd.Entry;
+
+                                // Some streams require this
+                                // to correctly find the next entry
+                                using (rd.OpenEntryStream())
+                                { }
+                            }
+                    }
+                    catch (Exception ex2)
+                    {
+                        // If we have zero files, or just a manifest, don't bother
+                        if (d.Count < 2)
+                            throw;
+                        
+                        Logging.Log.WriteMessage(string.Format("Zip archive appears to have broken records, returning the {0} records that could be recovered", d.Count), Logging.LogMessageType.Warning, ex2);
+                    }
+                    
+                    m_entryDict = d;
+                }
+            }
         }
 
         /// <summary>
@@ -297,19 +366,14 @@ namespace Duplicati.Library.Compression
         /// </summary>
         /// <param name="file">The name of the file to find</param>
         /// <returns>The ZipEntry for the file or null if no such file was found</returns>
-        private IArchiveEntry GetEntry(string file)
+        private IEntry GetEntry(string file)
         {
             if (m_isWriting)
                 throw new InvalidOperationException("Cannot read while writing");
 
-            if (m_entryDict == null)
-            {
-                m_entryDict = new Dictionary<string, IArchiveEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
-                foreach(IArchiveEntry en in Archive.Entries)
-                    m_entryDict[en.Key] = en;
-            }
+            LoadEntryTable();
 
-            IArchiveEntry e;
+            IEntry e;
             if (m_entryDict.TryGetValue(file, out e))
                 return e;
             if (m_entryDict.TryGetValue(file.Replace('/', '\\'), out e))
@@ -331,25 +395,13 @@ namespace Duplicati.Library.Compression
                 throw new InvalidOperationException("Cannot write while reading");
 
             m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
-            m_compressionInfo.DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressor.Deflate.CompressionLevel.None : m_defaultCompressionLevel;
-            SetStreamCompressionLevel();
-            return ((ZipWriter)m_writer).WriteToStream(file, lastWrite, null, m_compressionInfo);
+            return ((ZipWriter)m_writer).WriteToStream(file, new ZipWriterEntryOptions()
+            {
+                DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressors.Deflate.CompressionLevel.None : m_defaultCompressionLevel,
+                ModificationDateTime = lastWrite,
+                CompressionType = m_compressionType
+            });
 
-        }
-
-        /// <summary>
-        /// Hack to set compression level for stream
-        /// </summary>
-        private void SetStreamCompressionLevel()
-        {
-            if (_zipCompressionInfoField != null)
-                try 
-                { 
-                    var compInstance = _zipCompressionInfoField.GetValue(m_writer);
-                    var prop = compInstance.GetType().GetProperty("DeflateCompressionLevel", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                    prop.SetValue(compInstance, m_compressionInfo.DeflateCompressionLevel);
-                }
-                catch { }
         }
 
         /// <summary>

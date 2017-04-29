@@ -1,40 +1,4 @@
 <div class="home">
-    <div class="state" ng-controller="StateController">
-
-        <div ng-hide="state.programState == 'Running'">
-            <strong style="margin-right: 0px;" translate>Duplicati is paused</strong>
-            - <a href ng-click="sendResume()" translate>resume now</a>
-        </div>
-
-        <div ng-hide="activeBackup == null">
-            <strong>{{'Running task:' | translate}} </strong>
-            {{activeBackup.Backup.Name}}
-
-            <a class="button" ng-click="stopTask()" ng-show="StopReqId == state.activeTask.Item1" translate>Force stop</a>
-            <a class="button" ng-click="stopTask()" ng-hide="StopReqId == state.activeTask.Item1" translate>Stop</a>
-
-            <progress-bar ng-text="StateText" ng-progress="Progress"></progress-bar>
-
-        </div>
-
-        <div ng-show="activeBackup == null &amp;&amp; state.activeTask != null">
-            <strong translate>Running task</strong>
-
-            <a class="button" ng-click="stopTask()" ng-show="StopReqId == state.activeTask.Item1" translate>Force stop</a>
-            <a class="button" ng-click="stopTask()" ng-hide="StopReqId == state.activeTask.Item1" translate>Stop</a>
-        </div>
-
-        <div ng-show="state.activeTask == null &amp;&amp; nextTask != null">
-            <strong>{{'Next task:' | translate}} </strong>
-            {{nextTask.Backup.Name}}
-        </div>
-
-        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong translate>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | moment: 'calendar'}}</span></div>
-
-        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null" translate>No scheduled tasks</div>
-
-    </div>
-
     <div class="tasks" ng-controller="HomeController">
         <div class="tasklist">
             <div ng-repeat="item in backups" class="task">
@@ -60,9 +24,10 @@
 
                     <dt translate>Advanced:</dt>
                     <dd>
-                        <p ng-click="doLocalDb(item.Backup.ID)" translate>Manage database ...</p>
+                        <p ng-click="doLocalDb(item.Backup.ID)" translate>Database ...</p>
                         <p ng-click="doVerifyRemote(item.Backup.ID)" translate>Verify files</p>
                         <p ng-click="doCompact(item.Backup.ID)" translate>Compact now</p>
+                        <p ng-click="doCommandLine(item.Backup.ID)" translate>Commandline ...</p>
                     </dd>
 
                     <dt translate>Reporting:</dt>

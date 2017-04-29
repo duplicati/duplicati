@@ -8,7 +8,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Compression</RootNamespace>
     <AssemblyName>Duplicati.Library.Compression</AssemblyName>
-    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -38,12 +37,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="SharpCompress">
-      <HintPath>..\..\..\thirdparty\SharpCompress\SharpCompress.dll</HintPath>
-    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="managed-lzma">
       <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpCompress">
+      <HintPath>..\..\..\thirdparty\SharpCompress\SharpCompress.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

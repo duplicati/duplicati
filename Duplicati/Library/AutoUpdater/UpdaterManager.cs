@@ -49,6 +49,8 @@ namespace Duplicati.Library.AutoUpdater
 
         public static bool RequiresRespawn { get; set; }
 
+        public static bool IgnoreWebrootFolder { get; set; }
+
         private static KeyValuePair<string, UpdateInfo>? m_hasUpdateInstalled;
 
         public static readonly UpdateInfo SelfVersion;
@@ -127,7 +129,7 @@ namespace Duplicati.Library.AutoUpdater
                 }
 
                 // Previous locations that we don't want to use,
-                // but we keep them active to avoid breaking the update syste
+                // but we keep them active to avoid breaking the update system
                 var legacypaths = new List<string>();
 
                 if (!string.IsNullOrWhiteSpace(programfiles))
@@ -602,6 +604,9 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     var relpath = file.Substring(baselen);
                     if (string.IsNullOrWhiteSpace(relpath))
+                        continue;
+
+                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot"))
                         continue;
 
                     FileEntry fe;

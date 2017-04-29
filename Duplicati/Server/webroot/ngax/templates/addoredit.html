@@ -33,21 +33,7 @@
         <div class="step step1" ng-class="{active: CurrentStep == 0}">
             <div class="form">
                 <form class="styled">
-                    <div class="headerthreedotmenu">
-                        <h2 translate>General backup settings</h2>
-
-                        <div class="contextmenu_container">
-                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_general" class="threedotmenubutton"/></a>
-
-                            <div class="contextmenu" id="threedotmenu_add_general">
-                                <ul>
-                                    <li>
-                                        <a href="#import" translate>Import a backup configuration from file</a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+                    <h2 translate>General backup settings</h2>
 
                     <div class="input text">
                         <label for="name" translate>Name</label>
@@ -131,7 +117,7 @@
             <form class="styled">
                 <div class="box browser">
                     <div class="headerthreedotmenu">
-                        <h2 translate>Folders</h2>
+                        <h2 translate>Source data</h2>
 
                         <div class="contextmenu_container">
                             <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_source_folders" class="threedotmenubutton"/></a>
@@ -230,7 +216,7 @@
                                 name="fileattr_{{attr.value}}"
                                 value="{{attr.value}}"
                                 ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
-                                ng-click="toggleArraySelection(ExcludeAttributes, attr.value)"
+                                ng-click="toggleExcludeAttributes(attr.value)"
                               />
                               <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
                             </div>
@@ -289,7 +275,7 @@
                             name="dayofweek_{{day.value}}"
                             value="{{day.value}}"
                             ng-checked="Schedule.AllowedDays.indexOf(day.value) > -1"
-                            ng-click="toggleArraySelection(Schedule.AllowedDays, day.value)"
+                            ng-click="toggleAllowedDays(day.value)"
                           />
                           <label for="dayofweek_{{day.value}}">{{day.name}}</label>
                         </div>                

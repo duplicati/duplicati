@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Duplicati.Library.Interface;
 
@@ -32,6 +33,7 @@ namespace Duplicati.CommandLine.BackendTool
         [STAThread]
         public static int Main(string[] args)
         {
+            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }
 
@@ -120,7 +122,7 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException("DELETE requires a filename argument");
                         if (args.Count > 3)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
-                        backend.Delete(args[2]);
+                        backend.Delete(Path.GetFileName(args[2]));
                         
                         return 0;
                     }
@@ -130,9 +132,9 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException("GET requires a filename argument");
                         if (args.Count > 3)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
-                        if (System.IO.File.Exists(args[2]))
+                        if (File.Exists(args[2]))
                             throw new UserInformationException("File already exists, not overwriting!");
-                        backend.Get(args[2], args[2]);
+                        backend.Get(Path.GetFileName(args[2]), args[2]);
                         
                         return 0;
                     }
@@ -143,7 +145,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count > 3)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
                            
-                        backend.Put(args[2], args[2]);
+                        backend.Put(Path.GetFileName(args[2]), args[2]);
                         
                         return 0;
                     }

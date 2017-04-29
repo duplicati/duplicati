@@ -1,25 +1,17 @@
 $(document).ready(function() {
     $('html').on('click', function(e) {
         $('#mainmenu').removeClass('mobile-open');
-        $('#threedotmenu_add_general').removeClass('open');
         $('#threedotmenu_add_destination').removeClass('open');
         $('#threedotmenu_add_destination_adv').removeClass('open');
         $('#threedotmenu_add_source_folders').removeClass('open');
         $('#threedotmenu_add_source_filters').removeClass('open');
         $('#threedotmenu_add_options_adv').removeClass('open');
-        $('#contextmenu_pause').removeClass('open');
     });
     
     $('body').on('click', '.menubutton', function(e) {
         e.stopPropagation();
         e.preventDefault();
         $('#mainmenu').toggleClass('mobile-open');
-    });
-
-    $('body').on('click', '#threedotmenubutton_add_general', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        $('#threedotmenu_add_general').toggleClass('open');
     });
 
     $('body').on('click', '#threedotmenubutton_add_destination', function(e) {
@@ -52,9 +44,4 @@ $(document).ready(function() {
         $('#threedotmenu_add_options_adv').toggleClass('open');
     });
 
-    $('body').on('click', '#contextmenulink_pause', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        $('#contextmenu_pause').toggleClass('open');
-    });
 });

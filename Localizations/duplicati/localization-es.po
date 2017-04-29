@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-26 19:48+0100\n"
+"POT-Creation-Date: 2017-03-14 19:21+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Pruebas <pruebaspruebas77@gmail.com>, 2016\n"
+"Last-Translator: Martín Gómez González <correo.mgg@gmail.com>, 2016\n"
 "Language-Team: Spanish (https://www.transifex.com/duplicati/teams/67655/es/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -18,23 +18,23 @@ msgstr ""
 "Language: es\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: CommandLine/Program.cs:275
+#: CommandLine/Program.cs:276
 msgid "Toggle automatic updates"
-msgstr "Cambiar las actualizaciones automáticas"
+msgstr "Activar actualizaciones automáticas"
 
-#: CommandLine/Program.cs:275
+#: CommandLine/Program.cs:276
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
 msgstr ""
-"Establezca esta opción si prefiere tener la versión de línea de comandos que"
-" actualice automáticamente"
+"Establezca esta opción si desea que la versión de línea de comandos se "
+"actualice automáticamente."
 
 #: CommandLine/Strings.cs:4
 #, csharp-format
 msgid "The command {0} needs at least one of the following options set: {1}"
 msgstr ""
-"El {0} comando necesita por lo menos una de los siguientes opciones: {1}"
+"El {0} comando necesita por lo menos una de las siguientes opciones: {1}"
 
 #: CommandLine/Strings.cs:5
 #, csharp-format
@@ -42,7 +42,7 @@ msgid ""
 "Found {0} commands but expected {1}, commands: \n"
 "{2}"
 msgstr ""
-"Encontrados {0} comandos pero se esperaba {1}, comandos: \n"
+"Encontrados {0} comandos pero se esperaban {1}, comandos: \n"
 "{2}"
 
 #: CommandLine/Strings.cs:7
@@ -52,11 +52,11 @@ msgstr "Comando no soportado: {0}"
 
 #: CommandLine/Strings.cs:8
 msgid "No filesets matched the criteria"
-msgstr "No hay conjuntos de archivos emparejados a los criterios"
+msgstr "Ningún conjunto de archivos cumple los criterios"
 
 #: CommandLine/Strings.cs:9
 msgid "The following filesets would be deleted:"
-msgstr "Se suprimirá el conjuntos de archivos siguientes:"
+msgstr "Se suprimirán los siguientes conjuntos de archivos"
 
 #: CommandLine/Strings.cs:10
 msgid "These filesets were deleted:"
@@ -64,7 +64,7 @@ msgstr "Estos conjuntos de archivos fueron eliminados:"
 
 #: CommandLine/Strings.cs:11
 msgid "Supported backends:"
-msgstr ""
+msgstr "Back-ends soportados:"
 
 #: CommandLine/Strings.cs:12
 msgid "Supported compression modules:"
@@ -81,10 +81,12 @@ msgstr "Opciones soportadas:"
 #: CommandLine/Strings.cs:15
 msgid "Module is loaded automatically, use --disable-module to prevent this"
 msgstr ""
+"El módulo se carga automáticamente, use --disable-module para evitarlo"
 
 #: CommandLine/Strings.cs:16
 msgid "Module is not loaded automatically, use --enable-module to load it"
 msgstr ""
+"El módulo no se carga automáticamente, use --enable-module para cargarlo"
 
 #: CommandLine/Strings.cs:17
 msgid "Supported generic modules:"
@@ -93,7 +95,7 @@ msgstr "Módulos genéricos compatibles:"
 #: CommandLine/Strings.cs:18
 #, csharp-format
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
-msgstr "No se puede leer los parámetros del archivo \"{0}\", razón: {1}"
+msgstr "No se pueden leer el archivo de parámetros \"{0}\", razón: {1}"
 
 #: CommandLine/Strings.cs:19
 #, csharp-format
@@ -103,6 +105,11 @@ msgid ""
 "specify filters inside the parameter file. Each filter must be prefixed with"
 " either a + or a -, and multiple filters must be joined with {3}"
 msgstr ""
+"Los filtros no pueden ser indicados por medio de la línea de comandos si "
+"también se encuentran en el archivo de parámetros. Use la opción especial "
+"--{0}, --{1}, o --{2} para especificar filtros en el archivo de parámetros. "
+"Cada filtro debe ir precedido por un + o un - y múltiples filtros deben ser "
+"unidos con {3}"
 
 #: CommandLine/Strings.cs:20
 #, csharp-format
@@ -110,8 +117,8 @@ msgid ""
 "The option --{0} was supplied, but it is reserved for internal use and may "
 "not be set on the commandline"
 msgstr ""
-"La opción --{0} se suministra, pero está reservado para uso interno y no "
-"pueden fijarse en la línea de comandos"
+"Se usó la opción --{0}, pero está reservada para uso interno y no se puede "
+"fijar desde la línea de comandos"
 
 #: CommandLine/Strings.cs:21
 #, csharp-format
@@ -202,9 +209,10 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:13
 #: Library/Backend/Backblaze/Strings.cs:9
 #: Library/Backend/CloudFiles/Strings.cs:6 Library/Backend/File/Strings.cs:9
-#: Library/Backend/FTP/Strings.cs:12 Library/Backend/Mega/Strings.cs:5
-#: Library/Backend/S3/Strings.cs:9 Library/Backend/SharePoint/Strings.cs:8
-#: Library/Backend/SSHv2/Strings.cs:23 Library/Backend/WEBDAV/Strings.cs:7
+#: Library/Backend/FTP/Strings.cs:12 Library/Backend/Jottacloud/Strings.cs:15
+#: Library/Backend/Mega/Strings.cs:5 Library/Backend/S3/Strings.cs:9
+#: Library/Backend/SharePoint/Strings.cs:8 Library/Backend/SSHv2/Strings.cs:23
+#: Library/Backend/WEBDAV/Strings.cs:7
 msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
@@ -216,10 +224,10 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:14
 #: Library/Backend/Backblaze/Strings.cs:10
 #: Library/Backend/CloudFiles/Strings.cs:7 Library/Backend/File/Strings.cs:10
-#: Library/Backend/FTP/Strings.cs:13 Library/Backend/Mega/Strings.cs:6
-#: Library/Backend/OpenStack/Strings.cs:20 Library/Backend/S3/Strings.cs:10
-#: Library/Backend/SharePoint/Strings.cs:9 Library/Backend/SSHv2/Strings.cs:24
-#: Library/Backend/WEBDAV/Strings.cs:8
+#: Library/Backend/FTP/Strings.cs:13 Library/Backend/Jottacloud/Strings.cs:14
+#: Library/Backend/Mega/Strings.cs:6 Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/S3/Strings.cs:10 Library/Backend/SharePoint/Strings.cs:9
+#: Library/Backend/SSHv2/Strings.cs:24 Library/Backend/WEBDAV/Strings.cs:8
 msgid "Supplies the password used to connect to the server"
 msgstr "Suministra la contraseña utilizada para conectar al servidor"
 
@@ -227,9 +235,9 @@ msgstr "Suministra la contraseña utilizada para conectar al servidor"
 #: Library/Backend/AzureBlob/Strings.cs:15
 #: Library/Backend/Backblaze/Strings.cs:11
 #: Library/Backend/CloudFiles/Strings.cs:8 Library/Backend/File/Strings.cs:11
-#: Library/Backend/FTP/Strings.cs:14 Library/Backend/Mega/Strings.cs:7
-#: Library/Backend/OpenStack/Strings.cs:20 Library/Backend/S3/Strings.cs:11
-#: Library/Backend/SharePoint/Strings.cs:10
+#: Library/Backend/FTP/Strings.cs:14 Library/Backend/Jottacloud/Strings.cs:13
+#: Library/Backend/Mega/Strings.cs:7 Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/S3/Strings.cs:11 Library/Backend/SharePoint/Strings.cs:10
 #: Library/Backend/SSHv2/Strings.cs:25 Library/Backend/WEBDAV/Strings.cs:9
 msgid ""
 "The username used to connect to the server. This may also be supplied as the"
@@ -242,9 +250,9 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:16
 #: Library/Backend/Backblaze/Strings.cs:12
 #: Library/Backend/CloudFiles/Strings.cs:9 Library/Backend/File/Strings.cs:12
-#: Library/Backend/FTP/Strings.cs:15 Library/Backend/Mega/Strings.cs:8
-#: Library/Backend/OpenStack/Strings.cs:20 Library/Backend/S3/Strings.cs:12
-#: Library/Backend/SharePoint/Strings.cs:11
+#: Library/Backend/FTP/Strings.cs:15 Library/Backend/Jottacloud/Strings.cs:12
+#: Library/Backend/Mega/Strings.cs:8 Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/S3/Strings.cs:12 Library/Backend/SharePoint/Strings.cs:11
 #: Library/Backend/SSHv2/Strings.cs:26 Library/Backend/WEBDAV/Strings.cs:10
 msgid "Supplies the username used to connect to the server"
 msgstr "Suministra el nombre de usuario utilizado para conectar al servidor"
@@ -586,6 +594,7 @@ msgid "Failed to delete file"
 msgstr "Error al eliminar archivo"
 
 #: Library/Backend/CloudFiles/Strings.cs:20
+#: Library/Backend/Jottacloud/Strings.cs:11
 msgid "Failed to upload file"
 msgstr "Error al cargar archivo"
 
@@ -853,21 +862,62 @@ msgstr ""
 msgid "HubiC"
 msgstr "HubiC"
 
-#: Library/Backend/Mega/Strings.cs:4
-msgid "mega.nz"
-msgstr " mega.nz"
+#: Library/Backend/Jottacloud/Strings.cs:5
+msgid "Jottacloud"
+msgstr ""
 
-#: Library/Backend/Mega/Strings.cs:9
-msgid "No password given"
-msgstr "Sin contraseña dada"
+#: Library/Backend/Jottacloud/Strings.cs:6
+msgid ""
+"This backend can read and write data to Jottacloud using it's REST protocol."
+" Allowed format is \"jottacloud://folder/subfolder\"."
+msgstr ""
 
-#: Library/Backend/Mega/Strings.cs:10
+#: Library/Backend/Jottacloud/Strings.cs:7 Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
 msgstr "Ningún nombre de usuario dado"
 
-#: Library/Backend/Mega/Strings.cs:11
+#: Library/Backend/Jottacloud/Strings.cs:8 Library/Backend/Mega/Strings.cs:9
+msgid "No password given"
+msgstr "Sin contraseña dada"
+
+#: Library/Backend/Jottacloud/Strings.cs:9 Library/Backend/Mega/Strings.cs:11
 msgid "No path given, cannot upload files to the root folder"
 msgstr "Ninguna ruta dada, no puede subir archivos a la carpeta raíz"
+
+#: Library/Backend/Jottacloud/Strings.cs:10
+msgid "Illegal mount point given."
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:16
+msgid "Supplies the backup device to use"
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:17
+#, csharp-format
+msgid ""
+"The backup device to use. Will be created if not already exists. You can "
+"manage your devices from the backup panel in the Jottacloud web interface. "
+"When you specify a custom device you should also specify the mount point to "
+"use on this device with the \"{0}\" option."
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:18
+msgid "Supplies the mount point to use on the server"
+msgstr ""
+
+#: Library/Backend/Jottacloud/Strings.cs:19
+#, csharp-format
+msgid ""
+"The mount point to use on the server. The default is \"Archive\" for using "
+"the built-in archive mount point. Set this option to \"Sync\" to use the "
+"built-in synchronization mount point instead, or if you have specified a "
+"custom device with option \"{0}\" you are free to name the mount point as "
+"you like."
+msgstr ""
+
+#: Library/Backend/Mega/Strings.cs:4
+msgid "mega.nz"
+msgstr " mega.nz"
 
 #: Library/Backend/Mega/Strings.cs:12
 msgid ""
@@ -1566,8 +1616,8 @@ msgid "AES-256 encryption, built in"
 msgstr "Cifrado AES-256, incorporado"
 
 #: Library/Encryption/Strings.cs:6
-msgid "Blank or empty passphrase not allowed"
-msgstr "No se permite la frase de seguridad en blanco o vacía"
+msgid "Empty passphrase not allowed"
+msgstr ""
 
 #: Library/Encryption/Strings.cs:7
 msgid ""
@@ -1847,28 +1897,28 @@ msgstr "Cancelado"
 msgid "Failed to dispose backend instance: {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:602
+#: Library/Main/BackendManager.cs:611
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr "No se pudo eliminar el archivo {0}, probando si ya existe el archivo"
 
-#: Library/Main/BackendManager.cs:608
+#: Library/Main/BackendManager.cs:617
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 "Se recuperó de un problema al intentar eliminar el archivo no existente {0}"
 
-#: Library/Main/BackendManager.cs:613
+#: Library/Main/BackendManager.cs:622
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr "No se pudo recuperar de un error borrando el archivo {0}"
 
-#: Library/Main/BackendManager.cs:1094
+#: Library/Main/BackendManager.cs:1103
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1107
+#: Library/Main/BackendManager.cs:1116
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr "Indica que el arhivo {0} se elimino correctamente"
@@ -2039,11 +2089,10 @@ msgstr ""
 #: Library/Main/Strings.cs:33
 msgid ""
 "A string used to prefix the filenames of the remote volumes, can be used to "
-"store multiple backups in the same remote folder."
+"store multiple backups in the same remote folder. The prefix cannot contain "
+"a hyphen (-), but can contain all other characters allowed by the remote "
+"storage."
 msgstr ""
-"Una cadena que se utiliza como prefijo para los nombres de archivo de los "
-"volúmenes remotos, se puede utilizar para almacenar varias copias de "
-"seguridad en la misma carpeta remota."
 
 #: Library/Main/Strings.cs:34
 msgid "Remote filename prefix"
@@ -2543,7 +2592,7 @@ msgstr ""
 #: Library/Main/Strings.cs:120
 #, csharp-format
 msgid ""
-"Using this option to handle symlinks different. The \"{0}\" option will "
+"Use this option to handle symlinks differently. The \"{0}\" option will "
 "simply record a symlink with its name and destination, and a restore will "
 "recreate the symlink as a link. Use the option \"{1}\" to ignore all "
 "symlinks and not store any information about them. Previous versions of "
@@ -2558,8 +2607,8 @@ msgstr ""
 #: Library/Main/Strings.cs:122
 #, csharp-format
 msgid ""
-"Using this option to handle hardlinks (only works on Linux/OSX). The \"{0}\""
-" option will record a hardlink ID for each hardlink to avoid storing "
+"Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
+"option will record a hardlink ID for each hardlink to avoid storing "
 "hardlinked paths multiple times. The option \"{1}\" will ignore hardlink "
 "information, and treat each hardlink as a unique path. The option \"{2}\" "
 "will ignore all hardlinks with more than one link."
@@ -2931,7 +2980,8 @@ msgid ""
 " remote backend. Use this option to turn on full verification, which will "
 "decrypt the files and examine the insides of each volume, instead of simply "
 "verifying the external hash, If the option --{0} is set, no remote files are"
-" verified"
+" verified. This option is automatically set when then verification is "
+"performed directly."
 msgstr ""
 
 #: Library/Main/Strings.cs:188
@@ -3464,6 +3514,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
 #: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:153
 msgid "The messages to send"
 msgstr "Los mensajes para enviar"
 
@@ -3531,10 +3582,12 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:109
+#: Library/Modules/Builtin/Strings.cs:139
 msgid "The message template"
 msgstr "La plantilla de mensaje"
 
 #: Library/Modules/Builtin/Strings.cs:110
+#: Library/Modules/Builtin/Strings.cs:140
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -3566,6 +3619,7 @@ msgid "The password for the account that will send the message"
 msgstr "La contraseña para la cuenta que le enviará el mensaje"
 
 #: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:154
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
@@ -3573,10 +3627,12 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:156
 msgid "Send messages for all operations"
 msgstr "Enviar mensajes para todas las operaciones"
 
 #: Library/Modules/Builtin/Strings.cs:127
+#: Library/Modules/Builtin/Strings.cs:157
 msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
@@ -3601,6 +3657,43 @@ msgstr ""
 #, csharp-format
 msgid "Failed to send jabber message: {0}"
 msgstr "Fallo al enviar el mensaje Jabber: {0}"
+
+#: Library/Modules/Builtin/Strings.cs:135
+msgid "HTTP report module"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:136
+msgid ""
+"This module provides support for sending status reports via HTTP messages"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:137
+#: Library/Modules/Builtin/Strings.cs:138
+msgid "HTTP report url"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:149
+msgid "The name of the parameter to send the message as"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:150
+msgid "The name of the parameter to send the message as."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:151
+msgid "Extra parameters to add to the http message"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:152
+msgid ""
+"Extra parameters to add to the http message. I.e. "
+"\"parameter1=value1&parameter2=value2\""
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:158
+#, csharp-format
+msgid "Failed to send http message: {0}"
+msgstr ""
 
 #: Library/Snapshots/Strings.cs:4
 #, csharp-format
@@ -3889,7 +3982,8 @@ msgstr ""
 
 #: Server/Strings.cs:25
 msgid ""
-"The certificate and key file in PKCS #12 format the webserver use for SSL."
+"The certificate and key file in PKCS #12 format the webserver use for SSL. "
+"Only RSA/DSA keys are supported."
 msgstr ""
 
 #: Server/Strings.cs:26

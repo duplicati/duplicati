@@ -392,7 +392,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private BlockingQueue<FileEntryItem> m_queue;
+        private readonly BlockingQueue<FileEntryItem> m_queue;
         private Options m_options;
         private volatile Exception m_lastException;
         private Library.Interface.IEncryption m_encryption;
@@ -402,7 +402,7 @@ namespace Duplicati.Library.Main
         private IBackendWriter m_statwriter;
         private System.Threading.Thread m_thread;
         private BasicResults m_taskControl;
-        private DatabaseCollector m_db;
+        private readonly DatabaseCollector m_db;
                 
         public string BackendUrl { get { return m_backendurl; } }
         
@@ -588,9 +588,18 @@ namespace Duplicati.Library.Main
                                 catch(Exception dex) { m_statwriter.AddWarning(LC.L("Failed to dispose backend instance: {0}", ex.Message), dex); }
     
                                 m_backend = null;
-                                
+
                                 if (retries < m_options.NumberOfRetries && m_options.RetryDelay.Ticks != 0)
-                                    System.Threading.Thread.Sleep(m_options.RetryDelay);
+                                {
+                                    var target = DateTime.Now.AddTicks(m_options.RetryDelay.Ticks);
+                                    while (target > DateTime.Now)
+                                    {
+                                        if (m_taskControl != null && m_taskControl.IsAbortRequested())
+                                            break;
+                                        
+                                        System.Threading.Thread.Sleep(500);
+                                    }
+                                }
                             }
                         }
                         

@@ -98,11 +98,14 @@ namespace Duplicati.Library.SQLiteHelper
             {
                 if (m_type == null)
                 {
-                    string filename = "System.Data.SQLite.dll";
-                    string basePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
+                    var filename = "System.Data.SQLite.dll";
+                    var basePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
+
+                    // Set this to make SQLite preload automatically
+                    Environment.SetEnvironmentVariable("PreLoadSQLite_BaseDirectory", basePath);
 
                     //Default is to use the pinvoke version which requires a native .dll/.so
-                    string assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
+                    var assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
 
                     if (!Duplicati.Library.Utility.Utility.IsMono)
                     {
@@ -117,6 +120,15 @@ namespace Duplicati.Library.SQLiteHelper
                             if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
                                 assemblyPath = System.IO.Path.Combine(basePath, "win32");
                         }
+
+                        // If we have a new path, try to force load the mixed-mode assembly for the current architecture
+                        // This can be avoided if the preload in SQLite works, but it is easy to do it here as well
+                        if (assemblyPath != System.IO.Path.Combine(basePath, "pinvoke"))
+                        {
+                            try { PInvoke.LoadLibraryEx(System.IO.Path.Combine(basePath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
+                            catch { }
+                        }
+
                     } else {
                         //On Mono, we try to find the Mono version of SQLite
                         
@@ -153,5 +165,21 @@ namespace Duplicati.Library.SQLiteHelper
                 return m_type;
             }
         }
+    }
+
+    /// <summary>
+    /// Helper class with PInvoke methods
+    /// </summary>
+    internal static class PInvoke
+    {
+        /// <summary>
+        /// Loads the specified module into the address space of the calling process.
+        /// </summary>
+        /// <returns>The library ex.</returns>
+        /// <param name="lpFileName">The filename of the module to load.</param>
+        /// <param name="hReservedNull">Reserved for future use.</param>
+        /// <param name="dwFlags">Action to take on load.</param>
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
     }
 }

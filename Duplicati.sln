@@ -93,6 +93,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Tools", "Duplicati\Tools\Duplicati.Tools.csproj", "{0797AA22-C5DD-4950-BB60-34765AB8C6DD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Jottacloud", "Duplicati\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj", "{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -279,6 +281,10 @@ Global
 		{0797AA22-C5DD-4950-BB60-34765AB8C6DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0797AA22-C5DD-4950-BB60-34765AB8C6DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0797AA22-C5DD-4950-BB60-34765AB8C6DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
@@ -290,10 +296,10 @@ Global
 		$2.ResourceNamePolicy = FileFormatDefault
 		$0.TextStylePolicy = $3
 		$3.FileWidth = 120
-		$3.inheritsSet = null
+		$3.inheritsSet = VisualStudio
 		$3.inheritsScope = text/plain
 		$3.EolMarker = Windows
-		$3.scope = text/microsoft-resx
+		$3.scope = text/plain
 		$0.TextStylePolicy = $4
 		$4.FileWidth = 120
 		$4.TabsToSpaces = True

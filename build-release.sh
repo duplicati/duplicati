@@ -155,6 +155,10 @@ done
 rm -rf "${UPDATE_SOURCE}/"*.mdb;
 rm -rf "${UPDATE_SOURCE}/"*.pdb;
 
+# Remove all .DS_Store and Thumbs.db files
+find  . -type f -name ".DS_Store" | xargs rm -rf
+find  . -type f -name "Thumbs.db" | xargs rm -rf
+
 # Sign all files with Authenticode
 if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 	echo "Performing authenticode signing of executables and libraries"

@@ -1,3 +1,76 @@
+2017-04-21 - 2.0.1.56_canary_2017-04-21
+==========
+* Fixed an issue with duplicate strings in S3 providers
+* Fixed an issue where a file being expanded during backup could cause the file to not be backed up.
+* Changed HTTP requests to not buffer the output to fix out-of-memory errors
+* Added a Python script to do restores completely without using Duplicati, thanks @downpoured !
+* Improved Amazon Cloud Drive by not waiting while performing batched requests
+
+2017-04-06 - 2.0.1.55_canary_2017-04-06
+==========
+* Updated SharpCompress to support creating zip files larger than 4 GiB
+* Added a commandline-like interface to the WebUI
+* Updated the backendtool to support full paths
+* Updated the list of S3 regions and servers
+* Change the UI to have a fixed top-bar with status and progress
+* Fixed a crash that occurs if the web-browser does not send `Accept-Language`
+* Fixed an issue with filtering the output of the LIST command
+
+2017-03-26 - 2.0.1.54_canary_2017-03-26
+==========
+* Fixed an unwanted empty folder creation, thanks @albertony
+* Fixed logic issues with volumesize minimum bounds, thanks @albertony
+* Fixed importing config files with AllowedDays set
+* Improved database performance on backups, thanks @danstahr
+
+2017-03-13 - 2.0.1.53_experimental_2017-03-13
+==========
+* This update contains the same fixes as canary 2.0.1.51
+
+2017-03-13 - 2.0.1.52_canary_2017-03-13
+==========
+* Added fail-over to read zip files with invalid central directory
+* Improved the login page for compatibility with password managers, thanks @johenning
+* Improved the URL parser for better commandline import
+* Improved the URL parsing when importing a saved configuration
+* Added exit/status codes to the verification command
+* Added IBM Bluemix COS to list of S3 providers, thanks @greyhoundforty
+* Improved startup time for commandline, thanks @frelis
+* Improved non-hosted mode for TrayIcon, thanks @mnaiman
+* Added a Jottacloud backend, thanks @albertony
+
+2017-03-03 - 2.0.1.51_canary_2017-03-03
+==========
+* Updated the bundled version of SQLite for Windows to 1.0.104.0
+* Added deep archive verification when invoking verify
+* Changed the pagination method for GoogleDrive
+
+2017-02-28 - 2.0.1.50_canary_2017-02-28
+==========
+* Added error message if `--prefix` contains hyphens
+* Fixed an issue with editing the allowed days on the schedule page
+* Changed "import" so it just loads the configuration into the editor, allowing the user to edit it before saving
+* Added function to restore that loads setup from a configuration file
+* Updated SharpCompress and S3 libraries
+* Improved crash messages for Windows TrayIcon
+
+2017-02-23 - 2.0.1.49_experimental_2017-02-23
+==========
+* This build is the same as the canary
+
+2017-02-23 - 2.0.1.48_canary_2017-02-23
+==========
+* Updated translations, thanks @agrajaghh
+* Improved verification script, thanks @mnaiman
+* Support for SSL certificates in server when running with Mono, thanks @mnaiman
+* Improved progress bar updates when processing large files, thanks @asselin
+
+2017-02-14 - 2.0.1.47_canary_2017-02-14
+==========
+* Updated some localizations
+* Updated the user interface
+* Fixed an issue where the Force Stop action did not work immediately
+
 2017-02-03 - 2.0.1.46_canary_2017-02-03
 ==========
 * Fixed icon sizes

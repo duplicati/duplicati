@@ -23,10 +23,22 @@ backupApp.config(['$routeProvider',
             when('/add', {
                 templateUrl: 'templates/addoredit.html'
             }).
+            when('/add-import', {
+                templateUrl: 'templates/addoredit.html'
+            }).
+            when('/restorestart', {
+                templateUrl: 'templates/restorewizard.html'
+            }).
+            when('/addstart', {
+                templateUrl: 'templates/addwizard.html'
+            }).
             when('/edit/:backupid', {
                 templateUrl: 'templates/addoredit.html'
             }).
             when('/restoredirect', {
+                templateUrl: 'templates/restoredirect.html'
+            }).
+            when('/restoredirect-import', {
                 templateUrl: 'templates/restoredirect.html'
             }).
             when('/restore/:backupid', {
@@ -56,8 +68,20 @@ backupApp.config(['$routeProvider',
             when('/import', {
                 templateUrl: 'templates/import.html'
             }).
+            when('/restore-import', {
+                templateUrl: 'templates/import.html'
+            }).
             when('/localdb/:backupid', {
                 templateUrl: 'templates/localdatabase.html'
+            }).
+            when('/commandline', {
+                templateUrl: 'templates/commandline.html'
+            }).
+            when('/commandline/:backupid', {
+                templateUrl: 'templates/commandline.html'
+            }).
+            when('/commandline/view/:viewid', {
+                templateUrl: 'templates/commandline.html'
             }).
             otherwise({
                 templateUrl: 'templates/home.html'
@@ -76,3 +100,25 @@ backupApp.run(function($injector) {
         $injector.get('ProxyService');
     } catch(e) {}
 });
+
+// Registers a global parseInt function
+angular.module('backupApp').run(function($rootScope){
+    $rootScope.parseInt = function(str) {
+        return parseInt(str);
+    };  
+});
+
+// Register a global back function
+/*backupApp.run(function ($rootScope, $location) {
+
+    var history = [];
+    $rootScope.$on('$routeChangeSuccess', function() {
+        history.push($location.$$path);
+    });
+
+    $rootScope.back = function () {
+        var prevUrl = history.length > 1 ? history.splice(-2)[0] : "/home";
+        $location.path(prevUrl);
+    };
+
+});*/

@@ -237,7 +237,7 @@ namespace Duplicati.UnitTest
                             }
 
                     IList<DateTime> entries;
-                    using (var i = new Duplicati.Library.Main.Controller(target, options, new CommandLine.ConsoleOutput(options)))
+                    using (var i = new Duplicati.Library.Main.Controller(target, options, new CommandLine.ConsoleOutput(Console.Out, options)))
                         entries = (from n in i.List().Filesets select n.Time.ToLocalTime()).ToList();
 
                     if (entries.Count != folders.Length)
@@ -269,7 +269,7 @@ namespace Duplicati.UnitTest
                                         using (new Timer("Extract list of files from" + folders[i]))
                                         {
                                             List<string> sourcefiles;
-                                            using (var inst = new Library.Main.Controller(target, options, new CommandLine.ConsoleOutput(options)))
+                                            using (var inst = new Library.Main.Controller(target, options, new CommandLine.ConsoleOutput(Console.Out, options)))
                                                 sourcefiles = (from n in inst.List("*").Files select n.Path).ToList();
 
                                             //Remove all folders from list
@@ -454,7 +454,7 @@ namespace Duplicati.UnitTest
         {
             BasicSetupHelper.ProgressWriteLine("Backing up the copy: " + sourcename);
             using (new Timer("Backup of " + sourcename))
-            using(var i = new Duplicati.Library.Main.Controller(target, options, new CommandLine.ConsoleOutput(options)))
+            using(var i = new Duplicati.Library.Main.Controller(target, options, new CommandLine.ConsoleOutput(Console.Out, options)))
                 Log.WriteMessage(i.Backup(source.Split(System.IO.Path.PathSeparator)).ToString(), LogMessageType.Information);
         }
 
@@ -463,7 +463,7 @@ namespace Duplicati.UnitTest
             var tops = new Dictionary<string, string>(options);
             tops["restore-path"] = tempfolder;
             using (new Timer("Restore of " + source))
-            using(var i = new Duplicati.Library.Main.Controller(target, tops, new CommandLine.ConsoleOutput(options)))
+            using(var i = new Duplicati.Library.Main.Controller(target, tops, new CommandLine.ConsoleOutput(Console.Out, options)))
                 Log.WriteMessage(i.Restore(null).ToString(), LogMessageType.Information);
         }
 
@@ -472,7 +472,7 @@ namespace Duplicati.UnitTest
             var tops = new Dictionary<string, string>(options);
             tops["restore-path"] = tempfolder;
             using (new Timer("Partial restore of " + source))
-            using(var i = new Duplicati.Library.Main.Controller(target, tops, new CommandLine.ConsoleOutput(options)))
+            using(var i = new Duplicati.Library.Main.Controller(target, tops, new CommandLine.ConsoleOutput(Console.Out, options)))
                 Log.WriteMessage(i.Restore(files).ToString(), LogMessageType.Information);
         }
     }

@@ -41,6 +41,8 @@ public class TlsTest
 		Console.WriteLine("\t--ssl3  \tUse SSLv3");
 		Console.WriteLine("\t--tls   \tUse TLSv1");
 		Console.WriteLine("\t--tls1  \tUse TLSv1");
+		Console.WriteLine("\t--tls11 \tUse TLSv1.1");
+		Console.WriteLine("\t--tls12 \tUse TLSv1.2");
 		Console.WriteLine("{0}class", Environment.NewLine);
 		Console.WriteLine("\t--stream\tDirectly use the SslClientStream [default]");
 		Console.WriteLine("\t--web   \tUse the WebRequest/WebResponse classes");
@@ -57,7 +59,7 @@ public class TlsTest
 	private static bool show;
 	private static bool time;
 	private static bool web;
-	private static Mono.Security.Protocol.Tls.SecurityProtocolType protocol = Mono.Security.Protocol.Tls.SecurityProtocolType.Default;
+	private static Mono.Security.Protocol.Tls.SecurityProtocolType? protocol;
 	private static X509CertificateCollection certificates = new X509CertificateCollection();
 	private static NetworkCredential basicCred;
 	private static NetworkCredential digestCred;
@@ -92,6 +94,12 @@ public class TlsTest
 			case "--tls":
 			case "--tls1":
 				protocol = Mono.Security.Protocol.Tls.SecurityProtocolType.Tls;
+				break;
+			case "--tls11":
+				protocol = Mono.Security.Protocol.Tls.SecurityProtocolType.Tls11;
+				break;
+			case "--tls12":
+				protocol = Mono.Security.Protocol.Tls.SecurityProtocolType.Tls12;
 				break;
 			// class
 			case "--stream":
@@ -157,7 +165,8 @@ public class TlsTest
 				{
 					content = GetWebPage(url);
 				}
-				else {
+				else
+				{
 					content = GetStreamPage(url);
 				}
 			}
@@ -183,7 +192,8 @@ public class TlsTest
 	public static string GetWebPage(string url)
 	{
 		ServicePointManager.CertificatePolicy = new TestCertificatePolicy();
-		ServicePointManager.SecurityProtocol = (System.Net.SecurityProtocolType)(int)protocol;
+		if (protocol != null)
+			ServicePointManager.SecurityProtocol = (System.Net.SecurityProtocolType)(int)protocol.Value;
 
 		Uri uri = new Uri(url);
 		HttpWebRequest req = (HttpWebRequest)WebRequest.Create(uri);
@@ -218,7 +228,7 @@ public class TlsTest
 		Socket socket = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 		socket.Connect(new IPEndPoint(ip, uri.Port));
 		NetworkStream ns = new NetworkStream(socket, false);
-		SslClientStream ssl = new SslClientStream(ns, uri.Host, false, protocol, certificates);
+		SslClientStream ssl = new SslClientStream(ns, uri.Host, false, protocol ?? Mono.Security.Protocol.Tls.SecurityProtocolType.Default, certificates);
 		ssl.ServerCertValidationDelegate += new CertificateValidationCallback(CertificateValidation);
 
 		StreamWriter sw = new StreamWriter(ssl);

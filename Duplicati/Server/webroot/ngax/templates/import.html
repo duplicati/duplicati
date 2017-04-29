@@ -1,5 +1,8 @@
 <div ng-controller="ImportController" class="importpage">
-    <h1 translate>Import backup configuration</h1>
+    
+    <h1 ng-hide="restoremode" translate>Import backup configuration</h1>
+    <h1 ng-show="restoremode" translate>Restore from backup configuration</h1>
+
     <form enctype="multipart/form-data" id="import-form" class="styled" method="POST" action="{{ImportURL}}" target="submit-target">
 
         <div class="input text">
@@ -7,15 +10,19 @@
             <input type="file" name="config"  id="file" />
         </div>
 
-        <div class="input text">            
+        <div class="input text">
             <label for="passphrase" translate>Passphrase (if encrypted)</label>
-            <input type="password" name="passphrase" id="passphrase" placeholder="{{'Enter encryption passphrase' | translate}}" >
+            <input type="password" name="passphrase" id="passphrase" placeholder="{{'Enter encryption passphrase' | translate}}" />
         </div>
 
-        <input type="hidden" name="callback" value="{{CallbackMethod}}">
+        <div class="input checkbox" ng-hide="restoremode">
+            <label for="direct" translate>Save immediately</label>
+            <input type="checkbox" name="direct" id="direct" value="true" />
+        </div>
+
+        <input type="hidden" name="callback" value="{{CallbackMethod}}" />
 
         <div class="buttons" ng-hide="Connecting">
-            <a href="#add" class="submit" translate>Cancel</a>
             <a href ng-click="doSubmit()" translate>Import</a>
         </div>
     

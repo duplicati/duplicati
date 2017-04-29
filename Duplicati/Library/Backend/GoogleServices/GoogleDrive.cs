@@ -465,15 +465,16 @@ namespace Duplicati.Library.Backend.GoogleDrive
             };
 
             var url = string.Format("{0}/files?q={1}", DRIVE_API_URL, Library.Utility.Uri.UrlEncode(string.Join(" and ", p.Where(x => x != null))));
+            var token = string.Empty;
 
-            while (!string.IsNullOrEmpty(url))
+            do
             {
-                var res = m_oauth.GetJSONData<GoogleDriveListResponse>(url);
-                foreach(var n in res.items)
+                var res = m_oauth.GetJSONData<GoogleDriveListResponse>(url + (string.IsNullOrWhiteSpace(token) ? "" : "&pageToken=" + Library.Utility.Uri.UrlEncode(token)));
+                foreach (var n in res.items)
                     yield return n;
 
-                url = res.nextLink;
-            }
+                token = res.nextPageToken;
+            } while (!string.IsNullOrWhiteSpace(token));
         }
 
         private GoogleDriveAboutResponse GetAboutInfo()
