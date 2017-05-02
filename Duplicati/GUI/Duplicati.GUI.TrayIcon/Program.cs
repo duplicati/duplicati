@@ -143,7 +143,9 @@ namespace Duplicati.GUI.TrayIcon
             if (Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) && Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
                 databaseConnection = GetDatabaseConnection(_args);
 
-            if (options.TryGetValue("webserver-password", out string pwd))
+            string pwd;
+
+            if (options.TryGetValue("webserver-password", out pwd))
             {
                 password = pwd;
                 saltedpassword = false;
