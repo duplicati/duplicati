@@ -64,7 +64,7 @@ namespace Duplicati.Server.Database
             ReloadSettings();
         }
 
-        private void ReloadSettings()
+        public void ReloadSettings()
         {
             lock(m_connection.m_lock)
             {
@@ -318,7 +318,7 @@ namespace Duplicati.Server.Database
             var password = "";
             var pwd = "";
 
-            if (m_values[CONST.SERVER_PASSPHRASE] != "")
+            if (!string.IsNullOrEmpty(m_values[CONST.SERVER_PASSPHRASE]))
             {
                 password = Guid.NewGuid().ToString();
                 var buf = Convert.FromBase64String(m_values[CONST.SERVER_PASSPHRASE_SALT]);

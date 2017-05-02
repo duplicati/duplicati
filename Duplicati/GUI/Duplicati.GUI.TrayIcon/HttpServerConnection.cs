@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
@@ -294,7 +295,7 @@ namespace Duplicati.GUI.TrayIcon
                 }
                 catch (System.Net.WebException wex)
                 {
-                    var httpex = wex.Response as System.Net.HttpWebResponse;
+                    var httpex = wex.Response as HttpWebResponse;
                     if (httpex == null)
                         throw;
 
@@ -305,28 +306,25 @@ namespace Duplicati.GUI.TrayIcon
                         httpex.StatusDescription.IndexOf("XSRF", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         hasTriedXSRF = true;
-                        string t = null;
-                        try 
-                        { 
-                            var c = httpex.Cookies[XSRF_COOKIE];
-                            if (c != null)
-                                t = c.Value;
-                        }
-                        catch
-                        {
-                        }
+                        var t = httpex.Cookies[XSRF_COOKIE]?.Value;
 
-                        if (!string.IsNullOrWhiteSpace(t))
-                            m_xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(t);
-                        else
-                            m_xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(GetXSRFToken());
+                        if (string.IsNullOrWhiteSpace(t))
+                            t = GetXSRFToken();
+
+                        m_xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(t);
                     }
                     else if (
                         !hasTriedPassword &&
                         wex.Status == System.Net.WebExceptionStatus.ProtocolError &&
-                        httpex.StatusCode == System.Net.HttpStatusCode.Unauthorized &&
-                        !string.IsNullOrWhiteSpace(m_password))
+                        httpex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                     {
+                        Program.databaseConnection?.ApplicationSettings?.ReloadSettings();
+                        //Can survive if server password is changed via web ui
+                        if (Program.databaseConnection?.ApplicationSettings?.WebserverPasswordTrayIcon != m_password)
+                            m_password = Program.databaseConnection?.ApplicationSettings?.WebserverPasswordTrayIcon;
+                        else
+                            hasTriedPassword = true;
+
                         m_authtoken = GetAuthToken();
                     }
                     else

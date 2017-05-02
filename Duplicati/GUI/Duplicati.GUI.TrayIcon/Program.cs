@@ -163,7 +163,7 @@ namespace Duplicati.GUI.TrayIcon
             
             using (hosted)
             {
-                var reSpawn = false;
+                var reSpawn = 0;
 
                 do
                 {
@@ -213,17 +213,12 @@ namespace Duplicati.GUI.TrayIcon
                     }
                     catch (WebException ex)
                     {
-                        //Can survive if server password is changed via web ui
-                        var response = ex.Response as HttpWebResponse;
-                        if (response?.StatusCode == HttpStatusCode.Unauthorized && databaseConnection?.ApplicationSettings?.WebserverPasswordTrayIcon != password)
-                        {
-                            password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
-                            reSpawn = true;
-                        }
-                        else
-                            throw;
+                        System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
+                        Console.WriteLine("Request error: " + ex.Message);
+
+                        reSpawn++;
                     }
-                } while (reSpawn);
+                } while (reSpawn < 3);
             }
         }
 
