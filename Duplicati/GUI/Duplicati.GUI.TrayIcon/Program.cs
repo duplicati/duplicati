@@ -262,7 +262,7 @@ namespace Duplicati.GUI.TrayIcon
                 else
                 {
                     //Normal release mode uses the systems "Application Data" folder
-                    serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName));
+                    serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
                 }
 #endif
             }
