@@ -380,6 +380,8 @@ namespace Duplicati.Server
                 if (commandlineOptions.ContainsKey("webservice-password"))
                     Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
 
+                Program.DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
+
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
                     
                 Duplicati.Library.AutoUpdater.UpdaterManager.OnError += (Exception obj) =>

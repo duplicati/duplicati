@@ -179,6 +179,11 @@ namespace Duplicati.Server.WebServer
                         return true;
                     }
 
+                    var password = Program.DataConnection.ApplicationSettings.WebserverPassword;
+
+                    if (request.Headers["User-Agent"] != null && request.Headers["User-Agent"].StartsWith("Duplicati TrayIcon Monitor"))
+                        password = Program.DataConnection.ApplicationSettings.WebserverPasswordTrayIconHash;
+                    
                     var buf = new byte[32];
                     var expires = DateTime.UtcNow.AddMinutes(AUTH_TIMEOUT_MINUTES);
                     m_prng.GetBytes(buf);
@@ -186,7 +191,7 @@ namespace Duplicati.Server.WebServer
 
                     var sha256 = System.Security.Cryptography.SHA256.Create();
                     sha256.TransformBlock(buf, 0, buf.Length, buf, 0);
-                    buf = Convert.FromBase64String(Program.DataConnection.ApplicationSettings.WebserverPassword);
+                    buf = Convert.FromBase64String(password);
                     sha256.TransformFinalBlock(buf, 0, buf.Length);
                     var pwd = Convert.ToBase64String(sha256.Hash);
 

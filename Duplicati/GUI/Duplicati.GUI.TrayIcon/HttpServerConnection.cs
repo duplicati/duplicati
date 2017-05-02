@@ -354,9 +354,10 @@ namespace Duplicati.GUI.TrayIcon
                 req.CookieContainer.Add(new System.Net.Cookie(AUTH_COOKIE, m_authtoken, "/", req.RequestUri.Host));
             if (m_xsrftoken != null)
                 req.CookieContainer.Add(new System.Net.Cookie(XSRF_COOKIE, m_xsrftoken, "/", req.RequestUri.Host));
-
+            
             //Wrap it all in async stuff
             var areq = new Library.Utility.AsyncHttpRequest(req);
+            req.AllowWriteStreamBuffering = true;
 
             //Assign the timeout, and add a little processing time as well
             if (endpoint.Equals("/serverstate", StringComparison.InvariantCultureIgnoreCase) && queryparams.ContainsKey("duration"))
@@ -439,14 +440,8 @@ namespace Duplicati.GUI.TrayIcon
         {
             get 
             { 
-                try
-                {
-                    if (m_authtoken != null)
-                        return m_baseUri + STATUS_WINDOW + "?auth-token=" + GetAuthToken();
-                }
-                catch
-                {
-                }
+                if (m_authtoken != null)
+                    return m_baseUri + STATUS_WINDOW + "?auth-token=" + GetAuthToken();
                 
                 return m_baseUri + STATUS_WINDOW; 
             }

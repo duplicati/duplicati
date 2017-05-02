@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Windows.Forms;
 using Duplicati.Library.Interface;
 
@@ -19,15 +20,16 @@ namespace Duplicati.GUI.TrayIcon
 
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
-        
+        private const string READCONFIGFROMDB_OPTION = "read-config-from-db";
+
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
         private const string DEFAULT_HOSTURL = "http://localhost:8200";
         
         private static string _browser_command = null;
         public static string BrowserCommand { get { return _browser_command; } }
-        
-        
+        public static Server.Database.ServerSettings databaseSettings = null;
+
         private static string GetDefaultToolKit(bool printwarnings)
         {
             // No longer using Cocoa directly as it fails on 32bit as well            
@@ -114,9 +116,11 @@ namespace Duplicati.GUI.TrayIcon
             }
 
             HostedInstanceKeeper hosted = null;
-            bool openui = false;
+            var openui = false;
             string password = null;
-            bool saltedpassword = false;
+            var saltedpassword = false;
+            var serverURL = new Uri(DEFAULT_HOSTURL);
+
             if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
             {
                 try
@@ -133,73 +137,257 @@ namespace Duplicati.GUI.TrayIcon
                 openui = Duplicati.Server.Program.IsFirstRun || Duplicati.Server.Program.ServerPortChanged;
                 password = Duplicati.Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
                 saltedpassword = true;
+                serverURL = (new UriBuilder(serverURL) { Port = Duplicati.Server.Program.ServerPort }).Uri;
+            }
+            
+            if (Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) && Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
+                databaseSettings = GetDatabaseApplicationSettings(_args);
+
+            if (options.TryGetValue("webserver-password", out string pwd))
+            {
+                password = pwd;
+                saltedpassword = false;
             }
 
+            if (databaseSettings != null)
+            {
+                password = databaseSettings.WebserverPasswordTrayIcon;
+                saltedpassword = false;
+            }
+            
+            if (databaseSettings != null)
+                serverURL = (new UriBuilder(serverURL) {Port = databaseSettings.LastWebserverPort}).Uri;
+
+            if (options.TryGetValue(HOSTURL_OPTION, out string url))
+                serverURL = new Uri(url);
+            
             using (hosted)
             {
-                string url;
-                if (!options.TryGetValue(HOSTURL_OPTION, out url))
-                {
-                    if (hosted == null)
-                    {
-                        url = DEFAULT_HOSTURL;
-                    }
-                    else
-                    {
-                        int port = Duplicati.Server.Program.ServerPort;
-                        url = "http://127.0.0.1:" + port;
-                    }
-                }
+                var reSpawn = false;
 
-                string pwd;
-                if (options.TryGetValue("webserver-password", out pwd))
+                do
                 {
-                    password = pwd;
-                    saltedpassword = false;
-                }
-
-                using (Connection = new HttpServerConnection(new Uri(url), password, saltedpassword))
-                {
-                    using(var tk = RunTrayIcon(toolkit))
+                    try
                     {
-                        if (hosted != null && Server.Program.Instance != null)
-                            Server.Program.Instance.SecondInstanceDetected += new Server.SingleInstance.SecondInstanceDelegate(x => { tk.ShowUrlInWindow(url); });
-                        
-                        // TODO: If we change to hosted browser this should be a callback
-                        if (openui)
+                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword))
                         {
-                            try 
+                            using (var tk = RunTrayIcon(toolkit))
                             {
-                                tk.ShowUrlInWindow(Connection.StatusWindowURL);
+                                if (hosted != null && Server.Program.Instance != null)
+                                    Server.Program.Instance.SecondInstanceDetected +=
+                                        new Server.SingleInstance.SecondInstanceDelegate(
+                                            x => { tk.ShowUrlInWindow(serverURL.ToString()); });
 
-                                Duplicati.Server.Program.IsFirstRun = false;
-                                Duplicati.Server.Program.ServerPortChanged = false;
-                            } 
-                            catch
-                            {
+                                // TODO: If we change to hosted browser this should be a callback
+                                if (openui)
+                                {
+                                    try
+                                    {
+                                        tk.ShowUrlInWindow(Connection.StatusWindowURL);
+
+                                        Duplicati.Server.Program.IsFirstRun = false;
+                                        Duplicati.Server.Program.ServerPortChanged = false;
+                                    }
+                                    catch
+                                    {
+                                    }
+                                }
+
+                                // If the server shuts down, shut down the tray-icon as well
+                                Action shutdownEvent = () =>
+                                {
+                                    tk.InvokeExit();
+                                };
+
+                                if (hosted != null)
+                                    hosted.InstanceShutdown += shutdownEvent;
+
+                                tk.Init(_args);
+
+                                // Make sure that the server shutdown does not access the tray-icon,
+                                // as it would be disposed by now
+                                if (hosted != null)
+                                    hosted.InstanceShutdown -= shutdownEvent;
                             }
                         }
-
-                        // If the server shuts down, shut down the tray-icon as well
-                        Action shutdownEvent = () =>
-                        {
-                            tk.InvokeExit();
-                        };
-
-                        if (hosted != null)
-                            hosted.InstanceShutdown += shutdownEvent;
-
-                        tk.Init(_args);
-
-                        // Make sure that the server shutdown does not access the tray-icon,
-                        // as it would be disposed by now
-                        if (hosted != null)
-                            hosted.InstanceShutdown -= shutdownEvent;
                     }
-                }
+                    catch (WebException ex)
+                    {
+                        //Can survive if server password is changed via web ui
+                        var response = ex.Response as HttpWebResponse;
+                        if (response?.StatusCode == HttpStatusCode.Unauthorized && databaseSettings?.WebserverPasswordTrayIcon != password)
+                        {
+                            password = databaseSettings.WebserverPasswordTrayIcon;
+                            reSpawn = true;
+                        }
+                        else
+                            throw;
+                    }
+                } while (reSpawn);
             }
         }
-  
+
+        private static Server.Database.ServerSettings GetDatabaseApplicationSettings(string[] args)
+        {
+            //Find commandline options here for handling special startup cases
+            var commandlineOptions = Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args));
+            var dbPassword = Environment.GetEnvironmentVariable(Server.Program.DB_KEY_ENV_NAME);
+
+            //If we are on windows we encrypt the database by default
+            //We do not encrypt on Linux as most distros use a SQLite library without encryption support,
+            //Linux users can use an encrypted home folder, or install a SQLite library with encryption support
+            if (!Library.Utility.Utility.IsClientLinux &&
+                string.IsNullOrEmpty(Environment.GetEnvironmentVariable(Server.Program.DB_KEY_ENV_NAME)))
+                    dbPassword = Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42";
+
+            if (commandlineOptions.ContainsKey("server-encryption-key"))
+                dbPassword = commandlineOptions["server-encryption-key"];
+
+            var serverDataFolder = Environment.GetEnvironmentVariable(Server.Program.DATAFOLDER_ENV_NAME);
+
+            // Allow override of the environment variables from the commandline
+            if (commandlineOptions.ContainsKey("server-datafolder"))
+                serverDataFolder = commandlineOptions["server-datafolder"];
+            
+            //Set the %DUPLICATI_HOME% env variable, if it is not already set
+            if (string.IsNullOrEmpty(serverDataFolder))
+            {
+#if DEBUG
+                //debug mode uses a lock file located in the app folder
+                serverDataFolder = Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
+#else
+                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
+
+                if (portableMode)
+                {
+                    //Portable mode uses a data folder in the application home dir
+                    serverDataFolder = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "data");
+                    System.IO.Directory.SetCurrentDirectory(Library.AutoUpdater.UpdaterManager.InstalledBaseDir);
+                }
+                else
+                {
+                    //Normal release mode uses the systems "Application Data" folder
+                    serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName));
+                }
+#endif
+            }
+            
+            var sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
+
+            if (sqliteVersion < new Version(3, 6, 3))
+            {
+                //The official Mono SQLite provider is also broken with less than 3.6.3
+                throw new Exception($@"Unsupported version of SQLite detected ({sqliteVersion}), must be 3.6.3 or higher");
+            }
+
+            //Create the connection instance
+            var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection();
+
+            try
+            {
+                var databasePath = System.IO.Path.Combine(Library.Utility.Utility.AppendDirSeparator(
+                    Library.Utility.Utility.ExpandEnvironmentVariables(serverDataFolder).Trim('"')), "Duplicati-server.sqlite");
+
+                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(databasePath)))
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(databasePath));
+#if DEBUG
+                //Default is to not use encryption for debugging
+                var useDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") && !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
+#else
+                var UseDatabaseEncryption = !commandlineOptions.ContainsKey("unencrypted-database") || !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
+#endif
+                con.ConnectionString = "Data Source=" + databasePath;
+
+                //Attempt to open the database, handling any encryption present
+                OpenDatabase(con, useDatabaseEncryption, dbPassword);
+
+                Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, databasePath,
+                    typeof(Duplicati.Server.Database.Connection));
+            }
+            catch (Exception ex)
+            {
+                //Unwrap the reflection exceptions
+                if (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
+                    ex = ex.InnerException;
+
+                throw new Exception($@"Failed to create, open or upgrade the database. Error message: {ex}");
+            }
+
+            return new Duplicati.Server.Database.Connection(con).ApplicationSettings;
+        }
+
+        /// <summary>
+        /// Helper method with logic to handle opening a database in possibly encrypted format
+        /// </summary>
+        /// <param name="con">The SQLite connection object</param>
+        private static void OpenDatabase(System.Data.IDbConnection con, bool UseDatabaseEncryption, string password)
+        {
+            bool noEncryption = !UseDatabaseEncryption;
+
+            System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new Type[] { typeof(string) });
+            string attemptedPassword;
+
+            if (noEncryption || string.IsNullOrEmpty(password))
+                attemptedPassword = null; //No encryption specified, attempt to open without
+            else
+                attemptedPassword = password; //Encryption specified, attempt to open with
+
+            if (setPwdMethod != null)
+                setPwdMethod.Invoke(con, new object[] { attemptedPassword });
+
+            try
+            {
+                //Attempt to open in preferred state
+                con.Open();
+
+                // Do a dummy query to make sure we have a working db
+                using (var cmd = con.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
+                    cmd.ExecuteScalar();
+                }
+            }
+            catch
+            {
+                try
+                {
+                    //We can't try anything else without a password
+                    if (string.IsNullOrEmpty(password))
+                        throw;
+
+                    //Open failed, now try the reverse
+                    if (attemptedPassword == null)
+                        attemptedPassword = password;
+                    else
+                        attemptedPassword = null;
+
+                    con.Close();
+                    setPwdMethod.Invoke(con, new object[] { attemptedPassword });
+                    con.Open();
+
+                    // Do a dummy query to make sure we have a working db
+                    using (var cmd = con.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
+                        cmd.ExecuteScalar();
+                    }
+                }
+                catch
+                {
+                    try { con.Close(); }
+                    catch { }
+                }
+
+                //If the db is not open now, it won't open
+                if (con.State != System.Data.ConnectionState.Open)
+                    throw; //Report original error
+
+                //The open method succeeded with the non-default method, now change the password
+                System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new Type[] { typeof(string) });
+                changePwdMethod.Invoke(con, new object[] { noEncryption ? null : password });
+            }
+        }
+
         private static TrayIconBase RunTrayIcon(string toolkit)
         {
             if (toolkit == TOOLKIT_WINDOWS_FORMS)
@@ -356,6 +544,7 @@ namespace Duplicati.GUI.TrayIcon
                     new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(false), null, toolkits.ToArray()),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
+                    new Duplicati.Library.Interface.CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),               
                     new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser comand", "Set this option to override the default browser detection"),
                 };
             }
