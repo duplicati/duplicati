@@ -160,7 +160,9 @@ namespace Duplicati.GUI.TrayIcon
             if (databaseConnection != null)
                 serverURL = (new UriBuilder(serverURL) {Port = databaseConnection.ApplicationSettings.LastWebserverPort}).Uri;
 
-            if (options.TryGetValue(HOSTURL_OPTION, out string url))
+            string url;
+
+            if (options.TryGetValue(HOSTURL_OPTION, out url))
                 serverURL = new Uri(url);
             
             using (hosted)
