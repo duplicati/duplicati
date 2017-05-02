@@ -28,7 +28,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private static string _browser_command = null;
         public static string BrowserCommand { get { return _browser_command; } }
-        public static Server.Database.ServerSettings databaseSettings = null;
+        public static Server.Database.Connection databaseConnection = null;
 
         private static string GetDefaultToolKit(bool printwarnings)
         {
@@ -141,7 +141,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             
             if (Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) && Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
-                databaseSettings = GetDatabaseApplicationSettings(_args);
+                databaseConnection = GetDatabaseConnection(_args);
 
             if (options.TryGetValue("webserver-password", out string pwd))
             {
@@ -149,14 +149,14 @@ namespace Duplicati.GUI.TrayIcon
                 saltedpassword = false;
             }
 
-            if (databaseSettings != null)
+            if (databaseConnection != null)
             {
-                password = databaseSettings.WebserverPasswordTrayIcon;
+                password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                 saltedpassword = false;
             }
             
-            if (databaseSettings != null)
-                serverURL = (new UriBuilder(serverURL) {Port = databaseSettings.LastWebserverPort}).Uri;
+            if (databaseConnection != null)
+                serverURL = (new UriBuilder(serverURL) {Port = databaseConnection.ApplicationSettings.LastWebserverPort}).Uri;
 
             if (options.TryGetValue(HOSTURL_OPTION, out string url))
                 serverURL = new Uri(url);
@@ -215,9 +215,9 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         //Can survive if server password is changed via web ui
                         var response = ex.Response as HttpWebResponse;
-                        if (response?.StatusCode == HttpStatusCode.Unauthorized && databaseSettings?.WebserverPasswordTrayIcon != password)
+                        if (response?.StatusCode == HttpStatusCode.Unauthorized && databaseConnection?.ApplicationSettings?.WebserverPasswordTrayIcon != password)
                         {
-                            password = databaseSettings.WebserverPasswordTrayIcon;
+                            password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                             reSpawn = true;
                         }
                         else
@@ -227,7 +227,7 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
 
-        private static Server.Database.ServerSettings GetDatabaseApplicationSettings(string[] args)
+        private static Server.Database.Connection GetDatabaseConnection(string[] args)
         {
             //Find commandline options here for handling special startup cases
             var commandlineOptions = Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args));
@@ -313,7 +313,7 @@ namespace Duplicati.GUI.TrayIcon
                 throw new Exception($@"Failed to create, open or upgrade the database. Error message: {ex}");
             }
 
-            return new Duplicati.Server.Database.Connection(con).ApplicationSettings;
+            return new Duplicati.Server.Database.Connection(con);
         }
 
         /// <summary>
