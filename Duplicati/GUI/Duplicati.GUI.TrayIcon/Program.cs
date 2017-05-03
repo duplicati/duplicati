@@ -293,7 +293,7 @@ namespace Duplicati.GUI.TrayIcon
                 //Default is to not use encryption for debugging
                 var useDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") && !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
 #else
-                var UseDatabaseEncryption = !commandlineOptions.ContainsKey("unencrypted-database") || !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
+                var useDatabaseEncryption = !commandlineOptions.ContainsKey("unencrypted-database") || !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
 #endif
                 con.ConnectionString = "Data Source=" + databasePath;
 
