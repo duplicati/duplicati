@@ -275,7 +275,7 @@ msgstr "Région de création du bucket"
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
 #: templates/backends/s3.html:19 templates/backends/s3.html:20
 msgid "Bucket name"
-msgstr "nom du bucket"
+msgstr "Nom du bucket"
 
 #: templates/backends/gcs.html:26
 msgid "Bucket storage class"
@@ -291,7 +291,7 @@ msgstr "Construction d'une base de données temporaire partielle"
 
 #: templates/restore.html:59
 msgid "Busy ..."
-msgstr "Occupé ..."
+msgstr "Occupé..."
 
 #: templates/settings.html:82
 msgid "Canary"
@@ -336,15 +336,15 @@ msgstr "Vérification échouée :"
 
 #: templates/about.html:35
 msgid "Check for updates now"
-msgstr "Vérifier les mise à jour maintenant"
+msgstr "Vérifier les mises à jour maintenant"
 
 #: templates/captcha.html:10
 msgid "Checking ..."
-msgstr "Vérification ..."
+msgstr "Vérification..."
 
 #: templates/about.html:36
 msgid "Checking for updates ..."
-msgstr "Vérification des mises à jour ..."
+msgstr "Vérification des mises à jour..."
 
 #: templates/edituri.html:16
 msgid "Chose a storage type to get started"
@@ -360,15 +360,15 @@ msgstr "Compacter maintenant"
 
 #: scripts/services/ServerStatus.js:41 scripts/services/ServerStatus.js:64
 msgid "Compacting remote data ..."
-msgstr "Compactage des données distantes ..."
+msgstr "Compactage des données distantes..."
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup ..."
-msgstr "Finalisation de la sauvegarde ..."
+msgstr "Finalisation de la sauvegarde..."
 
 #: scripts/services/ServerStatus.js:36
 msgid "Completing previous backup ..."
-msgstr "Finalisation de la précédente sauvegarde ..."
+msgstr "Finalisation de la précédente sauvegarde..."
 
 #: templates/about.html:67
 msgid "Compression modules:"
@@ -388,7 +388,7 @@ msgstr "Configuration :"
 
 #: templates/addwizard.html:9
 msgid "Configure a new backup"
-msgstr ""
+msgstr "Configurer une nouvelle sauvegarde"
 
 #: scripts/controllers/DeleteController.js:65
 #: scripts/controllers/DeleteController.js:77
@@ -410,7 +410,7 @@ msgstr "Connecter maintenant"
 
 #: index.html:316
 msgid "Connecting..."
-msgstr "Connexion ..."
+msgstr "Connexion..."
 
 #: index.html:307
 msgid "Connection lost"
@@ -423,7 +423,7 @@ msgstr "Connection fonctionnelle !"
 
 #: index.html:311
 msgid "Connnecting to server ..."
-msgstr "Connexion au serveur ..."
+msgstr "Connexion au serveur..."
 
 #: scripts/services/EditUriBuiltins.js:624 templates/backends/azure.html:2
 msgid "Container name"
@@ -467,7 +467,7 @@ msgstr "Uniquement les accidents"
 
 #: templates/home.html:35
 msgid "Create bug report ..."
-msgstr "Crée un rapport d'erreur ..."
+msgstr "Crée un rapport d'erreur..."
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
@@ -479,23 +479,23 @@ msgstr "Nouvel utilisateur limité créé"
 
 #: scripts/services/ServerStatus.js:59
 msgid "Creating bug report ..."
-msgstr "Création d'un rapport d'erreur ..."
+msgstr "Création d'un rapport d'erreur..."
 
 #: scripts/services/EditUriBuiltins.js:111
 msgid "Creating new user with limited access ..."
-msgstr "Création d'un nouvel utilisateur avec un accès limité ..."
+msgstr "Création d'un nouvel utilisateur avec un accès limité..."
 
 #: scripts/services/ServerStatus.js:49
 msgid "Creating target folders ..."
-msgstr "Création des répertoires de destination ..."
+msgstr "Création des répertoires de destination..."
 
 #: scripts/controllers/RestoreController.js:356
 msgid "Creating temporary backup ..."
-msgstr "Création d'une sauvegarde temporaire ..."
+msgstr "Création d'une sauvegarde temporaire..."
 
 #: scripts/services/EditUriBuiltins.js:111
 msgid "Creating user..."
-msgstr "Création d'un utilisateur ..."
+msgstr "Création d'un utilisateur..."
 
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
@@ -551,7 +551,7 @@ msgstr "Supprimer"
 
 #: templates/home.html:21
 msgid "Delete ..."
-msgstr "Suppression ..."
+msgstr "Suppression..."
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
@@ -575,11 +575,11 @@ msgstr "Supprimer {{filecount}} fichiers ({{filesize}}) du stockage distant ?"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
-msgstr "Suppression des fichiers distants ..."
+msgstr "Suppression des fichiers distants..."
 
 #: scripts/services/ServerStatus.js:40
 msgid "Deleting unwanted files ..."
-msgstr "Suppression des fichiers non désirés ..."
+msgstr "Suppression des fichiers non désirés..."
 
 #: scripts/services/AppUtils.js:59
 msgid "Desktop"
@@ -654,15 +654,15 @@ msgstr "Téléchargement"
 
 #: templates/notificationarea.html:28
 msgid "Downloading ..."
-msgstr "Téléchargement ..."
+msgstr "Téléchargement..."
 
 #: scripts/services/ServerStatus.js:53
 msgid "Downloading files ..."
-msgstr "Téléchargement des fichiers ..."
+msgstr "Téléchargement des fichiers..."
 
 #: templates/notificationarea.html:22
 msgid "Downloading update..."
-msgstr "Téléchargement de mise à jour ..."
+msgstr "Téléchargement de mise à jour..."
 
 #: scripts/services/AppUtils.js:265
 msgid "Duplicate option {{opt}}"
@@ -696,11 +696,11 @@ msgstr ""
 "Chaque sauvegarde a une base de données locale associée à elle, elle "
 "enregistre localement les informations à propos de la sauvegarde distante. "
 "\\nCela rend la réalisation de beaucoup d'opérations plus rapide et réduit "
-"la quantité de données qui doit être téléchargé pour chaque opération."
+"la quantité de données qui doit être téléchargée pour chaque opération."
 
 #: templates/home.html:19
 msgid "Edit ..."
-msgstr "Éditer ..."
+msgstr "Éditer..."
 
 #: templates/addoredit.html:170 templates/addoredit.html:345
 #: templates/edituri.html:39 templates/settings.html:126
@@ -748,7 +748,7 @@ msgstr "Entrez la phrase secrète de sauvegarde, si présente"
 
 #: templates/addwizard.html:10
 msgid "Enter configuration details"
-msgstr ""
+msgstr "Entrez les détails de configuration"
 
 #: templates/backends/azure.html:3
 msgid "Enter container name"
@@ -850,7 +850,7 @@ msgstr "Exporter"
 
 #: templates/home.html:20
 msgid "Export ..."
-msgstr "Exportation ..."
+msgstr "Exportation..."
 
 #: templates/export.html:2
 msgid "Export backup configuration"
@@ -862,7 +862,7 @@ msgstr "Exporter la configuration"
 
 #: templates/export.html:31
 msgid "Exporting ..."
-msgstr "Exportation ..."
+msgstr "Exportation..."
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
@@ -897,7 +897,7 @@ msgstr "Échec de la suppression :"
 #: scripts/controllers/RestoreController.js:114
 #: scripts/controllers/RestoreController.js:144
 msgid "Failed to fetch path information: {{message}}"
-msgstr "Échec de la récupération des information du chemin : {{message}}"
+msgstr "Échec de la récupération des informations du chemin : {{message}}"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
@@ -918,7 +918,7 @@ msgstr "Échec d'enregistrement :"
 #: scripts/controllers/RestoreController.js:120
 #: scripts/controllers/RestoreController.js:159
 msgid "Fetching path information ..."
-msgstr "Récupération des informations du chemin ..."
+msgstr "Récupération des informations du chemin..."
 
 #: scripts/services/AppUtils.js:73
 msgid "File"
@@ -1112,7 +1112,7 @@ msgstr "Échec de l'import"
 
 #: templates/import.html:30
 msgid "Importing ..."
-msgstr "Importation ..."
+msgstr "Importation..."
 
 #: scripts/controllers/EditBackupController.js:141
 msgid "Include a file?"
@@ -1132,7 +1132,7 @@ msgstr "Réponse incorrecte, essayez encore"
 
 #: templates/settings.html:83
 msgid "Individual builds for developers only."
-msgstr "Compilations individuelles pour les developpeurs uniquement."
+msgstr "Compilations individuelles pour les développeurs uniquement."
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
@@ -1193,11 +1193,11 @@ msgstr "Librairies"
 
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates ..."
-msgstr "Listing des dates de sauvegardes ..."
+msgstr "Listing des dates de sauvegardes..."
 
 #: scripts/services/ServerStatus.js:60 scripts/services/ServerStatus.js:62
 msgid "Listing remote files ..."
-msgstr "Listing des fichiers distants ..."
+msgstr "Listing des fichiers distants..."
 
 #: templates/log.html:8
 msgid "Live"
@@ -1220,11 +1220,11 @@ msgstr "Charger des données plus anciennes"
 #: templates/log.html:45 templates/log.html:53 templates/log.html:60
 #: templates/log.html:67 templates/updatechangelog.html:7
 msgid "Loading ..."
-msgstr "Chargement ..."
+msgstr "Chargement..."
 
 #: templates/delete.html:40
 msgid "Loading remote storage usage ..."
-msgstr "Chargement de l'utilisation du stockage distant ..."
+msgstr "Chargement de l'utilisation du stockage distant..."
 
 #: templates/localdatabase.html:2
 msgid "Local database for"
@@ -1272,7 +1272,7 @@ msgstr "Maintenance"
 
 #: templates/home.html:27
 msgid "Manage database ..."
-msgstr "Gérer la base de données ..."
+msgstr "Gérer la base de données..."
 
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
@@ -1436,7 +1436,7 @@ msgstr "Aucune phrase secrète entrée"
 
 #: index.html:189
 msgid "No scheduled tasks"
-msgstr "Pas de tâche planifié"
+msgstr "Pas de tâche planifiée"
 
 #: scripts/controllers/EditBackupController.js:231
 msgid "Non-matching passphrase"
@@ -1532,7 +1532,7 @@ msgstr "Les mots de passe ne correspondent pas"
 
 #: scripts/services/ServerStatus.js:52
 msgid "Patching files with local blocks ..."
-msgstr "Correction des fichiers avec les blocs locaux ..."
+msgstr "Correction des fichiers avec les blocs locaux..."
 
 #: scripts/controllers/EditBackupController.js:131
 msgid "Path not found"
@@ -1602,11 +1602,11 @@ msgstr "Récrée (suppression et réparation)"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database ..."
-msgstr "Recréation de la base de données ..."
+msgstr "Recréation de la base de données..."
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup ..."
-msgstr "Enregistrement de la sauvegarde temporaire .."
+msgstr "Enregistrement de la sauvegarde temporaire..."
 
 #: scripts/controllers/EditBackupController.js:116
 msgid "Relative paths not allowed"
@@ -1634,7 +1634,7 @@ msgstr "Réparer"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Reparing ..."
-msgstr "Réparation ...."
+msgstr "Réparation...."
 
 #: templates/addoredit.html:58
 msgid "Repeat Passphrase"
@@ -1658,11 +1658,11 @@ msgstr "Restaurer fichiers"
 
 #: templates/home.html:14
 msgid "Restore files ..."
-msgstr "Restaurer fichier ..."
+msgstr "Restaurer fichier..."
 
 #: templates/restore.html:46
 msgid "Restore files from {{backupname}}"
-msgstr ""
+msgstr "Restaurer les fichiers depuis {{backupname}}"
 
 #: templates/restore.html:48
 msgid "Restore from"
@@ -1688,7 +1688,7 @@ msgstr "Autorisations de lecture/écriture de restauration"
 #: scripts/controllers/RestoreController.js:371
 #: scripts/controllers/RestoreController.js:393
 msgid "Restoring files ..."
-msgstr "Restauration des fichiers ..."
+msgstr "Restauration des fichiers..."
 
 #: index.html:213
 msgid "Resume"
@@ -1704,7 +1704,7 @@ msgstr "Démarrer maintenant"
 
 #: scripts/controllers/StateController.js:24
 msgid "Running ..."
-msgstr "En cours d'exécution ..."
+msgstr "En cours d'exécution..."
 
 #: index.html:176
 msgid "Running task"
@@ -1746,11 +1746,11 @@ msgstr ""
 
 #: scripts/services/ServerStatus.js:50
 msgid "Scanning existing files ..."
-msgstr "Scannage des fichiers existants ..."
+msgstr "Scannage des fichiers existants..."
 
 #: scripts/services/ServerStatus.js:51
 msgid "Scanning for local blocks ..."
-msgstr "Scannage de blocs locaux ..."
+msgstr "Scannage de blocs locaux..."
 
 #: templates/addoredit.html:245 templates/addoredit.html:27
 msgid "Schedule"
@@ -1832,7 +1832,7 @@ msgstr "Montrer l'historique"
 
 #: templates/home.html:34
 msgid "Show log ..."
-msgstr "Montrer l'historique ..."
+msgstr "Montrer l'historique..."
 
 #: templates/addoredit.html:131
 msgid "Show treeview"
@@ -1872,12 +1872,12 @@ msgstr "Protocoles standards"
 
 #: scripts/services/ServerStatus.js:33 scripts/services/ServerStatus.js:45
 msgid "Starting ..."
-msgstr "Démarrage ..."
+msgstr "Démarrage..."
 
 #: scripts/controllers/RestoreController.js:367
 #: scripts/controllers/RestoreController.js:391
 msgid "Starting the restore process ..."
-msgstr "Démarrage du processus de restauration ..."
+msgstr "Démarrage du processus de restauration..."
 
 #: index.html:169 index.html:179
 msgid "Stop"
@@ -1958,19 +1958,15 @@ msgstr "Tester la connexion"
 
 #: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
 msgid "Testing ..."
-msgstr "Test ..."
+msgstr "Test..."
 
 #: scripts/directives/backupEditUri.js:44
 msgid "Testing connection ..."
-msgstr "Essai de connexion ..."
+msgstr "Essai de connexion..."
 
 #: scripts/services/EditUriBuiltins.js:41
 msgid "Testing permissions ..."
-msgstr "Test des permissions ..."
-
-#: scripts/services/EditUriBuiltins.js:41
-msgid "Testing permissions..."
-msgstr "Test des permissions ..."
+msgstr "Test des permissions..."
 
 #: scripts/services/EditUriBuiltins.js:686
 msgid "The bucket name should be all lower-case, convert automatically?"
@@ -1988,7 +1984,7 @@ msgstr ""
 #: index.html:308
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr ""
-"La connexion au serveur a été perdue, nouvelle tentative dans {{time}} ..."
+"La connexion au serveur a été perdue, nouvelle tentative dans {{time}}..."
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2004,7 +2000,7 @@ msgid ""
 "\n"
 "Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
 msgstr ""
-"La clé de l'hôte a changé, veuillez vérifier avec l'administrateur du serveur si cela est correcte, car il pourrait s'agir d'une attaque de type \"intermédiaire\".\n"
+"La clé de l'hôte a changé, veuillez vérifier avec l'administrateur du serveur si cela est correcte, car il pourrait s'agir d'une \"attaque de l'homme du milieu\".\n"
 "\n"
 "Voulez-vous REMPLACER votre clé d'hôte COURANTE \"{{prev}}\" par la clé MENTIONNÉE : {{key}} ?"
 
@@ -2027,8 +2023,8 @@ msgid ""
 "The path must be an absolute path, i.e. it must start with a forward slash "
 "'/'"
 msgstr ""
-"Le chemin doit être un chemin absolu, c.-à-d. Il doit commencer par un slash"
-" avant '/'"
+"Le chemin doit être un chemin absolu, c.-à-d. Il doit commencer par une barre"
+" oblique '/'"
 
 #: scripts/services/EditUriBuiltins.js:596
 msgid ""
@@ -2148,7 +2144,7 @@ msgstr "Tapez pour mettre en surbrillance les fichiers"
 
 #: templates/restorewizard.html:25
 msgid "Unknown backup size and versions"
-msgstr ""
+msgstr "Taille et version de sauvegarde inconnus"
 
 #: templates/pause.html:31
 msgid "Until resumed"
@@ -2160,7 +2156,7 @@ msgstr "Canal de mise à jour"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Update failed:"
-msgstr "Échec de mise à jour"
+msgstr "Échec de mise à jour :"
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid "Updating with existing database"
@@ -2172,7 +2168,7 @@ msgstr "Taille du volume téléversé"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
-msgstr "Téléversement du fichier de vérification ..."
+msgstr "Téléversement du fichier de vérification..."
 
 #: templates/settings.html:105
 msgid ""
@@ -2237,16 +2233,16 @@ msgstr "VISA, Mastercard, ... par Paypal"
 
 #: templates/addoredit.html:151
 msgid "Validating ..."
-msgstr "Validation ..."
+msgstr "Validation..."
 
 #: templates/home.html:28
 msgid "Verify files"
-msgstr "Vérifier fichier"
+msgstr "Vérifier fichiers"
 
 #: scripts/services/CaptchaService.js:32 scripts/services/ServerStatus.js:58
 #: templates/notificationarea.html:29
 msgid "Verifying ..."
-msgstr "Vérification ..."
+msgstr "Vérification..."
 
 #: scripts/services/CaptchaService.js:32
 msgid "Verifying answer"
@@ -2254,15 +2250,15 @@ msgstr "Vérification de la réponse"
 
 #: scripts/services/ServerStatus.js:34 scripts/services/ServerStatus.js:43
 msgid "Verifying backend data ..."
-msgstr "Vérification des données back-end"
+msgstr "Vérification des données back-end..."
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
-msgstr "Vérifications des données distantes"
+msgstr "Vérifications des données distantes..."
 
 #: scripts/services/ServerStatus.js:54
 msgid "Verifying restored files ..."
-msgstr "Vérification des fichiers restaurés"
+msgstr "Vérification des fichiers restaurés..."
 
 #: scripts/controllers/EditBackupController.js:32
 msgid "Very strong"
@@ -2295,7 +2291,7 @@ msgstr "En attente du début de la tâche"
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload ..."
-msgstr "En attente du téléversement ..."
+msgstr "En attente du téléversement..."
 
 #: templates/settings.html:100
 msgid "Warnings, errors and crashes"
@@ -2325,7 +2321,7 @@ msgstr "Semaines"
 
 #: templates/restorewizard.html:3
 msgid "Where do you want to restore from?"
-msgstr ""
+msgstr "D'oû voulez-vous restaurer vos fichiers ?"
 
 #: templates/restore.html:78
 msgid "Where do you want to restore the files to?"
@@ -2364,7 +2360,7 @@ msgstr "Oui, je suis courageux !"
 
 #: scripts/controllers/EditBackupController.js:342
 msgid "Yes, please break my backup!"
-msgstr "Oui, s'il vous plait cassez ma sauvegarde"
+msgstr "Oui, s'il vous plait cassez ma sauvegarde !"
 
 #: scripts/controllers/RestoreController.js:34
 msgid "Yesterday"
