@@ -319,14 +319,14 @@ namespace Duplicati.GUI.TrayIcon
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>
         /// <param name="con">The SQLite connection object</param>
-        private static void OpenDatabase(System.Data.IDbConnection con, bool UseDatabaseEncryption, string password)
+        /// <param name="useDatabaseEncryption">Specify if database is encrypted</param>
+        /// <param name="password">Encryption password</param>
+        private static void OpenDatabase(System.Data.IDbConnection con, bool useDatabaseEncryption, string password)
         {
-            bool noEncryption = !UseDatabaseEncryption;
-
             System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new Type[] { typeof(string) });
             string attemptedPassword;
 
-            if (noEncryption || string.IsNullOrEmpty(password))
+            if (!useDatabaseEncryption || string.IsNullOrEmpty(password))
                 attemptedPassword = null; //No encryption specified, attempt to open without
             else
                 attemptedPassword = password; //Encryption specified, attempt to open with
@@ -383,7 +383,7 @@ namespace Duplicati.GUI.TrayIcon
 
                 //The open method succeeded with the non-default method, now change the password
                 System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new Type[] { typeof(string) });
-                changePwdMethod.Invoke(con, new object[] { noEncryption ? null : password });
+                changePwdMethod.Invoke(con, new object[] { useDatabaseEncryption ? password : null });
             }
         }
 
