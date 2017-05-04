@@ -40,7 +40,7 @@ msgstr "AWS Access Key"
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Policy"
 
-#: index.html:222 index.html:238
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "À propos"
 
@@ -81,7 +81,7 @@ msgstr ""
 msgid "Add advanced option"
 msgstr "Ajouter une option avancée"
 
-#: index.html:207
+#: index.html:209
 msgid "Add backup"
 msgstr "Ajouter sauvegarde"
 
@@ -233,7 +233,7 @@ msgstr "Destination de sauvegarde"
 msgid "Backup location"
 msgstr ""
 
-#: templates/home.html:59
+#: templates/home.html:60
 msgid "Backup:"
 msgstr "Sauvegarde :"
 
@@ -308,6 +308,8 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:98
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:46
 #: scripts/services/EditUriBuiltins.js:596
@@ -353,6 +355,10 @@ msgstr "Sélectionnez un type de stockage pour commencer"
 #: templates/backends/gcs.html:11 templates/backends/oauth.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Cliquez sur le lien AuthID pour créer un AuthID"
+
+#: templates/home.html:30
+msgid "Commandline ..."
+msgstr ""
 
 #: templates/home.html:29
 msgid "Compact now"
@@ -404,15 +410,19 @@ msgstr "Confirmation nécessaire"
 msgid "Connect"
 msgstr "Connecter"
 
-#: index.html:315
+#: index.html:317
 msgid "Connect now"
 msgstr "Connecter maintenant"
 
-#: index.html:316
+#: templates/commandline.html:51
+msgid "Connecting to task ...."
+msgstr ""
+
+#: index.html:318
 msgid "Connecting..."
 msgstr "Connexion ..."
 
-#: index.html:307
+#: index.html:309
 msgid "Connection lost"
 msgstr "Connexion perdue"
 
@@ -421,7 +431,7 @@ msgstr "Connexion perdue"
 msgid "Connection worked!"
 msgstr "Connection fonctionnelle !"
 
-#: index.html:311
+#: index.html:313
 msgid "Connnecting to server ..."
 msgstr "Connexion au serveur ..."
 
@@ -457,7 +467,7 @@ msgstr "Copie échouée. Veuillez copier manuellement l'URL"
 msgid "Core options"
 msgstr "Options du noyau"
 
-#: scripts/controllers/StateController.js:33
+#: scripts/controllers/StateController.js:34
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr "Comptage ({{files}} fichiers trouvés, {{size}})"
 
@@ -465,7 +475,7 @@ msgstr "Comptage ({{files}} fichiers trouvés, {{size}})"
 msgid "Crashes only"
 msgstr "Uniquement les accidents"
 
-#: templates/home.html:35
+#: templates/home.html:36
 msgid "Create bug report ..."
 msgstr "Crée un rapport d'erreur ..."
 
@@ -528,6 +538,10 @@ msgstr "URL serveur personnalisée ({{server}})"
 #: templates/backends/gcs.html:29 templates/backends/s3.html:41
 msgid "Custom storage class ({{class}})"
 msgstr "Classe de stockage personnalisée ({{class}})"
+
+#: templates/home.html:27
+msgid "Database ..."
+msgstr ""
 
 #: scripts/services/AppUtils.js:90 templates/addoredit.html:314
 msgid "Days"
@@ -620,15 +634,15 @@ msgid "Do you really want to delete the local database for: {{name}}"
 msgstr ""
 "Voulez-vous vraiment supprimer la base de données locale pour : {{name}} ?"
 
-#: index.html:138 index.html:265
+#: index.html:139 index.html:267
 msgid "Donate"
 msgstr "Faire un don"
 
-#: index.html:141 index.html:268
+#: index.html:142 index.html:270
 msgid "Donate with Bitcoins"
 msgstr "Faire un don en Bitcoins"
 
-#: index.html:144 index.html:271
+#: index.html:145 index.html:273
 msgid "Donate with PayPal"
 msgstr "Faire un don avec PayPal"
 
@@ -668,13 +682,9 @@ msgstr "Téléchargement de mise à jour ..."
 msgid "Duplicate option {{opt}}"
 msgstr "Option de duplication {{opt}}"
 
-#: index.html:259
+#: index.html:261
 msgid "Duplicati Website"
 msgstr "Site internet de Duplicati"
-
-#: index.html:160
-msgid "Duplicati is paused"
-msgstr "Duplicati est en pause"
 
 #: templates/delete.html:15
 msgid ""
@@ -776,6 +786,8 @@ msgstr ""
 msgid "Enter the destination path"
 msgstr "Entrez le chemin de destination"
 
+#: scripts/controllers/CommandlineController.js:170
+#: scripts/controllers/CommandlineController.js:74
 #: scripts/controllers/ExportController.js:28
 #: scripts/controllers/RestoreController.js:114
 #: scripts/controllers/RestoreController.js:144
@@ -879,6 +891,8 @@ msgstr ""
 msgid "Failed to connect:"
 msgstr "Échec de la connexion :"
 
+#: scripts/controllers/CommandlineController.js:170
+#: scripts/controllers/CommandlineController.js:74
 #: scripts/controllers/ExportController.js:28
 #: scripts/controllers/LogController.js:77
 #: scripts/controllers/RestoreController.js:291
@@ -903,7 +917,7 @@ msgstr "Échec de la récupération des information du chemin : {{message}}"
 msgid "Failed to import:"
 msgstr "Échec de l'import :"
 
-#: scripts/controllers/EditBackupController.js:613
+#: scripts/controllers/EditBackupController.js:632
 msgid "Failed to read backup defaults:"
 msgstr "Échec de la lecture des paramètres par défaut de la sauvegarde :"
 
@@ -933,7 +947,7 @@ msgid "Filters"
 msgstr "Filtres"
 
 #: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:55
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:65 templates/commandline.html:60
 msgid "Finished!"
 msgstr "Terminé !"
 
@@ -947,10 +961,6 @@ msgstr "Dossier"
 #: templates/restore.html:105 templates/restore.html:89
 msgid "Folder path"
 msgstr "Chemin du dossier"
-
-#: index.html:168 index.html:178
-msgid "Force stop"
-msgstr "Forcer l'arrêt"
 
 #: scripts/services/AppUtils.js:107
 msgid "Fri"
@@ -1004,7 +1014,7 @@ msgstr "Cacher"
 msgid "Hide hidden folders"
 msgstr "Masquer les dossiers cachés"
 
-#: index.html:204 scripts/services/AppUtils.js:61
+#: index.html:206 scripts/services/AppUtils.js:61
 msgid "Home"
 msgstr "Poste de travail"
 
@@ -1179,7 +1189,7 @@ msgstr "Langue dans l'interface utilisateur"
 msgid "Last month"
 msgstr "Mois dernier"
 
-#: templates/home.html:40
+#: templates/home.html:41
 msgid "Last successful run:"
 msgstr "Dernière exécution réussie :"
 
@@ -1254,7 +1264,7 @@ msgstr "Historique pour <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Données d'historique du serveur"
 
-#: index.html:225
+#: index.html:227
 msgid "Log out"
 msgstr "Déconnexion"
 
@@ -1270,15 +1280,11 @@ msgstr "MByte/s"
 msgid "Maintenance"
 msgstr "Maintenance"
 
-#: templates/home.html:27
-msgid "Manage database ..."
-msgstr "Gérer la base de données ..."
-
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
 msgstr "Entrée manuelle du chemin"
 
-#: index.html:149 templates/addoredit.html:123 templates/addoredit.html:165
+#: index.html:150 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:340 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1345,7 +1351,7 @@ msgstr "Mes photos"
 msgid "Name"
 msgstr "Nom"
 
-#: templates/home.html:46
+#: templates/home.html:47
 msgid "Never"
 msgstr "Jamais"
 
@@ -1368,15 +1374,15 @@ msgstr ""
 msgid "Next"
 msgstr "Suivant"
 
-#: templates/home.html:50
+#: templates/home.html:51
 msgid "Next scheduled run:"
 msgstr "Prochaine exécution programmée :"
 
-#: index.html:187
+#: index.html:181
 msgid "Next scheduled task:"
 msgstr "Prochaine tâche planifiée :"
 
-#: index.html:183
+#: index.html:178
 msgid "Next task:"
 msgstr "Prochaine tâche :"
 
@@ -1434,7 +1440,7 @@ msgstr ""
 msgid "No passphrase entered"
 msgstr "Aucune phrase secrète entrée"
 
-#: index.html:189
+#: index.html:183
 msgid "No scheduled tasks"
 msgstr "Pas de tâche planifié"
 
@@ -1640,7 +1646,7 @@ msgstr "Réparation ...."
 msgid "Repeat Passphrase"
 msgstr "Répeter la phrase secrète"
 
-#: templates/home.html:32
+#: templates/home.html:33
 msgid "Reporting:"
 msgstr "Communication de données :"
 
@@ -1648,7 +1654,7 @@ msgstr "Communication de données :"
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#: index.html:210 templates/restore.html:131
+#: index.html:212 templates/restore.html:131
 msgid "Restore"
 msgstr "Restaurer"
 
@@ -1690,7 +1696,7 @@ msgstr "Autorisations de lecture/écriture de restauration"
 msgid "Restoring files ..."
 msgstr "Restauration des fichiers ..."
 
-#: index.html:213
+#: index.html:215
 msgid "Resume"
 msgstr "Reprendre"
 
@@ -1698,19 +1704,23 @@ msgstr "Reprendre"
 msgid "Run again every"
 msgstr "Relancer tous les"
 
-#: templates/home.html:13 templates/home.html:46
+#: templates/home.html:13 templates/home.html:47
 msgid "Run now"
 msgstr "Démarrer maintenant"
 
-#: scripts/controllers/StateController.js:24
+#: scripts/controllers/StateController.js:25
 msgid "Running ..."
 msgstr "En cours d'exécution ..."
 
-#: index.html:176
-msgid "Running task"
-msgstr "Tâche en cours"
+#: templates/commandline.html:58
+msgid "Running ...."
+msgstr ""
 
-#: index.html:165
+#: templates/commandline.html:47
+msgid "Running commandline entry"
+msgstr ""
+
+#: index.html:170
 msgid "Running task:"
 msgstr "Tâche en cours :"
 
@@ -1791,7 +1801,8 @@ msgstr "Serveur et port"
 msgid "Server hostname or IP"
 msgstr "Nom d'hôte du serveur ou IP"
 
-#: templates/restoredirect.html:95 templates/waitarea.html:15
+#: templates/commandline.html:49 templates/restoredirect.html:95
+#: templates/waitarea.html:15
 msgid "Server is currently paused,"
 msgstr "Le serveur est actuellement en pause,"
 
@@ -1808,7 +1819,7 @@ msgstr "Serveur en pause"
 msgid "Server state properties"
 msgstr "Propriétés du statut serveur"
 
-#: index.html:216 templates/settings.html:2
+#: index.html:218 templates/settings.html:2
 msgid "Settings"
 msgstr "Paramètres"
 
@@ -1826,11 +1837,11 @@ msgstr "Montrer l'éditeur avancé"
 msgid "Show hidden folders"
 msgstr "Montrer les dossiers cachés"
 
-#: index.html:219
+#: index.html:221
 msgid "Show log"
 msgstr "Montrer l'historique"
 
-#: templates/home.html:34
+#: templates/home.html:35
 msgid "Show log ..."
 msgstr "Montrer l'historique ..."
 
@@ -1858,7 +1869,7 @@ msgstr "Données source"
 msgid "Source folders"
 msgstr "Dossiers source"
 
-#: templates/home.html:55
+#: templates/home.html:56
 msgid "Source:"
 msgstr "Source :"
 
@@ -1879,9 +1890,34 @@ msgstr "Démarrage ..."
 msgid "Starting the restore process ..."
 msgstr "Démarrage du processus de restauration ..."
 
-#: index.html:169 index.html:179
-msgid "Stop"
-msgstr "Stop"
+#: scripts/controllers/StateController.js:107
+msgid "Stop after the current file"
+msgstr ""
+
+#: scripts/controllers/StateController.js:98
+msgid "Stop after upload"
+msgstr ""
+
+#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:98
+msgid "Stop now"
+msgstr ""
+
+#: scripts/controllers/StateController.js:96
+msgid "Stop running backup"
+msgstr ""
+
+#: scripts/controllers/StateController.js:105
+msgid "Stop running task"
+msgstr ""
+
+#: index.html:166
+msgid "Stopping after upload:"
+msgstr ""
+
+#: index.html:171
+msgid "Stopping task:"
+msgstr ""
 
 #: templates/edituri.html:3
 msgid "Storage Type"
@@ -1985,7 +2021,7 @@ msgstr ""
 "Le nom du bucket devrait commencer par votre nom d'utilisateur, l'ajouter "
 "automatiquement ?"
 
-#: index.html:308
+#: index.html:310
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr ""
 "La connexion au serveur a été perdue, nouvelle tentative dans {{time}} ..."
@@ -2272,7 +2308,7 @@ msgstr "Très fort"
 msgid "Very weak"
 msgstr "Très faible"
 
-#: index.html:244
+#: index.html:246
 msgid "Visit us on"
 msgstr "Rendez nous visite sur"
 
@@ -2292,6 +2328,10 @@ msgstr ""
 #: templates/waitarea.html:2
 msgid "Waiting for task to begin"
 msgstr "En attente du début de la tâche"
+
+#: templates/commandline.html:54
+msgid "Waiting for task to start ...."
+msgstr ""
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload ..."
@@ -2389,6 +2429,18 @@ msgstr ""
 #: templates/about.html:26
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "Vous êtes actuellement entrain d'utiliser {{appname}} {{version}}"
+
+#: scripts/controllers/StateController.js:97
+msgid ""
+"You can stop the backup immediately, or stop after the current file has been"
+" uploaded."
+msgstr ""
+
+#: scripts/controllers/StateController.js:106
+msgid ""
+"You can stop the task immediately, or allow the process to continue its "
+"current file and the stop."
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:351
 msgid ""
@@ -2532,7 +2584,8 @@ msgstr "pour un temps spécifique"
 msgid "forever"
 msgstr "pour toujours"
 
-#: index.html:161 templates/restoredirect.html:95 templates/waitarea.html:15
+#: templates/commandline.html:49 templates/restoredirect.html:95
+#: templates/waitarea.html:15
 msgid "resume now"
 msgstr "reprendre maintenant"
 
@@ -2549,11 +2602,11 @@ msgstr ""
 "href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} est sous licence "
 "<a href=\"{{licenselink}}\">{{licensename}}</a>."
 
-#: scripts/controllers/StateController.js:45
+#: scripts/controllers/StateController.js:46
 msgid "{{files}} files ({{size}}) to go"
 msgstr "{{files}} fichiers ({{size}}) restants"
 
-#: templates/home.html:60 templates/restorewizard.html:23
+#: templates/home.html:61 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
@@ -2568,6 +2621,6 @@ msgstr "{{number}} Heure"
 msgid "{{number}} Minutes"
 msgstr "{{number}} Minutes"
 
-#: templates/home.html:41
+#: templates/home.html:42
 msgid "{{time}} (took {{duration}})"
 msgstr "{{time}} (durée {{duration}})"

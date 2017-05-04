@@ -36,7 +36,7 @@ msgstr "AWS 访问密钥"
 msgid "AWS IAM Policy"
 msgstr "AWS IAM 策略"
 
-#: index.html:222 index.html:238
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "关于"
 
@@ -77,7 +77,7 @@ msgstr "添加新备份"
 msgid "Add advanced option"
 msgstr "添加高级选项"
 
-#: index.html:207
+#: index.html:209
 msgid "Add backup"
 msgstr "新增备份"
 
@@ -216,14 +216,14 @@ msgstr "后端模块："
 
 #: templates/addoredit.html:88
 msgid "Backup destination"
-msgstr "备份目标位置"
+msgstr "备份保存位置"
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
 msgid "Backup location"
 msgstr "备份位置"
 
-#: templates/home.html:59
+#: templates/home.html:60
 msgid "Backup:"
 msgstr "备份数据："
 
@@ -298,6 +298,8 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:98
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:46
 #: scripts/services/EditUriBuiltins.js:596
@@ -343,6 +345,10 @@ msgstr "选择存储类型以开始"
 #: templates/backends/gcs.html:11 templates/backends/oauth.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr "点击\"授权 ID\"链接来创建一个授权 ID"
+
+#: templates/home.html:30
+msgid "Commandline ..."
+msgstr ""
 
 #: templates/home.html:29
 msgid "Compact now"
@@ -394,15 +400,19 @@ msgstr "需要确认"
 msgid "Connect"
 msgstr "连接"
 
-#: index.html:315
+#: index.html:317
 msgid "Connect now"
 msgstr "立即连接"
 
-#: index.html:316
+#: templates/commandline.html:51
+msgid "Connecting to task ...."
+msgstr ""
+
+#: index.html:318
 msgid "Connecting..."
 msgstr "正在连接…"
 
-#: index.html:307
+#: index.html:309
 msgid "Connection lost"
 msgstr "连接中断"
 
@@ -411,7 +421,7 @@ msgstr "连接中断"
 msgid "Connection worked!"
 msgstr "连接正常！"
 
-#: index.html:311
+#: index.html:313
 msgid "Connnecting to server ..."
 msgstr "正在连接服务器…"
 
@@ -447,7 +457,7 @@ msgstr "复制失败，请手动复制此地址"
 msgid "Core options"
 msgstr "核心选项"
 
-#: scripts/controllers/StateController.js:33
+#: scripts/controllers/StateController.js:34
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr "正在计算 ( {{files}} 个文件已找到，总计 {{size}} )"
 
@@ -455,7 +465,7 @@ msgstr "正在计算 ( {{files}} 个文件已找到，总计 {{size}} )"
 msgid "Crashes only"
 msgstr "仅崩溃"
 
-#: templates/home.html:35
+#: templates/home.html:36
 msgid "Create bug report ..."
 msgstr "创建 bug 报告…"
 
@@ -519,6 +529,10 @@ msgstr "自定义服务器地址 ({{server}})"
 msgid "Custom storage class ({{class}})"
 msgstr "自定义存储类别 ({{class}})"
 
+#: templates/home.html:27
+msgid "Database ..."
+msgstr ""
+
 #: scripts/services/AppUtils.js:90 templates/addoredit.html:314
 msgid "Days"
 msgstr "天"
@@ -577,7 +591,7 @@ msgstr "桌面"
 
 #: templates/addoredit.html:25
 msgid "Destination"
-msgstr "目标位置"
+msgstr "保存位置"
 
 #: templates/restore.html:141
 msgid ""
@@ -608,15 +622,15 @@ msgstr "你确定要删除备份：\"{{name}}\"吗 ？"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "你确定要删除 \"{{name}}\" 的本地数据库吗 ？"
 
-#: index.html:138 index.html:265
+#: index.html:139 index.html:267
 msgid "Donate"
 msgstr "捐赠"
 
-#: index.html:141 index.html:268
+#: index.html:142 index.html:270
 msgid "Donate with Bitcoins"
 msgstr "通过比特币捐赠"
 
-#: index.html:144 index.html:271
+#: index.html:145 index.html:273
 msgid "Donate with PayPal"
 msgstr "通过 Paypal 捐赠"
 
@@ -656,13 +670,9 @@ msgstr "正在下载更新…"
 msgid "Duplicate option {{opt}}"
 msgstr "Duplicati 选项 {{opt}}"
 
-#: index.html:259
+#: index.html:261
 msgid "Duplicati Website"
 msgstr "Duplicati 网站"
-
-#: index.html:160
-msgid "Duplicati is paused"
-msgstr "Duplicati 暂停中"
 
 #: templates/delete.html:15
 msgid ""
@@ -759,6 +769,8 @@ msgstr "以命令行格式，一行一个参数，例如 {0}"
 msgid "Enter the destination path"
 msgstr "输入目标路径"
 
+#: scripts/controllers/CommandlineController.js:170
+#: scripts/controllers/CommandlineController.js:74
 #: scripts/controllers/ExportController.js:28
 #: scripts/controllers/RestoreController.js:114
 #: scripts/controllers/RestoreController.js:144
@@ -861,6 +873,8 @@ msgstr "构建临时数据库失败： {{message}}"
 msgid "Failed to connect:"
 msgstr "连接失败："
 
+#: scripts/controllers/CommandlineController.js:170
+#: scripts/controllers/CommandlineController.js:74
 #: scripts/controllers/ExportController.js:28
 #: scripts/controllers/LogController.js:77
 #: scripts/controllers/RestoreController.js:291
@@ -885,7 +899,7 @@ msgstr "获取路径信息失败： {{message}}"
 msgid "Failed to import:"
 msgstr "导入失败："
 
-#: scripts/controllers/EditBackupController.js:613
+#: scripts/controllers/EditBackupController.js:632
 msgid "Failed to read backup defaults:"
 msgstr "读取备份默认设置失败："
 
@@ -915,7 +929,7 @@ msgid "Filters"
 msgstr "过滤条件"
 
 #: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:55
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:65 templates/commandline.html:60
 msgid "Finished!"
 msgstr "已完成！"
 
@@ -929,10 +943,6 @@ msgstr "文件夹"
 #: templates/restore.html:105 templates/restore.html:89
 msgid "Folder path"
 msgstr "文件夹路径"
-
-#: index.html:168 index.html:178
-msgid "Force stop"
-msgstr "强制停止"
 
 #: scripts/services/AppUtils.js:107
 msgid "Fri"
@@ -986,7 +996,7 @@ msgstr "隐藏"
 msgid "Hide hidden folders"
 msgstr "隐藏被隐藏的文件夹"
 
-#: index.html:204 scripts/services/AppUtils.js:61
+#: index.html:206 scripts/services/AppUtils.js:61
 msgid "Home"
 msgstr "首页"
 
@@ -1153,7 +1163,7 @@ msgstr "显示语言"
 msgid "Last month"
 msgstr "上月"
 
-#: templates/home.html:40
+#: templates/home.html:41
 msgid "Last successful run:"
 msgstr "上一次成功运行于："
 
@@ -1179,11 +1189,11 @@ msgstr "实时"
 
 #: templates/addwizard.html:16
 msgid "Load a configuration from an exported job or a storage provider"
-msgstr ""
+msgstr "从已导出的任务或存储提供商处载入配置"
 
 #: templates/restorewizard.html:16
 msgid "Load destination from an exported job or a storage provider"
-msgstr ""
+msgstr "从已导出的任务或存储提供商处载入目标位置"
 
 #: templates/log.html:23 templates/log.html:54 templates/log.html:68
 msgid "Load older data"
@@ -1228,7 +1238,7 @@ msgstr "<b>{{Backup.Backup.Name}}</b>  的日志"
 msgid "Log data from the server"
 msgstr "Duplicati 服务器日志"
 
-#: index.html:225
+#: index.html:227
 msgid "Log out"
 msgstr "登出"
 
@@ -1244,15 +1254,11 @@ msgstr "MB/s"
 msgid "Maintenance"
 msgstr "维护"
 
-#: templates/home.html:27
-msgid "Manage database ..."
-msgstr "管理数据库…"
-
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
 msgstr "手动输入路径…"
 
-#: index.html:149 templates/addoredit.html:123 templates/addoredit.html:165
+#: index.html:150 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:340 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1319,7 +1325,7 @@ msgstr "我的图片"
 msgid "Name"
 msgstr "名称"
 
-#: templates/home.html:46
+#: templates/home.html:47
 msgid "Never"
 msgstr "从不"
 
@@ -1342,15 +1348,15 @@ msgstr ""
 msgid "Next"
 msgstr "下一步"
 
-#: templates/home.html:50
+#: templates/home.html:51
 msgid "Next scheduled run:"
 msgstr "下一次计划运行于："
 
-#: index.html:187
+#: index.html:181
 msgid "Next scheduled task:"
 msgstr "下一次计划任务："
 
-#: index.html:183
+#: index.html:178
 msgid "Next task:"
 msgstr "下一次任务："
 
@@ -1407,7 +1413,7 @@ msgstr "未恢复项目，请至少选择一项"
 msgid "No passphrase entered"
 msgstr "未输入密码"
 
-#: index.html:189
+#: index.html:183
 msgid "No scheduled tasks"
 msgstr "暂无计划任务"
 
@@ -1613,7 +1619,7 @@ msgstr "正在修复…"
 msgid "Repeat Passphrase"
 msgstr "重复密码"
 
-#: templates/home.html:32
+#: templates/home.html:33
 msgid "Reporting:"
 msgstr "报告："
 
@@ -1621,7 +1627,7 @@ msgstr "报告："
 msgid "Reset"
 msgstr "重置"
 
-#: index.html:210 templates/restore.html:131
+#: index.html:212 templates/restore.html:131
 msgid "Restore"
 msgstr "恢复文件"
 
@@ -1643,11 +1649,11 @@ msgstr "恢复自"
 
 #: templates/import.html:4
 msgid "Restore from backup configuration"
-msgstr ""
+msgstr "从备份配置中恢复"
 
 #: templates/restorewizard.html:15
 msgid "Restore from configuration ..."
-msgstr ""
+msgstr "从配置中恢复..."
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
@@ -1663,7 +1669,7 @@ msgstr "恢复读写权限"
 msgid "Restoring files ..."
 msgstr "正在恢复文件…"
 
-#: index.html:213
+#: index.html:215
 msgid "Resume"
 msgstr "恢复运行"
 
@@ -1671,19 +1677,23 @@ msgstr "恢复运行"
 msgid "Run again every"
 msgstr "重复运行每"
 
-#: templates/home.html:13 templates/home.html:46
+#: templates/home.html:13 templates/home.html:47
 msgid "Run now"
 msgstr "立即运行"
 
-#: scripts/controllers/StateController.js:24
+#: scripts/controllers/StateController.js:25
 msgid "Running ..."
 msgstr "正在运行…"
 
-#: index.html:176
-msgid "Running task"
-msgstr "运行中的任务"
+#: templates/commandline.html:58
+msgid "Running ...."
+msgstr ""
 
-#: index.html:165
+#: templates/commandline.html:47
+msgid "Running commandline entry"
+msgstr ""
+
+#: index.html:170
 msgid "Running task:"
 msgstr "运行中的任务："
 
@@ -1713,7 +1723,7 @@ msgstr "保存不同版本 (文件名中添加时间戳)"
 
 #: templates/import.html:19
 msgid "Save immediately"
-msgstr ""
+msgstr "立即保存"
 
 #: scripts/services/ServerStatus.js:50
 msgid "Scanning existing files ..."
@@ -1760,7 +1770,8 @@ msgstr "服务器与端口"
 msgid "Server hostname or IP"
 msgstr "服务器主机名或 IP"
 
-#: templates/restoredirect.html:95 templates/waitarea.html:15
+#: templates/commandline.html:49 templates/restoredirect.html:95
+#: templates/waitarea.html:15
 msgid "Server is currently paused,"
 msgstr "服务器暂停中，"
 
@@ -1776,7 +1787,7 @@ msgstr "服务器已暂停"
 msgid "Server state properties"
 msgstr "Duplicati 服务器状态"
 
-#: index.html:216 templates/settings.html:2
+#: index.html:218 templates/settings.html:2
 msgid "Settings"
 msgstr "设置"
 
@@ -1794,11 +1805,11 @@ msgstr "显示高级编辑器"
 msgid "Show hidden folders"
 msgstr "显示隐藏文件夹"
 
-#: index.html:219
+#: index.html:221
 msgid "Show log"
 msgstr "查看日志"
 
-#: templates/home.html:34
+#: templates/home.html:35
 msgid "Show log ..."
 msgstr "查看日志…"
 
@@ -1824,7 +1835,7 @@ msgstr "源数据"
 msgid "Source folders"
 msgstr "源文件夹"
 
-#: templates/home.html:55
+#: templates/home.html:56
 msgid "Source:"
 msgstr "源数据："
 
@@ -1845,9 +1856,34 @@ msgstr "准备开始…"
 msgid "Starting the restore process ..."
 msgstr "正在开始恢复操作…"
 
-#: index.html:169 index.html:179
-msgid "Stop"
-msgstr "停止"
+#: scripts/controllers/StateController.js:107
+msgid "Stop after the current file"
+msgstr ""
+
+#: scripts/controllers/StateController.js:98
+msgid "Stop after upload"
+msgstr ""
+
+#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:98
+msgid "Stop now"
+msgstr ""
+
+#: scripts/controllers/StateController.js:96
+msgid "Stop running backup"
+msgstr ""
+
+#: scripts/controllers/StateController.js:105
+msgid "Stop running task"
+msgstr ""
+
+#: index.html:166
+msgid "Stopping after upload:"
+msgstr ""
+
+#: index.html:171
+msgid "Stopping task:"
+msgstr ""
 
 #: templates/edituri.html:3
 msgid "Storage Type"
@@ -1863,7 +1899,7 @@ msgstr "创建 Bucket 的存储类别"
 
 #: templates/log.html:7
 msgid "Stored"
-msgstr "已保存"
+msgstr "存档"
 
 #: scripts/controllers/EditBackupController.js:31
 msgid "Strong"
@@ -1947,7 +1983,7 @@ msgid ""
 "The bucket name should start with your username, prepend automatically?"
 msgstr "Bucket 名称应该以你的用户名开头，自动加上？"
 
-#: index.html:308
+#: index.html:310
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr "服务器连接中断，将在 {{time}} 后重新连接…"
 
@@ -2211,7 +2247,7 @@ msgstr "强度非常高"
 msgid "Very weak"
 msgstr "强度非常低"
 
-#: index.html:244
+#: index.html:246
 msgid "Visit us on"
 msgstr "了解我们"
 
@@ -2228,6 +2264,10 @@ msgstr "警告：这将使你以后不再能恢复数据"
 #: templates/waitarea.html:2
 msgid "Waiting for task to begin"
 msgstr "等待任务开始…"
+
+#: templates/commandline.html:54
+msgid "Waiting for task to start ...."
+msgstr ""
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload ..."
@@ -2323,6 +2363,18 @@ msgstr ""
 #: templates/about.html:26
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "当前正在运行 {{appname}} {{version}}"
+
+#: scripts/controllers/StateController.js:97
+msgid ""
+"You can stop the backup immediately, or stop after the current file has been"
+" uploaded."
+msgstr ""
+
+#: scripts/controllers/StateController.js:106
+msgid ""
+"You can stop the task immediately, or allow the process to continue its "
+"current file and the stop."
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:351
 msgid ""
@@ -2451,7 +2503,8 @@ msgstr "指定时长"
 msgid "forever"
 msgstr "永久"
 
-#: index.html:161 templates/restoredirect.html:95 templates/waitarea.html:15
+#: templates/commandline.html:49 templates/restoredirect.html:95
+#: templates/waitarea.html:15
 msgid "resume now"
 msgstr "立即恢复运行"
 
@@ -2467,11 +2520,11 @@ msgstr ""
 "href=\"{{websitelink}}\">{{websitename}}</a> 下载. {{appname}} 采用 <a "
 "href=\"{{licenselink}}\">{{licensename}}</a> 授权."
 
-#: scripts/controllers/StateController.js:45
+#: scripts/controllers/StateController.js:46
 msgid "{{files}} files ({{size}}) to go"
 msgstr "剩余 {{files}} 个文件 ({{size}})"
 
-#: templates/home.html:60 templates/restorewizard.html:23
+#: templates/home.html:61 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} 个版本"
@@ -2485,6 +2538,6 @@ msgstr "{{number}} 小时"
 msgid "{{number}} Minutes"
 msgstr "{{number}} 分钟"
 
-#: templates/home.html:41
+#: templates/home.html:42
 msgid "{{time}} (took {{duration}})"
 msgstr "{{time}} (耗时 {{duration}})"

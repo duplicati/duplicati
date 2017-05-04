@@ -36,7 +36,7 @@ msgstr "AWS Toegangssleutel"
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Beleid"
 
-#: index.html:222 index.html:238
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "Over"
 
@@ -77,7 +77,7 @@ msgstr "Nieuwe back-up toevoegen"
 msgid "Add advanced option"
 msgstr "Voeg geavanceerde optie toe"
 
-#: index.html:207
+#: index.html:209
 msgid "Add backup"
 msgstr "Back-up toevoegen"
 
@@ -228,7 +228,7 @@ msgstr "Back-updoel"
 msgid "Backup location"
 msgstr "Back-up locatie"
 
-#: templates/home.html:59
+#: templates/home.html:60
 msgid "Backup:"
 msgstr "Back-up:"
 
@@ -303,6 +303,8 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:98
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:46
 #: scripts/services/EditUriBuiltins.js:596
@@ -348,6 +350,10 @@ msgstr "Kies een opslagtype om aan de slag te gaan"
 #: templates/backends/gcs.html:11 templates/backends/oauth.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Klik op de AuthID link om een AuthID aan te maken"
+
+#: templates/home.html:30
+msgid "Commandline ..."
+msgstr ""
 
 #: templates/home.html:29
 msgid "Compact now"
@@ -399,15 +405,19 @@ msgstr "Bevestiging vereist"
 msgid "Connect"
 msgstr "Verbind"
 
-#: index.html:315
+#: index.html:317
 msgid "Connect now"
 msgstr "Verbind nu"
 
-#: index.html:316
+#: templates/commandline.html:51
+msgid "Connecting to task ...."
+msgstr ""
+
+#: index.html:318
 msgid "Connecting..."
 msgstr "Verbinden..."
 
-#: index.html:307
+#: index.html:309
 msgid "Connection lost"
 msgstr "Verbinding verbroken"
 
@@ -416,7 +426,7 @@ msgstr "Verbinding verbroken"
 msgid "Connection worked!"
 msgstr "Verbinding werkt!"
 
-#: index.html:311
+#: index.html:313
 msgid "Connnecting to server ..."
 msgstr "Verbinden met server ..."
 
@@ -452,7 +462,7 @@ msgstr "Kopiëren mislukt. Kopieer de URL handmatig"
 msgid "Core options"
 msgstr "Kern-opties"
 
-#: scripts/controllers/StateController.js:33
+#: scripts/controllers/StateController.js:34
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr "Tellen ({{files}} bestanden gevonden, {{size}})"
 
@@ -460,7 +470,7 @@ msgstr "Tellen ({{files}} bestanden gevonden, {{size}})"
 msgid "Crashes only"
 msgstr "Alleen crashes"
 
-#: templates/home.html:35
+#: templates/home.html:36
 msgid "Create bug report ..."
 msgstr "Bug rapport maken ..."
 
@@ -523,6 +533,10 @@ msgstr "Aangepaste server url ({{server}})"
 #: templates/backends/gcs.html:29 templates/backends/s3.html:41
 msgid "Custom storage class ({{class}})"
 msgstr "Aangepaste opslagklasse ({{class}})"
+
+#: templates/home.html:27
+msgid "Database ..."
+msgstr ""
 
 #: scripts/services/AppUtils.js:90 templates/addoredit.html:314
 msgid "Days"
@@ -615,15 +629,15 @@ msgstr "Wilt u de back-up \"{{name}}\" echt verwijderen?"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Wilt u de lokale database voor: {{name}} echt verwijderen?"
 
-#: index.html:138 index.html:265
+#: index.html:139 index.html:267
 msgid "Donate"
 msgstr "Doneren"
 
-#: index.html:141 index.html:268
+#: index.html:142 index.html:270
 msgid "Donate with Bitcoins"
 msgstr "Doneer met Bitcoins"
 
-#: index.html:144 index.html:271
+#: index.html:145 index.html:273
 msgid "Donate with PayPal"
 msgstr "Doneer met PayPal"
 
@@ -663,13 +677,9 @@ msgstr "Update downloaden ..."
 msgid "Duplicate option {{opt}}"
 msgstr "Dupliceer optie {{opt}}"
 
-#: index.html:259
+#: index.html:261
 msgid "Duplicati Website"
 msgstr "Duplicati Website"
-
-#: index.html:160
-msgid "Duplicati is paused"
-msgstr "Duplicati is gepauseerd"
 
 #: templates/delete.html:15
 msgid ""
@@ -769,6 +779,8 @@ msgstr ""
 msgid "Enter the destination path"
 msgstr "Geef het doelpad in"
 
+#: scripts/controllers/CommandlineController.js:170
+#: scripts/controllers/CommandlineController.js:74
 #: scripts/controllers/ExportController.js:28
 #: scripts/controllers/RestoreController.js:114
 #: scripts/controllers/RestoreController.js:144
@@ -871,6 +883,8 @@ msgstr "Opbouwen tijdelijke database mislukt: {{message}}"
 msgid "Failed to connect:"
 msgstr "Verbinden mislukt:"
 
+#: scripts/controllers/CommandlineController.js:170
+#: scripts/controllers/CommandlineController.js:74
 #: scripts/controllers/ExportController.js:28
 #: scripts/controllers/LogController.js:77
 #: scripts/controllers/RestoreController.js:291
@@ -895,7 +909,7 @@ msgstr "Ophalen pad-informatie mislukt: {{message}}"
 msgid "Failed to import:"
 msgstr "Importeren mislukt:"
 
-#: scripts/controllers/EditBackupController.js:613
+#: scripts/controllers/EditBackupController.js:632
 msgid "Failed to read backup defaults:"
 msgstr "Standaard instellingen voor back-up inlezen mislukt:"
 
@@ -925,7 +939,7 @@ msgid "Filters"
 msgstr "Filters"
 
 #: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:55
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:65 templates/commandline.html:60
 msgid "Finished!"
 msgstr "Klaar!"
 
@@ -939,10 +953,6 @@ msgstr "Map"
 #: templates/restore.html:105 templates/restore.html:89
 msgid "Folder path"
 msgstr "Map-pad"
-
-#: index.html:168 index.html:178
-msgid "Force stop"
-msgstr "Forceer stoppen"
 
 #: scripts/services/AppUtils.js:107
 msgid "Fri"
@@ -996,9 +1006,9 @@ msgstr "Verberg"
 msgid "Hide hidden folders"
 msgstr "Verberg verborgen bestanden"
 
-#: index.html:204 scripts/services/AppUtils.js:61
+#: index.html:206 scripts/services/AppUtils.js:61
 msgid "Home"
-msgstr "Thuis"
+msgstr "Start"
 
 #: scripts/services/AppUtils.js:89 scripts/services/AppUtils.js:99
 #: templates/settings.html:33
@@ -1172,7 +1182,7 @@ msgstr "Taal in gebruikersinterface"
 msgid "Last month"
 msgstr "Vorige maand"
 
-#: templates/home.html:40
+#: templates/home.html:41
 msgid "Last successful run:"
 msgstr "Laatste succesvolle uitvoering"
 
@@ -1199,10 +1209,11 @@ msgstr "Live"
 #: templates/addwizard.html:16
 msgid "Load a configuration from an exported job or a storage provider"
 msgstr ""
+"Laad een configuratie vanuit een geëxporteerde taak of een opslagprovider"
 
 #: templates/restorewizard.html:16
 msgid "Load destination from an exported job or a storage provider"
-msgstr ""
+msgstr "Laad doel vanuit een geëxporteerde taak of een opslagprovider"
 
 #: templates/log.html:23 templates/log.html:54 templates/log.html:68
 msgid "Load older data"
@@ -1247,7 +1258,7 @@ msgstr "Log gegevens voor <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Log gegevens van de server"
 
-#: index.html:225
+#: index.html:227
 msgid "Log out"
 msgstr "Uitloggen"
 
@@ -1263,15 +1274,11 @@ msgstr "MByte/s"
 msgid "Maintenance"
 msgstr "Onderhoud"
 
-#: templates/home.html:27
-msgid "Manage database ..."
-msgstr "Database-onderhoud ..."
-
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
 msgstr "Voer pad handmatig in"
 
-#: index.html:149 templates/addoredit.html:123 templates/addoredit.html:165
+#: index.html:150 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:340 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1338,7 +1345,7 @@ msgstr "Mijn Afbeeldingen"
 msgid "Name"
 msgstr "Naam"
 
-#: templates/home.html:46
+#: templates/home.html:47
 msgid "Never"
 msgstr "Nooit"
 
@@ -1361,15 +1368,15 @@ msgstr ""
 msgid "Next"
 msgstr "Volgende"
 
-#: templates/home.html:50
+#: templates/home.html:51
 msgid "Next scheduled run:"
 msgstr "Volgende geplande uitvoering:"
 
-#: index.html:187
+#: index.html:181
 msgid "Next scheduled task:"
 msgstr "Volgende geplande taak:"
 
-#: index.html:183
+#: index.html:178
 msgid "Next task:"
 msgstr "Volgende taak:"
 
@@ -1428,7 +1435,7 @@ msgstr "Geen items om te herstellen, selecteer één of meer items"
 msgid "No passphrase entered"
 msgstr "Geen wachtwoordzin ingegeven"
 
-#: index.html:189
+#: index.html:183
 msgid "No scheduled tasks"
 msgstr "Geen geplande taken"
 
@@ -1634,7 +1641,7 @@ msgstr "Repareren ..."
 msgid "Repeat Passphrase"
 msgstr "Herhaal wachtwoordzin"
 
-#: templates/home.html:32
+#: templates/home.html:33
 msgid "Reporting:"
 msgstr "Rapportage:"
 
@@ -1642,7 +1649,7 @@ msgstr "Rapportage:"
 msgid "Reset"
 msgstr "Reset"
 
-#: index.html:210 templates/restore.html:131
+#: index.html:212 templates/restore.html:131
 msgid "Restore"
 msgstr "Herstellen"
 
@@ -1664,11 +1671,11 @@ msgstr "Herstellen vanaf"
 
 #: templates/import.html:4
 msgid "Restore from backup configuration"
-msgstr ""
+msgstr "Herstel vanuit back-up configuratie"
 
 #: templates/restorewizard.html:15
 msgid "Restore from configuration ..."
-msgstr ""
+msgstr "Herstel vanuit configuratie..."
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
@@ -1684,7 +1691,7 @@ msgstr "Herstel lees/schrijfpermissies"
 msgid "Restoring files ..."
 msgstr "Bestanden worden hersteld ..."
 
-#: index.html:213
+#: index.html:215
 msgid "Resume"
 msgstr "Hervat"
 
@@ -1692,19 +1699,23 @@ msgstr "Hervat"
 msgid "Run again every"
 msgstr "Voer opnieuw uit iedere"
 
-#: templates/home.html:13 templates/home.html:46
+#: templates/home.html:13 templates/home.html:47
 msgid "Run now"
 msgstr "Nu uitvoeren"
 
-#: scripts/controllers/StateController.js:24
+#: scripts/controllers/StateController.js:25
 msgid "Running ..."
 msgstr "Uitvoeren ..."
 
-#: index.html:176
-msgid "Running task"
-msgstr "Taak in uitvoering"
+#: templates/commandline.html:58
+msgid "Running ...."
+msgstr ""
 
-#: index.html:165
+#: templates/commandline.html:47
+msgid "Running commandline entry"
+msgstr ""
+
+#: index.html:170
 msgid "Running task:"
 msgstr "Taak in uitvoering:"
 
@@ -1734,7 +1745,7 @@ msgstr "Sla verschillende versies op met tijdstempel in de bestandsnaam"
 
 #: templates/import.html:19
 msgid "Save immediately"
-msgstr ""
+msgstr "Onmiddellijk opslaan"
 
 #: scripts/services/ServerStatus.js:50
 msgid "Scanning existing files ..."
@@ -1781,7 +1792,8 @@ msgstr "Server en poort"
 msgid "Server hostname or IP"
 msgstr "Server hostnaam of IP"
 
-#: templates/restoredirect.html:95 templates/waitarea.html:15
+#: templates/commandline.html:49 templates/restoredirect.html:95
+#: templates/waitarea.html:15
 msgid "Server is currently paused,"
 msgstr "Server is momenteel gepauzeerd,"
 
@@ -1797,7 +1809,7 @@ msgstr "Server gepauzeerd"
 msgid "Server state properties"
 msgstr "Server status eigenschappen"
 
-#: index.html:216 templates/settings.html:2
+#: index.html:218 templates/settings.html:2
 msgid "Settings"
 msgstr "Instellingen"
 
@@ -1815,11 +1827,11 @@ msgstr "Toon geavanceerde editor"
 msgid "Show hidden folders"
 msgstr "Toon verborgen mappen"
 
-#: index.html:219
+#: index.html:221
 msgid "Show log"
 msgstr "Log weergeven"
 
-#: templates/home.html:34
+#: templates/home.html:35
 msgid "Show log ..."
 msgstr "Log weergeven ..."
 
@@ -1847,7 +1859,7 @@ msgstr "Brongegevens"
 msgid "Source folders"
 msgstr "Bronmappen"
 
-#: templates/home.html:55
+#: templates/home.html:56
 msgid "Source:"
 msgstr "Bron:"
 
@@ -1868,9 +1880,34 @@ msgstr "Starten ..."
 msgid "Starting the restore process ..."
 msgstr "Starten van het herstelproces ..."
 
-#: index.html:169 index.html:179
-msgid "Stop"
-msgstr "Stop"
+#: scripts/controllers/StateController.js:107
+msgid "Stop after the current file"
+msgstr ""
+
+#: scripts/controllers/StateController.js:98
+msgid "Stop after upload"
+msgstr ""
+
+#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:98
+msgid "Stop now"
+msgstr ""
+
+#: scripts/controllers/StateController.js:96
+msgid "Stop running backup"
+msgstr ""
+
+#: scripts/controllers/StateController.js:105
+msgid "Stop running task"
+msgstr ""
+
+#: index.html:166
+msgid "Stopping after upload:"
+msgstr ""
+
+#: index.html:171
+msgid "Stopping task:"
+msgstr ""
 
 #: templates/edituri.html:3
 msgid "Storage Type"
@@ -1973,7 +2010,7 @@ msgstr ""
 "De bucket naam hoort te beginnen met uw gebruikersnaam, automatisch "
 "voorvoegen?"
 
-#: index.html:308
+#: index.html:310
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr ""
 "De verbinding met de server is verbroken, opnieuw proberen over {{time}} ..."
@@ -2259,7 +2296,7 @@ msgstr "Erg sterk"
 msgid "Very weak"
 msgstr "Erg zwak"
 
-#: index.html:244
+#: index.html:246
 msgid "Visit us on"
 msgstr "Bezoek ons op"
 
@@ -2280,6 +2317,10 @@ msgstr ""
 #: templates/waitarea.html:2
 msgid "Waiting for task to begin"
 msgstr "Wachten op het starten van de taak"
+
+#: templates/commandline.html:54
+msgid "Waiting for task to start ...."
+msgstr ""
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload ..."
@@ -2377,6 +2418,18 @@ msgstr ""
 #: templates/about.html:26
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "U werkt momenteel met {{appname}} {{version}}"
+
+#: scripts/controllers/StateController.js:97
+msgid ""
+"You can stop the backup immediately, or stop after the current file has been"
+" uploaded."
+msgstr ""
+
+#: scripts/controllers/StateController.js:106
+msgid ""
+"You can stop the task immediately, or allow the process to continue its "
+"current file and the stop."
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:351
 msgid ""
@@ -2521,7 +2574,8 @@ msgstr "voor een bepaalde tijd"
 msgid "forever"
 msgstr "voor altijd"
 
-#: index.html:161 templates/restoredirect.html:95 templates/waitarea.html:15
+#: templates/commandline.html:49 templates/restoredirect.html:95
+#: templates/waitarea.html:15
 msgid "resume now"
 msgstr "nu hervatten"
 
@@ -2538,11 +2592,11 @@ msgstr ""
 "href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is gelicenseerd "
 "onder de <a href=\"{{licenselink}}\">{{licensename}}</a>."
 
-#: scripts/controllers/StateController.js:45
+#: scripts/controllers/StateController.js:46
 msgid "{{files}} files ({{size}}) to go"
 msgstr "Nog {{files}} bestanden ({{size}}) te gaan"
 
-#: templates/home.html:60 templates/restorewizard.html:23
+#: templates/home.html:61 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versie"
@@ -2557,6 +2611,6 @@ msgstr "{{number}} Uur"
 msgid "{{number}} Minutes"
 msgstr "{{number}} Minuten"
 
-#: templates/home.html:41
+#: templates/home.html:42
 msgid "{{time}} (took {{duration}})"
 msgstr "{{time}} (duurde {{duration}})"
