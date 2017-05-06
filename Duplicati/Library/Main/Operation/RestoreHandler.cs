@@ -900,10 +900,10 @@ namespace Duplicati.Library.Main.Operation
                                 if (calcFileHash) filehasher.Initialize();
 
                                 using (var file = m_systemIO.FileOpenRead(targetpath))
-                                using (var block = new Blockprocessor(file, blockbuffer))
+                                using (var block = new BlockProcessor(file, blockbuffer.Length))
                                     foreach (var targetblock in restorelist.Blocks)
                                     {
-                                        var size = block.Readblock();
+                                        var size = block.ReadBlock(blockbuffer);
                                         if (size <= 0)
                                             break;
 

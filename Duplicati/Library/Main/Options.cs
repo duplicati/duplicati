@@ -1370,7 +1370,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the size the read-ahead buffer
         /// </summary>
-        public long FileReadBufferSize
+        public int FileReadBufferSize
         {
             get
             {
