@@ -173,6 +173,18 @@ namespace Duplicati.Library.Main
             m_messageSink = messageSink;
         }
 
+        /// <summary>
+        /// Appends another message sink to the controller
+        /// </summary>
+        /// <param name="sink">The sink to use.</param>
+        public void AppendSink(IMessageSink sink)
+        {
+            if (m_messageSink is MultiMessageSink)
+                ((MultiMessageSink)m_messageSink).Append(sink);
+            else
+                m_messageSink = new MultiMessageSink(m_messageSink, sink);
+        }
+
         public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
         {
             Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
@@ -388,19 +400,19 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public Duplicati.Library.Interface.IListChangesResults ListChanges(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListChangesResults ListChanges(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null, Action<Duplicati.Library.Interface.IListChangesResults, IEnumerable<Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>>> callback = null)
         {
             var t = new string[] { baseVersion, targetVersion };
 
             return RunAction(new ListChangesResults(), ref t, ref filter, (result) => {
-                new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter);
+                new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter, callback);
             });
         }
 
-        public Duplicati.Library.Interface.IListAffectedResults ListAffected(List<string> args)
+        public Duplicati.Library.Interface.IListAffectedResults ListAffected(List<string> args, Action<Duplicati.Library.Interface.IListAffectedResults> callback = null)
         {
             return RunAction(new ListAffectedResults(), (result) => {
-                new Operation.ListAffected(m_options, result).Run(args);
+                new Operation.ListAffected(m_options, result).Run(args, callback);
             });
         }
 

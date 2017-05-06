@@ -122,6 +122,7 @@
     <Compile Include="WebServer\RESTMethods\Licenses.cs" />
     <Compile Include="WebServer\CaptchaUtil.cs" />
     <Compile Include="WebServer\RESTMethods\Captcha.cs" />
+    <Compile Include="WebServer\RESTMethods\CommandLine.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

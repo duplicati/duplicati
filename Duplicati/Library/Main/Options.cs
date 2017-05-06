@@ -469,6 +469,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, Strings.Options.CompressionextensionfileLong(DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
                     new CommandLineArgument("verbose", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VerboseShort, Strings.Options.VerboseLong, "false"),
+                    new CommandLineArgument("full-result", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullresultShort, Strings.Options.FullresultLong, "false"),
 
                     new CommandLineArgument("overwrite", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OverwriteShort, Strings.Options.OverwriteLong, "false"),
 
@@ -1279,7 +1280,12 @@ namespace Duplicati.Library.Main
         /// A value indicating if the output should be verbose
         /// </summary>
         public bool Verbose { get { return GetBool("verbose"); } }
-        
+
+        /// <summary>
+        /// A value indicating if the returned value should not be truncated
+        /// </summary>
+        public bool FullResult { get { return GetBool("full-result"); } }
+
         /// <summary>
         /// A value indicating restored files overwrite existing ones
         /// </summary>

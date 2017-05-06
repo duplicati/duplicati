@@ -603,6 +603,9 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             items[n].Category = gettextCatalog.getString('Core options');
 
         function copyToList(lst, key) {
+            if (key != null && typeof(key) != typeof(''))
+                key = null;
+            
             for(var n in lst)
             {
                 if (key == null || key.toLowerCase() == lst[n].Key.toLowerCase())

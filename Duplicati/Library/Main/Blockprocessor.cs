@@ -9,6 +9,7 @@ namespace Duplicati.Library.Main
     public class BlockProcessor : IDisposable
     {
         private Stream m_stream;
+        private bool m_depleted = false;
 
         public BlockProcessor(Stream stream, int bufferSizeBytes)
         {
@@ -20,6 +21,9 @@ namespace Duplicati.Library.Main
 
         public int ReadBlock(byte[] buffer)
         {
+            if (m_depleted)
+                return 0;
+            
             var bytesleft = buffer.Length;
             var bytesread = 0;
             var read = 1;
@@ -30,6 +34,8 @@ namespace Duplicati.Library.Main
                 bytesleft -= read;
                 bytesread += read;
             }
+
+            m_depleted = bytesleft != 0;
 
             return bytesread;
         }

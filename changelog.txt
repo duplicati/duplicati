@@ -1,3 +1,28 @@
+2017-04-21 - 2.0.1.56_canary_2017-04-21
+==========
+* Fixed an issue with duplicate strings in S3 providers
+* Fixed an issue where a file being expanded during backup could cause the file to not be backed up.
+* Changed HTTP requests to not buffer the output to fix out-of-memory errors
+* Added a Python script to do restores completely without using Duplicati, thanks @downpoured !
+* Improved Amazon Cloud Drive by not waiting while performing batched requests
+
+2017-04-06 - 2.0.1.55_canary_2017-04-06
+==========
+* Updated SharpCompress to support creating zip files larger than 4 GiB
+* Added a commandline-like interface to the WebUI
+* Updated the backendtool to support full paths
+* Updated the list of S3 regions and servers
+* Change the UI to have a fixed top-bar with status and progress
+* Fixed a crash that occurs if the web-browser does not send `Accept-Language`
+* Fixed an issue with filtering the output of the LIST command
+
+2017-03-26 - 2.0.1.54_canary_2017-03-26
+==========
+* Fixed an unwanted empty folder creation, thanks @albertony
+* Fixed logic issues with volumesize minimum bounds, thanks @albertony
+* Fixed importing config files with AllowedDays set
+* Improved database performance on backups, thanks @danstahr
+
 2017-03-13 - 2.0.1.53_experimental_2017-03-13
 ==========
 * This update contains the same fixes as canary 2.0.1.51

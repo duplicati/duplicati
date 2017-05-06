@@ -296,10 +296,10 @@ Global
 		$2.ResourceNamePolicy = FileFormatDefault
 		$0.TextStylePolicy = $3
 		$3.FileWidth = 120
-		$3.inheritsSet = null
+		$3.inheritsSet = VisualStudio
 		$3.inheritsScope = text/plain
 		$3.EolMarker = Windows
-		$3.scope = text/microsoft-resx
+		$3.scope = text/plain
 		$0.TextStylePolicy = $4
 		$4.FileWidth = 120
 		$4.TabsToSpaces = True

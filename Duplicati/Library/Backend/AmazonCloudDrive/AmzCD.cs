@@ -54,6 +54,18 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         private DateTime m_waitUntil;
         private TimeSpan m_delayTimeSpan;
 
+        private enum RemoteOperation
+        {
+            First,
+            List,
+            Get,
+            Put,
+            Delete,
+            Rename
+        }
+
+        private RemoteOperation m_lastOperation = RemoteOperation.First;
+
         public AmzCD()
         {
         }
@@ -91,8 +103,16 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             m_userid = authid.Split(new string[] {":"}, StringSplitOptions.RemoveEmptyEntries).First();
         }
 
-        private void EnforceConsistencyDelay()
+        private void EnforceConsistencyDelay(RemoteOperation lastop)
         {
+            if (m_lastOperation == RemoteOperation.First)
+                m_lastOperation = lastop;
+                 
+            if (lastop == m_lastOperation)
+                return;
+
+            m_lastOperation = lastop;
+
             var wait = m_waitUntil - DateTime.Now;
             if (wait.Ticks > 0)
                 System.Threading.Thread.Sleep(wait);
@@ -163,8 +183,6 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
 
         private ResourceModel GetCurrentDirectory(bool createMissing, string altpath = null)
         {
-            EnforceConsistencyDelay();
-
             var rootResponse = m_oauth.GetJSONData<ListResponse>(string.Format("{0}/nodes?filters=isRoot:true", MetadataUrl));
             var parent = rootResponse.Data.First();
             var curpath = new List<string>();
@@ -259,7 +277,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         #region IStreamingBackend implementation
         public void Put(string remotename, System.IO.Stream stream)
         {
-            EnforceConsistencyDelay();
+            EnforceConsistencyDelay(RemoteOperation.Put);
 
             var overwrite = FileCache.ContainsKey(remotename);
             var fileid = overwrite ? m_filecache[remotename] : null;
@@ -309,7 +327,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         }
         public void Get(string remotename, System.IO.Stream stream)
         {
-            EnforceConsistencyDelay();
+            EnforceConsistencyDelay(RemoteOperation.Get);
 
             using (var resp = m_oauth.GetResponse(string.Format("{0}/nodes/{1}/content", ContentUrl, GetFileID(remotename))))
             using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
@@ -320,7 +338,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         #region IBackend implementation
         public List<IFileEntry> List()
         {
-            EnforceConsistencyDelay();
+            EnforceConsistencyDelay(RemoteOperation.List);
 
             var query = string.Format("{0}/nodes?filters=parents:{1}&limit={2}", MetadataUrl, Utility.Uri.UrlEncode(CurrentDirectory.ID), PAGE_SIZE);
             var res = new List<IFileEntry>();
@@ -380,7 +398,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         }
         public void Delete(string remotename)
         {
-            EnforceConsistencyDelay();
+            EnforceConsistencyDelay(RemoteOperation.Put);
 
             try
             {
@@ -402,6 +420,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         }
         public void CreateFolder()
         {
+            EnforceConsistencyDelay(RemoteOperation.List);
             GetCurrentDirectory(true);            
         }
         public string DisplayName
@@ -448,7 +467,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         #region IRenameEnabledBackend
         public void Rename(string oldname, string newname)
         {
-            EnforceConsistencyDelay();
+            EnforceConsistencyDelay(RemoteOperation.Rename);
 
             var id = GetFileID(oldname);
 
