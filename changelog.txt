@@ -1,3 +1,13 @@
+2017-05-17 - 2.0.1.57_canary_2017-05-17
+==========
+* Fixed an issue with not being performed correctly with AmzCD
+* Fixed the Windows verifyscript, thanks @mnaiman
+* Updated fonts to work better with Russian language display, thanks @vnau
+* Removed Tlsv1 option from server, thanks @mnaiman
+* Updated NewtonSoft.Json, MailKit, MimeKit and AlphaVSS
+* Fixed the way AllowWriteBuffering is used, which should fix delete errors on AmzCD
+* Fixed an error in searching for files with regular expressions
+
 2017-04-21 - 2.0.1.56_canary_2017-04-21
 ==========
 * Fixed an issue with duplicate strings in S3 providers
