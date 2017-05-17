@@ -44,30 +44,6 @@
     </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
-    <Reference Include="AlphaVSS.51.x86">
-      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.51.x86.dll</HintPath>
-    </Reference>
-    <Reference Include="AlphaVSS.52.x64">
-      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.52.x64.dll</HintPath>
-    </Reference>
-    <Reference Include="AlphaVSS.52.x86">
-      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.52.x86.dll</HintPath>
-    </Reference>
-    <Reference Include="AlphaVSS.60.x64">
-      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.60.x64.dll</HintPath>
-    </Reference>
-    <Reference Include="AlphaVSS.60.x86">
-      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.60.x86.dll</HintPath>
-    </Reference>
-    <Reference Include="AlphaVSS.Common">
-      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaVSS.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="AlphaShadow">
-      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\AlphaShadow.exe</HintPath>
-    </Reference>
-    <Reference Include="SnapshotQuery">
-      <HintPath>..\..\..\packages\AlphaVSS.1.2.4000.3\lib\net40\SnapshotQuery.exe</HintPath>
-    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="AlphaFS">
@@ -76,6 +52,9 @@
     <Reference Include="System.Transactions" />
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaVSS.Common">
+      <HintPath>..\..\..\packages\AlphaVSS.1.4.0\lib\net45\AlphaVSS.Common.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -144,4 +123,5 @@
   </Target>
   -->
   <ItemGroup />
+  <Import Project="..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets" Condition="Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" />
 </Project>
