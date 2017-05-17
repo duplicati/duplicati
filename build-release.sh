@@ -134,7 +134,7 @@ cp -R Duplicati/Server/webroot "${UPDATE_SOURCE}"
 
 # We copy some files for alphavss manually as they are not picked up by xbuild
 mkdir "${UPDATE_SOURCE}/alphavss"
-for FN in "Duplicati/Library/Snapshots/bin/Release/SnapshotQuery.exe" "Duplicati/Library/Snapshots/bin/Release/AlphaShadow.exe" Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.*.dll; do
+for FN in Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll; do
 	cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
 done
 
