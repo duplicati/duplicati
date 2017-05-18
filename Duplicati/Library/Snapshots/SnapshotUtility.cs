@@ -36,12 +36,44 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The ISnapshotService implementation</returns>
         public static ISnapshotService CreateSnapshot(string[] folders, Dictionary<string, string> options)
         {
-            if (Utility.Utility.IsClientLinux)
-                return new LinuxSnapshot(folders, options);
-            else
-                return new WindowsSnapshot(folders, options);
+            return
+                Utility.Utility.IsClientLinux
+                       ? CreateLinuxSnapshot(folders, options)
+                       : CreateWindowsSnapshot(folders, options);
+            
         }
 
+        // The two loader methods below guard agains the type system attempting to load types
+        // related to the OS specific implementations which may not be present for
+        // the operation system we are not running on (i.e. prevent loading AlphaVSS on Linux)
+
+        /// <summary>
+        /// Loads a snapshot implementation for Linux
+        /// </summary>
+        /// <param name="folders">The list of folders to create snapshots of</param>
+        /// <param name="options">A set of commandline options</param>
+        /// <returns>The ISnapshotService implementation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static ISnapshotService CreateLinuxSnapshot(string[] folders, Dictionary<string, string> options)
+        {
+            return new LinuxSnapshot(folders, options);
+        }
+
+        /// <summary>
+        /// Loads a snapshot implementation for Windows
+        /// </summary>
+        /// <param name="folders">The list of folders to create snapshots of</param>
+        /// <param name="options">A set of commandline options</param>
+        /// <returns>The ISnapshotService implementation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static ISnapshotService CreateWindowsSnapshot(string[] folders, Dictionary<string, string> options)
+        {
+            return new WindowsSnapshot(folders, options);
+        }
+
+        /// <summary>
+        /// Gets an interface for System.IO, which wraps all operations in a platform consistent manner.
+        /// </summary>
         public static ISystemIO SystemIO
         {
             get

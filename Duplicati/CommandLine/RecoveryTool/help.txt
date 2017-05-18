@@ -58,7 +58,7 @@ Some files are created in the system temporary folder, use --tempdir to set an a
 
 Restore
 -------
-Duplicati.RecoveryTool.exe index <localfolder> [version] [options]
+Duplicati.RecoveryTool.exe restore <localfolder> [version] [options]
 
 Restores all files to their respective destinations. Use --targetpath to choose another folder where the files are restored into.
 Use the filters, --exclude, to perform a partial restore.

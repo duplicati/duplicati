@@ -1,17 +1,20 @@
-backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gettextCatalog) {
+backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogService, gettextCatalog) {
 
     var apputils = this;
 
     this.exampleOptionString = '--dblock-size=100MB';
 
-    try {
-        moment.locale(
-            navigator.languages
-            ? navigator.languages[0]
-            : (navigator.language || navigator.userLanguage)
-        );
-    } catch (e) {
-    }    
+    function setMomentLocale() {
+        try {
+            var browser_lang = navigator.languages ?
+                navigator.languages[0] :
+                (navigator.language || navigator.userLanguage);
+            moment.locale($cookies.get('ui-locale') ? $cookies.get('ui-locale') : browser_lang);
+        } catch (e) {
+        }
+    }
+    setMomentLocale();
+    $rootScope.$on('ui_language_changed', setMomentLocale);
 
     this.formatSizes = ['TB', 'GB', 'MB', 'KB'];
     this.formatSizeString = function(val) {
@@ -38,6 +41,40 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gett
         if (m) $timeout(m);
     };
 
+    this.getEntryTypeFromIconCls = function(cls)
+    {
+        // Entry type is used in as the ALT entry,
+        // to guide screen reading software for visually
+        // impaired users
+
+        var res = gettextCatalog.getString('Folder');
+
+        if (cls == 'x-tree-icon-mydocuments')
+            res = gettextCatalog.getString('My Documents');
+        else if (cls == 'x-tree-icon-mymusic')
+            res = gettextCatalog.getString('My Music');
+        else if (cls == 'x-tree-icon-mypictures')
+            res = gettextCatalog.getString('My Pictures');
+        else if (cls == 'x-tree-icon-desktop')
+            res = gettextCatalog.getString('Desktop');
+        else if (cls == 'x-tree-icon-home')
+            res = gettextCatalog.getString('Home');
+        else if (cls == 'x-tree-icon-hypervmachine')
+            res = gettextCatalog.getString('Hyper-V Machine');
+        else if (cls == 'x-tree-icon-hyperv')
+            res = gettextCatalog.getString('Hyper-V Machines');
+        else if (cls == 'x-tree-icon-broken')
+            res = gettextCatalog.getString('Broken access');
+        else if (cls == 'x-tree-icon-locked')
+            res = gettextCatalog.getString('Access denied');
+        else if (cls == 'x-tree-icon-symlink')
+            res = gettextCatalog.getString('Symbolic link');
+        else if (cls == 'x-tree-icon-leaf')
+            res = gettextCatalog.getString('File');
+
+        return res;
+    };
+
     function reloadTexts() {
         apputils.fileSizeMultipliers = [
             {name: gettextCatalog.getString('byte'), value: ''},
@@ -54,6 +91,12 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gett
             {name: gettextCatalog.getString('Weeks'), value: 'W'},
             {name: gettextCatalog.getString('Months'), value: 'M'},
             {name: gettextCatalog.getString('Years'), value: 'Y'}
+        ];
+
+        apputils.shorttimerangeMultipliers = [
+            {name: gettextCatalog.getString('Seconds'), value: 's'},
+            {name: gettextCatalog.getString('Minutes'), value: 'm'},
+            {name: gettextCatalog.getString('Hours'), value: 'h'}
         ];
 
         apputils.daysOfWeek = [
@@ -397,7 +440,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gett
 
         res.querystring.replace(QUERY_REGEXP, function(str, key, val) {
             if (key)
-                res['--' + key] = decodeURIComponent(val);
+                res['--' + key] = decodeURIComponent((val || '').replace(/\+/g, '%20'));
         });
 
         var backends = {};
@@ -560,6 +603,9 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gett
             items[n].Category = gettextCatalog.getString('Core options');
 
         function copyToList(lst, key) {
+            if (key != null && typeof(key) != typeof(''))
+                key = null;
+            
             for(var n in lst)
             {
                 if (key == null || key.toLowerCase() == lst[n].Key.toLowerCase())
@@ -583,6 +629,25 @@ backupApp.service('AppUtils', function($rootScope, $timeout, DialogService, gett
             copyToList(sysinfo.BackendModules, backmodule);
 
         return items;
+    };
+
+    this.extractServerModuleOptions = function(advOptionsList, servermodulelist, servermodulesettings, optionlistname) {
+        if (optionlistname == null)
+            optionlistname = 'SupportedCommands';
+
+        for(var mix in servermodulelist) {
+            var mod = servermodulelist[mix];
+            for(var oix in mod[optionlistname]) {
+                var opt = mod[optionlistname][oix];
+                var prefixstr = '--' + opt.Name + '=';
+                for (var i = advOptionsList.length - 1; i >= 0; i--) {
+                    if (advOptionsList[i].indexOf(prefixstr) == 0) {
+                        servermodulesettings[opt.Name] = advOptionsList[i].substr(prefixstr.length);
+                        advOptionsList.splice(i, 1);
+                    }
+                }
+            }
+        }
     };
 
 });

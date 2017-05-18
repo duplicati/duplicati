@@ -12,12 +12,12 @@ namespace Duplicati.Library.Backend.Strings {
         public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
         public static string NoAMZKeyError { get { return LC.L(@"No Amazon S3 secret key given"); } }
         public static string NoAMZUserIDError { get { return LC.L(@"No Amazon S3 userID given"); } }
-        public static string S3EurobucketDescriptionLong { get { return LC.L(@"This flag is only used when creating new buckets. If the flag is set, the bucket is created on a european server. This flag forces the ""s3-use-new-style"" flag. Amazon charges slightly more for european buckets."); } }
+        public static string S3EurobucketDescriptionLong { get { return LC.L(@"This flag is only used when creating new buckets. If the flag is set, the bucket is created on a European server. This flag forces the ""s3-use-new-style"" flag. Amazon charges slightly more for European buckets."); } }
         public static string S3EurobucketDescriptionShort { get { return LC.L(@"Use a European server"); } }
         public static string S3NewStyleDescriptionLong { get { return LC.L(@"Specify this argument to make the S3 backend use subdomains rather than the previous url prefix method. See the Amazon S3 documentation for more details."); } }
         public static string S3NewStyleDescriptionShort { get { return LC.L(@"Use subdomain calling style"); } }
         public static string UnableToDecodeBucketnameError(string url) { return LC.L(@"Unable to determine the bucket name for host: {0}", url); }
-        public static string S3UseRRSDescriptionLong { get { return LC.L(@"This flag toggles the use of the special RRS header. Files stored using RRS are more likely to disapear than those stored normally, but also costs less to store. See the full description here: http://aws.amazon.com/about-aws/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"); } }
+        public static string S3UseRRSDescriptionLong { get { return LC.L(@"This flag toggles the use of the special RRS header. Files stored using RRS are more likely to disappear than those stored normally, but also costs less to store. See the full description here: http://aws.amazon.com/about-aws/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"); } }
         public static string S3UseRRSDescriptionShort { get { return LC.L(@"Use Reduced Redundancy Storage"); } }
         public static string DeprecatedUrlFormat(string url) { return LC.L(@"You are using a deprected url format, please change it to: {0}", url); }
         public static string Description_v2 { get { return LC.L(@"This backend can read and write data to an Amazon S3 compatible server. Allowed formats are: ""s3://bucketname/prefix"""); } }

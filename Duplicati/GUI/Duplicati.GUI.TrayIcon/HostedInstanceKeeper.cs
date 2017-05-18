@@ -30,7 +30,14 @@ namespace Duplicati.GUI.TrayIcon
                     Duplicati.Server.Program.ServerStartedEvent.Set();
                 } finally {
                     if (InstanceShutdown != null)
-                        InstanceShutdown();   
+                        try { InstanceShutdown(); }
+                        catch (Exception shutex)
+                        {
+                            if (m_runnerException != null)
+                                m_runnerException = new AggregateException(m_runnerException, shutex);
+                            else
+                                m_runnerException = shutex;
+                        }
                 }
 
             });
@@ -42,7 +49,7 @@ namespace Duplicati.GUI.TrayIcon
                 if (m_runnerException != null)
                     throw m_runnerException;
                 else
-                    throw new Exception("Hosted server startup timed out");
+                    throw new Duplicati.Library.Interface.UserInformationException("Hosted server startup timed out");
             }
 
             if (m_runnerException != null)

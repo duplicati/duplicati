@@ -16,6 +16,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation
@@ -37,15 +38,15 @@ namespace Duplicati.Library.Main.Operation
         {
             var ext = System.IO.Path.GetExtension(m_targetpath);
             var module = m_options.CompressionModule;
-            
-            if (ext != module)
+
+            if (ext == "" || string.Compare(ext, 1, module, 0, module.Length, StringComparison.OrdinalIgnoreCase) != 0)
                 m_targetpath = m_targetpath + "." + module;
         
             if (System.IO.File.Exists(m_targetpath))
-                throw new Exception(string.Format("Output file already exists, not overwriting: {0}", m_targetpath));
+                throw new UserInformationException(string.Format("Output file already exists, not overwriting: {0}", m_targetpath));
                 
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
                 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.BugReport_Running);
             m_result.OperationProgressUpdater.UpdateProgress(0);

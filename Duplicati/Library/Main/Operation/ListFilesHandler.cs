@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
 {    
@@ -21,8 +22,8 @@ namespace Duplicati.Library.Main.Operation
         public void Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
         {
             var parsedfilter = new Library.Utility.FilterExpression(filterstrings);
-            var simpleList = !(parsedfilter.Type == Library.Utility.FilterType.Simple || m_options.AllVersions);
             var filter = Library.Utility.JoinedFilterExpression.Join(parsedfilter, compositefilter);
+            var simpleList = !((filter is Library.Utility.FilterExpression && ((Library.Utility.FilterExpression)filter).Type == Library.Utility.FilterType.Simple) || m_options.AllVersions);
         
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
@@ -31,7 +32,7 @@ namespace Duplicati.Library.Main.Operation
                     m_result.SetDatabase(db);
                     using(var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
                     {
-                        if (parsedfilter.Type != Library.Utility.FilterType.Empty)
+                        if (!filter.Empty)
                         {
                             if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
                                 filesets.TakeFirst();
@@ -42,7 +43,7 @@ namespace Duplicati.Library.Main.Operation
                             files = filesets.SelectFolderContents(filter);
                         else if (m_options.ListPrefixOnly)
                             files = filesets.GetLargestPrefix(filter);
-                        else if (parsedfilter.Type == Duplicati.Library.Utility.FilterType.Empty)
+                        else if (filter.Empty)
                             files = null;
                         else
                             files = filesets.SelectFiles(filter);
@@ -70,9 +71,9 @@ namespace Duplicati.Library.Main.Operation
 
             //TODO: Add prefix and foldercontents
             if (m_options.ListFolderContents)
-                throw new Exception("Listing folder contents is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
+                throw new UserInformationException("Listing folder contents is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
             else if (m_options.ListPrefixOnly)
-                throw new Exception("Listing prefixes is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
+                throw new UserInformationException("Listing prefixes is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new Library.Utility.TempFile())
@@ -83,10 +84,10 @@ namespace Duplicati.Library.Main.Operation
                 
                 var filteredList = ParseAndFilterFilesets(backend.List(), m_options);
                 if (filteredList.Count == 0)
-                    throw new Exception("No filesets found on remote target");
+                    throw new UserInformationException("No filesets found on remote target");
 
                 var numberSeq = CreateResultSequence(filteredList);
-                if (parsedfilter.Type == Library.Utility.FilterType.Empty)
+                if (filter.Empty)
                 {
                     m_result.SetResult(numberSeq, null);
                     m_result.EncryptedFiles = filteredList.Any(x => !string.IsNullOrWhiteSpace(x.Value.EncryptionModule));

@@ -17,6 +17,7 @@
     <UpgradeBackupLocation />
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -50,6 +51,7 @@
     <Compile Include="IEncryption.cs" />
     <Compile Include="ICompression.cs" />
     <Compile Include="IFileEntry.cs" />
+    <Compile Include="IGenericSourceModule.cs" />
     <Compile Include="IGenericModule.cs" />
     <Compile Include="IQuotaEnabledBackend.cs" />
     <Compile Include="IStreamingBackend.cs" />
@@ -60,6 +62,7 @@
     <Compile Include="IConnectionModule.cs" />
     <Compile Include="IRenameEnabledBackend.cs" />
     <Compile Include="Strings.cs" />
+    <Compile Include="IGenericServerModule.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />

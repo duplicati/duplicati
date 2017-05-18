@@ -206,13 +206,13 @@ namespace Duplicati.Library.SQLiteHelper
                 catch (Exception ex)
                 {
                     //Hopefully a more explanatory error message
-                    throw new Exception(Strings.DatabaseUpgrader.DatabaseFormatError(ex.Message), ex);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.DatabaseUpgrader.DatabaseFormatError(ex.Message), ex);
                 }
 
                 Dictionary<string, IComparable> preparserVars = null;
 
                 if (dbversion > versions.Count)
-                    throw new Exception(Strings.DatabaseUpgrader.InvalidVersionError(dbversion, versions.Count, System.IO.Path.GetDirectoryName(sourcefile)));
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.DatabaseUpgrader.InvalidVersionError(dbversion, versions.Count, System.IO.Path.GetDirectoryName(sourcefile)));
                 else if (dbversion < versions.Count) // will need action, collect vars for preparser
                 {
                     preparserVars = new Dictionary<string, IComparable>(StringComparer.InvariantCultureIgnoreCase);

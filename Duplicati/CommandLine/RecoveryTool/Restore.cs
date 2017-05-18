@@ -94,9 +94,9 @@ namespace Duplicati.CommandLine.RecoveryTool
             var filehasher = string.IsNullOrWhiteSpace(filehash_str) ? null : System.Security.Cryptography.HashAlgorithm.Create(filehash_str);
 
             if (blockhasher == null)
-                throw new Exception(string.Format("Block hash algorithm not valid: {0}", blockhash_str));
+                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Block hash algorithm not valid: {0}", blockhash_str));
             if (filehasher == null)
-                throw new Exception(string.Format("File hash algorithm not valid: {0}", filehash_str));
+                throw new Duplicati.Library.Interface.UserInformationException(string.Format("File hash algorithm not valid: {0}", filehash_str));
 
             var hashesprblock = blocksize / (blockhasher.HashSize / 8);
 

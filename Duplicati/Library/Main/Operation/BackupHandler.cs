@@ -23,13 +23,17 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options m_options;
         private string m_backendurl;
 
+
         private LocalBackupDatabase m_database;
         private System.Data.IDbTransaction m_transaction;
-
-        private Library.Utility.IFilter m_filter;
+       
+        private Library.Utility.IFilter m_filter;;
         private Library.Utility.IFilter m_sourceFilter;
 
-        private BackupResults m_result;
+        private BackupResults m_result
+
+
+
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
@@ -38,16 +42,15 @@ namespace Duplicati.Library.Main.Operation
             m_backendurl = backendurl;
                             
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
-        }
-        
-        public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
-        {
-            if (!Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                log.AddWarning("hyperv-backup-vm is efective only on Windows OS.", null);
+                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported);
+       }
 
-            if (Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm") && options.SnapShotStrategy == Options.OptimizationStrategy.Off)
-                throw new Exception("Snapshot strategy cannot be Off when backuping Hyper-V using hyperv-backup-vm"); //VSS is required for Hyper-V backups
+
+
+
+        public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
+    kups
+
 
             try
             {
@@ -58,8 +61,6 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw;
-                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                    throw; //VSS is required for Hyper-V backups
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                     log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);
             }
@@ -68,9 +69,11 @@ namespace Duplicati.Library.Main.Operation
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux(sources, options.RawOptions)
                     :
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
-        }
+   
+    }
 
-        private void PreBackupVerify(BackendManager backend)
+
+        private void PreBackupVerify(BackendManager backend, string protectedfile)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
             using(new Logging.Timer("PreBackupVerify"))
@@ -83,7 +86,7 @@ namespace Duplicati.Library.Main.Operation
 						UpdateStorageStatsFromDatabase();
 					}
 					else
-						FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
                 }
                 catch (Exception ex)
                 {
@@ -185,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using(var testdb = new LocalTestDatabase(m_database))
                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
-                    new TestHandler(m_backendurl, m_options, new TestResults(m_result))
+                    new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
                         .DoRun(m_options.BackupTestSampleCount, testdb, backend);
             }
         }
@@ -260,10 +263,7 @@ namespace Duplicati.Library.Main.Operation
                 await uploader;
 
             // Grab the size of the last uploaded volume
-            return await flushReq.LastWriteSizeAync;
-        }
-
-        private async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
+private async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
             
@@ -432,11 +432,11 @@ namespace Duplicati.Library.Main.Operation
                     lh.Wait(500);
                 }
             }
-        }
-
-        public void Dispose()
+        }VolumeStatpublic void Dispose()
         {
             m_result.EndTime = DateTime.UtcNow;
+        }icks == 0)
+                m_result.EndTime = DateTime.UtcNow;
         }
     }
 }

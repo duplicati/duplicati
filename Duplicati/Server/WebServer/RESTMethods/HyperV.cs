@@ -14,22 +14,75 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;using System.Collections.Generic;using Duplicati.Library.Interface;
+using System;
+using System.Collections.Generic;
+using Duplicati.Library.Interface;
 using System.Linq;
+using System.Security.Principal;
 using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class HyperV : IRESTMethodGET, IRESTMethodDocumented
     {
-        public void GET(string key, RequestInfo info)        {
+        public void GET(string key, RequestInfo info)
+        {
+            // Early exit in case we are non-windows to prevent attempting to load Windows-only components
+            if (Library.Utility.Utility.IsClientWindows)
+                RealGET(key, info);
+            else
+                info.OutputOK(new string[0]);
+        }
+
+        // Make sure the JIT does not attempt to inline this call and thus load
+        // referenced types from System.Management here
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private void RealGET(string key, RequestInfo info)
+        {
+            var hypervUtility = new HyperVUtility();
+
+            if (!hypervUtility.IsHyperVInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
+            {
+                info.OutputOK(new string[0]);
+                return;
+            }
+
             try
             {
-                info.OutputOK(new HyperVUtility().GetHyperVGuests().Select(x => new { id = x.ID, name = x.Name }).ToList());
+                if (string.IsNullOrEmpty(key))
+                {
+                    hypervUtility.QueryHyperVGuestsInfo();
+                    info.OutputOK(hypervUtility.Guests.Select(x => new { id = x.ID, name = x.Name }).ToList());
+                }
+                else
+                {
+                    hypervUtility.QueryHyperVGuestsInfo(true);
+                    var foundVMs = hypervUtility.Guests.FindAll(x => x.ID.Equals(new Guid(key)));
+
+                    if (foundVMs.Count == 1)
+                        info.OutputOK(foundVMs[0].DataPaths.Select(x => new { text = x, id = x, cls = "folder", iconCls = "x-tree-icon-leaf", check = "false", leaf = "true" }).ToList());
+                    else
+                        info.ReportClientError(string.Format("Cannot find VM with ID {0}.", key));
+                }
             }
             catch (Exception ex)
             {
-                info.ReportClientError("Failed to enumerate Hyper-V virtual machines: " + ex.Message);
-            }        }        public string Description { get { return "Return a list of Hyper-V virtual machines"; } }        public IEnumerable<KeyValuePair<string, Type>> Types        {            get            {                return new KeyValuePair<string, Type>[] {                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(ICommandLineArgument[]))                };            }        }    }
+                info.ReportServerError("Failed to enumerate Hyper-V virtual machines: " + ex.Message);
+            }
+        }
+
+        public string Description { get { return "Return a list of Hyper-V virtual machines"; } }
+
+        public IEnumerable<KeyValuePair<string, Type>> Types
+        {
+            get
+            {
+                return new KeyValuePair<string, Type>[] {
+                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(ICommandLineArgument[]))
+                };
+            }
+        }
+
+    }
 }
 

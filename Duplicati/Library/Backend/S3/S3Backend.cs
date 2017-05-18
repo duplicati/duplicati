@@ -42,30 +42,44 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("DreamHost", "objects.dreamhost.com"),
             new KeyValuePair<string, string>("dinCloud - Chicago", "d3-ord.dincloud.com"),
             new KeyValuePair<string, string>("dinCloud - Los Angeles", "d3-lax.dincloud.com"),
+            new KeyValuePair<string, string>("IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net"),
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
         public static readonly KeyValuePair<string, string>[] KNOWN_S3_LOCATIONS = new KeyValuePair<string, string>[] {
             new KeyValuePair<string, string>("(default)", ""),
-            new KeyValuePair<string, string>("Europe (EU, Ireland)", "EU"),
+            new KeyValuePair<string, string>("Europe (EU)", "EU"),
+            new KeyValuePair<string, string>("Europe (EU, Frankfurt)", "eu-central-1"),
+            new KeyValuePair<string, string>("Europe (EU, Ireland)", "eu-west-1"),
+            new KeyValuePair<string, string>("Europe (EU, London)", "eu-west-2"),
             new KeyValuePair<string, string>("US East (Northern Virginia)", "us-east-1"),
-            new KeyValuePair<string, string>("US West (Northen California)", "us-west-1"),
+            new KeyValuePair<string, string>("US East (Ohio)", "us-east-2"),
+            new KeyValuePair<string, string>("US West (Northern California)", "us-west-1"),
             new KeyValuePair<string, string>("US West (Oregon)", "us-west-2"),
+            new KeyValuePair<string, string>("Canada (Central)", "ca-central-1"),
+            new KeyValuePair<string, string>("Asia Pacific (Mumbai)", "ap-south-1"),
             new KeyValuePair<string, string>("Asia Pacific (Singapore)", "ap-southeast-1"),
             new KeyValuePair<string, string>("Asia Pacific (Sydney)", "ap-southeast-2"),
             new KeyValuePair<string, string>("Asia Pacific (Tokyo)", "ap-northeast-1"),
-            new KeyValuePair<string, string>("South America (Sao Paulo)", "sa-east-1"),
+            new KeyValuePair<string, string>("Asia Pacific (Seoul)", "ap-northeast-2"),
+            new KeyValuePair<string, string>("South America (São Paulo)", "sa-east-1"),
         };
 
         public static readonly KeyValuePair<string, string>[] DEFAULT_S3_LOCATION_BASED_HOSTS = new KeyValuePair<string, string>[] {
             new KeyValuePair<string, string>("EU", "s3-eu-west-1.amazonaws.com"),
+            new KeyValuePair<string, string>("ca-central-1", "s3-ca-central-1.amazonaws.com"),
             new KeyValuePair<string, string>("eu-west-1", "s3-eu-west-1.amazonaws.com"),
+            new KeyValuePair<string, string>("eu-west-2", "s3-eu-west-2.amazonaws.com"),
+            new KeyValuePair<string, string>("eu-central-1", "s3-eu-central-1.amazonaws.com"),
             new KeyValuePair<string, string>("us-east-1", "s3.amazonaws.com"),
+            new KeyValuePair<string, string>("us-east-2", "s3.us-east-2.amazonaws.com"),
             new KeyValuePair<string, string>("us-west-1", "s3-us-west-1.amazonaws.com"),
             new KeyValuePair<string, string>("us-west-2", "s3-us-west-2.amazonaws.com"),
+            new KeyValuePair<string, string>("ap-south-1", "s3-ap-south-1.amazonaws.com"),
             new KeyValuePair<string, string>("ap-southeast-1", "s3-ap-southeast-1.amazonaws.com"),
             new KeyValuePair<string, string>("ap-southeast-2", "s3-ap-southeast-2.amazonaws.com"),
             new KeyValuePair<string, string>("ap-northeast-1", "s3-ap-northeast-1.amazonaws.com"),
+            new KeyValuePair<string, string>("ap-northeast-2", "s3-ap-northeast-2.amazonaws.com"),
             new KeyValuePair<string, string>("sa-east-1", "s3-sa-east-1.amazonaws.com"),
         };
 
@@ -154,9 +168,9 @@ namespace Duplicati.Library.Backend
                 awsKey = uri.Password;
 
             if (string.IsNullOrEmpty(awsID))
-                throw new Exception(Strings.S3Backend.NoAMZUserIDError);
+                throw new UserInformationException(Strings.S3Backend.NoAMZUserIDError);
             if (string.IsNullOrEmpty(awsKey))
-                throw new Exception(Strings.S3Backend.NoAMZKeyError);
+                throw new UserInformationException(Strings.S3Backend.NoAMZKeyError);
 
             bool euBuckets = Utility.Utility.ParseBoolOption(options, EU_BUCKETS_OPTION);
             bool useRRS = Utility.Utility.ParseBoolOption(options, RRS_OPTION);
@@ -166,7 +180,7 @@ namespace Duplicati.Library.Backend
             options.TryGetValue(LOCATION_OPTION, out locationConstraint);
 
             if (!string.IsNullOrEmpty(locationConstraint) && euBuckets)
-                throw new Exception(Strings.S3Backend.OptionsAreMutuallyExclusiveError(LOCATION_OPTION, EU_BUCKETS_OPTION));
+                throw new UserInformationException(Strings.S3Backend.OptionsAreMutuallyExclusiveError(LOCATION_OPTION, EU_BUCKETS_OPTION));
 
             if (euBuckets)
                 locationConstraint = S3_EU_REGION_NAME;
@@ -225,7 +239,7 @@ namespace Duplicati.Library.Backend
                             m_prefix = m_prefix.Substring(1);
                     }
                     else
-                        throw new Exception(Strings.S3Backend.UnableToDecodeBucketnameError(url));
+                        throw new UserInformationException(Strings.S3Backend.UnableToDecodeBucketnameError(url));
                 }
 
                 try { Console.Error.WriteLine(Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix)); }

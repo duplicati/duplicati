@@ -49,12 +49,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void ImportBackup(RequestInfo info)
         {
-            var output_template = "<html><body><script type=\"text/javascript\">var rp = null; try { rp = parent['CBM']; } catch (e) {}; rp = rp || alert; rp('MSG');</script></body></html>";
+            var output_template = "<html><body><script type=\"text/javascript\">var jso = 'JSO'; var rp = null; try { rp = parent['CBM']; } catch (e) {}; if (rp) { rp('MSG', jso); } else { alert; rp('MSG'); };</script></body></html>";
             //output_template = "<html><body><script type=\"text/javascript\">alert('MSG');</script></body></html>";
             try
             {
                 var input = info.Request.Form;
                 var cmdline = Library.Utility.Utility.ParseBool(input["cmdline"].Value, false);
+                var direct = Library.Utility.Utility.ParseBool(input["direct"].Value, false);
                 output_template = output_template.Replace("CBM", input["callback"].Value);
                 if (cmdline)
                 {
@@ -96,34 +97,45 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     if (ipx.Schedule != null)
                         ipx.Schedule.ID = -1;
 
-                    lock(Program.DataConnection.m_lock)
+                    if (direct)
                     {
-                        var basename = ipx.Backup.Name;
-                        var c = 0;
-                        while (c++ < 100 && Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
-                            ipx.Backup.Name = basename + " (" + c.ToString() + ")"; 
-
-                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                        lock (Program.DataConnection.m_lock)
                         {
-                            info.BodyWriter.SetOK();
-                            info.Response.ContentType = "text/html";
-                            info.BodyWriter.Write(output_template.Replace("MSG", "There already exists a backup with the name: " + basename.Replace("\'", "\\'")));
+                            var basename = ipx.Backup.Name;
+                            var c = 0;
+                            while (c++ < 100 && Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                                ipx.Backup.Name = basename + " (" + c.ToString() + ")";
+
+                            if (Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                            {
+                                info.BodyWriter.SetOK();
+                                info.Response.ContentType = "text/html";
+                                info.BodyWriter.Write(output_template.Replace("MSG", "There already exists a backup with the name: " + basename.Replace("\'", "\\'")));
+                            }
+
+                            var err = Program.DataConnection.ValidateBackup(ipx.Backup, ipx.Schedule);
+                            if (!string.IsNullOrWhiteSpace(err))
+                            {
+                                info.ReportClientError(err);
+                                return;
+                            }
+
+                            Program.DataConnection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
                         }
 
-                        var err = Program.DataConnection.ValidateBackup(ipx.Backup, ipx.Schedule);
-                        if (!string.IsNullOrWhiteSpace(err))
-                        {
-                            info.ReportClientError(err);
-                            return;
-                        }
+                        info.Response.ContentType = "text/html";
+                        info.BodyWriter.Write(output_template.Replace("MSG", "OK"));
 
-                        Program.DataConnection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
                     }
-
-                    info.Response.ContentType = "text/html";
-                    info.BodyWriter.Write(output_template.Replace("MSG", "OK"));
-
-                    //bw.OutputOK(new { status = "OK", ID = ipx.Backup.ID });
+                    else
+                    {
+                        using (var sw = new StringWriter())
+                        {
+                            Serializer.SerializeJson(sw, ipx, true);
+                            output_template = output_template.Replace("'JSO'", sw.ToString());
+                        }
+                        info.BodyWriter.Write(output_template.Replace("MSG", "Import completed, but a browser issue prevents loading the contents. Try using the direct import method instead."));
+                    }
                 }
             }
             catch (Exception ex)

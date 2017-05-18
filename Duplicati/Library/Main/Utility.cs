@@ -53,7 +53,7 @@ namespace Duplicati.Library.Main
                 using(var filehasher = System.Security.Cryptography.HashAlgorithm.Create(options.FileHashAlgorithm))
                 {
                     if (filehasher == null)
-                        throw new Exception(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm));
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm));
                     
                     w.Write(JsonConvert.SerializeObject(values));
                     w.Flush();
@@ -153,21 +153,21 @@ namespace Duplicati.Library.Main
                         if (!options.AllowPassphraseChange)
                         {
                             if (newDict[k.Key] == "no-encryption")
-                                throw new Exception("Unsupported removal of passphrase");
+                                throw new Duplicati.Library.Interface.UserInformationException("Unsupported removal of passphrase");
                             else if (opts[k.Key] == "no-encryption")
-                                throw new Exception("Unsupported addition of passphrase");
+                                throw new Duplicati.Library.Interface.UserInformationException("Unsupported addition of passphrase");
                             else
-                                throw new Exception("Unsupported change of passphrase");
+                                throw new Duplicati.Library.Interface.UserInformationException("Unsupported change of passphrase");
                         }
                     }
                     else
-                        throw new Exception(string.Format("Unsupported change of parameter \"{0}\" from \"{1}\" to \"{2}\"", k.Key, opts[k.Key], k.Value));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Unsupported change of parameter \"{0}\" from \"{1}\" to \"{2}\"", k.Key, opts[k.Key], k.Value));
                     
                 }
                             
             //Extra sanity check
             if (db.GetBlocksLargerThan(options.Blocksize) > 0)
-                throw new Exception("Unsupported block-size change detected");
+                throw new Duplicati.Library.Interface.UserInformationException("Unsupported block-size change detected");
         
             if (needsUpdate)
             {
@@ -196,9 +196,6 @@ namespace Duplicati.Library.Main
                 try
                 {
                     var folder = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AutoUpdater.AutoUpdateSettings.AppName);
-                    if (!Directory.Exists(folder))
-                        Directory.CreateDirectory(folder);
-                    
                     return File.Exists(Path.Combine(folder, SUPPRESS_DONATIONS_FILENAME));
                 }
                 catch

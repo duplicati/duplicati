@@ -49,7 +49,7 @@
     function updateToCurrentTheme() {
         var theme = parseCookies()['default-theme'];
 
-        var themes = ['greeno', 'ngax'];
+        var themes = ['ngax'];
         for(var k in themes) {
             var el = document.getElementById(themes[k]);
             el.className = "button" + (theme == themes[k] ? " disabled" : "");
@@ -78,19 +78,19 @@
     <h2>Duplicati theme</h2>
     <ul>
         <li class="theme-item">
-            <h3 class="title">NgAx - The new responsive theme</h3>
+            <h3 class="title">NgAx - The responsive theme</h3>
             <div class="buttons">
                 <div class="button" id="ngax" onclick="setDefault('ngax')">Use as default</div>
                 <div class="button" onclick="setView('ngax')">View now</div>
             </div>
         </li>
-        <li class="theme-item">
+        <!--<li class="theme-item">
             <h3 class="title">Greeno - Your friendly green theme</h3>
             <div class="buttons">
                 <div class="button" id="greeno" onclick="setDefault('greeno')">Use as default</div>
                 <div class="button" onclick="setView('greeno')">View now</div>
             </div>
-        </li>
+        </li>-->
     </ul>
 
     <script type="text/javascript">updateToCurrentTheme();</script>

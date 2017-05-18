@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -54,7 +55,7 @@ namespace Duplicati.Library.Main.Operation
             return res;
         }
 
-        public void Run(string baseVersion, string compareVersion, IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
+        public void Run(string baseVersion, string compareVersion, IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null, Action<IListChangesResults, IEnumerable<Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>>> callback = null)
         {
             var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
             
@@ -79,7 +80,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var dbtimes = db.FilesetTimes.ToList();
                     if (dbtimes.Count < 2)
-                        throw new Exception(string.Format("Need at least two backups to show differences, database contains {0} backups", dbtimes.Count));
+                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", dbtimes.Count));
                     
                     long baseVersionId;
                     long compareVersionId;
@@ -104,7 +105,7 @@ namespace Duplicati.Library.Main.Operation
                                 
                     var numberedList = parsedlist.Zip(Enumerable.Range(0, parsedlist.Length), (a, b) => new Tuple<long, DateTime, Volumes.IParsedVolume>(b, a.Time, a)).ToList();
                     if (numberedList.Count < 2)
-                        throw new Exception(string.Format("Need at least two backups to show differences, database contains {0} backups", numberedList.Count));
+                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", numberedList.Count));
 
                     Volumes.IParsedVolume baseFile;
                     Volumes.IParsedVolume compareFile;
@@ -148,18 +149,22 @@ namespace Duplicati.Library.Main.Operation
                 
                 var changes = storageKeeper.CreateChangeCountReport();
                 var sizes = storageKeeper.CreateChangeSizeReport();
-                
+
+                var lst = (m_options.Verbose || m_options.FullResult || callback != null) ?
+                        (from n in storageKeeper.CreateChangedFileReport()
+                         select n) : null;
+
                 m_result.SetResult(
                     baseVersionTime, baseVersionIndex, compareVersionTime, compareVersionIndex,
                     changes.AddedFolders, changes.AddedSymlinks, changes.AddedFiles,
                     changes.DeletedFolders, changes.DeletedSymlinks, changes.DeletedFiles,
                     changes.ModifiedFolders, changes.ModifiedSymlinks, changes.ModifiedFiles,
                     sizes.AddedSize, sizes.DeletedSize, sizes.PreviousSize, sizes.CurrentSize,
-                    
-                    m_options.Verbose ? 
-                        (from n in storageKeeper.CreateChangedFileReport()
-                        select n).ToArray() : null
+                    (lst == null || callback != null) ? null : lst.ToArray()
                 );
+
+                if (callback != null)
+                    callback(m_result, lst);
 
                 return;                                
             }      

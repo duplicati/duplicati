@@ -1,0 +1,10 @@
+# Defaults for duplicati initscript
+# sourced by /etc/init.d/duplicati
+# installed at /etc/default/duplicati by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS=""

@@ -29,6 +29,12 @@
                 </select>
             </div>
 
+            <div ng-if="getInputType(item) == 'shorttimespan'" class="input type multiple">
+                <input parse-advanced-option-size-number type="number" ng-model="$parent.ngModel[$index]" />
+                <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in shorttimerangeMultipliers">
+                    <option value="" translate>custom</option>
+                </select>
+            </div>
         </div>
 
         <a href ng-click="deleteItem(item)" title="{{'Remove option' | translate}}">x</a>

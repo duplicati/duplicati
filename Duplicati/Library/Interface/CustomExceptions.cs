@@ -25,10 +25,30 @@ using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Interface
 {
     /// <summary>
+    /// A special exception that gives the user information on how to proceed.
+    /// Use this execption if the message is directed at the end user, and supplies
+    /// some guidance or explanation for the error. Exceptions of this type will
+    /// suppress the stack trace by default, on commandline output
+    /// </summary>
+    [Serializable]
+    public class UserInformationException : Exception
+    {
+        public UserInformationException(string message)
+            : base(message)
+        {
+        }
+
+        public UserInformationException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    /// <summary>
     /// An exception indicating that the requested folder is missing
     /// </summary>
     [Serializable]
-    public class FolderMissingException : Exception
+    public class FolderMissingException : UserInformationException
     {
         public FolderMissingException()
             : base(Strings.Common.FolderMissingError)
@@ -51,7 +71,7 @@ namespace Duplicati.Library.Interface
     /// An exception indicating that the requested folder is missing
     /// </summary>
     [Serializable]
-    public class FileMissingException : Exception
+    public class FileMissingException : UserInformationException
     {
         public FileMissingException()
             : base(LC.L("The requested file does not exist"))
@@ -74,7 +94,7 @@ namespace Duplicati.Library.Interface
     /// An exception indicating that the requested folder already existed
     /// </summary>
     [Serializable]
-    public class FolderAreadyExistedException : Exception
+    public class FolderAreadyExistedException : UserInformationException
     {
         public FolderAreadyExistedException()
             : base(Strings.Common.FolderAlreadyExistsError)
@@ -97,10 +117,10 @@ namespace Duplicati.Library.Interface
     /// An exception indicating that the user has cancelled the action
     /// </summary>
     [Serializable]
-    public class CancelException : Exception
+    public class CancelException : UserInformationException
     {
         public CancelException()
-            : base()
+            : base(Strings.Common.CancelExceptionError)
         { }
 
         public CancelException(string message)

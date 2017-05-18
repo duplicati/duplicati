@@ -126,9 +126,13 @@ namespace Duplicati.Library.Utility
                     oldstream.CopyTo(m_stream);
                 }
             }
-            
+
+            m_stream.Position = m_stream.Length;
             m_stream.Write(BitConverter.GetBytes(size), 0, 8);
+            var pos = m_stream.Position;
             Serialize(value, m_stream);
+            if (m_stream.Position - pos != size)
+                throw new Exception(string.Format("Stream serializer wrote a different set of bytes than it was supposed to. Expected {0} bytes, but wrote {1} bytes", m_stream.Position - pos, size));
 
             m_count++;
         }

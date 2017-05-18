@@ -104,7 +104,8 @@ namespace Duplicati.Library.Modules.Builtin
         private enum ConfigType
         {
             List,
-            Install
+            Install,
+            Test
         }
 
 
@@ -137,6 +138,25 @@ namespace Duplicati.Library.Modules.Builtin
                     }
 
                     d["count"] = CheckForInstalledCerts().ToString();
+                    break;
+
+                case ConfigType.Test:
+                    try
+                    {
+                        var req = System.Net.WebRequest.CreateHttp("https://updates.duplicati.com");
+                        req.Method = "HEAD";
+                        req.AllowAutoRedirect = false;
+
+                        using (var resp = (System.Net.HttpWebResponse)req.GetResponse())
+                        {
+                            d["status"] = resp.StatusDescription;
+                            d["status_code"] = ((int)resp.StatusCode).ToString();
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        d["error"] = ex.ToString();
+                    }
                     break;
 
                 case ConfigType.List:

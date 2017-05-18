@@ -10,6 +10,7 @@ namespace Duplicati.Library.Main
     {
         private Stream m_stream;
         private byte[] m_buffer;
+        private bool m_depleted = false;
 
         public Blockprocessor(Stream stream, byte[] buffer)
         {
@@ -25,6 +26,9 @@ namespace Duplicati.Library.Main
 
         public int Readblock()
         {
+            if (m_depleted)
+                return 0;
+            
             var bytesleft = m_buffer.Length;
             var bytesread = 0;
             var read = 1;
@@ -35,6 +39,8 @@ namespace Duplicati.Library.Main
                 bytesleft -= read;
                 bytesread += read;
             }
+
+            m_depleted = bytesleft != 0;
 
             return bytesread;
         }

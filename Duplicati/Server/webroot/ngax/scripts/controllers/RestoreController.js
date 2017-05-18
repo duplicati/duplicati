@@ -1,4 +1,4 @@
-backupApp.controller('RestoreController', function ($rootScope, $scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus, DialogService, gettextCatalog) {
+backupApp.controller('RestoreController', function ($rootScope, $scope, $routeParams, $location, AppService, AppUtils, SystemInfo, ServerStatus, DialogService, BackupList, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
@@ -13,6 +13,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     var filesetsRepaired = {};
     var filesetStamps = {};
     var inProgress = {};
+    var dirsep = $scope.SystemInfo.DirectorySeparator || '/';
 
     $scope.filesetStamps = filesetStamps;
     $scope.treedata = {};
@@ -62,6 +63,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
     $scope.fetchBackupTimes = function() {
         $scope.connecting = true;
+        $scope.ConnectionProgress = gettextCatalog.getString('Getting file versions ...');
 
         var qp = '';
         if ($scope.IsBackupTemporary)
@@ -70,6 +72,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         AppService.get('/backup/' + $scope.BackupID + '/filesets' + qp).then(
             function(resp) {
                 $scope.connecting = false;
+                $scope.ConnectionProgress = '';
                 $scope.Filesets = resp.data;
                 $scope.parseBackupTimesData();
                 $scope.fetchPathInformation();
@@ -164,6 +167,9 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
                         filesetsBuilt[version] = resp.data.Files;
                         $scope.Paths = filesetsBuilt[version];
+
+                        dirsep = resp.data.Files[0].Path[0] == '/' ? '/' : '\\';
+
                     }, handleError);
             }
         } else {
@@ -217,7 +223,6 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             function(resp) {
                 $scope.Searching = false;
                 var searchNodes = [];
-                var dirsep = $scope.SystemInfo.DirectorySeparator || '/';            
 
                 function compareablePath(path) {
                     return $scope.SystemInfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
@@ -289,16 +294,38 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     };
 
     $scope.onStartRestore = function() {
+        if ($scope.RestoreLocation == 'custom' && ($scope.RestorePath || '').trim().length == 0)
+        {
+            DialogService.alert(gettextCatalog.getString('You have chosen to restore to a new location, but not entered one'));
+            return;
+        }
+
+        if ($scope.RestoreLocation != 'custom' && dirsep != $scope.SystemInfo.DirectorySeparator)
+        {
+            DialogService.confirm(gettextCatalog.getString('This backup was created on another operating system. Restoring files without specifying a destination folder can cause files to be restored in unexpected places. Are you sure you want to continue without choosing a destination folder?'), function(ix) {
+                if (ix == 1)
+                    $scope.onStartRestoreProcess();
+            });
+        }
+        else
+        {
+            $scope.onStartRestoreProcess();
+        }
+    }
+
+    $scope.onStartRestoreProcess = function() {
+
         var version = $scope.RestoreVersion + '';
         var stamp = filesetStamps[version];
-        var dirsep = $scope.SystemInfo.DirectorySeparator || '/';            
-        var pathSep = $scope.SystemInfo.PathSeparator || ':';       
+
+        $scope.restore_step = 2;
 
         function handleError(resp) {
             var message = resp.statusText;
             if (resp.data != null && resp.data.Message != null)
                 message = resp.data.Message;
 
+            $scope.restore_step = 1;
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
             DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
@@ -351,6 +378,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                                 DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to build temporary database: {{message}}', { message: resp.data.ErrorMessage }));
                                 $scope.connecting = false;
                                 $scope.ConnectionProgress = '';
+                                $scope.restore_step = 1;
                             }
                         }, handleError);
                     });
@@ -376,7 +404,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
             if (resp.data.Status == 'Completed')
             {
-                $scope.restore_step = 2;
+                $scope.restore_step = 3;
             }
             else
             {
@@ -387,6 +415,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             if (resp.data != null && resp.data.Message != null)
                 message = resp.data.Message;
 
+            $scope.restore_step = 1;
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
             DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
@@ -395,10 +424,20 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
     $scope.onClickComplete = function () {
         $location.path('/');
-    }
+    };
+
+    $scope.trySetStep = function(pg) {
+        if ($scope.restore_step < 2)
+            $scope.restore_step = pg;
+    };
 
     $scope.BackupID = $routeParams.backupid;
     $scope.IsBackupTemporary = parseInt($scope.BackupID) != $scope.BackupID;
+
+    if (!$scope.IsBackupTemporary) {
+        $scope.$on('backuplistchanged', function() { $scope.Backup = BackupList.lookup[$scope.BackupID]; });
+        $scope.Backup = BackupList.lookup[$scope.BackupID];
+    }
 
     // We pass in the filelist through a global variable
     // ... bit ugly, but we do not want to do two remote queries,

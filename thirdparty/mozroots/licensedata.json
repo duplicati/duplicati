@@ -1,0 +1,7 @@
+{
+    "name": "mozroots",
+    "description": "A tool downloading trusted certificates from Mozilla and installing them for Mono",
+    "link": "https://github.com/mono/mono/blob/master/mcs/tools/security/mozroots.cs",
+    "license": "MIT",
+    "notes": ""
+}
