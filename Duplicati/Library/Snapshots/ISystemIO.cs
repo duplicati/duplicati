@@ -57,7 +57,7 @@ namespace Duplicati.Library.Snapshots
         IEnumerable<string> EnumerateFileSystemEntries(string path);
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
-        Dictionary<string, string> GetMetadata(string path);
+        Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink);
     }
 }
 

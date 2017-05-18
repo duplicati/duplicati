@@ -76,7 +76,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     curparent = CreateFolder(p, curparent).id;
                 }
                 else if (res.Length > 1)
-                    throw new Exception(Strings.GoogleDrive.MultipleEntries(p, curdisplay));
+                    throw new UserInformationException(Strings.GoogleDrive.MultipleEntries(p, curdisplay));
                 else
                     curparent = res[0].id;
 
@@ -349,7 +349,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             {
                 var files = GetFileEntries(oldname, true);
                 if (files.Length > 1)
-                    throw new Exception(string.Format(Strings.GoogleDrive.MultipleEntries(oldname, m_path)));
+                    throw new UserInformationException(string.Format(Strings.GoogleDrive.MultipleEntries(oldname, m_path)));
 
                 var newfile = JsonConvert.DeserializeObject<GoogleDriveFolderItem>(JsonConvert.SerializeObject(files[0]));
                 newfile.title = newname;
@@ -465,15 +465,16 @@ namespace Duplicati.Library.Backend.GoogleDrive
             };
 
             var url = string.Format("{0}/files?q={1}", DRIVE_API_URL, Library.Utility.Uri.UrlEncode(string.Join(" and ", p.Where(x => x != null))));
+            var token = string.Empty;
 
-            while (!string.IsNullOrEmpty(url))
+            do
             {
-                var res = m_oauth.GetJSONData<GoogleDriveListResponse>(url);
-                foreach(var n in res.items)
+                var res = m_oauth.GetJSONData<GoogleDriveListResponse>(url + (string.IsNullOrWhiteSpace(token) ? "" : "&pageToken=" + Library.Utility.Uri.UrlEncode(token)));
+                foreach (var n in res.items)
                     yield return n;
 
-                url = res.nextLink;
-            }
+                token = res.nextPageToken;
+            } while (!string.IsNullOrWhiteSpace(token));
         }
 
         private GoogleDriveAboutResponse GetAboutInfo()

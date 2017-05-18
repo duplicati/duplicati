@@ -1,4 +1,9 @@
-Set-StrictMode -Version 5
+param
+(
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string]$FileOrDir
+)
 
 function HexToBase64
 {
@@ -35,16 +40,15 @@ function Verify-Hashes
     }
     
     [string]$folder = Split-Path -Path $filename
-
     $remoteVolumes = (Get-Content $filename) -Join "`n" | ConvertFrom-Json
-
+    
     foreach ($remoteVolume in $remoteVolumes) {
         [string]$volFileName = $remoteVolume.Name
         [long]$volFileSize = $remoteVolume.Size
         [string]$volFilePath = Join-Path -Path $folder -ChildPath $volFileName
 
         if(-not $(Test-Path $volFilePath)) {
-            Write-Host "File missing: $volFilePath" -ForegroundColor Red
+            Write-Host "File missing: $volFileName" -ForegroundColor Red
             $errorCount++
         } else {
             $checked++
@@ -60,35 +64,45 @@ function Verify-Hashes
         }
     }
 
+    [string]$prefix = $(Split-Path -Path $filename -Leaf) -replace "-verification.json", ""
+    [array]$filesInStorage = Get-ChildItem $folder -Include "$prefix*" -Exclude $(Split-Path -Path $filename -Leaf) | `
+        Select-Object -ExpandProperty Name | Sort-Object
+    [array]$filesInVerification = $remoteVolumes | Select-Object -ExpandProperty Name | Sort-Object
+
+
+    $filesInStorage | Where-Object {$filesInVerification -NotContains $_} | ForEach-Object { 
+        Write-Host "Found extra file which is not in verification file: $_" -ForegroundColor Red 
+        $errorCount++
+    }
+    
     if($errorCount -gt 0) {
-        Write-Host "Errors were found" -ForegroundColor Red
+        Write-Host "`nErrors were found" -ForegroundColor Red
     } else {
-        Write-Host "No errors found" -ForegroundColor Green
+        Write-Host "`nNo errors found" -ForegroundColor Green
     }
 
     return $errorCount
 }
 
-[string]$argument = ""
-if ($args.Length -eq 1) { $argument = $args[0] }
-else { $argument = $PSScriptRoot }
+Set-StrictMode -Version Latest
 
-
-if(-not $(Test-Path $argument)) {
-    Write-Host "No such file or directory: $argument" -ForegroundColor Red
+if(-not $(Test-Path $FileOrDir)) {
+    Write-Host "No such file or directory: $FileOrDir" -ForegroundColor Red
 }
 
-if(Test-Path $argument -PathType Leaf) {
-    Verify-Hashes -filename $argument
+if(Test-Path $FileOrDir -PathType Leaf) {
+    exit Verify-Hashes -filename $FileOrDir
 } else {
-    [int] $files = 0
+    [int]$files = 0
+    [int]$errorCount = 0
 
-    Get-ChildItem $argument -Filter "*-verification.json" | 
+    Get-ChildItem $FileOrDir -Filter "*-verification.json" | 
     Foreach-Object {
         $files++
-        Write-Host "Verifying file: $_.Name"
-        Verify-Hashes -filename $_.FullName
+        Write-Host "Verifying file: $($_.Name)"
+        $errorCount = $errorCount + $(Verify-Hashes -filename $_.FullName)
     }
 
-    if ($files -eq 0) { Write-Host "No verification files in folder: $argument" }
+    if ($files -eq 0) { Write-Host "No verification files in folder: $FileOrDir" }
+    exit $errorCount
 }

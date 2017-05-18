@@ -25,7 +25,7 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.UsageReporter
 {
-    public class EventProcessor : ShutdownHelper
+    public static class EventProcessor
     {
         /// <summary>
         /// The maximum number of events to collect before transmitting
@@ -40,27 +40,7 @@ namespace Duplicati.Library.UsageReporter
         /// <summary>
         /// The time to wait before sending event
         /// </summary>
-        private readonly TimeSpan WAIT_TIME = TimeSpan.FromMinutes(5);
-
-        /// <summary>
-        /// The input channel for receiving events
-        /// </summary>
-        internal readonly IWriteChannel<ReportItem> Channel;
-
-        /// <summary>
-        /// The input channel for receiving events
-        /// </summary>
-        private readonly IChannel<ReportItem> m_channel;
-
-        /// <summary>
-        /// The completion task
-        /// </summary>
-        public readonly Task Terminated;
-
-        /// <summary>
-        /// The forwarding destination
-        /// </summary>
-        private readonly IWriteChannel<string> m_forward;
+        private static readonly TimeSpan WAIT_TIME = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// The prefix for generated filenames
@@ -78,67 +58,103 @@ namespace Duplicati.Library.UsageReporter
         private static readonly Regex FILNAME_MATCHER = new Regex(string.Format(FILENAME_TEMPLATE, "(?<id>[0-9]+)", "(?<time>[0-9]+)"));
 
         /// <summary>
-        /// The current process ID
+        /// Runs the report processor
         /// </summary>
-        private readonly string INSTANCE_ID;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.UsageReporter.EventProcessor"/> class.
-        /// </summary>
-        /// <param name="forwardChannel">The forwarding destination.</param>
-        public EventProcessor(IWriteChannel<string> forwardChannel)
+        /// <param name="forward">The channel accepting filenames with usage reports.</param>
+        internal static Tuple<Task, IWriteChannel<ReportItem>> Run(IWriteChannel<string> forward)
         {
-            INSTANCE_ID = System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+            var instanceid = System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+            var channel = ChannelManager.CreateChannel<ReportItem>(
+                maxPendingWriters: MAX_QUEUE_SIZE,
+                pendingWritersOverflowStrategy: QueueOverflowStrategy.LIFO
+            );
 
-            Channel = m_channel = ChannelManager.CreateChannel<ReportItem>(null, MAX_QUEUE_SIZE);
-            m_forward = forwardChannel;
-            Terminated = RunProtected(Run);
-        }
-
-        /// <summary>
-        /// Run the processing of incomming requests
-        /// </summary>
-        private async Task Run()
-        {
-            var rs = new ReportSet();
-            var tf = GetTempFilename();
-
-            foreach(var f in GetAbandonedFiles(null))
-                await m_forward.WriteAsync(f);
-
-            while(true)
-            {
-                var forceSend = false;
-                try
+            var task = AutomationExtensions.RunTask(
+                new
                 {
-                    var item = await m_channel.ReadAsync(rs.Items.Count == 0 ? Timeout.Infinite : WAIT_TIME);
-                    if (item != null)
+                    Input = channel.AsRead(),
+                    Output = forward
+                },
+                async (self) =>
+                {
+                    // Wait 20 seconds before we start transmitting
+                    for(var i = 0; i < 20; i++)
                     {
-                        forceSend = item.Type == ReportType.Crash;
-                        rs.Items.Add(item);
-                        File.WriteAllText(tf, JsonConvert.SerializeObject(rs));
+                        await Task.Delay(TimeSpan.FromSeconds(1));
+                        if (self.Input.IsRetired)
+                            return;
+                    }
+
+                    foreach (var f in GetAbandonedFiles(null))
+                    {
+                        // Check if we should exit
+                        if (self.Input.IsRetired)
+                            return;
+                    
+                        await self.Output.WriteAsync(f);
+                    }
+
+                    var rs = new ReportSet();
+                    var tf = GetTempFilename(instanceid);
+                    var nextTransmitTarget = new DateTime(0);
+
+                    while (true)
+                    {
+                        var forceSend = false;
+                        try
+                        {
+                            // We wait until we get an item, or WAIT_TIME from the last event
+                            var waittime =
+                                    rs.Items.Count == 0
+                                      ? Timeout.Infinite
+                                      : new TimeSpan(Math.Max(0, (nextTransmitTarget - DateTime.UtcNow).Ticks));
+                        
+                            var item = await self.Input.ReadAsync(waittime);
+                            if (item != null)
+                            {
+                                if (rs.Items.Count == 0)
+                                    nextTransmitTarget = DateTime.UtcNow + WAIT_TIME;
+                            
+                                forceSend = item.Type == ReportType.Crash;
+                                rs.Items.Add(item);
+                                File.WriteAllText(tf, JsonConvert.SerializeObject(rs));
+                            }
+                        }
+                        catch (TimeoutException)
+                        {
+                            forceSend = true;
+                        }
+
+                        if ((forceSend && rs.Items.Count > 0) || (rs.Items.Count > MAX_ITEMS_IN_SET))
+                        {
+                            var nextFilename = GetTempFilename(instanceid);
+                            self.Output.WriteNoWait(tf);
+                            rs = new ReportSet();
+
+                            foreach (var f in GetAbandonedFiles(tf))
+                            {
+                                if (self.Input.IsRetired)
+                                    return;
+                            
+                                self.Output.WriteNoWait(f);
+                            }
+
+                            tf = nextFilename;
+                        }
                     }
                 }
-                catch(TimeoutException)
-                {
-                    forceSend = true;
-                }
+            );
 
-                if ((forceSend && rs.Items.Count > 0) || (rs.Items.Count > MAX_ITEMS_IN_SET))
-                {
-                    var nextFilename = GetTempFilename();
-                    await m_forward.WriteAsync(tf);
-                    rs = new ReportSet();
-
-                    foreach(var f in GetAbandonedFiles(tf))
-                        await m_forward.WriteAsync(f);
-
-                    tf = nextFilename;
-                }
-            }
+            return new Tuple<Task, IWriteChannel<ReportItem>>(task, channel);
         }
 
-        private IEnumerable<string> GetAbandonedFiles(string current)
+        /// <summary>
+        /// Gets a list of abandoned files, meaning files that appear to be Duplicati files.
+        /// These should have been uploaded, but if they are found they are somehow left-over.
+        /// </summary>
+        /// <returns>The abandoned files.</returns>
+        /// <param name="current">The current file, which is excluded from the results.</param>
+        private static IEnumerable<string> GetAbandonedFiles(string current)
         {
             return 
                 from n in GetAbandonedMatches(current)
@@ -146,7 +162,12 @@ namespace Duplicati.Library.UsageReporter
                 select n.Key;
         }
 
-        private IEnumerable<KeyValuePair<string, long>> GetAbandonedMatches(string current)
+        /// <summary>
+        /// Gets files that match the temporary file prefix
+        /// </summary>
+        /// <returns>The abandoned matches.</returns>
+        /// <param name="current">The current file, which is excluded from the results.</param>
+        private static IEnumerable<KeyValuePair<string, long>> GetAbandonedMatches(string current)
         {
             foreach(var f in Directory.EnumerateFiles(Path.GetTempPath(), FILENAME_PREFIX + "*", SearchOption.TopDirectoryOnly))
             {
@@ -171,9 +192,14 @@ namespace Duplicati.Library.UsageReporter
             }
         }
 
-        private string GetTempFilename()
+        /// <summary>
+        /// Gets a unique timestamped filename using the template
+        /// </summary>
+        /// <returns>The temporary filename.</returns>
+        /// <param name="instanceid">The instance ID of this process.</param>
+        private static string GetTempFilename(string instanceid)
         {
-            return Path.Combine(Path.GetTempPath(), string.Format(FILENAME_TEMPLATE, INSTANCE_ID, DateTime.UtcNow.ToString("yyyyMMddHHmmss")));
+            return Path.Combine(Path.GetTempPath(), string.Format(FILENAME_TEMPLATE, instanceid, DateTime.UtcNow.ToString("yyyyMMddHHmmss")));
         }
     }
 }

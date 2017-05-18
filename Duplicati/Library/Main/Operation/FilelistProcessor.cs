@@ -75,9 +75,10 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
         /// <param name="log">The log instance to use</param>
-        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log)
+        /// <param name="protectedfile">A filename that should be excempted for deletion</param>
+        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, string protectedfile = null)
         {
-            var tp = RemoteListAnalysis(backend, options, database, log);
+            var tp = RemoteListAnalysis(backend, options, database, log, protectedfile);
             long extraCount = 0;
             long missingCount = 0;
             
@@ -97,7 +98,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
                 log.AddError(s, null);
-                throw new Exception(s);
+                throw new Duplicati.Library.Interface.UserInformationException(s);
             }
 
             var lookup = new Dictionary<string, string>();
@@ -114,7 +115,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles.Keys));
                 log.AddError(s, null);
-                throw new Exception(s);
+                throw new Duplicati.Library.Interface.UserInformationException(s);
             }
 
             if (missingCount > 0)
@@ -126,7 +127,7 @@ namespace Duplicati.Library.Main.Operation
                     s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
                 
                 log.AddError(s, null);
-                throw new Exception(s);
+                throw new Duplicati.Library.Interface.UserInformationException(s);
             }            
         }
 
@@ -189,10 +190,12 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="backend">The backend instance to use</param>
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
-        public static RemoteAnalysisResult RemoteListAnalysis(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log)
+        /// <param name="protectedfile">A filename that should be excempted for deletion</param>
+        public static RemoteAnalysisResult RemoteListAnalysis(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, string protectedfile)
         {
             var rawlist = backend.List();
             var lookup = new Dictionary<string, Volumes.IParsedVolume>();
+            protectedfile = protectedfile ?? string.Empty;
 
             var remotelist = (from n in rawlist
                                        let p = Volumes.VolumeBase.ParseFilename(n)
@@ -277,8 +280,15 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {
-                                log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
-                                cleanupRemovedRemoteVolumes.Add(i.Name);
+                                if (string.Equals(i.Name, protectedfile) && i.State == RemoteVolumeState.Temporary)
+                                {
+                                    log.AddMessage(string.Format("keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name));
+                                }
+                                else
+                                {
+                                    log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
+                                    cleanupRemovedRemoteVolumes.Add(i.Name);
+                                }
                             }
                         }
                         break;
@@ -290,14 +300,30 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (!remoteFound)
                         {
-                            log.AddMessage(string.Format("scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name));
-                            cleanupRemovedRemoteVolumes.Add(i.Name);
-                            database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
+
+                            if (string.Equals(i.Name, protectedfile))
+                            {
+                                log.AddMessage(string.Format("keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name));
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), null);
+                            }
+                            else
+                            {
+                                log.AddMessage(string.Format("scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name));
+                                cleanupRemovedRemoteVolumes.Add(i.Name);
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
+                            }
                         }
                         else
                         {
-                            log.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", i.State, i.Name));
-                            backend.Delete(i.Name, i.Size, true);
+                            if (string.Equals(i.Name, protectedfile))
+                            {
+                                log.AddMessage(string.Format("keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name));
+                            }
+                            else
+                            {
+                                log.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", i.State, i.Name));
+                                backend.Delete(i.Name, i.Size, true);
+                            }
                         }
                         break;
 

@@ -212,9 +212,9 @@ namespace Duplicati.Library.Modules.Builtin
                     if (requiredScript)
                     {
                         if (!p.HasExited)
-                            throw new Exception(Strings.RunScript.ScriptTimeoutError(scriptpath));
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.ScriptTimeoutError(scriptpath));
                         else if (p.ExitCode != 0)
-                            throw new Exception(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
                     }
 
                     if (p.HasExited)

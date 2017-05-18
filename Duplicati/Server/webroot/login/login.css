@@ -1,9 +1,12 @@
 @charset "utf-8";
 
+* {
+    font-family: 'Clear Sans', sans-serif;
+}
 body {
     background: #C0C0C0;
     color: #000;
-    font: 100%/1.5em "Arial Black","GillSans",Helvetica,Arial,sans-serif;
+    font: 100%/1.5em;
     margin: 0;
 }
 
@@ -25,10 +28,9 @@ input {
 }
 
 #login h2 {
-    background: #3A5E30;
-    color: #9DAB98;
+    background: #65b1dd;
+    color: #d3d3d3;
     font-size: 28px;
-    text-transform: uppercase;
     border-radius: 20px 20px 0 0;
     padding: 18px 20px;
     margin: 0px;
@@ -63,8 +65,8 @@ input {
 }
 
 #login fieldset input[type="submit"] {
-    background: #91AA8A;
-    color: #000000;
+    background: #65b1dd;
+    color: #fff;
     width: 100px;
     display: block;
     margin: 0 auto;
@@ -72,5 +74,5 @@ input {
 }
 
 #login fieldset input[type="submit"]:hover {
-    background: #91AA8A;
+    background: #65b1dd;
 }

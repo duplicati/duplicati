@@ -27,11 +27,13 @@ namespace Duplicati.Library.Snapshots
     public struct SystemIOWindows : ISystemIO
     {
         private const string UNCPREFIX = @"\\?\";
+        private const string UNCPREFIX_SERVER = @"\\?\UNC\";
+        private const string PATHPREFIX_SERVER = @"\\";
         private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
 
         public static bool IsPathTooLong(string path)
         {
-            if (path.StartsWith(UNCPREFIX) || path.Length > 260)
+            if (path.StartsWith(UNCPREFIX) || path.StartsWith(UNCPREFIX_SERVER) || path.Length > 260)
                 return true;
 
             return false;
@@ -39,10 +41,16 @@ namespace Duplicati.Library.Snapshots
 
         public static string PrefixWithUNC(string path)
         {
-            if (!path.StartsWith(UNCPREFIX))
-                return UNCPREFIX + path;
-            else
+            if (path.StartsWith(UNCPREFIX_SERVER))
                 return path;
+
+            if (path.StartsWith(UNCPREFIX))
+                return path;
+
+            if (path.StartsWith(PATHPREFIX_SERVER))
+                return UNCPREFIX_SERVER + path.Remove(0, PATHPREFIX_SERVER.Length);
+            
+            return UNCPREFIX + path;
         }
 
         public static string StripUNCPrefix(string path)
@@ -500,7 +508,7 @@ namespace Duplicati.Library.Snapshots
             Alphaleonis.Win32.Filesystem.Directory.SetAccessControl(PrefixWithUNC(path), rules, AccessControlSections.All);
         }
 
-        public Dictionary<string, string> GetMetadata(string path)
+        public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)
         {
             var isDirTarget = path.EndsWith(DIRSEP);
             var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;

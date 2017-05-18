@@ -4,6 +4,17 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
 
     function reloadOptionsList() {
         $scope.advancedOptionList = AppUtils.buildOptionList($scope.SystemInfo, false, false, false);
+        var mods = [];
+        if ($scope.SystemInfo.ServerModules != null)
+            for(var ix in $scope.SystemInfo.ServerModules)
+            {
+                var m = $scope.SystemInfo.ServerModules[ix];
+                if (m.SupportedGlobalCommands != null && m.SupportedGlobalCommands.length > 0)
+                    mods.push(m);
+            }
+
+        $scope.ServerModules = mods;
+        AppUtils.extractServerModuleOptions($scope.advancedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedGlobalCommands');
     }
 
     reloadOptionsList();
@@ -19,8 +30,11 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
             $cookies.remove('ui-locale');
             gettextCatalog.setCurrentLanguage($scope.SystemInfo.BrowserLocale.Code.replace("-", "_"));
         } else {
-            $cookies.put('ui-locale', $scope.uiLanguage);
-            gettextCatalog.setCurrentLanguage($scope.uiLanguage);
+            var now = new Date();
+            var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+            $cookies.put('ui-locale', $scope.uiLanguage, { expires: exp });
+
+            gettextCatalog.setCurrentLanguage($scope.uiLanguage.replace("-", "_"));
         }
         $rootScope.$broadcast('ui_language_changed');
     }
@@ -29,8 +43,8 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
 
         $scope.rawdata = data.data;
 
-        $scope.requireRemotePassword = data.data[''] != null && data.data.WebserverPassword != '';
-        $scope.remotePassword = data.data.WebserverPassword;
+        $scope.requireRemotePassword = data.data['server-passphrase'] != null && data.data['server-passphrase'] != '';
+        $scope.remotePassword = data.data['server-passphrase'];
         $scope.allowRemoteAccess = data.data['server-listen-interface'] != 'loopback';
         $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
         $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1);
@@ -38,7 +52,10 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
         $scope.originalUpdateChannel = data.data['update-channel'];
         $scope.usageReporterLevel = data.data['usage-reporter-level'];
         $scope.advancedOptions = AppUtils.serializeAdvancedOptionsToArray(data.data);
+        $scope.servermodulesettings = {};
 
+        AppUtils.extractServerModuleOptions($scope.advancedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedGlobalCommands');
+        
     }, AppUtils.connectionError);
 
 
@@ -68,6 +85,8 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
         }
 
         AppUtils.mergeAdvancedOptions($scope.advancedOptions, patchdata, $scope.rawdata);
+        for(var n in $scope.servermodulesettings)
+            patchdata['--' + n] = $scope.servermodulesettings[n];
 
         AppService.patch('/serversettings', patchdata, {headers: {'Content-Type': 'application/json; charset=utf-8'}}).then(
             function() {

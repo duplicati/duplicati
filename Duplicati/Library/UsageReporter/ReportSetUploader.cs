@@ -24,12 +24,12 @@ using System.Net;
 
 namespace Duplicati.Library.UsageReporter
 {
-    public class ReportSetUploader : ShutdownHelper
+    public static class ReportSetUploader
     {
         /// <summary>
         /// The maximum number of pending uploads
         /// </summary>
-        private const int MAX_PENDING_UPLOADS = 500;
+        private const int MAX_PENDING_UPLOADS = 50;
 
         /// <summary>
         /// The target upload url
@@ -37,88 +37,66 @@ namespace Duplicati.Library.UsageReporter
         private const string UPLOAD_URL = "https://usage-reporter.duplicati.com/api/v1/report";
 
         /// <summary>
-        /// The input channel for receiving events
+        /// Runs the upload process
         /// </summary>
-        private readonly IChannel<string> m_channel;
-
-        /// <summary>
-        /// The input channel for receiving events
-        /// </summary>
-        public readonly IWriteChannel<string> Channel;
-
-        /// <summary>
-        /// The internal channel for passing filtered requests
-        /// </summary>
-        private readonly IChannel<string> FilterChannel;
-
-        /// <summary>
-        /// The completion task
-        /// </summary>
-        public readonly Task Terminated;
-
-        public ReportSetUploader()
+        /// <returns>A tuple with the completion task and the channel to use</returns>
+        public static Tuple<Task, IWriteChannel<string>> Run()
         {
-            Channel = m_channel = ChannelManager.CreateChannel<string>(buffersize: MAX_PENDING_UPLOADS);
-            FilterChannel = ChannelManager.CreateChannel<string>();
-
-            Terminated = Task.WhenAll(
-                RunProtected(async () => {
-                    // If we have more than MAX_PENDING_UPLOADS
-                    // the newest ones are just discarded
-                    // they will be picked up on the later runs
-
-                    while (true)
-                        FilterChannel.TryWrite(await m_channel.ReadAsync());
-                }),
-                RunProtected(Run)
+            var channel = ChannelManager.CreateChannel<string>(
+                buffersize: MAX_PENDING_UPLOADS, 
+                pendingWritersOverflowStrategy: QueueOverflowStrategy.LIFO
             );
-        }
 
-        /// <summary>
-        /// Run the processing of incomming requests
-        /// </summary>
-        private async Task Run()
-        {
-            while (true)
-            {
-                var f = await FilterChannel.ReadAsync();
+            var task = AutomationExtensions.RunTask(
+                channel.AsRead(),
 
-                try
+                async (chan) =>
                 {
-                    if (File.Exists(f))
+                    while (true)
                     {
-                        var req = (HttpWebRequest)WebRequest.Create(UPLOAD_URL);
-                        req.Method = "POST";
-                        req.ContentType = "application/json; charset=utf-8";
+                        var f = await chan.ReadAsync();
 
-                        int rc;
-                        using(var fs = File.OpenRead(f))
+                        try
                         {
-                            if (fs.Length > 0)
+                            if (File.Exists(f))
                             {
-                                req.ContentLength = fs.Length;
-                                var areq = new Library.Utility.AsyncHttpRequest(req);
+                                var req = (HttpWebRequest)WebRequest.Create(UPLOAD_URL);
+                                req.Method = "POST";
+                                req.ContentType = "application/json; charset=utf-8";
 
-                                using(var rs =areq.GetRequestStream())
-                                    Library.Utility.Utility.CopyStream(fs, rs);
+                                int rc;
+                                using (var fs = File.OpenRead(f))
+                                {
+                                    if (fs.Length > 0)
+                                    {
+                                        req.ContentLength = fs.Length;
+                                        var areq = new Library.Utility.AsyncHttpRequest(req);
 
-                                using(var resp = (HttpWebResponse)areq.GetResponse())
-                                    rc = (int)resp.StatusCode;
+                                        using (var rs = areq.GetRequestStream())
+                                            Library.Utility.Utility.CopyStream(fs, rs);
+
+                                        using (var resp = (HttpWebResponse)areq.GetResponse())
+                                            rc = (int)resp.StatusCode;
+                                    }
+                                    else
+                                        rc = 200;
+                                }
+
+                                if (rc >= 200 && rc <= 299)
+                                    File.Delete(f);
                             }
-                            else
-                                rc = 200;
                         }
-
-                        if (rc >= 200 && rc <= 299)
-                            File.Delete(f);
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteMessage("UsageReporter failed", Duplicati.Library.Logging.LogMessageType.Error, ex);
+                        }
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logging.Log.WriteMessage("UsageReporter failed", Duplicati.Library.Logging.LogMessageType.Error, ex);
-                }
-            }        
+            );
+
+            return new Tuple<Task, IWriteChannel<string>>(task, channel);
         }
+
     }
 }
 

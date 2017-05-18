@@ -221,11 +221,18 @@ namespace Duplicati.Library.Utility
         public delegate System.IO.FileAttributes ExtractFileAttributes(string path);
 
         /// <summary>
+        /// A callback delegate used for extracting attributes from a file or folder
+        /// </summary>
+        /// <param name="rootpath">The root folder where the path was found</param>
+        /// <param name="path">The path that produced the error</param>
+        /// <param name="ex">The exception for the error</param>
+        public delegate void ReportAccessError(string rootpath, string path, Exception ex);
+
+        /// <summary>
         /// Returns a list of all files found in the given folder.
         /// The search is recursive.
         /// </summary>
         /// <param name="rootpath">The folder to look in</param>
-        /// <param name="filter">An optional filter to apply to the filenames</param>
         /// <param name="callback">The function to call with the filenames</param>
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
@@ -244,7 +251,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
         {
-            return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null);
+            return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null, null);
         }
 
         /// <summary>
@@ -256,8 +263,9 @@ namespace Duplicati.Library.Utility
         /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
         /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
         /// <param name="attributeReader">A function to call that obtains the attributes for an element, set to null to avoid reading attributes</param>
+        /// <param name="errorCallback">An optional function to call with error messages.</param>
         /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader, ReportAccessError errorCallback = null)
         {
             Stack<string> lst = new Stack<string>();
         
@@ -270,7 +278,7 @@ namespace Duplicati.Library.Utility
                     isFolder = (attributeReader(rootpath) & System.IO.FileAttributes.Directory) == System.IO.FileAttributes.Directory;
             }
             catch
-            {
+            {                
             }
         
             if (isFolder)
@@ -287,9 +295,11 @@ namespace Duplicati.Library.Utility
                 {
                     throw;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    callback(rootpath, rootpath, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
+                    if (errorCallback != null)
+                        errorCallback(rootpath, rootpath, ex);
+                    callback(rootpath, rootpath, System.IO.FileAttributes.Directory | ATTRIBUTE_ERROR);
                 }
 
                 while (lst.Count > 0)
@@ -303,18 +313,33 @@ namespace Duplicati.Library.Utility
                         foreach(string s in folderList(f))
                         {
                             var sf = AppendDirSeparator(s);
-                            System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(sf);
-                            if (callback(rootpath, sf, attr))
-                                lst.Push(sf);
+                            try
+                            {
+                                System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(sf);
+                                if (callback(rootpath, sf, attr))
+                                    lst.Push(sf);
+                            }
+                            catch (System.Threading.ThreadAbortException)
+                            {
+                                throw;
+                            }
+                            catch (Exception ex)
+                            {
+                                if (errorCallback != null)
+                                    errorCallback(rootpath, sf, ex);
+                                callback(rootpath, sf, System.IO.FileAttributes.Directory | ATTRIBUTE_ERROR);
+                            }
                         }
                     }
                     catch (System.Threading.ThreadAbortException)
                     {
                         throw;
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        callback(rootpath, f, ATTRIBUTE_ERROR | System.IO.FileAttributes.Directory);
+                        if (errorCallback != null)
+                            errorCallback(rootpath, f, ex);
+                        callback(rootpath, f, System.IO.FileAttributes.Directory | ATTRIBUTE_ERROR);
                     }
 
                     string[] files = null;
@@ -327,9 +352,11 @@ namespace Duplicati.Library.Utility
                         {
                             throw;
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            callback(rootpath, f, ATTRIBUTE_ERROR);
+                            if (errorCallback != null)
+                                errorCallback(rootpath, f, ex);
+                            callback(rootpath, f, System.IO.FileAttributes.Directory | ATTRIBUTE_ERROR);
                         }
         
                     if (files != null)
@@ -345,8 +372,10 @@ namespace Duplicati.Library.Utility
                             {
                                 throw;
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
+                                if (errorCallback != null)
+                                    errorCallback(rootpath, s, ex);
                                 callback(rootpath, s, ATTRIBUTE_ERROR);
                                 continue;
                             }
@@ -366,8 +395,10 @@ namespace Duplicati.Library.Utility
                 {
                     throw;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    if (errorCallback != null)
+                        errorCallback(rootpath, rootpath, ex);
                     callback(rootpath, rootpath, ATTRIBUTE_ERROR);
                     yield break;
                 }
@@ -400,10 +431,35 @@ namespace Duplicati.Library.Utility
         /// <returns>The path with the directory separator appended</returns>
         public static string AppendDirSeparator(string path)
         {
-            if (!path.EndsWith(DirectorySeparatorString))
+            if (!path.EndsWith(DirectorySeparatorString, StringComparison.Ordinal))
                 return path += DirectorySeparatorString;
             else
                 return path;
+        }
+
+        /// <summary>
+        /// Appends the appropriate directory separator to paths, depending on OS.
+        /// Does not append the separator if the path already ends with it.
+        /// </summary>
+        /// <param name="path">The path to append to</param>
+        /// <param name="separator">The directory separator to use</param>
+        /// <returns>The path with the directory separator appended</returns>
+        public static string AppendDirSeparator(string path, string separator)
+        {
+            if (!path.EndsWith(separator, StringComparison.Ordinal))
+                return path += separator;
+            else
+                return path;
+        }
+
+        /// <summary>
+        /// Guesses the directory separator from the path
+        /// </summary>
+        /// <param name="path">The path to guess the separator from</param>
+        /// <returns>The guessed directory separator</returns>
+        public static string GuessDirSeparator(string path)
+        {
+            return string.IsNullOrWhiteSpace(path) || path.StartsWith("/", StringComparison.Ordinal) ? "/" : "\\";
         }
 
         /// <summary>
@@ -1115,6 +1171,39 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Returns a value indicating if the given type should be treated as a primitive
+        /// </summary>
+        /// <returns><c>true</c>, if type is primitive for serialization, <c>false</c> otherwise.</returns>
+        /// <param name="t">The type to check.</param>
+        private static bool IsPrimitiveTypeForSerialization(Type t)
+        {
+            return t.IsPrimitive || t.IsEnum || t == typeof(string) || t == typeof(DateTime) || t == typeof(TimeSpan);
+        }
+
+        /// <summary>
+        /// Writes a primitive to the output, or returns false if the input is not primitive
+        /// </summary>
+        /// <returns><c>true</c>, the item was printed, <c>false</c> otherwise.</returns>
+        /// <param name="item">The item to write.</param>
+        /// <param name="writer">The target writer.</param>
+        private static bool PrintSerializeIfPrimitive(object item, System.IO.TextWriter writer)
+        {
+            if (item == null)
+            {
+                writer.Write("null");
+                return true;
+            }
+
+            if (IsPrimitiveTypeForSerialization(item.GetType()))
+            {
+                writer.Write(item);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Prints the object to a stream, which can be used for display or logging
         /// </summary>
         /// <returns>The serialized object</returns>
@@ -1125,23 +1214,40 @@ namespace Duplicati.Library.Utility
         /// <param name="indentation">The string indentation</param>
         /// <param name="visited">A lookup table with visited objects, used to avoid inifinite recursion</param>
         /// <param name="collectionlimit">The maximum number of items to report from an IEnumerable instance</param>
-        public static void PrintSerializeObject(object item, System.IO.TextWriter writer, Func<System.Reflection.PropertyInfo, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 0, Dictionary<object, object> visited = null)
-        {
+        public static void PrintSerializeObject(object item, System.IO.TextWriter writer, Func<System.Reflection.PropertyInfo, object, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 0, Dictionary<object, object> visited = null)
+        {            
             visited = visited ?? new Dictionary<object, object>();
             var indentstring = new string(' ', indentation);
 
+            var first = true;
+
+
+            if (item == null || IsPrimitiveTypeForSerialization(item.GetType()))
+            {
+                writer.Write(indentstring);
+                if (PrintSerializeIfPrimitive(item, writer))
+                    return;
+            }
+
             foreach (var p in item.GetType().GetProperties())
             {
-                if (filter != null && !filter(p))
+                if (filter != null && !filter(p, item))
                     continue;
-                
-                if (p.PropertyType.IsPrimitive || p.PropertyType.IsEnum || p.PropertyType == typeof(string) || p.PropertyType == typeof(DateTime) || p.PropertyType == typeof(TimeSpan))
+
+                if (IsPrimitiveTypeForSerialization(p.PropertyType))
                 {
-                    writer.WriteLine("{0}{1}: {2}", indentstring, p.Name, p.GetValue(item, null));
+                    if (first)
+                        first = false;
+                    else
+                        writer.WriteLine();
+
+                    writer.Write("{0}{1}: ", indentstring, p.Name);
+                    PrintSerializeIfPrimitive(p.GetValue(item, null), writer);
                 }
                 else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(p.PropertyType))
                 {
                     var enumerable = (System.Collections.IEnumerable)p.GetValue(item, null);
+                    var any = false;
                     if (enumerable != null)
                     {
                         var enumerator = enumerable.GetEnumerator();
@@ -1149,41 +1255,43 @@ namespace Duplicati.Library.Utility
                         {
                             var remain = collectionlimit;
 
+                            if (first)
+                                first = false;
+                            else
+                                writer.WriteLine();
+
                             writer.Write("{0}{1}: [", indentstring, p.Name);
                             if (enumerator.MoveNext())
                             {
+                                any = true;
                                 writer.WriteLine();
-
-                                var extraindent = new string(' ', indentation + 4);
-
-                                writer.Write(indentstring);
-                                writer.Write(extraindent);
-                                writer.Write(enumerator.Current);
+                                PrintSerializeObject(enumerator.Current, writer, filter, recurseobjects, indentation + 4, collectionlimit, visited);
 
                                 remain--;
 
                                 while (enumerator.MoveNext())
                                 {
                                     writer.WriteLine(",");
-                                    writer.Write(indentstring);
-                                    writer.Write(extraindent);
 
                                     if (remain == 0)
                                     {
                                         writer.Write("...");
                                         break;
                                     }
-                                    writer.Write(enumerator.Current);
+
+                                    PrintSerializeObject(enumerator.Current, writer, filter, recurseobjects, indentation + 4, collectionlimit, visited);
 
                                     remain--;
                                 }
 
-                                writer.WriteLine();
-
-                                writer.Write(indentstring);
                             }
 
-                            writer.WriteLine("]");
+                            if (any)
+                            {
+                                writer.WriteLine();
+                                writer.Write(indentstring);
+                            }
+                            writer.Write("]");
                         }
                     }
                 }
@@ -1191,9 +1299,19 @@ namespace Duplicati.Library.Utility
                 {
                     var value = p.GetValue(item, null);
                     if (value == null)
-                        writer.WriteLine("{0}{1}: null", indentstring, p.Name);
+                    {
+                        if (first)
+                            first = false;
+                        else
+                            writer.WriteLine();
+                        writer.Write("{0}{1}: null", indentstring, p.Name);
+                    }
                     else if (!visited.ContainsKey(value))
                     {
+                        if (first)
+                            first = false;
+                        else
+                            writer.WriteLine();
                         writer.WriteLine("{0}{1}:", indentstring, p.Name);
                         visited[value] = null;
                         PrintSerializeObject(value, writer, filter, recurseobjects, indentation + 4, collectionlimit, visited);
@@ -1212,7 +1330,7 @@ namespace Duplicati.Library.Utility
         /// <param name="recurseobjects">A value indicating if non-primitive values are recursed</param>
         /// <param name="indentation">The string indentation</param>
         /// <param name="collectionlimit">The maximum number of items to report from an IEnumerable instance, set to zero or less for reporting all</param>
-        public static StringBuilder PrintSerializeObject(object item, StringBuilder sb = null, Func<System.Reflection.PropertyInfo, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 10)
+        public static StringBuilder PrintSerializeObject(object item, StringBuilder sb = null, Func<System.Reflection.PropertyInfo, object, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 10)
         {
             sb = sb ?? new StringBuilder();
             using(var sw = new System.IO.StringWriter(sb))

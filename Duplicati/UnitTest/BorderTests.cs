@@ -43,6 +43,16 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
+        public void Run10mb()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => { 
+                opts["blocksize"] = "10mb";
+            });
+        }
+
+        [Test]
+        [Category("Border")]
         public void Run100k()
         {
             PrepareSourceData();
@@ -140,14 +150,18 @@ namespace Duplicati.UnitTest
             });
         }
 
-        private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
+        [Test]
+        [Category("Border")]
+        public void RunQuickTimestamps()
         {
-            var testopts = TestOptions;
-            testopts["verbose"] = "true";
-            testopts["blocksize"] = blocksize.ToString() + "b";
-            if (modifyOptions != null)
-                modifyOptions(testopts);
-
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
+                opts["check-filetime-only"] = "true";
+            });
+        }
+        public static Dictionary<string, int> WriteTestFilesToFolder(string targetfolder, int blocksize, int basedatasize = 0)
+        {
             if (basedatasize <= 0)
                 basedatasize = blocksize * 1024;
 
@@ -174,8 +188,21 @@ namespace Duplicati.UnitTest
 
             var data = new byte[filenames.Select(x => x.Value).Max()];
 
-            foreach(var k in filenames)
-                File.WriteAllBytes(Path.Combine(DATAFOLDER, "a" + k.Key), data.Take(k.Value).ToArray());
+            foreach (var k in filenames)
+                File.WriteAllBytes(Path.Combine(targetfolder, "a" + k.Key), data.Take(k.Value).ToArray());
+
+            return filenames;
+        }
+
+        private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
+        {
+            var testopts = TestOptions;
+            testopts["verbose"] = "true";
+            testopts["blocksize"] = blocksize.ToString() + "b";
+            if (modifyOptions != null)
+                modifyOptions(testopts);
+
+            var filenames = WriteTestFilesToFolder(DATAFOLDER, blocksize, basedatasize);
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
@@ -192,6 +219,7 @@ namespace Duplicati.UnitTest
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
             }
 
+            var data = new byte[filenames.Select(x => x.Value).Max()];
             new Random().NextBytes(data);
             foreach(var k in filenames)
                 File.WriteAllBytes(Path.Combine(DATAFOLDER, "b" + k.Key), data.Take(k.Value).ToArray());

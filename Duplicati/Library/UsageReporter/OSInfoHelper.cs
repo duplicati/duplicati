@@ -15,6 +15,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Duplicati.Library.UsageReporter
@@ -22,7 +23,7 @@ namespace Duplicati.Library.UsageReporter
     /// <summary>
     /// Helper class for extracting operating system info
     /// </summary>
-    internal static class OSInfoHelper
+    public static class OSInfoHelper
     {
         /// <summary>
         /// Runs a commandline program and returns stdout as a string.
@@ -88,6 +89,58 @@ namespace Duplicati.Library.UsageReporter
                 }
                 else
                 {
+                    // Manual extraction, this grabs the distro identication files directly
+                    try
+                    {
+                        var keys = new List<Tuple<string, string>>();
+                        foreach (var fn in System.IO.Directory.GetFiles("/etc/", "*-release"))
+                        {
+                            var fi = new System.IO.FileInfo(fn);
+                            if (fi.Exists && fi.Length < 1024 * 10)
+                            {
+                                try
+                                {
+                                    keys.AddRange(
+                                        System.IO.File.ReadAllLines(fi.FullName)
+                                                      .Select(x =>
+                                                        {
+                                                            var items = (x ?? string.Empty).Split(new char[] { '=' }, 2).Select(y => (y ?? string.Empty).Trim('"')).ToArray();
+                                                            if (items.Length != 2 || items.Any(y => string.IsNullOrWhiteSpace(y)))
+                                                                return null;
+
+                                                            return new Tuple<string, string>(items[0], items[1]);
+                                                        })
+                                                    .Where(x => x != null)
+                                    );
+                                }
+                                catch { }
+
+                            }
+                        }
+
+                        var primary = keys.FirstOrDefault(x => string.Equals(x.Item1, "PRETTY_NAME", StringComparison.InvariantCultureIgnoreCase));
+                        if (primary != null)
+                            return primary.Item2;
+
+                        var name = keys.FirstOrDefault(x => string.Equals(x.Item1, "NAME", StringComparison.InvariantCultureIgnoreCase));
+                        var version = keys.FirstOrDefault(x => string.Equals(x.Item1, "VERSION", StringComparison.InvariantCultureIgnoreCase));
+
+                        name = name ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "DISTRIB_ID", StringComparison.InvariantCultureIgnoreCase));
+                        name = name ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "ID", StringComparison.InvariantCultureIgnoreCase));
+
+                        version = version ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "DISTRIB_RELEASE", StringComparison.InvariantCultureIgnoreCase));
+                        version = version ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "VERSION_ID", StringComparison.InvariantCultureIgnoreCase));
+
+                        if (name != null && version != null)
+                            return string.Format("{0} {1}", name.Item2, version.Item2);
+                        if (name != null)
+                            return name.Item2;
+                    }
+                    catch
+                    {
+                    }
+
+                    // This works on debian based distros, but emits a warning to stderr
                     var m = RunProgramAndReadOutput("lsb_release", "-a");
                     if (m != null)
                     {
@@ -97,8 +150,8 @@ namespace Duplicati.Library.UsageReporter
                             return line;
                     }
 
+                    // This should work on all Linux based systems
                     return RunProgramAndReadOutput("uname", "-srvmpio");
-
                 }
 
                 return null;

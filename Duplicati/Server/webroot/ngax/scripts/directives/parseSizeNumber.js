@@ -9,8 +9,7 @@ backupApp.directive('parseSizeNumber', function(AppUtils) {
             var multiplier = null;
 
             ctrl[0].$parsers.push(function(txt) {
-                txt = txt || '0';
-                return txt + (multiplier || '');
+                return (txt || '0') + (multiplier || '');
             });
 
             ctrl[0].$formatters.push(function(src) {

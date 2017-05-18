@@ -53,6 +53,11 @@ namespace Duplicati.Library.Main
         Delete_Listing,
         Delete_Deleting,
 
+        PurgeFiles_Begin,
+        PurgeFiles_Process,
+        PurgeFiles_Compact,
+        PurgeFiles_Complete,
+
         Error
     }
 }

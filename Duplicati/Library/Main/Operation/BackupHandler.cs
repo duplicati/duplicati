@@ -23,9 +23,10 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options m_options;
         private string m_backendurl;
 
+
         private LocalBackupDatabase m_database;
         private System.Data.IDbTransaction m_transaction;
-
+       
         private Library.Utility.IFilter m_filter;
         private Library.Utility.IFilter m_sourceFilter;
 
@@ -38,17 +39,11 @@ namespace Duplicati.Library.Main.Operation
             m_backendurl = backendurl;
                             
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
+                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported);
         }
-        
+
         public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
-        {
-            if (!Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                log.AddWarning("hyperv-backup-vm is efective only on Windows OS.", null);
-
-            if (Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm") && options.SnapShotStrategy == Options.OptimizationStrategy.Off)
-                throw new Exception("Snapshot strategy cannot be Off when backuping Hyper-V using hyperv-backup-vm"); //VSS is required for Hyper-V backups
-
+        { 
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
@@ -58,8 +53,6 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw;
-                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                    throw; //VSS is required for Hyper-V backups
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                     log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);
             }
@@ -67,10 +60,43 @@ namespace Duplicati.Library.Main.Operation
             return Library.Utility.Utility.IsClientLinux ?
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux(sources, options.RawOptions)
                     :
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
+                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);   
         }
 
         private void PreBackupVerify(BackendManager backend)
+        {
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
+            using (new Logging.Timer("PreBackupVerify"))
+            {
+                try
+                {
+                    if (m_options.NoBackendverification)
+                    {
+                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
+                        UpdateStorageStatsFromDatabase();
+                    }
+                    else
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                }
+                catch (Exception ex)
+                {
+                    if (m_options.AutoCleanup)
+                    {
+                        m_result.AddWarning("Backend verification failed, attempting automatic cleanup", ex);
+                        m_result.RepairResults = new RepairResults(m_result);
+                        new RepairHandler(backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
+
+                        m_result.AddMessage("Backend cleanup finished, retrying verification");
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                    }
+                    else
+                        throw;
+                }
+            }
+        }
+
+
+        private void PreBackupVerify(BackendManager backend, string protectedfile)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
             using(new Logging.Timer("PreBackupVerify"))
@@ -83,7 +109,7 @@ namespace Duplicati.Library.Main.Operation
 						UpdateStorageStatsFromDatabase();
 					}
 					else
-						FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
                 }
                 catch (Exception ex)
                 {
@@ -185,7 +211,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using(var testdb = new LocalTestDatabase(m_database))
                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
-                    new TestHandler(m_backendurl, m_options, new TestResults(m_result))
+                    new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
                         .DoRun(m_options.BackupTestSampleCount, testdb, backend);
             }
         }

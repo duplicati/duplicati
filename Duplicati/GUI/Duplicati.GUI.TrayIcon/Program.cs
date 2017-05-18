@@ -22,7 +22,7 @@ namespace Duplicati.GUI.TrayIcon
         
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
-        private const string DEFAULT_HOSTURL = "http://localhost:8080";
+        private const string DEFAULT_HOSTURL = "http://localhost:8200";
         
         private static string _browser_command = null;
         public static string BrowserCommand { get { return _browser_command; } }
@@ -215,7 +215,7 @@ namespace Duplicati.GUI.TrayIcon
             else if (toolkit == TOOLKIT_RUMPS)
                 return GetRumpsRunnerInstance();
             else 
-                throw new Exception(string.Format("The selected toolkit '{0}' is invalid", toolkit));
+                throw new UserInformationException(string.Format("The selected toolkit '{0}' is invalid", toolkit));
         }
         
         //We keep these in functions to avoid attempting to load the instance,

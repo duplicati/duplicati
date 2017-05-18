@@ -81,6 +81,8 @@ namespace Duplicati.Server.WebServer
 
         private static System.Globalization.CultureInfo ParseRequestCulture(string acceptheader)
         {
+            acceptheader = acceptheader ?? string.Empty;
+
             // Lock-free read
             System.Globalization.CultureInfo ci;
             if (_cultureCache.TryGetValue(acceptheader, out ci))

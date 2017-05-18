@@ -96,6 +96,7 @@
 .tif #TIFF image
 .dng #Adobe Digital Negative
 .cr2 #Canon RAW Image Format
+.webp #WebP Image
 
 
 # Compressed Font files

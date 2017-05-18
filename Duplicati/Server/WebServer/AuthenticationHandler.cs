@@ -94,11 +94,11 @@ namespace Duplicati.Server.WebServer
             var authform = request.Form["auth-token"] ?? request.Form[Library.Utility.Uri.UrlEncode("auth-token")];
             var authquery = request.QueryString["auth-token"] ?? request.QueryString[Library.Utility.Uri.UrlEncode("auth-token")];
 
-            var auth_token = authcookie == null || string.IsNullOrWhiteSpace(authcookie.Value) ? null : authcookie.Value;
-            if (authquery != null && !string.IsNullOrWhiteSpace(authquery.Value))
-                auth_token = authquery["auth-token"].Value;
-            if (authform != null && !string.IsNullOrWhiteSpace(authform.Value))
-                auth_token = authform["auth-token"].Value;
+            var auth_token = string.IsNullOrWhiteSpace(authcookie?.Value) ? null : authcookie.Value;
+            if (!string.IsNullOrWhiteSpace(authquery?.Value))
+                auth_token = authquery.Value;
+            if (!string.IsNullOrWhiteSpace(authform?.Value))
+                auth_token = authform.Value;
 
             return auth_token;
         }
@@ -264,13 +264,11 @@ namespace Duplicati.Server.WebServer
             }
 
             var limitedAccess =
-                ControlHandler.CONTROL_HANDLER_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase)
-                ||
                 request.Uri.AbsolutePath.StartsWith(RESTHandler.API_URI_PATH, StringComparison.InvariantCultureIgnoreCase)
             ;
 
             // Override to allow the CAPTCHA call to go through
-            if (request.Uri.AbsolutePath.StartsWith(CAPTCHA_IMAGE_URI) && request.Method == "GET")
+            if (request.Uri.AbsolutePath.StartsWith(CAPTCHA_IMAGE_URI, StringComparison.InvariantCultureIgnoreCase) && request.Method == "GET")
                 limitedAccess = false;
 
             if (limitedAccess)

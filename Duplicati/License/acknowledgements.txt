@@ -11,3 +11,4 @@ Due to their recent contributions to Duplicati 2.0 we would like to thank some p
   Stefan Lück (@footstark) for providing great performance optimizations to Duplicati 2.0
   Tobias Käs (@weltkante) for his C# library that implements LZMA2 and 7z
   Alexander Franzelin (@AlexFRAN) for the design of the Duplicati UI and the website
+  @agrajaghh for building localization support and improving the user interface

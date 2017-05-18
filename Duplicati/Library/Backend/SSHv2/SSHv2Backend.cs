@@ -69,8 +69,6 @@ namespace Duplicati.Library.Backend
                 m_username = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
                 m_password = uri.Password;
-            if (uri.QueryParameters != null && uri.QueryParameters[SSH_FINGERPRINT_OPTION] != null)
-                m_fingerprint = uri.QueryParameters[SSH_FINGERPRINT_OPTION];
 
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
 

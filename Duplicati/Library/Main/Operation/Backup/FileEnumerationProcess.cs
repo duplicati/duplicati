@@ -31,6 +31,12 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class FileEnumerationProcess 
     {
+        private static void ReportError(string rootpath, string path, Exception ex, LogWrapper logWrapper)
+        {
+            if (logWrapper != null)
+                logWrapper.WriteWarningAsync(string.Format("Error reported while accessing file: {0}", path), ex);
+        }
+
         public static Task Run(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, string[] changedfilelist, Common.ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
@@ -74,6 +80,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     worklist = snapshot.EnumerateFilesAndFolders((root, path, attr) => {
                         return AttributeFilterAsync(root, path, attr, snapshot, log, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, mixinqueue).WaitForTask().Result;                        
+                    }, (root, path, attr) => {
+                        ReportError(root, path, attr, log);
                     });
                 }
 
@@ -100,7 +108,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-  
+
         /// <summary>
         /// Plugin filter for enumerating a list of files.
         /// </summary>

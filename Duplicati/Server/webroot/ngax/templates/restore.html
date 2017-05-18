@@ -1,10 +1,49 @@
 <script>$(function() { $( ".resizable" ).resizable(); });</script>
 
-<div class="restore" ng-controller="RestoreController">
+<div class="restore" ng-class="{'restore-direct': IsBackupTemporary}" ng-controller="RestoreController">
+
+    <div class="steps" ng-show="IsBackupTemporary &amp;&amp; restore_step &lt; 2">
+        <div class="step step1 not-clickable">
+            <span>1</span>
+        </div>
+        <div class="step step2 not-clickable">
+            <span>2</span>
+        </div>
+        <div class="step step3" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)">
+            <span>3</span>
+        </div>
+        <div class="step step4" ng-class="{active: restore_step == 1}" ng-click="trySetStep(1)">
+            <span>4</span>
+        </div>
+    </div>
+
+    <ol class="steps-legend" ng-show="IsBackupTemporary &amp;&amp; restore_step &lt; 2">
+        <li class="step1 not-clickable" translate>Backup location</li>
+        <li class="step2 not-clickable" translate>Encryption</li>
+        <li ng-class="{active: restore_step == 0}" class="step3" ng-click="trySetStep(0)" translate>Select files</li>
+        <li ng-class="{active: restore_step == 1}" class="step4" ng-click="trySetStep(1)" translate>Restore options</li>
+    </ol>
+
+
+    <div class="steps" ng-hide="IsBackupTemporary || restore_step &gt; 1">
+        <div class="step step1" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)">
+            <span>1</span>
+        </div>
+        <div class="step step2" ng-class="{active: restore_step == 1}" ng-click="trySetStep(1)">
+            <span>2</span>
+        </div>
+    </div>
+
+    <ol class="steps-legend" ng-hide="IsBackupTemporary || restore_step &gt; 1">
+        <li ng-class="{active: restore_step == 0}" class="step1" ng-click="trySetStep(0)" translate>Select files</li>
+        <li ng-class="{active: restore_step == 1}" class="step2" ng-click="trySetStep(1)" translate>Restore options</li>
+    </ol>
+
     <form id="restore" class="styled">
 
         <div ng-show="restore_step == 0 &amp;&amp; connecting == false">
-            <h1 translate>Restore files</h1>
+            <h1 ng-show="IsBackupTemporary" translate>Restore files</h1>
+            <h1 ng-hide="IsBackupTemporary" translate translate-params-backupname="Backup.Backup.Name">Restore files from {{backupname}}</h1>
             <div class="input timestamp">
                 <label for="restoreversion" translate>Restore from</label>
 
@@ -95,7 +134,7 @@
 
         </div>
 
-        <div ng-show="restore_step == 2 &amp;&amp; connecting == false">
+        <div ng-show="restore_step == 3 &amp;&amp; connecting == false">
             <h3>
                 <div class="hint-text" translate>Your files and folders have been restored successfully.</div>
                 <div ng-hide="SystemInfo.SuppressDonationMessages">

@@ -49,6 +49,8 @@ namespace Duplicati.Library.AutoUpdater
 
         public static bool RequiresRespawn { get; set; }
 
+        public static bool IgnoreWebrootFolder { get; set; }
+
         private static KeyValuePair<string, UpdateInfo>? m_hasUpdateInstalled;
 
         public static readonly UpdateInfo SelfVersion;
@@ -127,7 +129,7 @@ namespace Duplicati.Library.AutoUpdater
                 }
 
                 // Previous locations that we don't want to use,
-                // but we keep them active to avoid breaking the update syste
+                // but we keep them active to avoid breaking the update system
                 var legacypaths = new List<string>();
 
                 if (!string.IsNullOrWhiteSpace(programfiles))
@@ -604,6 +606,9 @@ namespace Duplicati.Library.AutoUpdater
                     if (string.IsNullOrWhiteSpace(relpath))
                         continue;
 
+                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot"))
+                        continue;
+
                     FileEntry fe;
                     if (!paths.TryGetValue(relpath, out fe))
                     {
@@ -1036,7 +1041,7 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         var targetfolder = System.IO.Path.Combine(INSTALLDIR, current);
                         var currentmanifest = ReadInstalledManifest(targetfolder);
-                        if (currentmanifest != null && VerifyUnpackedFolder(targetfolder, currentmanifest))
+                        if (currentmanifest != null && TryParseVersion(currentmanifest.Version) > TryParseVersion(best.Value.Version) && VerifyUnpackedFolder(targetfolder, currentmanifest))
                             best = new KeyValuePair<string, UpdateInfo>(targetfolder, currentmanifest);
                     }
                 }

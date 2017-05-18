@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.Database
     
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempblocktable));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""Targetpath"" TEXT NULL, ""DataVerified"" BOOLEAN NOT NULL) ", m_tempfiletable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""TargetPath"" TEXT NULL, ""DataVerified"" BOOLEAN NOT NULL) ", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL, ""Metadata"" BOOLEAN NOT NULL)", m_tempblocktable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_Index"" ON ""{0}"" (""TargetPath"")", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_HashSizeIndex"" ON ""{0}"" (""Hash"", ""Size"")", m_tempblocktable));
@@ -315,6 +315,19 @@ namespace Duplicati.Library.Main.Database
             return new Tuple<long, long>(0, 0);
         }
 
+        public string GetFirstPath()
+        {
+            using (var cmd = m_connection.CreateCommand())
+            {
+                cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""{0}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1", m_tempfiletable);
+                var v0 = cmd.ExecuteScalar();
+                if (v0 == null || v0 == DBNull.Value)
+                    return null;
+                
+                return v0.ToString();
+            }
+        }
+
         public string GetLargestPrefix()
         {
             using (var cmd = m_connection.CreateCommand())
@@ -322,8 +335,10 @@ namespace Duplicati.Library.Main.Database
                 cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""{0}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1", m_tempfiletable);
                 var v0 = cmd.ExecuteScalar();
                 string maxpath = "";
-                if (v0 != null)
+                if (v0 != null && v0 != DBNull.Value)
                     maxpath = v0.ToString();
+
+                var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(maxpath);
 
                 cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}""", m_tempfiletable);
                 var filecount = cmd.ExecuteScalarInt64(-1);
@@ -336,7 +351,7 @@ namespace Duplicati.Library.Main.Database
 
                 while (filecount != foundfiles && maxpath.Length > 0)
                 {
-                    var mp = Library.Utility.Utility.AppendDirSeparator(maxpath);
+                    var mp = Library.Utility.Utility.AppendDirSeparator(maxpath, dirsep);
                     cmd.SetParameterValue(0, mp.Length);
                     cmd.SetParameterValue(1, mp);
                     foundfiles = cmd.ExecuteScalarInt64(-1);
@@ -344,19 +359,22 @@ namespace Duplicati.Library.Main.Database
                     if (filecount != foundfiles)
                     {
                         var oldlen = maxpath.Length;
-                        maxpath = Duplicati.Library.Snapshots.SnapshotUtility.SystemIO.PathGetDirectoryName(maxpath);
+
+                        var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
+                        maxpath = maxpath.Substring(0, lix + 1);
                         if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
                             maxpath = "";
                     }
                 }
 
-                return maxpath == "" ? "" : Library.Utility.Utility.AppendDirSeparator(maxpath);
+                return maxpath == "" ? "" : Library.Utility.Utility.AppendDirSeparator(maxpath, dirsep);
             }
-
         }
 
         public void SetTargetPaths(string largest_prefix, string destination)
         {
+            var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(string.IsNullOrWhiteSpace(largest_prefix) ? GetFirstPath() : largest_prefix);
+
             using(var cmd = m_connection.CreateCommand())
             {
                 if (string.IsNullOrEmpty(destination))
@@ -364,33 +382,61 @@ namespace Duplicati.Library.Main.Database
                     //The string fixing here is meant to provide some non-random
                     // defaults when restoring cross OS, e.g. backup on Linux, restore on Windows
                     //This is mostly meaningless, and the user really should use --restore-path
-                
-                    if (Library.Utility.Utility.IsClientLinux)
+
+                    if (Library.Utility.Utility.IsClientLinux && dirsep == "\\")
+                    {
                         // For Win -> Linux, we remove the colon from the drive letter, and use the drive letter as root folder
-                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN ""/"" || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
-                    else
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN ""\\"" || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == ""\\"" THEN ""\\"" || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable));
+
+                    }
+                    else if (Library.Utility.Utility.IsClientWindows && dirsep == "/")
+                    {
                         // For Linux -> Win, we use the temporary folder's drive as the root path
-                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == ""/"" THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable), Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)));
-                    
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == ""/"" THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable), Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"));
+                    }
+                    else
+                    {
+                        // Same OS, just use the path directly
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = ""Path"" ", m_tempfiletable));
+                    }
                 }
                 else
                 {                        
                     if (string.IsNullOrEmpty(largest_prefix))
                     {
-                        //Special case, restoring to new folder, but files are from different drives
-                        // So we use the format <restore path> / <drive letter> / <source path>
-                        // To avoid generating paths with a colon
-                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = ? || CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable), destination);
+                        //Special case, restoring to new folder, but files are from different drives (no shared root on Windows)
+
+                        // We use the format <restore path> / <drive letter> / <source path>
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
+
+                        // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == ""\\"" THEN SUBSTR(""Path"", 2) ELSE ""TargetPath"" END", m_tempfiletable));
                     }
                     else
                     {
-                        largest_prefix = Library.Utility.Utility.AppendDirSeparator(largest_prefix);
-                        cmd.CommandText = string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = ? || SUBSTR(""Path"", ?)", m_tempfiletable);
-                        cmd.AddParameter(destination);
-                        cmd.AddParameter(largest_prefix.Length + 1);
-                        cmd.ExecuteNonQuery();
+                        largest_prefix = Library.Utility.Utility.AppendDirSeparator(largest_prefix, dirsep);
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = SUBSTR(""Path"", ?)", m_tempfiletable), largest_prefix.Length + 1);
                     }
-                   }
+                }
+
+                // Cross-os path remapping support
+                if (Library.Utility.Utility.IsClientLinux && dirsep == "\\")
+                    // For Win paths on Linux
+                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(""TargetPath"", ""\"", ""/"")", m_tempfiletable));
+                else if (Library.Utility.Utility.IsClientWindows && dirsep == "/")
+                    // For Linux paths on Windows
+                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(REPLACE(""TargetPath"", ""\"", ""_""), ""/"", ""\"")", m_tempfiletable));
+
+                if (!string.IsNullOrEmpty(destination))
+                {
+                    // Paths are now relative with target-os naming system
+                    // so we prefix them with the target path
+
+                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = ? || ""TargetPath"" ", m_tempfiletable), Library.Utility.Utility.AppendDirSeparator(destination));
+                }
+
+
             }
         }
 
@@ -887,7 +933,7 @@ namespace Duplicati.Library.Main.Database
                 cmd.AddParameter(!onlyNonVerified);
                 using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""ID"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{0}"".""DataVerified"" <= ?", m_tempfiletable)))
                     while (rd.Read())
-                        yield return new FileToRestore(rd.GetInt64(0), rd.GetString(1), rd.GetString(2), rd.GetInt64(3));
+                        yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3));
             }
         }
 

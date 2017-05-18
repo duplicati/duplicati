@@ -39,9 +39,15 @@ namespace Duplicati.Library.Utility
         
         public static IFilter Join(IFilter first, IFilter second)
         {
-            if (first == null || first.Empty)
+            if (first == null && second == null)
+                return null;
+            else if (first == null)
                 return second;
-            else if (second == null || second.Empty)
+            else if (second == null)
+                return first;
+            else if (first.Empty)
+                return second;
+            else if (second.Empty)
                 return first;
             else
             {

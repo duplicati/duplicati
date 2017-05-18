@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
             
-            using(var db = new LocalDeleteDatabase(m_options.Dbpath, true))
+            using(var db = new LocalDeleteDatabase(m_options.Dbpath, "Compact"))
             {
                 var tr = db.BeginTransaction();
                 try
@@ -257,11 +257,13 @@ namespace Duplicati.Library.Main.Operation
                             
                     backend.WaitForComplete(db, transaction);
                 }
-                
+
+                m_result.EndTime = DateTime.UtcNow;
                 return (m_result.DeletedFileCount + m_result.UploadedFileCount) > 0;
             }
             else
             {
+                m_result.EndTime = DateTime.UtcNow;
                 return false;
             }
         }

@@ -72,11 +72,6 @@ namespace Duplicati.Library.Utility
         /// The number of ticks to have passed before a sample is taken
         /// </summary>
 		private const long SAMPLE_PERIOD = TimeSpan.TicksPerSecond / 4;
-        
-        /// <summary>
-        /// The number of bytes to process without raising an event
-        /// </summary>
-        private const int REPORT_DISTANCE_SIZE = 1024 * 50;
 
         /// <summary>
         /// Creates a throttle around a stream.

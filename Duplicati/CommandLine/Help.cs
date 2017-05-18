@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -57,13 +58,16 @@ namespace Duplicati.CommandLine
             }
         }
 
-        public static void PrintUsage(string topic, IDictionary<string, string> options)
+        public static void PrintUsage(TextWriter outwriter, string topic, IDictionary<string, string> options)
         {
             try
             {
-                //Force translation off
-                System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-                System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
+                //Force translation off if this is from the commandline
+                if (Program.FROM_COMMANDLINE)
+                {
+                    System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+                    System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
+                }
             }
             catch
             {
@@ -109,7 +113,7 @@ namespace Duplicati.CommandLine
                     foreach (Library.Interface.ICommandLineArgument arg in opts.SupportedCommands)
                         sorted.Add(arg.Name, arg);
 
-                    foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedCommands)
+                    foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedOptions)
                         sorted[arg.Name] = arg;
 
                     foreach (Library.Interface.ICommandLineArgument arg in sorted.Values)
@@ -125,7 +129,7 @@ namespace Duplicati.CommandLine
                         Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
 
 
-                    foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedCommands)
+                    foreach (Library.Interface.ICommandLineArgument arg in Program.SupportedOptions)
                         Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
 
                     lines.Add("");
@@ -204,11 +208,11 @@ namespace Duplicati.CommandLine
                         tp = tp.Replace("%MODULEOPTIONS%", PrintArgsSimple(args));
                     else
                     {
-                        Console.WriteLine("Topic not found: {0}", topic);
-                        Console.WriteLine();
+                        outwriter.WriteLine("Topic not found: {0}", topic);
+                        outwriter.WriteLine();
                         //Prevent recursive lookups
                         if (topic != "help")
-                            PrintUsage("help", new Dictionary<string, string>());
+                            PrintUsage(outwriter, "help", new Dictionary<string, string>());
                         return;
                     }
                 }
@@ -216,7 +220,7 @@ namespace Duplicati.CommandLine
                 if (NAMEDOPTION_REGEX.IsMatch(tp))
                     tp = NAMEDOPTION_REGEX.Replace(tp, new Matcher().MathEvaluator); 
 
-                PrintFormatted(tp.Split(new string[] { Environment.NewLine }, StringSplitOptions.None));
+                PrintFormatted(outwriter, tp.Split(new string[] { Environment.NewLine }, StringSplitOptions.None));
             }
             else
             {
@@ -259,13 +263,13 @@ namespace Duplicati.CommandLine
 
                 if (lines.Count != 0)
                 {
-                    PrintFormatted(lines);
+                    PrintFormatted(outwriter, lines);
                 }
                 else
                 {
-                    Console.WriteLine("Topic not found: {0}", topic);
-                    Console.WriteLine();
-                    PrintUsage("help", new Dictionary<string, string>());
+                    outwriter.WriteLine("Topic not found: {0}", topic);
+                    outwriter.WriteLine();
+                    PrintUsage(outwriter, "help", new Dictionary<string, string>());
                 }
             }
         }
@@ -361,14 +365,15 @@ namespace Duplicati.CommandLine
 
         }
 
-        private static void PrintFormatted(IEnumerable<string> lines)
+        private static void PrintFormatted(TextWriter outwriter, IEnumerable<string> lines)
         {
             int windowWidth = 80;
             
             try 
             {
                 // This can go wrong if we have no attached console
-                windowWidth = Math.Max(12, Console.WindowWidth == 0 ? 80 : Console.WindowWidth); 
+                if (outwriter == Console.Out)
+                    windowWidth = Math.Max(12, Console.WindowWidth == 0 ? 80 : Console.WindowWidth); 
             }
             catch { }
             
@@ -376,7 +381,7 @@ namespace Duplicati.CommandLine
             {
                 if (string.IsNullOrEmpty(s) || s.Trim().Length == 0)
                 {
-                    Console.WriteLine();
+                    outwriter.WriteLine();
                     continue;
                 }
 
@@ -402,7 +407,7 @@ namespace Duplicati.CommandLine
                             len = ix;
                     }
 
-                    Console.WriteLine(leadingSpaces + c.Substring(0, len).Trim());
+                    outwriter.WriteLine(leadingSpaces + c.Substring(0, len).Trim());
                     c = c.Remove(0, len);
                     if (extraIndent)
                     {
@@ -421,7 +426,7 @@ namespace Duplicati.CommandLine
             {
                 List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>();
                 foundArgs.Add(new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
-                foundArgs.Add(Program.SupportedCommands);
+                foundArgs.Add(Program.SupportedOptions);
 
                 foreach (Duplicati.Library.Interface.IBackend backend in Library.DynamicLoader.BackendLoader.Backends)
                     if (backend.SupportedCommands != null)
