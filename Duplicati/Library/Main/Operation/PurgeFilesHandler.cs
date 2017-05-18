@@ -152,7 +152,7 @@ namespace Duplicati.Library.Main.Operation
 
                                     m_result.AddMessage(string.Format("Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize)));
 
-                                    db.WriteFileset(vol, tr, newids.Item2);
+                                    db.WriteFileset(vol, newids.Item2, tr);
 
                                     m_result.RemovedFileSize += tempset.RemovedFileSize;
                                     m_result.RemovedFileCount += tempset.RemovedFileCount;

@@ -283,6 +283,26 @@ namespace Duplicati.Library.Main.Database
             return RemoteVolumeEntry.Empty;
         }
 
+        public bool GetRemoteVolume(string file, out string hash, out long size, out RemoteVolumeType type, out RemoteVolumeState state)
+        {
+            m_selectremotevolumeCommand.SetParameterValue(0, file);
+            using (var rd = m_selectremotevolumeCommand.ExecuteReader())
+                if (rd.Read())
+                {
+                    type = (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(0).ToString());
+                    size = (rd.GetValue(1) == null || rd.GetValue(1) == DBNull.Value) ? -1 : rd.GetInt64(1);
+                    hash = (rd.GetValue(2) == null || rd.GetValue(2) == DBNull.Value) ? null : rd.GetValue(2).ToString();
+                    state = (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(3).ToString());
+                    return true;
+                }
+
+            hash = null;
+            size = -1;
+            type = (RemoteVolumeType)(-1);
+            state = (RemoteVolumeState)(-1);
+            return false;
+        }
+
         public IEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes()
         {
             foreach(var rd in m_selectduplicateRemoteVolumesCommand.ExecuteReaderEnumerable(null))
@@ -726,7 +746,7 @@ namespace Duplicati.Library.Main.Database
                 return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > ?", -1, fhblocksize);
         }
 
-        public void VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists, System.Data.IDbTransaction transaction)
+        public void VerifyConsistency(System.Data.IDbTransaction transaction, long blocksize, long hashsize, bool verifyfilelists)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {

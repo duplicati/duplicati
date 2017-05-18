@@ -178,7 +178,7 @@ namespace Duplicati.Library.Main.Operation
 
             public IEnumerable<string> EnumerateFilesAndFolders()
             {
-                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter))
+                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter, (root, path, ex) => { }))
                 {
                     while (m_mixinqueue.Count > 0)
                         yield return m_mixinqueue.Dequeue();

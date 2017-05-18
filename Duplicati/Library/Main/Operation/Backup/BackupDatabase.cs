@@ -101,7 +101,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 long lastFileSize;
                 string oldMetahash;
                 long oldMetasize;
-
+                
                 var id = m_database.GetFileEntry(path, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
                 return
                     id < 0 ?
@@ -210,7 +210,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task VerifyConsistencyAsync(int blocksize, int blockhashSize, bool verifyfilelists)
         {
-            return RunOnMain(() => m_database.VerifyConsistency(blocksize, blockhashSize, verifyfilelists, m_transaction));
+            return RunOnMain(() => m_database.VerifyConsistency(m_transaction, blocksize, blockhashSize, verifyfilelists));
         }
 
         public Task RemoveRemoteVolumeAsync(string remoteFilename)

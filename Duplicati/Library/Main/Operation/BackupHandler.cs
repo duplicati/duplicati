@@ -27,13 +27,10 @@ namespace Duplicati.Library.Main.Operation
         private LocalBackupDatabase m_database;
         private System.Data.IDbTransaction m_transaction;
        
-        private Library.Utility.IFilter m_filter;;
+        private Library.Utility.IFilter m_filter;
         private Library.Utility.IFilter m_sourceFilter;
 
-        private BackupResults m_result
-
-
-
+        private BackupResults m_result;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
@@ -43,15 +40,10 @@ namespace Duplicati.Library.Main.Operation
                             
             if (options.AllowPassphraseChange)
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported);
-       }
-
-
-
+        }
 
         public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
-    kups
-
-
+        { 
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
@@ -68,9 +60,40 @@ namespace Duplicati.Library.Main.Operation
             return Library.Utility.Utility.IsClientLinux ?
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux(sources, options.RawOptions)
                     :
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
-   
-    }
+                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);   
+        }
+
+        private void PreBackupVerify(BackendManager backend)
+        {
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
+            using (new Logging.Timer("PreBackupVerify"))
+            {
+                try
+                {
+                    if (m_options.NoBackendverification)
+                    {
+                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
+                        UpdateStorageStatsFromDatabase();
+                    }
+                    else
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                }
+                catch (Exception ex)
+                {
+                    if (m_options.AutoCleanup)
+                    {
+                        m_result.AddWarning("Backend verification failed, attempting automatic cleanup", ex);
+                        m_result.RepairResults = new RepairResults(m_result);
+                        new RepairHandler(backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
+
+                        m_result.AddMessage("Backend cleanup finished, retrying verification");
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                    }
+                    else
+                        throw;
+                }
+            }
+        }
 
 
         private void PreBackupVerify(BackendManager backend, string protectedfile)
@@ -263,7 +286,10 @@ namespace Duplicati.Library.Main.Operation
                 await uploader;
 
             // Grab the size of the last uploaded volume
-private async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
+            return await flushReq.LastWriteSizeAync;
+        }
+
+        private async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
             
@@ -432,11 +458,11 @@ private async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
                     lh.Wait(500);
                 }
             }
-        }VolumeStatpublic void Dispose()
+        }
+
+        public void Dispose()
         {
             m_result.EndTime = DateTime.UtcNow;
-        }icks == 0)
-                m_result.EndTime = DateTime.UtcNow;
         }
     }
 }

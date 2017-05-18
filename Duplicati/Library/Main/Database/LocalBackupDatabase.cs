@@ -83,7 +83,10 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_selectblocklistHashesCommand;
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
-        
+
+        private HashLookupHelper<KeyValuePair<long, long>> m_blockHashLookup;
+        private HashLookupHelper<long> m_fileHashLookup;
+        private HashLookupHelper<long> m_metadataLookup;
         private PathLookupHelper<PathEntryKeeper> m_pathLookup;
         
         private long m_filesetId;
@@ -539,7 +542,7 @@ namespace Duplicati.Library.Main.Database
             return -1;
         }
 
-        public long GetFileEntry(string path, long filesetid, out DateTime oldModified, out long lastFileSize, out string oldMetahash, out long oldMetasize)
+        public long GetFileEntry(string path, out DateTime oldModified, out long lastFileSize, out string oldMetahash, out long oldMetasize)
         {
             if (m_pathLookup != null)
             {            
@@ -727,6 +730,7 @@ namespace Duplicati.Library.Main.Database
             using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"" WHERE ""ID"" = ?", id))
                 if (rd.Read())
                     return new RemoteVolumeEntry(
+                        id,
                         rd.GetValue(0).ToString(),
                         (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
                         rd.ConvertValueToInt64(2, -1),
@@ -737,8 +741,7 @@ namespace Duplicati.Library.Main.Database
                 else
                     return default(RemoteVolumeEntry);
         }
-
-        public IEnumerable<string> GetMissingIndexFiles()
+        
         public IEnumerable<string> GetMissingIndexFiles(System.Data.IDbTransaction transaction)
         {
             using(var cmd = m_connection.CreateCommand(transaction))
@@ -788,7 +791,7 @@ namespace Duplicati.Library.Main.Database
 
             using(var cmd = m_connection.CreateCommand(transaction))
             {
-                var c = cmd.ExecuteNonQuery(@"SELECT COUNT(*) FROM ""Block"" WHERE ""VolumeID"" = ? ", volumeid);
+                var c = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Block"" WHERE ""VolumeID"" = ? ", -1, volumeid);
                 if (c != 0)
                     throw new Exception(string.Format("Failed to safe-delete volume {0}, blocks: {1}", name, c));
 

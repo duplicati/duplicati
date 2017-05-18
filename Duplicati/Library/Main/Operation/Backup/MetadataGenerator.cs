@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 if (options.StoreMetadata)
                 {
-                    metadata = snapshot.GetMetadata(path);
+                    metadata = snapshot.GetMetadata(path, attributes.HasFlag(System.IO.FileAttributes.ReparsePoint), options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
                     if (metadata == null)
                         metadata = new Dictionary<string, string>();
 
