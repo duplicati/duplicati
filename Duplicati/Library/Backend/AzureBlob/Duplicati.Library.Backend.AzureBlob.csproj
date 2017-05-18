@@ -42,9 +42,6 @@
       <HintPath>..\..\..\..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
     </Reference>
     <Reference Include="System.Data" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Data.Edm">
       <HintPath>..\..\..\..\packages\Microsoft.Data.Edm.5.8.1\lib\net40\Microsoft.Data.Edm.dll</HintPath>
     </Reference>
@@ -62,6 +59,9 @@
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Storage">
       <HintPath>..\..\..\..\packages\WindowsAzure.Storage.7.2.1\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

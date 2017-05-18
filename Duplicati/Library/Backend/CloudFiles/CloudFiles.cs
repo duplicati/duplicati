@@ -346,8 +346,13 @@ namespace Duplicati.Library.Backend
             {
                 string fileHash = null;
 
+                long streamLen = -1;
+                try { streamLen = stream.Length; }
+                catch {}
+
+
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.IO.Stream s = areq.GetRequestStream())
+                using (System.IO.Stream s = areq.GetRequestStream(streamLen))
                 using (var mds = new Utility.MD5CalculatingStream(s))
                 {
                     Utility.Utility.CopyStream(stream, mds, true, m_copybuffer);
