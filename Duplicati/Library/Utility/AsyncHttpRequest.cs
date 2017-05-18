@@ -117,8 +117,13 @@ namespace Duplicati.Library.Utility
         public Stream GetRequestStream(long contentlength = -1)
         {
             // Prevent in-memory buffering causing out-of-memory issues
-            if (contentlength >= 0 || m_request.ContentLength >= 0)
-                ((HttpWebRequest)m_request).AllowWriteStreamBuffering = false;
+            if (m_request is HttpWebRequest)
+            {
+                if (contentlength >= 0)
+                    ((HttpWebRequest)m_request).ContentLength = contentlength;
+                if (m_request.ContentLength >= 0)
+                    ((HttpWebRequest)m_request).AllowWriteStreamBuffering = false;
+            }
 
             if (m_state == RequestStates.GetRequest)
                 return (Stream)m_asyncRequest.GetResponseOrStream();
