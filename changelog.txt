@@ -1,3 +1,8 @@
+2017-05-19 - 2.0.1.58_canary_2017-05-19
+==========
+* Fixed an issue with the FTP backend in 2.0.1.57
+* Improved the query used to get the timestamp if `--check-filetime-only` is enabled
+
 2017-05-17 - 2.0.1.57_canary_2017-05-17
 ==========
 * Fixed an issue with not being performed correctly with AmzCD
