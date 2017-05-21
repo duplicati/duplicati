@@ -480,7 +480,7 @@ namespace Duplicati.Server.Database
                 bool update = item.ID != null;
                 if (!update && item.DBPath == null)
                 {
-                    var folder = Program.DATAFOLDER;
+                    var folder = Program.DataFolder;
                     if (!System.IO.Directory.Exists(folder))
                         System.IO.Directory.CreateDirectory(folder);
                     

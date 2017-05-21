@@ -141,7 +141,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             
             if (Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) && Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
-                databaseConnection = GetDatabaseConnection(_args);
+                databaseConnection = Server.Program.GetDatabaseConnection(options);
 
             string pwd;
 
@@ -224,95 +224,6 @@ namespace Duplicati.GUI.TrayIcon
                     }
                 } while (reSpawn < 3);
             }
-        }
-
-        private static Server.Database.Connection GetDatabaseConnection(string[] args)
-        {
-            //Find commandline options here for handling special startup cases
-            var commandlineOptions = Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args));
-            var dbPassword = Environment.GetEnvironmentVariable(Server.Program.DB_KEY_ENV_NAME);
-
-            //If we are on windows we encrypt the database by default
-            //We do not encrypt on Linux as most distros use a SQLite library without encryption support,
-            //Linux users can use an encrypted home folder, or install a SQLite library with encryption support
-            if (!Library.Utility.Utility.IsClientLinux &&
-                string.IsNullOrEmpty(Environment.GetEnvironmentVariable(Server.Program.DB_KEY_ENV_NAME)))
-                    dbPassword = Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42";
-
-            if (commandlineOptions.ContainsKey("server-encryption-key"))
-                dbPassword = commandlineOptions["server-encryption-key"];
-
-            var serverDataFolder = Environment.GetEnvironmentVariable(Server.Program.DATAFOLDER_ENV_NAME);
-
-            // Allow override of the environment variables from the commandline
-            if (commandlineOptions.ContainsKey("server-datafolder"))
-                serverDataFolder = commandlineOptions["server-datafolder"];
-            
-            //Set the %DUPLICATI_HOME% env variable, if it is not already set
-            if (string.IsNullOrEmpty(serverDataFolder))
-            {
-#if DEBUG
-                //debug mode uses a lock file located in the app folder
-                serverDataFolder = Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
-#else
-                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
-
-                if (portableMode)
-                {
-                    //Portable mode uses a data folder in the application home dir
-                    serverDataFolder = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "data");
-                    System.IO.Directory.SetCurrentDirectory(Library.AutoUpdater.UpdaterManager.InstalledBaseDir);
-                }
-                else
-                {
-                    //Normal release mode uses the systems "Application Data" folder
-                    serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
-                }
-#endif
-            }
-            
-            var sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
-
-            if (sqliteVersion < new Version(3, 6, 3))
-            {
-                //The official Mono SQLite provider is also broken with less than 3.6.3
-                throw new Exception($@"Unsupported version of SQLite detected ({sqliteVersion}), must be 3.6.3 or higher");
-            }
-
-            //Create the connection instance
-            var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection();
-
-            try
-            {
-                var databasePath = System.IO.Path.Combine(Library.Utility.Utility.AppendDirSeparator(
-                    Library.Utility.Utility.ExpandEnvironmentVariables(serverDataFolder).Trim('"')), "Duplicati-server.sqlite");
-
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(databasePath)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(databasePath));
-#if DEBUG
-                //Default is to not use encryption for debugging
-                var useDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") && !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
-#else
-                var useDatabaseEncryption = !commandlineOptions.ContainsKey("unencrypted-database") || !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
-#endif
-                con.ConnectionString = "Data Source=" + databasePath;
-
-                //Attempt to open the database, handling any encryption present
-                Server.Program.OpenDatabase(con, useDatabaseEncryption, dbPassword);
-
-                Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, databasePath,
-                    typeof(Duplicati.Server.Database.Connection));
-            }
-            catch (Exception ex)
-            {
-                //Unwrap the reflection exceptions
-                if (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
-                    ex = ex.InnerException;
-
-                throw new Exception($@"Failed to create, open or upgrade the database. Error message: {ex}");
-            }
-
-            return new Duplicati.Server.Database.Connection(con);
         }
 
         private static TrayIconBase RunTrayIcon(string toolkit)
