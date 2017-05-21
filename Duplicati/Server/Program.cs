@@ -349,7 +349,7 @@ namespace Duplicati.Server
                     con.ConnectionString = "Data Source=" + DatabasePath;
 
                     //Attempt to open the database, handling any encryption present
-                    OpenDatabase(con);
+                    OpenDatabase(con, Program.UseDatabaseEncryption, Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME));
 
                     Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Duplicati.Server.Database.Connection));
                 }
@@ -623,15 +623,14 @@ namespace Duplicati.Server
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>
         /// <param name="con">The SQLite connection object</param>
-        internal static void OpenDatabase(System.Data.IDbConnection con)
+        /// <param name="useDatabaseEncryption">Specify if database is encrypted</param>
+        /// <param name="password">Encryption password</param>
+        public static void OpenDatabase(System.Data.IDbConnection con, bool useDatabaseEncryption, string password)
         {
-            bool noEncryption = !Program.UseDatabaseEncryption;
-            string password = Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME);
-
             System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new Type[] { typeof(string) });
             string attemptedPassword;
 
-            if (noEncryption || string.IsNullOrEmpty(password))
+            if (!useDatabaseEncryption || string.IsNullOrEmpty(password))
                 attemptedPassword = null; //No encryption specified, attempt to open without
             else
                 attemptedPassword = password; //Encryption specified, attempt to open with
@@ -660,13 +659,11 @@ namespace Duplicati.Server
                         throw;
 
                     //Open failed, now try the reverse
-                    if (attemptedPassword == null)
-                        attemptedPassword = password;
-                    else
-                        attemptedPassword = null;
+                    attemptedPassword = attemptedPassword == null ? password : null;
 
                     con.Close();
-                    setPwdMethod.Invoke(con, new object[] { attemptedPassword });
+                    if (setPwdMethod != null)
+                        setPwdMethod.Invoke(con, new object[] { attemptedPassword });
                     con.Open();
 
                     // Do a dummy query to make sure we have a working db
@@ -688,7 +685,7 @@ namespace Duplicati.Server
 
                 //The open method succeeded with the non-default method, now change the password
                 System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new Type[] { typeof(string) });
-                changePwdMethod.Invoke(con, new object[] { noEncryption ? null : password });
+                changePwdMethod.Invoke(con, new object[] { useDatabaseEncryption ? password : null });
             }
         }
 
