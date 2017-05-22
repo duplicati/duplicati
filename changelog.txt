@@ -1,3 +1,8 @@
+2017-05-22 - 2.0.1.59_canary_2017-05-22
+==========
+* Fixed an issue with NewtonSoft.Json not loading for some backends
+* Note that Windows VSS now requires VC++ Redist 2015 installed
+
 2017-05-19 - 2.0.1.58_canary_2017-05-19
 ==========
 * Fixed an issue with the FTP backend in 2.0.1.57
