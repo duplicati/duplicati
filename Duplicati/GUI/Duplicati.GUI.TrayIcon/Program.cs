@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -98,7 +98,13 @@ namespace Duplicati.GUI.TrayIcon
             
             string toolkit;
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
-                toolkit = GetDefaultToolKit(true);
+            {
+#if !(__MonoCS__ || __WindowsGTK__ || ENABLE_GTK)
+				if (Library.Utility.Utility.IsClientLinux && !Library.Utility.Utility.IsClientOSX)
+					Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
+#endif
+				toolkit = GetDefaultToolKit(true);
+            }
             else 
             {
                 if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
