@@ -28,7 +28,7 @@ AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
 AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
 
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
-XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
+XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
@@ -110,7 +110,7 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 "${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
 find "Duplicati" -type d -name "Release" | xargs rm -rf
-"${XBUILD}" /p:Configuration=Release "Duplicati.sln"
+"${XBUILD}" /p:DefineConstants=__MonoCS__ /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
 BUILD_STATUS=$?
 
 if [ "${BUILD_STATUS}" -ne 0 ]; then
