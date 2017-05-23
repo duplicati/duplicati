@@ -1,3 +1,7 @@
+2017-05-23 - 2.0.1.60_canary_2017-05-23
+==========
+* Re-enabled the GTK trayicon that was missing in the previous two versions
+
 2017-05-22 - 2.0.1.59_canary_2017-05-22
 ==========
 * Fixed an issue with NewtonSoft.Json not loading for some backends
