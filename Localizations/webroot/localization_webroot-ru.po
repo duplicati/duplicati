@@ -3,6 +3,7 @@
 # Dmitry Kartsyn <kd@sparta-it.ru>, 2016
 # Vadim P <kladzey@gmail.com>, 2017
 # Rondo Van <hope2013@mail.ru>, 2017
+# Jony Rh <info@jonyrh.ru>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
@@ -583,7 +584,7 @@ msgstr "Удалить локальную базу данных"
 
 #: templates/delete.html:41
 msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
-msgstr "Удалить {{filecount}} файлов ({{размер}}) из удаленного хранилища?"
+msgstr "Удалить {{filecount}} файлов ({{filesize}}) из удаленного хранилища?"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
