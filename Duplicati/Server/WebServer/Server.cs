@@ -287,7 +287,7 @@ namespace Duplicati.Server.WebServer
                 server.Add(proxy_files);
             }
 
-            var fh = new FileModule("/", webroot);
+            var fh = new FileModule("/", webroot, true);
             AddMimeTypes(fh);
             server.Add(fh);
 
