@@ -38,17 +38,11 @@ namespace Duplicati.Library.Main.Operation
             m_backendurl = backendurl;
                             
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
+                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported);
         }
         
         public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
         {
-            if (!Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                log.AddWarning("hyperv-backup-vm is efective only on Windows OS.", null);
-
-            if (Library.Utility.Utility.IsClientWindows && options.RawOptions.ContainsKey("hyperv-backup-vm") && options.SnapShotStrategy == Options.OptimizationStrategy.Off)
-                throw new Exception("Snapshot strategy cannot be Off when backuping Hyper-V using hyperv-backup-vm"); //VSS is required for Hyper-V backups
-
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
@@ -58,8 +52,6 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw;
-                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On && options.RawOptions.ContainsKey("hyperv-backup-vm"))
-                    throw; //VSS is required for Hyper-V backups
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                     log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);
             }
@@ -70,7 +62,7 @@ namespace Duplicati.Library.Main.Operation
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
         }
 
-        private void PreBackupVerify(BackendManager backend)
+        private void PreBackupVerify(BackendManager backend, string protectedfile)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
             using(new Logging.Timer("PreBackupVerify"))
@@ -83,7 +75,7 @@ namespace Duplicati.Library.Main.Operation
 						UpdateStorageStatsFromDatabase();
 					}
 					else
-						FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
                 }
                 catch (Exception ex)
                 {
@@ -105,7 +97,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperation(Snapshots.ISnapshotService snapshot, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader)
+        private static async Task RunMainOperation(Snapshots.ISnapshotService snapshot, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader, long lastfilesetid)
         {
             using(new Logging.Timer("BackupMainOperation"))
             {
@@ -123,7 +115,7 @@ namespace Duplicati.Library.Main.Operation
                             Backup.StreamBlockSplitter.Run(options, database, taskreader),
                             Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist, taskreader),
                             Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
-                            Backup.MetadataPreProcess.Run(snapshot, options, database),
+                            Backup.MetadataPreProcess.Run(snapshot, options, database, lastfilesetid),
                             Backup.SpillCollectorProcess.Run(options, database, taskreader),
                             Backup.ProgressHandler.Run(result)
                         }
@@ -185,7 +177,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using(var testdb = new LocalTestDatabase(m_database))
                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
-                    new TestHandler(m_backendurl, m_options, new TestResults(m_result))
+                    new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
                         .DoRun(m_options.BackupTestSampleCount, testdb, backend);
             }
         }
@@ -281,11 +273,15 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
 
+                var probe_path = m_database.GetFirstPath();
+                if (probe_path != null && Duplicati.Library.Utility.Utility.GuessDirSeparator(probe_path) != System.IO.Path.DirectorySeparatorChar.ToString())
+                    throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"));
+
                 if (m_database.PartiallyRecreated)
-                    throw new Exception("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                    throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
                 
                 if (m_database.RepairInProgress)
-                    throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
+                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
 
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that the sources are included
@@ -321,12 +317,35 @@ namespace Duplicati.Library.Main.Operation
                                 // Start the uploader process
                                 uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result, m_result.TaskReader);
 
+                                // If we have an interrupted backup, grab the 
+                                string lasttempfilelist = null;
+                                long lasttempfileid = -1;
+                                if (!m_options.DisableSyntheticFilelist)
+                                {
+                                    var candidates = (await db.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToArray();
+                                    if (candidates.Length > 0)
+                                    {
+                                        lasttempfileid = candidates.Last().Key;
+                                        lasttempfilelist = m_database.GetRemoteVolumeFromID(lasttempfileid).Name;
+                                    }
+                                }
+
                                 // TODO: Rewrite to using the uploader process, or the BackendHandler interface
                                 // Do a remote verification, unless disabled
-                                PreBackupVerify(backend);
+                                PreBackupVerify(backend, lasttempfilelist);
 
                                 // If the previous backup was interrupted, send a synthetic list
-                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader);
+                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader, lasttempfilelist, lasttempfileid);
+
+                                // Grab the previous backup ID, if any
+                                var prevfileset = m_database.FilesetTimes.FirstOrDefault();
+                                if (prevfileset.Value.ToUniversalTime() > m_database.OperationTimestamp.ToUniversalTime())
+                                    throw new Exception(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()));
+                                
+                                var lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
+
+                                // Rebuild any index files that are missing
+                                await Backup.RecreateMissingIndexFiles.Run(db, m_options, m_result, m_result.TaskReader);
 
                                 // This should be removed as the lookups are no longer used
                                 m_database.BuildLookupTable(m_options);
@@ -346,7 +365,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Run the backup operation
                                 if (await m_result.TaskReader.ProgressAsync)
-                                    await RunMainOperation(snapshot, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader);
+                                    await RunMainOperation(snapshot, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid);
                             }
                             finally
                             {
@@ -393,7 +412,6 @@ namespace Duplicati.Library.Main.Operation
                                 m_transaction.Commit();
                                 
                             m_transaction = null;
-                            m_database.Vacuum();
 
 							if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
 							{
@@ -436,7 +454,8 @@ namespace Duplicati.Library.Main.Operation
 
         public void Dispose()
         {
-            m_result.EndTime = DateTime.UtcNow;
+            if (m_result.EndTime.Ticks == 0)
+                m_result.EndTime = DateTime.UtcNow;
         }
     }
 }

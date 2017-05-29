@@ -46,7 +46,17 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(options.FileHashAlgorithm);
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-                var maxmetadatasize = (options.Blocksize / options.BlockhashSize) * options.Blocksize;
+                var maxmetadatasize = (options.Blocksize / (long)options.BlockhashSize) * options.Blocksize;
+
+                 if (blockhasher == null)
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm));
+                 if (filehasher == null)
+                     throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm));
+ 
+                 if (!blockhasher.CanReuseTransform)
+                     throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm));
+                 if (!filehasher.CanReuseTransform)
+                     throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.FileHashAlgorithm));
 
                 using (var empty_metadata_stream = new MemoryStream(emptymetadata.Blob))
                 while (await taskreader.ProgressAsync)

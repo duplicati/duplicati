@@ -71,7 +71,13 @@ namespace Duplicati.Library.Main.Operation
 
             }
 
-            public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
+			public void ReportError(string rootpath, string path, Exception ex)
+			{
+				if (m_logWriter != null)
+					m_logWriter.AddWarning(string.Format("Error reported while accessing file: {0}", path), ex);
+			}
+
+			public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
             {
                 try
                 {
@@ -178,7 +184,7 @@ namespace Duplicati.Library.Main.Operation
 
             public IEnumerable<string> EnumerateFilesAndFolders()
             {
-                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter))
+                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter, ReportError))
                 {
                     while (m_mixinqueue.Count > 0)
                         yield return m_mixinqueue.Dequeue();

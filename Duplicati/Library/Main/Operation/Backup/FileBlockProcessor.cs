@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             await log.WriteVerboseAsync("File has only metadata changes {0}", e.Path);
                             await database.AddFileAsync(e.Path, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
-                        else
+                        else /*if (e.OldId >= 0)*/
                         {
                             // When we write the file to output, update the last modified time
                             await log.WriteVerboseAsync("File has not changed {0}", e.Path);

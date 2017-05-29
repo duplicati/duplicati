@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     var timestampChanged = e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
                     var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
                     var tooLargeFile = options.SkipFilesLargerThan != long.MaxValue && options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > options.SkipFilesLargerThan;
-                    e.MetadataChanged = !options.SkipMetadata && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
+                    e.MetadataChanged = !options.CheckFiletimeOnly && !options.SkipMetadata && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
 
                     if ((e.OldId < 0 || options.DisableFiletimeCheck || timestampChanged || filesizeChanged || e.MetadataChanged) && !tooLargeFile)
                     {
@@ -75,10 +75,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     else
                     {
-                        if (options.SkipFilesLargerThan == long.MaxValue || options.SkipFilesLargerThan == 0 || snapshot.GetFileSize(e.Path) < options.SkipFilesLargerThan)
-                            await log.WriteVerboseAsync("Skipped checking file, because timestamp was not updated {0}", e.Path);
-                        else
+                        if (tooLargeFile)
                             await log.WriteVerboseAsync("Skipped checking file, because the size exceeds limit {0}", e.Path);
+                        else
+                            await log.WriteVerboseAsync("Skipped checking file, because timestamp was not updated {0}", e.Path);
 
                         await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                     }

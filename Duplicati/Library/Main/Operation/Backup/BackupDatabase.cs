@@ -94,7 +94,18 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.AddSymlinkEntry(filename, metadataid, lastModified, m_transaction));
         }
 
-        public Task<FileEntryData> GetFileEntryAsync(string path)
+        public Task<KeyValuePair<long, DateTime>> GetFileLastModifiedAsync(string path, long lastfilesetid)
+        {
+            return RunOnMain(() =>
+            {
+                DateTime lastModified;
+                var id = m_database.GetFileLastModified(path, lastfilesetid, out lastModified, m_transaction);
+
+                return new KeyValuePair<long, DateTime>(id, lastModified);
+            });
+		}
+
+		public Task<FileEntryData> GetFileEntryAsync(string path, long lastfilesetid)
         {
             return RunOnMain(() => { 
                 DateTime oldModified;
@@ -102,7 +113,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 string oldMetahash;
                 long oldMetasize;
 
-                var id = m_database.GetFileEntry(path, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                var id = m_database.GetFileEntry(path, lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
                 return
                     id < 0 ?
                     null :
@@ -216,6 +227,11 @@ namespace Duplicati.Library.Main.Operation.Backup
         public Task RemoveRemoteVolumeAsync(string remoteFilename)
         {
             return RunOnMain(() => m_database.RemoveRemoteVolume(remoteFilename, m_transaction));
+        }
+
+        public Task<RemoteVolumeEntry> GetRemoteVolumeFromIDAsync(long fileid)
+        {
+            return RunOnMain(() => m_database.GetRemoteVolumeFromID(fileid, m_transaction));
         }
     }
 }

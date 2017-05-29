@@ -33,6 +33,7 @@ namespace Duplicati.Server
             void Abort();
             void Pause();
             void Resume();
+            void SetController(Duplicati.Library.Main.Controller controller);
         }
         
         private class RunnerData : IRunnerData
@@ -48,7 +49,12 @@ namespace Duplicati.Server
             public long TaskID { get { return m_taskID; } }
             
             internal Duplicati.Library.Main.Controller Controller { get; set; }
-            
+
+            public void SetController(Duplicati.Library.Main.Controller controller)
+            {
+                Controller = controller;
+            }
+
             public void Stop()
             {
                 var c = Controller;
@@ -83,6 +89,26 @@ namespace Duplicati.Server
             {
                 m_taskID = System.Threading.Interlocked.Increment(ref RunnerTaskID);
             }
+        }
+
+        private class CustomRunnerTask : RunnerData
+        {
+            public readonly Action<Library.Main.IMessageSink> Run;
+
+            public CustomRunnerTask(Action<Library.Main.IMessageSink> runner)
+                : base()
+            {
+                if (runner == null)
+                    throw new ArgumentNullException("runner");
+                Run = runner;
+                Operation = DuplicatiOperation.CustomRunner;
+                Backup = new Database.Backup();
+            }
+        }
+
+        public static IRunnerData CreateCustomTask(Action<Library.Main.IMessageSink> runner)
+        {
+            return new CustomRunnerTask(runner);
         }
         
         public static IRunnerData CreateTask(Duplicati.Server.Serialization.DuplicatiOperation operation, Duplicati.Server.Serialization.Interface.IBackup backup, IDictionary<string, string> extraOptions = null, string[] filterStrings = null)
@@ -300,8 +326,20 @@ namespace Duplicati.Server
                         )
                 );
 
-            Func<string, string> appendBackslash = x => x.EndsWith("\\") ? x + "\\" : x;
-            exe = "\"" + appendBackslash(exe) + "\"";
+            Func<string, string> commandLineEscapeValue = x =>
+            {
+                if (string.IsNullOrWhiteSpace(x))
+                    return x;
+
+                if (x.EndsWith("\\", StringComparison.Ordinal))
+                    x += "\\";
+
+                x = x.Replace("\"", Library.Utility.Utility.IsClientWindows ? "\"\"" : "\\\"");
+
+                return "\"" + x + "\"";
+            };
+
+            exe = commandLineEscapeValue(exe);
 
             if (Library.Utility.Utility.IsMono)
                 exe = "mono " + exe;
@@ -309,25 +347,83 @@ namespace Duplicati.Server
 
             cmd.Append(exe);
             cmd.Append(" backup");
-            cmd.AppendFormat(" \"{0}\"", appendBackslash(backup.TargetURL));
-            cmd.Append(" \"" + string.Join("\" \"", sources.Select(x => appendBackslash(x))) + "\"");
+            cmd.Append(" ");
+            cmd.Append(commandLineEscapeValue(backup.TargetURL));
+            cmd.Append(" ");
+            cmd.Append(string.Join(" ", sources.Select(x => commandLineEscapeValue(x))));
 
             foreach(var opt in options)
-                cmd.AppendFormat(" --{0}={1}", opt.Key, string.IsNullOrWhiteSpace(opt.Value) ? "" : "\"" + appendBackslash(opt.Value) + "\"");
+                cmd.AppendFormat(" --{0}={1}", opt.Key, commandLineEscapeValue(opt.Value));
             
             if (cf != null)
                 foreach(var f in cf)
-                    cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
+                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", commandLineEscapeValue(f.Expression));
 
             if (bf != null)
                 foreach(var f in bf)
-                    cmd.AppendFormat(" --{0}=\"{1}\"", f.Include ? "include" : "exclude", appendBackslash(f.Expression));
+                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", commandLineEscapeValue(f.Expression));
 
             return cmd.ToString();
+        }
+
+        public static string[] GetCommandLineParts(IRunnerData data)
+        {
+            var backup = data.Backup;
+
+            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            if (data.ExtraOptions != null)
+                foreach (var k in data.ExtraOptions)
+                    options[k.Key] = k.Value;
+
+            var cf = Program.DataConnection.Filters;
+            var bf = backup.Filters;
+
+            var sources =
+                (from n in backup.Sources
+                 let p = SpecialFolders.ExpandEnvironmentVariables(n)
+                 where !string.IsNullOrWhiteSpace(p)
+                 select p).ToArray();
+
+            var parts = new List<string>();
+
+            parts.Add(backup.TargetURL);
+            parts.AddRange(sources);
+
+            foreach (var opt in options)
+                parts.Add(string.Format("--{0}={1}", opt.Key, opt.Value));
+
+            if (cf != null)
+                foreach (var f in cf)
+                    parts.Add(string.Format("--{0}={1}", f.Include ? "include" : "exclude", f.Expression));
+
+            if (bf != null)
+                foreach (var f in bf)
+                    parts.Add(string.Format("--{0}={1}", f.Include ? "include" : "exclude", f.Expression));
+
+            return parts.ToArray();
         }
         
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
+            if (data is CustomRunnerTask)
+            {
+                try
+                {
+                    var sink = new MessageSink(data.TaskID, null);
+                    Program.GenerateProgressState = () => sink.Copy();
+                    Program.StatusEventNotifyer.SignalNewEvent();
+
+                    ((CustomRunnerTask)data).Run(sink);
+                }
+                catch(Exception ex)
+                {
+                    Program.DataConnection.LogError(string.Empty, "Failed while executing custom task", ex);
+                }
+
+                return null;
+            }
+
+
             var backup = data.Backup;
             Duplicati.Library.Utility.TempFolder tempfolder = null;
 
@@ -336,35 +432,17 @@ namespace Duplicati.Server
             
             try
             {                
-                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
                 var sink = new MessageSink(data.TaskID, backup.ID);
                 if (fromQueue)
                 {
                     Program.GenerateProgressState = () => sink.Copy();
                     Program.StatusEventNotifyer.SignalNewEvent();            
                 }
-                
+
+                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));                
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
-                        options[k.Key] = k.Value;
-                
-                // Log file is using the internal log-handler 
-                // so we can display output in the GUI as well as log 
-                // into the given file
-                if (options.ContainsKey("log-file"))
-                {
-                    var file = options["log-file"];
-
-                    string o;
-                    Library.Logging.LogMessageType level;
-                    options.TryGetValue("log-level", out o);
-                    Enum.TryParse<Library.Logging.LogMessageType>(o, true, out level);
-
-                    options.Remove("log-file");
-                    options.Remove("log-level");
-
-                    Program.LogHandler.SetOperationFile(file, level);
-                }
+                        options[k.Key] = k.Value;                
 
                 // Pack in the system or task config for easy restore
                 if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
@@ -502,25 +580,25 @@ namespace Duplicati.Server
                                 return r;
                             }
 
-                    case DuplicatiOperation.Delete:
-                        {
-                            if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-remote-files"))
-                                controller.DeleteAllRemoteFiles();
-
-                            if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-local-db"))
+                        case DuplicatiOperation.Delete:
                             {
-                                string dbpath;
-                                options.TryGetValue("db-path", out dbpath);
+                                if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-remote-files"))
+                                    controller.DeleteAllRemoteFiles();
 
-                                if (!string.IsNullOrWhiteSpace(dbpath) && System.IO.File.Exists(dbpath))
-                                    System.IO.File.Delete(dbpath);
+                                if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-local-db"))
+                                {
+                                    string dbpath;
+                                    options.TryGetValue("db-path", out dbpath);
+
+                                    if (!string.IsNullOrWhiteSpace(dbpath) && System.IO.File.Exists(dbpath))
+                                        System.IO.File.Delete(dbpath);
+                                }
+                                Program.DataConnection.DeleteBackup(backup);
+                                Program.Scheduler.Reschedule();
+                                return null;
                             }
-                            Program.DataConnection.DeleteBackup(backup);
-                            Program.Scheduler.Reschedule();
-                            return null;
-                        }
 
-                    default:
+                        default:
                             //TODO: Log this
                             return null;
                     }
@@ -540,7 +618,6 @@ namespace Duplicati.Server
             finally
             {
                 ((RunnerData)data).Controller = null;
-                Program.LogHandler.RemoveOperationFile();
             }
         }
         
@@ -605,7 +682,7 @@ namespace Duplicati.Server
                 if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
                     UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
             }
-            
+
             if (o is Duplicati.Library.Interface.IBackupResults)
             {
                 var r = (Duplicati.Library.Interface.IBackupResults)o;
@@ -614,21 +691,22 @@ namespace Duplicati.Server
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
                 backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
                 backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
-                 
-                if (r.FilesWithError > 0 || r.Warnings.Any())
+
+                if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
                     Program.DataConnection.RegisterNotification(
-                        NotificationType.Error, 
-                        backup.IsTemporary ? 
+                        NotificationType.Error,
+                        backup.IsTemporary ?
                             "Warning" : string.Format("Warning while running {0}", backup.Name),
-                            r.FilesWithError > 0 ? 
+                            r.FilesWithError > 0 ?
                                 string.Format("Errors affected {0} file(s) ", r.FilesWithError) :
                                 string.Format("Got {0} warning(s) ", r.Warnings.Count())
                             ,
                         null,
                         backup.ID,
                         "backup:show-log",
-                        (n, a) => {
+                        (n, a) =>
+                        {
                             var existing = (a.Where(x => x.BackupID == backup.ID)).FirstOrDefault();
                             if (existing == null)
                                 return n;
@@ -640,6 +718,36 @@ namespace Duplicati.Server
                         }
                     );
                 }
+            }
+            else if (o is Duplicati.Library.Interface.IBasicResults)
+            {
+                var r = (Duplicati.Library.Interface.IBasicResults)o;
+                if (r.ParsedResult != Library.Interface.ParsedResultType.Success)
+                {
+                    var type = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                ? NotificationType.Warning
+                                : NotificationType.Error;
+
+                    var title = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                 ? (backup.IsTemporary ?
+                                    "Warning" : string.Format("Warning while running {0}", backup.Name))
+                                : (backup.IsTemporary ?
+                                   "Error" : string.Format("Error while running {0}", backup.Name));
+
+                    var message = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                   ? string.Format("Got {0} warning(s) ", r.Warnings.Count())
+                                   : string.Format("Got {0} error(s) ", r.Errors.Count());
+
+                    Program.DataConnection.RegisterNotification(
+                        type,
+                        title,
+                        message,
+                        null,
+                        backup.ID,
+                        "backup:show-log",
+                        (n, a) => n
+                    );
+                }                
             }
             
             if (!backup.IsTemporary)

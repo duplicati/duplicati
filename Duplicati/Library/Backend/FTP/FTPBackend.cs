@@ -222,7 +222,7 @@ namespace Duplicati.Library.Backend
                 catch {}
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.IO.Stream rs = areq.GetRequestStream())
+                using (System.IO.Stream rs = areq.GetRequestStream(streamLen))
                     Utility.Utility.CopyStream(input, rs, true, m_copybuffer);
                 
                 if (m_listVerify) 

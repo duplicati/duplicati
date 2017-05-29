@@ -1,4 +1,4 @@
-backupApp.service('DialogService', function() {
+backupApp.service('DialogService', function(gettextCatalog) {
     var state = this.state = {
         CurrentItem: null,
         Queue: []
@@ -21,11 +21,11 @@ backupApp.service('DialogService', function() {
 
 
     this.enqueueDialog = function(config) {
-        if (config == null || (config.message == null && config.htmltemplate == null))
+        if (config == null || (config.message == null && config.htmltemplate == null && config.enableTextarea == null))
             return;
 
-        config.title = config.title || 'Information';
-        config.buttons = config.buttons || ['OK'];        
+        config.title = config.title || gettextCatalog.getString('Information');
+        config.buttons = config.buttons || [gettextCatalog.getString('OK')];
 
         state.Queue.push(config);
         if (state.CurrentItem == null)
@@ -47,7 +47,7 @@ backupApp.service('DialogService', function() {
         return this.enqueueDialog({
             'message': message, 
             'callback': callback, 
-            'buttons': ['Cancel', 'OK']
+            'buttons': [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')]
         });
     };
 
@@ -55,7 +55,7 @@ backupApp.service('DialogService', function() {
         return this.enqueueDialog({
             'message': message, 
             'callback': callback, 
-            'buttons': ['OK']
+            'buttons': [gettextCatalog.getString('OK')]
         });
     };
 
@@ -73,8 +73,22 @@ backupApp.service('DialogService', function() {
         return this.enqueueDialog({
             'htmltemplate': htmltemplate,
             'title': title,
-            'callback': callback, 
+            'callback': callback,
             'buttons': buttons,
+            'onshow': onshow
+        });
+    };
+
+    this.textareaDialog = function(title, message, placeholder, textarea, buttons, buttonTemplate, callback, onshow) {
+        return this.enqueueDialog({
+            'enableTextarea': true,
+            'title': title,
+            'message': message,
+            'placeholder': placeholder,
+            'textarea': textarea,
+            'callback': callback,
+            'buttons': buttons,
+            'buttonTemplate': buttonTemplate,
             'onshow': onshow
         });
     };

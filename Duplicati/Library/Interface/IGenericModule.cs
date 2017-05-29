@@ -24,7 +24,7 @@ using System.Text;
 namespace Duplicati.Library.Interface
 {
     /// <summary>
-    /// An interface for a plugable generic module.
+    /// An interface for a pluggable generic module.
     /// An instance of a module is loaded prior to a backup or restore operation,
     /// and can perform tasks relating to the general execution environment, as
     /// well as modify the options used in Duplicati.

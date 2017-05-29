@@ -187,8 +187,9 @@ namespace Duplicati.UnitTest
                     TestUtils.VerifyDir(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true);
             
             ProgressWriteLine("Testing data ...");
-            using(new Library.Logging.Timer("Test remote data"))
-                Duplicati.CommandLine.Program.RealMain((new string[] { "test", target, "all" }.Union(opts)).ToArray());
+            using (new Library.Logging.Timer("Test remote data"))
+                if (Duplicati.CommandLine.Program.RealMain((new string[] { "test", target, "all" }.Union(opts)).ToArray()) != 0)
+                    throw new Exception("Failed during final remote verification");
 
         }
 

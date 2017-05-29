@@ -1,4 +1,4 @@
-backupApp.controller('LogController', function($scope, $routeParams, SystemInfo, ServerStatus, AppService, DialogService, gettextCatalog) {
+backupApp.controller('LogController', function($scope, $routeParams, $timeout, SystemInfo, ServerStatus, AppService, DialogService, BackupList, gettextCatalog) {
     $scope.state = ServerStatus.watch($scope);
     $scope.BackupID = $routeParams.backupid;
     $scope.SystemInfo = SystemInfo.watch($scope);
@@ -13,7 +13,7 @@ backupApp.controller('LogController', function($scope, $routeParams, SystemInfo,
         }
 
         if (liveRefreshTimer != null) {
-            clearTimeout(liveRefreshTimer);
+            $timeout.cancel(liveRefreshTimer);
             liveRefreshTimer = null;
         }
 
@@ -39,11 +39,11 @@ backupApp.controller('LogController', function($scope, $routeParams, SystemInfo,
                     updateLivePoll();
                 else
                     if ($scope.Page == 'live' && $scope.LiveLogLevel != '')
-                        liveRefreshTimer = setTimeout(updateLivePoll, 3000);
+                        liveRefreshTimer = $timeout(updateLivePoll, 3000);
 
             }, function(resp) {
                 if ($scope.Page == 'live' && $scope.LiveLogLevel != '')
-                    liveRefreshTimer = setTimeout(updateLivePoll, 3000);
+                    liveRefreshTimer = $timeout(updateLivePoll, 3000);
             }
         );
 
@@ -65,6 +65,9 @@ backupApp.controller('LogController', function($scope, $routeParams, SystemInfo,
                 $scope[key].push.apply($scope[key], resp.data);
                 $scope.LoadingData = false;
                 $scope[key + 'Complete'] = resp.data.length < PAGE_SIZE;
+                if ($scope.BackupID != null)
+                    $scope.Backup = BackupList.lookup[$scope.BackupID];
+
             }, function(resp) {
                 var message = resp.statusText;
                 if (resp.data != null && resp.data.Message != null)
@@ -93,12 +96,13 @@ backupApp.controller('LogController', function($scope, $routeParams, SystemInfo,
         $scope.LoadMoreStoredData = function() { LoadMoreData('/logdata/log', 'LogData', 'Timestamp'); };
         $scope.LoadMoreStoredData();
     } else {
-        $scope.Page = 'general';
+        $scope.Page = 'general';        
 
         $scope.LoadMoreGeneralData = function() { LoadMoreData('/backup/' + $scope.BackupID + '/log', 'GeneralData', 'ID'); };
         $scope.LoadMoreRemoteData = function() { LoadMoreData('/backup/' + $scope.BackupID + '/remotelog', 'RemoteData', 'ID'); };
         
         $scope.LoadMoreGeneralData();
+        $scope.Backup = BackupList.lookup[$scope.BackupID];
     }
 
 });

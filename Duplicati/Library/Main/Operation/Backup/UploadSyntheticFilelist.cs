@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class UploadSyntheticFilelist
     {
-        public static Task Run(BackupDatabase database, Options options, BackupResults result, ITaskReader taskreader)
+        public static Task Run(BackupDatabase database, Options options, BackupResults result, ITaskReader taskreader, string lasttempfilelist, long lasttempfileid)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -38,31 +38,53 @@ namespace Duplicati.Library.Main.Operation.Backup
             },
 
             async self => 
-            {
+            {                
                 var log = new LogWrapper(self.LogChannel);
-                var incompleteFilesets = await database.GetIncompleteFilesetsAsync();
-                if (incompleteFilesets.Length != 0)
+
+                // Check if we should upload a synthetic filelist
+                if (options.DisableSyntheticFilelist || string.IsNullOrWhiteSpace(lasttempfilelist) || lasttempfileid < 0)
+                    return;
+
+                // Check that we still need to process this after the cleanup has performed its duties
+                var syntbase = await database.GetRemoteVolumeFromIDAsync(lasttempfileid);
+
+                // If we do not have a valid entry, warn and quit
+                if (syntbase.Name == null || syntbase.State != RemoteVolumeState.Uploaded)
                 {
-                    await database.CommitTransactionAsync("PreSyntheticFilelist");
+                    // TODO: If the repair succeeds, this could give a false warning?
+                    await log.WriteWarningAsync(string.Format("Expected there to be a temporary fileset for synthetic filelist ({0}, {1}, {2}), but none was found?", lasttempfileid, lasttempfilelist, syntbase.State), null);
+                    return;
+                }
 
-                    result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
-                    await log.WriteInformationAsync("Uploading filelist from previous interrupted backup");
+                // Files is missing or repaired
+                if (syntbase.Name == null || (syntbase.State != RemoteVolumeState.Uploading && syntbase.State != RemoteVolumeState.Temporary))
+                {
+                    await log.WriteInformationAsync(string.Format("Skipping synthetic upload because temporary fileset appers to be complete: ({0}, {1}, {2})", lasttempfileid, lasttempfilelist, syntbase.State), null);
+                    return;
+                }
 
-                    if (!await taskreader.ProgressAsync)
-                        return;
+                // Ready to build and upload the synthetic list
+                await database.CommitTransactionAsync("PreSyntheticFilelist");
+                var incompleteFilesets = (await database.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToList();
 
-                    var incompleteSet = incompleteFilesets.Last();
-                    var badIds = from n in incompleteFilesets select n.Key;
+                result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
+                await log.WriteInformationAsync("Uploading filelist from previous interrupted backup");
 
-                    var prevs = (from n in await database.GetFilesetTimesAsync()
-                        where 
-                        n.Key < incompleteSet.Key
-                        &&
-                        !badIds.Contains(n.Key)
-                        orderby n.Key                                                
-                        select n.Key).ToArray();
+                if (!await taskreader.ProgressAsync)
+                    return;
 
-                    var prevId = prevs.Length == 0 ? -1 : prevs.Last();
+                var incompleteSet = incompleteFilesets.Last();
+                var badIds = from n in incompleteFilesets select n.Key;
+
+                var prevs = (from n in await database.GetFilesetTimesAsync()
+                    where 
+                    n.Key < incompleteSet.Key
+                    &&
+                    !badIds.Contains(n.Key)
+                    orderby n.Key                                                
+                    select n.Key).ToArray();
+
+                var prevId = prevs.Length == 0 ? -1 : prevs.Last();
 
                     FilesetVolumeWriter fsw = null;
                     try
@@ -114,25 +136,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         catch { fsw = null; }
                     }                          
                 }
-
-                if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
-                {
-                    foreach(var blockfile in await database.GetMissingIndexFilesAsync())
-                    {
-                        if (!await taskreader.ProgressAsync)
-                            return;
-                        
-                        await log.WriteInformationAsync(string.Format("Re-creating missing index file for {0}", blockfile));
-                        var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database);
-
-                        if (!await taskreader.ProgressAsync)
-                            return;
-
-                        await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                        await self.UploadChannel.WriteAsync(new IndexVolumeUploadRequest(w));
-                    }
-                }
-            });
+            );
         }
     }
 }

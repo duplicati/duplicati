@@ -12,6 +12,7 @@
     <SignAssembly>false</SignAssembly>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -39,7 +40,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Renci.SshNet">
-      <HintPath>..\..\..\..\packages\SSH.NET.2016.0.0-beta2\lib\net40\Renci.SshNet.dll</HintPath>
+      <HintPath>..\..\..\..\packages\SSH.NET.2016.0.0\lib\net40\Renci.SshNet.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

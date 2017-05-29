@@ -67,7 +67,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'box': null,
                 'od4b': null,
                 'mssp': null,
-                'dropbox': null
+                'dropbox': null,
+                'jottacloud': null
             }
         };
 
@@ -117,7 +118,7 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 if ((uiLanguage || '').trim().length == 0) {
                     gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code.replace("-", "_"));
                 } else {
-                    gettextCatalog.setCurrentLanguage(uiLanguage);
+                    gettextCatalog.setCurrentLanguage(uiLanguage.replace("-", "_"));
                 }
             }
 

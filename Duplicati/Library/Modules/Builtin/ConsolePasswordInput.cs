@@ -29,7 +29,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// These actions only use the local database and do not require access to the data inside the files.
         /// For List and ListChanges this may not be true if there is no local database
         /// </summary>
-        private readonly static string[] PASSPHRASELESS_ACTIONS = { "CreateLogDb", "TestFilters", "ListAffected", "SystemInfo" };
+        private readonly static string[] PASSPHRASELESS_ACTIONS = { "CreateLogDb", "TestFilters", "ListAffected", "SystemInfo", "SendMail" };
 
         #region IGenericModule Members
 
@@ -107,11 +107,11 @@ namespace Duplicati.Library.Modules.Builtin
                 Console.WriteLine();
 
                 if (passphrase.ToString() != password2.ToString())
-                    throw new Exception(Strings.ConsolePasswordInput.PassphraseMismatchError);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError);
             }
 
             if (passphrase.ToString().Length == 0)
-                throw new Exception(Strings.ConsolePasswordInput.EmptyPassphraseError);
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError);
 
             return passphrase.ToString();
         }

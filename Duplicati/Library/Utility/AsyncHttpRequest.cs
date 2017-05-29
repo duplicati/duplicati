@@ -93,6 +93,9 @@ namespace Duplicati.Library.Utility
                     m_activity_timeout = ((HttpWebRequest)m_request).ReadWriteTimeout;
 
                 ((HttpWebRequest)m_request).ReadWriteTimeout = System.Threading.Timeout.Infinite;
+
+                // Prevent in-memory buffering causing out-of-memory issues
+                ((HttpWebRequest)m_request).AllowReadStreamBuffering = false;                    
             }
         }
 
@@ -102,7 +105,7 @@ namespace Duplicati.Library.Utility
         public WebRequest Request { get { return m_request; } }
 
         /// <summary>
-        /// Gets or sets the timeout used to guard the <see cref="GetRequestStream()"/> and <see cref="GetResponse()"/> calls
+        /// Gets or sets the timeout used to guard the <see cref="GetRequestStream(long)"/> and <see cref="GetResponse()"/> calls
         /// </summary>
         public int Timeout { get { return m_timeout; } set { m_timeout = value; } }
 
@@ -110,8 +113,18 @@ namespace Duplicati.Library.Utility
         /// Gets the request stream
         /// </summary>
         /// <returns>The request stream</returns>
-        public Stream GetRequestStream()
+        /// <param name="contentlength">The content length to use</param>
+        public Stream GetRequestStream(long contentlength = -1)
         {
+            // Prevent in-memory buffering causing out-of-memory issues
+            if (m_request is HttpWebRequest)
+            {
+                if (contentlength >= 0)
+                    ((HttpWebRequest)m_request).ContentLength = contentlength;
+                if (m_request.ContentLength >= 0)
+                    ((HttpWebRequest)m_request).AllowWriteStreamBuffering = false;
+            }
+
             if (m_state == RequestStates.GetRequest)
                 return (Stream)m_asyncRequest.GetResponseOrStream();
 

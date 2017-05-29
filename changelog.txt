@@ -1,3 +1,240 @@
+2017-05-23 - 2.0.1.60_canary_2017-05-23
+==========
+* Re-enabled the GTK trayicon that was missing in the previous two versions
+
+2017-05-22 - 2.0.1.59_canary_2017-05-22
+==========
+* Fixed an issue with NewtonSoft.Json not loading for some backends
+* Note that Windows VSS now requires VC++ Redist 2015 installed
+
+2017-05-19 - 2.0.1.58_canary_2017-05-19
+==========
+* Fixed an issue with the FTP backend in 2.0.1.57
+* Improved the query used to get the timestamp if `--check-filetime-only` is enabled
+
+2017-05-17 - 2.0.1.57_canary_2017-05-17
+==========
+* Fixed an issue with not being performed correctly with AmzCD
+* Fixed the Windows verifyscript, thanks @mnaiman
+* Updated fonts to work better with Russian language display, thanks @vnau
+* Removed Tlsv1 option from server, thanks @mnaiman
+* Updated NewtonSoft.Json, MailKit, MimeKit and AlphaVSS
+* Fixed the way AllowWriteBuffering is used, which should fix delete errors on AmzCD
+* Fixed an error in searching for files with regular expressions
+
+2017-04-21 - 2.0.1.56_canary_2017-04-21
+==========
+* Fixed an issue with duplicate strings in S3 providers
+* Fixed an issue where a file being expanded during backup could cause the file to not be backed up.
+* Changed HTTP requests to not buffer the output to fix out-of-memory errors
+* Added a Python script to do restores completely without using Duplicati, thanks @downpoured !
+* Improved Amazon Cloud Drive by not waiting while performing batched requests
+
+2017-04-06 - 2.0.1.55_canary_2017-04-06
+==========
+* Updated SharpCompress to support creating zip files larger than 4 GiB
+* Added a commandline-like interface to the WebUI
+* Updated the backendtool to support full paths
+* Updated the list of S3 regions and servers
+* Change the UI to have a fixed top-bar with status and progress
+* Fixed a crash that occurs if the web-browser does not send `Accept-Language`
+* Fixed an issue with filtering the output of the LIST command
+
+2017-03-26 - 2.0.1.54_canary_2017-03-26
+==========
+* Fixed an unwanted empty folder creation, thanks @albertony
+* Fixed logic issues with volumesize minimum bounds, thanks @albertony
+* Fixed importing config files with AllowedDays set
+* Improved database performance on backups, thanks @danstahr
+
+2017-03-13 - 2.0.1.53_experimental_2017-03-13
+==========
+* This update contains the same fixes as canary 2.0.1.51
+
+2017-03-13 - 2.0.1.52_canary_2017-03-13
+==========
+* Added fail-over to read zip files with invalid central directory
+* Improved the login page for compatibility with password managers, thanks @johenning
+* Improved the URL parser for better commandline import
+* Improved the URL parsing when importing a saved configuration
+* Added exit/status codes to the verification command
+* Added IBM Bluemix COS to list of S3 providers, thanks @greyhoundforty
+* Improved startup time for commandline, thanks @frelis
+* Improved non-hosted mode for TrayIcon, thanks @mnaiman
+* Added a Jottacloud backend, thanks @albertony
+
+2017-03-03 - 2.0.1.51_canary_2017-03-03
+==========
+* Updated the bundled version of SQLite for Windows to 1.0.104.0
+* Added deep archive verification when invoking verify
+* Changed the pagination method for GoogleDrive
+
+2017-02-28 - 2.0.1.50_canary_2017-02-28
+==========
+* Added error message if `--prefix` contains hyphens
+* Fixed an issue with editing the allowed days on the schedule page
+* Changed "import" so it just loads the configuration into the editor, allowing the user to edit it before saving
+* Added function to restore that loads setup from a configuration file
+* Updated SharpCompress and S3 libraries
+* Improved crash messages for Windows TrayIcon
+
+2017-02-23 - 2.0.1.49_experimental_2017-02-23
+==========
+* This build is the same as the canary
+
+2017-02-23 - 2.0.1.48_canary_2017-02-23
+==========
+* Updated translations, thanks @agrajaghh
+* Improved verification script, thanks @mnaiman
+* Support for SSL certificates in server when running with Mono, thanks @mnaiman
+* Improved progress bar updates when processing large files, thanks @asselin
+
+2017-02-14 - 2.0.1.47_canary_2017-02-14
+==========
+* Updated some localizations
+* Updated the user interface
+* Fixed an issue where the Force Stop action did not work immediately
+
+2017-02-03 - 2.0.1.46_canary_2017-02-03
+==========
+* Fixed icon sizes
+* Removed the fake control.cgi entry
+* Added experimental support for setting the SQLite tempdir
+* Added an optimization that makes bug reports faster to create
+* Added a new HTTP reporter module, thanks @vatara
+
+2017-02-03 - 2.0.1.45_experimental_2017-02-03
+==========
+* This experimental release contains the fixes in the latest canary and some updated translations, and a fix that makes creating a bug-report faster
+
+2017-01-24 - 2.0.1.44_canary_2017-01-24
+==========
+* Added SSL test tools for Mono debugging
+* Fixed an issue with not reporting the correct error message when listing files
+* Updated logs UI to show the backup name
+* Added extra menu items to the start page
+* Fixed a number of typos
+* Added a more thorough consistency check
+* Added an extra result level "fatal" to reporting
+* Fixed reporting warning status if there were warnings during the backup
+
+2017-01-19 - 2.0.1.43_canary_2017-01-19
+==========
+* Improved queries that are used to recreate the database
+* Fixed duplicate logging entries when a log file was used
+
+2017-01-16 - 2.0.1.41_canary_2017-01-16
+==========
+* Added a debugging feature to assist with #1699, #2048, #2140, #2178
+* Fixed a problem with listing changes from the commandline
+
+2017-01-12 - 2.0.1.40_canary_2017-01-12
+==========
+* Added extra functionality to the `--allow-full-removal` option
+* Various updates to send-mail
+* Reworked logging support to allow modules to funnel logs back into the current operation
+* Reverted an optimization that cause backup scanning to be really slow
+
+2017-01-08 - 2.0.1.39_canary_2017-01-08
+==========
+* Fixed some typos, thanks @sfahrenholz
+* Added webp to compressed file extension list, thanks @dessant
+* Changed aftp backend to use CWD, thanks @seaeagle1
+* Added "purge" command to purge files from the database
+* Added "list-broken-files" and "purge-broken-files" to aid in recovering from remote data loss
+* Added additional trace log messages to debug some consistency issues
+* Fixed support for operations across different operating systems
+
+2016-12-27 - 2.0.1.38_canary_2016-12-27
+==========
+* Fixed a problem with login no longer working
+* Updated the login page to use blue colors
+
+2016-12-27 - 2.0.1.37_canary_2016-12-27
+==========
+* Added a check for administrator privileges to avoid HyperV error messages
+
+2016-12-24 - 2.0.1.36_canary_2016-12-24
+==========
+* Fixed a case where excluded gave a warning
+* Removed the "No LSB Modules" messages on Linux
+* Fixed a problem with lon UNC paths on Windows, thanks @quincunx
+* Removed the Greeno theme as it was not maintained
+* Removed some unused options for setting in-memory buffers
+* Added debug output if we hit issue #1400
+
+2016-12-05 - 2.0.1.34_canary_2016-12-05
+==========
+* Fixed an issue with spurious errors in the UI mentioning Hyper-V
+* Fixed an issue where requesting deletion of remote files did not work
+* Improved the status results reported in the log files
+* Fixed some issues with the usage reporter
+* Fixed an issue with the SSH fingerprint not being accepted in URL encoded format
+
+2016-11-27 - 2.0.1.33_canary_2016-11-27
+==========
+* Updated Linux certificate warnings to mention cert-sync instead of Mozroots
+* Added option to run the Duplicati server as a Linux service, thanks @a1ezzz
+* Updated LVM snapshot size parameters, thanks @kakoskin1
+* Fixed schedule time being skewed towards UTC, thanks @tianqiaoxiangzhe
+* Improved notification area layout, thanks @tudacs
+* Fixed a case where it would be impossible to edit the weekdays in the schedule, thanks @tudacs
+* Added support for choosing time values in seconds range from the UI
+* Fixed issues with the scheduler not re-scheduling entries until after a restart
+* Fixed a case where sizes chosen from the advanced options editor would be invalid
+
+2016-11-12 - 2.0.1.32_canary_2016-11-12
+==========
+* Fixed an issue with deleting a backup
+* Fixed an issue with creating a backup without encryption
+* Fixed storing symlink metadata to not follow symlinks unless specified
+* Updated AlphaFS, AWS (S3), SSH, Azure, Mega and mailkit libraries
+* Fixed an issue with XFS-LVM snapshots, thanks @kakoskin1
+* Updated languages, added Chinese
+* Added a GUI for MSSQL databases, thanks @mnaiman
+* Fixed an issue with metadata being reported as being too large if the blocksize is 1mb or or more
+* Fixed escaping exported commandline for Windows
+* Fixes to the UI, thanks @agrajaghh
+
+2016-11-03 - 2.0.1.31_canary_2016-11-03
+==========
+* Fixed autoupdater choosing old update if the base version was replaced
+* Improved the UI for adding a backup, thanks @agrajaghh
+* Added MSSQL to potential backup targets, thanks @mnaiman
+
+2016-11-03 - 2.0.1.30_experimental_2016-11-03
+==========
+* Experimental release; includes all canary changes
+* Updated translations
+* Rebuilt UnixSupport to fix OSX metadata issues
+
+2016-10-27 - 2.0.1.29_canary_2016-10-27
+==========
+* Better support for LVM snapshots, thanks @a1ezzz
+* Fixed additional Debian dependencies, thanks @a1ezzz
+* Additional translation files, Spanish and French
+* Improved HyperV support from CLI and UI, thanks @mnaiman and @agrajaghh
+* Fixed a bug with log-spam from Windows Service, thanks @mnaiman
+* Fixed issue with backup metadata and user that do not exist locally, thanks @gerco
+* Improved screen reading support
+* Fixed OSX icon on dark statusbar
+* Fixed crashes on Linux related to icon format
+* Updated GTK support and switched to SVG icons
+
+2016-10-19
+==========
+* Some additions to the translation system
+* Fixed setting current working dir, thanks @mnaiman
+* Fixed an issue where deleting a backup would not work
+* Updated the throttle computation algorithm
+* Suppressing the "No LSB modules found" error message on Ubuntu
+* Added support for metadata larger than 100kb
+* NOTE: The large metadata support changes the remote file format for all newly written files
+* Added support for HyperV on CLI and in the UI, thanks @mnaiman and @agrajaghh
+* Fixed an issue with the Debian package requiring AlphaVSS.Common.dll when performing LVM snapshots
+* Fixed an issue with Amazon Cloud Drive, thanks @AndersGron
+* Fixed an incorrect warning when using the commandline and GPG
+
 2016-10-14
 ==========
 * Work on the translation system, thanks @agrajaghh

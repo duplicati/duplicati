@@ -17,6 +17,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Duplicati.Library.Main;
 
 namespace Duplicati.CommandLine
@@ -28,9 +29,11 @@ namespace Duplicati.CommandLine
         public bool QuietConsole { get; private set; }
         public bool VerboseOutput { get; private set; }
         public bool VerboseErrors { get; private set; }
+        public TextWriter Output { get; private set; }
         
-        public ConsoleOutput(Dictionary<string, string> options)
+        public ConsoleOutput(TextWriter output, Dictionary<string, string> options)
         {
+            this.Output = output;
             this.QuietConsole = Library.Utility.Utility.ParseBoolOption(options, "quiet-console");
             this.VerboseOutput = Library.Utility.Utility.ParseBoolOption(options, "verbose");
             this.VerboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
@@ -70,15 +73,15 @@ namespace Duplicati.CommandLine
                 if (type == BackendEventType.Started)
                 {
                     if (action == BackendActionType.Put)
-                        Console.WriteLine("  Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size));
+                        Output.WriteLine("  Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size));
                     else if (action == BackendActionType.Get)
-                        Console.WriteLine("  Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
+                        Output.WriteLine("  Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
                     else if (action == BackendActionType.List)
-                        Console.WriteLine("  Listing remote folder ...");
+                        Output.WriteLine("  Listing remote folder ...");
                     else if (action == BackendActionType.CreateFolder)
-                        Console.WriteLine("  Creating remote folder ...");
+                        Output.WriteLine("  Creating remote folder ...");
                     else if (action == BackendActionType.Delete)
-                        Console.WriteLine("  Deleting file {0}{1} ...", path, size < 0 ? "" : (" (" + Library.Utility.Utility.FormatSizeString(size) + ")"));
+                        Output.WriteLine("  Deleting file {0}{1} ...", path, size < 0 ? "" : (" (" + Library.Utility.Utility.FormatSizeString(size) + ")"));
                 }
         }
                         
@@ -86,37 +89,38 @@ namespace Duplicati.CommandLine
         {
             if (VerboseOutput)
                 lock(m_lock)
-                    Console.WriteLine(message, args);
+                    Output.WriteLine(message, args);
         }
         public void MessageEvent(string message)
         {
             if (!QuietConsole)
                 lock(m_lock)
-                    Console.WriteLine(message);
+                    Output.WriteLine(message);
         }
         
         public void RetryEvent(string message, Exception ex)
         {
             if (!QuietConsole)
                 lock(m_lock)
-                    Console.WriteLine(ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message));
+                    Output.WriteLine(ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message));
         }
         public void WarningEvent(string message, Exception ex)
         {
             if (!QuietConsole)
                 lock(m_lock)
-                    Console.WriteLine(ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message));
+                    Output.WriteLine(ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message));
         }
         public void ErrorEvent(string message, Exception ex)
         {
             if (!QuietConsole)
                 lock(m_lock)
-                    Console.WriteLine(ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message));
+                    Output.WriteLine(ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message));
         }
         public void DryrunEvent(string message)
         {
-            lock(m_lock)
-                Console.WriteLine(string.Format("[Dryrun]: {0}", message));
+            if (!QuietConsole)
+                lock(m_lock)
+                    Output.WriteLine(string.Format("[Dryrun]: {0}", message));
         }
         #endregion
     }

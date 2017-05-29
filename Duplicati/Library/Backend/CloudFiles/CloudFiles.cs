@@ -72,9 +72,9 @@ namespace Duplicati.Library.Backend
                 m_password = uri.Password;
 
             if (string.IsNullOrEmpty(m_username))
-                throw new Exception(Strings.CloudFiles.NoUserIDError);
+                throw new UserInformationException(Strings.CloudFiles.NoUserIDError);
             if (string.IsNullOrEmpty(m_password))
-                throw new Exception(Strings.CloudFiles.NoAPIKeyError);
+                throw new UserInformationException(Strings.CloudFiles.NoAPIKeyError);
 
             //Fallback to the previous format
             if (url.Contains(DUMMY_HOSTNAME))
@@ -346,8 +346,13 @@ namespace Duplicati.Library.Backend
             {
                 string fileHash = null;
 
+                long streamLen = -1;
+                try { streamLen = stream.Length; }
+                catch {}
+
+
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.IO.Stream s = areq.GetRequestStream())
+                using (System.IO.Stream s = areq.GetRequestStream(streamLen))
                 using (var mds = new Utility.MD5CalculatingStream(s))
                 {
                     Utility.Utility.CopyStream(stream, mds, true, m_copybuffer);

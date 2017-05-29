@@ -1,5 +1,10 @@
 BUILD_TOOL=xbuild
 BUILD_ARGS=/property:Platform=Any\ CPU /property:Configuration=Release
+BUILD_ARGS_DEBUG=/property:Platform=Any\ CPU /property:Configuration=Debug
+
+NUGET_TOOL=nuget
+NUGET_ARGS=restore
+
 OUTPUT_ARGS=/property:OutputPath=bin/Release
 SOURCE_DIR=../../.
 PACKAGE_DIR=./pkg
@@ -8,8 +13,14 @@ PKG_TARGET=$(PACKAGE_DIR)/usr/lib/duplicati
 all: package
 
 build:
+	$(NUGET_TOOL) $(NUGET_ARGS) "$(SOURCE_DIR)/Duplicati.sln"
 	$(BUILD_TOOL) $(BUILD_ARGS) "$(SOURCE_DIR)/Duplicati.sln"
 	$(BUILD_TOOL) $(BUILD_ARGS) "$(SOURCE_DIR)/BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
+
+debug:
+	$(NUGET_TOOL) $(NUGET_ARGS) "$(SOURCE_DIR)/Duplicati.sln"
+	$(BUILD_TOOL) $(BUILD_ARGS_DEBUG) "$(SOURCE_DIR)/Duplicati.sln"
+	$(BUILD_TOOL) $(BUILD_ARGS_DEBUG) "$(SOURCE_DIR)/BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
 
 package: build
 	if [ -e "$(PACKAGE_DIR)" ]; then \
@@ -71,8 +82,7 @@ package: build
 clean:
 	(find "$(SOURCE_DIR)" -type d -name bin -exec rm -rf "{}" \; &> /dev/null) || echo "bin cleaned"
 	(find "$(SOURCE_DIR)" -type d -name obj -exec rm -rf "{}" \; &> /dev/null) || echo "obj cleaned"
-	(find "$(SOURCE_DIR)/Duplicati/Localization/" -type d -not -name Localization -exec rm -rf "{}" \; &> /dev/null) || echo "localization cleaned"
 	rm -rf "$(PACKAGE_DIR)"
 
 
-.PHONY: build all clean install translations package
+.PHONY: build all clean package debug

@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             public bool MetadataChanged;
         }
             
-        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database)
+        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -95,18 +95,34 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         try
                         {
-                            var res = await database.GetFileEntryAsync(path);
-
-                            await self.Output.WriteAsync(new FileEntry() {
-                                OldId = res == null ? -1 : res.id,
-                                Path = path,
-                                Attributes = attributes,
-                                LastWrite = lastwrite,
-                                OldModified = res == null ? new DateTime(0) : res.modified,
-                                LastFileSize = res == null ? -1 : res.filesize,
-                                OldMetaHash = res == null ? null : res.metahash,
-                                OldMetaSize = res == null ? -1 : res.metasize
-                            });
+                            if (options.CheckFiletimeOnly || options.DisableFiletimeCheck)
+                            {
+                                var tmp = await database.GetFileLastModifiedAsync(path, lastfilesetid);
+                                await self.Output.WriteAsync(new FileEntry() {
+                                    OldId = tmp.Key < 0 ? -1 : tmp.Key,
+                                    Path = path,
+                                    Attributes = attributes,
+                                    LastWrite = lastwrite,
+                                    OldModified = tmp.Key < 0 ? new DateTime(0) : tmp.Value,
+                                    LastFileSize = -1 ,
+                                    OldMetaHash = null,
+                                    OldMetaSize = -1
+                                });
+                            }
+                            else
+                            {
+                                var res = await database.GetFileEntryAsync(path, lastfilesetid);
+                                await self.Output.WriteAsync(new FileEntry() {
+                                    OldId = res == null ? -1 : res.id,
+                                    Path = path,
+                                    Attributes = attributes,
+                                    LastWrite = lastwrite,
+                                    OldModified = res == null ? new DateTime(0) : res.modified,
+                                    LastFileSize = res == null ? -1 : res.filesize,
+                                    OldMetaHash = res == null ? null : res.metahash,
+                                    OldMetaSize = res == null ? -1 : res.metasize
+                                });
+                            }
                         }
                         catch(Exception ex)
                         {

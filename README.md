@@ -37,13 +37,13 @@ Download
 
 The latest version of Duplicati is an experimental version for the Duplicati 2.0 release. 
 
-[Click here to download the latest Duplicati 2.0 experimental release.](https://github.com/duplicati/duplicati/releases/tag/v2.0.1.22-2.0.1.22_experimental_2016-09-12)
+[Click here to download the latest Duplicati 2.0 experimental release.](http://www.duplicati.com/download)
 
-The experimental release will automatically notify you and allows you to upgrade with a single click (or command in the terminal).
+The experimental release will automatically notify you of updates and allows you to upgrade with a single click (or command in the terminal).
+For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases) or choose another update channel in the UI or on the commandline.
 
 All releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The latest signature file and latest ASCII signature file are also available from [the Duplicati download page](https://github.com/duplicati/duplicati/releases).
 
-For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases) or choose another update channel in the UI or on the commandline.
 
 Features
 ========
@@ -84,3 +84,5 @@ https://www.transifex.com/duplicati/duplicati/dashboard/
 
 ## Contributing Code
 Instructions on how to setup your development environment and build duplicati can be found in the [wiki](https://github.com/duplicati/duplicati/wiki/How-to-build-from-source). Pull requests fixing bugs or improving duplicati in another way are appreciated.
+
+If you are looking for an issue to fix, try looking at one of the [minor change](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22) issues. If you are most used to web development, have a look at the [issues marked UI](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22UI%22).

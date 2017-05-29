@@ -172,7 +172,7 @@ namespace Duplicati.Server.WebServer
                     if (!certValid)
                         server.Start(listenInterface, p);
                     else
-                        server.Start(listenInterface, p, cert, System.Security.Authentication.SslProtocols.Tls | System.Security.Authentication.SslProtocols.Tls11 | System.Security.Authentication.SslProtocols.Tls12, null, false);
+                        server.Start(listenInterface, p, cert, System.Security.Authentication.SslProtocols.Tls11 | System.Security.Authentication.SslProtocols.Tls12, null, false);
 
                     m_server = server;
                     m_server.ServerName = string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
@@ -213,8 +213,6 @@ namespace Duplicati.Server.WebServer
             HttpServer.HttpServer server = new HttpServer.HttpServer();
 
             server.Add(new AuthenticationHandler());
-
-            server.Add(new ControlHandler());
 
             server.Add(new RESTHandler());
 

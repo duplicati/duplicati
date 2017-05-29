@@ -17,6 +17,7 @@
     <TargetFrameworkProfile />
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -44,7 +45,7 @@
       <HintPath>..\..\..\packages\CoCoL.1.5.0\lib\net45\CoCoL.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -138,6 +139,12 @@
     <Compile Include="Operation\Common\TaskControl.cs" />
     <Compile Include="Operation\Backup\StreamBlockSplitter.cs" />
     <Compile Include="Operation\Backup\StreamBlock.cs" />
+    <Compile Include="Operation\PurgeFilesHandler.cs" />
+    <Compile Include="Database\LocalPurgeDatabase.cs" />
+    <Compile Include="Database\LocalListBrokenFilesDatabase.cs" />
+    <Compile Include="Operation\ListBrokenFilesHandler.cs" />
+    <Compile Include="Operation\PurgeBrokenFilesHandler.cs" />
+    <Compile Include="Operation\Backup\RecreateMissingIndexFiles.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

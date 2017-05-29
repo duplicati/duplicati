@@ -14,7 +14,7 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#if __MonoCS__ || __WindowsGTK__
+#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
 using System;
 using AppIndicator;
 using Gtk;
@@ -54,32 +54,29 @@ namespace Duplicati.GUI.TrayIcon
         {
             set 
             {
+                m_appIndicator.IconName = GetTrayIconFilename(value);
+
                 switch(value)
                 {
-                case TrayIcons.Paused:
-                    m_appIndicator.IconName = "normal-pause";
-                    m_appIndicator.IconDesc = "Paused";
-                    break;
-                case TrayIcons.Running:
-                    m_appIndicator.IconName = "normal-running";
-                    m_appIndicator.IconDesc = "Running";
-                    break;
-                case TrayIcons.IdleError:
-                    m_appIndicator.IconName = "normal-error";
-                    m_appIndicator.IconDesc = "Error";
-                    break;
-                case TrayIcons.RunningError:
-                    m_appIndicator.IconName = "normal-running";
-                    break;
-                case TrayIcons.PausedError:
-                    m_appIndicator.IconName = "normal-pause";
-                    m_appIndicator.IconDesc = "Paused";
-                    break;
-                case TrayIcons.Idle:
-                default:
-                    m_appIndicator.IconName = "normal";
-                    m_appIndicator.IconDesc = "Ready";
-                    break;
+                    case TrayIcons.Paused:
+                        m_appIndicator.IconDesc = "Paused";
+                        break;
+                    case TrayIcons.Running:
+                        m_appIndicator.IconDesc = "Running";
+                        break;
+                    case TrayIcons.IdleError:
+                        m_appIndicator.IconDesc = "Error";
+                        break;
+                    case TrayIcons.RunningError:
+                        m_appIndicator.IconDesc = "Running";
+                        break;
+                    case TrayIcons.PausedError:
+                        m_appIndicator.IconDesc = "Paused";
+                        break;
+                    case TrayIcons.Idle:
+                    default:
+                        m_appIndicator.IconDesc = "Ready";
+                        break;
                 }
             }
         }

@@ -11,8 +11,9 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, repair, affected
-  Debugging: debug, logging, create-report, test-filters, system-info
+  Commands: backup, find, restore, delete, compact, test, compare, purge
+  Reparing: repair, affected, list-broken-files, purge-broken-files
+  Debugging: debug, logging, create-report, test-filters, system-info, send-mail
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, encryption, compression
@@ -47,7 +48,7 @@ Show system information as seen by Duplicati
 
 Make an encrypted backup
 ========================
-  The following command will make an encrypted backup and store it on an FTP server. As no passphrase is specified, the user is prompted for a password. The upload speed is throttled to 500kB/s. Backups older than onemonth are considered old. Old backups are deleted automatically. The maximum file size is limited to 50MB (default). 
+  The following command will make an encrypted backup and store it on an FTP server. As no passphrase is specified, the user is prompted for a password. The upload speed is throttled to 500kB/s. Backups older than one month are considered old. Old backups are deleted automatically. The maximum file size is limited to 50MB (default). 
   
   %MONO%"%APP_PATH%" backup ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_PATH%" --throttle=500kB
   
@@ -98,7 +99,7 @@ Usage: find <storage-URL> ["<filename>"] [<options>]
   --time=<time>
     Shows what the files looked like at a specific time. Absolute and relative times can be specified.
   --version=<int>
-    Shows what the files looked like in a specific backup. If no version is specified the latest backup (version=0) will be used. If nothing is found, older backups will besearched automatically.
+    Shows what the files looked like in a specific backup. If no version is specified the latest backup (version=0) will be used. If nothing is found, older backups will be searched automatically.
   --include=<string>
     Reduces the list of files in a backup to those that match the provided string. This is applied before the search is executed. 
   --exclude=<string>
@@ -138,6 +139,8 @@ Usage: delete <storage-URL> [<options>]
     Marks data outdated that is older than <int> versions.
   --version=<int>
     Deletes all files that belong to the specified version(s).
+  --allow-full-removal
+    Disables the protection against removing the final fileset
   
   
   
@@ -193,6 +196,42 @@ Usage: repair <storage-URL> [<options>]
 
 
 
+# =============================================================================
+> duplicati.commandline.exe help purge
+
+Usage: purge <storage-URL> <filenames> [<options>]
+  
+  Purges (removes) files from remote backup data. This command can either take a list of filenames or use the filters to choose which files to purge. The purge process creates new filesets on the remote destination with the purged files removed, and will start the compacting process after a purge. By default, the matching files are purged in all versions, but this can be limited by choosing one or more versions. To test what will happen, use the --dry-run flag.
+
+  --dry-run
+    Performs the operation, but does not write changes to the local database or the remote storage
+  --version=<int>
+    Selects specific versions to purge from, multiple versions can be specified with commas
+  --time=<time>
+    Selects a specific version to purge from
+  --no-auto-compact
+    Performs a compact process after purging files
+  --include=<filter>
+    Selects files to purge, using filter syntax
+
+
+# =============================================================================
+> duplicati.commandline.exe help broken
+> duplicati.commandline.exe help broken-files
+> duplicati.commandline.exe help list-broken-files
+> duplicati.commandline.exe help purge-broken-files
+
+Usage: list-broken-files <storage-URL> [<options>]
+  
+  Checks the database for missing data that cause files not not be restoreable. Files can become unrestoreable if remote data files are defect or missing. Use the list-broken-files command to see what the purge-broken-files command will remove.
+
+Usage: purge-broken-files <storage-URL> [<options>]
+
+  Removes all files from the database and remote storage that are no longer restoreable. Use this operation with caution, and only if you cannot recover the missing remote files, but want to continue a backup. Even with missing remote files, it may be possible to restore parts of the files that will be removed with this command.
+
+  --dry-run
+    Performs the operation, but does not write changes to the local database or the remote storage
+    
 
 # =============================================================================
 > duplicati.commandline.exe help test
@@ -225,7 +264,7 @@ Usage: test-filters <source-path> [<options>]
 
 Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
-  Returns a report explaning what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
+  Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
   
   
 # =============================================================================
@@ -264,7 +303,7 @@ Duplicati offers various options for the used compression and encryption modules
 # =============================================================================
 > duplicati.commandline.exe help gpg
 
-Duplicati is shipped with an interface to GNU Privary Guard. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch.
+Duplicati is shipped with an interface to GNU Privacy Guard. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch.
 
 Options:
 %MODULEOPTIONS%
@@ -385,8 +424,12 @@ Inside scripts and the commandline --parameters-file, where multiple filters are
 # =============================================================================
 > duplicati.commandline.exe help mail
 > duplicati.commandline.exe help email
+> duplicati.commandline.exe help send-mail
 
-Duplicati can send email notifications.
+Duplicati can send email notifications after each operation. Use the send-mail command to test this:
+  
+  %MONO%"%APP_PATH%" send-mail --send-mail-to=<email-address>
+
 
   --send-mail-to=<email-address>
     Send an email to <email-address> after a backup. Valid formats are "Name <test@example.com>, Other <test2@example.com>, test3@example.com". Multiple addresses must be separated with a comma. 
@@ -397,7 +440,7 @@ Duplicati can send email notifications.
   --send-mail-body=<body>
     The content of the email message. This should contain "%RESULT%".
   --send-mail-url=<smtp-url>
-    A URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587" or "smtp://smtp.example.com:25"
+    A URL to connect to an SMTP server to send out an email. Example: "tls://smtp.example.com:587", "smtps://smtp.example.com:465" or "smtp://smtp.example.com:25"
   --send-mail-username=<username>
     Required username to authenticate with SMTP server.
   --send-mail-password=<password>

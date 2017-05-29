@@ -31,6 +31,65 @@ namespace Duplicati.Library.SQLiteHelper
         private static Type m_type = null;
 
         /// <summary>
+        /// Loads an SQLite connection instance, optionally setting the tempfolder and opening the the database
+        /// </summary>
+        /// <returns>The SQLite connection instance.</returns>
+        /// <param name="targetpath">The optional path to the database.</param>
+        /// <param name="tempdir">The optional tempdir to set.</param>
+        public static System.Data.IDbConnection LoadConnection(string targetpath = null, string tempdir = null)
+        {
+            if (string.IsNullOrWhiteSpace(tempdir))
+                tempdir = Library.Utility.TempFolder.SystemTempPath;
+
+            var prev = System.Environment.GetEnvironmentVariable("SQLITE_TMPDIR");
+
+            System.Data.IDbConnection con = null;
+
+            try
+            {
+                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", tempdir);
+                con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                if (!string.IsNullOrWhiteSpace(targetpath))
+                {
+                    con.ConnectionString = "Data Source=" + targetpath;
+                    con.Open();
+
+                    // Try to set the temp_dir even tough it is deprecated
+                    if (!string.IsNullOrWhiteSpace(tempdir))
+                    {
+                        try
+                        {
+                            using (var cmd = con.CreateCommand())
+                            {
+                                cmd.CommandText = string.Format("PRAGMA temp_store_directory = '{0}'", tempdir);
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+
+            }
+            catch
+            {
+                if (con != null)
+                    try { con.Dispose(); }
+                    catch { }
+
+                throw;
+            }
+            finally
+            {
+                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", prev);
+            }
+
+            
+            return con;
+        }
+
+        /// <summary>
         /// Returns the SQLiteCommand type for the current architecture
         /// </summary>
         public static Type SQLiteConnectionType
@@ -39,11 +98,14 @@ namespace Duplicati.Library.SQLiteHelper
             {
                 if (m_type == null)
                 {
-                    string filename = "System.Data.SQLite.dll";
-                    string basePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
+                    var filename = "System.Data.SQLite.dll";
+                    var basePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
+
+                    // Set this to make SQLite preload automatically
+                    Environment.SetEnvironmentVariable("PreLoadSQLite_BaseDirectory", basePath);
 
                     //Default is to use the pinvoke version which requires a native .dll/.so
-                    string assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
+                    var assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
 
                     if (!Duplicati.Library.Utility.Utility.IsMono)
                     {
@@ -58,6 +120,15 @@ namespace Duplicati.Library.SQLiteHelper
                             if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
                                 assemblyPath = System.IO.Path.Combine(basePath, "win32");
                         }
+
+                        // If we have a new path, try to force load the mixed-mode assembly for the current architecture
+                        // This can be avoided if the preload in SQLite works, but it is easy to do it here as well
+                        if (assemblyPath != System.IO.Path.Combine(basePath, "pinvoke"))
+                        {
+                            try { PInvoke.LoadLibraryEx(System.IO.Path.Combine(basePath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
+                            catch { }
+                        }
+
                     } else {
                         //On Mono, we try to find the Mono version of SQLite
                         
@@ -94,5 +165,21 @@ namespace Duplicati.Library.SQLiteHelper
                 return m_type;
             }
         }
+    }
+
+    /// <summary>
+    /// Helper class with PInvoke methods
+    /// </summary>
+    internal static class PInvoke
+    {
+        /// <summary>
+        /// Loads the specified module into the address space of the calling process.
+        /// </summary>
+        /// <returns>The library ex.</returns>
+        /// <param name="lpFileName">The filename of the module to load.</param>
+        /// <param name="hReservedNull">Reserved for future use.</param>
+        /// <param name="dwFlags">Action to take on load.</param>
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
     }
 }

@@ -49,6 +49,10 @@ backupApp.controller('HomeController', function ($scope, $location, ServerStatus
         $location.path('/log/' + id);
     };
 
+    $scope.doCommandLine = function(id, name) {
+        $location.path('/commandline/' + id);
+    };
+
     $scope.doCreateBugReport = function(id, name) {
         AppService.post('/backup/' + id + '/createreport');
     };
