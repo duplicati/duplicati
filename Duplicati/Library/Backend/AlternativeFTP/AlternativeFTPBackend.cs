@@ -44,6 +44,9 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         private const string CONFIG_KEY_AFTP_DATA_CONNECTION_TYPE = "aftp-data-connection-type";
         private const string CONFIG_KEY_AFTP_SSL_PROTOCOLS = "aftp-ssl-protocols";
 
+        private const string TEST_FILE_NAME = "duplicati-access-privileges-test.tmp";
+        private const string TEST_FILE_CONTENT = "This file used by Duplicati to test access permissions and could be safely deleted.";
+
         // ReSharper disable InconsistentNaming
         private static readonly string DEFAULT_DATA_CONNECTION_TYPE_STRING = DEFAULT_DATA_CONNECTION_TYPE.ToString();
         private static readonly string DEFAULT_ENCRYPTION_MODE_STRING = DEFAULT_ENCRYPTION_MODE.ToString();
@@ -84,13 +87,13 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.DescriptionAuthPasswordShort, Strings.DescriptionAuthPasswordLong),
-                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.DescriptionAuthUsernameShort, Strings.DescriptionAuthUsernameLong),
-                    new CommandLineArgument("disable-upload-verify", CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
-                    new CommandLineArgument(CONFIG_KEY_AFTP_DATA_CONNECTION_TYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpDataConnectionTypeShort, Strings.DescriptionFtpDataConnectionTypeLong, DEFAULT_DATA_CONNECTION_TYPE_STRING, null, Enum.GetNames(typeof(FtpDataConnectionType))),
-                    new CommandLineArgument(CONFIG_KEY_AFTP_ENCRYPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpEncryptionModeShort, Strings.DescriptionFtpEncryptionModeLong, DEFAULT_ENCRYPTION_MODE_STRING, null, Enum.GetNames(typeof(FtpEncryptionMode))),
-                    new CommandLineArgument(CONFIG_KEY_AFTP_SSL_PROTOCOLS, CommandLineArgument.ArgumentType.Flags, Strings.DescriptionSslProtocolsShort, Strings.DescriptionSslProtocolsLong, DEFAULT_SSL_PROTOCOLS_STRING, null, Enum.GetNames(typeof(SslProtocols))),
-                });
+                          new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.DescriptionAuthPasswordShort, Strings.DescriptionAuthPasswordLong),
+                          new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.DescriptionAuthUsernameShort, Strings.DescriptionAuthUsernameLong),
+                          new CommandLineArgument("disable-upload-verify", CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
+                          new CommandLineArgument(CONFIG_KEY_AFTP_DATA_CONNECTION_TYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpDataConnectionTypeShort, Strings.DescriptionFtpDataConnectionTypeLong, DEFAULT_DATA_CONNECTION_TYPE_STRING, null, Enum.GetNames(typeof(FtpDataConnectionType))),
+                          new CommandLineArgument(CONFIG_KEY_AFTP_ENCRYPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpEncryptionModeShort, Strings.DescriptionFtpEncryptionModeLong, DEFAULT_ENCRYPTION_MODE_STRING, null, Enum.GetNames(typeof(FtpEncryptionMode))),
+                          new CommandLineArgument(CONFIG_KEY_AFTP_SSL_PROTOCOLS, CommandLineArgument.ArgumentType.Flags, Strings.DescriptionSslProtocolsShort, Strings.DescriptionSslProtocolsLong, DEFAULT_SSL_PROTOCOLS_STRING, null, Enum.GetNames(typeof(SslProtocols))),
+                     });
             }
         }
 
@@ -447,9 +450,69 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
+        private static System.IO.Stream StringToStream(string str)
+        {
+            var stream = new System.IO.MemoryStream();
+            var writer = new System.IO.StreamWriter(stream) { AutoFlush = true };
+            writer.Write(str);
+            return stream;
+        }
+
+        /// <summary>
+        /// Test FTP access permissions.
+        /// </summary>
         public void Test()
         {
-            List();
+            var list = List();
+
+            // Delete test file if exists
+            if (list.Any(entry => entry.Name == TEST_FILE_NAME))
+            {
+                try
+                {
+                    Delete(TEST_FILE_NAME);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(string.Format(Strings.ErrorDeleteFile, e.Message), e);
+                }
+            }
+
+            // Test write permissions
+            using (var testStream = StringToStream(TEST_FILE_CONTENT))
+            {
+                try
+                {
+                    Put(TEST_FILE_NAME, testStream);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(string.Format(Strings.ErrorWriteFile, e.Message), e);
+                }
+            }
+
+            // Test read permissions
+            using (var stream = new System.IO.MemoryStream())
+            {
+                try
+                {
+                    Get(TEST_FILE_NAME, stream);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(string.Format(Strings.ErrorReadFile, e.Message), e);
+                }
+            }
+
+            // Cleanup
+            try
+            {
+                Delete(TEST_FILE_NAME);
+            }
+            catch (Exception e)
+            {
+                throw new Exception(string.Format(Strings.ErrorDeleteFile, e.Message), e);
+            }
         }
 
         public void CreateFolder()
@@ -468,7 +531,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         public void Dispose()
         {
-            if(Client != null)
+            if (Client != null)
                 Client.Dispose();
 
             Client = null;
