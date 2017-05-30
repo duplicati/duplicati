@@ -400,7 +400,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>True if the set was added to the database, false otherwise</returns>
         public bool AddMetadataset(string filehash, long size, long blocksetid, out long metadataid, System.Data.IDbTransaction transaction = null)
         {
-            if (!GetMetadatasetID(filehash, size, out metadataid, transaction))
+            if (GetMetadatasetID(filehash, size, out metadataid, transaction))
                 return false;            
 
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
