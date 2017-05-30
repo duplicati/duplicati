@@ -19,52 +19,53 @@ using System;
 
 namespace Duplicati.Library.Main.Database
 {
-	internal class LocalBugReportDatabase : LocalDatabase
-	{
-		public LocalBugReportDatabase(string path)
-			: base(path, "BugReportCreate", false)
-		{
+    internal class LocalBugReportDatabase : LocalDatabase
+    {
+        public LocalBugReportDatabase(string path)
+            : base(path, "BugReportCreate", false)
+        {
             ShouldCloseConnection = true;
-		}
+        }
 
-		public void Fix()
-		{
-			using(var tr = m_connection.BeginTransaction())
-			using(var cmd = m_connection.CreateCommand())
-			{
-				cmd.Transaction = tr;
+        public void Fix()
+        {
+            using(var tr = m_connection.BeginTransaction())
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = tr;
                 var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-				
-				using(var upcmd = m_connection.CreateCommand())
-				{
                 
-					upcmd.Transaction = tr;
+                using(var upcmd = m_connection.CreateCommand())
+                {
+                
+                    upcmd.Transaction = tr;
                     upcmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""RealPath"" TEXT NOT NULL, ""Obfuscated"" TEXT NULL)", tablename));
                     upcmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" ", tablename));
                     upcmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Obfuscated"" = ? || length(""RealPath"") || ? || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = ? THEN ? ELSE ? END) ", tablename), Library.Utility.Utility.IsClientLinux ? "/" : "X:\\", Library.Utility.Utility.DirectorySeparatorString, Library.Utility.Utility.DirectorySeparatorString, Library.Utility.Utility.DirectorySeparatorString, ".bin");
                     
-					long id = 1;
-					using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""RealPath"", ""Obfuscated"" FROM ""{0}"" ", tablename)))
-						while(rd.Read())
-						{
-							upcmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = replace(""Message"", ?, ?), ""Exception"" = replace(""Exception"", ?, ?)", rd.GetValue(0), rd.GetValue(1), rd.GetValue(0), rd.GetValue(1) );
-							id++;
-						}
-				}
+                    /*long id = 1;
+                    using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""RealPath"", ""Obfuscated"" FROM ""{0}"" ", tablename)))
+                        while(rd.Read())
+                        {
+                            upcmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = replace(""Message"", ?, ?), ""Exception"" = replace(""Exception"", ?, ?)", rd.GetValue(0), rd.GetValue(1), rd.GetValue(0), rd.GetValue(1) );
+                            id++;
+                        }
+                        */
+                }
 
-				cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = ""ERASED!"" WHERE ""Message"" LIKE ""%/%"" OR ""Message"" LIKE ""%:\%"" ");				
-				cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = ""ERASED!"" WHERE ""Exception"" LIKE ""%/%"" OR ""Exception"" LIKE ""%:\%"" ");				
-				cmd.ExecuteNonQuery(string.Format(@"UPDATE ""File"" SET ""Path"" = (SELECT ""Obfuscated"" FROM ""{0}"" WHERE ""Path"" = ""RealPath"") ", tablename));
-				
+                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = ""ERASED!"" WHERE ""Message"" LIKE ""%/%"" OR ""Message"" LIKE ""%:\%"" ");                
+                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = ""ERASED!"" WHERE ""Exception"" LIKE ""%/%"" OR ""Exception"" LIKE ""%:\%"" ");                
+                cmd.ExecuteNonQuery(string.Format(@"UPDATE ""File"" SET ""Path"" = (SELECT ""Obfuscated"" FROM ""{0}"" WHERE ""Path"" = ""RealPath"") ", tablename));
+                
                 cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tablename));
                 
                 using(new Logging.Timer("CommitUpdateBugReport"))
-    				tr.Commit();
-				
-				cmd.Transaction = null;
-				cmd.ExecuteNonQuery("VACUUM");
-			}
-		}
-	}
+                    tr.Commit();
+                
+                cmd.Transaction = null;
+                cmd.ExecuteNonQuery("VACUUM");
+            }
+        }
+    }
 }
 

@@ -100,7 +100,7 @@ namespace Duplicati.Library.Backend
             u.RequireHost();
             
             if (!u.Path.StartsWith("uri/URI:DIR2:") && !u.Path.StartsWith("uri/URI%3ADIR2%3A"))
-                throw new Exception(Strings.TahoeBackend.UnrecognizedUriError);
+                throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError);
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
@@ -161,7 +161,7 @@ namespace Duplicati.Library.Backend
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                         throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-					using (var rs = areq.GetResponseStream())
+                    using (var rs = areq.GetResponseStream())
                     using (var sr = new System.IO.StreamReader(rs))
                     using (var jr = new Newtonsoft.Json.JsonTextReader(sr))
                     {
@@ -314,7 +314,7 @@ namespace Duplicati.Library.Backend
                 if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                     throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
-				using (var s = areq.GetResponseStream())
+                using (var s = areq.GetResponseStream())
                     Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
             }
         }

@@ -65,10 +65,10 @@ namespace Duplicati.Server.Serializable
             get 
             { 
                 var t = Program.WorkThread.CurrentTask;
-                if (t == null || t.Backup == null)
+                if (t == null)
                     return null;
                 else
-                    return new Tuple<long, string>(t.TaskID, t.Backup.ID);
+                    return new Tuple<long, string>(t.TaskID, t.Backup == null ? null : t.Backup.ID);
             }
         }
 

@@ -16,6 +16,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
 
 namespace Duplicati.Library.Main
 {
@@ -43,6 +44,101 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <value>The operation progress update object</value>
         IOperationProgress OperationProgress { set; }
+    }
+
+    /// <summary>
+    /// Helper class to allow setting multiple message sinks on a single controller
+    /// </summary>
+    public class MultiMessageSink : IMessageSink
+    {
+        /// <summary>
+        /// The sinks in this instance
+        /// </summary>
+        private IMessageSink[] m_sinks;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Duplicati.Library.Main.MultiMessageSink"/> class.
+        /// </summary>
+        /// <param name="sinks">The sinks to use.</param>
+        public MultiMessageSink(params IMessageSink[] sinks)
+        {
+            m_sinks = (sinks ?? new IMessageSink[0]).Where(x => x != null).ToArray();
+        }
+
+        /// <summary>
+        /// Appends a new sink to the list
+        /// </summary>
+        /// <param name="sink">The sink to append.</param>
+        public void Append(IMessageSink sink)
+        {
+            if (sink == null)
+                return;
+            
+            var na = new IMessageSink[m_sinks.Length + 1];
+            Array.Copy(m_sinks, na, m_sinks.Length);
+            na[na.Length - 1] = sink;
+            m_sinks = na;
+        }
+
+        public IBackendProgress BackendProgress
+        {
+            set
+            {
+                foreach (var s in m_sinks)
+                    s.BackendProgress = value;
+            }
+        }
+
+        public IOperationProgress OperationProgress
+        {
+            set
+            {
+                foreach (var s in m_sinks)
+                    s.OperationProgress = value;
+            }
+        }
+
+        public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+        {
+            foreach (var s in m_sinks)
+                s.BackendEvent(action, type, path, size);
+        }
+
+        public void DryrunEvent(string message)
+        {
+            foreach (var s in m_sinks)
+                s.DryrunEvent(message);
+        }
+
+        public void ErrorEvent(string message, Exception ex)
+        {
+            foreach (var s in m_sinks)
+                s.ErrorEvent(message, ex);
+        }
+
+        public void MessageEvent(string message)
+        {
+            foreach (var s in m_sinks)
+                s.MessageEvent(message);
+        }
+
+        public void RetryEvent(string message, Exception ex)
+        {
+            foreach (var s in m_sinks)
+                s.RetryEvent(message, ex);
+        }
+
+        public void VerboseEvent(string message, object[] args)
+        {
+            foreach (var s in m_sinks)
+                s.VerboseEvent(message, args);
+        }
+
+        public void WarningEvent(string message, Exception ex)
+        {
+            foreach (var s in m_sinks)
+                s.WarningEvent(message, ex);
+        }
     }
     
     /// <summary>

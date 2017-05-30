@@ -202,7 +202,22 @@ namespace Duplicati.Server.Serializable
                      select new DynamicModule(n))
                     .ToArray(); 
             }
-        }   
+        }
+
+        /// <summary>
+        /// The server modules known by the server
+        /// </summary>
+        public static object[] ServerModules
+        {
+            get
+            {
+                return
+                    (from n in Library.DynamicLoader.GenericLoader.Modules
+                     where n is Library.Interface.IGenericServerModule
+                     select n)
+                    .ToArray();
+            }
+        }
 
         /// <summary>
         /// The filters that are applied to all backups

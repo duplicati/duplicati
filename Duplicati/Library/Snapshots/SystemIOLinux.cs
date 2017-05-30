@@ -165,20 +165,26 @@ namespace Duplicati.Library.Snapshots
             Directory.Delete(NoSnapshot.NormalizePath(path), recursive);
         }
 
-        public Dictionary<string, string> GetMetadata(string file)
+        public Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
         {
             var f = NoSnapshot.NormalizePath(file);
             var dict = new Dictionary<string, string>();
 
-            var n = UnixSupport.File.GetExtendedAttributes(f);
+            var n = UnixSupport.File.GetExtendedAttributes(f, isSymlink, followSymlink);
             if (n != null)
                 foreach(var x in n)
                     dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
 
             var fse = UnixSupport.File.GetUserGroupAndPermissions(f);
             dict["unix:uid-gid-perm"] = string.Format("{0}-{1}-{2}", fse.UID, fse.GID, fse.Permissions);
-            dict["unix:owner-name"] = fse.OwnerName;
-            dict["unix:group-name"] = fse.GroupName;
+            if (fse.OwnerName != null)
+            {
+                dict["unix:owner-name"] = fse.OwnerName;
+            }
+            if (fse.GroupName != null)
+            {
+                dict["unix:group-name"] = fse.GroupName;
+            }
 
             return dict;
         }

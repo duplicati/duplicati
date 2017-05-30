@@ -112,7 +112,7 @@ namespace Duplicati.GUI.TrayIcon.Windows
         public override void Init (string[] args)
         {
             if (WinFormsRunner.Instance != null)
-                throw new Exception("Multiple trayicon instances not allowed!");
+                throw new Duplicati.Library.Interface.UserInformationException("Multiple trayicon instances not allowed!");
 
             WinFormsRunner.Instance = this;
 
@@ -145,6 +145,15 @@ namespace Duplicati.GUI.TrayIcon.Windows
         {
             if (m_onSingleClick != null)
                 m_onSingleClick();
+            else if (m_trayIcon != null && m_trayIcon.ContextMenuStrip != null)
+            {
+                // Show context menu on left-click as we have nothing happening otherwise
+                try
+                {
+                    typeof(NotifyIcon).GetMethod("ShowContextMenu", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(m_trayIcon, null);
+                }
+                catch { }
+            }
         }
         
         private void m_trayIcon_DoubleClick(object sender, EventArgs e)

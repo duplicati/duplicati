@@ -2,12 +2,12 @@
  * The primary table that stores all backups.
  *
  * The name and tag are free form user strings.
- * The tags are comma seperated
+ * The tags are comma separated
  * the TargetURL is the url to remote storage,
  * and the DBPath is the path to the local database
  */
 CREATE TABLE "Backup" (
-    "ID" INTEGER PRIMARY KEY,
+    "ID" INTEGER PRIMARY KEY AUTOINCREMENT,
     "Name" TEXT NOT NULL,
     "Tags" TEXT NOT NULL,
     "TargetURL" TEXT NOT NULL,
@@ -150,5 +150,5 @@ CREATE TABLE "TempFile" (
     "Expires" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (3);
+INSERT INTO "Version" ("Version") VALUES (4);
 

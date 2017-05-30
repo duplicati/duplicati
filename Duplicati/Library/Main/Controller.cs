@@ -43,9 +43,14 @@ namespace Duplicati.Library.Main
         private IMessageSink m_messageSink;
 
         /// <summary>
-        /// A flag indicating if logging has been set, used to dispose the logging
+        /// The stream log, if any
         /// </summary>
-        private bool m_hasSetLogging = false;
+        private Logging.StreamLog m_logfile = null;
+
+        /// <summary>
+        /// The logging filescope
+        /// </summary>
+        private IDisposable m_logfilescope = null;
 
         /// <summary>
         /// The current executing task
@@ -83,17 +88,77 @@ namespace Duplicati.Library.Main
         private bool m_doResetLocale;
 
         /// <summary>
+        /// The caffeinate process runner
+        /// </summary>
+        private System.Diagnostics.Process m_caffeinate;
+
+        /// <summary>
         /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
         /// </summary>
         /// <param name="isRunning">Flag indicating execution state</param>
         private void OperationRunning(bool isRunning)
         {
-            if (m_options != null && !m_options.AllowSleep && !Duplicati.Library.Utility.Utility.IsClientLinux)
-                try
+            if (m_options != null && !m_options.AllowSleep)
+            {
+                if (Duplicati.Library.Utility.Utility.IsClientWindows)
                 {
-                    Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
+                    try
+                    {
+                        Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteMessage("Failed to set sleep prevention", Logging.LogMessageType.Warning, ex);
+                    }
                 }
-                catch { } //TODO: Report this somehow
+                else if (Duplicati.Library.Utility.Utility.IsClientOSX)
+                {
+                    if (isRunning)
+                    {
+                        try
+                        {
+                            if (m_caffeinate == null)
+                            {
+                                // -s prevents sleep on AC, -i prevents sleep generally
+                                var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s");
+                                psi.RedirectStandardInput = true;
+                                psi.UseShellExecute = false;
+                                m_caffeinate = System.Diagnostics.Process.Start(psi);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteMessage("Failed to set sleep prevention", Logging.LogMessageType.Warning, ex);
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            if (m_caffeinate != null && !m_caffeinate.HasExited)
+                            {
+                                // Send CTRL+C
+                                m_caffeinate.StandardInput.Write("\x3");
+                                m_caffeinate.StandardInput.Flush();
+                                m_caffeinate.WaitForExit(500);
+
+                                if (!m_caffeinate.HasExited)
+                                {
+                                    m_caffeinate.Kill();
+                                    m_caffeinate.WaitForExit(500);
+                                    if (!m_caffeinate.HasExited)
+                                        throw new Exception("Failed to kill the caffeinate process");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteMessage("Failed to unset sleep prevention", Logging.LogMessageType.Warning, ex);
+                        }
+                            
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -108,30 +173,42 @@ namespace Duplicati.Library.Main
             m_messageSink = messageSink;
         }
 
+        /// <summary>
+        /// Appends another message sink to the controller
+        /// </summary>
+        /// <param name="sink">The sink to use.</param>
+        public void AppendSink(IMessageSink sink)
+        {
+            if (m_messageSink is MultiMessageSink)
+                ((MultiMessageSink)m_messageSink).Append(sink);
+            else
+                m_messageSink = new MultiMessageSink(m_messageSink, sink);
+        }
+
         public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
-		{
+        {
             Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
-
+            
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
-				if (inputsources == null || inputsources.Length == 0)
-					throw new Exception(Strings.Controller.NoSourceFoldersError);
+                if (inputsources == null || inputsources.Length == 0)
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError);
 
                 var sources = new List<string>(inputsources);
 
-				//Make sure they all have the same format and exist
-				for(int i = 0; i < sources.Count; i++)
-				{
-					try
-					{
-						sources[i] = System.IO.Path.GetFullPath(sources[i]);
-					}
-					catch (Exception ex)
-					{
-						throw new ArgumentException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
-					}
+                //Make sure they all have the same format and exist
+                for(int i = 0; i < sources.Count; i++)
+                {
+                    try
+                    {
+                        sources[i] = System.IO.Path.GetFullPath(sources[i]);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
+                    }
 
                     var fi = new System.IO.FileInfo(sources[i]);
                     var di = new System.IO.DirectoryInfo(sources[i]);
@@ -139,44 +216,48 @@ namespace Duplicati.Library.Main
                         throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(sources[i]));
 
                     if (!fi.Exists)
-    					sources[i] = Library.Utility.Utility.AppendDirSeparator(sources[i]);
-				}
+                        sources[i] = Library.Utility.Utility.AppendDirSeparator(sources[i]);
+                }
 
-				//Sanity check for duplicate folders and multiple inclusions of the same folder
-				for(int i = 0; i < sources.Count - 1; i++)
-				{
-					for(int j = i + 1; j < sources.Count; j++)
-						if (sources[i].Equals(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
+                //Sanity check for duplicate files/folders
+                var pathDuplicates = sources.GroupBy(x => x, Library.Utility.Utility.ClientFilenameStringComparer)
+                      .Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+
+                foreach (var pathDuplicate in pathDuplicates)
+                    result.AddVerboseMessage(string.Format("Removing duplicate source: {0}", pathDuplicate));
+
+                sources = sources.Distinct(Library.Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList();
+
+                //Sanity check for multiple inclusions of the same folder
+                for (int i = 0; i < sources.Count; i++)
+                    for (int j = 0; j < sources.Count; j++)
+                        if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparision))
                         {
-                            result.AddVerboseMessage("Removing duplicate source: {0}", sources[j]);
-							sources.RemoveAt(j);
-                            j--;
-                        }
-						else if (sources[i].StartsWith(sources[j], Library.Utility.Utility.IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            bool includes;
-                            bool excludes;
-
-                            FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
-
-                            // If there are no excludes, there is no need to keep the folder as a filter
-                            if (excludes)
+                            if (filter != null)
                             {
-                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
-                                filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                                bool includes;
+                                bool excludes;
+
+                                FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+
+                                // If there are no excludes, there is no need to keep the folder as a filter
+                                if (excludes)
+                                {
+                                    result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
+                                    filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                                }
+                                else
+                                    result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
                             }
                             else
-                            {
-                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\"", sources[i], sources[j]);
-                            }
+                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
 
                             sources.RemoveAt(i);
                             i--;
                             break;
                         }
-				}
 
-                using(var h = new Operation.BackupHandler(m_backend, m_options, result))
+                using (var h = new Operation.BackupHandler(m_backend, m_options, result))
                     h.Run(sources.ToArray(), filter);
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
@@ -186,9 +267,9 @@ namespace Duplicati.Library.Main
         }
 
         public Library.Interface.IRestoreResults Restore(string[] paths, Library.Utility.IFilter filter = null)
-		{
+        {
             return RunAction(new RestoreResults(), ref paths, ref filter, (result) => {
-    			new Operation.RestoreHandler(m_backend, m_options, result).Run(paths, filter);
+                new Operation.RestoreHandler(m_backend, m_options, result).Run(paths, filter);
 
                 Library.UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.FilesRestored);
                 Library.UsageReporter.Reporter.Report("RESTORE_FILESIZE", result.SizeOfRestoredFiles);
@@ -204,9 +285,9 @@ namespace Duplicati.Library.Main
         }
 
         public Duplicati.Library.Interface.IDeleteResults Delete()
-		{
+        {
             return RunAction(new DeleteResults(), (result) => {
-    			new Operation.DeleteHandler(m_backend, m_options, result).Run();
+                new Operation.DeleteHandler(m_backend, m_options, result).Run();
             });
         }
 
@@ -228,9 +309,9 @@ namespace Duplicati.Library.Main
         }
 
         public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter = null)
-		{
+        {
             return RunAction(new ListResults(), ref filter, (result) => {
-    			new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
+                new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
             });
         }
 
@@ -238,6 +319,46 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new ListResults(), ref filter, (result) => {
                 new Operation.ListControlFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
+            });
+        }
+
+        public Duplicati.Library.Interface.IListRemoteResults ListRemote()
+        {
+            return RunAction(new ListRemoteResults(), (result) =>
+            {
+                using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
+                using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
+                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
+                    result.SetResult(bk.List());
+            });
+        }
+
+        public Duplicati.Library.Interface.IListRemoteResults DeleteAllRemoteFiles()
+        {
+            return RunAction(new ListRemoteResults(), (result) =>
+            {
+                result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
+                using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
+                using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
+                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
+                {
+                    var list = bk.List();
+                    result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
+                    result.OperationProgressUpdater.UpdateProgress(0);
+                    for (var i = 0; i < list.Count; i++)
+                    {
+                        try
+                        {
+                            bk.Delete(list[i].Name, list[i].Size, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            result.AddWarning(string.Format("Failed to delete remote file: {0}", list[i].Name), ex);
+                        }
+                        result.OperationProgressUpdater.UpdateProgress((float)i / list.Count);
+                    }
+                    result.OperationProgressUpdater.UpdateProgress(1);
+                }
             });
         }
 
@@ -279,24 +400,27 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public Duplicati.Library.Interface.IListChangesResults ListChanges(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListChangesResults ListChanges(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null, Action<Duplicati.Library.Interface.IListChangesResults, IEnumerable<Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>>> callback = null)
         {
             var t = new string[] { baseVersion, targetVersion };
 
             return RunAction(new ListChangesResults(), ref t, ref filter, (result) => {
-                new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter);
+                new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter, callback);
             });
         }
 
-        public Duplicati.Library.Interface.IListAffectedResults ListAffected(List<string> args)
+        public Duplicati.Library.Interface.IListAffectedResults ListAffected(List<string> args, Action<Duplicati.Library.Interface.IListAffectedResults> callback = null)
         {
             return RunAction(new ListAffectedResults(), (result) => {
-                new Operation.ListAffected(m_options, result).Run(args);
+                new Operation.ListAffected(m_options, result).Run(args, callback);
             });
         }
 
         public Duplicati.Library.Interface.ITestResults Test(long samples = 1)
         {
+            if (!m_options.RawOptions.ContainsKey("full-remote-verification"))
+                m_options.RawOptions["full-remote-verification"] = "true";
+                
             return RunAction(new TestResults(), (result) => {
                 new Operation.TestHandler(m_backend, m_options, result).Run(samples);
             });
@@ -320,8 +444,60 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public Library.Interface.IPurgeFilesResults PurgeFiles(Library.Utility.IFilter filter)
+        {
+            return RunAction(new PurgeFilesResults(), result =>
+            {
+                new Operation.PurgeFilesHandler(m_backend, m_options, result).Run(filter);
+            });
+        }
+
+        public Library.Interface.IListBrokenFilesResults ListBrokenFiles(Library.Utility.IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
+        {
+            return RunAction(new ListBrokenFilesResults(), result =>
+            {
+                new Operation.ListBrokenFilesHandler(m_backend, m_options, result).Run(filter, callbackhandler);
+            });
+        }
+
+        public Library.Interface.IPurgeBrokenFilesResults PurgeBrokenFiles(Library.Utility.IFilter filter)
+        {
+            return RunAction(new PurgeBrokenFilesResults(), result =>
+            {
+                new Operation.PurgeBrokenFilesHandler(m_backend, m_options, result).Run(filter);
+            });
+        }
+
+        public Library.Interface.ISendMailResults SendMail()
+        {
+            m_options.RawOptions["send-mail-level"] = "all";
+            m_options.RawOptions["send-mail-any-operation"] = "true";
+            string targetmail;
+            m_options.RawOptions.TryGetValue("send-mail-to", out targetmail);
+            if (string.IsNullOrWhiteSpace(targetmail))
+                throw new Exception(string.Format("No email specified, please use --{0}", "send-mail-to"));
+
+            if (m_options.Loglevel == Logging.LogMessageType.Error)
+                m_options.RawOptions["log-level"] = Logging.LogMessageType.Warning.ToString();
+
+            m_options.RawOptions["disable-module"] = string.Join(
+                ",",
+                DynamicLoader.GenericLoader.Modules
+                         .Where(m =>
+                              !(m is Library.Interface.IConnectionModule) && m.GetType().FullName != "Duplicati.Library.Modules.Builtin.SendMail"
+                         )
+                .Select(x => x.Key)
+            );
+                         
+            return RunAction(new SendMailResults(), result =>
+            {
+                result.Lines = new string[0];
+                System.Threading.Thread.Sleep(5);
+            });
+        }
+
         private T RunAction<T>(T result, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
             var tmp = new string[0];
             IFilter tempfilter = null;
@@ -329,57 +505,65 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, ref string[] paths, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
             IFilter tempfilter = null;
             return RunAction<T>(result, ref paths, ref tempfilter, method);
         }
 
         private T RunAction<T>(T result, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
             var tmp = new string[0];
             return RunAction<T>(result, ref tmp, ref filter, method);
         }
 
         private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl
+            where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
-            try
+            using (Logging.Log.StartScope(result))
             {
-                m_currentTask = result;
-                m_currentTaskThread = System.Threading.Thread.CurrentThread;
-                using(new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                try
                 {
+                    m_currentTask = result;
+                    m_currentTaskThread = System.Threading.Thread.CurrentThread;
                     SetupCommonOptions(result, ref paths, ref filter);
-                    OperationRunning(true);
 
-                    method(result);
+                    result.WriteLogMessageDirect(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
 
-                    result.EndTime = DateTime.UtcNow;
+                    using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                        method(result);
+
+                    if (result.EndTime.Ticks == 0)
+                        result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
 
                     OnOperationComplete(result);
+
+                    result.WriteLogMessageDirect(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
+
                     return result;
                 }
-            }
-            catch (Exception ex)
-            {
-                Logging.Log.WriteMessage("Terminated with error: " + ex.Message, Duplicati.Library.Logging.LogMessageType.Error, ex);
+                catch (Exception ex)
+                {
+                    result.EndTime = DateTime.UtcNow;
 
-                OnOperationComplete(ex);
+                    try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                    catch { }
 
-                try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                catch { }
+                    OnOperationComplete(ex);
 
-                throw;
-            }
-            finally
-            {
-                m_currentTask = null;
+                    result.WriteLogMessageDirect(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
+
+                    throw;
+                }
+                finally
+                {
+                    m_currentTask = null;
                 m_currentTaskThread = null;
+                }
             }
-		}
+        }
 
         /// <summary>
         /// Attempts to get the locale, but delays linking to the calls as they are missing in some environments
@@ -401,8 +585,8 @@ namespace Duplicati.Library.Main
             System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = uiLocale;
         }
 
-		private void OnOperationComplete(object result)
-		{
+        private void OnOperationComplete(object result)
+        {
             if (m_options != null && m_options.LoadedModules != null)
             {
                 foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
@@ -450,14 +634,19 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            if (m_hasSetLogging && Logging.Log.CurrentLog is Logging.StreamLog)
+            if (m_logfilescope != null)
             {
-                Logging.StreamLog sl = (Logging.StreamLog)Logging.Log.CurrentLog;
-                Logging.Log.CurrentLog = null;
-                sl.Dispose();
-                m_hasSetLogging = false;
+                m_logfilescope.Dispose();
+                m_logfilescope = null;
             }
-		}
+
+            if (m_logfile != null)
+            {
+                m_logfile.Dispose();
+                m_logfile = null;
+            }
+
+        }
 
         private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths, ref IFilter filter)
         {
@@ -490,7 +679,7 @@ namespace Duplicati.Library.Main
             // Make the filter read-n-write able in the generic modules
             var pristinefilter = conopts["filter"] = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
 
-            foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
+            foreach (var mx in m_options.LoadedModules)
                 if (mx.Key)
                 {
                     if (mx.Value is Library.Interface.IConnectionModule)
@@ -498,13 +687,26 @@ namespace Duplicati.Library.Main
                     else
                         mx.Value.Configure(m_options.RawOptions);
 
+                    if (mx.Value is Library.Interface.IGenericSourceModule)
+                    {
+                        var sourcemodule = (Library.Interface.IGenericSourceModule)mx.Value;
+
+                        if (sourcemodule.ContainFilesForBackup(paths))
+                        {
+                            var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
+
+                            foreach (var sourceoption in sourceoptions)
+                                m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
+                        }
+                    }
+
                     if (mx.Value is Library.Interface.IGenericCallbackModule)
                         ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
 
             // If the filters were changed, read them back in
             if (pristinefilter != conopts["filter"])
-                filter = FilterExpression.Deserialize(conopts["filter"].Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
+                filter = FilterExpression.Deserialize(pristinefilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
 
             OperationRunning(true);
 
@@ -513,11 +715,11 @@ namespace Duplicati.Library.Main
 
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {
-                m_hasSetLogging = true;
                 var path = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(m_options.Logfile));
                 if (!System.IO.Directory.Exists(path))
                     System.IO.Directory.CreateDirectory(path);
-                Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(m_options.Logfile);
+
+                m_logfilescope = Logging.Log.StartScope(m_logfile = new Library.Logging.StreamLog(m_options.Logfile));
             }
 
             result.VerboseErrors = m_options.DebugOutput;
@@ -568,21 +770,20 @@ namespace Duplicati.Library.Main
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
 
             ValidateOptions(result);
-
-            Library.Logging.Log.WriteMessage(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information);
         }
 
         /// <summary>
         /// This function will examine all options passed on the commandline, and test for unsupported or deprecated values.
         /// Any errors will be logged into the statistics module.
         /// </summary>
-        /// <param name="options">The commandline options given</param>
-        /// <param name="backend">The backend url</param>
-        /// <param name="stats">The statistics into which warnings are written</param>
+        /// <param name="log">The log instance</param>
         private void ValidateOptions(ILogWriter log)
         {
-			if (m_options.KeepTime.Ticks > 0 && m_options.KeepVersions > 0)
-				throw new Exception(string.Format("Setting both --{0} and --{1} is not permitted", "keep-versions", "keep-time"));
+            if (m_options.KeepTime.Ticks > 0 && m_options.KeepVersions > 0)
+                throw new Interface.UserInformationException(string.Format("Setting both --{0} and --{1} is not permitted", "keep-versions", "keep-time"));
+
+            if (!string.IsNullOrWhiteSpace(m_options.Prefix) && m_options.Prefix.Contains("-"))
+                throw new Interface.UserInformationException("The prefix cannot contain hyphens (-)");
 
             //No point in going through with this if we can't report
             if (log == null)
@@ -607,7 +808,6 @@ namespace Duplicati.Library.Main
                     if (m.Key)
                         moduleOptions.AddRange(m.Value.SupportedCommands);
                     else
-                    {
                         foreach (Library.Interface.ICommandLineArgument c in m.Value.SupportedCommands)
                         {
                             disabledModuleOptions[c.Name] = m.Value.DisplayName + " (" + m.Value.Key + ")";
@@ -616,7 +816,6 @@ namespace Duplicati.Library.Main
                                 foreach (string s in c.Aliases)
                                     disabledModuleOptions[s] = disabledModuleOptions[c.Name];
                         }
-                    }
 
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key
@@ -701,44 +900,44 @@ namespace Duplicati.Library.Main
         /// <param name="value">The value to check</param>
         /// <returns>Null if no errors are found, an error message otherwise</returns>
         public static string ValidateOptionValue(Library.Interface.ICommandLineArgument arg, string optionname, string value)
-		{
-			if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration)
-			{
-				bool found = false;
-				foreach (string v in arg.ValidValues ?? new string[0])
-					if (string.Equals(v, value, StringComparison.CurrentCultureIgnoreCase))
-					{
-						found = true;
-						break;
-					}
+        {
+            if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration)
+            {
+                bool found = false;
+                foreach (string v in arg.ValidValues ?? new string[0])
+                    if (string.Equals(v, value, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        found = true;
+                        break;
+                    }
 
-				if (!found)
-					return Strings.Controller.UnsupportedEnumerationValue(optionname, value, arg.ValidValues ?? new string[0]);
+                if (!found)
+                    return Strings.Controller.UnsupportedEnumerationValue(optionname, value, arg.ValidValues ?? new string[0]);
 
-			}
-			else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Flags)
-			{
-				bool validatedAllFlags = false;
-				var flags = (value ?? string.Empty).ToLowerInvariant().Split(new[] {","}, StringSplitOptions.None).Select(flag => flag.Trim()).Distinct();
-				var validFlags = arg.ValidValues ?? new string[0];
+            }
+            else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Flags)
+            {
+                bool validatedAllFlags = false;
+                var flags = (value ?? string.Empty).ToLowerInvariant().Split(new[] {","}, StringSplitOptions.None).Select(flag => flag.Trim()).Distinct();
+                var validFlags = arg.ValidValues ?? new string[0];
 
-				foreach (var flag in flags)
-				{
-					if (!validFlags.Any(validFlag => string.Equals(validFlag, flag, StringComparison.CurrentCultureIgnoreCase)))
-					{
-						validatedAllFlags = false;
-						break;
-					}
+                foreach (var flag in flags)
+                {
+                    if (!validFlags.Any(validFlag => string.Equals(validFlag, flag, StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        validatedAllFlags = false;
+                        break;
+                    }
 
-					validatedAllFlags = true;
-				}
+                    validatedAllFlags = true;
+                }
 
-				if (!validatedAllFlags)
-				{
-					return Strings.Controller.UnsupportedFlagsValue(optionname, value, validFlags);
-				}
-			}
-			else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
+                if (!validatedAllFlags)
+                {
+                    return Strings.Controller.UnsupportedFlagsValue(optionname, value, validFlags);
+                }
+            }
+            else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean)
             {
                 if (!string.IsNullOrEmpty(value) && Library.Utility.Utility.ParseBool(value, true) != Library.Utility.Utility.ParseBool(value, false))
                     return Strings.Controller.UnsupportedBooleanValue(optionname, value);

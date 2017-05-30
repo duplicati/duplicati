@@ -233,6 +233,7 @@ namespace Duplicati.Library.Main
                     "dblock-size",
                     "disable-autocreate-folder",
                     "disable-filetime-check",
+                    "check-filetime-only",
                     "disable-time-tolerance",
                     "allow-missing-source",
                     "skip-files-larger-than",
@@ -243,11 +244,13 @@ namespace Duplicati.Library.Main
                     "vss-exclude-writers",
                     "vss-use-mapping",
                     "usn-policy",
+                    "hyperv-backup-vm",
                     "symlink-policy",
                     "hardlink-policy",
                     "exclude-files-attributes",
                     "compression-extension-file",
-                    "full-remote-verification"
+                    "full-remote-verification",
+                    "disable-synthetic-filelist"
                 };
             }
         }
@@ -345,7 +348,8 @@ namespace Duplicati.Library.Main
             get
             {
                 return new string[] {
-                    "dry-run"
+                    "dry-run",
+                    "allow-full-removal"
                 };
             }
         }
@@ -366,7 +370,8 @@ namespace Duplicati.Library.Main
                     "allow-passphrase-change",
                     "no-local-db",
                     "no-local-blocks",
-                    "full-block-verification"
+                    "full-block-verification",
+                    "dont-compress-restore-paths"
                 };
             }
         }
@@ -407,6 +412,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
 
                     new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
+                    new CommandLineArgument("check-filetime-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CheckfiletimeonlyShort, Strings.Options.CheckfiletimeonlyLong, "false"),
                     //new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
                     new CommandLineArgument("disable-time-tolerance", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisabletimetoleranceShort, Strings.Options.DisabletimetoleranceLong, "false"),
 
@@ -427,8 +433,8 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
 
-                    new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0"),
-                    new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0"),
+                    new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
+                    new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0kb"),
                     new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
                     
                     new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
@@ -451,7 +457,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
 
                     new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
-                    new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepShort, "false"),
+                    new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepLong, "false"),
                     new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
                     
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
@@ -463,25 +469,23 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, Strings.Options.CompressionextensionfileLong(DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
                     new CommandLineArgument("verbose", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VerboseShort, Strings.Options.VerboseLong, "false"),
+                    new CommandLineArgument("full-result", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullresultShort, Strings.Options.FullresultLong, "false"),
 
                     new CommandLineArgument("overwrite", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OverwriteShort, Strings.Options.OverwriteLong, "false"),
 
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
-                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0"),
+                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb"),
                     new CommandLineArgument("store-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadataShort, Strings.Options.StoremetadataLong, "true", null, null, Strings.Options.StoremetadataDeprecated),
                     new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipmetadataShort, Strings.Options.SkipmetadataLong, "false"),
                     new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
                     new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
-                    new CommandLineArgument("blockhash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.BlockhashlookupsizeShort, Strings.Options.BlockhashlookupsizeLong, "0"),
-                    new CommandLineArgument("filehash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.FilehashlookupsizeShort, Strings.Options.FilehashlookupsizeLong, "0"),
-                    new CommandLineArgument("metadatahash-lookup-memory", CommandLineArgument.ArgumentType.Size, Strings.Options.MetadatahashlookupsizeShort, Strings.Options.MetadatahashlookupsizeLong, "0"),
-                    new CommandLineArgument("old-lookup-memory-defaults", CommandLineArgument.ArgumentType.Size, Strings.Options.OldmemorylookupdefaultsShort, Strings.Options.OldmemorylookupdefaultsLong, "false"),
                     new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true"),
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, Strings.Options.DeletedfilesLong("changed-files")),
+                    new CommandLineArgument("disable-synthetic-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablesyntheticfilelistShort, Strings.Options.DisablesyntehticfilelistLong, "false"),
 
-                    new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Size, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
+                    new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
@@ -497,13 +501,15 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong, "false"),
                     new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
-                    
+                    new CommandLineArgument("dont-compress-restore-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontcompressrestorepathsShort, Strings.Options.DontcompressrestorepathsLong, "false"),
+
                     new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
                     new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
                     new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
                     new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false"),
                     new CommandLineArgument("full-block-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullblockverificationShort, Strings.Options.FullblockverificationLong, "false"),
+                    new CommandLineArgument("allow-full-removal", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremovalShort, Strings.Options.AllowfullremovalLong, "false"),
 
                     new CommandLineArgument("log-retention", CommandLineArgument.ArgumentType.Timespan, Strings.Options.LogretentionShort, Strings.Options.LogretentionLong, DEFAULT_LOG_RETENTION),
 
@@ -572,9 +578,9 @@ namespace Duplicati.Library.Main
         {
             get
             {
-            	string v;
-            	m_options.TryGetValue("control-files", out v);
-            	return v;
+                string v;
+                m_options.TryGetValue("control-files", out v);
+                return v;
             }
         }
 
@@ -660,6 +666,11 @@ namespace Duplicati.Library.Main
         public bool DisableFiletimeCheck { get { return GetBool("disable-filetime-check"); } }
 
         /// <summary>
+        /// A value indicating if file time checks are skipped
+        /// </summary>
+        public bool CheckFiletimeOnly { get { return GetBool("check-filetime-only"); } }
+
+        /// <summary>
         /// A value indicating if USN numbers are used to get list of changed files
         /// </summary>
         //public bool DisableUSNDiffCheck { get { return GetBool("disable-usn-diff-check"); } }
@@ -740,12 +751,12 @@ namespace Duplicati.Library.Main
         {
             get
             {
-            	string v;
-            	m_options.TryGetValue("prefix", out v);
-            	if (!string.IsNullOrEmpty(v))
-            		return v;
-            		
-        		return "duplicati";
+                string v;
+                m_options.TryGetValue("prefix", out v);
+                if (!string.IsNullOrEmpty(v))
+                    return v;
+                    
+                return "duplicati";
             }
         }
 
@@ -796,14 +807,17 @@ namespace Duplicati.Library.Main
         {
             if (backups.Length == 0)
                 return backups;
-                
+
+            if (backups.Distinct().Count() != backups.Length)
+                throw new Exception(string.Format("List of backup timestamps contains duplicates: {0}", string.Join(", ", backups.Select(x => x.ToString()))));
+
             List<DateTime> res = new List<DateTime>();
                 
             var versions = this.Version;
             if (versions != null && versions.Length > 0) 
                 foreach (var ix in versions.Distinct())
-                	if (ix >= 0 && ix < backups.Length)
-                    	res.Add(backups[ix]);
+                    if (ix >= 0 && ix < backups.Length)
+                        res.Add(backups[ix]);
             
             var keepVersions = this.KeepVersions;
             if (keepVersions > 0 && keepVersions < backups.Length)
@@ -816,9 +830,9 @@ namespace Duplicati.Library.Main
             var filtered = res.Distinct().OrderByDescending(x => x).AsEnumerable();
             
             var removeCount = filtered.Count();
-            if (removeCount >= backups.Length)
-                filtered = filtered.Skip(removeCount - backups.Length + (AllowFullRemoval ? 0 : 1));
-            
+            if (removeCount > backups.Length)
+                throw new Exception(string.Format("Too many entries {0} vs {1}, lists: {2} vs {3}", removeCount, backups.Length, string.Join(", ", filtered.Select(x => x.ToString())),string.Join(", ", backups.Select(x => x.ToString()))));
+
             return filtered.ToArray();
         }
 
@@ -917,7 +931,7 @@ namespace Duplicati.Library.Main
                 {
                     int x = int.Parse(m_options["number-of-retries"]);
                     if (x < 0)
-                        throw new Exception("Invalid count for number-of-retries");
+                        throw new UserInformationException("Invalid count for number-of-retries");
 
                     return x;
                 }
@@ -1266,7 +1280,12 @@ namespace Duplicati.Library.Main
         /// A value indicating if the output should be verbose
         /// </summary>
         public bool Verbose { get { return GetBool("verbose"); } }
-        
+
+        /// <summary>
+        /// A value indicating if the returned value should not be truncated
+        /// </summary>
+        public bool FullResult { get { return GetBool("full-result"); } }
+
         /// <summary>
         /// A value indicating restored files overwrite existing ones
         /// </summary>
@@ -1413,61 +1432,13 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating whether this <see cref="Duplicati.Library.Main.Options"/> old memory defaults.
+        /// Gets a flag indicating if synthetic filelist generation is disabled
         /// </summary>
-        public bool OldMemoryDefaults
+        public bool DisableSyntheticFilelist
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "old-lookup-memory-defaults"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-synthetic-filelist"); }
         }
 
-        /// <summary>
-        /// Gets the block hash lookup size
-        /// </summary>
-        public long BlockHashLookupMemory
-        {
-            get
-            {
-                string v;
-                m_options.TryGetValue("blockhash-lookup-memory", out v);
-                if (string.IsNullOrEmpty(v))
-                    v = OldMemoryDefaults ? DEFAULT_BLOCK_HASH_LOOKUP_SIZE : "0";
-
-                return Library.Utility.Sizeparser.ParseSize(v, "mb");
-            }
-        }
-
-        /// <summary>
-        /// Gets the file hash size
-        /// </summary>
-        public long FileHashLookupMemory
-        {
-            get
-            {
-                string v;
-                m_options.TryGetValue("filehash-lookup-memory", out v);
-                if (string.IsNullOrEmpty(v))
-                    v = OldMemoryDefaults ? DEFAULT_FILE_HASH_LOOKUP_SIZE : "0";
-
-                return Library.Utility.Sizeparser.ParseSize(v, "mb");
-            }
-        }
-
-        /// <summary>
-        /// Gets the block hash size
-        /// </summary>
-        public long MetadataHashMemory
-        {
-            get
-            {
-                string v;
-                m_options.TryGetValue("metadatahash-lookup-memory", out v);
-                if (string.IsNullOrEmpty(v))
-                    v = OldMemoryDefaults ? DEFAULT_METADATA_HASH_LOOKUP_SIZE : "0";
-                
-                return Library.Utility.Sizeparser.ParseSize(v, "mb");
-            }
-        }
-        
         /// <summary>
         /// Gets the file hash size
         /// </summary>
@@ -1475,15 +1446,9 @@ namespace Duplicati.Library.Main
         {
             get
             {
-
-                if (OldMemoryDefaults)
-                    return !Library.Utility.Utility.ParseBoolOption(m_options, "disable-filepath-cache");
-                else
-                {
-                    string s;
-                    m_options.TryGetValue("disable-filepath-cache", out s);
-                    return !Library.Utility.Utility.ParseBool(s, true);
-                }
+                string s;
+                m_options.TryGetValue("disable-filepath-cache", out s);
+                return !Library.Utility.Utility.ParseBool(s, true);
             }
         }
         
@@ -1663,10 +1628,10 @@ namespace Duplicati.Library.Main
         {
             get 
             {
-            	if (m_options.ContainsKey("dry-run"))
-            		return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); 
-            	else
-            		return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
+                if (m_options.ContainsKey("dry-run"))
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); 
+                else
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
             }
         }
         
@@ -1751,6 +1716,15 @@ namespace Duplicati.Library.Main
         public bool NoLocalDb
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-db"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the local database should not be used
+        /// </summary>
+        /// <value><c>true</c> if no local db is used; otherwise, <c>false</c>.</value>
+        public bool DontCompressRestorePaths
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "dont-compress-restore-paths"); }
         }
 
         /// <summary>

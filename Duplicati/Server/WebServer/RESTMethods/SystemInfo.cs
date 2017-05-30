@@ -29,14 +29,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
             get
             {
                 return new KeyValuePair<string, Type>[] {
-                    new KeyValuePair<string, Type>(HttpServer.Method.Get, SystemData.GetType())
+                    new KeyValuePair<string, Type>(HttpServer.Method.Get, SystemData(null).GetType())
                 };
             }
         }
 
         public void GET(string key, RequestInfo info)
         {
-            info.BodyWriter.OutputOK(SystemData);            
+            info.BodyWriter.OutputOK(SystemData(info));            
         }
 
         public void POST(string key, RequestInfo info)
@@ -60,48 +60,64 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
         }
 
-        private static object SystemData
+        private static object SystemData(RequestInfo info)
         {
-            get
+            var browserlanguage = RESTHandler.ParseDefaultRequestCulture(info) ?? System.Globalization.CultureInfo.InvariantCulture;
+
+            return new
             {
-                return new
+                APIVersion = 1,
+                PasswordPlaceholder = Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER,
+                ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                ServerVersionName = Duplicati.License.VersionNumbers.Version,
+                ServerVersionType = Duplicati.Library.AutoUpdater.UpdaterManager.SelfVersion.ReleaseType,
+                BaseVersionName = Duplicati.Library.AutoUpdater.UpdaterManager.BaseVersion.Displayname,
+                DefaultUpdateChannel = Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel,
+                DefaultUsageReportLevel = Duplicati.Library.UsageReporter.Reporter.DefaultReportLevel,
+                ServerTime = DateTime.Now,
+                OSType = Library.Utility.Utility.IsClientLinux ? (Library.Utility.Utility.IsClientOSX ? "OSX" : "Linux") : "Windows",
+                DirectorySeparator = System.IO.Path.DirectorySeparatorChar,
+                PathSeparator = System.IO.Path.PathSeparator,
+                CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,
+                MonoVersion = Duplicati.Library.Utility.Utility.IsMono ? Duplicati.Library.Utility.Utility.MonoVersion.ToString() : null,
+                MachineName = System.Environment.MachineName,
+                NewLine = System.Environment.NewLine,
+                CLRVersion = System.Environment.Version.ToString(),
+                CLROSInfo = new
                 {
-                    APIVersion = 1,
-                    PasswordPlaceholder = Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER,
-                    ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                    ServerVersionName = Duplicati.License.VersionNumbers.Version,
-                    ServerVersionType = Duplicati.Library.AutoUpdater.UpdaterManager.SelfVersion.ReleaseType,
-                    BaseVersionName = Duplicati.Library.AutoUpdater.UpdaterManager.BaseVersion.Displayname,
-                    DefaultUpdateChannel = Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel,
-                    DefaultUsageReportLevel = Duplicati.Library.UsageReporter.Reporter.DefaultReportLevel,
-                    ServerTime = DateTime.Now,
-                    OSType = Library.Utility.Utility.IsClientLinux ? (Library.Utility.Utility.IsClientOSX ? "OSX" : "Linux") : "Windows",
-                    DirectorySeparator = System.IO.Path.DirectorySeparatorChar,
-                    PathSeparator = System.IO.Path.PathSeparator,
-                    CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,
-                    MonoVersion = Duplicati.Library.Utility.Utility.IsMono ? Duplicati.Library.Utility.Utility.MonoVersion.ToString() : null,
-                    MachineName = System.Environment.MachineName,
-                    NewLine = System.Environment.NewLine,
-                    CLRVersion = System.Environment.Version.ToString(),
-                    CLROSInfo = new
-                    {
-                        Platform = System.Environment.OSVersion.Platform.ToString(),
-                        ServicePack = System.Environment.OSVersion.ServicePack,
-                        Version = System.Environment.OSVersion.Version.ToString(),
-                        VersionString = System.Environment.OSVersion.VersionString
-                    },
-                    Options = Serializable.ServerSettings.Options,
-                    CompressionModules = Serializable.ServerSettings.CompressionModules,
-                    EncryptionModules = Serializable.ServerSettings.EncryptionModules,
-                    BackendModules = Serializable.ServerSettings.BackendModules,
-                    GenericModules = Serializable.ServerSettings.GenericModules,
-                    WebModules = Serializable.ServerSettings.WebModules,
-                    ConnectionModules = Serializable.ServerSettings.ConnectionModules,
-                    UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
-                    LogLevels = Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)),
-                    SuppressDonationMessages = Duplicati.Library.Main.Utility.SuppressDonationMessages
-                };
-            }
+                    Platform = System.Environment.OSVersion.Platform.ToString(),
+                    ServicePack = System.Environment.OSVersion.ServicePack,
+                    Version = System.Environment.OSVersion.Version.ToString(),
+                    VersionString = System.Environment.OSVersion.VersionString
+                },
+                Options = Serializable.ServerSettings.Options,
+                CompressionModules = Serializable.ServerSettings.CompressionModules,
+                EncryptionModules = Serializable.ServerSettings.EncryptionModules,
+                BackendModules = Serializable.ServerSettings.BackendModules,
+                GenericModules = Serializable.ServerSettings.GenericModules,
+                WebModules = Serializable.ServerSettings.WebModules,
+                ConnectionModules = Serializable.ServerSettings.ConnectionModules,
+                ServerModules = Serializable.ServerSettings.ServerModules,
+                UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
+                LogLevels = Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)),
+                SuppressDonationMessages = Duplicati.Library.Main.Utility.SuppressDonationMessages,
+                SpecialFolders = from n in SpecialFolders.Nodes select new { ID = n.id, Path = n.resolvedpath },
+                BrowserLocale = new
+                {
+                    Code = browserlanguage.Name,
+                    EnglishName = browserlanguage.EnglishName,
+                    DisplayName = browserlanguage.NativeName
+                },
+                SupportedLocales = 
+                    Library.Localization.LocalizationService.SupportedCultures
+                            .Select(x => new { 
+                                Code = x, 
+                                EnglishName = new System.Globalization.CultureInfo(x).EnglishName,
+                                DisplayName = new System.Globalization.CultureInfo(x).NativeName
+                                }
+                            ),
+                BrowserLocaleSupported = Library.Localization.LocalizationService.isCultureSupported(browserlanguage)
+            };
         }
     }
 }

@@ -19,11 +19,11 @@
         return cookies;
     }
 
-	function setCookieAndRun(theme) {
-	    var d = new Date();
-    	d.setTime(d.getTime() + (90*24*60*60*1000));
+    function setCookieAndRun(theme) {
+        var d = new Date();
+        d.setTime(d.getTime() + (90*24*60*60*1000));
 
-		document.cookie = 'default-theme=' + theme  + '; expires=' + d.toUTCString() + '; path=/';
+        document.cookie = 'default-theme=' + theme  + '; expires=' + d.toUTCString() + '; path=/';
 
         // Make an absolute path redirect, as relative redirects break if the port is non-standard
         var path = window.location.pathname;
@@ -36,13 +36,15 @@
 
         path += theme +'/index.html';
         window.location.replace(path);
-	}
+    }
 
     var theme = parseCookies()['default-theme'];
     if ((theme || '').trim().length == 0)
-    	theme = 'ngax';
+        theme = 'ngax';
+    if (theme == 'greeno') // Make sure users are redirected automatically
+        theme = 'ngax';
     
-	setCookieAndRun(theme); // Refresh
+    setCookieAndRun(theme); // Refresh
 
 </script>
 

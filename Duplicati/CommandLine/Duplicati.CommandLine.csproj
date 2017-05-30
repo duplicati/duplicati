@@ -18,6 +18,7 @@
     </UpgradeBackupLocation>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -182,44 +183,20 @@
       <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
       <Name>Duplicati.Library.UsageReporter</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
+      <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
+      <Name>Duplicati.Library.Backend.Dropbox</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Tools\Duplicati.Tools.csproj">
+      <Project>{0797AA22-C5DD-4950-BB60-34765AB8C6DD}</Project>
+      <Name>Duplicati.Tools</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <Content Include="..\..\thirdparty\gpg\gpg2.exe">
-      <Link>win-tools\gpg2.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\gpg\gpg.exe">
-      <Link>win-tools\gpg\gpg.exe</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\iconv.dll">
-      <Link>win-tools\iconv.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\libadns-1.dll">
-      <Link>win-tools\libadns-1.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\libassuan-0.dll">
-      <Link>win-tools\libassuan-0.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\libgcrypt-11.dll">
-      <Link>win-tools\libgcrypt-11.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\libgpg-error-0.dll">
-      <Link>win-tools\libgpg-error-0.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\zlib1.dll">
-      <Link>win-tools\zlib1.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <EmbeddedResource Include="help.txt" />
     <Content Include="TrayWarning.ico" />
   </ItemGroup>

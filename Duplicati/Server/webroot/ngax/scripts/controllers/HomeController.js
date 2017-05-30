@@ -1,8 +1,16 @@
-backupApp.controller('HomeController', function ($scope, $location, BackupList, AppService, DialogService) {
+backupApp.controller('HomeController', function ($scope, $location, ServerStatus, BackupList, AppService, DialogService, gettextCatalog) {
     $scope.backups = BackupList.watch($scope);
 
     $scope.doRun = function(id) {
-        AppService.post('/backup/' + id + '/run');
+        AppService.post('/backup/' + id + '/run').then(function() {
+            if (ServerStatus.state.programState == 'Paused') {
+                DialogService.dialog(gettextCatalog.getString('Server paused'), gettextCatalog.getString('Server is currently paused, do you want to resume now?'), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
+                    if (ix == 1)
+                        ServerStatus.resume();
+                });
+
+            }
+        }, function() {});
     };
 
     $scope.doRestore = function(id) {
@@ -17,11 +25,12 @@ backupApp.controller('HomeController', function ($scope, $location, BackupList, 
         $location.path('/export/' + id);
     };
 
+    $scope.doCompact = function(id) {
+        AppService.post('/backup/' + id + '/compact');
+    };
+
     $scope.doDelete = function(id, name) {
-        DialogService.dialog('Confirm delete', 'Do you really want to delete the backup: ' + name, ['No', 'Yes'], function(ix) {
-            if (ix == 1)
-                AppService.delete('/backup/' + id);
-        });
+        $location.path('/delete/' + id);
     };
 
     $scope.doLocalDb = function(id) {
@@ -38,6 +47,10 @@ backupApp.controller('HomeController', function ($scope, $location, BackupList, 
 
     $scope.doShowLog = function(id, name) {
         $location.path('/log/' + id);
+    };
+
+    $scope.doCommandLine = function(id, name) {
+        $location.path('/commandline/' + id);
     };
 
     $scope.doCreateBugReport = function(id, name) {

@@ -15,10 +15,8 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-#if __MonoCS__ 
-using Mono.Security.X509;
-#endif
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -28,19 +26,58 @@ namespace Duplicati.Library.Modules.Builtin
         {
         }
 
-        private int CheckForInstalledCerts()
+        private int CheckStore(StoreName storename, StoreLocation storelocation)
         {
-#if __MonoCS__            
-            var localcerts = X509StoreManager.LocalMachine.TrustedRoot.Certificates.Count;
-            var usercerts = X509StoreManager.CurrentUser.TrustedRoot.Certificates.Count;
-            var trusted = X509StoreManager.TrustedRootCertificates.Count;
-            return localcerts + usercerts + trusted;
-#else
+            X509Store store = null;
+            try
+            {
+                store = new X509Store(storename, storelocation);
+                store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
+                return store.Certificates.Count;
+            }
+            catch
+            {
+            }
+            finally
+            {
+                if (store != null)
+                    try { store.Close(); }
+                    catch { }
+            }
+
             return 0;
-#endif
         }
 
-        #region IGenericModule implementation
+        // Prevent inlining, so we can catch loader errors from the caller
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private int CheckMonoCerts()
+        {
+            return
+#if __MonoCS__
+                Mono.Security.X509.X509StoreManager.LocalMachine.TrustedRoot.Certificates.Count +
+                Mono.Security.X509.X509StoreManager.CurrentUser.TrustedRoot.Certificates.Count +
+                Mono.Security.X509.X509StoreManager.TrustedRootCertificates.Count +
+#endif
+                0;
+        }
+
+        private int CheckForInstalledCerts()
+        {
+            var count =
+                CheckStore(StoreName.Root, StoreLocation.CurrentUser) +
+                CheckStore(StoreName.AuthRoot, StoreLocation.CurrentUser) +
+                CheckStore(StoreName.CertificateAuthority, StoreLocation.CurrentUser) +
+                CheckStore(StoreName.Root, StoreLocation.LocalMachine) +
+                CheckStore(StoreName.AuthRoot, StoreLocation.LocalMachine) +
+                CheckStore(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
+
+            try { count += CheckMonoCerts(); }
+            catch { }
+
+            return count;
+        }
+
+#region IGenericModule implementation
 
         public string Key { get { return "check-mono-ssl"; } }
         public string DisplayName { get { return Strings.CheckMonoSSL.Displayname; } }
@@ -57,9 +94,9 @@ namespace Duplicati.Library.Modules.Builtin
             if (CheckForInstalledCerts() == 0)
                 Console.WriteLine(Strings.CheckMonoSSL.ErrorMessage);
         }
-        #endregion
+#endregion
 
-        #region IWebModule implementation
+#region IWebModule implementation
 
         private const string KEY_CONFIGTYPE = "mono-ssl-config";
         private const ConfigType DEFAULT_CONFIG_TYPE = ConfigType.List;
@@ -67,7 +104,8 @@ namespace Duplicati.Library.Modules.Builtin
         private enum ConfigType
         {
             List,
-            Install
+            Install,
+            Test
         }
 
 
@@ -102,6 +140,25 @@ namespace Duplicati.Library.Modules.Builtin
                     d["count"] = CheckForInstalledCerts().ToString();
                     break;
 
+                case ConfigType.Test:
+                    try
+                    {
+                        var req = System.Net.WebRequest.CreateHttp("https://updates.duplicati.com");
+                        req.Method = "HEAD";
+                        req.AllowAutoRedirect = false;
+
+                        using (var resp = (System.Net.HttpWebResponse)req.GetResponse())
+                        {
+                            d["status"] = resp.StatusDescription;
+                            d["status_code"] = ((int)resp.StatusCode).ToString();
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        d["error"] = ex.ToString();
+                    }
+                    break;
+
                 case ConfigType.List:
                 default:
                     d["count"] = CheckForInstalledCerts().ToString();
@@ -113,7 +170,7 @@ namespace Duplicati.Library.Modules.Builtin
             return d;
         }
 
-        #endregion
+#endregion
     }
 }
 

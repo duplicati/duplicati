@@ -65,9 +65,9 @@ namespace Duplicati.Library.Main.Database
                 m_connection = owner.m_connection;
                 m_filesets = owner.FilesetTimes.ToArray();
                 m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-				var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
-				string query = tmp.Item1;
-				var args = tmp.Item2;
+                var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
+                string query = tmp.Item1;
+                var args = tmp.Item2;
                 
                 using(var cmd = m_connection.CreateCommand())
                 {
@@ -147,6 +147,8 @@ namespace Duplicati.Library.Main.Database
                     string maxpath = "";
                     if (v0 != null)
                         maxpath = v0.ToString();
+
+                    var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(maxpath);
     
                     cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}""", tmpnames.Tablename);
                     var filecount = cmd.ExecuteScalarInt64(0);
@@ -159,7 +161,7 @@ namespace Duplicati.Library.Main.Database
     
                     while (filecount != foundfiles && maxpath.Length > 0)
                     {
-                        var mp = Library.Utility.Utility.AppendDirSeparator(maxpath);
+                        var mp = Duplicati.Library.Utility.Utility.AppendDirSeparator(maxpath, dirsep);
                         cmd.SetParameterValue(0, mp.Length);
                         cmd.SetParameterValue(1, mp);
                         foundfiles = cmd.ExecuteScalarInt64(0);
@@ -167,7 +169,8 @@ namespace Duplicati.Library.Main.Database
                         if (filecount != foundfiles)
                         {
                             var oldlen = maxpath.Length;
-                            maxpath = Library.Snapshots.SnapshotUtility.SystemIO.PathGetDirectoryName(maxpath);
+                            var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
+                            maxpath = maxpath.Substring(0, lix + 1);
                             if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
                                 maxpath = "";
                         }
@@ -182,7 +185,7 @@ namespace Duplicati.Library.Main.Database
     
                     return 
                         new IFileversion[] {
-                            new FileversionFixed() { Path = maxpath == "" ? "" : Library.Utility.Utility.AppendDirSeparator(maxpath) }
+                            new FileversionFixed() { Path = maxpath == "" ? "" : Duplicati.Library.Utility.Utility.AppendDirSeparator(maxpath, dirsep) }
                         };
                 }
     
@@ -191,7 +194,7 @@ namespace Duplicati.Library.Main.Database
             private IEnumerable<string> SelectFolderEntries(System.Data.IDbCommand cmd, string prefix, string table)
             {
                 if (!string.IsNullOrEmpty(prefix))
-                    prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(prefix);
+                    prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(prefix, Duplicati.Library.Utility.Utility.GuessDirSeparator(prefix));
                 
                 var ppl = prefix.Length;
                 using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""Path"" FROM ""{0}"" ", table)))
@@ -200,9 +203,11 @@ namespace Duplicati.Library.Main.Database
                         var s = rd.GetString(0);
                         if (!s.StartsWith(prefix))
                             continue;
-                        
+
+                        var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(s);
+
                         s = s.Substring(ppl);
-                        var ix = s.IndexOf(System.IO.Path.DirectorySeparatorChar);
+                        var ix = s.IndexOf(dirsep, StringComparison.Ordinal);
                         if (ix > 0 && ix != s.Length - 1)
                             s = s.Substring(0, ix + 1);
                         yield return prefix + s;
@@ -221,11 +226,13 @@ namespace Duplicati.Library.Main.Database
                         throw new ArgumentException("Filter for list-folder-contents must be a path prefix with no wildcards", "filter");
                     else
                         pathprefix = ((Library.Utility.FilterExpression)filter).GetSimpleList().First();
+
+                    var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(pathprefix);
+
+                    if (pathprefix.Length > 0 || dirsep == "/")
+                        pathprefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(pathprefix, dirsep);
                     
-                    if (pathprefix.Length > 0 || Duplicati.Library.Utility.Utility.IsClientLinux)
-                        pathprefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(pathprefix);
-                    
-                    using(var tmpnames = new FilteredFilenameTable(m_connection, new Library.Utility.FilterExpression(pathprefix + "*", true), null))
+                    using(var tmpnames = new FilteredFilenameTable(m_connection, new Library.Utility.FilterExpression(new string[] { pathprefix + "*" }, true), null))
                     using(var cmd = m_connection.CreateCommand())
                     {
                         //First we trim the filelist to exclude filenames not found in any of the filesets

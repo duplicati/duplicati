@@ -107,11 +107,12 @@ namespace Duplicati.Library.Snapshots
         /// Enumerates all files and folders in the snapshot
         /// </summary>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback)
+        /// <param name="errorCallback">The callback used to report errors</param>
+        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback, Duplicati.Library.Utility.Utility.ReportAccessError errorCallback)
         {
-        	return m_sources.SelectMany(
-        		s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
-        	);
+            return m_sources.SelectMany(
+                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, this.ListFolders, this.ListFiles, this.GetAttributes, errorCallback)
+            );
         }
 
         /// <summary>
@@ -176,7 +177,9 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="file">The file or folder to examine</param>
-        public abstract Dictionary<string, string> GetMetadata(string file);
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        public abstract Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink);
 
         /// <summary>
         /// Gets a value indicating if the path points to a block device
@@ -189,7 +192,7 @@ namespace Duplicati.Library.Snapshots
         /// Gets a unique hardlink target ID
         /// </summary>
         /// <returns>The hardlink ID</returns>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="path">The file or folder to examine</param>
         public abstract string HardlinkTargetID(string path);
         #endregion
     }

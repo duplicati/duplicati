@@ -24,6 +24,10 @@ Optionally you can also run:
 4: List
   Shows what files are available and tests filters
 
+5: Recompress
+  Ability to change compression type of files on remote backend eg. from 7z to zip
+
+
 
 
 Command descriptions:
@@ -54,7 +58,7 @@ Some files are created in the system temporary folder, use --tempdir to set an a
 
 Restore
 -------
-Duplicati.RecoveryTool.exe index <localfolder> [version] [options]
+Duplicati.RecoveryTool.exe restore <localfolder> [version] [options]
 
 Restores all files to their respective destinations. Use --targetpath to choose another folder where the files are restored into.
 Use the filters, --exclude, to perform a partial restore.
@@ -70,6 +74,22 @@ Lists contents of <localfolder> backups.
 Version can be either a number, a filename or a date. 
 If [version] is omitted a list of backup versions are shown, if [version] is supplied, files from that version are listed.
 Use the filters, --exclude, to show a subset of files.
+
+
+
+Recompress
+----
+Duplicati.RecoveryTool.exe recompress <targetcompression> <remoteurl> <localfolder> --reupload --reencrypt [options]
+
+1) Downloads whole remote storage to <localfolder>.
+2) Recompress from existing compression type to <targetcompression>
+3) If --reencrypt is supplied, again reencrypts using same passphrase (needs to be decrypted for compression type change)
+4) If --reupload is supplied, files with old compression are deleted and recompressed files are uploaded back to remote storage (it is recommended to take at least temporary copy of remote storage before enabling this switch)
+
+If --reupload is supplied it is advisable to specify --reencrypt for perfect security.
+
+Warning: Before recompress delete local database and after recompress recreate local database before executing any operation on backup. This allows Duplicati to read new file names from remote storage.
+
 
 
 Supported Options

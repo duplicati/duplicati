@@ -34,7 +34,7 @@ namespace Duplicati.Library.Main
             /// <summary>
             /// The base64 encoded hash
             /// </summary>
-            private readonly string m_hash;
+            private readonly string m_filehash;
             /// <summary>
             /// The UTF-8 encoded json element with the metadata
             /// </summary>
@@ -47,30 +47,29 @@ namespace Duplicati.Library.Main
             public Metahash(Dictionary<string, string> values, Options options)
             {
                 m_values = values;
-                var hasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
-                if (hasher == null)
-                    throw new Exception(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm));
-                if (!hasher.CanReuseTransform)
-                    throw new Exception(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm));
                     
                 using (var ms = new System.IO.MemoryStream())
                 using (var w = new StreamWriter(ms, Encoding.UTF8))
+                using(var filehasher = System.Security.Cryptography.HashAlgorithm.Create(options.FileHashAlgorithm))
                 {
+                    if (filehasher == null)
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm));
+                    
                     w.Write(JsonConvert.SerializeObject(values));
                     w.Flush();
     
                     m_blob = ms.ToArray();
     
                     ms.Position = 0;
-                    m_hash = Convert.ToBase64String(hasher.ComputeHash(ms));
+                    m_filehash = Convert.ToBase64String(filehasher.ComputeHash(ms));
                 }
             }
     
-            public string Hash
+            public string FileHash
             {
-                get { return m_hash; }
+                get { return m_filehash; }
             }
-    
+                
             public long Size
             {
                 get { return m_blob.Length; }
@@ -154,21 +153,21 @@ namespace Duplicati.Library.Main
                         if (!options.AllowPassphraseChange)
                         {
                             if (newDict[k.Key] == "no-encryption")
-                                throw new Exception("Unsupported removal of passphrase");
+                                throw new Duplicati.Library.Interface.UserInformationException("Unsupported removal of passphrase");
                             else if (opts[k.Key] == "no-encryption")
-                                throw new Exception("Unsupported addition of passphrase");
+                                throw new Duplicati.Library.Interface.UserInformationException("Unsupported addition of passphrase");
                             else
-                                throw new Exception("Unsupported change of passphrase");
+                                throw new Duplicati.Library.Interface.UserInformationException("Unsupported change of passphrase");
                         }
                     }
                     else
-                        throw new Exception(string.Format("Unsupported change of parameter \"{0}\" from \"{1}\" to \"{2}\"", k.Key, opts[k.Key], k.Value));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Unsupported change of parameter \"{0}\" from \"{1}\" to \"{2}\"", k.Key, opts[k.Key], k.Value));
                     
                 }
                             
             //Extra sanity check
             if (db.GetBlocksLargerThan(options.Blocksize) > 0)
-                throw new Exception("Unsupported block-size change detected");
+                throw new Duplicati.Library.Interface.UserInformationException("Unsupported block-size change detected");
         
             if (needsUpdate)
             {
@@ -197,9 +196,6 @@ namespace Duplicati.Library.Main
                 try
                 {
                     var folder = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AutoUpdater.AutoUpdateSettings.AppName);
-                    if (!Directory.Exists(folder))
-                        Directory.CreateDirectory(folder);
-                    
                     return File.Exists(Path.Combine(folder, SUPPRESS_DONATIONS_FILENAME));
                 }
                 catch

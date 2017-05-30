@@ -41,7 +41,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void SearchFiles(IBackup backup, string filterstring, RequestInfo info)
         {
-            var filter = Library.Utility.Uri.UrlDecode(filterstring ?? "").Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+            var filter = filterstring;
             var timestring = info.Request.QueryString["time"].Value;
             var allversion = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["all-versions"].Value, false);
 
@@ -57,7 +57,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             if (!allversion)
                 time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
 
-            var r = Runner.Run(Runner.CreateListTask(backup, filter, prefixonly, allversion, foldercontents, time), false) as Duplicati.Library.Interface.IListResults;
+            var r = Runner.Run(Runner.CreateListTask(backup, new string[] { filter }, prefixonly, allversion, foldercontents, time), false) as Duplicati.Library.Interface.IListResults;
 
             var result = new Dictionary<string, object>();
 
@@ -91,23 +91,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void FetchLogData(IBackup backup, RequestInfo info)
         {
-            using(var con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType))
-            {
-                con.ConnectionString = "Data Source=" + backup.DBPath;
-                con.Open();
-
+            using(var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(backup.DBPath))
                 using(var cmd = con.CreateCommand())
                     info.OutputOK(LogData.DumpTable(cmd, "LogData", "ID", info.Request.QueryString["offset"].Value, info.Request.QueryString["pagesize"].Value));
-            }
         }
 
         private void FetchRemoteLogData(IBackup backup, RequestInfo info)
         {
-            using(var con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType))
-            {
-                con.ConnectionString = "Data Source=" + backup.DBPath;
-                con.Open();
-
+            using(var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(backup.DBPath))
                 using(var cmd = con.CreateCommand())
                 {
                     var dt = LogData.DumpTable(cmd, "RemoteOperation", "ID", info.Request.QueryString["offset"].Value, info.Request.QueryString["pagesize"].Value);
@@ -119,15 +110,29 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                     info.OutputOK(dt);
                 }
-            }
+        }
+        private void IsDBUsedElseWhere(IBackup backup, RequestInfo info)
+        {
+            info.OutputOK(new { inuse = Library.Main.DatabaseLocator.IsDatabasePathInUse(backup.DBPath) });
         }
 
         private void Export(IBackup backup, RequestInfo info)
         {
             var cmdline = Library.Utility.Utility.ParseBool(info.Request.QueryString["cmdline"].Value, false);
+            var argsonly = Library.Utility.Utility.ParseBool(info.Request.QueryString["argsonly"].Value, false);
             if (cmdline)
             {
                 info.OutputOK(new { Command = Runner.GetCommandLine(Runner.CreateTask(DuplicatiOperation.Backup, backup)) });
+            }
+            else if (argsonly)
+            {
+                var parts = Runner.GetCommandLineParts(Runner.CreateTask(DuplicatiOperation.Backup, backup));
+
+                info.OutputOK(new {
+                    Backend = parts.First(),
+                    Arguments = parts.Skip(1).Where(x => !x.StartsWith("--", StringComparison.Ordinal)),
+                    Options = parts.Skip(1).Where(x => x.StartsWith("--", StringComparison.Ordinal))
+                });
             }
             else
             {
@@ -172,7 +177,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             var input = info.Request.Form;
 
-            var filters = input["paths"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+            string[] filters = parsePaths(input["paths"].Value ?? string.Empty);
+            
             var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
             var restoreTarget = input["restore-path"].Value;
             var overwrite = Duplicati.Library.Utility.Utility.ParseBool(input["overwrite"].Value, false);
@@ -190,6 +196,15 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void CreateReport(IBackup backup, RequestInfo info)
         {
             var task = Runner.CreateTask(DuplicatiOperation.CreateReport, backup);
+            Program.WorkThread.AddTask(task);
+            Program.StatusEventNotifyer.SignalNewEvent();
+
+            info.OutputOK(new { Status = "OK", ID = task.TaskID });
+        }
+
+        private void ReportRemoteSize(IBackup backup, RequestInfo info)
+        {
+            var task = Runner.CreateTask(DuplicatiOperation.ListRemote, backup);
             Program.WorkThread.AddTask(task);
             Program.StatusEventNotifyer.SignalNewEvent();
 
@@ -215,6 +230,31 @@ namespace Duplicati.Server.WebServer.RESTMethods
             info.OutputOK(new {Status = "OK", ID = task.TaskID});
         }
 
+        private void Compact(IBackup backup, RequestInfo info)
+        {
+            var task = Runner.CreateTask(DuplicatiOperation.Compact, backup);
+            Program.WorkThread.AddTask(task);
+            Program.StatusEventNotifyer.SignalNewEvent();
+
+            info.OutputOK(new { Status = "OK", ID = task.TaskID });
+        }
+
+        private string[] parsePaths(string paths)
+        {
+            string[] filters;
+            var rawpaths = (paths ?? string.Empty).Trim();
+            
+            // We send the file list as a JSON array to avoid encoding issues with the path separator 
+            // as it is an allowed character in file and path names.
+            // We also accept the old way, for compatibility with the greeno theme
+            if (!string.IsNullOrWhiteSpace(rawpaths) && rawpaths.StartsWith("[", StringComparison.Ordinal) && rawpaths.EndsWith("]", StringComparison.Ordinal))
+                filters = Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(rawpaths);
+            else
+                filters = paths.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+
+            return filters;
+        }
+
         private void DoRepair(IBackup backup, RequestInfo info, bool repairUpdate)
         {
             var input = info.Request.Form;
@@ -227,7 +267,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             if (input["version"].Value != null)
                 extra["version"] = input["version"].Value;
             if (input["paths"].Value != null)
-                filters = input["paths"].Value.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
+                filters = parsePaths(input["paths"].Value);
 
             var task = Runner.CreateTask(repairUpdate ? DuplicatiOperation.RepairUpdate : DuplicatiOperation.Repair, backup, extra, filters);
             Program.WorkThread.AddTask(task);
@@ -340,6 +380,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         case "export":
                             Export(bk, info);
                             return;
+                        case "isdbusedelsewhere":
+                            IsDBUsedElseWhere(bk, info);
+                            return;
                         case "isactive":
                             IsActive(bk, info);
                             return;
@@ -415,11 +458,18 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             Verify(bk, info);
                             return;
 
+                        case "compact":
+                            Compact(bk, info);
+                            return;
+
                         case "start":
                         case "run":
                             RunBackup(bk, info);
                             return;
 
+                        case "report-remote-size":
+                            ReportRemoteSize(bk, info);
+                            return;
 
                         case "copytotemp":
                             var ipx = Serializer.Deserialize<Database.Backup>(new StringReader(Newtonsoft.Json.JsonConvert.SerializeObject(bk)));
@@ -495,6 +545,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             return;
                         }
 
+                        var err = Program.DataConnection.ValidateBackup(data.Backup, data.Schedule);
+                        if (!string.IsNullOrWhiteSpace(err))
+                        {
+                            info.ReportClientError(err);
+                            return;
+                        }
+
                         //TODO: Merge in real passwords where the placeholder is found
                         Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
 
@@ -509,7 +566,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     info.ReportClientError(string.Format("Unable to parse backup or schedule object: {0}", ex.Message));
                 else
                     info.ReportClientError(string.Format("Unable to save backup or schedule: {0}", ex.Message));
-
             }
         }
 
@@ -520,6 +576,25 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 info.ReportClientError("Invalid or missing backup id");
                 return;
+            }
+
+            var delete_remote_files = Library.Utility.Utility.ParseBool(info.Request.Param["delete-remote-files"].Value, false);
+
+            if (delete_remote_files)
+            {
+                var captcha_token = info.Request.Param["captcha-token"].Value;
+                var captcha_answer = info.Request.Param["captcha-answer"].Value;
+                if (string.IsNullOrWhiteSpace(captcha_token) || string.IsNullOrWhiteSpace(captcha_answer))
+                {
+                    info.ReportClientError("Missing captcha");
+                    return;
+                }
+
+                if (!Captcha.SolvedCaptcha(captcha_token, "DELETE /backup/" + backup.ID, captcha_answer))
+                {
+                    info.ReportClientError("Invalid captcha", System.Net.HttpStatusCode.Forbidden);
+                    return;
+                }
             }
 
             if (Program.WorkThread.Active)
@@ -585,28 +660,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 }
             }
 
+            var extra = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(info.Request.Param["delete-local-db"].Value))
+                extra["delete-local-db"] = info.Request.Param["delete-local-db"].Value;
+            if (delete_remote_files)
+                extra["delete-remote-files"] = "true";
 
-            //var dbpath = backup.DBPath;
-            Program.DataConnection.DeleteBackup(backup);
+            var task = Runner.CreateTask(DuplicatiOperation.Delete, backup, extra);
+            Program.WorkThread.AddTask(task);
+            Program.StatusEventNotifyer.SignalNewEvent();
 
-            // TODO: Before we activate this, 
-            // we need some strategy to figure out
-            // if the db is shared with something else
-            // like the commandline or another backup
-            /*try
-            {
-                if (System.IO.File.Exists(dbpath))
-                    System.IO.File.Delete(dbpath);
-            }
-            catch (Exception ex)
-            {
-                Program.DataConnection.LogError(null, string.Format("Failed to delete database: {0}", dbpath), ex);
-            }*/
-
-            //We have fiddled with the schedules
-            Program.Scheduler.Reschedule();
-
-            info.OutputOK();
+            info.OutputOK(new { Status = "OK", ID = task.TaskID });
         }
         public string Description { get { return "Retrieves, updates or deletes an existing backup and schedule"; } }
 

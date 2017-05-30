@@ -1,4 +1,4 @@
-backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, AppUtils) {
+backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, AppUtils, gettextCatalog) {
 
     var longpolltime = 5 * 60 * 1000;
 
@@ -26,37 +26,49 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
     };
 
     this.state = state;
+    var self = this;
 
-    this.progress_state_text = {
-        'Backup_Begin': 'Starting ...',
-        'Backup_PreBackupVerify': 'Verifying backend data ...',
-        'Backup_PostBackupTest': 'Verifying remote data ...',
-        'Backup_PreviousBackupFinalize': 'Completing previous backup ...',
-        'Backup_ProcessingFiles': null,
-        'Backup_Finalize': 'Completing backup ...',
-        'Backup_WaitForUpload': 'Waiting for upload ...',
-        'Backup_Delete': 'Deleting unwanted files ...',
-        'Backup_Compact': 'Compacting remote data ...',
-        'Backup_VerificationUpload': 'Uploading verification file ...',
-        'Backup_PostBackupVerify': 'Verifying backend data ...',
-        'Backup_Complete': 'Finished!',
-        'Restore_Begin': 'Starting ...',
-        'Restore_RecreateDatabase': 'Rebuilding local database ...',
-        'Restore_PreRestoreVerify': 'Verifying remote data ...',
-        'Restore_CreateFileList': 'Building list of files to restore ...',
-        'Restore_CreateTargetFolders': 'Creating target folders ...',
-        'Restore_ScanForExistingFiles': 'Scanning existing files ...',
-        'Restore_ScanForLocalBlocks': 'Scanning for local blocks ...',
-        'Restore_PatchWithLocalBlocks': 'Patching files with local blocks ...',
-        'Restore_DownloadingRemoteFiles': 'Downloading files ...',
-        'Restore_PostRestoreVerify': 'Verifying restored files ...',
-        'Restore_Complete': 'Finished!',
-        'Recreate_Running': 'Recreating database ...',
-        'Repair_Running': 'Reparing ...',
-        'Verify_Running': 'Verifying ...',
-        'BugReport_Running': 'Creating bug report ...',
-        'Error': 'Error!'
+    function reloadTexts() {
+        self.progress_state_text = {
+            'Backup_Begin': gettextCatalog.getString('Starting ...'),
+            'Backup_PreBackupVerify': gettextCatalog.getString('Verifying backend data ...'),
+            'Backup_PostBackupTest': gettextCatalog.getString('Verifying remote data ...'),
+            'Backup_PreviousBackupFinalize': gettextCatalog.getString('Completing previous backup ...'),
+            'Backup_ProcessingFiles': null,
+            'Backup_Finalize': gettextCatalog.getString('Completing backup ...'),
+            'Backup_WaitForUpload': gettextCatalog.getString('Waiting for upload ...'),
+            'Backup_Delete': gettextCatalog.getString('Deleting unwanted files ...'),
+            'Backup_Compact': gettextCatalog.getString('Compacting remote data ...'),
+            'Backup_VerificationUpload': gettextCatalog.getString('Uploading verification file ...'),
+            'Backup_PostBackupVerify': gettextCatalog.getString('Verifying backend data ...'),
+            'Backup_Complete': gettextCatalog.getString('Finished!'),
+            'Restore_Begin': gettextCatalog.getString('Starting ...'),
+            'Restore_RecreateDatabase': gettextCatalog.getString('Rebuilding local database ...'),
+            'Restore_PreRestoreVerify': gettextCatalog.getString('Verifying remote data ...'),
+            'Restore_CreateFileList': gettextCatalog.getString('Building list of files to restore ...'),
+            'Restore_CreateTargetFolders': gettextCatalog.getString('Creating target folders ...'),
+            'Restore_ScanForExistingFiles': gettextCatalog.getString('Scanning existing files ...'),
+            'Restore_ScanForLocalBlocks': gettextCatalog.getString('Scanning for local blocks ...'),
+            'Restore_PatchWithLocalBlocks': gettextCatalog.getString('Patching files with local blocks ...'),
+            'Restore_DownloadingRemoteFiles': gettextCatalog.getString('Downloading files ...'),
+            'Restore_PostRestoreVerify': gettextCatalog.getString('Verifying restored files ...'),
+            'Restore_Complete': gettextCatalog.getString('Finished!'),
+            'Recreate_Running': gettextCatalog.getString('Recreating database ...'),
+            'Repair_Running': gettextCatalog.getString('Reparing ...'),
+            'Verify_Running': gettextCatalog.getString('Verifying ...'),
+            'BugReport_Running': gettextCatalog.getString('Creating bug report ...'),
+            'Delete_Listing': gettextCatalog.getString('Listing remote files ...'),
+            'Delete_Deleting': gettextCatalog.getString('Deleting remote files ...'),
+            'PurgeFiles_Begin,': gettextCatalog.getString('Listing remote files ...'),
+            'PurgeFiles_Process,': gettextCatalog.getString('Purging files ...'),
+            'PurgeFiles_Compact,': gettextCatalog.getString('Compacting remote data ...'),
+            'PurgeFiles_Complete,': gettextCatalog.getString('Finished!'),
+            'Error': gettextCatalog.getString('Error!')
+        };
     };
+
+    reloadTexts();
+    $rootScope.$on('gettextLanguageChanged', reloadTexts);
 
     this.watch = function(scope, m) {
         scope.$on('serverstatechanged', function() {
@@ -71,10 +83,10 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
     }
 
     this.resume = function() {
-		return AppService.post('/serverstate/resume');
+        return AppService.post('/serverstate/resume');
     };
 
-	this.pause = function(duration) {
+    this.pause = function(duration) {
         return AppService.post('/serverstate/pause' + (duration == null ? '' : '?duration=' + duration));
     };
 
@@ -203,7 +215,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
                     notifyIfChanged(response.data, 'LastNotificationUpdateID', 'lastNotificationUpdateId') |
                     notifyIfChanged(response.data, 'ActiveTask', 'activeTask') |
                     notifyIfChanged(response.data, 'ProgramState', 'programState') |
-                    notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd')
+                    notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd') |
                     notifyIfChanged(response.data, 'UpdaterState', 'updaterState') |
                     notifyIfChanged(response.data, 'UpdateReady', 'updateReady') |
                     notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion')|

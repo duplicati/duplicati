@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <SignAssembly>false</SignAssembly>
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -45,6 +46,9 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.1.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\..\packages\BouncyCastle.1.8.1\lib\BouncyCastle.Crypto.dll</HintPath>
+    </Reference>
     <Reference Include="UnixSupport">
       <HintPath>..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
     </Reference>
@@ -52,8 +56,9 @@
       <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -70,15 +75,16 @@
     <Compile Include="Database\Connection.cs" />
     <Compile Include="Database\Filter.cs" />
     <Compile Include="Database\Setting.cs" />
-    <Compile Include="Database\ApplicationSettings.cs" />
+    <Compile Include="Database\ServerSettings.cs" />
     <Compile Include="Runner.cs" />
     <Compile Include="Database\Schedule.cs" />
     <Compile Include="SpecialFolders.cs" />
     <Compile Include="WebServer\AuthenticationHandler.cs" />
+    <Compile Include="WebServer\RESTMethods\MSSQL.cs" />
+    <Compile Include="WebServer\RESTMethods\HyperV.cs" />
     <Compile Include="WebServer\Server.cs" />
     <Compile Include="WebServer\BodyWriter.cs" />
     <Compile Include="WebServer\IndexHtmlHandler.cs" />
-    <Compile Include="WebServer\ControlHandler.cs" />
     <Compile Include="UpdatePollThread.cs" />
     <Compile Include="LogWriteHandler.cs" />
     <Compile Include="Database\Notification.cs" />
@@ -100,7 +106,6 @@
     <Compile Include="WebServer\RESTMethods\Changelog.cs" />
     <Compile Include="WebServer\RESTMethods\Tags.cs" />
     <Compile Include="WebServer\RESTMethods\ServerSetting.cs" />
-    <Compile Include="WebServer\RESTMethods\Localizations.cs" />
     <Compile Include="WebServer\RESTMethods\Filesystem.cs" />
     <Compile Include="WebServer\RESTMethods\LogData.cs" />
     <Compile Include="WebServer\RESTMethods\RemoteOperation.cs" />
@@ -115,6 +120,9 @@
     <Compile Include="WebServer\RESTMethods\WebModule.cs" />
     <Compile Include="WebServer\RESTMethods\WebModules.cs" />
     <Compile Include="WebServer\RESTMethods\Licenses.cs" />
+    <Compile Include="WebServer\CaptchaUtil.cs" />
+    <Compile Include="WebServer\RESTMethods\Captcha.cs" />
+    <Compile Include="WebServer\RESTMethods\CommandLine.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -124,6 +132,7 @@
     <EmbeddedResource Include="Database\Database schema\1. Add Notifications.sql" />
     <EmbeddedResource Include="Database\Database schema\2. Add UIStorage.sql" />
     <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
+    <EmbeddedResource Include="Database\Database schema\4. Add autoincrement to backup id.sql" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -154,6 +163,10 @@
     <ProjectReference Include="..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
+      <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
+      <Name>Duplicati.Library.Backend.Jottacloud</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
       <Project>{d4c37c33-5e73-4b56-b2c3-dc4a6baa36bb}</Project>
@@ -282,6 +295,14 @@
     <ProjectReference Include="..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj">
       <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
       <Name>Duplicati.Library.UsageReporter</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
+      <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
+      <Name>Duplicati.Library.Backend.Dropbox</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Tools\Duplicati.Tools.csproj">
+      <Project>{0797AA22-C5DD-4950-BB60-34765AB8C6DD}</Project>
+      <Name>Duplicati.Tools</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -5,6 +5,7 @@ using System.Text;
 using HttpServer.HttpModules;
 using System.IO;
 using Duplicati.Server.Serialization;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Server.WebServer
 {
@@ -14,10 +15,12 @@ namespace Duplicati.Server.WebServer
         /// Option for changing the webroot folder
         /// </summary>
         public const string OPTION_WEBROOT = "webservice-webroot";
+
         /// <summary>
         /// Option for changing the webservice listen port
         /// </summary>
         public const string OPTION_PORT = "webservice-port";
+
         /// <summary>
         /// Option for changing the webservice listen interface
         /// </summary>
@@ -32,6 +35,16 @@ namespace Duplicati.Server.WebServer
         /// The default listening port
         /// </summary>
         public const int DEFAULT_OPTION_PORT = 8200;
+
+        /// <summary>
+        /// Option for setting the webservice SSL certificate
+        /// </summary>
+        public const string OPTION_SSLCERTIFICATEFILE = "webservice-sslcertificatefile";
+
+        /// <summary>
+        /// Option for setting the webservice SSL certificate key
+        /// </summary>
+        public const string OPTION_SSLCERTIFICATEFILEPASSWORD = "webservice-sslcertificatepassword";
 
         /// <summary>
         /// The default listening interface
@@ -52,6 +65,19 @@ namespace Duplicati.Server.WebServer
         /// A string that is sent out instead of password values
         /// </summary>
         public const string PASSWORD_PLACEHOLDER = "**********";
+
+        /// <summary>
+        /// Writes a log message to Console, Service-hook and normal log
+        /// </summary>
+        /// <param name="message">The message to write.</param>
+        /// <param name="type">The message type.</param>
+        /// <param name="ex">The exception, if any.</param>
+        public static void WriteLogMessage(string message, Library.Logging.LogMessageType type, Exception ex)
+        {
+            System.Console.WriteLine(message);
+            Library.Logging.Log.WriteMessage(message, type, ex);
+            Program.LogHandler.WriteMessage(message, type, ex);
+        }
 
         /// <summary>
         /// Sets up the webserver and starts it
@@ -88,10 +114,53 @@ namespace Duplicati.Server.WebServer
             else
                 listenInterface = System.Net.IPAddress.Parse(interfacestring);
 
+            string certificateFile;
+            options.TryGetValue(OPTION_SSLCERTIFICATEFILE, out certificateFile);
+
+            string certificateFilePassword;
+            options.TryGetValue(OPTION_SSLCERTIFICATEFILEPASSWORD, out certificateFilePassword);
+
+            X509Certificate2 cert = null;
+            bool certValid = false;
+
+            if (certificateFile == null)
+            {
+                try
+                {
+                    cert = Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
+
+                    if (cert != null)
+                        certValid = cert.HasPrivateKey;
+                }
+                catch (Exception ex)
+                {
+                    WriteLogMessage(Strings.Server.DefectSSLCertInDatabase, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                }
+            }
+            else if (certificateFile.Length == 0)
+            {
+                Program.DataConnection.ApplicationSettings.ServerSSLCertificate = null;
+            }
+            else
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(certificateFilePassword))
+                        cert = new X509Certificate2(certificateFile, "", X509KeyStorageFlags.Exportable);
+                    else
+                        cert = new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable);
+
+                    certValid = cert.HasPrivateKey;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception(Strings.Server.SSLCertificateFailure(ex.Message), ex);
+                }
+            }
 
             // If we are in hosted mode with no specified port, 
             // then try different ports
-            foreach(var p in ports)
+            foreach (var p in ports)
                 try
                 {
                     // Due to the way the server is initialized, 
@@ -99,21 +168,31 @@ namespace Duplicati.Server.WebServer
                     // so we create a new server for each attempt
                 
                     var server = CreateServer(options);
-                    server.Start(listenInterface, p);
+                    
+                    if (!certValid)
+                        server.Start(listenInterface, p);
+                    else
+                        server.Start(listenInterface, p, cert, System.Security.Authentication.SslProtocols.Tls11 | System.Security.Authentication.SslProtocols.Tls12, null, false);
+
                     m_server = server;
-                    m_server.ServerName = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                    m_server.ServerName = string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
                     this.Port = p;
 
                     if (interfacestring !=  Program.DataConnection.ApplicationSettings.ServerListenInterface)
                         Program.DataConnection.ApplicationSettings.ServerListenInterface = interfacestring;
-    
+                    
+                    if (certValid && !cert.Equals(Program.DataConnection.ApplicationSettings.ServerSSLCertificate))
+                        Program.DataConnection.ApplicationSettings.ServerSSLCertificate = cert;
+
+                    WriteLogMessage(Strings.Server.StartedServer(listenInterface.ToString(), p), Library.Logging.LogMessageType.Information, null);
+                    
                     return;
                 }
                 catch (System.Net.Sockets.SocketException)
                 {
                 }
                 
-            throw new Exception("Unable to open a socket for listening, tried ports: " + string.Join(",", from n in ports select n.ToString()));
+            throw new Exception(Strings.Server.ServerStartFailure(ports));
         }
 
         private static void AddMimeTypes(FileModule fm)
@@ -126,6 +205,7 @@ namespace Duplicati.Server.WebServer
             fm.MimeTypes["html"] = "text/html; charset=utf-8";
             fm.MimeTypes["hbs"] = "application/x-handlebars-template";
             fm.MimeTypes["woff"] = "application/font-woff";
+            fm.MimeTypes["woff2"] = "application/font-woff";
         }
             
         private static HttpServer.HttpServer CreateServer(IDictionary<string, string> options)
@@ -133,8 +213,6 @@ namespace Duplicati.Server.WebServer
             HttpServer.HttpServer server = new HttpServer.HttpServer();
 
             server.Add(new AuthenticationHandler());
-
-            server.Add(new ControlHandler());
 
             server.Add(new RESTHandler());
 
@@ -195,21 +273,21 @@ namespace Duplicati.Server.WebServer
                 server.Add(customized_files);
             }
 
-			if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "oem")))
-			{
-				var oem_files = new FileModule("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
-				AddMimeTypes(oem_files);
-				server.Add(oem_files);
-			}
+            if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "oem")))
+            {
+                var oem_files = new FileModule("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
+                AddMimeTypes(oem_files);
+                server.Add(oem_files);
+            }
 
-			if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "package")))
-			{
-				var proxy_files = new FileModule("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
-				AddMimeTypes(proxy_files);
-				server.Add(proxy_files);
-			}
+            if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "package")))
+            {
+                var proxy_files = new FileModule("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
+                AddMimeTypes(proxy_files);
+                server.Add(proxy_files);
+            }
 
-            var fh = new FileModule("/", webroot);
+            var fh = new FileModule("/", webroot, true);
             AddMimeTypes(fh);
             server.Add(fh);
 

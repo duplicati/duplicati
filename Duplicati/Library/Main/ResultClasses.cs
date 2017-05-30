@@ -19,6 +19,8 @@ using System;
 using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Logging;
+using System.Linq;
 
 namespace Duplicati.Library.Main
 {
@@ -30,6 +32,7 @@ namespace Duplicati.Library.Main
         void AddWarning(string message, Exception ex);
         void AddError(string message, Exception ex);
         void AddDryrunMessage(string message);
+        void WriteLogMessageDirect(string message, LogMessageType type, Exception ex);
     }
     
     internal interface IBackendWriter : ILogWriter
@@ -67,7 +70,7 @@ namespace Duplicati.Library.Main
         bool VerboseOutput { set; }
         bool VerboseErrors { set; }
         
-        DateTime EndTime { set; }
+        DateTime EndTime { get; set; }
         DateTime BeginTime { set; }
         
         void SetDatabase(LocalDatabase db);
@@ -180,7 +183,7 @@ namespace Duplicati.Library.Main
         Abort
     }
     
-    internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions, ITaskControl
+    internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions, ITaskControl, Logging.ILog
     {
         protected class DbMessage
         {
@@ -242,10 +245,23 @@ namespace Duplicati.Library.Main
                     m_verboseErrors = value;
             }
         }
-        
+
+        public virtual ParsedResultType ParsedResult
+        {
+            get
+            {
+                if (Errors != null && Errors.Any())
+                    return ParsedResultType.Error;
+                else if (Warnings != null && Warnings.Any())
+                    return ParsedResultType.Warning;
+                else
+                    return ParsedResultType.Success;
+            }
+        }        
+
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
-        public TimeSpan Duration { get { return EndTime - BeginTime; } }
+        public TimeSpan Duration { get { return EndTime.Ticks == 0 ? new TimeSpan(0) : EndTime - BeginTime; } }
         
         public abstract OperationMode MainOperation { get; }
         
@@ -339,7 +355,9 @@ namespace Duplicati.Library.Main
                 m_db.LogMessage("Message", message, ex, null);
             }
         }
-        
+
+        private static bool m_is_reporting = false;
+
         public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size)
         {
             if (m_parent != null)
@@ -348,13 +366,27 @@ namespace Duplicati.Library.Main
             }
             else
             {
-                if (type == BackendEventType.Started)
-                    this.BackendProgressUpdater.StartAction(action, path, size);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
 
-                Logging.Log.WriteMessage(string.Format("Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size)), Duplicati.Library.Logging.LogMessageType.Information);
+                    try
+                    {
+                        m_is_reporting = true;
+                        if (type == BackendEventType.Started)
+                            this.BackendProgressUpdater.StartAction(action, path, size);
 
-                if (MessageSink != null)
-                    MessageSink.BackendEvent(action, type, path, size);
+                        Logging.Log.WriteMessage(string.Format("Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size)), Duplicati.Library.Logging.LogMessageType.Information, null);
+
+                        if (MessageSink != null)
+                            MessageSink.BackendEvent(action, type, path, size);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
                 
         }
@@ -365,62 +397,117 @@ namespace Duplicati.Library.Main
                 m_parent.AddDryrunMessage(message);
             else
             {
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information);
-                if (MessageSink != null)
-                    MessageSink.DryrunEvent(message);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
+
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
+                        if (MessageSink != null)
+                            MessageSink.DryrunEvent(message);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
-               
+
         public void AddVerboseMessage(string message, params object[] args)
         {
             if (m_parent != null)
                 m_parent.AddVerboseMessage(message, args);
             else
             {
-                if (Logging.Log.LogLevel == Duplicati.Library.Logging.LogMessageType.Profiling || VerboseOutput)
-                    Logging.Log.WriteMessage(string.Format(message, args), Duplicati.Library.Logging.LogMessageType.Information);
-                    
-                if (MessageSink != null)
-                    MessageSink.VerboseEvent(message, args);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
+
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(string.Format(message, args), Duplicati.Library.Logging.LogMessageType.Profiling, null);
+
+                        if (MessageSink != null)
+                            MessageSink.VerboseEvent(message, args);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
-        
+
         public void AddMessage(string message)
         { 
             if (m_parent != null)
                 m_parent.AddMessage(message);
             else
             {
-                lock(m_lock)
+                lock(Logging.Log.Lock)
                 {
-                    Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information);
-                    m_messages.Add(message);
-            
-                    if (MessageSink != null)
-                        MessageSink.MessageEvent(message);
-                            
-                    if (m_db != null && !m_db.IsDisposed)
-                        LogDbMessage("Message", message, null);
+                    if (m_is_reporting)
+                        return;
+
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
+
+                        m_messages.Add(message);
+
+                        if (MessageSink != null)
+                            MessageSink.MessageEvent(message);
+
+                        lock(m_lock)
+                            if (m_db != null && !m_db.IsDisposed)
+                                LogDbMessage("Message", message, null);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
                 }
             }
         }
-        
+
         public void AddWarning(string message, Exception ex)
         {
             if (m_parent != null)
                 m_parent.AddWarning(message, ex);
             else
             {
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
-                
-                var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
-                m_warnings.Add(s);
-                
-                if (MessageSink != null)
-                    MessageSink.WarningEvent(message, ex);
-                
-                if (m_db != null && !m_db.IsDisposed)
-                    LogDbMessage("Warning", message, ex);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
+
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+
+                        var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
+                        m_warnings.Add(s);
+
+                        if (MessageSink != null)
+                            MessageSink.WarningEvent(message, ex);
+
+                        lock(m_lock)
+                            if (m_db != null && !m_db.IsDisposed)
+                                LogDbMessage("Warning", message, ex);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
 
@@ -430,35 +517,65 @@ namespace Duplicati.Library.Main
                 m_parent.AddRetryAttempt(message, ex);
             else
             {
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
-                
-                var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
-                m_retryAttempts.Add(s);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
 
-                if (MessageSink != null)
-                    MessageSink.RetryEvent(message, ex);
-                
-                if (m_db != null && !m_db.IsDisposed)
-                    LogDbMessage("Retry", message, ex);
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+
+                        var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
+                        m_retryAttempts.Add(s);
+
+                        if (MessageSink != null)
+                            MessageSink.RetryEvent(message, ex);
+
+                        lock(m_lock)
+                            if (m_db != null && !m_db.IsDisposed)
+                                LogDbMessage("Retry", message, ex);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
-        
+
         public void AddError(string message, Exception ex)
         {
             if (m_parent != null)
                 m_parent.AddError(message, ex);
             else
             {
-                Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Error, ex);
-                
-                var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
-                m_errors.Add(s);
-            
-                if (MessageSink != null)
-                    MessageSink.ErrorEvent(message, ex);
+                lock(Logging.Log.Lock)
+                {
+                    if (m_is_reporting)
+                        return;
 
-                if (m_db != null && !m_db.IsDisposed)
-                    LogDbMessage("Error", message, ex);
+                    try
+                    {
+                        m_is_reporting = true;
+                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Error, ex);
+
+                        var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
+                        m_errors.Add(s);
+
+                        if (MessageSink != null)
+                            MessageSink.ErrorEvent(message, ex);
+
+                        lock(m_lock)
+                            if (m_db != null && !m_db.IsDisposed)
+                                LogDbMessage("Error", message, ex);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
             }
         }
         
@@ -508,15 +625,20 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Pause()
         {
-            lock(m_lock)
-                if (m_controlState == TaskControlState.Run)
-                {
-                    m_pauseEvent.Reset();
-                    m_controlState = TaskControlState.Pause;
-                }
-            
-            if (StateChangedEvent != null)
-                StateChangedEvent(m_controlState);
+            if (m_parent != null)
+                m_parent.Pause();
+            else
+            {
+                lock (m_lock)
+                    if (m_controlState == TaskControlState.Run)
+                    {
+                        m_pauseEvent.Reset();
+                        m_controlState = TaskControlState.Pause;
+                    }
+
+                if (StateChangedEvent != null)
+                    StateChangedEvent(m_controlState);
+            }
         }
         
         /// <summary>
@@ -524,15 +646,20 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Resume()
         {
-            lock(m_lock)
-                if (m_controlState == TaskControlState.Pause)
-                {
-                    m_pauseEvent.Set();
-                    m_controlState = TaskControlState.Run;
-                }
-            
-            if (StateChangedEvent != null)
-                StateChangedEvent(m_controlState);
+            if (m_parent != null)
+                m_parent.Resume();
+            else
+            {
+                lock (m_lock)
+                    if (m_controlState == TaskControlState.Pause)
+                    {
+                        m_pauseEvent.Set();
+                        m_controlState = TaskControlState.Run;
+                    }
+
+                if (StateChangedEvent != null)
+                    StateChangedEvent(m_controlState);
+            }
         }
         
         /// <summary>
@@ -540,15 +667,20 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Stop() 
         {
-            lock(m_lock)
-                if (m_controlState != TaskControlState.Abort)
-                {
-                    m_controlState = TaskControlState.Stop;
-                    m_pauseEvent.Set();
-                }
-            
-            if (StateChangedEvent != null)
-                StateChangedEvent(m_controlState);
+            if (m_parent != null)
+                m_parent.Stop();
+            else
+            {
+                lock (m_lock)
+                    if (m_controlState != TaskControlState.Abort)
+                    {
+                        m_controlState = TaskControlState.Stop;
+                        m_pauseEvent.Set();
+                    }
+
+                if (StateChangedEvent != null)
+                    StateChangedEvent(m_controlState);
+            }
         }
         
         /// <summary>
@@ -556,14 +688,19 @@ namespace Duplicati.Library.Main
         /// </summary>
         public void Abort()
         {
-            lock(m_lock)
+            if (m_parent != null)
+                m_parent.Abort();
+            else
             {
-                m_controlState = TaskControlState.Abort;
-                m_pauseEvent.Set();
+                lock (m_lock)
+                {
+                    m_controlState = TaskControlState.Abort;
+                    m_pauseEvent.Set();
+                }
+
+                if (StateChangedEvent != null)
+                    StateChangedEvent(m_controlState);
             }
-            
-            if (StateChangedEvent != null)
-                StateChangedEvent(m_controlState);
         }
         
         /// <summary>
@@ -571,26 +708,103 @@ namespace Duplicati.Library.Main
         /// </summary>
         public TaskControlState TaskControlRendevouz()
         {
-            // If we are paused, go into pause mode
-            m_pauseEvent.WaitOne();
-            
-            // If we are aborted, throw exception
-            if (m_controlState == TaskControlState.Abort)
-                System.Threading.Thread.CurrentThread.Abort();
-            
-            return m_controlState;
+            if (m_parent != null)
+                return m_parent.TaskControlRendevouz();
+            else
+            {
+                // If we are paused, go into pause mode
+                m_pauseEvent.WaitOne();
+
+                // If we are aborted, throw exception
+                if (m_controlState == TaskControlState.Abort)
+                    System.Threading.Thread.CurrentThread.Abort();
+
+                return m_controlState;
+            }
         }
-        
+
+        /// <summary>
+        /// Helper method to check if abort is requested
+        /// </summary>
+        public bool IsAbortRequested()
+        {
+            if (m_parent != null)
+                return m_parent.IsAbortRequested();
+            else
+                return m_controlState == TaskControlState.Abort;
+        }
+
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Main.BasicResults"/>.
         /// </summary>
         /// <returns>A <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Main.BasicResults"/>.</returns>
         public override string ToString()
         {
-            return Library.Utility.Utility.PrintSerializeObject(this).ToString();
+            return Library.Utility.Utility.PrintSerializeObject(
+                this, 
+                filter: (prop, item) =>
+                    !typeof(IBackendProgressUpdater).IsAssignableFrom(prop.PropertyType) &&
+                    !typeof(IMessageSink).IsAssignableFrom(prop.PropertyType) &&
+                    !typeof(ILogWriter).IsAssignableFrom(prop.PropertyType) &&
+                    prop.Name != "VerboseOutput" &&
+                    prop.Name != "VerboseErrors" &&
+                    !(prop.Name == "MainOperation" && item is BackendWriter) &&
+                    !(prop.Name == "EndTime" && item is BackendWriter) &&
+                    !(prop.Name == "Duration" && item is BackendWriter) &&
+                    !(prop.Name == "BeginTime" && item is BackendWriter),
+                recurseobjects: true
+            ).ToString();
         }
+
+        public void WriteMessage(string message, LogMessageType type, Exception exception)
+        {
+            switch (type)
+            {
+                case LogMessageType.Error:
+                    AddError(message, exception);
+                    break;
+                case LogMessageType.Warning:
+                    AddWarning(message, exception);
+                    break;
+                case LogMessageType.Profiling:
+                    if (Log.LogLevel == LogMessageType.Profiling && VerboseOutput)
+                        AddVerboseMessage(message, new object[0]);
+                    break;
+                default:
+                    AddMessage(message);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Writes a message to the log, bypassing injection as normal messages
+        /// </summary>
+        /// <param name="message">The message to write to the log.</param>
+        /// <param name="type">Type.</param>
+        /// <param name="exception">Exception.</param>
+        public void WriteLogMessageDirect(string message, LogMessageType type, Exception exception)
+        {
+            if (m_parent != null)
+                m_parent.WriteLogMessageDirect(message, type, exception);
+            else
+            {
+                lock (Logging.Log.Lock)
+                {
+                    try
+                    {
+                        m_is_reporting = true;
+                        WriteMessage(message, type, exception);
+                    }
+                    finally
+                    {
+                        m_is_reporting = false;
+                    }
+                }
+            }
+        }
+
     }
-    
+
     internal class BackupResults : BasicResults, IBackupResults
     {
         public long DeletedFiles { get; internal set; }
@@ -613,13 +827,26 @@ namespace Duplicati.Library.Main
         public long DeletedSymlinks { get; internal set; }
         public bool PartialBackup { get; internal set; }
         public bool Dryrun { get; internal set; }
-        
+
         public override OperationMode MainOperation { get { return OperationMode.Backup; } }
-        
+
         public ICompactResults CompactResults { get; internal set; }
         public IDeleteResults DeleteResults { get; internal set; }
-        public IRepairResults RepairResults { get; internal set; }        
-        public ITestResults TestResults { get; internal set; }        
+        public IRepairResults RepairResults { get; internal set; }
+        public ITestResults TestResults { get; internal set; }
+
+        public override ParsedResultType ParsedResult
+        {
+            get
+            {
+                if ((Errors != null && Errors.Any()) || FilesWithError > 0)
+                    return ParsedResultType.Error;
+                else if ((Warnings != null && Warnings.Any()) || PartialBackup)
+                    return ParsedResultType.Warning;
+                else
+                    return ParsedResultType.Success;                    
+            }
+        }
     }
     
     internal class RestoreResults : BasicResults, Library.Interface.IRestoreResults
@@ -636,6 +863,19 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
         
         public IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
+
+        public override ParsedResultType ParsedResult
+        {
+            get
+            {
+                if (Errors != null && Errors.Any())
+                    return ParsedResultType.Error;
+                else if ((Warnings != null && Warnings.Any()) || FilesRestored == 0)
+                    return ParsedResultType.Warning;
+                else
+                    return ParsedResultType.Success;
+            }
+        }
     }
 
     internal class ListResultFile : Duplicati.Library.Interface.IListResultFile
@@ -712,6 +952,7 @@ namespace Duplicati.Library.Main
         
         public void SetResults(IEnumerable<Tuple<long, DateTime>> deletedSets, bool dryrun)
         {
+            EndTime = DateTime.UtcNow;
             DeletedSets = deletedSets;
             Dryrun = dryrun;
         }
@@ -763,6 +1004,14 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.RestoreControlfiles; } }
         public void SetResult(IEnumerable<string> files) { this.Files = files; }
     }   
+
+    internal class ListRemoteResults : BasicResults, Library.Interface.IListRemoteResults
+    {
+        public IEnumerable<IFileEntry> Files { get; private set; }
+
+        public override OperationMode MainOperation { get { return OperationMode.ListRemote; } }
+        public void SetResult(IEnumerable<IFileEntry> files) { this.Files = files; }
+    }
 
     internal class RepairResults : BasicResults, Library.Interface.IRepairResults
     {
@@ -860,13 +1109,13 @@ namespace Duplicati.Library.Main
         public TestResults(BasicResults p) : base(p) { }
         
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
-        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get { return m_changes; } }
-        private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_changes = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+        private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
         
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {
             var res = new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(volume, changes);
-            m_changes.Add(res);
+            m_verifications.Add(res);
             return res;
         }
     }
@@ -885,5 +1134,36 @@ namespace Duplicati.Library.Main
         public IEnumerable<string> Lines { get; set; }
     }
 
+    internal class PurgeFilesResults : BasicResults, IPurgeFilesResults
+    {
+        public PurgeFilesResults() : base() { }
+        public PurgeFilesResults(BasicResults p) : base(p) { }
+
+        public override OperationMode MainOperation { get { return OperationMode.PurgeFiles; } }
+        public long RemovedFileCount { get; set; }
+        public long RemovedFileSize { get; set; }
+        public long RewrittenFileLists { get; set; }
+
+        public ICompactResults CompactResults { get; set; }
+    }
+
+    internal class ListBrokenFilesResults : BasicResults, IListBrokenFilesResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.ListBrokenFiles; } }
+        public IEnumerable<Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>> BrokenFiles { get; set; }
+    }
+
+    internal class PurgeBrokenFilesResults : BasicResults, IPurgeBrokenFilesResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.PurgeBrokenFiles; } }
+        public IPurgeFilesResults PurgeResults { get; set; }
+        public IDeleteResults DeleteResults { get; set; }
+    }
+
+    internal class SendMailResults : BasicResults, ISendMailResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.SendMail; } }
+        public IEnumerable<string> Lines { get; set; }
+    }
 }
 

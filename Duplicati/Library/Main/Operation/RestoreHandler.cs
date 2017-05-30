@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 
@@ -32,7 +33,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var tmp = VolumeBase.ParseFilename(filename);
             if (tmp == null)
-                throw new Exception(string.Format("Unable to parse filename to valid entry: {0}", filename));
+                throw new UserInformationException(string.Format("Unable to parse filename to valid entry: {0}", filename));
 
             return tmp.CompressionModule;
         }
@@ -80,7 +81,7 @@ namespace Duplicati.Library.Main.Operation
                 
             // If we have both target paths and a filter, combine into a single filter
             filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(paths), filter);
-			
+            
             if (!m_options.NoLocalDb && m_systemIO.FileExists(m_options.Dbpath))
             {
                 using(var db = new LocalRestoreDatabase(m_options.Dbpath))
@@ -126,14 +127,14 @@ namespace Duplicati.Library.Main.Operation
                                     blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                                     filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                                     if (blockhasher == null)
-                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                                        throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                                     if (!blockhasher.CanReuseTransform)
-                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                                        throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                                     if (filehasher == null)
-                                        throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                                        throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                                     if (!filehasher.CanReuseTransform)
-                                        throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                                        throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                                     // Don't run this again
                                     first = false;
@@ -183,7 +184,7 @@ namespace Duplicati.Library.Main.Operation
                     if (m_options.Version != null && m_options.Version.Length > 0)
                         m_options.RawOptions["version"] = string.Join(",", Enumerable.Range(0, m_options.Version.Length).Select(x => x.ToString()));
 
-	                DoRun(database, filter, m_result);
+                    DoRun(database, filter, m_result);
                 }
             }
         }
@@ -321,7 +322,7 @@ namespace Duplicati.Library.Main.Operation
                             m_systemIO.DirectoryCreate(folderpath);
                         }
 
-						ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.Dryrun);
+                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.Dryrun);
                     }
                     catch (Exception ex)
                     {
@@ -343,18 +344,18 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyParameters(database, m_options);
                 m_blockbuffer = new byte[m_options.Blocksize];
-	        	
+                
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
                 if (blockhasher == null)
-                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
 
                 if (filehasher == null)
-                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
                 if (!filehasher.CanReuseTransform)
-                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
 
                 if (!m_options.NoBackendverification)
                 {
@@ -417,26 +418,26 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 var brokenFiles = new List<string>();
-				foreach(var blockvolume in new AsyncDownloader(volumes, backend))
-					try
-					{
+                foreach(var blockvolume in new AsyncDownloader(volumes, backend))
+                    try
+                    {
                         if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                         {
                             backend.WaitForComplete(database, null);
                             return;
                         }
                     
-						using(var tmpfile = blockvolume.TempFile)
-						using(var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Name), tmpfile, m_options))
+                        using(var tmpfile = blockvolume.TempFile)
+                        using(var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Name), tmpfile, m_options))
                             PatchWithBlocklist(database, blocks, m_options, result, m_blockbuffer, metadatastorage);
-					}
-					catch (Exception ex)
-					{
+                    }
+                    catch (Exception ex)
+                    {
                         brokenFiles.Add(blockvolume.Name);
                         result.AddError(string.Format("Failed to patch with remote file: \"{0}\", message: {1}", blockvolume.Name, ex.Message), ex);
                         if (ex is System.Threading.ThreadAbortException)
                             throw;
-					}
+                    }
 
                 // Enforcing the length of files is now already done during ScanForExistingTargetBlocks
                 // and thus not necessary anymore.
@@ -447,7 +448,7 @@ namespace Duplicati.Library.Main.Operation
                 
                 // Reset the filehasher if it was used to verify existing files
                 filehasher.Initialize();
-					
+                    
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                     return;
                 
@@ -508,7 +509,7 @@ namespace Duplicati.Library.Main.Operation
             result.EndTime = DateTime.UtcNow;
         }
 
-		private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool dryrun)
+        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool dryrun)
         {
             using(var tr = new System.IO.StreamReader(stream))
             using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
@@ -518,9 +519,9 @@ namespace Duplicati.Library.Main.Operation
                 long t;
                 System.IO.FileAttributes fa;
 
-				// If this is dry-run, we stop after having deserialized the metadata
-				if (dryrun)
-					return;
+                // If this is dry-run, we stop after having deserialized the metadata
+                if (dryrun)
+                    return;
 
                 var isDirTarget = path.EndsWith(DIRSEP);
                 var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
@@ -528,9 +529,9 @@ namespace Duplicati.Library.Main.Operation
                 // Make the symlink first, otherwise we cannot apply metadata to it
                 if (metadata.TryGetValue("CoreSymlinkTarget", out k))
                     m_systemIO.CreateSymlink(targetpath, k, isDirTarget);
-				// If the target is a folder, make sure we create it first
-				else if (isDirTarget && !m_systemIO.DirectoryExists(targetpath))
-					m_systemIO.DirectoryCreate(targetpath);
+                // If the target is a folder, make sure we create it first
+                else if (isDirTarget && !m_systemIO.DirectoryExists(targetpath))
+                    m_systemIO.DirectoryCreate(targetpath);
 
                 if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
                 {
@@ -562,67 +563,67 @@ namespace Duplicati.Library.Main.Operation
             {
                 var updateCount = 0L;
                 foreach(var entry in database.GetFilesAndSourceBlocksFast(options.Blocksize))
-            	{
+                {
                     var targetpath = entry.TargetPath;
                     var targetfileid = entry.TargetFileID;
                     var sourcepath = entry.SourcePath;
                     var patched = false;
                     
-                	try
-                	{
-        				if (m_systemIO.FileExists(sourcepath))
-        				{
-	    					var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
-	    					if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
-	    					{
-	                            result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
-	    						m_systemIO.DirectoryCreate(folderpath);
-	    					}
-        				
-	                		using(var targetstream = options.Dryrun ? null : m_systemIO.FileOpenWrite(targetpath))
-	                		{
-	                			try
-	                			{
-		                    		using(var sourcestream = m_systemIO.FileOpenRead(sourcepath))
-		                    		{
-		    			                foreach(var block in entry.Blocks)
-		    			                {
+                    try
+                    {
+                        if (m_systemIO.FileExists(sourcepath))
+                        {
+                            var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+                            if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
+                            {
+                                result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
+                                m_systemIO.DirectoryCreate(folderpath);
+                            }
+                        
+                            using(var targetstream = options.Dryrun ? null : m_systemIO.FileOpenWrite(targetpath))
+                            {
+                                try
+                                {
+                                    using(var sourcestream = m_systemIO.FileOpenRead(sourcepath))
+                                    {
+                                        foreach(var block in entry.Blocks)
+                                        {
                                             if (result.TaskControlRendevouz() == TaskControlState.Stop)
                                                 return;
 
                                             //TODO: Handle metadata
 
-			    			                if (sourcestream.Length > block.Offset)
-				                    		{
-				                    			sourcestream.Position = block.Offset;
-				                    			
-		                                        var size = sourcestream.Read(blockbuffer, 0, blockbuffer.Length);
-		                                        if (size == block.Size)
-		                                        {
-		                                            var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
-		                                            if (key == block.Hash)
-		                                            {
+                                            if (sourcestream.Length > block.Offset)
+                                            {
+                                                sourcestream.Position = block.Offset;
+                                                
+                                                var size = sourcestream.Read(blockbuffer, 0, blockbuffer.Length);
+                                                if (size == block.Size)
+                                                {
+                                                    var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
+                                                    if (key == block.Hash)
+                                                    {
                                                         patched = true;
-						                            	if (!options.Dryrun)
-					                            		{
-					                            			targetstream.Position = block.Offset;
-		                                                    targetstream.Write(blockbuffer, 0, size);
-		                                                }
-		                                                    
-		                                                blockmarker.SetBlockRestored(targetfileid, block.Index, key, block.Size, false);
-		                                            }
-		                                        }	                    		
-											}
-										}
-									}
-	                			}
-	                			catch (Exception ex)
-	                			{
-	                                result.AddWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex);
+                                                        if (!options.Dryrun)
+                                                        {
+                                                            targetstream.Position = block.Offset;
+                                                            targetstream.Write(blockbuffer, 0, size);
+                                                        }
+                                                            
+                                                        blockmarker.SetBlockRestored(targetfileid, block.Index, key, block.Size, false);
+                                                    }
+                                                }                               
+                                            }
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    result.AddWarning(string.Format("Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message), ex);
                                     if (ex is System.Threading.ThreadAbortException)
                                         throw;
-	                			}
-	                		}
+                                }
+                            }
 
                             if ((++updateCount) % 20 == 0)
                             {
@@ -631,12 +632,12 @@ namespace Duplicati.Library.Main.Operation
                                     return;
                             }
                             
-	                	}
+                        }
                         else
                         {
                             result.AddVerboseMessage("Local source file not found: {0}", sourcepath);
                         }
-	 				}
+                    }
                     catch (Exception ex)
                     {
                         result.AddWarning(string.Format("Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message), ex);
@@ -650,11 +651,11 @@ namespace Duplicati.Library.Main.Operation
                         result.AddVerboseMessage("Target file is not patched any local data: {0}", targetpath);
                     
                     if (patched && options.Dryrun)
-                    	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
-            	}
-            	
+                        result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
+                }
+                
                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
-            	blockmarker.Commit(result);
+                blockmarker.Commit(result);
             }
         }
 
@@ -674,12 +675,12 @@ namespace Duplicati.Library.Main.Operation
                         if (result.TaskControlRendevouz() == TaskControlState.Stop)
                             return;
                         
-    					var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
-    					if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
-    					{
+                        var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+                        if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
+                        {
                             result.AddWarning(string.Format("Creating missing folder {0} for  file {1}", folderpath, targetpath), null);
-    						m_systemIO.DirectoryCreate(folderpath);
-    					}
+                            m_systemIO.DirectoryCreate(folderpath);
+                        }
                     
                         using (var file = options.Dryrun ? null : m_systemIO.FileOpenWrite(targetpath))
                             foreach (var targetblock in restorelist.Blocks)
@@ -711,7 +712,7 @@ namespace Duplicati.Library.Main.Operation
                                                         var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
                                                         if (key == targetblock.Hash)
                                                         {
-    						                            	if (!options.Dryrun)
+                                                            if (!options.Dryrun)
                                                             {
                                                                 if (targetblock.IsMetadata)
                                                                     metadatastorage.Add(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size));
@@ -721,7 +722,7 @@ namespace Duplicati.Library.Main.Operation
                                                                     file.Write(blockbuffer, 0, size);
                                                                 }
                                                             }
-    	                                                        
+                                                                
                                                             blockmarker.SetBlockRestored(targetfileid, targetblock.Index, key, targetblock.Size, false);
                                                             patched = true;
                                                             break;
@@ -754,7 +755,7 @@ namespace Duplicati.Library.Main.Operation
                         result.AddVerboseMessage("Target file is not patched any local data: {0}", targetpath);
                         
                     if (patched && options.Dryrun)
-                    	result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
+                        result.AddDryrunMessage(string.Format("Would patch file with local data: {0}", targetpath));
                 }
 
                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
@@ -772,23 +773,26 @@ namespace Duplicati.Library.Main.Operation
                 result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
             }
 
-			using(new Logging.Timer("SetTargetPaths"))
-    			if (!string.IsNullOrEmpty(options.Restorepath))
-    			{
-    				// Find the largest common prefix
-    				string largest_prefix = database.GetLargestPrefix();
+            using(new Logging.Timer("SetTargetPaths"))
+                if (!string.IsNullOrEmpty(options.Restorepath))
+                {
+                    // Find the largest common prefix
+                    var largest_prefix = options.DontCompressRestorePaths ? "" : database.GetLargestPrefix();
+                    if (options.DontCompressRestorePaths)
+                        largest_prefix = "";
+
                     result.AddVerboseMessage("Mapping restore path prefix to \"{0}\" to \"{1}\"", largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
     
-    				// Set the target paths, special care with C:\ and /
-    				database.SetTargetPaths(largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
-    			}
-    			else
-    			{
-    				database.SetTargetPaths("", "");
-    			}
+                    // Set the target paths, special care with C:\ and /
+                    database.SetTargetPaths(largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
+                }
+                else
+                {
+                    database.SetTargetPaths("", "");
+                }
 
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
-			using(new Logging.Timer("FindMissingBlocks"))
+            using(new Logging.Timer("FindMissingBlocks"))
                 database.FindMissingBlocks(result, options.SkipMetadata);
 
             // Create temporary tables and triggers that automatically track progress
@@ -798,18 +802,18 @@ namespace Duplicati.Library.Main.Operation
         }
 
         private static void CreateDirectoryStructure(LocalRestoreDatabase database, Options options, RestoreResults result)
-		{
-			// This part is not protected by try/catch as we need the target folder to exist
-			if (!string.IsNullOrEmpty(options.Restorepath))
+        {
+            // This part is not protected by try/catch as we need the target folder to exist
+            if (!string.IsNullOrEmpty(options.Restorepath))
                 if (!m_systemIO.DirectoryExists(options.Restorepath))
                 {
                     if (options.Verbose)
                         result.AddVerboseMessage("Creating folder: {0}", options.Restorepath);
                         
-                	if (options.Dryrun)
-                		result.AddDryrunMessage(string.Format("Would create folder: {0}", options.Restorepath));
-                	else
-                    	m_systemIO.DirectoryCreate(options.Restorepath);
+                    if (options.Dryrun)
+                        result.AddDryrunMessage(string.Format("Would create folder: {0}", options.Restorepath));
+                    else
+                        m_systemIO.DirectoryCreate(options.Restorepath);
                 }
         
             foreach (var folder in database.GetTargetFolders())
@@ -821,15 +825,15 @@ namespace Duplicati.Library.Main.Operation
                     
                     if (!m_systemIO.DirectoryExists(folder))
                     {
-                    	result.FoldersRestored++;
-                    	
+                        result.FoldersRestored++;
+                        
                         if (options.Verbose)
                             result.AddVerboseMessage("Creating folder: {0}", folder);
                             
-                    	if (options.Dryrun)
-                    		result.AddDryrunMessage(string.Format("Would create folder: {0}", folder));
-                    	else
-                        	m_systemIO.DirectoryCreate(folder);
+                        if (options.Dryrun)
+                            result.AddDryrunMessage(string.Format("Would create folder: {0}", folder));
+                        else
+                            m_systemIO.DirectoryCreate(folder);
                     }
                 }
                 catch (Exception ex)

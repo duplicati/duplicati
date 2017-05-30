@@ -21,25 +21,36 @@ export GDIPLUS_NOX=1
 
 #mono version check
 
-REQUIRED_MAJOR=2
-REQUIRED_MINOR=8
+REQUIRED_MAJOR=3
+REQUIRED_MINOR=0
 
 VERSION_TITLE="Cannot launch $APP_NAME"
 VERSION_MSG="$APP_NAME requires the Mono Framework version $REQUIRED_MAJOR.$REQUIRED_MINOR or later."
 DOWNLOAD_URL="http://www.go-mono.com/mono-downloads/download.html"
 
-# Try system default mono if an override was not supplied
+# Try to find system default Mono if an override was not supplied
 if [ "z${MONO_BIN}" == "z" ]; then
 	MONO_BIN=`which mono`
 
-	# Check if there was no mono found
-	if [ "z$MONO_BIN" == "z" ]
-	then
-		# Check if there is a HomeBrew install of mono instead
-		MONO_VERSION="$(/usr/local/bin/mono --version | grep 'Mono JIT compiler version ' |  cut -f5 -d\ )"
-		if [ -f "/usr/local/bin/mono" ]
-		then
+    # If the result is broken, don't use it
+	if [ ! -f "${MONO_BIN}" ]; then
+		MONO_BIN=""
+	fi
+
+	# Check if there was no Mono found
+	if [ "z${MONO_BIN}" == "z" ]; then
+		# Check if there is a HomeBrew install of Mono
+		if [ -f "/usr/local/bin/mono" ]; then
 			MONO_BIN="/usr/local/bin/mono"
+
+		# Check if there is a system version of Mono
+		elif [ -f "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono" ]; then
+			MONO_BIN="/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono"
+
+		# Set up some default that will likely fail
+		else
+			MONO_BIN="mono"
+
 		fi
 	fi
 fi

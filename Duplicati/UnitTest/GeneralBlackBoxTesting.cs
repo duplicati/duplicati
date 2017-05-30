@@ -64,17 +64,20 @@ namespace Duplicati.UnitTest
             }
         }
         [Test]
+        [Category("SVNData")]
         public void TestWithSVNShort()
         {
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, TestTarget);
         }
         [Test]
+        [Category("SVNDataLong")]
         public void TestWithSVNLong()
         {
             SVNCheckoutTest.RunTest(TestFolders.ToArray(), TestOptions, TestTarget);
         }
 
         [Test]
+        [Category("SVNData")]
         public void TestWithErrors()
         {
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
@@ -85,6 +88,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("SVNData")]
         public void TestWithoutSizeInfo()
         {
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());

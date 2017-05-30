@@ -1,3 +1,349 @@
+2017-05-30 - 2.0.1.61_experimental_2017-05-30
+==========
+This experimental release contains all the changes from canary v2.0.1.60,
+including:
+
+* Performance updates, faster backups, less memory
+* Fixed an issue with zip files larger than 4GiB
+* Improved import/export functions
+
+If you are using VSS snapshots on Windows,
+make sure you install VC++ 2015 redist:
+https://www.microsoft.com/en-us/download/details.aspx?id=48145
+
+2017-05-23 - 2.0.1.60_canary_2017-05-23
+==========
+* Re-enabled the GTK trayicon that was missing in the previous two versions
+
+2017-05-22 - 2.0.1.59_canary_2017-05-22
+==========
+* Fixed an issue with NewtonSoft.Json not loading for some backends
+* Note that Windows VSS now requires VC++ Redist 2015 installed
+
+2017-05-19 - 2.0.1.58_canary_2017-05-19
+==========
+* Fixed an issue with the FTP backend in 2.0.1.57
+* Improved the query used to get the timestamp if `--check-filetime-only` is enabled
+
+2017-05-17 - 2.0.1.57_canary_2017-05-17
+==========
+* Fixed an issue with not being performed correctly with AmzCD
+* Fixed the Windows verifyscript, thanks @mnaiman
+* Updated fonts to work better with Russian language display, thanks @vnau
+* Removed Tlsv1 option from server, thanks @mnaiman
+* Updated NewtonSoft.Json, MailKit, MimeKit and AlphaVSS
+* Fixed the way AllowWriteBuffering is used, which should fix delete errors on AmzCD
+* Fixed an error in searching for files with regular expressions
+
+2017-04-21 - 2.0.1.56_canary_2017-04-21
+==========
+* Fixed an issue with duplicate strings in S3 providers
+* Fixed an issue where a file being expanded during backup could cause the file to not be backed up.
+* Changed HTTP requests to not buffer the output to fix out-of-memory errors
+* Added a Python script to do restores completely without using Duplicati, thanks @downpoured !
+* Improved Amazon Cloud Drive by not waiting while performing batched requests
+
+2017-04-06 - 2.0.1.55_canary_2017-04-06
+==========
+* Updated SharpCompress to support creating zip files larger than 4 GiB
+* Added a commandline-like interface to the WebUI
+* Updated the backendtool to support full paths
+* Updated the list of S3 regions and servers
+* Change the UI to have a fixed top-bar with status and progress
+* Fixed a crash that occurs if the web-browser does not send `Accept-Language`
+* Fixed an issue with filtering the output of the LIST command
+
+2017-03-26 - 2.0.1.54_canary_2017-03-26
+==========
+* Fixed an unwanted empty folder creation, thanks @albertony
+* Fixed logic issues with volumesize minimum bounds, thanks @albertony
+* Fixed importing config files with AllowedDays set
+* Improved database performance on backups, thanks @danstahr
+
+2017-03-13 - 2.0.1.53_experimental_2017-03-13
+==========
+* This update contains the same fixes as canary 2.0.1.51
+
+2017-03-13 - 2.0.1.52_canary_2017-03-13
+==========
+* Added fail-over to read zip files with invalid central directory
+* Improved the login page for compatibility with password managers, thanks @johenning
+* Improved the URL parser for better commandline import
+* Improved the URL parsing when importing a saved configuration
+* Added exit/status codes to the verification command
+* Added IBM Bluemix COS to list of S3 providers, thanks @greyhoundforty
+* Improved startup time for commandline, thanks @frelis
+* Improved non-hosted mode for TrayIcon, thanks @mnaiman
+* Added a Jottacloud backend, thanks @albertony
+
+2017-03-03 - 2.0.1.51_canary_2017-03-03
+==========
+* Updated the bundled version of SQLite for Windows to 1.0.104.0
+* Added deep archive verification when invoking verify
+* Changed the pagination method for GoogleDrive
+
+2017-02-28 - 2.0.1.50_canary_2017-02-28
+==========
+* Added error message if `--prefix` contains hyphens
+* Fixed an issue with editing the allowed days on the schedule page
+* Changed "import" so it just loads the configuration into the editor, allowing the user to edit it before saving
+* Added function to restore that loads setup from a configuration file
+* Updated SharpCompress and S3 libraries
+* Improved crash messages for Windows TrayIcon
+
+2017-02-23 - 2.0.1.49_experimental_2017-02-23
+==========
+* This build is the same as the canary
+
+2017-02-23 - 2.0.1.48_canary_2017-02-23
+==========
+* Updated translations, thanks @agrajaghh
+* Improved verification script, thanks @mnaiman
+* Support for SSL certificates in server when running with Mono, thanks @mnaiman
+* Improved progress bar updates when processing large files, thanks @asselin
+
+2017-02-14 - 2.0.1.47_canary_2017-02-14
+==========
+* Updated some localizations
+* Updated the user interface
+* Fixed an issue where the Force Stop action did not work immediately
+
+2017-02-03 - 2.0.1.46_canary_2017-02-03
+==========
+* Fixed icon sizes
+* Removed the fake control.cgi entry
+* Added experimental support for setting the SQLite tempdir
+* Added an optimization that makes bug reports faster to create
+* Added a new HTTP reporter module, thanks @vatara
+
+2017-02-03 - 2.0.1.45_experimental_2017-02-03
+==========
+* This experimental release contains the fixes in the latest canary and some updated translations, and a fix that makes creating a bug-report faster
+
+2017-01-24 - 2.0.1.44_canary_2017-01-24
+==========
+* Added SSL test tools for Mono debugging
+* Fixed an issue with not reporting the correct error message when listing files
+* Updated logs UI to show the backup name
+* Added extra menu items to the start page
+* Fixed a number of typos
+* Added a more thorough consistency check
+* Added an extra result level "fatal" to reporting
+* Fixed reporting warning status if there were warnings during the backup
+
+2017-01-19 - 2.0.1.43_canary_2017-01-19
+==========
+* Improved queries that are used to recreate the database
+* Fixed duplicate logging entries when a log file was used
+
+2017-01-16 - 2.0.1.41_canary_2017-01-16
+==========
+* Added a debugging feature to assist with #1699, #2048, #2140, #2178
+* Fixed a problem with listing changes from the commandline
+
+2017-01-12 - 2.0.1.40_canary_2017-01-12
+==========
+* Added extra functionality to the `--allow-full-removal` option
+* Various updates to send-mail
+* Reworked logging support to allow modules to funnel logs back into the current operation
+* Reverted an optimization that cause backup scanning to be really slow
+
+2017-01-08 - 2.0.1.39_canary_2017-01-08
+==========
+* Fixed some typos, thanks @sfahrenholz
+* Added webp to compressed file extension list, thanks @dessant
+* Changed aftp backend to use CWD, thanks @seaeagle1
+* Added "purge" command to purge files from the database
+* Added "list-broken-files" and "purge-broken-files" to aid in recovering from remote data loss
+* Added additional trace log messages to debug some consistency issues
+* Fixed support for operations across different operating systems
+
+2016-12-27 - 2.0.1.38_canary_2016-12-27
+==========
+* Fixed a problem with login no longer working
+* Updated the login page to use blue colors
+
+2016-12-27 - 2.0.1.37_canary_2016-12-27
+==========
+* Added a check for administrator privileges to avoid HyperV error messages
+
+2016-12-24 - 2.0.1.36_canary_2016-12-24
+==========
+* Fixed a case where excluded gave a warning
+* Removed the "No LSB Modules" messages on Linux
+* Fixed a problem with lon UNC paths on Windows, thanks @quincunx
+* Removed the Greeno theme as it was not maintained
+* Removed some unused options for setting in-memory buffers
+* Added debug output if we hit issue #1400
+
+2016-12-05 - 2.0.1.34_canary_2016-12-05
+==========
+* Fixed an issue with spurious errors in the UI mentioning Hyper-V
+* Fixed an issue where requesting deletion of remote files did not work
+* Improved the status results reported in the log files
+* Fixed some issues with the usage reporter
+* Fixed an issue with the SSH fingerprint not being accepted in URL encoded format
+
+2016-11-27 - 2.0.1.33_canary_2016-11-27
+==========
+* Updated Linux certificate warnings to mention cert-sync instead of Mozroots
+* Added option to run the Duplicati server as a Linux service, thanks @a1ezzz
+* Updated LVM snapshot size parameters, thanks @kakoskin1
+* Fixed schedule time being skewed towards UTC, thanks @tianqiaoxiangzhe
+* Improved notification area layout, thanks @tudacs
+* Fixed a case where it would be impossible to edit the weekdays in the schedule, thanks @tudacs
+* Added support for choosing time values in seconds range from the UI
+* Fixed issues with the scheduler not re-scheduling entries until after a restart
+* Fixed a case where sizes chosen from the advanced options editor would be invalid
+
+2016-11-12 - 2.0.1.32_canary_2016-11-12
+==========
+* Fixed an issue with deleting a backup
+* Fixed an issue with creating a backup without encryption
+* Fixed storing symlink metadata to not follow symlinks unless specified
+* Updated AlphaFS, AWS (S3), SSH, Azure, Mega and mailkit libraries
+* Fixed an issue with XFS-LVM snapshots, thanks @kakoskin1
+* Updated languages, added Chinese
+* Added a GUI for MSSQL databases, thanks @mnaiman
+* Fixed an issue with metadata being reported as being too large if the blocksize is 1mb or or more
+* Fixed escaping exported commandline for Windows
+* Fixes to the UI, thanks @agrajaghh
+
+2016-11-03 - 2.0.1.31_canary_2016-11-03
+==========
+* Fixed autoupdater choosing old update if the base version was replaced
+* Improved the UI for adding a backup, thanks @agrajaghh
+* Added MSSQL to potential backup targets, thanks @mnaiman
+
+2016-11-03 - 2.0.1.30_experimental_2016-11-03
+==========
+* Experimental release; includes all canary changes
+* Updated translations
+* Rebuilt UnixSupport to fix OSX metadata issues
+
+2016-10-27 - 2.0.1.29_canary_2016-10-27
+==========
+* Better support for LVM snapshots, thanks @a1ezzz
+* Fixed additional Debian dependencies, thanks @a1ezzz
+* Additional translation files, Spanish and French
+* Improved HyperV support from CLI and UI, thanks @mnaiman and @agrajaghh
+* Fixed a bug with log-spam from Windows Service, thanks @mnaiman
+* Fixed issue with backup metadata and user that do not exist locally, thanks @gerco
+* Improved screen reading support
+* Fixed OSX icon on dark statusbar
+* Fixed crashes on Linux related to icon format
+* Updated GTK support and switched to SVG icons
+
+2016-10-19
+==========
+* Some additions to the translation system
+* Fixed setting current working dir, thanks @mnaiman
+* Fixed an issue where deleting a backup would not work
+* Updated the throttle computation algorithm
+* Suppressing the "No LSB modules found" error message on Ubuntu
+* Added support for metadata larger than 100kb
+* NOTE: The large metadata support changes the remote file format for all newly written files
+* Added support for HyperV on CLI and in the UI, thanks @mnaiman and @agrajaghh
+* Fixed an issue with the Debian package requiring AlphaVSS.Common.dll when performing LVM snapshots
+* Fixed an issue with Amazon Cloud Drive, thanks @AndersGron
+* Fixed an incorrect warning when using the commandline and GPG
+
+2016-10-14
+==========
+* Work on the translation system, thanks @agrajaghh
+* Added tray-icon context menu icons, thanks @agrajaghh
+* Added support for "caffeinate" on OSX to prevent sleep during backups
+* Work on Hyper-V support, thanks @mnaiman
+* Fixed an issue with Windows service running from the wrong start folder
+* Changed dependencies in packages to require Mono 3.0
+* Added a new delete dialog to assist in deleting the local database and optionally the remote data
+* UI tweaks
+* Added validation when saving/importing backups
+* Fixed some issues with choosing the home folder on Windows
+
+2016-09-29
+==========
+* Updated help file for commandline
+* Fixed a problem with showing progress / crashing UI
+* Support for localization
+* Added messages in the log when finishing an operation
+* Added log message after starting the webserver
+* Support for the --asynchronous-upload-folder setting
+* Added a dialog in the UI when clicking Run and the server is paused
+* Improved formating of the logged result message
+* Updated bundled GPG for Windows
+
+2016-09-26
+==========
+* Fixed some issues in commandline help (thanks @agrajaghh)
+* Added support for backing up HyperV machines (thanks @GNicho)
+* Fixed showing backend statistics when --no-remote-verification is specified
+* Fixed global options not being applied
+
+2016-09-21
+==========
+* Change default TrayIcon on OSX to work on 32bit Mono
+* Added localization support calls to all strings in the UI
+
+2016-09-16
+==========
+* Fixed a restore issue from a partially reconstructed database
+* Implemented Auhtenticode signing for all executables and libraries
+* Implemented Authenticode signing for Windows MSI files
+* Implmented Codesign for OSX pkg and dmg files
+* Updated Mono check for existing certificates, to avoid showing mozroots message
+* Added support for installing Duplicati.WindowsService.exe as a service from the commandline
+
+2016-09-12
+==========
+* Fixed a problem with restoring from the UI, thanks @4m1g0
+
+2016-09-09
+==========
+* Fixes to the Dropbox backend
+* Fixed restore of files/folders with semicolon and plus characters from the UI
+* Added visual feedback when clicking the restore button
+* Added assembly redirects to solve issues with loading SharpAESCrypt and Mega backend
+* Changed the label for dblocksize in the UI
+
+2016-09-01
+==========
+* Fixed VSS based backups not working after 2.0.1.17
+* Prevent including temporary files in verification file, thanks @mnaiman
+* Added host-key verification for SSH connections, thanks @mnaiman
+
+2016-08-27
+==========
+* Fixed issue with files not being listed on Windows (AlphaFS and AlphaVSS issue)
+* Updated B2 API URL
+* Added compact command to WebUI
+
+2016-08-10
+==========
+* OneDrive for Business now uploads files in chunks to prevent timeout, thanks @ReneHezer
+* Prevent using both --keep-version and --keep-time to avoid confusion
+* Fixed a number of usability issues with the WebUI
+* Fixed encoding of special characters for Amazon Cloud Drive, thanks @Xelio
+* Fixed an issue with the recovery tool not respecting the restore folder target, thanks @mnaiman
+* Fixed issues when including the "home" folder on Windows
+* Fixed expanding environment variables and special folder names for filters
+* Changed displaying the dates in the WebUI with the browser locale
+* Added option to re-compress and re-encrypt from the recovery tool, thanks @mnaiman
+* Updated AWS S3 library to latests version
+* Added option to create an un-priviledged S3 user via IAM, if the current user has permissions
+* Fixed an issue with the scheduler that cause high CPU usage for invalid schedules
+* Fixed an issue with the WebUI forgetting SSL settings in some cases
+* Upgraded support for sending email to use a new library with proper SSL support, thanks @mnaiman
+* Fixed spurious failures in SSH connections, caused by leaking open connections, thanks @mnaiman
+* Fixed a Mono dependency in the Debian package that has been renamed
+* Added a DropBox backend, thanks @wvc
+* Added option to serve the WebUI with an SSL certificate, thanks @mnaiman
+* Improments to the recovery tool, thanks @mnaiman
+* Fixed an issue where deleting a backup and creating a new could cause data to be pre-set from the delete backup on the new, thanks @4m1g0
+* Fixed an issue with LVM not working on newer versions of Ubuntu
+* Fixed an issue where Mono could not be located by the OSX app bundle
+* Fixes to WebUI layout, thansk @Vaporizer8
+
 2016-05-14
 ==========
 * Fixes for UI on Safari, thanks @alexfran
@@ -176,246 +522,3 @@
 * Fixed an issue with compacting that would cause the database to require a repair if the compacting was interrupted
 * Added mentions of the mozroots utility on Linux in various places
 * Added the storage-class option to S3
-
-2015-09-15
-==========
-* Improved use of non-default --oauth-url
-* Bugfixes to the REST API
-* Improved checks when repairing the database
-* Improved handling of tmpdir
-* Improved handling the tilde charater in input paths
-* Fixed a bug with relative paths and the recovery tool
-* Improved handling of RESULT template item in email templates
-* Fixed multiple locations where the system calendar was affecting the date format
-* Added more system info, and a system-info CLI command
-* Added a --force-locale option to force another locale
-* Fixed an issue with restoring, which would give "No filesets found on remote target"
-
-2015-08-24
-==========
-* Fixes to improve the use of the OAuth handler
-* Added a REST API
-* Changed access mode when reading files to not prevent concurrent write access
-* Added a recovery tool as a slower, but more robust restore method
-* Fixed an issue with recreating a partial database that would record missing file sizes in the database.
-* Fixed an issue where a recreated database would miss some files and repair for an extensive period of time.
-* Fixed an issue where repair would fail if the files were decrypted
-
-2015-07-02
-==========
-* Added handling for WebDAV timeouts
-* Updated list of compressed file extensions
-* Improved speed of searching without a local database
-* Improved speed of restore without a local database
-* Improved Web UI
-* Fixed issues with loading SQLite on newer versions of Mono
-* Added status code to email and XMPP messages
-* Fixed an issue with non-ascii filenames
-* Fixed an issue with crashes caused by incomplete remote file data
-* Added Google Drive backend and removed Google Docs backend
-* Added BITS transfer of large files to OneDrive
-* Added Google Cloud Storage backend
-* Added an OpenStack backend
-* Added HubiC backend
-
-2015-03-07
-==========
-* Fixed an issue with file-length not being set correctly when restoring into an existing file
-* Fixed an issue where metadata was attempted applied before the file was created
-* Fixed an issue where repair failed
-* Now suppressing error messages about extended attributes not being supported on Linux
-* Fixed reading metadata for long paths on Windows
-* Fixed an issue where the Zip compression did not honor the compressed extensions exclusion list
-* Updated 7z to support the --7z-compression-level option
-* Fixed some issues where options and filters were displayed incorrectly in IE and Firefox
-* Fixed an issue where filters were not exported to the commandline
-* Added paging to OneDrive file-lists so large OneDrive folders can now be listed
-* Fixed an issue with constant reloading due to a missing XSRF token
-
-2015-02-26
-==========
-* Added XSRF protection
-
-2015-02-15
-==========
-* Fixed an issue with many warnings
-* Fixed an issue where new backups were incorrectly saved
-* Added automatic log purging
-
-2015-02-04
-==========
-* Change the scanning method to look at the current timestamp instead of the last scantime
-* Added a delay for deleting partial remote files to work around a strange Apache bug
-* Removed .pdf from the list of compressed extensions
-* Various fixes for storing/restoring metadata
-* Fixed the errorlevel/exit code for restore with warnings
-* Exposed the --no-local-blocks option to release builds
-* Added a --full-block-verification option to help trace the cause of incorrect blocks
-* Added a new consistency check for missing BlocklistHash entries
-* Added a new repair method for recovering from missing BlocklistHash entries
-* Fixed an issue when multiple source folders resolves to the same path
-* Added control files to synthetic filelist uploads
-
-2015-01-19
-==========
-* Fixed an issue with multiple file prefixes
-* Change the UI to simplify restoring permissions
-* Updated AWSSDK and added the dinCloud provider
-* Fixed an issue where interrupted upload requires a repair
-
-2015-01-05
-==========
-* Added option to avoid verifying restored files
-* Various fixes to prevent broken databases and remote files during interrupted backups
-* Improved the use of uploaded files after an interrupted backup
-* Fixed the throttle-upload and throttle-download options
-* Improved robustness for uses with no remote backend verification
-* Improved recreate database for setups with no dindex files
-* Added automatic generation of missing dindex files
-* Reduced attempts to delete non-existing files
-* Added a checkbox to control restore of permissions in the GUI
-
-2014-12-01
-==========
-* Improved metadata collection to include more timestamps and permissions
-* Implemented metadata restore
-* Fixed an issue with interrupted backups attempting to delete a non-existing file
-* Fixed a unique constraint violation on repair
-* Improved the filter rules to prevent including empty folders
-* Fixed an issue where a restore would create empty folders
-
-2014-11-11
-==========
-* Fixed another broken SQL
-* Reduced memory allocations
-
-2014-11-06
-==========
-* Fixed a broken SQL
-
-2014-10-31
-==========
-* Fixed the display of restore times so it no longer shows todays backups as last week
-* Updated the login page with something fancier, thanks to @sfahrenholz!
-* Improved handling of files and folders with no date information
-* Fixed a few bugs related to storing metadata
-* Added some auto-healing routines to the repair command
-* Added some better error messages with correction suggestions
-* Improved the speed of backups and restores by a factor of 30
-* Default is now no in-memory lookups with same speed and lower memory footprint
-
-
-2014-10-14
-==========
-* Improved symlink handling
-* Fixed a warning with --send-mail-level
-* Improved support for portable installs
-* Fixed the issue with failed backups due to file://
-* Fixed a problem with recreating the local database
-* Adjusted display to use fixed header and footer
-
-
-2014-08-26
-==========
-* Added an updater tool to allow manual update control for the commandline interface
-* Disabled automatic update for the commandline
-* Fixed a bunch of typos
-* Fixed an issue with temporary files being deleted
-* Improved the tracking of remote files
-* Improved speed of listing the backup fileset times in the UI
-* Added a commandline method for listing what backups depends on a particular remote file
-* Fixed problem with clearing options on server startup
-* Fixed an issue where the S3 dialog did not generate valid URLs
-* Improved filter performance
-* Fixed an issue where the S3 server list occasionally did not drop down
-* Simplified filter logic
-* Implemented direct restore
-* Fixed generating invalid commandline commands on Windows
-* Improved the repair and verify routines for certain errors
-* Fixed handling file:// prefixed paths
-* Added progress indicator for restore and verify
-
-2014-08-16
-==========
-* Fixed the copyright statement on all assemblies, this should fix some cases where Antivirus would flag it
-* Fixed a problem with login when using a password to protect the service
-* Fixed handling extended/accented character in source and target input
-* Fixed an issue on older Mono installs where System.Numerics.BigInteger.Parse is missing from the framework (updated to Json.Net 6.0r4 .Net3.5 version)
-* Better display of advanced options and filters
-* Improved the way times are displayed in the restore dialog
-* Added saving the commandline option for server listen interface
-* Added a dialog for setting application-wide options
-* Improved the index handler to allow for new UI versions in subfolders
-* Added tooltips to many common options
-* Added options to specify retention without needing to use the advanced options
-
-2014-08-12
-==========
-* Fixed a crash on Windows after running a backup
-* Improved logging in the live-log area
-* Improved execution time when counting modified files
-
-2014-08-11
-==========
-* Fixed a stuck progress issue on Windows
-
-2014-08-10
-==========
-* Now stores app crash exceptions in a file
-* Added support for local stored update packages
-* Added Jabber (XMPP) notification support
-* Implemented method to delete the local db
-* Fixed problem where restore always used newest version
-
-2014-08-07
-==========
-* Azure Blob Storage support, thanks Don Lockhart!
-* Changed the lock dir name, so 2.0 can co-exist with 1.3.x
-* Added a live log monitor
-* Added import/export jobs to file and commandline
-* Implemented a notification system
-* Added desktop notifications (not working on OSX)
-* Changed so the customized folder is read from the base install dir instead of the update dir
-* Implemented the method for using the bug report creation feature
-* Added automatic removal of leftover temporary files
-* Added acknowledgements to the about dialog
-
-2014-07-25
-==========
-* Filters can now use Windows style environment variables,
-  e.g. %APPDATA%
-* AlphaVSS was updated to avoid crash
-* Fixed layout issues with Firefox and others.
-* Fixed an issue with UrlEncode and UrlDecode in HttpServer
-* Added a service.exe which runs the server.exe
-* Fixed some issues with OneDrive
-* Fixed that the cancel button changes text
-* Added ssl-certificate options to the URI dialog
-
-2014-07-19
-==========
-* Changed status from "Experimental" to "preview"
-* Added filters in source dialog
-* Changed location of duplicati-server.sqlite to 
-  ~/.config/Duplicati/Duplicati-server.sqlite resp. 
-  %APPDATA%\Duplicati\Duplicati-server.sqlite
-* Fixed some issues with auto-update (wrong webroot, 
-  tracking ID, recurring popups, ...)
-* Recompiled http server dll
-* Added connector for OneDrive
-* Connected with OneDrive auth-token service
-* Redesigned the target dropdown a bit
-* Advanced options can be deleted again
-* Problem with looooong paths fixed
-
-
-2014-07-09
-==========
-* Added automatic updater
-* Added timestamps to logfiles
-* Fixed additional / in connection URI
-* Reworked progress bar
-* Reworked "General" dialog
-* Reworked tray icon for OSX
-* Added support for "remote login". Start server or 
-  tray icon with --webservice-password=<password>

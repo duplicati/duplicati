@@ -21,15 +21,15 @@ using System.IO;
 
 namespace Duplicati.Library.Utility
 {
-	/// <summary>
-	/// Represents an enumerable list that can be appended to.
-	/// If the use of the list exceeds the threshold, the list will
-	/// switch from memory based to storage to file based storage.
-	/// Typical usage of this list is for storing log messages,
-	/// that occasionally grows and produces out-of-memory errors
-	/// </summary>
-	public abstract class FileBackedList<T> : IEnumerable<T>, IDisposable
-	{
+    /// <summary>
+    /// Represents an enumerable list that can be appended to.
+    /// If the use of the list exceeds the threshold, the list will
+    /// switch from memory based to storage to file based storage.
+    /// Typical usage of this list is for storing log messages,
+    /// that occasionally grows and produces out-of-memory errors
+    /// </summary>
+    public abstract class FileBackedList<T> : IEnumerable<T>, IDisposable
+    {
         private class StreamEnumerator : IEnumerator<T>, System.Collections.IEnumerator
         {
             private Stream m_stream;
@@ -51,13 +51,13 @@ namespace Duplicati.Library.Utility
             }
 
             public T Current
-			{
-				get
-				{
-					if (m_expectedCount != m_parent.Count)
-						throw new Exception("Collection modified");
+            {
+                get
+                {
+                    if (m_expectedCount != m_parent.Count)
+                        throw new Exception("Collection modified");
                     return m_current;
-				}
+                }
             }
 
             public void Dispose()
@@ -77,17 +77,17 @@ namespace Duplicati.Library.Utility
                     m_current = default(T);
                     return false;
                 }
-					
-				if (m_expectedCount != m_parent.Count)
-					throw new Exception("Collection modified");
-					
-				m_stream.Position = m_position;
-				if (m_stream.Read(m_sizebuffer, 0, m_sizebuffer.Length) != m_sizebuffer.Length)
+                    
+                if (m_expectedCount != m_parent.Count)
+                    throw new Exception("Collection modified");
+                    
+                m_stream.Position = m_position;
+                if (m_stream.Read(m_sizebuffer, 0, m_sizebuffer.Length) != m_sizebuffer.Length)
                     throw new IOException("Unexpected EOS");
                 var len = BitConverter.ToInt64(m_sizebuffer, 0);
                 m_current = m_deserialize(m_stream, len);
-				m_position += m_sizebuffer.Length + len;
-				return true;
+                m_position += m_sizebuffer.Length + len;
+                return true;
             }
 
             public void Reset()
@@ -101,17 +101,17 @@ namespace Duplicati.Library.Utility
         private Stream m_stream;
         private long m_count;
                 
-		public bool IsFileBacked { get { return !(m_stream is MemoryStream); } }
-		public long SwitchToFileLimit { get; set; }
-		
-		public FileBackedList()
-		{
+        public bool IsFileBacked { get { return !(m_stream is MemoryStream); } }
+        public long SwitchToFileLimit { get; set; }
+        
+        public FileBackedList()
+        {
             m_file = null;
             m_stream = new MemoryStream();
             m_count = 0;
                         
             this.SwitchToFileLimit = 2 * 1024 * 1024;
-		}
+        }
 
         public void Add(T value)
         {
@@ -126,9 +126,13 @@ namespace Duplicati.Library.Utility
                     oldstream.CopyTo(m_stream);
                 }
             }
-            
-        	m_stream.Write(BitConverter.GetBytes(size), 0, 8);
-        	Serialize(value, m_stream);
+
+            m_stream.Position = m_stream.Length;
+            m_stream.Write(BitConverter.GetBytes(size), 0, 8);
+            var pos = m_stream.Position;
+            Serialize(value, m_stream);
+            if (m_stream.Position - pos != size)
+                throw new Exception(string.Format("Stream serializer wrote a different set of bytes than it was supposed to. Expected {0} bytes, but wrote {1} bytes", m_stream.Position - pos, size));
 
             m_count++;
         }
@@ -169,45 +173,45 @@ namespace Duplicati.Library.Utility
         
         #region IEnumerable implementation
 
-		public IEnumerator<T> GetEnumerator()
-		{
+        public IEnumerator<T> GetEnumerator()
+        {
             return new StreamEnumerator(m_stream, this.Deserialize, this);
-		}
+        }
 
-		#endregion
+        #endregion
 
-		#region IEnumerable implementation
+        #region IEnumerable implementation
 
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-		{
-			return this.GetEnumerator();
-		}
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
 
-		#endregion
-	}
-	
-	/// <summary>
-	/// Represents an enumerable list that can be appended to.
-	/// If the use of the list exceeds the threshold, the list will
-	/// switch from memory based to storage to file based storage.
-	/// Typical usage of this list is for storing log messages,
-	/// that occasionally grows and produces out-of-memory errors
-	/// </summary>
-	public class FileBackedStringList : FileBackedList<string>
-	{
+        #endregion
+    }
+    
+    /// <summary>
+    /// Represents an enumerable list that can be appended to.
+    /// If the use of the list exceeds the threshold, the list will
+    /// switch from memory based to storage to file based storage.
+    /// Typical usage of this list is for storing log messages,
+    /// that occasionally grows and produces out-of-memory errors
+    /// </summary>
+    public class FileBackedStringList : FileBackedList<string>
+    {
         private byte[] m_buf;
         public readonly System.Text.Encoding m_encoding;
         private const int MIN_BUF_SIZE = 1024;
         private const int BUFFER_OVERSHOOT = 32;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Duplicati.Library.Utility.FileBackedStringList"/> class.
-		/// </summary>
-		/// <param name="encoding">The text encoding to use, defaults to UTF8</param>
-		public FileBackedStringList(System.Text.Encoding encoding = null)
-		{
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.FileBackedStringList"/> class.
+        /// </summary>
+        /// <param name="encoding">The text encoding to use, defaults to UTF8</param>
+        public FileBackedStringList(System.Text.Encoding encoding = null)
+        {
             m_encoding = encoding ?? System.Text.Encoding.UTF8;
-		}
+        }
                             
         protected override long GetSize(string value)
         {
@@ -231,6 +235,6 @@ namespace Duplicati.Library.Utility
             return (m_encoding ?? System.Text.Encoding.UTF8).GetString(m_buf, 0, (int)length);
         }            
             
-	}
+    }
 }
 

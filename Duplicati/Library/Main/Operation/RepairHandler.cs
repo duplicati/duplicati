@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 
@@ -20,7 +21,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
             
             if (options.AllowPassphraseChange)
-                throw new Exception(Strings.Common.PassphraseChangeUnsupported);
+                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported);
         }
         
         public void Run(Library.Utility.IFilter filter = null)
@@ -29,6 +30,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 RunRepairLocal(filter);
                 RunRepairCommon();
+                m_result.EndTime = DateTime.UtcNow;
                 return;
             }
 
@@ -69,6 +71,8 @@ namespace Duplicati.Library.Main.Operation
                 RunRepairRemote();
             }
 
+            m_result.EndTime = DateTime.UtcNow;
+
         }
         
         public void RunRepairLocal(Library.Utility.IFilter filter = null)
@@ -90,7 +94,7 @@ namespace Duplicati.Library.Main.Operation
         public void RunRepairRemote()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
@@ -101,19 +105,22 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
 
-                if (db.RepairInProgress)
-                    throw new Exception("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                if (db.PartiallyRecreated)
+                    throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
 
-                var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter);
+                if (db.RepairInProgress)
+                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+
+                var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter, null);
                 var buffer = new byte[m_options.Blocksize];
                 var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                 var hashsize = blockhasher.HashSize / 8;
 
                 if (blockhasher == null)
-                    throw new Exception(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)
-                    throw new Exception(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
-				
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
 
@@ -122,13 +129,13 @@ namespace Duplicati.Library.Main.Operation
                     if (tp.ParsedVolumes.Count() == 0 && tp.OtherVolumes.Count() > 0)
                     {
                         if (tp.BackupPrefixes.Length == 1)
-                            throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
                         else
-                            throw new Exception(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
                     }
                     else if (tp.ParsedVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
                     {
-                        throw new Exception(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()));
+                        throw new UserInformationException(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()));
                     }
                 }
 
@@ -253,7 +260,7 @@ namespace Duplicati.Library.Main.Operation
                             if (ex is System.Threading.ThreadAbortException)
                                 throw;
                         }
-							
+                            
                     foreach(var n in tp.MissingVolumes)
                     {
                         IDisposable newEntry = null;
@@ -275,9 +282,9 @@ namespace Duplicati.Library.Main.Operation
                                 var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
-								
+                                
                                 db.WriteFileset(w, null, filesetId);
-	
+    
                                 w.Close();
                                 if (m_options.Dryrun)
                                     m_result.AddDryrunMessage(string.Format("would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
@@ -294,15 +301,15 @@ namespace Duplicati.Library.Main.Operation
                                 w.SetRemoteFilename(n.Name);
 
                                 var h = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-								
+                                
                                 foreach(var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
-                                {								
+                                {                               
                                     w.StartVolume(blockvolume.Name);
                                     var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
-									
+                                    
                                     foreach(var b in db.GetBlocks(volumeid))
                                         w.AddBlock(b.Hash, b.Size);
-										
+                                        
                                     w.FinishVolume(blockvolume.Hash, blockvolume.Size);
                                     
                                     if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
@@ -315,9 +322,9 @@ namespace Duplicati.Library.Main.Operation
                                             w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
                                         }
                                 }
-								
+                                
                                 w.Close();
-								
+                                
                                 if (m_options.Dryrun)
                                     m_result.AddDryrunMessage(string.Format("would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
                                 else
@@ -392,16 +399,21 @@ namespace Duplicati.Library.Main.Operation
                                     var missingBlocks = mbl.GetMissingBlocks().Count();
                                     if (missingBlocks > 0)
                                     {                                    
-                                        //TODO: How do we handle this situation?
                                         m_result.AddMessage(string.Format("Repair cannot acquire {0} required blocks for volume {1}, which are required by the following filesets: ", missingBlocks, n.Name));
                                         foreach(var f in mbl.GetFilesetsUsingMissingBlocks())
                                             m_result.AddMessage(f.Name);
-                                        
+
+                                        var recoverymsg = string.Format("If you want to continue working with the database, you can use the \"{0}\" and \"{1}\" commands to purge the missing data from the database and the remote storage.", "list-broken-files", "purge-broken-files");
+
                                         if (!m_options.Dryrun)
                                         {
                                             m_result.AddMessage("This may be fixed by deleting the filesets and running repair again");
-                                            
-                                            throw new Exception(string.Format("Repair not possible, missing {0} blocks!!!", missingBlocks));
+
+                                            throw new UserInformationException(string.Format("Repair not possible, missing {0} blocks.\n" + recoverymsg, missingBlocks));
+                                        }
+                                        else
+                                        {
+                                            m_result.AddMessage(recoverymsg);
                                         }
                                     }
                                     else
@@ -436,16 +448,16 @@ namespace Duplicati.Library.Main.Operation
                     m_result.AddMessage("Destination and database are synchronized, not making any changes");
                 }
 
-                m_result.OperationProgressUpdater.UpdateProgress(1);				
-				backend.WaitForComplete(db, null);
+                m_result.OperationProgressUpdater.UpdateProgress(1);                
+                backend.WaitForComplete(db, null);
                 db.WriteResults();
-			}
+            }
         }
 
         public void RunRepairCommon()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
@@ -455,7 +467,7 @@ namespace Duplicati.Library.Main.Operation
 
                 Utility.UpdateOptionsFromDb(db, m_options);
 
-                if (db.RepairInProgress)
+                if (db.RepairInProgress || db.PartiallyRecreated)
                     m_result.AddWarning("The database is marked as \"in-progress\" and may be incomplete.", null);
 
                 db.FixDuplicateMetahash();

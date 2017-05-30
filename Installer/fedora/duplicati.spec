@@ -45,10 +45,10 @@ BuildRequires:  dos2unix
 
 Requires:	desktop-file-utils
 Requires:	bash
-Requires:	sqlite
+Requires:	sqlite >= 3.6.12
 Requires:	mono(appindicator-sharp)
 Requires:	libappindicator
-Requires:	mono-core
+Requires:	mono-core >= 3.0
 Requires:	mono-data-sqlite
 Requires:	mono(System)
 Requires:	mono(System.Configuration)
@@ -94,7 +94,6 @@ dos2unix Tools/Verification/DuplicatiVerify.py
 %patch1 -p1
 
 # removing own duplicati binaries:
-rm Duplicati/Localization/LocalizationTool.exe
 rm -f Duplicati/Localization/Duplicati.Library.Utility.dll
 
 # platform settings:
@@ -116,12 +115,14 @@ find -type f -name "*dll" -or -name "*DLL" -or -name "*exe"
 
 %build
 
+nuget restore Duplicati.sln
+
 xbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
 mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=%{_buildversion}
 
 xbuild /property:Configuration=Release thirdparty/UnixSupport/UnixSupport.csproj
 cp thirdparty/UnixSupport/bin/Release/UnixSupport.dll thirdparty/UnixSupport/UnixSupport.dll
-nuget restore Duplicati.sln
+
 xbuild /property:Configuration=Release Duplicati.sln
 
 # xbuild BuildTools/LocalizationTool/LocalizationTool.sln
@@ -194,7 +195,7 @@ if [ -f "oem-update-installid.txt" ]; then install -p -m 644 "oem-update-install
 desktop-file-install Installer/debian/%{namer}.desktop 
 
 mv Tools/Verification/DuplicatiVerify.py Tools/
-rmdir Tools/Verification/
+rm -rf Tools/Verification/
 mv Duplicati/Library/Snapshots/lvm-scripts/remove-lvm-snapshot.sh Tools/
 mv Duplicati/Library/Snapshots/lvm-scripts/create-lvm-snapshot.sh Tools/
 mv Duplicati/Library/Snapshots/lvm-scripts/find-volume.sh Tools/
@@ -222,6 +223,9 @@ mv Duplicati/Library/Modules/Builtin/run-script-example.sh Tools/
 
 
 %changelog
+* Fri Jan 13 2017 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20170113.git
+- Fixed NuGet restore
+
 * Sat Apr 23 2016 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20160423.git
 - Updated list of dependencies
 

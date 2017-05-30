@@ -33,8 +33,9 @@ namespace Duplicati.WindowsService
 
             m_eventLog.Source = LOG_SOURCE;
             m_eventLog.Log = LOG_NAME;
-            m_cmdargs = args;
-            m_verbose_messages = m_cmdargs != null && m_cmdargs.Where(x => string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase)).Any();
+            m_verbose_messages = args != null && args.Any(x => string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase));
+            m_cmdargs = (args ?? new string[0]).Where(x => !string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase)).ToArray();
+
         }
 
         protected override void OnStart(string[] args)
@@ -54,6 +55,8 @@ namespace Duplicati.WindowsService
 
         private void DoStart(string[] args)
         {
+            var startargs = (args ?? new string[0]).Union(m_cmdargs ?? new string[0]).ToArray();
+
             if (m_verbose_messages)
                 m_eventLog.WriteEntry("Starting...");
             lock(m_lock)
@@ -64,7 +67,7 @@ namespace Duplicati.WindowsService
                     var sv = new ServiceStatus()
                     {
                         dwCurrentState = ServiceState.SERVICE_START_PENDING,
-                        dwWaitHint = (int)TimeSpan.FromSeconds(30).TotalMilliseconds
+                        dwWaitHint = (uint)TimeSpan.FromSeconds(30).TotalMilliseconds
                     };
                     SetServiceStatus(this.ServiceHandle, ref sv);
 
@@ -72,7 +75,7 @@ namespace Duplicati.WindowsService
                         m_eventLog.WriteEntry("Starting runner...");
 
                     m_runner = new Runner(
-                        m_cmdargs,
+                        startargs,
                         () =>
                         {
                             if (m_verbose_messages)
@@ -117,7 +120,7 @@ namespace Duplicati.WindowsService
                     var sv = new ServiceStatus()
                     {
                         dwCurrentState = ServiceState.SERVICE_STOP_PENDING,
-                        dwWaitHint = (int)TimeSpan.FromSeconds(5).TotalMilliseconds
+                        dwWaitHint = (uint)TimeSpan.FromSeconds(5).TotalMilliseconds
                     };
                     SetServiceStatus(this.ServiceHandle, ref sv);
 
@@ -128,7 +131,7 @@ namespace Duplicati.WindowsService
 
         }
 
-        private enum ServiceState
+        private enum ServiceState : uint
         {
             SERVICE_STOPPED = 0x00000001,
             SERVICE_START_PENDING = 0x00000002,
@@ -142,13 +145,13 @@ namespace Duplicati.WindowsService
         [StructLayout(LayoutKind.Sequential)]
         private struct ServiceStatus
         {
-            public long dwServiceType;
+            public uint dwServiceType;
             public ServiceState dwCurrentState;
-            public long dwControlsAccepted;
-            public long dwWin32ExitCode;
-            public long dwServiceSpecificExitCode;
-            public long dwCheckPoint;
-            public long dwWaitHint;
+            public uint dwControlsAccepted;
+            public uint dwWin32ExitCode;
+            public uint dwServiceSpecificExitCode;
+            public uint dwCheckPoint;
+            public uint dwWaitHint;
         };
 
         [DllImport("advapi32.dll", SetLastError = true)]

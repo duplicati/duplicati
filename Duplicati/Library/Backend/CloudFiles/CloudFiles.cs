@@ -72,9 +72,9 @@ namespace Duplicati.Library.Backend
                 m_password = uri.Password;
 
             if (string.IsNullOrEmpty(m_username))
-                throw new Exception(Strings.CloudFiles.NoUserIDError);
+                throw new UserInformationException(Strings.CloudFiles.NoUserIDError);
             if (string.IsNullOrEmpty(m_password))
-                throw new Exception(Strings.CloudFiles.NoAPIKeyError);
+                throw new UserInformationException(Strings.CloudFiles.NoAPIKeyError);
 
             //Fallback to the previous format
             if (url.Contains(DUMMY_HOSTNAME))
@@ -146,7 +146,7 @@ namespace Duplicati.Library.Backend
                 {
                     var areq = new Utility.AsyncHttpRequest(req);
                     using (var resp = (HttpWebResponse)areq.GetResponse())
-					using (var s = areq.GetResponseStream())
+                    using (var s = areq.GetResponseStream())
                         doc.Load(s);
                 }
                 catch (WebException wex)
@@ -223,7 +223,7 @@ namespace Duplicati.Library.Backend
                     if ((int)resp.StatusCode >= 300)
                         throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError, resp);
                     else
-						using (areq.GetResponseStream())
+                        using (areq.GetResponseStream())
                         { }
                 }
             }
@@ -299,7 +299,7 @@ namespace Duplicati.Library.Backend
 
             var areq = new Utility.AsyncHttpRequest(req);
             using (var resp = areq.GetResponse())
-			using (var s = areq.GetResponseStream())
+            using (var s = areq.GetResponseStream())
             using (var mds = new Utility.MD5CalculatingStream(s))
             {
                 string md5Hash = resp.Headers["ETag"];
@@ -346,8 +346,13 @@ namespace Duplicati.Library.Backend
             {
                 string fileHash = null;
 
+                long streamLen = -1;
+                try { streamLen = stream.Length; }
+                catch {}
+
+
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.IO.Stream s = areq.GetRequestStream())
+                using (System.IO.Stream s = areq.GetRequestStream(streamLen))
                 using (var mds = new Utility.MD5CalculatingStream(s))
                 {
                     Utility.Utility.CopyStream(stream, mds, true, m_copybuffer);

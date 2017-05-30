@@ -1,0 +1,14 @@
+<svg id="tray_menu_icons" data-name="tray menu icons" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #65b1dd;
+      }
+    </style>
+  </defs>
+  <title>tray context menu icons</title>
+  <g id="pause_Kopie" data-name="pause Kopie">
+    <rect class="cls-1" x="4" y="2" width="3" height="12"/>
+    <rect class="cls-1" x="9" y="2" width="3" height="12"/>
+  </g>
+</svg>

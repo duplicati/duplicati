@@ -55,13 +55,9 @@ namespace Duplicati.Service
             var self_exec = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             var exec = System.IO.Path.Combine(path, "Duplicati.Server.exe");
-            var cmdargs = Environment.CommandLine + " --ping-pong-keepalive=true";
+            var cmdargs = "--ping-pong-keepalive=true";
             if (m_cmdargs != null && m_cmdargs.Length > 0)
-                cmdargs = cmdargs + string.Join(" ", m_cmdargs);
-
-            if (cmdargs.StartsWith(self_exec))
-                cmdargs = cmdargs.Substring(self_exec.Length);
-
+                cmdargs = cmdargs + " " + string.Join(" ", m_cmdargs);
 
             var firstRun = true;
             var startAttempts = 0;
@@ -87,6 +83,7 @@ namespace Duplicati.Service
                         pr.UseShellExecute = false;
                         pr.RedirectStandardInput = true;
                         pr.RedirectStandardOutput = true;
+                        pr.WorkingDirectory = path;
 
                         if (!m_terminate)
                             m_process = System.Diagnostics.Process.Start(pr);

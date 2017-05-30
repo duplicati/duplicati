@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
+using Newtonsoft.Json.Linq;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -47,7 +49,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 var rawlist = backend.List();
 
-                Console.WriteLine("Found {0} files", rawlist.Count);
+                Console.WriteLine("Found {0} files at remote storage", rawlist.Count);
 
                 var i = 0;
                 var downloaded = 0;
@@ -85,14 +87,29 @@ namespace Duplicati.CommandLine.RecoveryTool
                     return 100;
                 }
 
-                foreach (var entry in remotefiles)
+                bool reencrypt = Library.Utility.Utility.ParseBoolOption(options, "reencrypt");
+                bool reupload = Library.Utility.Utility.ParseBoolOption(options, "reupload");
+
+                // Needs order (Files or Blocks) and Indexes as last because indexes content will be adjusted based on recompressed blocks
+                var files = remotefiles.Where(a => a.FileType == RemoteVolumeType.Files).ToArray();
+                var blocks = remotefiles.Where(a => a.FileType == RemoteVolumeType.Blocks).ToArray();
+                var indexes = remotefiles.Where(a => a.FileType == RemoteVolumeType.Index).ToArray();
+
+                remotefiles = files.Concat(blocks).ToArray().Concat(indexes).ToArray();
+
+                Console.WriteLine("Found {0} files which belongs to backup with prefix {1}", remotefiles.Count(), m_Options.Prefix);
+
+                foreach (var remoteFile in remotefiles)
                 {
                     try
                     {
-                        Console.Write("{0}: {1}", i, entry.File.Name);
+                        Console.Write("{0}/{1}: {2}", ++i, remotefiles.Count(), remoteFile.File.Name);
 
-                        var local = Path.Combine(targetfolder, entry.File.Name);
-                        if (entry.EncryptionModule != null)
+                        var localFileSource = Path.Combine(targetfolder, remoteFile.File.Name);
+                        string localFileTarget;
+                        string localFileSourceEncryption = "";
+
+                        if (remoteFile.EncryptionModule != null)
                         {
                             if (string.IsNullOrWhiteSpace(m_Options.Passphrase))
                             {
@@ -101,100 +118,142 @@ namespace Duplicati.CommandLine.RecoveryTool
                                 continue;
                             }
 
-                            local = local.Substring(0, local.Length - entry.EncryptionModule.Length - 1);
+                            using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(remoteFile.EncryptionModule, m_Options.Passphrase, options))
+                                localFileSourceEncryption = m.FilenameExtension;
+
+                            localFileSource = localFileSource.Substring(0, localFileSource.Length - localFileSourceEncryption.Length - 1);
                         }
 
-                        if (entry.CompressionModule == target_compr_module)
-                        {
-                            Console.WriteLine(" - compression types are same");
-                            continue;
-                        }
-
-                        string localNew;
-
-                        if (entry.CompressionModule != null)
-                        {
-                            localNew = local.Substring(0, local.Length - entry.CompressionModule.Length - 1) + "." + target_compr_module;
-
-                            if (File.Exists(localNew))
-                            {
-                                Console.WriteLine(" - target file already exist");
-                                continue;
-                            }
-                        }
+                        if (remoteFile.CompressionModule != null)
+                            localFileTarget = localFileSource.Substring(0, localFileSource.Length - remoteFile.CompressionModule.Length - 1) + "." + target_compr_module;
                         else
                         {
                             Console.WriteLine(" - cannot detect compression type");
                             continue;
+                        }                        
+
+                        if ((!reencrypt && File.Exists(localFileTarget)) || (reencrypt && File.Exists(localFileTarget + "." + localFileSourceEncryption)))
+                        {
+                            Console.WriteLine(" - target file already exist");
+                            continue;
                         }
 
-                        if (File.Exists(local))
-                            File.Delete(local);
+                        if (File.Exists(localFileSource))
+                            File.Delete(localFileSource);
 
-                        Console.Write(" - downloading ({0})...", Library.Utility.Utility.FormatSizeString(entry.File.Size));
+                        Console.Write(" - downloading ({0})...", Library.Utility.Utility.FormatSizeString(remoteFile.File.Size));
 
-                        using (var tf = new Library.Utility.TempFile())
+                        DateTime originLastWriteTime;
+                        FileInfo destinationFileInfo;
+
+                        using (var tf = new TempFile())
                         {
-                            backend.Get(entry.File.Name, tf);
+                            backend.Get(remoteFile.File.Name, tf);
+                            originLastWriteTime = new FileInfo(tf).LastWriteTime;
                             downloaded++;
 
-                            if (entry.EncryptionModule != null)
+                            if (remoteFile.EncryptionModule != null)
                             {
-                                Console.Write(" - decrypting ...");
-                                using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(entry.EncryptionModule, m_Options.Passphrase, options))
-                                using (var tf2 = new Library.Utility.TempFile())
+                                Console.Write(" decrypting ...");
+                                using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(remoteFile.EncryptionModule, m_Options.Passphrase, options))
+                                using (var tf2 = new TempFile())
                                 {
                                     m.Decrypt(tf, tf2);
-                                    File.Copy(tf2, local);
+                                    File.Copy(tf2, localFileSource);
                                     File.Delete(tf2);
                                 }
                             }
                             else
-                                File.Copy(tf, local);
+                                File.Copy(tf, localFileSource);
 
                             File.Delete(tf);
+                            destinationFileInfo = new FileInfo(localFileSource);
+                            destinationFileInfo.LastWriteTime = originLastWriteTime;
                         }
 
-                        string reupload;
-                        options.TryGetValue("reupload", out reupload);
-
-                        if (entry.CompressionModule != null)
+                        if (remoteFile.CompressionModule != null)
                         {
-                            Console.Write(" - recompressing ...");
+                            Console.Write(" recompressing ...");
 
-                            using (var cmOld = Library.DynamicLoader.CompressionLoader.GetModule(entry.CompressionModule, local, options))
+                            //Recompressing from eg. zip to zip
+                            if (localFileSource == localFileTarget)
                             {
-                                using (var cmNew = Library.DynamicLoader.CompressionLoader.GetModule(target_compr_module, localNew, options))
+                                File.Move(localFileSource, localFileSource + ".same");
+                                localFileSource = localFileSource + ".same";
+                            }
+
+                            using (var cmOld = Library.DynamicLoader.CompressionLoader.GetModule(remoteFile.CompressionModule, localFileSource, options))
+                            using (var cmNew = Library.DynamicLoader.CompressionLoader.GetModule(target_compr_module, localFileTarget, options))
+                                foreach (var cmfile in cmOld.ListFiles(""))
                                 {
-                                    foreach (var cmfile in cmOld.ListFiles(""))
+                                    string cmfileNew = cmfile;
+                                    var cmFileVolume = VolumeBase.ParseFilename(cmfileNew);
+                                                                            
+                                    if (remoteFile.FileType == RemoteVolumeType.Index && cmFileVolume != null && cmFileVolume.FileType == RemoteVolumeType.Blocks)
+                                    {
+                                        // Correct inner filename extension to target compression type
+                                        cmfileNew = cmfileNew.Replace("." + cmFileVolume.CompressionModule, "." + target_compr_module);
+                                        if (!reencrypt)
+                                            cmfileNew = cmfileNew.Replace("." + cmFileVolume.EncryptionModule, "");
+
+                                        //Because compression changes blocks file sizes - needs to be updated
+                                        string textJSON;
                                         using (var sourceStream = cmOld.OpenRead(cmfile))
-                                        using (var cs = cmNew.CreateFile(cmfile, Duplicati.Library.Interface.CompressionHint.Compressible, cmOld.GetLastWriteTime(cmfile)))
+                                        using (var sourceStreamReader = new StreamReader(sourceStream))
+                                        {
+                                            textJSON = sourceStreamReader.ReadToEnd();
+                                            JToken token = JObject.Parse(textJSON);
+                                            var fileInfoBlocks = new FileInfo(Path.Combine(targetfolder, cmfileNew.Replace("vol/", "")));
+                                            var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_Options.FileHashAlgorithm);
+                                            
+                                            using (var fileStream = fileInfoBlocks.Open(FileMode.Open))
+                                            {
+                                                fileStream.Position = 0;
+                                                token["volumehash"] = Convert.ToBase64String(filehasher.ComputeHash(fileStream));
+                                                fileStream.Close();
+                                            }
+
+                                            token["volumesize"] = fileInfoBlocks.Length;
+                                            textJSON = token.ToString();
+                                        }
+                                            
+                                        using (var sourceStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(textJSON)))
+                                        using (var cs = cmNew.CreateFile(cmfileNew, Library.Interface.CompressionHint.Compressible, cmOld.GetLastWriteTime(cmfile)))
                                             Library.Utility.Utility.CopyStream(sourceStream, cs);
+                                    }
+                                    else
+                                    {
+                                        using (var sourceStream = cmOld.OpenRead(cmfile))
+                                        using (var cs = cmNew.CreateFile(cmfileNew, Library.Interface.CompressionHint.Compressible, cmOld.GetLastWriteTime(cmfile)))
+                                            Library.Utility.Utility.CopyStream(sourceStream, cs);
+                                    }
                                 }
-                            }
-
-                            File.Delete(local);
+                              
+                            File.Delete(localFileSource);
+                            destinationFileInfo = new FileInfo(localFileTarget);
+                            destinationFileInfo.LastWriteTime = originLastWriteTime;
                         }
-
-                        string reencrypt;
-                        options.TryGetValue("reencrypt", out reencrypt);
-
-                        if (reencrypt != null && reencrypt == "true" && entry.EncryptionModule != null)
+                        
+                        if (reencrypt && remoteFile.EncryptionModule != null)
                         {
-                            Console.Write(" - reencrypting ...");
-                            using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(entry.EncryptionModule, m_Options.Passphrase, options))
+                            Console.Write(" reencrypting ...");
+                            using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(remoteFile.EncryptionModule, m_Options.Passphrase, options))
                             {
-                                m.Encrypt(localNew, localNew + "." + m.FilenameExtension);
-                                File.Delete(localNew);
-                                localNew = localNew + "." + m.FilenameExtension;
+                                m.Encrypt(localFileTarget, localFileTarget + "." + localFileSourceEncryption);
+                                File.Delete(localFileTarget);
+                                localFileTarget = localFileTarget + "." + localFileSourceEncryption;
                             }
-                        }
 
-                        if (reupload != null && reupload == "true")
+                            destinationFileInfo = new FileInfo(localFileTarget);
+                            destinationFileInfo.LastWriteTime = originLastWriteTime;
+                        }
+                        
+                        if (reupload)
                         {
-                            backend.Put((new FileInfo(localNew)).Name, localNew);
-                            backend.Delete(entry.File.Name);
-                            File.Delete(localNew);
+                            Console.Write(" reuploading ...");
+                            backend.Put((new FileInfo(localFileTarget)).Name, localFileTarget);
+                            backend.Delete(remoteFile.File.Name);
+                            File.Delete(localFileTarget);
                         }
 
                         Console.WriteLine(" done!");
@@ -205,8 +264,17 @@ namespace Duplicati.CommandLine.RecoveryTool
                         Console.WriteLine(" error: {0}", ex.ToString());
                         errors++;
                     }
+                }
 
-                    i++;
+                if (reupload)
+                {
+                    var remoteverificationfileexist = rawlist.Any(x => x.Name == (m_Options.Prefix + "-verification.json"));
+
+                    if (remoteverificationfileexist)
+                    {
+                        Console.WriteLine("Found verification file {0} - deleting", m_Options.Prefix + "-verification.json");
+                        backend.Delete(m_Options.Prefix + "-verification.json");
+                    }
                 }
 
                 if (needspass > 0 && downloaded == 0)
@@ -220,10 +288,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                     Console.WriteLine("Additonally {0} remote files were skipped because of encryption, supply --passphrase to download those");
 
                 if (errors > 0)
+                {
+                    Console.WriteLine("There were errors during recompress of remote backend files!");
                     return 200;
-                else
-                    return 0;
+                }
 
+                return 0;
             }
         }
     }

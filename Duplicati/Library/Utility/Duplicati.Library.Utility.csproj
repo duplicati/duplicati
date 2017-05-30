@@ -17,6 +17,7 @@
     <TargetFrameworkProfile />
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -67,6 +68,7 @@
     <Compile Include="FilterCollector.cs" />
     <Compile Include="HashCalculatingStream.cs" />
     <Compile Include="DirectStreamLink.cs" />
+    <Compile Include="HostKeyException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -17,6 +17,7 @@
     <TargetFrameworkProfile />
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -40,7 +41,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -105,6 +106,11 @@
     <Compile Include="Strings.cs" />
     <Compile Include="Operation\RestoreHandlerMetadataStorage.cs" />
     <Compile Include="Operation\SystemInfoHandler.cs" />
+    <Compile Include="Operation\PurgeFilesHandler.cs" />
+    <Compile Include="Database\LocalPurgeDatabase.cs" />
+    <Compile Include="Database\LocalListBrokenFilesDatabase.cs" />
+    <Compile Include="Operation\ListBrokenFilesHandler.cs" />
+    <Compile Include="Operation\PurgeBrokenFilesHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

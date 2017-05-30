@@ -1,21 +1,50 @@
-backupApp.controller('SystemSettingsController', function($scope, $location, AppService, AppUtils, Localization, SystemInfo) {
+backupApp.controller('SystemSettingsController', function($rootScope, $scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);
 
     function reloadOptionsList() {
         $scope.advancedOptionList = AppUtils.buildOptionList($scope.SystemInfo, false, false, false);
-    };
+        var mods = [];
+        if ($scope.SystemInfo.ServerModules != null)
+            for(var ix in $scope.SystemInfo.ServerModules)
+            {
+                var m = $scope.SystemInfo.ServerModules[ix];
+                if (m.SupportedGlobalCommands != null && m.SupportedGlobalCommands.length > 0)
+                    mods.push(m);
+            }
+
+        $scope.ServerModules = mods;
+        AppUtils.extractServerModuleOptions($scope.advancedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedGlobalCommands');
+    }
 
     reloadOptionsList();
 
     $scope.$on('systeminfochanged', reloadOptionsList);
 
+    $scope.uiLanguage = $cookies.get('ui-locale');
+    $scope.lang_browser_default = gettextCatalog.getString('Browser default');
+    $scope.lang_default = gettextCatalog.getString('Default');
+
+    function setUILanguage() {
+        if (($scope.uiLanguage || '').trim().length == 0) {
+            $cookies.remove('ui-locale');
+            gettextCatalog.setCurrentLanguage($scope.SystemInfo.BrowserLocale.Code.replace("-", "_"));
+        } else {
+            var now = new Date();
+            var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+            $cookies.put('ui-locale', $scope.uiLanguage, { expires: exp });
+
+            gettextCatalog.setCurrentLanguage($scope.uiLanguage.replace("-", "_"));
+        }
+        $rootScope.$broadcast('ui_language_changed');
+    }
+
     AppService.get('/serversettings').then(function(data) {
 
         $scope.rawdata = data.data;
 
-        $scope.requireRemotePassword = data.data[''] != null && data.data.WebserverPassword != '';
-        $scope.remotePassword = data.data.WebserverPassword;
+        $scope.requireRemotePassword = data.data['server-passphrase'] != null && data.data['server-passphrase'] != '';
+        $scope.remotePassword = data.data['server-passphrase'];
         $scope.allowRemoteAccess = data.data['server-listen-interface'] != 'loopback';
         $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
         $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1);
@@ -23,7 +52,10 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
         $scope.originalUpdateChannel = data.data['update-channel'];
         $scope.usageReporterLevel = data.data['usage-reporter-level'];
         $scope.advancedOptions = AppUtils.serializeAdvancedOptionsToArray(data.data);
+        $scope.servermodulesettings = {};
 
+        AppUtils.extractServerModuleOptions($scope.advancedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedGlobalCommands');
+        
     }, AppUtils.connectionError);
 
 
@@ -39,7 +71,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
             'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
             'update-channel': $scope.updateChannel,
             'usage-reporter-level': $scope.usageReporterLevel
-        }
+        };
 
 
         if ($scope.requireRemotePassword) {
@@ -53,16 +85,20 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
         }
 
         AppUtils.mergeAdvancedOptions($scope.advancedOptions, patchdata, $scope.rawdata);
+        for(var n in $scope.servermodulesettings)
+            patchdata['--' + n] = $scope.servermodulesettings[n];
 
         AppService.patch('/serversettings', patchdata, {headers: {'Content-Type': 'application/json; charset=utf-8'}}).then(
             function() {
+                setUILanguage();
+
                 // Check for updates if we changed the channel
                 if ($scope.updateChannel != $scope.originalUpdateChannel)
                     AppService.post('/updates/check');
 
                 $location.path('/');
             },
-            AppUtils.connectionError(Localization.localize('Failed to save: '))
+            AppUtils.connectionError(gettextCatalog.getString('Failed to save:') + ' ')
         );
     };
 
@@ -73,7 +109,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
                 $scope.SystemInfo.SuppressDonationMessages = true; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError('Operation failed: ')
+            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
         );
     };
 
@@ -84,7 +120,7 @@ backupApp.controller('SystemSettingsController', function($scope, $location, App
                 $scope.SystemInfo.SuppressDonationMessages = false; 
                 SystemInfo.notifyChanged();
             }, 
-            AppUtils.connectionError('Operation failed: ')
+            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
         );
     };
 });

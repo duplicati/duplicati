@@ -20,8 +20,17 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Interface
 {
-	public interface IBasicResults
-	{
+    public enum ParsedResultType
+    {
+        Unknown,
+        Success,
+        Warning,
+        Error,
+        Fatal
+    }
+
+    public interface IBasicResults
+    {
         DateTime BeginTime { get; }
         DateTime EndTime { get; }
         TimeSpan Duration { get; }
@@ -29,22 +38,23 @@ namespace Duplicati.Library.Interface
         IEnumerable<string> Errors { get; }
         IEnumerable<string> Warnings { get; }
         IEnumerable<string> Messages { get; }
-	}
+        ParsedResultType ParsedResult { get; }
+    }
 
     public interface IBackendStatstics
     {
-    	long RemoteCalls { get; }
-    	long BytesUploaded { get; }
-    	long BytesDownloaded { get; }
-    	long FilesUploaded { get; }
-    	long FilesDownloaded { get; }
-    	long FilesDeleted { get; }
-    	long FoldersCreated { get; }
-    	long RetryAttempts { get; }
+        long RemoteCalls { get; }
+        long BytesUploaded { get; }
+        long BytesDownloaded { get; }
+        long FilesUploaded { get; }
+        long FilesDownloaded { get; }
+        long FilesDeleted { get; }
+        long FoldersCreated { get; }
+        long RetryAttempts { get; }
     }
 
-	public interface IParsedBackendStatistics : IBackendStatstics
-	{
+    public interface IParsedBackendStatistics : IBackendStatstics
+    {
         long UnknownFileSize { get; }
         long UnknownFileCount { get; }
         long KnownFileCount { get; }
@@ -54,7 +64,12 @@ namespace Duplicati.Library.Interface
         long TotalQuotaSpace { get; }
         long FreeQuotaSpace { get; }
         long AssignedQuotaSpace { get; }
-	}
+    }
+
+    public interface IBackendStatsticsReporter
+    {
+        IBackendStatstics BackendStatistics { get; }
+    }
 
     public interface IListResultFile
     {
@@ -103,7 +118,7 @@ namespace Duplicati.Library.Interface
         bool Dryrun { get; }
     }
         
-    public interface IBackupResults : IBasicResults
+    public interface IBackupResults : IBasicResults, IBackendStatsticsReporter
     {
         long DeletedFiles { get; }
         long DeletedFolders { get; }
@@ -129,7 +144,6 @@ namespace Duplicati.Library.Interface
         ICompactResults CompactResults { get; }
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
-        IBackendStatstics BackendStatistics { get; }
     }
     
     public interface IRestoreResults : IBasicResults
@@ -149,7 +163,12 @@ namespace Duplicati.Library.Interface
     public interface IRecreateDatabaseResults : IBasicResults
     {
     }
-    
+
+    public interface IListRemoteResults : IBasicResults, IBackendStatsticsReporter
+    {
+        IEnumerable<IFileEntry> Files { get; }
+    }
+
     public interface ICompactResults : IBasicResults
     {
         long DeletedFileCount { get; }
@@ -268,7 +287,7 @@ namespace Duplicati.Library.Interface
 
     public interface ITestResults : IBasicResults
     {
-        IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Changes { get; }
+        IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get; }
     }
     
     public interface ITestFilterResults : IBasicResults
@@ -278,6 +297,30 @@ namespace Duplicati.Library.Interface
     }
 
     public interface ISystemInfoResults : IBasicResults
+    {
+        IEnumerable<string> Lines { get; }
+    }
+
+    public interface IPurgeFilesResults : IBasicResults
+    {
+        long RemovedFileCount { get; }
+        long RemovedFileSize { get; }
+        long RewrittenFileLists { get; }
+        ICompactResults CompactResults { get; }
+    }
+
+    public interface IListBrokenFilesResults : IBasicResults
+    {
+        IEnumerable<Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>> BrokenFiles { get; }
+    }
+
+    public interface IPurgeBrokenFilesResults : IBasicResults
+    {
+        IPurgeFilesResults PurgeResults { get; }
+        IDeleteResults DeleteResults { get; }
+    }
+
+    public interface ISendMailResults : IBasicResults
     {
         IEnumerable<string> Lines { get; }
     }

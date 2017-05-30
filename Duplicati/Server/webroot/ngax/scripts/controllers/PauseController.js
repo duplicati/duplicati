@@ -1,15 +1,5 @@
-backupApp.controller('PauseController', function ($scope, $location, AppService, AppUtils, ServerStatus) {
-    $scope.state = ServerStatus.watch($scope);
+backupApp.controller('PauseController', function($scope, $location, gettextCatalog) {
+     $scope.selection = $scope.$parent.state.CurrentItem;
 
-    $scope.pause = function(duration) {
-    	ServerStatus.pause(duration).then(function() {
-            $location.path('/');
-        }, AppUtils.connectionError);
-    };
-
-    $scope.resume = function() {
-    	ServerStatus.resume().then(function() {
-            $location.path('/');
-        }, AppUtils.connectionError);
-    };
+     $scope.selection.time = 'infinite';
 });

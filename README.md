@@ -1,11 +1,19 @@
 # Duplicati
 Store securely encrypted backups on cloud storage services!
 
-[![Build Status](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
+<!---
+These are currently not working ...
 [![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/pr)](http://www.issuestats.com/github/duplicati/duplicati/)
 [![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/issue)](http://www.issuestats.com/github/duplicati/duplicati/)
+-->
 
 
+[![Build Status on Travis-CI](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
+[![Build status on AppVeyor](https://ci.appveyor.com/api/projects/status/h8s5nau9mn311hq0/branch/master?svg=true)](https://ci.appveyor.com/project/kenkendk/duplicati/branch/master)
+[![Bountysource](https://www.bountysource.com/badge/tracker?tracker_id=4870652)](https://www.bountysource.com/teams/duplicati?tracker_ids=4870652&utm_medium=shield&utm_campaign=TRACKER_BADGE)
+[![Coverage Status](https://coveralls.io/repos/github/duplicati/duplicati/badge.svg?branch=HEAD)](https://coveralls.io/github/duplicati/duplicati?branch=HEAD)
+[![License](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE.txt)
+[![Join the chat at https://gitter.im/duplicati/Lobby](https://badges.gitter.im/duplicati/Lobby.svg)](https://gitter.im/duplicati/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
 
@@ -27,15 +35,15 @@ Duplicati is licensed under LGPL and available for Windows, OSX and Linux (.NET 
 Download
 ========
 
-The latest version of Duplicati is an experiemental version for the Duplicati 2.0 release. 
+The latest version of Duplicati is an experimental version for the Duplicati 2.0 release. 
 
-[Click here to download the latest Duplicati 2.0 experimental release.](http://updates.duplicati.com/experimental/latest.zip)
+[Click here to download the latest Duplicati 2.0 experimental release.](http://www.duplicati.com/download)
 
-The preview release will automatically notify you and allows you to upgrade with a single click (or command in the terminal).
-
-All releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The [latest signature file](http://updates.duplicati.com/experimental/latest.zip.sig) and [latest ASCII signature file](http://updates.duplicati.com/experimental/latest.zip.sig.asc) are also available.
-
+The experimental release will automatically notify you of updates and allows you to upgrade with a single click (or command in the terminal).
 For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases) or choose another update channel in the UI or on the commandline.
+
+All releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The latest signature file and latest ASCII signature file are also available from [the Duplicati download page](https://github.com/duplicati/duplicati/releases).
+
 
 Features
 ========
@@ -62,3 +70,19 @@ Keep your data safe! Bad guys on the Internet seem to look for interesting data 
 Store your backup far away! The best backup is useless when it is destroyed together with it's original data. Just assume that a fire destroys your office - would your backup survive? Duplicati stores backups on various remote file servers and it supports incremental backups so that only changed parts need to be transfered. This makes it easy to use a destination far away from the original data.
 
 Backup regularly! The worst case is that your backup is outdated simply because someone forgot to make a backup at the right time. Duplicati has a built-in scheduler, so that it's easy to have a regular, up-to-date backup. Furthermore, Duplicati uses file compression and is able to store incremental backups to save storage space and bandwidth.
+
+Contributing
+==================
+
+## Contributing Bug reports
+We use GitHub for bug tracking. Please search the existing issues for your bug and create a new one if the issue is not yet tracked:
+https://github.com/duplicati/duplicati/issues
+
+## Contributing Translations
+Interested in helping to translate duplicati? Help is always welcome at transifex:
+https://www.transifex.com/duplicati/duplicati/dashboard/
+
+## Contributing Code
+Instructions on how to setup your development environment and build duplicati can be found in the [wiki](https://github.com/duplicati/duplicati/wiki/How-to-build-from-source). Pull requests fixing bugs or improving duplicati in another way are appreciated.
+
+If you are looking for an issue to fix, try looking at one of the [minor change](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22) issues. If you are most used to web development, have a look at the [issues marked UI](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22UI%22).

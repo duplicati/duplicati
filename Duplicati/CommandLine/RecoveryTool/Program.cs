@@ -28,6 +28,7 @@ namespace Duplicati.CommandLine.RecoveryTool
         [STAThread]
         public static int Main(string[] args)
         {
+            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }
 
@@ -93,7 +94,10 @@ namespace Duplicati.CommandLine.RecoveryTool
             }
             catch(Exception ex)
             {
-                Console.WriteLine("Program crashed: {0}{1}", Environment.NewLine, ex.ToString());
+                if (ex is Duplicati.Library.Interface.UserInformationException)
+                    Console.WriteLine(ex.Message);
+                else
+                    Console.WriteLine("Program crashed: {0}{1}", Environment.NewLine, ex.ToString());
                 return 200;
             }
         }
@@ -111,7 +115,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 // If the user specifies parameters-file, all filters must be in the file.
                 // Allowing to specify some filters on the command line could result in wrong filter ordering
                 if (!filter.Empty && !newfilter.Empty)
-                    throw new Exception("Filters cannot be specified on the commandline if filters are also present in the parameter file");
+                    throw new Duplicati.Library.Interface.UserInformationException("Filters cannot be specified on the commandline if filters are also present in the parameter file");
 
                 if (!newfilter.Empty)
                     filter = newfilter;

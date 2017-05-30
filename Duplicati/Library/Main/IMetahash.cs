@@ -28,11 +28,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The base64 encoded hash of the metadata
         /// </summary>
-        string Hash { get; }
-        /// <summary>
-        /// The size of the metadata in bytes
-        /// </summary>
-        long Size { get; }
+        string FileHash { get; }
         /// <summary>
         /// The UTF-8 encoded json element with the metadata
         /// </summary>

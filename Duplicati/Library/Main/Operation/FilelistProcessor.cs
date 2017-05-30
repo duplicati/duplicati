@@ -75,30 +75,31 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
         /// <param name="log">The log instance to use</param>
-        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log)
-		{
-			var tp = RemoteListAnalysis(backend, options, database, log);
-			long extraCount = 0;
-			long missingCount = 0;
+        /// <param name="protectedfile">A filename that should be excempted for deletion</param>
+        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, string protectedfile = null)
+        {
+            var tp = RemoteListAnalysis(backend, options, database, log, protectedfile);
+            long extraCount = 0;
+            long missingCount = 0;
             
-			foreach(var n in tp.ExtraVolumes)
-			{
-				log.AddWarning(string.Format("Extra unknown file: {0}", n.File.Name), null);
-				extraCount++;
-			}
+            foreach(var n in tp.ExtraVolumes)
+            {
+                log.AddWarning(string.Format("Extra unknown file: {0}", n.File.Name), null);
+                extraCount++;
+            }
 
-			foreach(var n in tp.MissingVolumes)
-			{
-				log.AddWarning(string.Format("Missing file: {0}", n.Name), null);
-				missingCount++;
-			}
+            foreach(var n in tp.MissingVolumes)
+            {
+                log.AddWarning(string.Format("Missing file: {0}", n.Name), null);
+                missingCount++;
+            }
 
-			if (extraCount > 0)
-			{
-				var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
-				log.AddError(s, null);
-				throw new Exception(s);
-			}
+            if (extraCount > 0)
+            {
+                var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
+                log.AddError(s, null);
+                throw new Duplicati.Library.Interface.UserInformationException(s);
+            }
 
             var lookup = new Dictionary<string, string>();
             var doubles = new Dictionary<string, string>();
@@ -114,19 +115,19 @@ namespace Duplicati.Library.Main.Operation
             {
                 var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles.Keys));
                 log.AddError(s, null);
-                throw new Exception(s);
+                throw new Duplicati.Library.Interface.UserInformationException(s);
             }
 
             if (missingCount > 0)
             {
-            	string s;
+                string s;
                 if (!tp.BackupPrefixes.Contains(options.Prefix) && tp.BackupPrefixes.Length > 0)
-                	s = string.Format("Found {0} files that are missing from the remote storage, and no files with the backup prefix {1}, but found the following backup prefixes: {2}", missingCount, options.Prefix, string.Join(", ", tp.BackupPrefixes));
+                    s = string.Format("Found {0} files that are missing from the remote storage, and no files with the backup prefix {1}, but found the following backup prefixes: {2}", missingCount, options.Prefix, string.Join(", ", tp.BackupPrefixes));
                 else
-                	s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
+                    s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
                 
                 log.AddError(s, null);
-                throw new Exception(s);
+                throw new Duplicati.Library.Interface.UserInformationException(s);
             }            
         }
 
@@ -150,7 +151,7 @@ namespace Duplicati.Library.Main.Operation
         public static void CreateVerificationFile(LocalDatabase db, System.IO.StreamWriter stream)
         {
             var s = new Newtonsoft.Json.JsonSerializer();
-            s.Serialize(stream, db.GetRemoteVolumes().Cast<IRemoteVolume>().ToArray());
+            s.Serialize(stream, db.GetRemoteVolumes().Where(x => x.State != RemoteVolumeState.Temporary).Cast<IRemoteVolume>().ToArray());
         }
         
         /// <summary>
@@ -189,10 +190,12 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="backend">The backend instance to use</param>
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
-        public static RemoteAnalysisResult RemoteListAnalysis(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log)
+        /// <param name="protectedfile">A filename that should be excempted for deletion</param>
+        public static RemoteAnalysisResult RemoteListAnalysis(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, string protectedfile)
         {
             var rawlist = backend.List();
             var lookup = new Dictionary<string, Volumes.IParsedVolume>();
+            protectedfile = protectedfile ?? string.Empty;
 
             var remotelist = (from n in rawlist
                                        let p = Volumes.VolumeBase.ParseFilename(n)
@@ -219,12 +222,14 @@ namespace Duplicati.Library.Main.Operation
             log.UnknownFileSize = unknownlist.Select(x => Math.Max(0, x.Size)).Sum();
             log.BackupListCount = filesets.Count;
             log.LastBackupDate = filesets.Count == 0 ? new DateTime(0) : filesets[0].Time.ToLocalTime();
-            
-            if (backend is Library.Interface.IQuotaEnabledBackend)
-            {
-                log.TotalQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).TotalQuotaSpace;
-                log.FreeQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).FreeQuotaSpace;
-            }
+
+			// TODO: We should query through the backendmanager
+			using (var bk = DynamicLoader.BackendLoader.GetBackend(backend.BackendUrl, options.RawOptions))
+				if (bk is Library.Interface.IQuotaEnabledBackend)
+	            {
+	                log.TotalQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)bk).TotalQuotaSpace;
+	                log.FreeQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)bk).FreeQuotaSpace;
+	            }
 
             log.AssignedQuotaSpace = options.QuotaSize;
             
@@ -275,8 +280,15 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {
-                                log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
-                                cleanupRemovedRemoteVolumes.Add(i.Name);
+                                if (string.Equals(i.Name, protectedfile) && i.State == RemoteVolumeState.Temporary)
+                                {
+                                    log.AddMessage(string.Format("keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name));
+                                }
+                                else
+                                {
+                                    log.AddMessage(string.Format("removing file listed as {0}: {1}", i.State, i.Name));
+                                    cleanupRemovedRemoteVolumes.Add(i.Name);
+                                }
                             }
                         }
                         break;
@@ -288,14 +300,30 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (!remoteFound)
                         {
-                            log.AddMessage(string.Format("scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name));
-                            cleanupRemovedRemoteVolumes.Add(i.Name);
-                            database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
+
+                            if (string.Equals(i.Name, protectedfile))
+                            {
+                                log.AddMessage(string.Format("keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name));
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), null);
+                            }
+                            else
+                            {
+                                log.AddMessage(string.Format("scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name));
+                                cleanupRemovedRemoteVolumes.Add(i.Name);
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
+                            }
                         }
                         else
                         {
-                            log.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", i.State, i.Name));
-                            backend.Delete(i.Name, i.Size, true);
+                            if (string.Equals(i.Name, protectedfile))
+                            {
+                                log.AddMessage(string.Format("keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name));
+                            }
+                            else
+                            {
+                                log.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", i.State, i.Name));
+                                backend.Delete(i.Name, i.Size, true);
+                            }
                         }
                         break;
 

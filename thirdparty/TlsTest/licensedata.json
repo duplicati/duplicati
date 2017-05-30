@@ -1,0 +1,7 @@
+{
+    "name": "TlsTest",
+    "description": "A tool for testing SSL support in Mono",
+    "link": "https://github.com/mono/mono/blob/master/mcs/class/Mono.Security/Test/tools/tlstest/tlstest.cs",
+    "license": "MIT",
+    "notes": ""
+}

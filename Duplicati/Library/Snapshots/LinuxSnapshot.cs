@@ -148,7 +148,7 @@ namespace Duplicati.Library.Snapshots
                         p.Kill();
                         p.WaitForExit(5 * 1000); //This should work, and if it does, prevents a race with any cleanup invocations
 
-                        throw new Exception(Strings.LinuxSnapshot.ExternalProgramTimeoutError(program, commandline));
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.LinuxSnapshot.ExternalProgramTimeoutError(program, commandline));
                     }
 
                     //Build the output string. Since the process has exited, these cannot block
@@ -156,7 +156,7 @@ namespace Duplicati.Library.Snapshots
 
                     //Throw an exception if something went wrong
                     if (p.ExitCode != expectedExitCode)
-                        throw new Exception(Strings.LinuxSnapshot.ScriptExitCodeError(p.ExitCode, expectedExitCode, output));
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.LinuxSnapshot.ScriptExitCodeError(p.ExitCode, expectedExitCode, output));
 
                     return output;
                 }
@@ -388,13 +388,13 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Enumerates all files and folders in the snapshot
         /// </summary>
-        /// <param name="filter">The filter to apply when evaluating files and folders</param>
         /// <param name="callback">The callback to invoke with each found path</param>
-        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback)
+        /// <param name="errorCallback">The callback used to report errors</param>
+        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback, Duplicati.Library.Utility.Utility.ReportAccessError errorCallback)
         {
-        	return m_entries.SelectMany(
-        		s => Utility.Utility.EnumerateFileSystemEntries(s.Key, callback, this.ListFolders, this.ListFiles, this.GetAttributes)
-        	);
+            return m_entries.SelectMany(
+                s => Utility.Utility.EnumerateFileSystemEntries(s.Key, callback, this.ListFolders, this.ListFiles, this.GetAttributes, errorCallback)
+            );
         }
         
         /// <summary>
@@ -463,10 +463,12 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="file">The file or folder to examine</param>
-        public Dictionary<string, string> GetMetadata(string file)
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        public Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
-            return _sysIO.GetMetadata(local);
+            return _sysIO.GetMetadata(local, isSymlink, followSymlink);
         }
         
         /// <summary>

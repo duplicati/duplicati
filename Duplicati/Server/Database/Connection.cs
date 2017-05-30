@@ -29,7 +29,7 @@ namespace Duplicati.Server.Database
         private System.Data.IDbCommand m_errorcmd;
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
-        public const int APP_SETTINGS_ID = -2;
+        public const int SERVER_SETTINGS_ID = -2;
         private Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
 
         public Connection(System.Data.IDbConnection connection)
@@ -40,7 +40,7 @@ namespace Duplicati.Server.Database
             for(var i = 0; i < 4; i++)
                 m_errorcmd.Parameters.Add(m_errorcmd.CreateParameter());
             
-            this.ApplicationSettings = new ApplicationSettings(this);
+            this.ApplicationSettings = new ServerSettings(this);
         }
                 
         internal void LogError(string backupid, string message, Exception ex)
@@ -117,7 +117,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public ApplicationSettings ApplicationSettings { get; private set; }
+        public ServerSettings ApplicationSettings { get; private set; }
         
         internal IDictionary<string, string> GetMetadata(long id)
         {
@@ -354,14 +354,102 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        internal void AddOrUpdateBackup(IBackup item)
-        {
-            AddOrUpdateBackup(item, false, null);
-        }
-        
         internal void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule schedule)
         {
             AddOrUpdateBackup(item, true, schedule);
+        }
+
+        internal string ValidateBackup(IBackup item, ISchedule schedule)
+        {
+            if (string.IsNullOrWhiteSpace(item.Name))
+                return "Missing a name";
+
+            if (string.IsNullOrWhiteSpace(item.TargetURL))
+                return "Missing a target";
+
+            if (item.Sources == null || item.Sources.Any(x => string.IsNullOrWhiteSpace(x)) || item.Sources.Length == 0)
+                return "Invalid source list";
+            
+            var disabled_encryption = false;
+            var passphrase = string.Empty;
+            if (item.Settings != null)
+            {
+                foreach (var s in item.Settings)
+                    if (string.Equals(s.Name, "--no-encryption", StringComparison.InvariantCultureIgnoreCase))
+                        disabled_encryption = string.IsNullOrWhiteSpace(s.Value) ? true : Library.Utility.Utility.ParseBool(s.Value, false);
+                    else if (string.Equals(s.Name, "passphrase", StringComparison.InvariantCultureIgnoreCase))
+                        passphrase = s.Value;
+                    else if (string.Equals(s.Name, "keep-versions", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        int i;
+                        if (!int.TryParse(s.Value, out i) || i <= 0)
+                            return "Retention value must be a positive integer";
+                    }
+                    else if (string.Equals(s.Name, "keep-time", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        try
+                        {
+                            var ts = Library.Utility.Timeparser.ParseTimeSpan(s.Value);
+                            if (ts <= TimeSpan.FromMinutes(5))
+                                return "Retention value must be more than 5 minutes";
+                        }
+                        catch
+                        {
+                            return "Retention value must be a valid timespan";
+                        }
+                    }
+                    else if (string.Equals(s.Name, "dblock-size", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        try
+                        {
+                            var ds = Library.Utility.Sizeparser.ParseSize(s.Value);
+                            if (ds < 1024 * 1024)
+                                return "DBlock size must be at least 1MB";
+                        }
+                        catch
+                        {
+                            return "DBlock value must be a valid size string";
+                        }
+                    }
+                    else if (string.Equals(s.Name, "--blocksize", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        try
+                        {
+                            var ds = Library.Utility.Sizeparser.ParseSize(s.Value);
+                            if (ds < 1024 || ds > int.MaxValue)
+                                return "The blocksize must be at least 1KB";
+                        }
+                        catch
+                        {
+                            return "The blocksize value must be a valid size string";
+                        }
+                    }
+                    else if (string.Equals(s.Name, "--prefix", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        if (!string.IsNullOrWhiteSpace(s.Value) && s.Value.Contains("-"))
+                            return "The prefix cannot contain hyphens (-)";
+                    }
+            }
+
+            if (!disabled_encryption && string.IsNullOrWhiteSpace(passphrase))
+                return "Missing passphrase";
+
+            if (schedule != null)
+            {
+                try
+                {
+                    var ts = Library.Utility.Timeparser.ParseTimeSpan(schedule.Repeat);
+                    if (ts <= TimeSpan.FromMinutes(5))
+                        return "Schedule repetition time must be more than 5 minutes";
+                }
+                catch
+                {
+                    return "Schedule repetition value must be a valid timespan";
+                }
+
+            }
+
+            return null;
         }
 
         internal void UpdateBackupDBPath(IBackup item, string path)

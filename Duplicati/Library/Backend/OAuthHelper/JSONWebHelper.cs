@@ -211,7 +211,7 @@ namespace Duplicati.Library
 
         public virtual T ReadJSONResponse<T>(HttpWebResponse resp)
         {
-			using(var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
+            using(var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
             using(var tr = new System.IO.StreamReader(rs))
             using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
                 return new Newtonsoft.Json.JsonSerializer().Deserialize<T>(jr);
@@ -219,7 +219,7 @@ namespace Duplicati.Library
 
         /// <summary>
         /// Use this method to register an exception handler,
-        /// which can throw another, more meaningfull exception
+        /// which can throw another, more meaningful exception
         /// </summary>
         /// <param name="ex">The exception being processed.</param>
         protected virtual void ParseException(Exception ex)

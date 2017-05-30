@@ -1,4 +1,4 @@
-backupApp.service('AppService', function($http, $cookies, $q, DialogService, appConfig) {
+backupApp.service('AppService', function($http, $cookies, $q, $cookies, DialogService, appConfig) {
     this.apiurl = '/api/v1';
     this.proxy_url = null;
 
@@ -32,6 +32,9 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
             options.headers['Cache-Control'] = 'no-cache';
             options.headers['Pragma'] = 'no-cache';
         }
+
+        if (($cookies.get('ui-locale') || '').trim().length > 0)
+            options.headers['X-UI-Language'] = $cookies.get('ui-locale');
   
         if (self.proxy_config != null)
             self.proxy_config(method, options, data, targeturl);
@@ -112,5 +115,11 @@ backupApp.service('AppService', function($http, $cookies, $q, DialogService, app
             return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
 
         return rurl;
+    };
+
+    this.log_out = function() {
+        var rurl = '/logout.cgi';
+
+        return installResponseHook($http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', {}, null, rurl)));
     };
 });

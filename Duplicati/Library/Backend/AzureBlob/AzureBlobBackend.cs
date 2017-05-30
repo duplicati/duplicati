@@ -57,11 +57,11 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             if (string.IsNullOrWhiteSpace(storageAccountName))
             {
-                throw new Exception(Strings.AzureBlobBackend.NoStorageAccountName);
+                throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName);
             }
             if (string.IsNullOrWhiteSpace(accessKey))
             {
-                throw new Exception(Strings.AzureBlobBackend.NoAccessKey);
+                throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKey);
             }
 
             _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, containerName);

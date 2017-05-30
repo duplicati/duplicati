@@ -21,103 +21,103 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Database
 {
-	internal class LocalRepairDatabase : LocalDatabase
-	{
-		public LocalRepairDatabase(string path)
-			: base(path, "Repair", true)
-		{
-		
-		}
-		
-		public long GetFilesetIdFromRemotename(string filelist)
-		{
-			using(var cmd = m_connection.CreateCommand())
-			{
-				var filesetid = cmd.ExecuteScalarInt64(@"SELECT ""Fileset"".""ID"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = ?", -1, filelist);
+    internal class LocalRepairDatabase : LocalDatabase
+    {
+        public LocalRepairDatabase(string path)
+            : base(path, "Repair", true)
+        {
+        
+        }
+        
+        public long GetFilesetIdFromRemotename(string filelist)
+        {
+            using(var cmd = m_connection.CreateCommand())
+            {
+                var filesetid = cmd.ExecuteScalarInt64(@"SELECT ""Fileset"".""ID"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = ?", -1, filelist);
                 if (filesetid == -1)
-					throw new Exception(string.Format("No such remote file: {0}", filelist));
-					
+                    throw new Exception(string.Format("No such remote file: {0}", filelist));
+                    
                 return filesetid;
-			}
-		}
+            }
+        }
 
-		public interface IBlockSource
-		{
-			string File { get; }
-			long Offset { get; }
-		}
-		
-		public interface IBlockWithSources :  LocalBackupDatabase.IBlock
-		{
-			IEnumerable<IBlockSource> Sources { get; }
-		}
-		
-		private class BlockWithSources : LocalBackupDatabase.Block, IBlockWithSources
-		{
-			private class BlockSource : IBlockSource
-			{
-				public string File { get; private set; }
-				public long Offset { get; private set; }
-				
-				public BlockSource(string file, long offset)
-				{
-					this.File = file;
-					this.Offset = offset;
-					
-				}
-			}
-		
-			private System.Data.IDataReader m_rd;
-			public bool Done { get; private set; }
-			
-			public BlockWithSources(System.Data.IDataReader rd)
+        public interface IBlockSource
+        {
+            string File { get; }
+            long Offset { get; }
+        }
+        
+        public interface IBlockWithSources :  LocalBackupDatabase.IBlock
+        {
+            IEnumerable<IBlockSource> Sources { get; }
+        }
+        
+        private class BlockWithSources : LocalBackupDatabase.Block, IBlockWithSources
+        {
+            private class BlockSource : IBlockSource
+            {
+                public string File { get; private set; }
+                public long Offset { get; private set; }
+                
+                public BlockSource(string file, long offset)
+                {
+                    this.File = file;
+                    this.Offset = offset;
+                    
+                }
+            }
+        
+            private System.Data.IDataReader m_rd;
+            public bool Done { get; private set; }
+            
+            public BlockWithSources(System.Data.IDataReader rd)
                 : base(rd.GetString(0), rd.GetInt64(1))
-			{
-				m_rd = rd;
-				Done = !m_rd.Read();
-			}
-			
-			public IEnumerable<IBlockSource> Sources
-			{
-				get
-				{
-					if (Done)
-						yield break;
-					
+            {
+                m_rd = rd;
+                Done = !m_rd.Read();
+            }
+            
+            public IEnumerable<IBlockSource> Sources
+            {
+                get
+                {
+                    if (Done)
+                        yield break;
+                    
                     var cur = new BlockSource(m_rd.GetString(2), m_rd.GetInt64(3));
-					var file = cur.File;
-					
-					while(!Done && cur.File == file)
-					{
-						yield return cur;
-						Done = m_rd.Read();
-						if (!Done)
+                    var file = cur.File;
+                    
+                    while(!Done && cur.File == file)
+                    {
+                        yield return cur;
+                        Done = m_rd.Read();
+                        if (!Done)
                             cur = new BlockSource(m_rd.GetString(2), m_rd.GetInt64(3));
-					}
-				}
-			}
-		}
-				
-		private class RemoteVolume : IRemoteVolume
-		{
-			public string Name { get; private set; }
-			public string Hash { get; private set; }
-			public long Size { get; private set; }
-			
-			public RemoteVolume(string name, string hash, long size)
-			{
-				this.Name = name;
-				this.Hash = hash;
-				this.Size = size;
-			}
-		}
-		
-		public IEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string name)
-		{
-			using(var cmd = m_connection.CreateCommand())
+                    }
+                }
+            }
+        }
+                
+        private class RemoteVolume : IRemoteVolume
+        {
+            public string Name { get; private set; }
+            public string Hash { get; private set; }
+            public long Size { get; private set; }
+            
+            public RemoteVolume(string name, string hash, long size)
+            {
+                this.Name = name;
+                this.Hash = hash;
+                this.Size = size;
+            }
+        }
+        
+        public IEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string name)
+        {
+            using(var cmd = m_connection.CreateCommand())
                 foreach(var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?))", name))
                     yield return new RemoteVolume(rd.GetString(0), rd.ConvertValueToString(1), rd.ConvertValueToInt64(2));
-		}
+        }
         
         public interface IMissingBlockList : IDisposable
         {
@@ -288,7 +288,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalarInt64(0);
                     if (x > 1)
-                        throw new Exception("Repair failed, there are still duplicate metadatahashes!");
+                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate metadatahashes!");
 
                     m_result.AddMessage("Duplicate metadatahashes repaired succesfully");
                     tr.Commit();
@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalarInt64(0);
                     if (x > 1)
-                        throw new Exception("Repair failed, there are still duplicate file entries!");
+                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate file entries!");
 
                     m_result.AddMessage("Duplicate file entries repaired succesfully");
                     tr.Commit();
@@ -429,7 +429,7 @@ namespace Duplicati.Library.Main.Database
 
                     itemswithnoblocklisthash = cmd.ExecuteScalarInt64(countsql, 0);
                     if (itemswithnoblocklisthash != 0)
-                        throw new Exception(string.Format("Failed to repair, after repair {0} blocklisthashes were missing", itemswithnoblocklisthash));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Failed to repair, after repair {0} blocklisthashes were missing", itemswithnoblocklisthash));
 
                     m_result.AddMessage("Missing blocklisthashes repaired succesfully");
                     tr.Commit();
@@ -474,15 +474,15 @@ namespace Duplicati.Library.Main.Database
                     var real_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM ""BlocklistHash""", 0);
 
                     if (real_count != unique_count)
-                        throw new Exception(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count, real_count));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count, real_count));
 
                     try
                     {
-                        VerifyConsistency(tr, blocksize, hashsize);
+                        VerifyConsistency(tr, blocksize, hashsize, true);
                     }
                     catch(Exception ex)
                     {
-                        throw new Exception("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", ex);
+                        throw new Duplicati.Library.Interface.UserInformationException("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", ex);
                     }
 
                     m_result.AddMessage("Duplicate blocklisthashes repaired succesfully");
@@ -571,6 +571,6 @@ ORDER BY
                     throw new Exception(string.Format("Too many source blocklist entries in {0}", hash));
             }
         }
-	}
+    }
 }
 

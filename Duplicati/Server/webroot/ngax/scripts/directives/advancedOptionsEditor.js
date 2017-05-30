@@ -6,8 +6,30 @@ backupApp.directive('advancedOptionsEditor', function() {
             ngOptionList: '='
         },
         templateUrl: 'templates/advancedoptionseditor.html',
-        controller: function($scope, $timeout) {
+        controller: function($scope, $timeout, AppUtils) {
             $scope.NewItem = null;
+            $scope.fileSizeMultipliers = AppUtils.fileSizeMultipliers;
+            $scope.timerangeMultipliers = AppUtils.timerangeMultipliers;
+            $scope.speedMultipliers = AppUtils.speedMultipliers;
+            $scope.shorttimerangeMultipliers = AppUtils.shorttimerangeMultipliers;
+
+            AppUtils.watch($scope, function() {
+                $scope.fileSizeMultipliers = AppUtils.fileSizeMultipliers;
+                $scope.timerangeMultipliers = AppUtils.timerangeMultipliers;
+                $scope.speedMultipliers = AppUtils.speedMultipliers;
+                $scope.shorttimerangeMultipliers = AppUtils.shorttimerangeMultipliers;
+            });
+
+            // Overrides to display a custom layout for a specific option
+            var overrides = {
+                'throttle-upload': 'speed',
+                'throttle-download': 'speed',
+
+                'retry-delay': 'shorttimespan',
+                'amzcd-consistency-delay': 'shorttimespan',
+                'web-timeout': 'shorttimespan',
+                'run-script-timeout': 'shorttimespan'
+            };
 
             var optionmap = null;
 
@@ -51,6 +73,9 @@ backupApp.directive('advancedOptionsEditor', function() {
                 var item = $scope.getEntry(item);
                 if (item == null)
                     return 'text';
+
+                if (overrides[item.Name])
+                    return overrides[item.Name];
 
                 if (item.Type == 'Enumeration')
                     return 'enum';

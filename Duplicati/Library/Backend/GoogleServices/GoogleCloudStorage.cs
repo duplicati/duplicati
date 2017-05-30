@@ -93,7 +93,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             options.TryGetValue(STORAGECLASS_OPTION, out m_storage_class);
 
             if (string.IsNullOrEmpty(authid))
-                throw new Exception(Strings.GoogleCloudStorage.MissingAuthID(AUTHID_OPTION));
+                throw new UserInformationException(Strings.GoogleCloudStorage.MissingAuthID(AUTHID_OPTION));
 
             m_oauth = new OAuthHelper(authid, this.ProtocolKey);
             m_oauth.AutoAuthHeader = true;
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         public void CreateFolder()
         {
             if (string.IsNullOrEmpty(m_project))
-                throw new Exception(Strings.GoogleCloudStorage.ProjectIDMissingError(PROJECT_OPTION));
+                throw new UserInformationException(Strings.GoogleCloudStorage.ProjectIDMissingError(PROJECT_OPTION));
 
             var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new CreateBucketRequest() {
                 name = m_bucket,
@@ -281,7 +281,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 var areq = new AsyncHttpRequest(req);
 
                 using(var resp = areq.GetResponse())
-				using(var rs = areq.GetResponseStream())
+                using(var rs = areq.GetResponseStream())
                     Library.Utility.Utility.CopyStream(rs, stream);
             }
             catch (WebException wex)

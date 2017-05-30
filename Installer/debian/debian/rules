@@ -30,13 +30,14 @@ override_dh_clean:
 	find -maxdepth 1 -type d -name build | xargs rm -rf
 
 override_dh_auto_build:
+	nuget restore Duplicati.sln
+
 	xbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
 	mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=$(VERSION)
 
 	xbuild /property:Configuration=Release thirdparty/UnixSupport/UnixSupport.csproj
 	cp thirdparty/UnixSupport/bin/Release/UnixSupport.dll thirdparty/UnixSupport/UnixSupport.dll
 
-	nuget restore Duplicati.sln
 	xbuild /property:Configuration=Release Duplicati.sln
 
 override_dh_auto_install:
@@ -98,3 +99,6 @@ override_dh_auto_install:
 #	mkdir ${DESTDIR}/usr/lib/duplicati/
 #	cp -R Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/* ${DESTDIR}/usr/lib/duplicati/
 #	cp -R Duplicati/Server/webroot ${DESTDIR}/usr/lib/duplicati/
+
+override_dh_systemd_enable:
+	dh_systemd_enable --no-enable

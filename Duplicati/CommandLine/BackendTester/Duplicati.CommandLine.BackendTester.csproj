@@ -17,6 +17,7 @@
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
+    <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -55,12 +56,18 @@
     <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
       <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
       <Name>Duplicati.Library.Backend.AzureBlob</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
+      <Project>{b20a7cee-9c5b-47b9-8b76-bc85adfe8493}</Project>
+      <Name>Duplicati.Library.Backend.Dropbox</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
       <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>

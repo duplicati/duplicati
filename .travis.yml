@@ -2,35 +2,79 @@ language: csharp
 solution: Duplicati.sln
 install:
   - nuget restore Duplicati.sln
-  - nuget install NUnit.Runners -Version 3.4.0 -OutputDirectory testrunner
+  - nuget install NUnit.Runners -Version 3.5.0 -OutputDirectory testrunner
+  - sudo pip install selenium
+addons:
+  sauce_connect:
+    username: $SAUCE_USERNAME
+    access_key: $SAUCE_ACCESS_KEY
+env:
+  general:
+    - USAGEREPORTER_Duplicati_LEVEL=none
+    - AUTOUPDATER_Duplicati_SKIP_UPDATE=1
+  matrix:
+  - JOB=job1
+  - JOB=job2
+  - JOB=job3
+notifications:
+  webhooks:
+    urls:
+      - $GITTER_WEBHOOK_URL
+    on_success: always
+    on_failure: always
+    on_start: never
+
+cache:
+  directories:
+    - $HOME/download
+
 script:
+# build duplicati
+  - echo "travis_fold:start:build_duplicati"
   - xbuild /p:Configuration=Release Duplicati.sln
+  - echo "travis_fold:end:build_duplicati"
+  - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+# download and extract testdata
+  - echo "travis_fold:start:download_extract_testdata"
+  - ls -la .
+  - if [ ! -d ~/download ]; then mkdir ~/download; fi
+  - if [ ! -f ~/download/DSMCBE.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip" -O ~/download/DSMCBE.zip; fi
+  - if [ ! -f ~/download/data.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip" -O ~/download/data.zip; fi
+  - ls -la .
   - mkdir ~/testdata
   - mkdir ~/testdata/data
   - mkdir ~/testdata/DSMCBE
-  - wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip"
-  - wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip"
-  - unzip -q DSMCBE.zip -d ~/testdata/
-  - unzip -q data.zip -d ~/testdata/
+  - unzip -q ~/download/DSMCBE.zip -d ~/testdata/
+  - unzip -q ~/download/data.zip -d ~/testdata/
   - chown -R travis ~/testdata/
   - chmod -R 755 ~/testdata
   - ls -la ~/testdata
   - ls -la ~/testdata/DSMCBE
   - ls -la ~/testdata/data
-  - export USAGEREPORTER_Duplicati_LEVEL=none
-  - mono ./testrunner/NUnit.ConsoleRunner.3.4.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
-
-env:
-  global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-   #   via the "travis encrypt" command using the project repo's public key
-   - secure: "Mhlxl/8VDKyJRdT8IIz4MEh4m8kjDhfFbp0hb+C9hlGtUXY0mcMxo26DusKKLRZMFGQBCQs7XZA8wKa+VhX5EAnM+jsqUw4Zp+bCG0fy4bJCC6Ju9ToK5OAae5nlN7f4GlCBr1xmNXoJHddxzpv4/9iCNGnlyapVUMiG6FnebAKVxoVTkc0hE4XekNzzjjMG3hSRX1F34IhwxaCO2Hq8D7/PzYO1jG+w0ZGCuRed0bSYY9h/f9FXuxKyHBfyC6Ggw8L1ejUKUMsnuOSKHv2FU9opNTb/3CmlsMvIePeF3drwhcQpvBYj+q/fFoP2uWTaXxkDSb9tvP3355+H1F1xsncvOdVcMLXSpcqzaPICnEm68DmIpzs+2Vg+KIrYkDMgH9N7v2jpyhBbrqVZLwwaM9ajGWi12oQblW1cj10jSi1awrlsHqz4w9Z1z8DEgoKB762EpLFTQfFBVDaoOOOt1W62jwJ2pK9Bw1w+LbYhAWSJhkGr2LQHpDc+xMCt5hSilCjjsCpXQzBb2Ep/FaBpYuwU99NZiz8xmgTopiKx+RKNe+AFIgKgpbHZcFEe9A/GP3IX8d6VQdGU0FB49iVpafjAeTmd2IFC/WNxpY9sFXLuP4TxfD8Fh2/mbnNKHcmltrPIJQF27FLo/rO6ikFIZvRtdHOhOT7JuZSrmP8Z2Lw="
-
-addons:
-  coverity_scan:
-    project:
-      name: "duplicati/duplicati"
-      description: "Build submitted via Travis CI"
-    build_command_prepend: "msbuild /t:Clean"
-    build_command:   "msbuild /t:Rebuild"
-    branch_pattern: coverity_scan
+  - echo "travis_fold:end:download_extract_testdata"
+# run unit tests
+  - echo "travis_fold:start:unit_tests_border"
+  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Border --workers=1; fi
+  - echo "travis_fold:end:unit_tests_border"
+  - echo "travis_fold:start:unit_tests_bulknormal"
+  - if [[ "$JOB" == "job2" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNormal --workers=1; fi
+  - echo "travis_fold:end:unit_tests_bulknormal"
+  - echo "travis_fold:start:unit_tests_bulknosize"
+  - if [[ "$JOB" == "job2" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNoSize --workers=1; fi
+  - echo "travis_fold:end:unit_tests_bulknosize"
+  - echo "travis_fold:start:unit_tests_svndata"
+  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNData --workers=1; fi
+  - echo "travis_fold:end:unit_tests_svndata"
+  - echo "travis_fold:start:unit_tests_svndatalong"
+  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNDataLong --workers=1; fi
+  - echo "travis_fold:end:unit_tests_svndatalong"
+  - echo "travis_fold:start:unit_tests_targeted"
+  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Targeted --workers=1; fi
+  - echo "travis_fold:end:unit_tests_targeted"
+  - echo "travis_fold:start:unit_tests_purge"
+  - if [[ "$JOB" == "job3" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Purge --workers=1; fi
+  - echo "travis_fold:end:unit_tests_purge"
+# start server and run gui tests
+  - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
+  - if [[ "$JOB" == "job3" ]]; then python guiTests/guiTest.py; fi
+  
