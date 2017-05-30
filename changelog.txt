@@ -1,3 +1,16 @@
+2017-05-30 - 2.0.1.61_experimental_2017-05-30
+==========
+This experimental release contains all the changes from canary v2.0.1.60,
+including:
+
+* Performance updates, faster backups, less memory
+* Fixed an issue with zip files larger than 4GiB
+* Improved import/export functions
+
+If you are using VSS snapshots on Windows,
+make sure you install VC++ 2015 redist:
+https://www.microsoft.com/en-us/download/details.aspx?id=48145
+
 2017-05-23 - 2.0.1.60_canary_2017-05-23
 ==========
 * Re-enabled the GTK trayicon that was missing in the previous two versions
