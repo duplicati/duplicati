@@ -94,7 +94,7 @@
         <div ng-if="SystemInfo.DefaultUsageReportLevel != 'Disabled'" class="input mixed multiple">
             <label for="usagereporterlevel" translate>Anonymous usage reports</label>
 
-            <select id="usagereporterlevel" ng-model="usageReporterLevel">
+            <select id="usagereporterlevel" ng-model="$parent.usageReporterLevel">
                 <option value="" translate translate-params-levelname="SystemInfo.DefaultUsageReportLevel">System default ({{levelname}})</option>
                 <option value="information" translate>Usage statistics, warnings, errors, and crashes</option>
                 <option value="warning" translate>Warnings, errors and crashes</option>
