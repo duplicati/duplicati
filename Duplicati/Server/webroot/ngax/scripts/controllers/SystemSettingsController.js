@@ -1,6 +1,11 @@
 backupApp.controller('SystemSettingsController', function($rootScope, $scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
 
-    $scope.SystemInfo = SystemInfo.watch($scope);
+    $scope.SystemInfo = SystemInfo.watch($scope);    
+    $scope.theme = $scope.$parent.$parent.saved_theme;
+    if (($scope.theme || '').trim().length == 0)
+        $scope.theme = 'default';
+
+    $scope.usageReporterLevel = '';
 
     function reloadOptionsList() {
         $scope.advancedOptionList = AppUtils.buildOptionList($scope.SystemInfo, false, false, false);
@@ -15,11 +20,14 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
 
         $scope.ServerModules = mods;
         AppUtils.extractServerModuleOptions($scope.advancedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedGlobalCommands');
-    }
+    };
 
     reloadOptionsList();
-
     $scope.$on('systeminfochanged', reloadOptionsList);
+
+    $scope.$watch('theme', function() {
+        $rootScope.$broadcast('preview_theme', { theme: $scope.theme });
+    });
 
     $scope.uiLanguage = $cookies.get('ui-locale');
     $scope.lang_browser_default = gettextCatalog.getString('Browser default');
@@ -37,7 +45,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
             gettextCatalog.setCurrentLanguage($scope.uiLanguage.replace("-", "_"));
         }
         $rootScope.$broadcast('ui_language_changed');
-    }
+    };
 
     AppService.get('/serversettings').then(function(data) {
 
@@ -62,7 +70,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
     $scope.save = function() {
 
         if ($scope.requireRemotePassword && $scope.remotePassword.trim().length == 0)
-            return AppUtil.notifyInputError('Cannot use empty password');
+            return AppUtils.notifyInputError('Cannot use empty password');
 
         var patchdata = {
             'server-passphrase': $scope.requireRemotePassword ? $scope.remotePassword : '',
@@ -72,7 +80,6 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
             'update-channel': $scope.updateChannel,
             'usage-reporter-level': $scope.usageReporterLevel
         };
-
 
         if ($scope.requireRemotePassword) {
             if ($scope.rawdata['server-passphrase'] != $scope.remotePassword) {
@@ -87,6 +94,8 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
         AppUtils.mergeAdvancedOptions($scope.advancedOptions, patchdata, $scope.rawdata);
         for(var n in $scope.servermodulesettings)
             patchdata['--' + n] = $scope.servermodulesettings[n];
+
+        $rootScope.$broadcast('update_theme', { theme: $scope.theme } );
 
         AppService.patch('/serversettings', patchdata, {headers: {'Content-Type': 'application/json; charset=utf-8'}}).then(
             function() {
