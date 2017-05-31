@@ -18,8 +18,45 @@ using System;using System.Collections.Generic;using Duplicati.Server.Serializa
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
-    public class UISettings : IRESTMethodGET, IRESTMethodPOST
-    {        public void GET(string key, RequestInfo info)        {            if (string.IsNullOrWhiteSpace(key))            {                info.OutputOK(Program.DataConnection.GetUISettingsSchemes());            }            else            {                info.OutputOK(Program.DataConnection.GetUISettings(key));            }        }        public void POST(string key, RequestInfo info)        {            if (string.IsNullOrWhiteSpace(key))            {                info.ReportClientError("Scheme is missing");                return;            }            IDictionary<string, string> data;            try            {                data = Serializer.Deserialize<Dictionary<string, string>>(new StreamReader(info.Request.Body));            }            catch (Exception ex)            {                info.ReportClientError(string.Format("Unable to parse settings object: {0}", ex.Message));                return;            }            if (data == null)            {                info.ReportClientError(string.Format("Unable to parse settings object"));                return;            }            Program.DataConnection.SetUISettings(key, data);            info.OutputOK();                    }
-    }
+    public class UISettings : IRESTMethodGET, IRESTMethodPOST, IRESTMethodPATCH
+    {        public void GET(string key, RequestInfo info)        {            if (string.IsNullOrWhiteSpace(key))            {                info.OutputOK(Program.DataConnection.GetUISettingsSchemes());            }            else            {                info.OutputOK(Program.DataConnection.GetUISettings(key));            }        }
+
+		public void POST(string key, RequestInfo info)
+		{
+			PATCH(key, info);
+		}
+
+		public void PATCH(string key, RequestInfo info)
+        {
+			if (string.IsNullOrWhiteSpace(key))
+			{
+				info.ReportClientError("Scheme is missing");
+				return;
+			}
+
+            IDictionary<string, string> data;
+			try
+			{
+				data = Serializer.Deserialize<Dictionary<string, string>>(new StreamReader(info.Request.Body));
+			}
+			catch (Exception ex)
+			{
+				info.ReportClientError(string.Format("Unable to parse settings object: {0}", ex.Message));
+				return;
+			}
+
+			if (data == null)
+			{
+				info.ReportClientError(string.Format("Unable to parse settings object"));
+				return;
+			}
+
+            if (info.Request.Method == "POST")
+			    Program.DataConnection.SetUISettings(key, data);
+            else
+                Program.DataConnection.UpdateUISettings(key, data);
+			info.OutputOK();
+		}
+    }
 }
 
