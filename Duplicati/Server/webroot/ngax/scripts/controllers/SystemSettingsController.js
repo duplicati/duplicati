@@ -70,7 +70,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
     $scope.save = function() {
 
         if ($scope.requireRemotePassword && $scope.remotePassword.trim().length == 0)
-            return AppUtil.notifyInputError('Cannot use empty password');
+            return AppUtils.notifyInputError('Cannot use empty password');
 
         var patchdata = {
             'server-passphrase': $scope.requireRemotePassword ? $scope.remotePassword : '',
