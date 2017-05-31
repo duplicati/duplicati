@@ -5,6 +5,12 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
 
     $scope.localized = {};
     $scope.location = $location;
+    $scope.saved_theme = $scope.active_theme = $cookies.get('current-theme') || 'default';
+
+    // If we want the theme settings
+    // to be persisted on the server,
+    // set to "true" here
+    var save_theme_on_server = false;
 
     $scope.doReconnect = function() {
         ServerStatus.reconnect();
@@ -50,6 +56,9 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     };
 
     function updateCurrentPage() {
+
+        $scope.active_theme = $scope.saved_theme;
+
         if ($location.$$path == '/' || $location.$$path == '')
             $scope.current_page = 'home';
         else if ($location.$$path == '/addstart' || $location.$$path == '/add' || $location.$$path == '/import')
@@ -78,4 +87,58 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     $scope.$watch('location.$$path', updateCurrentPage);
     updateCurrentPage();
 
+    function loadCurrentTheme() {
+        if (save_theme_on_server) {
+            AppService.get('/uisettings/ngax').then(
+                function(data) {
+                    var theme = 'default';
+                    if (data.data != null && (data.data['theme'] || '').trim().length > 0)
+                        theme = data.data['theme'];
+
+                    var now = new Date();
+                    var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+                    $cookies.put('current-theme', theme, { expires: exp });
+                    $scope.saved_theme = $scope.active_theme = theme;
+                }, function() {}
+            );
+        }
+    };
+
+    // In case the cookie is out-of-sync
+    loadCurrentTheme();
+
+    $scope.$on('update_theme', function(event, args) {
+        var theme = 'default';
+        if (args != null && (args.theme || '').trim().length != 0)
+            theme = args.theme;
+
+        if (save_theme_on_server) {
+            // Set it here to avoid flickering when the page changes
+            $scope.saved_theme = $scope.active_theme = theme;
+
+            AppService.patch('/uisettings/ngax', { 'theme': theme }, {'headers': {'Content-Type': 'application/json'}}).then(
+                function(data) {
+                    var now = new Date();
+                    var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+                    $cookies.put('current-theme', theme, { expires: exp });
+                    $scope.saved_theme = $scope.active_theme = theme;
+                }, function() {}
+            );
+        } else {
+            var now = new Date();
+            var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+            $cookies.put('current-theme', theme, { expires: exp });
+            $scope.saved_theme = $scope.active_theme = theme;
+        }
+
+        loadCurrentTheme();
+    });
+
+    $scope.$on('preview_theme', function(event, args) {
+        if (args == null || (args.theme + '').trim().length == 0)
+            $scope.active_theme = $scope.saved_theme;
+        else
+            $scope.active_theme = args.theme || '';
+
+    });
 });
