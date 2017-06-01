@@ -1,3 +1,14 @@
+2017-06-01 - 2.0.1.62_canary_2017-06-01
+==========
+* Caching is now enabled for static content in the WebUI, thanks @mknjc
+* Fixed an issue with `--deleted-files`, thanks @downpoured
+* Added permissions testing for the "Test connection" on aFTP, thanks @vnau
+* Changed some `GET` calls to `POST` for the login sequence
+* Fixed not being able to change the usagereporter level
+* Added support for setting a theme
+* Added the "dark" theme, thanks Michal
+* Updated SharpCompress to the latest version
+
 2017-05-30 - 2.0.1.61_experimental_2017-05-30
 ==========
 This experimental release contains all the changes from canary v2.0.1.60,
