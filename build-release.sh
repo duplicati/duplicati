@@ -33,6 +33,29 @@ NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
 
+# Newer GPG needs this to allow input from a non-terminal
+export GPG_TTY=$(tty)
+
+if [ ! -f "$GPG" ]; then
+	echo "gpg executable not found: $GPG"
+	exit 1
+fi
+
+if [ ! -f "$XBUILD" ]; then
+	echo "xbuild/msbuild executable not found: $XBUILD"
+	exit 1
+fi
+
+if [ ! -f "$MONO" ]; then
+	echo "mono executable not found: $MONO"
+	exit 1
+fi
+
+if [ ! -f "$NUGET" ]; then
+	echo "NuGet executable not found: $NUGET"
+	exit 1
+fi
+
 # The "OTHER_UPLOADS" setting is no longer used
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
 	OTHER_UPLOADS=""
