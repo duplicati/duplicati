@@ -1,3 +1,7 @@
+2017-06-01 - 2.0.1.63_canary_2017-06-01
+==========
+* Rebuild, gpg was removed from the build maching causing 2.0.1.62 to be a partially unsigned build
+
 2017-06-01 - 2.0.1.62_canary_2017-06-01
 ==========
 * Caching is now enabled for static content in the WebUI, thanks @mknjc
