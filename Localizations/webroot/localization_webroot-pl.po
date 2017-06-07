@@ -38,7 +38,7 @@ msgstr "Klucz dostepu AWS"
 msgid "AWS IAM Policy"
 msgstr "Polisa AWS IAM"
 
-#: index.html:224 index.html:240
+#: index.html:225 index.html:241
 msgid "About"
 msgstr "O programie"
 
@@ -75,11 +75,15 @@ msgstr "Niepowodzenie aktywacji:"
 msgid "Add a new backup"
 msgstr "Dodaj nową kopię"
 
+#: templates/addoredit.html:149
+msgid "Add a path directly"
+msgstr ""
+
 #: templates/advancedoptionseditor.html:46
 msgid "Add advanced option"
 msgstr "Dodaj opcję zaawansowaną"
 
-#: index.html:209
+#: index.html:210
 msgid "Add backup"
 msgstr "Dodaj kopię"
 
@@ -120,7 +124,7 @@ msgstr "Wszystkie Maszyny Hyper-V"
 msgid "All Microsoft SQL Databases"
 msgstr "Wszystkie Bazy Danych Microsoft SQL"
 
-#: templates/settings.html:107
+#: templates/settings.html:115
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
 "information. They contain information about hardware and operating system, "
@@ -166,7 +170,7 @@ msgstr ""
 "\n"
 "Czy chcesz użyć istniejącej bazy danych?"
 
-#: templates/settings.html:95
+#: templates/settings.html:103
 msgid "Anonymous usage reports"
 msgstr "Anonimowy raport użycia"
 
@@ -233,7 +237,7 @@ msgstr "Lokalizacja kopii"
 msgid "Backup:"
 msgstr "Kopia:"
 
-#: templates/settings.html:72
+#: templates/settings.html:80
 msgid "Beta"
 msgstr "Beta"
 
@@ -249,7 +253,7 @@ msgstr "Przerwany dostęp"
 msgid "Browse"
 msgstr "Przeglądaj"
 
-#: scripts/controllers/SystemSettingsController.js:25
+#: scripts/controllers/SystemSettingsController.js:33
 msgid "Browser default"
 msgstr "Domyślna przeglądarka"
 
@@ -289,11 +293,11 @@ msgstr "Tworzenie tymczasowej częściowej bazy danych ..."
 msgid "Busy ..."
 msgstr "Zajęty ..."
 
-#: templates/settings.html:82
+#: templates/settings.html:90
 msgid "Canary"
 msgstr "Robocze"
 
-#: scripts/controllers/AppController.js:37
+#: scripts/controllers/AppController.js:43
 #: scripts/controllers/EditBackupController.js:293
 #: scripts/controllers/EditBackupController.js:308
 #: scripts/controllers/EditBackupController.js:342
@@ -311,7 +315,7 @@ msgstr "Robocze"
 #: scripts/services/EditUriBuiltins.js:596
 #: scripts/services/EditUriBuiltins.js:669
 #: scripts/services/EditUriBuiltins.js:686 templates/delete.html:54
-#: templates/export.html:26 templates/settings.html:137
+#: templates/export.html:26 templates/settings.html:145
 #: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Anuluj"
@@ -406,7 +410,7 @@ msgstr "Potwierdzenie wymagane"
 msgid "Connect"
 msgstr "Połącz"
 
-#: index.html:317
+#: index.html:318
 msgid "Connect now"
 msgstr "Połącz teraz"
 
@@ -414,11 +418,11 @@ msgstr "Połącz teraz"
 msgid "Connecting to task ...."
 msgstr ""
 
-#: index.html:318
+#: index.html:319
 msgid "Connecting..."
 msgstr "Łączenie ..."
 
-#: index.html:309
+#: index.html:310
 msgid "Connection lost"
 msgstr "Utracono połączenie"
 
@@ -427,7 +431,7 @@ msgstr "Utracono połączenie"
 msgid "Connection worked!"
 msgstr "Połączenie działa!"
 
-#: index.html:313
+#: index.html:314
 msgid "Connnecting to server ..."
 msgstr "Łączenie z serwerem ..."
 
@@ -467,7 +471,7 @@ msgstr "Opcje podstawowe"
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr "Liczenie ({{files}} znaleziono plików, {{size}})"
 
-#: templates/settings.html:102
+#: templates/settings.html:110
 msgid "Crashes only"
 msgstr "Tylko awarie"
 
@@ -543,15 +547,15 @@ msgstr ""
 msgid "Days"
 msgstr "Dni"
 
-#: scripts/controllers/SystemSettingsController.js:26
+#: scripts/controllers/SystemSettingsController.js:34
 msgid "Default"
 msgstr "Domyślny"
 
-#: templates/settings.html:59
+#: templates/settings.html:67
 msgid "Default ({{channelname}})"
 msgstr "Domyślny ({{channelname}})"
 
-#: templates/settings.html:122
+#: templates/settings.html:130
 msgid "Default options"
 msgstr "Opcje domyślne"
 
@@ -621,6 +625,10 @@ msgstr "Wyłączone"
 msgid "Dismiss"
 msgstr "Ukryj"
 
+#: templates/settings.html:49
+msgid "Display and color theme"
+msgstr ""
+
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
 msgstr "Naprawdę chcesz usunąć kopię: \"{{name}}\" ?"
@@ -629,27 +637,27 @@ msgstr "Naprawdę chcesz usunąć kopię: \"{{name}}\" ?"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Czy naprawdę chcesz usunąć lokalna bazę danych: {{name}}"
 
-#: index.html:139 index.html:267
+#: index.html:140 index.html:268
 msgid "Donate"
 msgstr "Wesprzyj"
 
-#: index.html:142 index.html:270
+#: index.html:143 index.html:271
 msgid "Donate with Bitcoins"
 msgstr "Wesprzyj przez Bitcoins"
 
-#: index.html:145 index.html:273
+#: index.html:146 index.html:274
 msgid "Donate with PayPal"
 msgstr "Wesprzyj przez PayPal"
 
-#: templates/settings.html:49 templates/settings.html:51
+#: templates/settings.html:57 templates/settings.html:59
 msgid "Donation messages"
 msgstr "Komunikaty o wsparcie"
 
-#: templates/settings.html:53
+#: templates/settings.html:61
 msgid "Donation messages are hidden, click to show"
 msgstr "Komunikaty o wsparcie są ukryte, kliknij by przywrócić"
 
-#: templates/settings.html:52
+#: templates/settings.html:60
 msgid "Donation messages are visible, click to hide"
 msgstr "Komunikaty o wsparcie są widoczne kliknij by ukryć"
 
@@ -677,19 +685,16 @@ msgstr "Pobieranie uaktualnienia ..."
 msgid "Duplicate option {{opt}}"
 msgstr "Powielenie opcji {{opt}}"
 
-#: index.html:261
+#: index.html:262
 msgid "Duplicati Website"
 msgstr "Strona Duplicati"
 
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
-"Każdy skonfigurowany backup posiada powiązaną z nim lokalną bazę danych, w której przechowuje na komputerze lokalnym informacje o zdalnej kopii zapasowej.↩\n"
-"Kiedy konfiguracja backup'u jest usuwana, można również usunąć lokalną bazę danych bez wpływu na możliwość odtworzenia plików zdalnych.↩\n"
-"Jeśli używasz lokalnej bazy danych do kopii zapasowych z wiersza poleceń, należy zachować bazę danych."
 
 #: templates/localdatabase.html:8
 msgid ""
@@ -708,12 +713,12 @@ msgid "Edit ..."
 msgstr "Edycja ..."
 
 #: templates/addoredit.html:170 templates/addoredit.html:345
-#: templates/edituri.html:39 templates/settings.html:126
+#: templates/edituri.html:39 templates/settings.html:134
 msgid "Edit as list"
 msgstr "Edytuj jako listę"
 
 #: templates/addoredit.html:173 templates/addoredit.html:348
-#: templates/edituri.html:42 templates/settings.html:132
+#: templates/edituri.html:42 templates/settings.html:140
 msgid "Edit as text"
 msgstr "Edytuj jako tekst"
 
@@ -808,7 +813,7 @@ msgstr "Błąd"
 msgid "Error!"
 msgstr "Błąd!"
 
-#: templates/settings.html:101
+#: templates/settings.html:109
 msgid "Errors and crashes"
 msgstr "Błędy i awarie"
 
@@ -848,7 +853,7 @@ msgstr "Wyłącz wyrażenie regularne"
 msgid "Existing file found"
 msgstr "Znaleziono istniejący plik"
 
-#: templates/settings.html:77
+#: templates/settings.html:85
 msgid "Experimental"
 msgstr "Eksperymentalne"
 
@@ -920,7 +925,7 @@ msgstr "Nie udało się odczytać domyślnych danych kopii:"
 msgid "Failed to restore files: {{message}}"
 msgstr "Nie udało się odtworzyć plików: {{message}}"
 
-#: scripts/controllers/SystemSettingsController.js:101
+#: scripts/controllers/SystemSettingsController.js:110
 msgid "Failed to save:"
 msgstr "Nie udało się zapisać:"
 
@@ -1009,7 +1014,7 @@ msgstr "Ukryj"
 msgid "Hide hidden folders"
 msgstr "Ukryj ukryte foldery"
 
-#: index.html:206 scripts/services/AppUtils.js:61
+#: index.html:207 scripts/services/AppUtils.js:61
 msgid "Home"
 msgstr "Domowa"
 
@@ -1116,6 +1121,10 @@ msgstr "Import zakończony, ale nie znaleziono certyfikatów po imporcie"
 msgid "Import failed"
 msgstr "Nie udało się zaimportować"
 
+#: templates/addwizard.html:15
+msgid "Import from a file"
+msgstr ""
+
 #: templates/import.html:30
 msgid "Importing ..."
 msgstr "Importowanie ..."
@@ -1136,7 +1145,7 @@ msgstr "Dołącz wyrażenie regularne"
 msgid "Incorrect answer, try again"
 msgstr "Nieprawidłowa odpowiedź, spróbuj ponownie"
 
-#: templates/settings.html:83
+#: templates/settings.html:91
 msgid "Individual builds for developers only."
 msgstr "Indywidualne kompilacje tylko dla developerów"
 
@@ -1260,7 +1269,7 @@ msgstr "Loguj dane dla <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Loguj dane z serwera"
 
-#: index.html:227
+#: index.html:228
 msgid "Log out"
 msgstr "Wyloguj"
 
@@ -1280,7 +1289,7 @@ msgstr "Konserwacja"
 msgid "Manually type path"
 msgstr "Podaj ścieżkę ręcznie "
 
-#: index.html:150 templates/addoredit.html:123 templates/addoredit.html:165
+#: index.html:151 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:340 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1374,11 +1383,11 @@ msgstr "Następny"
 msgid "Next scheduled run:"
 msgstr "Następne zaplanowane uruchomienie:"
 
-#: index.html:181
+#: index.html:182
 msgid "Next scheduled task:"
 msgstr "Następne zaplanowane zadanie:"
 
-#: index.html:178
+#: index.html:179
 msgid "Next task:"
 msgstr "Następne zadanie"
 
@@ -1435,7 +1444,7 @@ msgstr "Brak pozycji do odtworzenia, proszę wybrać jedną lub więcej pozycji.
 msgid "No passphrase entered"
 msgstr "Nie wprowadzono długiego hasła"
 
-#: index.html:183
+#: index.html:184
 msgid "No scheduled tasks"
 msgstr "Brak zaplanowanych zadań"
 
@@ -1443,11 +1452,11 @@ msgstr "Brak zaplanowanych zadań"
 msgid "Non-matching passphrase"
 msgstr "Niepasujące długie hasła"
 
-#: templates/settings.html:103
+#: templates/settings.html:111
 msgid "None / disabled"
 msgstr "Żaden / wyłączone"
 
-#: scripts/controllers/AppController.js:37
+#: scripts/controllers/AppController.js:43
 #: scripts/controllers/EditBackupController.js:73
 #: scripts/controllers/EditBackupController.js:81
 #: scripts/controllers/RestoreDirectController.js:24
@@ -1455,7 +1464,7 @@ msgstr "Żaden / wyłączone"
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
 #: scripts/services/EditUriBuiltins.js:120 templates/restore.html:147
-#: templates/settings.html:138
+#: templates/settings.html:146
 msgid "OK"
 msgstr "OK"
 
@@ -1467,8 +1476,8 @@ msgstr "OpenStack AuthURI"
 msgid "OpenStack Object Storage / Swift"
 msgstr "OpenStack Object Storage / Swift"
 
-#: scripts/controllers/SystemSettingsController.js:112
-#: scripts/controllers/SystemSettingsController.js:123
+#: scripts/controllers/SystemSettingsController.js:121
+#: scripts/controllers/SystemSettingsController.js:132
 msgid "Operation failed:"
 msgstr "Nie udało się wykonać operacji:"
 
@@ -1485,7 +1494,7 @@ msgid "Optional authentication username"
 msgstr "Opcjonalny użytkownik uwierzytelnienia"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/settings.html:125 templates/settings.html:131
+#: templates/settings.html:133 templates/settings.html:139
 msgid "Options"
 msgstr "Opcje"
 
@@ -1555,7 +1564,7 @@ msgstr "Wstrzymaj"
 msgid "Pause after startup or hibernation"
 msgstr "Wstrzymaj po uruchomieniu lub hibernacji"
 
-#: scripts/controllers/AppController.js:35
+#: scripts/controllers/AppController.js:41
 msgid "Pause options"
 msgstr "Opcje wstrzymania"
 
@@ -1649,7 +1658,7 @@ msgstr "Raportowanie:"
 msgid "Reset"
 msgstr "Resetuj"
 
-#: index.html:212 templates/restore.html:131
+#: index.html:213 templates/restore.html:131
 msgid "Restore"
 msgstr "Odtwórz"
 
@@ -1691,7 +1700,7 @@ msgstr "Odtwórz uprawnienia odczytu/zapisu"
 msgid "Restoring files ..."
 msgstr "Odtwarzanie plików"
 
-#: index.html:215
+#: index.html:216
 msgid "Resume"
 msgstr "Wznów"
 
@@ -1715,7 +1724,7 @@ msgstr ""
 msgid "Running commandline entry"
 msgstr ""
 
-#: index.html:170
+#: index.html:171
 msgid "Running task:"
 msgstr "Uruchamianie zadania:"
 
@@ -1723,7 +1732,7 @@ msgstr "Uruchamianie zadania:"
 msgid "S3 Compatible"
 msgstr "Kompatybilny z S3"
 
-#: templates/settings.html:60
+#: templates/settings.html:68
 msgid "Same as the base install version: {{channelname}}"
 msgstr "Zgodny z bazową wersją instalacji: {{channelname}}"
 
@@ -1809,7 +1818,7 @@ msgstr "Serwer wstrzymany"
 msgid "Server state properties"
 msgstr "Właściwości stanu serwera"
 
-#: index.html:218 templates/settings.html:2
+#: index.html:219 templates/settings.html:2
 msgid "Settings"
 msgstr "Ustawienia"
 
@@ -1827,7 +1836,7 @@ msgstr "Pokaż edytor zaawansowany"
 msgid "Show hidden folders"
 msgstr "Pokaż ukryte foldery"
 
-#: index.html:221
+#: index.html:222
 msgid "Show log"
 msgstr "Pokaż dziennik"
 
@@ -1863,7 +1872,7 @@ msgstr "Foldery źródłowe"
 msgid "Source:"
 msgstr "Źródło:"
 
-#: templates/settings.html:78
+#: templates/settings.html:86
 msgid "Specific builds for developers only."
 msgstr "Specjalne kompilacje tylko dla developerów"
 
@@ -1901,11 +1910,11 @@ msgstr ""
 msgid "Stop running task"
 msgstr ""
 
-#: index.html:166
+#: index.html:167
 msgid "Stopping after upload:"
 msgstr ""
 
-#: index.html:171
+#: index.html:172
 msgid "Stopping task:"
 msgstr ""
 
@@ -1942,7 +1951,7 @@ msgstr "Nie"
 msgid "Symbolic link"
 msgstr "Link symboliczny"
 
-#: templates/settings.html:98
+#: templates/settings.html:106
 msgid "System default ({{levelname}})"
 msgstr "System domyślny ({{levelname}})"
 
@@ -2010,9 +2019,17 @@ msgstr ""
 "Nazwa zasobnika powinna zaczynać się od nazwy użytkownika, dodać "
 "automatycznie ?"
 
-#: index.html:310
+#: index.html:311
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr "Utracono połączenie z serwerem, ponowna próba za {{time}} ..."
+
+#: templates/settings.html:53
+msgid "The dark theme (by Michal)"
+msgstr ""
+
+#: templates/settings.html:52
+msgid "The default blue on white theme (by Alex)"
+msgstr ""
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2149,7 +2166,7 @@ msgstr "Certyfikat zaufanego hosta?"
 msgid "Trust server certificate?"
 msgstr "Certyfikat zaufanego serwera?"
 
-#: templates/settings.html:73
+#: templates/settings.html:81
 msgid ""
 "Try out the new features we are working on. Don't use with important data."
 msgstr ""
@@ -2172,7 +2189,7 @@ msgstr "Nieznany rozmiar kopii i wersje"
 msgid "Until resumed"
 msgstr "Do wznowienia"
 
-#: templates/settings.html:56
+#: templates/settings.html:64
 msgid "Update channel"
 msgstr "Kanał uaktualnień"
 
@@ -2192,7 +2209,7 @@ msgstr "Rozmiar przesłanych danych"
 msgid "Uploading verification file ..."
 msgstr "Przesyłanie pliku weryfikującego ..."
 
-#: templates/settings.html:105
+#: templates/settings.html:113
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <a href=\"{{link}}\" "
@@ -2202,11 +2219,11 @@ msgstr ""
 "wpływ nowych funkcji. Używamy ich do generowania <a href=\"{{link}}\" "
 "target=\"_blank\"> publicznych statystyk użytkowania</a>"
 
-#: templates/settings.html:93
+#: templates/settings.html:101
 msgid "Usage statistics"
 msgstr "Statystyki użycia"
 
-#: templates/settings.html:99
+#: templates/settings.html:107
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr "Statystyki użycia , ostrzeżenia, błędy i awarie"
 
@@ -2235,8 +2252,8 @@ msgid "User has too many permissions"
 msgstr "Użytkownik ma za duże uprawnienia"
 
 #: templates/settings.html:37
-msgid "User interface language"
-msgstr "Język interfejsu użytkownika"
+msgid "User interface settings"
+msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:552
 #: scripts/services/EditUriBuiltins.js:632
@@ -2289,7 +2306,7 @@ msgstr "Bardzo silne"
 msgid "Very weak"
 msgstr "Bardzo słabe"
 
-#: index.html:246
+#: index.html:247
 msgid "Visit us on"
 msgstr "Odwiedź nas na"
 
@@ -2317,7 +2334,7 @@ msgstr ""
 msgid "Waiting for upload ..."
 msgstr "Oczekiwanie na przesłanie ..."
 
-#: templates/settings.html:100
+#: templates/settings.html:108
 msgid "Warnings, errors and crashes"
 msgstr "Ostrzeżenia, błędy i awarie"
 

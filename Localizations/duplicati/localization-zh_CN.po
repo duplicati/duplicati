@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-04 22:22+0200\n"
+"POT-Creation-Date: 2017-06-01 10:40+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Bonan Zhu <zhubonan@outlook.com>, 2016\n"
 "Language-Team: Chinese (China) (https://www.transifex.com/duplicati/teams/67655/zh_CN/)\n"
@@ -315,6 +315,21 @@ msgstr "此参数决定加密启用时的 SSL 策略。"
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr "配置加密启用时的 SSL 策略"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:26
+#, csharp-format
+msgid "Error on deleting file: {0}"
+msgstr "删除文件出错： {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:27
+#, csharp-format
+msgid "Error reading file: {0}"
+msgstr "读取文件出错： {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:28
+#, csharp-format
+msgid "Error writing file: {0}"
+msgstr "写入文件出错： {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
@@ -1413,7 +1428,7 @@ msgstr "Tahoe-LAFS"
 
 #: Library/Backend/TahoeLAFS/Strings.cs:9
 msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
-msgstr ""
+msgstr "不支持的 URL 格式，必须以 \"uri/URI:DIR2:\" 开头"
 
 #: Library/Backend/WEBDAV/Strings.cs:4
 msgid ""
@@ -1857,7 +1872,7 @@ msgstr "已从删除不存在文件 {0} 的尝试中恢复"
 #: Library/Main/BackendManager.cs:622
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
-msgstr "从错误删除文件 {0} 恢复失败"
+msgstr "从删除文件错误中 {0} 恢复失败"
 
 #: Library/Main/BackendManager.cs:1103
 #, csharp-format
@@ -1882,7 +1897,7 @@ msgstr "执行标量：{0}"
 #: Library/Main/Database/ExtensionMethods.cs:90
 #, csharp-format
 msgid "ExecuteScalarInt64: {0}"
-msgstr ""
+msgstr "执行 Int64 标量：{0}"
 
 #: Library/Main/Database/ExtensionMethods.cs:110
 #, csharp-format
@@ -2873,13 +2888,13 @@ msgstr "使用此选项来增加运行时的输出信息。一般来说，此选
 
 #: Library/Main/Strings.cs:182
 msgid "Output full results"
-msgstr ""
+msgstr "输出完整结果"
 
 #: Library/Main/Strings.cs:183
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
-msgstr ""
+msgstr "使用此选项来增加的输出的操作结果信息，包括所有的文件名。"
 
 #: Library/Main/Strings.cs:184
 msgid "Determine if verification files are uploaded"
@@ -3482,6 +3497,10 @@ msgid ""
 "\n"
 "To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
 msgstr ""
+"SMTP 服务器的地址，例如 smtp://example.com:25。多个服务器可以用半角逗号分割，依优先级排列。如果使用某一服务器失败，那么将尝试使用列表中的下一服务器，直到消息发送成功。\n"
+"如果未指定服务器，将进行 DNS 查询找到第一个收件人的 MX 记录，所有的 SMTP 将按照优先级进行尝试，知道消息发送成功。\n"
+"\n"
+"若要启用 SMTP over SSL，请使用格式 smtps://example.com。若要启用SMTP STARTTLS，请使用格式 smtp://example.com:25/?starttls=when-available 或者 smtp://example.com:25/?starttls=always。如果未指定端口，非 SSL 连接将使用 25 端口，SSL 连接将使用 465 端口。若要禁止使用 STARTTLS，请使用 smtp://example.com:25/?starttls=never。"
 
 #: Library/Modules/Builtin/Strings.cs:96
 msgid "SMTP Url"

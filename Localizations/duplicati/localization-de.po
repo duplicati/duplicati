@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-04 22:22+0200\n"
+"POT-Creation-Date: 2017-06-01 10:40+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Chris K <github@mail.christosoft.de>, 2017\n"
+"Last-Translator: Markus Greitner <christian.weller@gmx.net>, 2017\n"
 "Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -369,6 +369,21 @@ msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr ""
 "Konfiguriere die SSL-Richtlinie, welche verwendet wird, wenn die "
 "Verschlüsselung aktiviert ist."
+
+#: Library/Backend/AlternativeFTP/Strings.cs:26
+#, csharp-format
+msgid "Error on deleting file: {0}"
+msgstr "Fehler beim Löschen der Datei: {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:27
+#, csharp-format
+msgid "Error reading file: {0}"
+msgstr "Fehler beim Lesen der Datei: {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:28
+#, csharp-format
+msgid "Error writing file: {0}"
+msgstr "Fehler beim Schreiben der Datei: {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
@@ -1659,6 +1674,8 @@ msgstr "Tahoe-LAFS"
 #: Library/Backend/TahoeLAFS/Strings.cs:9
 msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
 msgstr ""
+"Nicht unterstütztes URL Format. Die URL muss mit \"/uri/URI:DIR2:\" "
+"beginnen."
 
 #: Library/Backend/WEBDAV/Strings.cs:4
 msgid ""
@@ -2180,7 +2197,7 @@ msgstr "ExecuteScalar: {0}"
 #: Library/Main/Database/ExtensionMethods.cs:90
 #, csharp-format
 msgid "ExecuteScalarInt64: {0}"
-msgstr ""
+msgstr "Führe ScalarInt64 aus: {0}"
 
 #: Library/Main/Database/ExtensionMethods.cs:110
 #, csharp-format
@@ -3331,7 +3348,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:182
 msgid "Output full results"
-msgstr ""
+msgstr "Gib alle Ergebnisse aus"
 
 #: Library/Main/Strings.cs:183
 msgid ""
@@ -3396,6 +3413,8 @@ msgstr "Größe des Buffers zum Dateien lesen"
 msgid ""
 "Use this size to control how many bytes a read from a file before processing"
 msgstr ""
+"Verwende diese Größe um einzustellen wie viele Bytes von einer Datei vor dem"
+" Verarbeiten gelesen werden"
 
 #: Library/Main/Strings.cs:192
 msgid "Allow the passphrase to change"
@@ -3543,7 +3562,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:220
 msgid "Disables synethic filelist"
-msgstr ""
+msgstr "Deaktiviere die synthetische Dateiliste"
 
 #: Library/Main/Strings.cs:221
 msgid ""
@@ -3559,7 +3578,7 @@ msgstr "Nur Datei-Änderungszeit prüfen"
 
 #: Library/Main/Strings.cs:223
 msgid "Disables path compresion on restore"
-msgstr ""
+msgstr "Deaktiviere die Dateipfadkompression bei Wiederherstellung"
 
 #: Library/Main/Strings.cs:224
 msgid ""
@@ -3634,6 +3653,8 @@ msgid ""
 "When running with Mono, this module will check if any certificates are "
 "installed and suggest installing them otherwise"
 msgstr ""
+"Falls Mono verwendet wird, überprüft dieses Modul bereits vorliegende "
+"Zertifikate wurden und schlägt sie gegebenenfalls zur  Installation vor."
 
 #: Library/Modules/Builtin/Strings.cs:16
 msgid "Check for SSL certificates"
@@ -4068,7 +4089,7 @@ msgstr "Jabber-Mitteilung konnte nicht gesendet werden: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:135
 msgid "HTTP report module"
-msgstr ""
+msgstr "HTTP Report-Modul"
 
 #: Library/Modules/Builtin/Strings.cs:136
 msgid ""
@@ -4078,7 +4099,7 @@ msgstr "Dieses Modul erlaubt das Senden eines Status via HTTP-Meldungen"
 #: Library/Modules/Builtin/Strings.cs:137
 #: Library/Modules/Builtin/Strings.cs:138
 msgid "HTTP report url"
-msgstr ""
+msgstr "HTTP Report-URL"
 
 #: Library/Modules/Builtin/Strings.cs:149
 msgid "The name of the parameter to send the message as"
@@ -4353,7 +4374,7 @@ msgstr "Ausgabe von Protokollinformationen in die angegebene Datei"
 
 #: Server/Strings.cs:16
 msgid "Determines the amount of information written in the log file"
-msgstr ""
+msgstr "Bestimmt wie viel Information in die Lob-Datei geschrieben wird"
 
 #: Server/Strings.cs:17
 msgid ""
