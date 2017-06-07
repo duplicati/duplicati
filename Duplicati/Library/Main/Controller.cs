@@ -671,21 +671,18 @@ namespace Duplicati.Library.Main
             foreach (Library.Interface.IGenericModule m in DynamicLoader.GenericLoader.Modules)
                 m_options.LoadedModules.Add(new KeyValuePair<bool, Library.Interface.IGenericModule>(Array.IndexOf<string>(m_options.DisableModules, m.Key.ToLower()) < 0 && (m.LoadAsDefault || Array.IndexOf<string>(m_options.EnableModules, m.Key.ToLower()) >= 0), m));
 
-            var conopts = new Dictionary<string, string>(m_options.RawOptions);
+            // Make the filter read-n-write able in the generic modules
+            var pristinefilter = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
+            m_options.RawOptions["filter"] = pristinefilter;
+            
             var qp = new Library.Utility.Uri(m_backend).QueryParameters;
             foreach(var k in qp.Keys)
-                conopts[(string)k] = qp[(string)k];
-
-            // Make the filter read-n-write able in the generic modules
-            var pristinefilter = conopts["filter"] = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
+                m_options.RawOptions[(string)k] = qp[(string)k];
 
             foreach (var mx in m_options.LoadedModules)
                 if (mx.Key)
                 {
-                    if (mx.Value is Library.Interface.IConnectionModule)
-                        mx.Value.Configure(conopts);
-                    else
-                        mx.Value.Configure(m_options.RawOptions);
+                    mx.Value.Configure(m_options.RawOptions);
 
                     if (mx.Value is Library.Interface.IGenericSourceModule)
                     {
@@ -705,8 +702,11 @@ namespace Duplicati.Library.Main
                 }
 
             // If the filters were changed, read them back in
-            if (pristinefilter != conopts["filter"])
-                filter = FilterExpression.Deserialize(pristinefilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
+            if (pristinefilter != m_options.RawOptions["filter"])
+            {
+                filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
+            }
+            m_options.RawOptions.Remove("filter"); // "--filter" is not a supported command line option
 
             OperationRunning(true);
 
