@@ -26,6 +26,7 @@
     <meta name="theme-color" content="#ffffff">
 
     <link rel="stylesheet" type="text/css" href="styles/smoothness/jquery-ui.min.css">
+    <link rel="stylesheet" type="text/css" href="styles/fontawesome.min.css">
     <link rel="stylesheet" type="text/css" href="styles/style.css">
     <link rel="stylesheet" type="text/css" href="styles/themes.css">
     <link rel="stylesheet" type="text/css" href="../oem/ngax/styles/oem.css" />
@@ -194,7 +195,10 @@
                 </div>
 
                 <div class="action-icons">
-                    <div class="pause" ng-class="{'active': state.programState != 'Running'}" ng-click="pauseOptions()" title="{{state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></div>
+                    <div class="pause" ng-class="{'active': state.programState != 'Running'}" ng-click="pauseOptions()" title="{{state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}">
+						<i ng-show="{{state.programState != 'Running'}}" class="fa fa-pause-circle" aria-hidden="true"></i>
+						<i  ng-show="{{state.programState == 'Running'}}" class="fa fa-play-circle" aria-hidden="true"></i>
+					</div>
                     <!--<div class="throttle" ng-click="throttleOptions()"></div> -->
                 </div>
             </div>            
@@ -204,28 +208,28 @@
             <div class="mainmenu menu" id="mainmenu">
                 <ul>
                     <li>
-                        <a href="#/" class="home" ng-class="{active: current_page == 'home'}" translate>Home</a>
+                        <a href="#/" class="home" ng-class="{active: current_page == 'home'}" translate><i class="fa fa-home" aria-hidden="true"></i> Home</a>
                     </li>
                     <li>
-                        <a class="add" href="#/addstart" ng-class="{active: current_page == 'add'}" translate>Add backup</a>
+                        <a class="add" href="#/addstart" ng-class="{active: current_page == 'add'}" translate><i class="fa fa-plus" aria-hidden="true"></i> Add backup</a>
                     </li>
                     <li>
-                        <a href="#/restorestart" ng-class="{active: current_page == 'restore'}" class="restore" translate>Restore</a>
+                        <a href="#/restorestart" ng-class="{active: current_page == 'restore'}" class="restore" translate><i class="fa fa-download" aria-hidden="true"></i> Restore</a>
                     </li>
                     <li ng-hide="state.programState == 'Running'">
-                        <a href ng-click="resume()" id="resume" class="resume" translate>Resume</a>
+                        <a href ng-click="resume()" id="resume" class="resume" translate><i class="fa fa-play-circle" aria-hidden="true"></i> Resume</a>
                     </li>
                     <li>
-                        <a href="#/settings" class="settings"  ng-class="{active: current_page == 'settings'}" translate>Settings</a>
+                        <a href="#/settings" class="settings"  ng-class="{active: current_page == 'settings'}" translate><i class="fa fa-cogs" aria-hidden="true"></i> Settings</a>
                     </li>
                     <li>
-                        <a href="#/log" class="log" ng-class="{active: current_page == 'log'}" translate>Show log</a>
+                        <a href="#/log" class="log" ng-class="{active: current_page == 'log'}" translate><i class="fa fa-history" aria-hidden="true"></i> Show log</a>
                     </li>
                     <li>
-                        <a href="#/about" class="about" ng-class="{active: current_page == 'about'}" translate>About</a>
+                        <a href="#/about" class="about" ng-class="{active: current_page == 'about'}" translate><i class="fa fa-info-circle" aria-hidden="true"></i> About</a>
                     </li>
                     <li ng-show="isLoggedIn">
-                        <a href ng-click="log_out()" class="logout" translate>Log out</a>
+                        <a href ng-click="log_out()" class="logout" translate><i class="fa fa-sign-out" aria-hidden="true"></i> Log out</a>
                     </li>
                 </ul>
             </div>
