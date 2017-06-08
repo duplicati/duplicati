@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-04 22:22+0200\n"
+"POT-Creation-Date: 2017-06-01 10:40+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Kees Zaaijer <kees@famzaaijer.nl>, 2016\n"
 "Language-Team: Dutch (Netherlands) (https://www.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -375,6 +375,21 @@ msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr ""
 "Stel het SSL beleid in dat gebruikt moet worden als encryptie is "
 "ingeschakeld."
+
+#: Library/Backend/AlternativeFTP/Strings.cs:26
+#, csharp-format
+msgid "Error on deleting file: {0}"
+msgstr "Fout bij het verwijderen van bestand: {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:27
+#, csharp-format
+msgid "Error reading file: {0}"
+msgstr "Fout bij het lezen van bestand: {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:28
+#, csharp-format
+msgid "Error writing file: {0}"
+msgstr "Fout bij het schrijven naar bestand: {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
@@ -1670,7 +1685,7 @@ msgstr "Tahoe-LAFS"
 
 #: Library/Backend/TahoeLAFS/Strings.cs:9
 msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
-msgstr ""
+msgstr "Niet ondersteund URL formaat, moet beginnen met \"uri/URI:DIR2:\""
 
 #: Library/Backend/WEBDAV/Strings.cs:4
 msgid ""
@@ -2197,7 +2212,7 @@ msgstr "ExecuteScalar: {0}"
 #: Library/Main/Database/ExtensionMethods.cs:90
 #, csharp-format
 msgid "ExecuteScalarInt64: {0}"
-msgstr ""
+msgstr "ExecuteScalarInt64: {0}"
 
 #: Library/Main/Database/ExtensionMethods.cs:110
 #, csharp-format
@@ -3450,13 +3465,15 @@ msgstr ""
 
 #: Library/Main/Strings.cs:182
 msgid "Output full results"
-msgstr ""
+msgstr "Uitvoer volledige resultaten"
 
 #: Library/Main/Strings.cs:183
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
 msgstr ""
+"Gebruik deze optie om de hoeveelheid uitvoer te vergroten die gegenereerd "
+"wordt als het resultaat van een bewerking, inclusief alle bestandsnamen."
 
 #: Library/Main/Strings.cs:184
 msgid "Determine if verification files are uploaded"
@@ -4178,6 +4195,9 @@ msgid ""
 "\n"
 "To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
 msgstr ""
+"Een url voor de SMTP server, bijvoorbeeld smtp://example.com:25. Meerdere servers kunnen worden opgegeven in een lijst op volgorde van belangrijkheid, gescheiden door puntkomma's. Als een server onbereikbaar is, wordt de volgende server in de lijst geprobeerd, totdat het bericht is verzonden.\n"
+"Als geen server is opgegeven, zal een DNS lookup worden uitgevoerd om het MX record van de eerste geadresseerde te vinden, en alle SMTP servers worden geprobeerd op volgorde van prioriteit totdat het bericht is verzonden.\n"
+"Gebruik om SMTP over SSL in te schakelen het formaat smtps://example.com. Gebruik om SMTP STARTTLS in te schakelen het formaat smtp://example.com:25/?starttls=when-available of smtp://example.com:25/?starttls=always. Als geen poort wordt opgegeven, wordt poort 25 gebruikt voor niet-SSL en poort 465 gebruikt voor SSL verbindingen. Gebruik om het niet gebruiken van STARTTLS af te dwingen het formaat smtp://example.com:25/?starttls=never."
 
 #: Library/Modules/Builtin/Strings.cs:96
 msgid "SMTP Url"

@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -34,7 +34,7 @@ namespace Duplicati.GUI.TrayIcon
             if (Duplicati.Library.Utility.Utility.IsClientOSX)
                     return TOOLKIT_RUMPS;
 
-#if __MonoCS__ || __WindowsGTK__            
+#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
             if (Duplicati.Library.Utility.Utility.IsClientLinux)
             {
                 if (SupportsAppIndicator)
@@ -44,7 +44,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             else
 #endif
-            {
+			{
                 //Windows users expect a WinForms element
                 return TOOLKIT_WINDOWS_FORMS;
             }
@@ -79,7 +79,11 @@ namespace Duplicati.GUI.TrayIcon
                 Console.WriteLine();
 
                 foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
+                {
                     Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
+					if (arg.Name == TOOLKIT_OPTION)
+                        Console.WriteLine("    Supported toolkits: {0}{1}", string.Join(", ", arg.ValidValues), Environment.NewLine);                    
+				}
 
                 Console.WriteLine("Additionally, these server options are also supported:");
                 Console.WriteLine();
@@ -94,18 +98,24 @@ namespace Duplicati.GUI.TrayIcon
             
             string toolkit;
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
-                toolkit = GetDefaultToolKit(true);
+            {
+#if !(__MonoCS__ || __WindowsGTK__ || ENABLE_GTK)
+				if (Library.Utility.Utility.IsClientLinux && !Library.Utility.Utility.IsClientOSX)
+					Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
+#endif
+				toolkit = GetDefaultToolKit(true);
+            }
             else 
             {
                 if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_WINDOWS_FORMS;
-#if __MonoCS__ || __WindowsGTK__                
+#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
                 else if (TOOLKIT_GTK.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_GTK;
                 else if (TOOLKIT_GTK_APP_INDICATOR.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_GTK_APP_INDICATOR;
 #endif
-                else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+				else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_COCOA;
                 else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
                     toolkit = TOOLKIT_RUMPS;
@@ -204,13 +214,13 @@ namespace Duplicati.GUI.TrayIcon
         {
             if (toolkit == TOOLKIT_WINDOWS_FORMS)
                 return GetWinformsInstance();
-#if __MonoCS__ || __WindowsGTK__
+#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
             else if (toolkit == TOOLKIT_GTK)
                 return GetGtkInstance();
             else if (toolkit == TOOLKIT_GTK_APP_INDICATOR)
                 return GetAppIndicatorInstance();
 #endif
-            else if (toolkit == TOOLKIT_COCOA)
+			else if (toolkit == TOOLKIT_COCOA)
                 return GetCocoaRunnerInstance();
             else if (toolkit == TOOLKIT_RUMPS)
                 return GetRumpsRunnerInstance();
@@ -227,13 +237,13 @@ namespace Duplicati.GUI.TrayIcon
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetWinformsInstance() { return new Windows.WinFormsRunner(); }
-#if __MonoCS__ || __WindowsGTK__
+#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
 #endif
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
 
         private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
@@ -247,10 +257,10 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetGtk()
         {
-#if __MonoCS__ || __WindowsGTK__
+#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
             return typeof(Gtk.StatusIcon) != null && typeof(Gdk.Image) != null;
 #else
-            return false;
+			return false;
 #endif
         }
 
@@ -263,10 +273,10 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetAppIndicator()
         {
-#if __MonoCS__ || __WindowsGTK__
+#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
             return typeof(AppIndicator.ApplicationIndicator) != null;
 #else
-            return false;
+			return false;
 #endif
         }
         

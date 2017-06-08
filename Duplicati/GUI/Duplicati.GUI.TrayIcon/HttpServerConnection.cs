@@ -209,11 +209,16 @@ namespace Duplicati.GUI.TrayIcon
 
         private SaltAndNonce GetSaltAndNonce()
         {
-            var req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT + "?get-nonce=1");
-            req.Method = "GET";
+            var req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT);
+            req.Method = "POST";
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+			req.ContentType = "application/x-www-form-urlencoded";
 
-            Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
+			Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
+            var body = System.Text.Encoding.ASCII.GetBytes("get-nonce=1");
+            using (var f = areq.GetRequestStream(body.Length))
+                f.Write(body, 0, body.Length);
+
             using(var r = (System.Net.HttpWebResponse)areq.GetResponse())
             using(var s = areq.GetResponseStream())
             using (var sr = new System.IO.StreamReader(s, ENCODING, true))
@@ -222,16 +227,21 @@ namespace Duplicati.GUI.TrayIcon
 
         private string PerformLogin(string password, string nonce)
         {
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT + "?password=" + Duplicati.Library.Utility.Uri.UrlEncode(password));
-            req.Method = "GET";
+            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT);
+            req.Method = "POST";
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            if (req.CookieContainer == null)
+			req.ContentType = "application/x-www-form-urlencoded";
+			if (req.CookieContainer == null)
                 req.CookieContainer = new System.Net.CookieContainer();
             req.CookieContainer.Add(new System.Net.Cookie("session-nonce", nonce, "/", req.RequestUri.Host));
 
-            //Wrap it all in async stuff
-            Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
-            using(var r = (System.Net.HttpWebResponse)areq.GetResponse())
+			//Wrap it all in async stuff
+			Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
+			var body = System.Text.Encoding.ASCII.GetBytes("password=" + Duplicati.Library.Utility.Uri.UrlEncode(password));
+			using (var f = areq.GetRequestStream(body.Length))
+				f.Write(body, 0, body.Length);
+            
+			using(var r = (System.Net.HttpWebResponse)areq.GetResponse())
                 if (r.StatusCode == System.Net.HttpStatusCode.OK)
                     return (r.Cookies[AUTH_COOKIE] ?? r.Cookies[Library.Utility.Uri.UrlEncode(AUTH_COOKIE)]).Value;
 

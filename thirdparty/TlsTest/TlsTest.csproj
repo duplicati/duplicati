@@ -5,6 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{95B35AA3-7F86-43F1-9794-0CA115CFDF32}</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <Prefer32Bit>False</Prefer32Bit>    
     <RootNamespace>TlsTest</RootNamespace>
     <AssemblyName>TlsTest</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>

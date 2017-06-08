@@ -1,3 +1,60 @@
+2017-06-02 - 2.0.1.64_canary_2017-06-02
+==========
+* Compile all executables without `Prefer32Bit`
+* Fixed not showing the commandline arguments if the input is incorrect
+
+2017-06-01 - 2.0.1.63_canary_2017-06-01
+==========
+* Rebuild, gpg was removed from the build maching causing 2.0.1.62 to be a partially unsigned build
+
+2017-06-01 - 2.0.1.62_canary_2017-06-01
+==========
+* Caching is now enabled for static content in the WebUI, thanks @mknjc
+* Fixed an issue with `--deleted-files`, thanks @downpoured
+* Added permissions testing for the "Test connection" on aFTP, thanks @vnau
+* Changed some `GET` calls to `POST` for the login sequence
+* Fixed not being able to change the usagereporter level
+* Added support for setting a theme
+* Added the "dark" theme, thanks Michal
+* Updated SharpCompress to the latest version
+
+2017-05-30 - 2.0.1.61_experimental_2017-05-30
+==========
+This experimental release contains all the changes from canary v2.0.1.60,
+including:
+
+* Performance updates, faster backups, less memory
+* Fixed an issue with zip files larger than 4GiB
+* Improved import/export functions
+
+If you are using VSS snapshots on Windows,
+make sure you install VC++ 2015 redist:
+https://www.microsoft.com/en-us/download/details.aspx?id=48145
+
+2017-05-23 - 2.0.1.60_canary_2017-05-23
+==========
+* Re-enabled the GTK trayicon that was missing in the previous two versions
+
+2017-05-22 - 2.0.1.59_canary_2017-05-22
+==========
+* Fixed an issue with NewtonSoft.Json not loading for some backends
+* Note that Windows VSS now requires VC++ Redist 2015 installed
+
+2017-05-19 - 2.0.1.58_canary_2017-05-19
+==========
+* Fixed an issue with the FTP backend in 2.0.1.57
+* Improved the query used to get the timestamp if `--check-filetime-only` is enabled
+
+2017-05-17 - 2.0.1.57_canary_2017-05-17
+==========
+* Fixed an issue with not being performed correctly with AmzCD
+* Fixed the Windows verifyscript, thanks @mnaiman
+* Updated fonts to work better with Russian language display, thanks @vnau
+* Removed Tlsv1 option from server, thanks @mnaiman
+* Updated NewtonSoft.Json, MailKit, MimeKit and AlphaVSS
+* Fixed the way AllowWriteBuffering is used, which should fix delete errors on AmzCD
+* Fixed an error in searching for files with regular expressions
+
 2017-04-21 - 2.0.1.56_canary_2017-04-21
 ==========
 * Fixed an issue with duplicate strings in S3 providers

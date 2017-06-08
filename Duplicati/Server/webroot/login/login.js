@@ -11,7 +11,7 @@ $(document).ready(function() {
         // First we grab the nonce and salt
         $.ajax({
             url: '/login.cgi',
-            type: 'GET',
+            type: 'POST',
             dataType: 'json',
             data: {'get-nonce': 1}
         })
@@ -22,7 +22,7 @@ $(document).ready(function() {
 
             $.ajax({
                 url: '/login.cgi',
-                type: 'GET',
+                type: 'POST',
                 dataType: 'json',
                 data: {'password': noncedpwd }
             })
