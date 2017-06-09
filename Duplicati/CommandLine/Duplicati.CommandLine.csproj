@@ -5,6 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{81765A64-3661-4E3E-B850-2F6F87A51F74}</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <Prefer32Bit>False</Prefer32Bit>		
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.CommandLine</RootNamespace>
     <AssemblyName>Duplicati.CommandLine</AssemblyName>

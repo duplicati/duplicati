@@ -7,6 +7,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3B546BD0-7549-4CE3-9B68-5C149B8AA2E7}</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <Prefer32Bit>False</Prefer32Bit>    
     <RootNamespace>SQLiteTool</RootNamespace>
     <AssemblyName>SQLiteTool</AssemblyName>
   </PropertyGroup>

@@ -171,7 +171,7 @@ namespace Duplicati.Library.Main.Database
                             var oldlen = maxpath.Length;
                             var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
                             maxpath = maxpath.Substring(0, lix + 1);
-                            if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
+                            if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen || maxpath == "\\\\")
                                 maxpath = "";
                         }
                     }

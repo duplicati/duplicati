@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-04 22:22+0200\n"
+"POT-Creation-Date: 2017-06-01 10:40+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Martín Gómez González <correo.mgg@gmail.com>, 2016\n"
 "Language-Team: Spanish (https://www.transifex.com/duplicati/teams/67655/es/)\n"
@@ -333,6 +333,21 @@ msgstr ""
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr "Configurar la política SSL cuando se habilita la encriptación"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:26
+#, csharp-format
+msgid "Error on deleting file: {0}"
+msgstr ""
+
+#: Library/Backend/AlternativeFTP/Strings.cs:27
+#, csharp-format
+msgid "Error reading file: {0}"
+msgstr ""
+
+#: Library/Backend/AlternativeFTP/Strings.cs:28
+#, csharp-format
+msgid "Error writing file: {0}"
+msgstr ""
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""

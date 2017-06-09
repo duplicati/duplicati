@@ -5,6 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <Prefer32Bit>False</Prefer32Bit>    
     <RootNamespace>Duplicati.CommandLine.RecoveryTool</RootNamespace>
     <AssemblyName>Duplicati.CommandLine.RecoveryTool</AssemblyName>
     <SignAssembly>false</SignAssembly>

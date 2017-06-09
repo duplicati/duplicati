@@ -1,3 +1,31 @@
+2017-06-09 - 2.0.1.65_canary_2017-06-09
+==========
+* Updated the Azure libraries
+* Cleaned the deployed builds from XML files
+* Fixed an out-of-bounds error, thanks @okoetter
+* Updated localizations
+* Fixed a bug where the SSL certificate was reported to the client
+
+2017-06-02 - 2.0.1.64_canary_2017-06-02
+==========
+* Compile all executables without `Prefer32Bit`
+* Fixed not showing the commandline arguments if the input is incorrect
+
+2017-06-01 - 2.0.1.63_canary_2017-06-01
+==========
+* Rebuild, gpg was removed from the build maching causing 2.0.1.62 to be a partially unsigned build
+
+2017-06-01 - 2.0.1.62_canary_2017-06-01
+==========
+* Caching is now enabled for static content in the WebUI, thanks @mknjc
+* Fixed an issue with `--deleted-files`, thanks @downpoured
+* Added permissions testing for the "Test connection" on aFTP, thanks @vnau
+* Changed some `GET` calls to `POST` for the login sequence
+* Fixed not being able to change the usagereporter level
+* Added support for setting a theme
+* Added the "dark" theme, thanks Michal
+* Updated SharpCompress to the latest version
+
 2017-05-30 - 2.0.1.61_experimental_2017-05-30
 ==========
 This experimental release contains all the changes from canary v2.0.1.60,

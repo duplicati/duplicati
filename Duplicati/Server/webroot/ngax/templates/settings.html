@@ -34,7 +34,7 @@
             </select>
         </div>
 
-        <h2 translate>User interface language</h2>
+        <h2 translate>User interface settings</h2>
         <div class="input mixed multiple">
             <label for="userinterfacelanguage" translate>Language in user interface</label>
 
@@ -45,6 +45,14 @@
             </select>
         </div>
 
+        <div class="input mixed multiple">
+            <label for="themedisplay" translate>Display and color theme</label>
+
+            <select id="themedisplay" ng-model="theme">
+                <option value="default" translate>The default blue on white theme (by Alex)</option>
+                <option value="dark" translate>The dark theme (by Michal)</option>
+            </select>
+        </div>
         
         <h2 translate>Donation messages</h2>
         <div class="input checkbox">
@@ -94,7 +102,7 @@
         <div ng-if="SystemInfo.DefaultUsageReportLevel != 'Disabled'" class="input mixed multiple">
             <label for="usagereporterlevel" translate>Anonymous usage reports</label>
 
-            <select id="usagereporterlevel" ng-model="usageReporterLevel">
+            <select id="usagereporterlevel" ng-model="$parent.usageReporterLevel">
                 <option value="" translate translate-params-levelname="SystemInfo.DefaultUsageReportLevel">System default ({{levelname}})</option>
                 <option value="information" translate>Usage statistics, warnings, errors, and crashes</option>
                 <option value="warning" translate>Warnings, errors and crashes</option>
