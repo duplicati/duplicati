@@ -1,3 +1,11 @@
+2017-06-09 - 2.0.1.65_canary_2017-06-09
+==========
+* Updated the Azure libraries
+* Cleaned the deployed builds from XML files
+* Fixed an out-of-bounds error, thanks @okoetter
+* Updated localizations
+* Fixed a bug where the SSL certificate was reported to the client
+
 2017-06-02 - 2.0.1.64_canary_2017-06-02
 ==========
 * Compile all executables without `Prefer32Bit`
