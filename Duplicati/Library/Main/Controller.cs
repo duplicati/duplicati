@@ -675,14 +675,19 @@ namespace Duplicati.Library.Main
             var pristinefilter = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
             m_options.RawOptions["filter"] = pristinefilter;
             
+            // Store the URL connection options separately, as these should only be visible to modules implementing IConnectionModule
+            var conopts = new Dictionary<string, string>(m_options.RawOptions);
             var qp = new Library.Utility.Uri(m_backend).QueryParameters;
-            foreach(var k in qp.Keys)
-                m_options.RawOptions[(string)k] = qp[(string)k];
+            foreach (var k in qp.Keys)
+                conopts[(string)k] = qp[(string)k];
 
             foreach (var mx in m_options.LoadedModules)
                 if (mx.Key)
                 {
-                    mx.Value.Configure(m_options.RawOptions);
+                    if (mx.Value is Library.Interface.IConnectionModule)
+                        mx.Value.Configure(conopts);
+                    else
+                        mx.Value.Configure(m_options.RawOptions);
 
                     if (mx.Value is Library.Interface.IGenericSourceModule)
                     {
@@ -701,7 +706,7 @@ namespace Duplicati.Library.Main
                         ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
 
-            // If the filters were changed, read them back in
+            // If the filters were changed by a module, read them back in
             if (pristinefilter != m_options.RawOptions["filter"])
             {
                 filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
