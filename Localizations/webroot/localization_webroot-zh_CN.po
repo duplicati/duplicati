@@ -684,8 +684,8 @@ msgstr "Duplicati 网站"
 
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
 "每个备份都有一个关联的本地数据库，用来存储远程备份相关的信息。\n"

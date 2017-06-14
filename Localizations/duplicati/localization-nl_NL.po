@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-01 10:40+0200\n"
+"POT-Creation-Date: 2017-06-14 23:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Kees Zaaijer <kees@famzaaijer.nl>, 2016\n"
 "Language-Team: Dutch (Netherlands) (https://www.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -3728,8 +3728,8 @@ msgstr ""
 "back-up en de inhoud die werd geüpload tijdens de incomplete back-up sessie."
 
 #: Library/Main/Strings.cs:220
-msgid "Disables synethic filelist"
-msgstr "Schakelt synthetische bestandslijst uit"
+msgid "Disables synthetic filelist"
+msgstr ""
 
 #: Library/Main/Strings.cs:221
 msgid ""

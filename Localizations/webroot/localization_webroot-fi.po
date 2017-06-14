@@ -692,10 +692,13 @@ msgstr "Duplicatin verkkosivu"
 
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
+"Jokaisella varmuuskopiolla on oma paikallinen tietokanta, joka sisältää tiedot etäpalvelimella olevista varmuuskopioista.\n"
+"Poistaessasi varmuuskopion voit poistaa myös paikallisen tietokannan. Tämä ei vaikuta mitenkään kykyyn palauttaa varmuuuskopioituja tietoja.\n"
+"Jos käytät Duplicatia komentoriviltä, on suositeltavaa säilyttää tietokanta."
 
 #: templates/localdatabase.html:8
 msgid ""
