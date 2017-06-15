@@ -691,13 +691,13 @@ msgstr "Duplicati Website"
 
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
 "Iedere back-up heeft een lokale database waarmee het geassocieerd is, die informatie opslaat over de remote back-up op de lokale machine.\n"
-"Bij het verwijderen van een back-up kan eveneens de lokale database verwijderd worden, zonder dat dit invloed heeft op de mogelijkheid van het terugzetten van de remote bestanden.\n"
-"Als de lokale database gebruikt wordt voor back-ups vanaf de opdrachtregel, moet de database behouden blijven."
+"            Bij het verwijderen van de back-up kunt u eveneens de lokale database verwijderen, zonder dat dit invloed heeft op de mogelijkheid om remote bestanden te herstellen.\n"
+"            Als u de lokale database gebruikt voor back-ups vanaf de opdrachtprompt, moet u de database behouden."
 
 #: templates/localdatabase.html:8
 msgid ""

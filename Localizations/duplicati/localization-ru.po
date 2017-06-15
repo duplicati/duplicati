@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-01 10:40+0200\n"
+"POT-Creation-Date: 2017-06-14 23:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Pavel Klevakin <klev.paul@gmail.com>, 2017\n"
 "Language-Team: Russian (https://www.transifex.com/duplicati/teams/67655/ru/)\n"
@@ -3607,8 +3607,8 @@ msgstr ""
 "резервной копии и содержимого, выгруженного во незавершенного сеанса."
 
 #: Library/Main/Strings.cs:220
-msgid "Disables synethic filelist"
-msgstr "Отключает искусственный список файлов"
+msgid "Disables synthetic filelist"
+msgstr ""
 
 #: Library/Main/Strings.cs:221
 msgid ""

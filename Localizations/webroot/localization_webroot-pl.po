@@ -77,7 +77,7 @@ msgstr "Dodaj nową kopię"
 
 #: templates/addoredit.html:149
 msgid "Add a path directly"
-msgstr ""
+msgstr "Dodaj ścieżkę bezpośrednio"
 
 #: templates/advancedoptionseditor.html:46
 msgid "Add advanced option"
@@ -358,7 +358,7 @@ msgstr "Kliknij link AuthID by utworzyć AuthID"
 
 #: templates/home.html:30
 msgid "Commandline ..."
-msgstr ""
+msgstr "Linia poleceń ..."
 
 #: templates/home.html:29
 msgid "Compact now"
@@ -416,7 +416,7 @@ msgstr "Połącz teraz"
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
-msgstr ""
+msgstr "Łączenie z zadaniem ..."
 
 #: index.html:319
 msgid "Connecting..."
@@ -541,7 +541,7 @@ msgstr "Niestandardowa klasa magazynu ({{Klasa}})"
 
 #: templates/home.html:27
 msgid "Database ..."
-msgstr ""
+msgstr "Baza danych ..."
 
 #: scripts/services/AppUtils.js:90 templates/addoredit.html:314
 msgid "Days"
@@ -627,7 +627,7 @@ msgstr "Ukryj"
 
 #: templates/settings.html:49
 msgid "Display and color theme"
-msgstr ""
+msgstr "Schemat ekranu i kolorystyki"
 
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
@@ -691,10 +691,13 @@ msgstr "Strona Duplicati"
 
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
+"Każdy skonfigurowany backup posiada powiązaną z nim lokalną bazę danych, w której przechowuje na komputerze lokalnym informacje o zdalnej kopii zapasowej.↩\n"
+"Kiedy konfiguracja backup'u jest usuwana, można również usunąć lokalną bazę danych bez wpływu na możliwość odtworzenia plików zdalnych.↩\n"
+"Jeśli używasz lokalnej bazy danych do kopii zapasowych z wiersza poleceń, należy zachować bazę danych."
 
 #: templates/localdatabase.html:8
 msgid ""
@@ -1123,7 +1126,7 @@ msgstr "Nie udało się zaimportować"
 
 #: templates/addwizard.html:15
 msgid "Import from a file"
-msgstr ""
+msgstr "Zaimportuj z pliku"
 
 #: templates/import.html:30
 msgid "Importing ..."
@@ -1718,11 +1721,11 @@ msgstr "Uruchamianie ..."
 
 #: templates/commandline.html:58
 msgid "Running ...."
-msgstr ""
+msgstr "Uruchamianie ..."
 
 #: templates/commandline.html:47
 msgid "Running commandline entry"
-msgstr ""
+msgstr "Uruchamianie komend z linii poleceń"
 
 #: index.html:171
 msgid "Running task:"
@@ -1891,32 +1894,32 @@ msgstr "Uruchamianie procesu odtwarzania ..."
 
 #: scripts/controllers/StateController.js:107
 msgid "Stop after the current file"
-msgstr ""
+msgstr "Zatrzymaj po bieżącym pliku"
 
 #: scripts/controllers/StateController.js:98
 msgid "Stop after upload"
-msgstr ""
+msgstr "Zatrzymaj po przesłaniu pliku"
 
 #: scripts/controllers/StateController.js:107
 #: scripts/controllers/StateController.js:98
 msgid "Stop now"
-msgstr ""
+msgstr "Zatrzymaj teraz"
 
 #: scripts/controllers/StateController.js:96
 msgid "Stop running backup"
-msgstr ""
+msgstr "Zatrzymaj wykonywaną kopię"
 
 #: scripts/controllers/StateController.js:105
 msgid "Stop running task"
-msgstr ""
+msgstr "Zatrzymaj wykonywane zadanie"
 
 #: index.html:167
 msgid "Stopping after upload:"
-msgstr ""
+msgstr "Zatrzymaj po przesłaniu:"
 
 #: index.html:172
 msgid "Stopping task:"
-msgstr ""
+msgstr "Zatrzymywanie zadania:"
 
 #: templates/edituri.html:3
 msgid "Storage Type"
@@ -2025,11 +2028,11 @@ msgstr "Utracono połączenie z serwerem, ponowna próba za {{time}} ..."
 
 #: templates/settings.html:53
 msgid "The dark theme (by Michal)"
-msgstr ""
+msgstr "Ciemny schemat (wyk. Michal)"
 
 #: templates/settings.html:52
 msgid "The default blue on white theme (by Alex)"
-msgstr ""
+msgstr "Domyślny schemat niebieski na białym (wyk. Alex)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2253,7 +2256,7 @@ msgstr "Użytkownik ma za duże uprawnienia"
 
 #: templates/settings.html:37
 msgid "User interface settings"
-msgstr ""
+msgstr "Ustawienia interfejsu użytkownika"
 
 #: scripts/services/EditUriBuiltins.js:552
 #: scripts/services/EditUriBuiltins.js:632
@@ -2328,7 +2331,7 @@ msgstr "Oczekiwanie na rozpoczęcie zadania"
 
 #: templates/commandline.html:54
 msgid "Waiting for task to start ...."
-msgstr ""
+msgstr "Oczekiwanie na uruchomienie zadania ..."
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload ..."
@@ -2431,12 +2434,16 @@ msgid ""
 "You can stop the backup immediately, or stop after the current file has been"
 " uploaded."
 msgstr ""
+"Możesz natychmiast przerwać tworzenie kopii zapasowej lub przerwać po "
+"przesłaniu bieżącego pliku."
 
 #: scripts/controllers/StateController.js:106
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and the stop."
 msgstr ""
+"Możesz natychmiast przerwać wykonywane zadanie lub przerwać po zakończeniu "
+"bieżącego pliku. "
 
 #: scripts/controllers/EditBackupController.js:351
 msgid ""

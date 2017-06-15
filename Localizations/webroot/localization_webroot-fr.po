@@ -4,10 +4,11 @@
 # Hadrien DUSSUEL <dbkblk@gmail.com>, 2016
 # Arnaud COURCOUX <courcoa@hotmail.fr>, 2016
 # Kevin CHAILLY <kchailly@adeo-informatique.fr>, 2017
+# Alexandre DAUMAS <daumas.alexandre@gmail.com>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Kevin CHAILLY <kchailly@adeo-informatique.fr>, 2017\n"
+"Last-Translator: Alexandre DAUMAS <daumas.alexandre@gmail.com>, 2017\n"
 "Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -75,11 +76,11 @@ msgstr "Echec d'activation:"
 
 #: templates/addwizard.html:3
 msgid "Add a new backup"
-msgstr ""
+msgstr "Ajouter une nouvelle sauvegarde"
 
 #: templates/addoredit.html:149
 msgid "Add a path directly"
-msgstr ""
+msgstr "Ajouter un répertoire directement"
 
 #: templates/advancedoptionseditor.html:46
 msgid "Add advanced option"
@@ -235,7 +236,7 @@ msgstr "Destination de sauvegarde"
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
 msgid "Backup location"
-msgstr ""
+msgstr "Emplacement de la sauvegarde"
 
 #: templates/home.html:60
 msgid "Backup:"
@@ -362,7 +363,7 @@ msgstr "Cliquez sur le lien AuthID pour créer un AuthID"
 
 #: templates/home.html:30
 msgid "Commandline ..."
-msgstr ""
+msgstr "Ligne de commande"
 
 #: templates/home.html:29
 msgid "Compact now"
@@ -398,7 +399,7 @@ msgstr "Configuration :"
 
 #: templates/addwizard.html:9
 msgid "Configure a new backup"
-msgstr ""
+msgstr "Configurer une nouvelle sauvegarde"
 
 #: scripts/controllers/DeleteController.js:65
 #: scripts/controllers/DeleteController.js:77
@@ -420,7 +421,7 @@ msgstr "Connecter maintenant"
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
-msgstr ""
+msgstr "Connexion à la tâche ..."
 
 #: index.html:319
 msgid "Connecting..."
@@ -545,7 +546,7 @@ msgstr "Classe de stockage personnalisée ({{class}})"
 
 #: templates/home.html:27
 msgid "Database ..."
-msgstr ""
+msgstr "Base de donnée"
 
 #: scripts/services/AppUtils.js:90 templates/addoredit.html:314
 msgid "Days"
@@ -619,7 +620,7 @@ msgstr ""
 
 #: templates/restorewizard.html:9
 msgid "Direct restore from backup files ..."
-msgstr ""
+msgstr "Restauration directe depuis les fichiers de sauvegarde"
 
 #: templates/log.html:31
 msgid "Disabled"
@@ -631,7 +632,7 @@ msgstr "Rejeter"
 
 #: templates/settings.html:49
 msgid "Display and color theme"
-msgstr ""
+msgstr "Affichage et couleur"
 
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
@@ -696,10 +697,13 @@ msgstr "Site internet de Duplicati"
 
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
+"Chaque sauvegarde a une base de données locale associée à elle, elle stocke des informations localement à propos de la sauvegarde distante.\n"
+"Quand vous supprimez une sauvegarde, vous pouvez aussi supprimer la base de données locale sans affecter votre capacité à restaurer vos fichiers distants.\n"
+"Si vous utilisez la base de données locale pour vos sauvegardes à partir de la ligne de commande, vous devez conserver la base de données."
 
 #: templates/localdatabase.html:8
 msgid ""
@@ -763,7 +767,7 @@ msgstr "Entrez la phrase secrète de sauvegarde, si présente"
 
 #: templates/addwizard.html:10
 msgid "Enter configuration details"
-msgstr ""
+msgstr "Entrer les détails de configuration"
 
 #: templates/backends/azure.html:3
 msgid "Enter container name"
@@ -1127,7 +1131,7 @@ msgstr "Échec de l'import"
 
 #: templates/addwizard.html:15
 msgid "Import from a file"
-msgstr ""
+msgstr "Importer depuis un fichier"
 
 #: templates/import.html:30
 msgid "Importing ..."
@@ -1225,10 +1229,11 @@ msgstr "Direct"
 #: templates/addwizard.html:16
 msgid "Load a configuration from an exported job or a storage provider"
 msgstr ""
+"Charger une configuration depuis un export ou un opérateur de stockage"
 
 #: templates/restorewizard.html:16
 msgid "Load destination from an exported job or a storage provider"
-msgstr ""
+msgstr "Charger la destination depuis un export ou un opérateur de stockage"
 
 #: templates/log.html:23 templates/log.html:54 templates/log.html:68
 msgid "Load older data"
@@ -1571,7 +1576,7 @@ msgstr "Pause après le démarrage ou l'hibernation"
 
 #: scripts/controllers/AppController.js:41
 msgid "Pause options"
-msgstr ""
+msgstr "Options de pause"
 
 #: templates/restore.html:123
 msgid "Permissions"
@@ -1583,7 +1588,7 @@ msgstr "Choisir emplacement"
 
 #: templates/restorewizard.html:10
 msgid "Point to your backup files and restore from there"
-msgstr ""
+msgstr "Donner votre fichier de sauvegarde et restaurer depuis celui-ci "
 
 #: templates/backends/generic.html:9
 msgid "Port"
@@ -1677,7 +1682,7 @@ msgstr "Restaurer fichier ..."
 
 #: templates/restore.html:46
 msgid "Restore files from {{backupname}}"
-msgstr ""
+msgstr "Restaurer les fichiers depuis {{backupname}}"
 
 #: templates/restore.html:48
 msgid "Restore from"
@@ -1685,11 +1690,11 @@ msgstr "Restaurer depuis"
 
 #: templates/import.html:4
 msgid "Restore from backup configuration"
-msgstr ""
+msgstr "Restaurer depuis une sauvegarde de configuration"
 
 #: templates/restorewizard.html:15
 msgid "Restore from configuration ..."
-msgstr ""
+msgstr "Restaurer depuis une configuration"
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
@@ -1723,11 +1728,11 @@ msgstr "En cours d'exécution ..."
 
 #: templates/commandline.html:58
 msgid "Running ...."
-msgstr ""
+msgstr "En cour ..."
 
 #: templates/commandline.html:47
 msgid "Running commandline entry"
-msgstr ""
+msgstr "Execution d'une ligne de commnde"
 
 #: index.html:171
 msgid "Running task:"
@@ -1761,7 +1766,7 @@ msgstr ""
 
 #: templates/import.html:19
 msgid "Save immediately"
-msgstr ""
+msgstr "Sauver immédiatement "
 
 #: scripts/services/ServerStatus.js:50
 msgid "Scanning existing files ..."
@@ -1796,7 +1801,7 @@ msgstr ""
 #: templates/restore.html:23 templates/restore.html:38
 #: templates/restoredirect.html:23
 msgid "Select files"
-msgstr ""
+msgstr "Sélectionner les fichiers"
 
 #: templates/backends/s3.html:8
 msgid "Server"
@@ -1901,32 +1906,32 @@ msgstr "Démarrage du processus de restauration ..."
 
 #: scripts/controllers/StateController.js:107
 msgid "Stop after the current file"
-msgstr ""
+msgstr "Stopper après le fichier en cour"
 
 #: scripts/controllers/StateController.js:98
 msgid "Stop after upload"
-msgstr ""
+msgstr "Stopper après le transfert"
 
 #: scripts/controllers/StateController.js:107
 #: scripts/controllers/StateController.js:98
 msgid "Stop now"
-msgstr ""
+msgstr "Stopper maintenant"
 
 #: scripts/controllers/StateController.js:96
 msgid "Stop running backup"
-msgstr ""
+msgstr "Stopper la sauvegarde en cour"
 
 #: scripts/controllers/StateController.js:105
 msgid "Stop running task"
-msgstr ""
+msgstr "Stopper la tâche en cour"
 
 #: index.html:167
 msgid "Stopping after upload:"
-msgstr ""
+msgstr "Arrêter après transfert"
 
 #: index.html:172
 msgid "Stopping task:"
-msgstr ""
+msgstr "Arrêt de la tâche"
 
 #: templates/edituri.html:3
 msgid "Storage Type"
@@ -2037,11 +2042,11 @@ msgstr ""
 
 #: templates/settings.html:53
 msgid "The dark theme (by Michal)"
-msgstr ""
+msgstr "Le thème sombre (de Michal)"
 
 #: templates/settings.html:52
 msgid "The default blue on white theme (by Alex)"
-msgstr ""
+msgstr "Thème par défaut bleu sur fond blanc (by Alex)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2201,7 +2206,7 @@ msgstr "Tapez pour mettre en surbrillance les fichiers"
 
 #: templates/restorewizard.html:25
 msgid "Unknown backup size and versions"
-msgstr ""
+msgstr "Taille et version de sauvegarde inconnue"
 
 #: templates/pause.html:31
 msgid "Until resumed"
@@ -2272,7 +2277,7 @@ msgstr "L'utilisateur à trop d'autorisations"
 
 #: templates/settings.html:37
 msgid "User interface settings"
-msgstr ""
+msgstr "Réglages interface utilisateur"
 
 #: scripts/services/EditUriBuiltins.js:552
 #: scripts/services/EditUriBuiltins.js:632
@@ -2348,7 +2353,7 @@ msgstr "En attente du début de la tâche"
 
 #: templates/commandline.html:54
 msgid "Waiting for task to start ...."
-msgstr ""
+msgstr "En attente du début de la tâche"
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload ..."
@@ -2382,7 +2387,7 @@ msgstr "Semaines"
 
 #: templates/restorewizard.html:3
 msgid "Where do you want to restore from?"
-msgstr ""
+msgstr "Ou voulez-vous restaurer vos fichiers ?"
 
 #: templates/restore.html:78
 msgid "Where do you want to restore the files to?"
@@ -2452,12 +2457,16 @@ msgid ""
 "You can stop the backup immediately, or stop after the current file has been"
 " uploaded."
 msgstr ""
+"Vous pouvez arrêter la sauvegarde immédiatement, ou stopper après télé-"
+"versement du fichier courant"
 
 #: scripts/controllers/StateController.js:106
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and the stop."
 msgstr ""
+"Vous pouvez stopper la tâche immédiatement, ou autoriser le processus en "
+"cour et stopper ensuite"
 
 #: scripts/controllers/EditBackupController.js:351
 msgid ""

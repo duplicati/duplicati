@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-01 10:40+0200\n"
+"POT-Creation-Date: 2017-06-14 23:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Bonan Zhu <zhubonan@outlook.com>, 2016\n"
 "Language-Team: Chinese (China) (https://www.transifex.com/duplicati/teams/67655/zh_CN/)\n"
@@ -3095,8 +3095,8 @@ msgid ""
 msgstr "如果 Duplicati 检测到前一备份没有完成，它将生成一份文件列表，其中包括上一次完成的备份和在未完成备份会话中已上传的内容。"
 
 #: Library/Main/Strings.cs:220
-msgid "Disables synethic filelist"
-msgstr "禁用虚拟文件列表"
+msgid "Disables synthetic filelist"
+msgstr ""
 
 #: Library/Main/Strings.cs:221
 msgid ""
