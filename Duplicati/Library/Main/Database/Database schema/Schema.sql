@@ -111,7 +111,7 @@ CREATE TABLE "BlocklistHash" (
 );
 
 /* Faster database recreation */
-CREATE INDEX "BlocklistHashBlocksetIDIndex" ON "BlocklistHash" ("BlocksetID", "Index");
+CREATE UNIQUE INDEX "BlocklistHashBlocksetIDIndex" ON "BlocklistHash" ("BlocksetID", "Index");
 
 /*
 The blockset is a list of blocks
