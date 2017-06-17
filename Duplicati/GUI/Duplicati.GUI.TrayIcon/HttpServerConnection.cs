@@ -17,6 +17,8 @@ namespace Duplicati.GUI.TrayIcon
         private const string XSRF_HEADER = "X-XSRF-Token";
         private const string AUTH_COOKIE = "session-auth";
 
+        private const string TRAYICON_HEADER_NAME = "X-TrayIcon-Client";
+
         private class BackgroundRequest
         {
             public string Method;
@@ -213,6 +215,7 @@ namespace Duplicati.GUI.TrayIcon
             var req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT + "?get-nonce=1");
             req.Method = "GET";
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.Headers.Add(TRAYICON_HEADER_NAME, "");
 
             Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
             using(var r = (System.Net.HttpWebResponse)areq.GetResponse())
@@ -226,6 +229,7 @@ namespace Duplicati.GUI.TrayIcon
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT + "?password=" + Duplicati.Library.Utility.Uri.UrlEncode(password));
             req.Method = "GET";
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.Headers.Add(TRAYICON_HEADER_NAME, "");
             if (req.CookieContainer == null)
                 req.CookieContainer = new System.Net.CookieContainer();
             req.CookieContainer.Add(new System.Net.Cookie("session-nonce", nonce, "/", req.RequestUri.Host));
@@ -269,6 +273,7 @@ namespace Duplicati.GUI.TrayIcon
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + STATUS_WINDOW);
             req.Method = "GET";
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.Headers.Add(TRAYICON_HEADER_NAME, "");
             if (req.CookieContainer == null)
                 req.CookieContainer = new System.Net.CookieContainer();
 
@@ -345,6 +350,7 @@ namespace Duplicati.GUI.TrayIcon
             if (m_xsrftoken != null)
                 req.Headers.Add(XSRF_HEADER, m_xsrftoken);
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.Headers.Add(TRAYICON_HEADER_NAME, "");
             if (req.CookieContainer == null)
                 req.CookieContainer = new System.Net.CookieContainer();
 

@@ -32,6 +32,8 @@ namespace Duplicati.Server.WebServer
         private const string XSRF_COOKIE_NAME = "xsrf-token";
         private const string XSRF_HEADER_NAME = "X-XSRF-Token";
 
+        private const string TRAYICON_HEADER_NAME = "X-TrayIcon-Client";
+
         public const string LOGIN_SCRIPT_URI = "/login.cgi";
         public const string LOGOUT_SCRIPT_URI = "/logout.cgi";
         public const string CAPTCHA_IMAGE_URI = RESTHandler.API_URI_PATH + "/captcha/";
@@ -181,7 +183,7 @@ namespace Duplicati.Server.WebServer
 
                     var password = Program.DataConnection.ApplicationSettings.WebserverPassword;
 
-                    if (request.Headers["User-Agent"] != null && request.Headers["User-Agent"].StartsWith("Duplicati TrayIcon Monitor"))
+                    if (request.Headers[TRAYICON_HEADER_NAME] != null)
                         password = Program.DataConnection.ApplicationSettings.WebserverPasswordTrayIconHash;
                     
                     var buf = new byte[32];
