@@ -20,7 +20,7 @@
             <!-- The spaces near the equation sign are used to prevent the version being set to the current build by the VersionStamp tool -->
             <dependentAssembly>
                 <assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
-                <bindingRedirect oldVersion="1.0.0.0 - 8.0.0.0" newVersion = "9.0.0.0"/>
+                <bindingRedirect oldVersion="0.0.0.0 - 99.9.9.9" newVersion = "10.0.0.0"/>
             </dependentAssembly>
 
         </assemblyBinding>

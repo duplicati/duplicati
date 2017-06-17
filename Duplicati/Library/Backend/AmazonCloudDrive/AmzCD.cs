@@ -398,7 +398,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         }
         public void Delete(string remotename)
         {
-            EnforceConsistencyDelay(RemoteOperation.Put);
+            EnforceConsistencyDelay(RemoteOperation.Delete);
 
             try
             {

@@ -48,17 +48,17 @@
     <Reference Include="agsXMPP">
       <HintPath>..\..\..\..\packages\agsXMPP.1.1.1.0\lib\agsXMPP.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="MimeKit">
-      <HintPath>..\..\..\..\packages\MimeKit.1.10.0\lib\net45\MimeKit.dll</HintPath>
-    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Security" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="MimeKit">
+      <HintPath>..\..\..\..\packages\MimeKit.1.16.1\lib\net45\MimeKit.dll</HintPath>
+    </Reference>
     <Reference Include="MailKit">
-      <HintPath>..\..\..\..\packages\MailKit.1.10.1\lib\net45\MailKit.dll</HintPath>
+      <HintPath>..\..\..\..\packages\MailKit.1.16.1\lib\net45\MailKit.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

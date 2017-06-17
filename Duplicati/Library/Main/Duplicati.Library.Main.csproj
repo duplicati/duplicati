@@ -41,7 +41,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -173,6 +173,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
     <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
+    <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

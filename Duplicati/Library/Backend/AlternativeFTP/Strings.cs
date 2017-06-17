@@ -23,5 +23,8 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         public static string DescriptionFtpEncryptionModeShort { get { return LC.L(@"Configure the FTP encryption mode"); } }
         public static string DescriptionSslProtocolsLong { get { return LC.L(@"This flag controls the SSL policy to use when encryption is enabled."); } }
         public static string DescriptionSslProtocolsShort { get { return LC.L(@"Configure the SSL policy to use when encryption is enabled"); } }
+        public static string ErrorDeleteFile { get { return LC.L(@"Error on deleting file: {0}"); } }
+        public static string ErrorReadFile { get { return LC.L(@"Error reading file: {0}"); } }
+        public static string ErrorWriteFile { get { return LC.L(@"Error writing file: {0}"); } }
     }
 }

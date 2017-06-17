@@ -23,13 +23,24 @@ using System.Text;
 using System.Data;
 using System.Text.RegularExpressions;
 using System.Linq;
+using Duplicati.Library.SQLiteHelper.DBUpdates;
+using Duplicati.Library.SQLiteHelper.DBSchemaUpgrades;
 
 namespace Duplicati.Library.SQLiteHelper
 {
     /// <summary>
     /// This class will read embedded files from the given folder.
     /// Updates should have the form &quot;1.Sample upgrade.sql&quot;.
-    /// When the database schema changes, simply put a new file into the folder.
+    /// When the database schema changes, simply put a new file into the folder
+    /// and set it to be emnbedded in the binary.
+    /// 
+    /// Additionally, it's possible to execute custom code before and after 
+    /// the SQL is executed. To set up a custom upgrade stage, add your
+    /// code to DbUpgradesRegistry along with the DB version to apply it with.
+    /// 
+    /// Even if all the DB upgrade code is handled in C#, you still have to add
+    /// a dummy SQL file to indicate the version ID is already taken.
+    /// 
     /// Each upgrade file should ONLY upgrade from the previous version.
     /// If done correctly, a user may be upgrade from the very first version
     /// to the very latest.
@@ -235,7 +246,9 @@ namespace Duplicati.Library.SQLiteHelper
                 }
                 else if (versions.Count > dbversion)
                 {
-                    string backupfile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(sourcefile), Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + DateTime.Now.ToString("yyyyMMddhhmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
+                    string backupfile = System.IO.Path.Combine(
+                        System.IO.Path.GetDirectoryName(sourcefile), 
+                        Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + DateTime.Now.ToString("yyyyMMddhhmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
 
                     try
                     {
@@ -247,6 +260,16 @@ namespace Duplicati.Library.SQLiteHelper
 
                         for (int i = dbversion; i < versions.Count; i++)
                         {
+                            IDbSchemaUpgrade dbCodeUpgrade;
+
+                            // The versions in the registry are 1-based, the loop index is zero based.
+                            bool hookFound = DbUpgradesRegistry.CodeChanges.TryGetValue(i + 1, out dbCodeUpgrade);
+
+                            if (hookFound)
+                            {
+                                dbCodeUpgrade.BeforeSql(connection);
+                            }
+
                             //TODO: Find a better way to split SQL statements, as there may be embedded semicolons
                             //in the SQL, like "UPDATE x WHERE y = ';';"
 
@@ -260,6 +283,11 @@ namespace Duplicati.Library.SQLiteHelper
                                     cmd.CommandText = c;
                                     cmd.ExecuteNonQuery();
                                 }
+
+                            if (hookFound)
+                            {
+                                dbCodeUpgrade.AfterSql(connection);
+                            }
 
                             // after upgrade, db_version should have changed to i + 1. If logic changes, just requery.
                             preparserVars["db_version"] = i + 1;

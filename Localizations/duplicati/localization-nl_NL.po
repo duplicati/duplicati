@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-03-14 19:21+0100\n"
+"POT-Creation-Date: 2017-06-14 23:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Kees Zaaijer <kees@famzaaijer.nl>, 2016\n"
 "Language-Team: Dutch (Netherlands) (https://www.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Language: nl_NL\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: CommandLine/Program.cs:276
+#: CommandLine/Program.cs:300
 msgid "Toggle automatic updates"
 msgstr "Automatische updates inschakelen"
 
-#: CommandLine/Program.cs:276
+#: CommandLine/Program.cs:300
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -375,6 +375,21 @@ msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr ""
 "Stel het SSL beleid in dat gebruikt moet worden als encryptie is "
 "ingeschakeld."
+
+#: Library/Backend/AlternativeFTP/Strings.cs:26
+#, csharp-format
+msgid "Error on deleting file: {0}"
+msgstr "Fout bij het verwijderen van bestand: {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:27
+#, csharp-format
+msgid "Error reading file: {0}"
+msgstr "Fout bij het lezen van bestand: {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:28
+#, csharp-format
+msgid "Error writing file: {0}"
+msgstr "Fout bij het schrijven naar bestand: {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
@@ -955,13 +970,16 @@ msgstr "HubiC"
 
 #: Library/Backend/Jottacloud/Strings.cs:5
 msgid "Jottacloud"
-msgstr ""
+msgstr "Jottacloud"
 
 #: Library/Backend/Jottacloud/Strings.cs:6
 msgid ""
 "This backend can read and write data to Jottacloud using it's REST protocol."
 " Allowed format is \"jottacloud://folder/subfolder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Jottacloud door middel van"
+" het REST protocol. Ondersteunde indeling is "
+"\"jottacloud://folder/subfolder\"."
 
 #: Library/Backend/Jottacloud/Strings.cs:7 Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
@@ -977,11 +995,11 @@ msgstr "Geen pad opgegeven, kan geen bestanden uploaden naar de hoofdmap"
 
 #: Library/Backend/Jottacloud/Strings.cs:10
 msgid "Illegal mount point given."
-msgstr ""
+msgstr "Ongeldig koppelpunt opgegeven."
 
 #: Library/Backend/Jottacloud/Strings.cs:16
 msgid "Supplies the backup device to use"
-msgstr ""
+msgstr "Geeft het te gebruiken back-up apparaat"
 
 #: Library/Backend/Jottacloud/Strings.cs:17
 #, csharp-format
@@ -991,10 +1009,15 @@ msgid ""
 "When you specify a custom device you should also specify the mount point to "
 "use on this device with the \"{0}\" option."
 msgstr ""
+"Het te gebruiken back-up apparaat. Zal worden aangemaakt indien nodig. "
+"Apparaten kunnen worden beheerd vanuit het back-up paneel in de Jottacloud "
+"web interface. Als een aangepast apparaat wordt opgegeven, moet eveneens het"
+" koppelpunt worden opgegeven dat gebruikt moet worden op dit apparaat met de"
+" \"{0}\" optie."
 
 #: Library/Backend/Jottacloud/Strings.cs:18
 msgid "Supplies the mount point to use on the server"
-msgstr ""
+msgstr "Geeft het koppelpunt dat gebruikt moet worden op de server."
 
 #: Library/Backend/Jottacloud/Strings.cs:19
 #, csharp-format
@@ -1005,6 +1028,11 @@ msgid ""
 "custom device with option \"{0}\" you are free to name the mount point as "
 "you like."
 msgstr ""
+"Het koppelpunt dat gebruikt moet worden op de server. Standaardwaarde is "
+"\"Archive\" voor het gebruiken van het ingebouwde archive koppelpunt. Stel "
+"deze optie in op \"Sync\" om in plaats hiervan het ingebouwde synchronisatie"
+" koppelpunt te gebruiken, of als een aangepast apparaat werd opgegeven met "
+"de optie \"{0}\" kan de naam van ieder gewenst koppelpunt worden opgegeven."
 
 #: Library/Backend/Mega/Strings.cs:4
 msgid "mega.nz"
@@ -1656,8 +1684,8 @@ msgid "Tahoe-LAFS"
 msgstr "Tahoe-LAFS"
 
 #: Library/Backend/TahoeLAFS/Strings.cs:9
-msgid "Unsupported URL format, must start with \"/uri/URI:DIR2:\""
-msgstr "Niet ondersteund URL formaat, moet beginnen met \"/uri/URI:DIR2:\""
+msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
+msgstr "Niet ondersteund URL formaat, moet beginnen met \"uri/URI:DIR2:\""
 
 #: Library/Backend/WEBDAV/Strings.cs:4
 msgid ""
@@ -1840,7 +1868,7 @@ msgstr "AES-256 encryptie, ingebouwd"
 
 #: Library/Encryption/Strings.cs:6
 msgid "Empty passphrase not allowed"
-msgstr ""
+msgstr "Lege wachtwoordzin niet toegestaan"
 
 #: Library/Encryption/Strings.cs:7
 msgid ""
@@ -2177,10 +2205,14 @@ msgid "ExecuteNonQuery: {0}"
 msgstr "ExecuteNonQuery: {0}"
 
 #: Library/Main/Database/ExtensionMethods.cs:64
-#: Library/Main/Database/ExtensionMethods.cs:90
 #, csharp-format
 msgid "ExecuteScalar: {0}"
 msgstr "ExecuteScalar: {0}"
+
+#: Library/Main/Database/ExtensionMethods.cs:90
+#, csharp-format
+msgid "ExecuteScalarInt64: {0}"
+msgstr "ExecuteScalarInt64: {0}"
 
 #: Library/Main/Database/ExtensionMethods.cs:110
 #, csharp-format
@@ -2345,6 +2377,11 @@ msgid ""
 "a hyphen (-), but can contain all other characters allowed by the remote "
 "storage."
 msgstr ""
+"Een tekenreeks die gebruikt wordt om voorafgegaan te worden aan de "
+"bestandsnamen van de remote volumes, kan gebruikt worden om meerdere back-"
+"ups op te slaan in dezelfde remote map. Het voorvoegsel mag geen minteken "
+"(-) bevatten, maar kan alle andere tekens bevatten die door de remote opslag"
+" worden ondersteund."
 
 #: Library/Main/Strings.cs:34
 msgid "Remote filename prefix"
@@ -3427,10 +3464,22 @@ msgstr ""
 "regel aanmaken voor ieder verwerkt bestand."
 
 #: Library/Main/Strings.cs:182
+msgid "Output full results"
+msgstr "Uitvoer volledige resultaten"
+
+#: Library/Main/Strings.cs:183
+msgid ""
+"Use this option to increase the amount of output generated as the result of "
+"the operation, including all filenames."
+msgstr ""
+"Gebruik deze optie om de hoeveelheid uitvoer te vergroten die gegenereerd "
+"wordt als het resultaat van een bewerking, inclusief alle bestandsnamen."
+
+#: Library/Main/Strings.cs:184
 msgid "Determine if verification files are uploaded"
 msgstr "Bepaal of controlebestanden geüpload zijn"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:185
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -3442,11 +3491,11 @@ msgstr ""
 "SHA256 hashes van alle remote bestanden en kan gebruikt worden om de "
 "integriteit van de bestanden te controleren."
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:186
 msgid "The number of samples to test after a backup"
 msgstr "Het aantal samples die getest moeten worden na een back-up"
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:187
 #, csharp-format
 msgid ""
 "After a backup is completed, some files are selected for verification on the"
@@ -3458,11 +3507,11 @@ msgstr ""
 "Als deze waarde wordt ingesteld op 0 of als de optie --{0} is geselecteerd, "
 "worden remote bestanden niet gecontroleerd."
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:188
 msgid "Activates in-depth verification of files"
 msgstr "Activeert diepgaande controle van bestanden"
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:189
 #, csharp-format
 msgid ""
 "After a backup is completed, some files are selected for verification on the"
@@ -3472,23 +3521,30 @@ msgid ""
 " verified. This option is automatically set when then verification is "
 "performed directly."
 msgstr ""
+"Nadat een back-up is voltooid, worden een aantal bestanden geselecteerd voor"
+" controle op de remote backend. Gebruik deze optie om volledige controle in "
+"te schakelen, wat de bestanden zal ontsleutelen en de inhoud van ieder "
+"volume zal onderzoeken, in plaats van simpelweg de externe hash te "
+"controleren, als de optie --{0} is ingesteld, worden remote bestanden niet "
+"gecontroleerd. Deze optie is automatisch ingesteld als de controle "
+"rechtstreeks wordt uitgevoerd."
 
-#: Library/Main/Strings.cs:188
+#: Library/Main/Strings.cs:190
 msgid "Size of the file read buffer"
 msgstr "Groote van de bestands leesbuffer"
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:191
 msgid ""
 "Use this size to control how many bytes a read from a file before processing"
 msgstr ""
 "Gebruik deze grootte om te beheren hoe veel bytes van een bestand gelezen "
 "worden voordat het verwerkt wordt"
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:192
 msgid "Allow the passphrase to change"
 msgstr "Sta toe dat een wachtwoordzin veranderd wordt"
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:193
 msgid ""
 "Use this option to allow the passphrase to change, note that this option is "
 "not permitted for a backup or repair operation"
@@ -3497,11 +3553,11 @@ msgstr ""
 "merk op dat deze optie niet is toegestaan voor een back-up of "
 "herstelbewerking"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:194
 msgid "List only filesets"
 msgstr "Geef enkel bestandsverzamelingen weer"
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:195
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process"
@@ -3509,11 +3565,11 @@ msgstr ""
 "Gebruik deze optie om enkel bestandsverzamelingen weer te geven om te "
 "voorkomen dat bestanden andere metadata doorkruisen wat het proces vertraagt"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:197
 msgid "Don't store metadata"
 msgstr "Sla geen metadata op"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:198
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -3524,11 +3580,11 @@ msgstr ""
 "en herstelbewerkingen versnellen, maar heeft niet veel effect op de "
 "bestandsgrootte."
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:199
 msgid "Restore file permissions"
 msgstr "Herstel bestandspermissies"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:200
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -3537,11 +3593,11 @@ msgstr ""
 "zou kunnen hebben tot uw bestanden. Gebruik deze optie om ook "
 "bestandspermissies te herstellen."
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:201
 msgid "Skip restored file check"
 msgstr "Sla het controleren van herstelde bestanden over"
 
-#: Library/Main/Strings.cs:200
+#: Library/Main/Strings.cs:202
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -3552,20 +3608,20 @@ msgstr ""
 "succesvol was. Gebruik deze optie om de controle uit te schakelen en het "
 "wachten op het controleproces te vermijden."
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:203
 msgid "Activate caches"
 msgstr "Activeer caches"
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:204
 msgid "Activate in-memory caches, which are now off by default"
 msgstr ""
 "Activeer caches in het geheugen, dit is tegenwoordig standaard uitgeschakeld"
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:205
 msgid "Do not use local data"
 msgstr "Gebruik geen lokale gegevens"
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:206
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -3576,11 +3632,11 @@ msgstr ""
 "optie op deze optimalisatie over te slaan en alleen remote gegevens te "
 "gebruiken."
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:207
 msgid "Check block hashes"
 msgstr "Controleer blok hashes"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:208
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -3589,19 +3645,19 @@ msgstr ""
 "controleren die gelezen worden van een volume voordat herstelde bestanden "
 "worden bijgewerkt met de gegevens."
 
-#: Library/Main/Strings.cs:207 Server/Strings.cs:31
+#: Library/Main/Strings.cs:209 Server/Strings.cs:31
 msgid "Clean up old log data"
 msgstr "Schoon oude log-gegevens op"
 
-#: Library/Main/Strings.cs:208 Server/Strings.cs:32
+#: Library/Main/Strings.cs:210 Server/Strings.cs:32
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Stel de tijd in waarna log-gegevens worden gewist uit de database."
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:211
 msgid "Repair database with paths"
 msgstr "Repareer database met paden"
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:212
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -3614,11 +3670,11 @@ msgstr ""
 "informatie te reconstrueren. De resulterende database kan worden doorzocht, "
 "maar kan niet worden gebruikt om er gegevens mee te herstellen."
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:213
 msgid "Force the locale setting"
 msgstr "forceer de plaatsinstelling"
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:214
 msgid ""
 "By default, your system locale and culture settings will be used. In some "
 "cases you may prefer to run with another locale, for example to get messages"
@@ -3631,12 +3687,12 @@ msgstr ""
 "optie kan worden gebruikt om de plaatsinstelling te selecteren. Geef een "
 "blanco regel op om te kiezen voor de \"Onveranderlijke Cultuur\""
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:215
 msgid "Handle file communication with backend using threaded pipes"
 msgstr ""
 "Handel bestandscommunicatie met de backend af door middel van threaded pipes"
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:216
 msgid ""
 "Use this option to disable multithreaded handling of up- and downloads, that"
 " can significantly speed up backend operations depending on the hardware "
@@ -3646,11 +3702,11 @@ msgstr ""
 "schakelen, dat kan backend bewerkingen aanzienlijk versnellen afhankelijk "
 "van de hardware die gebruikt wordt en de doorvoersnelheid van de backend."
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:217
 msgid "Perform backup of Hyper-V machines (Windows only)"
 msgstr "Voer back-up uit van Hyper-V machines (alleen Windows)"
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:218
 msgid ""
 "Use this option to specify the IDs of machines to include in the backup. "
 "Specify multiple machine IDs with a semicolon separator. (You can use this "
@@ -3661,7 +3717,7 @@ msgstr ""
 "scheidingsteken. (U kunt dit PowerShell commando geven om de ID's op te "
 "vragen: 'Get-VM | ft VMName, ID')"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:219
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -3671,11 +3727,11 @@ msgstr ""
 "bestandslijst samenstellen die een samenvoeging is van de laatste afgeronde "
 "back-up en de inhoud die werd geüpload tijdens de incomplete back-up sessie."
 
-#: Library/Main/Strings.cs:218
-msgid "Disables synethic filelist"
-msgstr "Schakelt synthetische bestandslijst uit"
+#: Library/Main/Strings.cs:220
+msgid "Disables synthetic filelist"
+msgstr ""
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:221
 msgid ""
 "This flag instructs Duplicati to not look at metadata or filesize when "
 "deciding to scan a file for changes. Use this option if you have a large "
@@ -3687,15 +3743,15 @@ msgstr ""
 "een groot aantal bestanden hebt en opmerkt dat het scannen een lange tijd "
 "duurt met ongewijzigde bestanden."
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:222
 msgid "Checks only file lastmodified"
 msgstr "Controleert alleen laatst bewerkte bestand"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:223
 msgid "Disables path compresion on restore"
 msgstr "Schakelt pad compressie uit bij terugzetten"
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:224
 msgid ""
 "When restore a subset of a backup into a new folder, the shortest possible "
 "path is used to avoid generating deep paths with empty folders. Use this "
@@ -3708,11 +3764,11 @@ msgstr ""
 "originele mapstructuur in zijn geheel behouden blijft, inclusief hoger "
 "gelegen lege mappen."
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:225
 msgid "Allow removing all filesets"
 msgstr "Sta verwijderen van alle bestandsverzamelingen toe"
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:226
 msgid ""
 "By default, the last fileset cannot be removed. This is a safeguard to make "
 "sure that all remote data is not deleted by a configuration mistake. Use "
@@ -3724,7 +3780,7 @@ msgstr ""
 "beveiliging uit te schakelen, zodat alle bestandsverzamelingen kunnen worden"
 " verwijderd."
 
-#: Library/Main/Strings.cs:229
+#: Library/Main/Strings.cs:231
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -3733,17 +3789,17 @@ msgstr ""
 "De cryptobibliotheek ondersteunt geen herbruikbare transformaties voor het "
 "hash algoritme {0}"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:232
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "De cryptobibliotheek ondersteunt het hash algoritme {0} niet"
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:233
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "De wachtwoordzin kan niet veranderd worden voor een al bestaande back-up"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:234
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Het maken van een momentopname is mislukt: {0}"
@@ -4137,12 +4193,11 @@ msgid ""
 "A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
 "\n"
-"To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections."
+"To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
 msgstr ""
 "Een url voor de SMTP server, bijvoorbeeld smtp://example.com:25. Meerdere servers kunnen worden opgegeven in een lijst op volgorde van belangrijkheid, gescheiden door puntkomma's. Als een server onbereikbaar is, wordt de volgende server in de lijst geprobeerd, totdat het bericht is verzonden.\n"
 "Als geen server is opgegeven, zal een DNS lookup worden uitgevoerd om het MX record van de eerste geadresseerde te vinden, en alle SMTP servers worden geprobeerd op volgorde van prioriteit totdat het bericht is verzonden.\n"
-"\n"
-"Gebruik om SMTP over SSL in te schakelen het formaat smtps://example.com:25. Gebruik om SMTO STARTTLS in te schakelen het formaat smtp://example.com:25/?starttls=when-available of smtp://example.com:25/?starttls=always. Als geen poort wordt opgegeven, wordt poort 25 gebruikt voor niet-SSL en poort 465 gebruikt voor SSL verbindingen."
+"Gebruik om SMTP over SSL in te schakelen het formaat smtps://example.com. Gebruik om SMTP STARTTLS in te schakelen het formaat smtp://example.com:25/?starttls=when-available of smtp://example.com:25/?starttls=always. Als geen poort wordt opgegeven, wordt poort 25 gebruikt voor niet-SSL en poort 465 gebruikt voor SSL verbindingen. Gebruik om het niet gebruiken van STARTTLS af te dwingen het formaat smtp://example.com:25/?starttls=never."
 
 #: Library/Modules/Builtin/Strings.cs:96
 msgid "SMTP Url"
@@ -4655,6 +4710,8 @@ msgid ""
 "The certificate and key file in PKCS #12 format the webserver use for SSL. "
 "Only RSA/DSA keys are supported."
 msgstr ""
+"Het certificaat en het sleutelbestand in PKCS #12 indeling die de webserver "
+"gebruikt voor SSL. Alleen RSA/DSA sleutels worden ondersteund."
 
 #: Server/Strings.cs:26
 msgid "The password for decryption of certificate PKCS #12 file."

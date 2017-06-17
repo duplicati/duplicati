@@ -835,7 +835,8 @@ namespace Duplicati.Server.Database
                     ),
                     @"SELECT ""Key"", ""Value"" FROM ""UIStorage"" WHERE ""Scheme"" = ?", 
                     scheme)
-                    .ToDictionary(x => x.Key, x => x.Value);
+                    .GroupBy(x => x.Key)
+                    .ToDictionary(x => x.Key, x => x.Last().Value);
         }
         
         public void SetUISettings(string scheme, IDictionary<string, string> values, System.Data.IDbTransaction transaction = null)
@@ -857,6 +858,27 @@ namespace Duplicati.Server.Database
                         tr.Commit();
                 }
         }
+
+		public void UpdateUISettings(string scheme, IDictionary<string, string> values, System.Data.IDbTransaction transaction = null)
+		{
+			lock (m_lock)
+				using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
+				{
+					OverwriteAndUpdateDb(
+						tr,
+                        @"DELETE FROM ""UIStorage"" WHERE ""Scheme"" = ? AND ""Key"" IN (?)", new object[] { scheme, values.Keys },
+                        values.Where(x => x.Value != null),
+						@"INSERT INTO ""UIStorage"" (""Scheme"", ""Key"", ""Value"") VALUES (?, ?, ?)",
+						(f) =>
+						{
+							return new object[] { scheme, f.Key ?? "", f.Value ?? "" };
+						}
+					);
+
+					if (tr != null)
+						tr.Commit();
+				}
+		}
 
         public TempFile[] GetTempFiles()
         {

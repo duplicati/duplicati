@@ -146,7 +146,7 @@
                         <textarea id="SourcePathList" string-array-as-text ng-model="Backup.Sources" ng-model-options="{updateOn: 'blur'}"></textarea>
                     </div>
                     <div class="input text overlayButton">
-                        <input type="text" name="sourcePath" id="sourcePath" placeholder="Add a path directly" ng-model="manualSourcePath" ng-disabled="validatingSourcePath" />
+                        <input type="text" name="sourcePath" id="sourcePath" placeholder="{{'Add a path directly' | translate}}" ng-model="manualSourcePath" ng-disabled="validatingSourcePath" />
                         <a href id="sourceFolderPathAdd" class="button"  ng-disabled="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" ng-click="addManualSourcePath()">
                             <span ng-show="validatingSourcePath" translate>Validating ...</span>
                             <span ng-hide="validatingSourcePath" translate>Add path</span>
