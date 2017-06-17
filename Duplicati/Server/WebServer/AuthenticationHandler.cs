@@ -183,7 +183,7 @@ namespace Duplicati.Server.WebServer
 
                     var password = Program.DataConnection.ApplicationSettings.WebserverPassword;
 
-                    if (request.Headers[TRAYICON_HEADER_NAME] != null)
+                    if (request.Headers[TRAYICON_HEADER_NAME] == "true")
                         password = Program.DataConnection.ApplicationSettings.WebserverPasswordTrayIconHash;
                     
                     var buf = new byte[32];
