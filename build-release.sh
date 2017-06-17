@@ -28,10 +28,33 @@ AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
 AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
 
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
-XBUILD=/Library/Frameworks/Mono.framework/Commands/xbuild
+XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
+
+# Newer GPG needs this to allow input from a non-terminal
+export GPG_TTY=$(tty)
+
+if [ ! -f "$GPG" ]; then
+	echo "gpg executable not found: $GPG"
+	exit 1
+fi
+
+if [ ! -f "$XBUILD" ]; then
+	echo "xbuild/msbuild executable not found: $XBUILD"
+	exit 1
+fi
+
+if [ ! -f "$MONO" ]; then
+	echo "mono executable not found: $MONO"
+	exit 1
+fi
+
+if [ ! -f "$NUGET" ]; then
+	echo "NuGet executable not found: $NUGET"
+	exit 1
+fi
 
 # The "OTHER_UPLOADS" setting is no longer used
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
@@ -110,7 +133,7 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 "${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
 find "Duplicati" -type d -name "Release" | xargs rm -rf
-"${XBUILD}" /p:Configuration=Release "Duplicati.sln"
+"${XBUILD}" /p:DefineConstants=__MonoCS__ /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
 BUILD_STATUS=$?
 
 if [ "${BUILD_STATUS}" -ne 0 ]; then
@@ -134,7 +157,7 @@ cp -R Duplicati/Server/webroot "${UPDATE_SOURCE}"
 
 # We copy some files for alphavss manually as they are not picked up by xbuild
 mkdir "${UPDATE_SOURCE}/alphavss"
-for FN in "Duplicati/Library/Snapshots/bin/Release/SnapshotQuery.exe" "Duplicati/Library/Snapshots/bin/Release/AlphaShadow.exe" Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.*.dll; do
+for FN in Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll; do
 	cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
 done
 
@@ -154,6 +177,9 @@ done
 # Clean debug files, if any
 rm -rf "${UPDATE_SOURCE}/"*.mdb;
 rm -rf "${UPDATE_SOURCE}/"*.pdb;
+
+# Remove all library docs files
+rm -rf "${UPDATE_SOURCE}/"*.xml;
 
 # Remove all .DS_Store and Thumbs.db files
 find  . -type f -name ".DS_Store" | xargs rm -rf

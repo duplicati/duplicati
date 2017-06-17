@@ -140,6 +140,17 @@ echo ""
 echo ""
 echo "Building Windows instance in virtual machine"
 
+while true
+do
+    ssh -o ConnectTimeout=5 IEUser@192.168.56.101 "dir"
+    if [ $? -eq 255 ]; then
+    	echo "Windows Build machine is not responding, try restarting it"
+        read -p "Press [Enter] key to try again"
+        continue
+    fi
+    break
+done
+
 cat > "tmp-windows-commands.bat" <<EOF
 SET VS120COMNTOOLS=%VS140COMNTOOLS%
 cd \\Duplicati\\Installer\\Windows

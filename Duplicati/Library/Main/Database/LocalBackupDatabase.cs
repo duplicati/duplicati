@@ -150,7 +150,7 @@ namespace Duplicati.Library.Main.Database
             m_insertmetadatasetCommand.CommandText = @"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (?); SELECT last_insert_rowid();";
             m_insertmetadatasetCommand.AddParameter();
 
-            m_selectfilelastmodifiedCommand.CommandText = @"SELECT ""File"".""ID"", ""FilesetEntry"".""LastModified"" FROM ""File"", ""FilesetEntry"" WHERE ""Path"" = ? AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? LIMIT 1";
+            m_selectfilelastmodifiedCommand.CommandText = @"SELECT ""A"".""ID"", ""B"".""LastModified"" FROM (SELECT ""ID"" FROM ""File"" WHERE ""Path"" = ?) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = ?";
             m_selectfilelastmodifiedCommand.AddParameters(2);
 
             //Need a temporary table with path/lastmodified lookups
@@ -620,7 +620,8 @@ namespace Duplicati.Library.Main.Database
         public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted, long filesetid, long prevId, DateTime timestamp)
         {
             using(var cmd = m_connection.CreateCommand())
-            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using(var cmdDelete = m_connection.CreateCommand())
+            using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 long lastFilesetId = prevId < 0 ? GetPreviousFilesetID(cmd, timestamp, filesetid) : prevId;
 
@@ -629,14 +630,15 @@ namespace Duplicati.Library.Main.Database
 
                 if (deleted != null)
                 {
-                    cmd.CommandText = @"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" IN (SELECT ""ID"" FROM ""File"" WHERE ""Path"" = ?) ";
-                    cmd.AddParameter(filesetid);
-                    cmd.AddParameter();
+                    cmdDelete.Transaction = tr.Parent;
+                    cmdDelete.CommandText = @"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" IN (SELECT ""ID"" FROM ""File"" WHERE ""Path"" = ?) ";
+                    cmdDelete.AddParameters(2);
+                    cmdDelete.SetParameterValue(0, filesetid);
 
                     foreach (string s in deleted)
                     {
-                        cmd.SetParameterValue(1, s);
-                        cmd.ExecuteNonQuery();
+                        cmdDelete.SetParameterValue(1, s);
+                        cmdDelete.ExecuteNonQuery();
                     }
                 }
 

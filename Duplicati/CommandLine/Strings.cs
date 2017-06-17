@@ -3,7 +3,7 @@ namespace Duplicati.CommandLine.Strings {
     internal static class Program {
         public static string DeleteCommandNeedsOptions(string commandname, string[] options) { return LC.L(@"The command {0} needs at least one of the following options set: {1}", commandname, string.Join(", ", options)); }
         public static string WrongNumberOfCommandsError_v2(int actualcommands, int expectedcommands, string[] commands) { return LC.L(@"Found {0} commands but expected {1}, commands: 
-{2}", actualcommands, expectedcommands, commands); }
+{2}", actualcommands, expectedcommands, string.Join(System.Environment.NewLine, commands ?? new string[0])); }
         public static string InvalidCommandError(string commandname) { return LC.L(@"Command not supported: {0}", commandname); }
         public static string NoFilesetsMatching { get { return LC.L(@"No filesets matched the criteria"); } }
         public static string WouldDeleteBackups { get { return LC.L(@"The following filesets would be deleted:"); } }

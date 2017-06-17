@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-03-14 19:21+0100\n"
+"POT-Creation-Date: 2017-06-14 23:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Bonan Zhu <zhubonan@outlook.com>, 2016\n"
 "Language-Team: Chinese (China) (https://www.transifex.com/duplicati/teams/67655/zh_CN/)\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Language: zh_CN\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: CommandLine/Program.cs:276
+#: CommandLine/Program.cs:300
 msgid "Toggle automatic updates"
 msgstr "启用自动更新"
 
-#: CommandLine/Program.cs:276
+#: CommandLine/Program.cs:300
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -315,6 +315,21 @@ msgstr "此参数决定加密启用时的 SSL 策略。"
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr "配置加密启用时的 SSL 策略"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:26
+#, csharp-format
+msgid "Error on deleting file: {0}"
+msgstr "删除文件出错： {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:27
+#, csharp-format
+msgid "Error reading file: {0}"
+msgstr "读取文件出错： {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:28
+#, csharp-format
+msgid "Error writing file: {0}"
+msgstr "写入文件出错： {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
@@ -812,13 +827,13 @@ msgstr "HubiC"
 
 #: Library/Backend/Jottacloud/Strings.cs:5
 msgid "Jottacloud"
-msgstr ""
+msgstr "Jottacloud"
 
 #: Library/Backend/Jottacloud/Strings.cs:6
 msgid ""
 "This backend can read and write data to Jottacloud using it's REST protocol."
 " Allowed format is \"jottacloud://folder/subfolder\"."
-msgstr ""
+msgstr "此后端能通过 REST 协议读写 Jottacloud 中数据，支持的格式为 \"jottacloud://folder/subfolder\""
 
 #: Library/Backend/Jottacloud/Strings.cs:7 Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
@@ -834,11 +849,11 @@ msgstr "未给出路径，不能上传文件至根目录"
 
 #: Library/Backend/Jottacloud/Strings.cs:10
 msgid "Illegal mount point given."
-msgstr ""
+msgstr "挂载点非法"
 
 #: Library/Backend/Jottacloud/Strings.cs:16
 msgid "Supplies the backup device to use"
-msgstr ""
+msgstr "指定使用的备份设备"
 
 #: Library/Backend/Jottacloud/Strings.cs:17
 #, csharp-format
@@ -848,10 +863,12 @@ msgid ""
 "When you specify a custom device you should also specify the mount point to "
 "use on this device with the \"{0}\" option."
 msgstr ""
+"所使用的备份设置，如果不存在，则将自动创建。你可以在 Jottacloud 网页界面上的控制面板管理你的设备。当你指定了自定义设备，你也需要通过 "
+"\"{0}\" 选项指定所用的挂载点。"
 
 #: Library/Backend/Jottacloud/Strings.cs:18
 msgid "Supplies the mount point to use on the server"
-msgstr ""
+msgstr "指定服务器上使用的挂载点"
 
 #: Library/Backend/Jottacloud/Strings.cs:19
 #, csharp-format
@@ -862,6 +879,8 @@ msgid ""
 "custom device with option \"{0}\" you are free to name the mount point as "
 "you like."
 msgstr ""
+"服务器上使用的挂载点。默认为 \"Archive\" 将使用内置的存档挂载点。设置为 \"Sync\" 将使用内置的同步挂载点。或者，如果你通过 "
+"\"{0}\" 选项指定了自定义设备，你可以随意命名挂载点。"
 
 #: Library/Backend/Mega/Strings.cs:4
 msgid "mega.nz"
@@ -1408,8 +1427,8 @@ msgid "Tahoe-LAFS"
 msgstr "Tahoe-LAFS"
 
 #: Library/Backend/TahoeLAFS/Strings.cs:9
-msgid "Unsupported URL format, must start with \"/uri/URI:DIR2:\""
-msgstr "不支持的 URL 格式，必须以 \"/uri/URI:DIR2:\" 开头"
+msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
+msgstr "不支持的 URL 格式，必须以 \"uri/URI:DIR2:\" 开头"
 
 #: Library/Backend/WEBDAV/Strings.cs:4
 msgid ""
@@ -1564,7 +1583,7 @@ msgstr "内置的 AES-256 加密方式"
 
 #: Library/Encryption/Strings.cs:6
 msgid "Empty passphrase not allowed"
-msgstr ""
+msgstr "不允许空密码"
 
 #: Library/Encryption/Strings.cs:7
 msgid ""
@@ -1853,7 +1872,7 @@ msgstr "已从删除不存在文件 {0} 的尝试中恢复"
 #: Library/Main/BackendManager.cs:622
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
-msgstr "从错误删除文件 {0} 恢复失败"
+msgstr "从删除文件错误中 {0} 恢复失败"
 
 #: Library/Main/BackendManager.cs:1103
 #, csharp-format
@@ -1871,10 +1890,14 @@ msgid "ExecuteNonQuery: {0}"
 msgstr "执行非查询：{0}"
 
 #: Library/Main/Database/ExtensionMethods.cs:64
-#: Library/Main/Database/ExtensionMethods.cs:90
 #, csharp-format
 msgid "ExecuteScalar: {0}"
 msgstr "执行标量：{0}"
+
+#: Library/Main/Database/ExtensionMethods.cs:90
+#, csharp-format
+msgid "ExecuteScalarInt64: {0}"
+msgstr "执行 Int64 标量：{0}"
 
 #: Library/Main/Database/ExtensionMethods.cs:110
 #, csharp-format
@@ -2015,7 +2038,7 @@ msgid ""
 "store multiple backups in the same remote folder. The prefix cannot contain "
 "a hyphen (-), but can contain all other characters allowed by the remote "
 "storage."
-msgstr ""
+msgstr "作为远程卷的文件名前缀的字符串，可以用来在同一远程文件夹存储多个备份。此前缀不能包含连字符 (-)，但可以包含其他所有远程存储支持的字符。"
 
 #: Library/Main/Strings.cs:34
 msgid "Remote filename prefix"
@@ -2864,10 +2887,20 @@ msgid ""
 msgstr "使用此选项来增加运行时的输出信息。一般来说，此选项将每处理一个文件，打印一行信息。"
 
 #: Library/Main/Strings.cs:182
+msgid "Output full results"
+msgstr "输出完整结果"
+
+#: Library/Main/Strings.cs:183
+msgid ""
+"Use this option to increase the amount of output generated as the result of "
+"the operation, including all filenames."
+msgstr "使用此选项来增加的输出的操作结果信息，包括所有的文件名。"
+
+#: Library/Main/Strings.cs:184
 msgid "Determine if verification files are uploaded"
 msgstr "决定是否上传效验文件"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:185
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -2875,11 +2908,11 @@ msgid ""
 "files."
 msgstr "使用此选项在改变远程存储后上传效验文件。此文件没有加密，且包含所有远程文件的大小和 SHA256 hash值，用来效验文件的完整性。"
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:186
 msgid "The number of samples to test after a backup"
 msgstr "备份后的效验样本数"
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:187
 #, csharp-format
 msgid ""
 "After a backup is completed, some files are selected for verification on the"
@@ -2888,11 +2921,11 @@ msgid ""
 msgstr ""
 "备份完成后，Duplicati 会选择某些远程文件进行效验。使用此选项来指定样本数。如果这个值设为0，或选项 {0} 开启，则不会效验远程文件。"
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:188
 msgid "Activates in-depth verification of files"
 msgstr "激活深度校验"
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:189
 #, csharp-format
 msgid ""
 "After a backup is completed, some files are selected for verification on the"
@@ -2902,110 +2935,112 @@ msgid ""
 " verified. This option is automatically set when then verification is "
 "performed directly."
 msgstr ""
+"备份完成后，Duplicati 会选择某些远程文件进行校验。使用此选项来启用全量校验，这将解密文件并校验每个卷，而不是简单地验证外部 hash "
+"值。如果选项 --{0} 开启，则不会校验远程文件。此选项将会在手动校验时自动开启。"
 
-#: Library/Main/Strings.cs:188
+#: Library/Main/Strings.cs:190
 msgid "Size of the file read buffer"
 msgstr "文件读取缓冲大小"
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:191
 msgid ""
 "Use this size to control how many bytes a read from a file before processing"
 msgstr "这个值控制从文件中一次读取多少字节"
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:192
 msgid "Allow the passphrase to change"
 msgstr "允许更改备份密码"
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:193
 msgid ""
 "Use this option to allow the passphrase to change, note that this option is "
 "not permitted for a backup or repair operation"
 msgstr "使用此选项来允许更改备份密码。注意，此选项在备份或修复操作时禁止使用。"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:194
 msgid "List only filesets"
 msgstr "仅列举文件集"
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:195
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process"
 msgstr "使用此选项可以只列出文件集，避免遍历文件名和其他元数据，从而减少耗时操作"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:197
 msgid "Don't store metadata"
 msgstr "不保存元数据"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:198
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
 " but does not affect file size much."
 msgstr "使用此选项来禁用保存元数据，例如文件的时间戳。不保存元数据可以加快备份和恢复的速度，但是对文件大小影响不大。"
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:199
 msgid "Restore file permissions"
 msgstr "恢复文件权限"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:200
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
 msgstr "默认情况下，权限不会被还原，因为这可能影响你访问恢复出的文件。使用此选项可以还原权限。"
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:201
 msgid "Skip restored file check"
 msgstr "跳过恢复文件效验"
 
-#: Library/Main/Strings.cs:200
+#: Library/Main/Strings.cs:202
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
 " and avoid waiting for the verification."
 msgstr "恢复文件后，Duplicati 将对比 hash 值验证恢复是否成功。使用此选项来禁用此检查来跳过等待效验的时间。"
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:203
 msgid "Activate caches"
 msgstr "激活缓存"
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:204
 msgid "Activate in-memory caches, which are now off by default"
 msgstr "激活内存内缓存，目前这项默认关闭。"
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:205
 msgid "Do not use local data"
 msgstr "不使用本地数据"
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:206
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
 "remote data."
 msgstr "Duplicati 将尝试使用源文件中的数据来最小化需要下载的数据量。使用此选项来跳过此项优化，只使用远程数据。"
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:207
 msgid "Check block hashes"
 msgstr "检查文件块 hash 值"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:208
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
 msgstr "使用此选项可在将数据恢复至文件中时，通过检查卷中保存的文件块 hash 值，提升校验级别。"
 
-#: Library/Main/Strings.cs:207 Server/Strings.cs:31
+#: Library/Main/Strings.cs:209 Server/Strings.cs:31
 msgid "Clean up old log data"
 msgstr "清理旧日志数据"
 
-#: Library/Main/Strings.cs:208 Server/Strings.cs:32
+#: Library/Main/Strings.cs:210 Server/Strings.cs:32
 msgid "Set the time after which log data will be purged from the database."
 msgstr "设定时长，在此时长之后日志数据将被从数据库中清除。"
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:211
 msgid "Repair database with paths"
 msgstr "修复路径数据库"
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:212
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -3014,11 +3049,11 @@ msgid ""
 msgstr ""
 "使用此选项将构建一个只包含路径信息的本地可搜索的数据库。这可以快速构建数据库来定位文件，而不需要重构所有信息。产生的数据库可以搜索，但不能用来恢复数据。"
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:213
 msgid "Force the locale setting"
 msgstr "指定语言区域设置"
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:214
 msgid ""
 "By default, your system locale and culture settings will be used. In some "
 "cases you may prefer to run with another locale, for example to get messages"
@@ -3028,22 +3063,22 @@ msgstr ""
 "默认情况下，Duplicati "
 "将使用系统默认的语言和区域设置。在某些情况下，你可能想指定其他语言区域，比如想获得其他语言的消息。此选项可以用来设定语言区域，设为空则表示“统一语言区域”。"
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:215
 msgid "Handle file communication with backend using threaded pipes"
 msgstr "使用单线程处理与后端的文件通信"
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:216
 msgid ""
 "Use this option to disable multithreaded handling of up- and downloads, that"
 " can significantly speed up backend operations depending on the hardware "
 "you're running on and the transfer rate of your backend."
 msgstr "使用此选项可以禁用多线程处理上传下载，这可以根据你的硬件和后端的传输速率显著地提升后端操作速度。"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:217
 msgid "Perform backup of Hyper-V machines (Windows only)"
 msgstr "需要备份的 Hyper-V 虚拟机(仅  )"
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:218
 msgid ""
 "Use this option to specify the IDs of machines to include in the backup. "
 "Specify multiple machine IDs with a semicolon separator. (You can use this "
@@ -3052,18 +3087,18 @@ msgstr ""
 "使用此选项指定需要备份的机器的 ID，使用半角逗号分隔指定多个 ID。(你可以使用 PowerShell 命令 'Get-VM | ft VMName,"
 " ID' 来获取 ID)"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:219
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
 "contents that were uploaded in the incomplete backup session."
 msgstr "如果 Duplicati 检测到前一备份没有完成，它将生成一份文件列表，其中包括上一次完成的备份和在未完成备份会话中已上传的内容。"
 
-#: Library/Main/Strings.cs:218
-msgid "Disables synethic filelist"
-msgstr "禁用虚拟文件列表"
+#: Library/Main/Strings.cs:220
+msgid "Disables synthetic filelist"
+msgstr ""
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:221
 msgid ""
 "This flag instructs Duplicati to not look at metadata or filesize when "
 "deciding to scan a file for changes. Use this option if you have a large "
@@ -3073,15 +3108,15 @@ msgstr ""
 "此参数通知 Duplicati 在扫描文件更改时不要查看元数据或文件大小。如果你有大量文件需要扫描，而 Duplicati "
 "耗费大量时间在未更改的文件上，你可以使用此选项。"
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:222
 msgid "Checks only file lastmodified"
 msgstr "仅检查文件最后更改时间"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:223
 msgid "Disables path compresion on restore"
 msgstr "恢复时禁用路径压缩"
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:224
 msgid ""
 "When restore a subset of a backup into a new folder, the shortest possible "
 "path is used to avoid generating deep paths with empty folders. Use this "
@@ -3091,11 +3126,11 @@ msgstr ""
 "在恢复一个备份的子集到新文件夹时，Duplicati "
 "会使用尽可能短的路径来避免生成包含空文件夹的深路径。使用此参数可以跳过这项压缩，这样完整的原始文件夹结构会保留下来，包括上一级的空文件夹。"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:225
 msgid "Allow removing all filesets"
 msgstr "允许删除所有文件集"
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:226
 msgid ""
 "By default, the last fileset cannot be removed. This is a safeguard to make "
 "sure that all remote data is not deleted by a configuration mistake. Use "
@@ -3103,23 +3138,23 @@ msgid ""
 msgstr ""
 "默认情况下，最近的文件集不能被删除。这是一项安全措施，用来确保远程数据不会因为配置错误而被全部删除。使用此参数可以禁用这项保护，这样所有文件集都可以被删除。"
 
-#: Library/Main/Strings.cs:229
+#: Library/Main/Strings.cs:231
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr "加密库不支持 hash 算法 {0} 的重用变换"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:232
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "加密库不支持 hash 算法 {0}"
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:233
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "不能更改已有备份的加密密码"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:234
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "创建快照失败：{0}"
@@ -3460,12 +3495,12 @@ msgid ""
 "A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
 "\n"
-"To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections."
+"To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
 msgstr ""
 "SMTP 服务器的地址，例如 smtp://example.com:25。多个服务器可以用半角逗号分割，依优先级排列。如果使用某一服务器失败，那么将尝试使用列表中的下一服务器，直到消息发送成功。\n"
 "如果未指定服务器，将进行 DNS 查询找到第一个收件人的 MX 记录，所有的 SMTP 将按照优先级进行尝试，知道消息发送成功。\n"
 "\n"
-"若要启用 SMTP over SSL，请使用格式 smtps://example.com。若要启用SMTP STARTTLS，请使用格式 smtp://example.com:25/?starttls=when-available 或者 smtp://example.com:25/?starttls=always。如果未指定端口，非 SSL 连接将使用 25 端口，SSL 连接将使用 465 端口。"
+"若要启用 SMTP over SSL，请使用格式 smtps://example.com。若要启用SMTP STARTTLS，请使用格式 smtp://example.com:25/?starttls=when-available 或者 smtp://example.com:25/?starttls=always。如果未指定端口，非 SSL 连接将使用 25 端口，SSL 连接将使用 465 端口。若要禁止使用 STARTTLS，请使用 smtp://example.com:25/?starttls=never。"
 
 #: Library/Modules/Builtin/Strings.cs:96
 msgid "SMTP Url"
@@ -3931,7 +3966,7 @@ msgstr "web 服务器监听的端口。可以使用逗号分割来指定多个�
 msgid ""
 "The certificate and key file in PKCS #12 format the webserver use for SSL. "
 "Only RSA/DSA keys are supported."
-msgstr ""
+msgstr "Web 服务器用于 SSL 的 PKCS #12 格式的证书和密钥文件。只支持 RSA/DSA 密钥。"
 
 #: Server/Strings.cs:26
 msgid "The password for decryption of certificate PKCS #12 file."

@@ -30,6 +30,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
+            if (key.Equals("server-ssl-certificate", StringComparison.InvariantCultureIgnoreCase) || key.Equals("ServerSSLCertificate", StringComparison.InvariantCultureIgnoreCase))
+            {
+                info.OutputOK(Program.DataConnection.ApplicationSettings.ServerSSLCertificate == null ? "False" : "True");
+                return;
+            }
+
             if (key.StartsWith("--", StringComparison.Ordinal))
             {
                 var prop = Program.DataConnection.Settings.FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.InvariantCultureIgnoreCase));
@@ -53,7 +59,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
-            if (key.StartsWith("--", StringComparison.Ordinal))
+			if (key.Equals("server-ssl-certificate", StringComparison.InvariantCultureIgnoreCase) || key.Equals("ServerSSLCertificate", StringComparison.InvariantCultureIgnoreCase))
+			{
+				info.OutputError(null, System.Net.HttpStatusCode.BadRequest, "Can only update SSL certificate from commandline");
+				return;
+			}
+
+			if (key.StartsWith("--", StringComparison.Ordinal))
             {
                 var settings = Program.DataConnection.Settings.ToList();
 
@@ -62,6 +74,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     settings.Add(prop = new Database.Setting() { Name = key, Value = info.Request.Form["data"].Value });
                 else
                     prop.Value = info.Request.Form["data"].Value;
+
+                Program.DataConnection.Settings = settings.ToArray();
                 
                 info.OutputOK(prop == null ? null : prop.Value);
             }

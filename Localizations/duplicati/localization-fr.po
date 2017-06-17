@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-03-14 19:21+0100\n"
+"POT-Creation-Date: 2017-06-14 23:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Guillaume Lannes-Lacrouts <lannes.lacrouts@yahoo.fr>, 2017\n"
+"Last-Translator: franck aubert <franck.aubert@gmail.com>, 2017\n"
 "Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Language: fr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: CommandLine/Program.cs:276
+#: CommandLine/Program.cs:300
 msgid "Toggle automatic updates"
 msgstr "Activer les mises à jour automatiques"
 
-#: CommandLine/Program.cs:276
+#: CommandLine/Program.cs:300
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -367,6 +367,21 @@ msgstr ""
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr "Configure la police SSL à utiliser quand le chiffrement est activé"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:26
+#, csharp-format
+msgid "Error on deleting file: {0}"
+msgstr ""
+
+#: Library/Backend/AlternativeFTP/Strings.cs:27
+#, csharp-format
+msgid "Error reading file: {0}"
+msgstr ""
+
+#: Library/Backend/AlternativeFTP/Strings.cs:28
+#, csharp-format
+msgid "Error writing file: {0}"
+msgstr ""
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
@@ -951,13 +966,15 @@ msgstr "HubiC"
 
 #: Library/Backend/Jottacloud/Strings.cs:5
 msgid "Jottacloud"
-msgstr ""
+msgstr "Jottacloud"
 
 #: Library/Backend/Jottacloud/Strings.cs:6
 msgid ""
 "This backend can read and write data to Jottacloud using it's REST protocol."
 " Allowed format is \"jottacloud://folder/subfolder\"."
 msgstr ""
+"Le back-end peux lire et écrire les données sur Jottacloud en utilisant le "
+"protocole REST. Le format authorisé est \"jottacloud://folder/subfolder\"."
 
 #: Library/Backend/Jottacloud/Strings.cs:7 Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
@@ -974,11 +991,11 @@ msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:10
 msgid "Illegal mount point given."
-msgstr ""
+msgstr "Point de montage illégal"
 
 #: Library/Backend/Jottacloud/Strings.cs:16
 msgid "Supplies the backup device to use"
-msgstr ""
+msgstr "Indiquez le dispositif de sauvegarde à utiliser"
 
 #: Library/Backend/Jottacloud/Strings.cs:17
 #, csharp-format
@@ -988,10 +1005,15 @@ msgid ""
 "When you specify a custom device you should also specify the mount point to "
 "use on this device with the \"{0}\" option."
 msgstr ""
+"Le système de sauvegarde sera crée s'il n'est pas encore existant. Vous "
+"pouvez administrer vos appareils depuis le panel web de sauvegarde de "
+"l'interface de JottaCloud. Quand vous parametrez un appareil spécial, vous "
+"devez également indiquer le point de montage à utiliser avec l'option  "
+"\"{0}\". "
 
 #: Library/Backend/Jottacloud/Strings.cs:18
 msgid "Supplies the mount point to use on the server"
-msgstr ""
+msgstr "Indiquez le point de montage à utiliser sur le serveur"
 
 #: Library/Backend/Jottacloud/Strings.cs:19
 #, csharp-format
@@ -1307,7 +1329,7 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:34 Library/Backend/TahoeLAFS/Strings.cs:6
 #: Library/Backend/WEBDAV/Strings.cs:19
 msgid "Instructs Duplicati to use an SSL (https) connection"
-msgstr ""
+msgstr "Indiquez à Duplicati d'utiliser des connections SSL (https)"
 
 #: Library/Backend/S3/Strings.cs:36
 msgid ""
@@ -1366,7 +1388,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:18
 msgid "Upload files using binary direct mode."
-msgstr ""
+msgstr "Uploader les fichiers en utilisant le mode binaire direct"
 
 #: Library/Backend/SharePoint/Strings.cs:20
 msgid ""
@@ -1376,7 +1398,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:21
 msgid "Set timeout for SharePoint web operations."
-msgstr ""
+msgstr "Fixer l'expiration pour les opérations web de Sharepoint"
 
 #: Library/Backend/SharePoint/Strings.cs:23
 msgid ""
@@ -1391,7 +1413,7 @@ msgstr ""
 #: Library/Backend/SharePoint/Strings.cs:26
 #, csharp-format
 msgid "Element with path '{0}' not found on host '{1}'."
-msgstr ""
+msgstr "Element avec le chemin '{0}'  non trouvé sur l'hote '{1}'."
 
 #: Library/Backend/SharePoint/Strings.cs:27
 #, csharp-format
@@ -1569,7 +1591,7 @@ msgid "Tahoe-LAFS"
 msgstr ""
 
 #: Library/Backend/TahoeLAFS/Strings.cs:9
-msgid "Unsupported URL format, must start with \"/uri/URI:DIR2:\""
+msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
 msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:4
@@ -2015,9 +2037,13 @@ msgid "ExecuteNonQuery: {0}"
 msgstr ""
 
 #: Library/Main/Database/ExtensionMethods.cs:64
-#: Library/Main/Database/ExtensionMethods.cs:90
 #, csharp-format
 msgid "ExecuteScalar: {0}"
+msgstr ""
+
+#: Library/Main/Database/ExtensionMethods.cs:90
+#, csharp-format
+msgid "ExecuteScalarInt64: {0}"
 msgstr ""
 
 #: Library/Main/Database/ExtensionMethods.cs:110
@@ -2968,10 +2994,20 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:182
-msgid "Determine if verification files are uploaded"
+msgid "Output full results"
 msgstr ""
 
 #: Library/Main/Strings.cs:183
+msgid ""
+"Use this option to increase the amount of output generated as the result of "
+"the operation, including all filenames."
+msgstr ""
+
+#: Library/Main/Strings.cs:184
+msgid "Determine if verification files are uploaded"
+msgstr ""
+
+#: Library/Main/Strings.cs:185
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -2979,11 +3015,11 @@ msgid ""
 "files."
 msgstr ""
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:186
 msgid "The number of samples to test after a backup"
 msgstr ""
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:187
 #, csharp-format
 msgid ""
 "After a backup is completed, some files are selected for verification on the"
@@ -2991,11 +3027,11 @@ msgid ""
 " 0 or the option --{0} is set, no remote files are verified"
 msgstr ""
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:188
 msgid "Activates in-depth verification of files"
 msgstr ""
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:189
 #, csharp-format
 msgid ""
 "After a backup is completed, some files are selected for verification on the"
@@ -3006,109 +3042,109 @@ msgid ""
 "performed directly."
 msgstr ""
 
-#: Library/Main/Strings.cs:188
+#: Library/Main/Strings.cs:190
 msgid "Size of the file read buffer"
 msgstr ""
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:191
 msgid ""
 "Use this size to control how many bytes a read from a file before processing"
 msgstr ""
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:192
 msgid "Allow the passphrase to change"
 msgstr ""
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:193
 msgid ""
 "Use this option to allow the passphrase to change, note that this option is "
 "not permitted for a backup or repair operation"
 msgstr ""
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:194
 msgid "List only filesets"
 msgstr ""
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:195
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process"
 msgstr ""
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:197
 msgid "Don't store metadata"
 msgstr ""
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:198
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
 " but does not affect file size much."
 msgstr ""
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:199
 msgid "Restore file permissions"
 msgstr ""
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:200
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
 msgstr ""
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:201
 msgid "Skip restored file check"
 msgstr ""
 
-#: Library/Main/Strings.cs:200
+#: Library/Main/Strings.cs:202
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
 " and avoid waiting for the verification."
 msgstr ""
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:203
 msgid "Activate caches"
 msgstr ""
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:204
 msgid "Activate in-memory caches, which are now off by default"
 msgstr ""
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:205
 msgid "Do not use local data"
 msgstr ""
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:206
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
 "remote data."
 msgstr ""
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:207
 msgid "Check block hashes"
 msgstr ""
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:208
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
 msgstr ""
 
-#: Library/Main/Strings.cs:207 Server/Strings.cs:31
+#: Library/Main/Strings.cs:209 Server/Strings.cs:31
 msgid "Clean up old log data"
 msgstr ""
 
-#: Library/Main/Strings.cs:208 Server/Strings.cs:32
+#: Library/Main/Strings.cs:210 Server/Strings.cs:32
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:211
 msgid "Repair database with paths"
 msgstr ""
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:212
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -3116,11 +3152,11 @@ msgid ""
 "resulting database can be searched, but cannot be used to restore data with."
 msgstr ""
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:213
 msgid "Force the locale setting"
 msgstr ""
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:214
 msgid ""
 "By default, your system locale and culture settings will be used. In some "
 "cases you may prefer to run with another locale, for example to get messages"
@@ -3128,40 +3164,40 @@ msgid ""
 "blank string to choose the \"Invariant Culture\"."
 msgstr ""
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:215
 msgid "Handle file communication with backend using threaded pipes"
 msgstr ""
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:216
 msgid ""
 "Use this option to disable multithreaded handling of up- and downloads, that"
 " can significantly speed up backend operations depending on the hardware "
 "you're running on and the transfer rate of your backend."
 msgstr ""
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:217
 msgid "Perform backup of Hyper-V machines (Windows only)"
 msgstr ""
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:218
 msgid ""
 "Use this option to specify the IDs of machines to include in the backup. "
 "Specify multiple machine IDs with a semicolon separator. (You can use this "
 "Powershell command to get ID 'Get-VM | ft VMName, ID')"
 msgstr ""
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:219
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
 "contents that were uploaded in the incomplete backup session."
 msgstr ""
 
-#: Library/Main/Strings.cs:218
-msgid "Disables synethic filelist"
+#: Library/Main/Strings.cs:220
+msgid "Disables synthetic filelist"
 msgstr ""
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:221
 msgid ""
 "This flag instructs Duplicati to not look at metadata or filesize when "
 "deciding to scan a file for changes. Use this option if you have a large "
@@ -3169,15 +3205,15 @@ msgid ""
 "unmodified files."
 msgstr ""
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:222
 msgid "Checks only file lastmodified"
 msgstr ""
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:223
 msgid "Disables path compresion on restore"
 msgstr ""
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:224
 msgid ""
 "When restore a subset of a backup into a new folder, the shortest possible "
 "path is used to avoid generating deep paths with empty folders. Use this "
@@ -3185,34 +3221,34 @@ msgid ""
 "structure is preserved, including upper level empty folders."
 msgstr ""
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:225
 msgid "Allow removing all filesets"
 msgstr ""
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:226
 msgid ""
 "By default, the last fileset cannot be removed. This is a safeguard to make "
 "sure that all remote data is not deleted by a configuration mistake. Use "
 "this flag to disable that protection, such that all filesets can be deleted."
 msgstr ""
 
-#: Library/Main/Strings.cs:229
+#: Library/Main/Strings.cs:231
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:232
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:233
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:234
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr ""
@@ -3525,7 +3561,7 @@ msgid ""
 "A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
 "\n"
-"To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections."
+"To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:96

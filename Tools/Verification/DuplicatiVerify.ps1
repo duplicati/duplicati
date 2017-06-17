@@ -99,7 +99,7 @@ if(Test-Path $FileOrDir -PathType Leaf) {
     Get-ChildItem $FileOrDir -Filter "*-verification.json" | 
     Foreach-Object {
         $files++
-        Write-Host "Verifying file: $_.Name"
+        Write-Host "Verifying file: $($_.Name)"
         $errorCount = $errorCount + $(Verify-Hashes -filename $_.FullName)
     }
 
