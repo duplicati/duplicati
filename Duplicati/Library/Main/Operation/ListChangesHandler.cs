@@ -160,7 +160,7 @@ namespace Duplicati.Library.Main.Operation
                     changes.DeletedFolders, changes.DeletedSymlinks, changes.DeletedFiles,
                     changes.ModifiedFolders, changes.ModifiedSymlinks, changes.ModifiedFiles,
                     sizes.AddedSize, sizes.DeletedSize, sizes.PreviousSize, sizes.CurrentSize,
-                    (lst == null || callback != null) ? null : lst.ToArray()
+                    (lst == null || callback == null) ? null : lst.ToArray()
                 );
 
                 if (callback != null)

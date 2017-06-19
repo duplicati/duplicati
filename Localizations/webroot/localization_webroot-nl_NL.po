@@ -36,7 +36,7 @@ msgstr "AWS Toegangssleutel"
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Beleid"
 
-#: index.html:224 index.html:240
+#: index.html:225 index.html:241
 msgid "About"
 msgstr "Over"
 
@@ -73,11 +73,15 @@ msgstr "Activeren mislukt"
 msgid "Add a new backup"
 msgstr "Nieuwe back-up toevoegen"
 
+#: templates/addoredit.html:149
+msgid "Add a path directly"
+msgstr "Voeg een pad rechtstreeks toe"
+
 #: templates/advancedoptionseditor.html:46
 msgid "Add advanced option"
 msgstr "Voeg geavanceerde optie toe"
 
-#: index.html:209
+#: index.html:210
 msgid "Add backup"
 msgstr "Back-up toevoegen"
 
@@ -118,7 +122,7 @@ msgstr "Alle Hyper-V Machines"
 msgid "All Microsoft SQL Databases"
 msgstr "Alle Microsoft SQL Databases"
 
-#: templates/settings.html:107
+#: templates/settings.html:115
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
 "information. They contain information about hardware and operating system, "
@@ -165,7 +169,7 @@ msgstr ""
 "\n"
 "Wilt u de bestaande database gebruiken?"
 
-#: templates/settings.html:95
+#: templates/settings.html:103
 msgid "Anonymous usage reports"
 msgstr "Anonieme gebruiksrapporten"
 
@@ -232,7 +236,7 @@ msgstr "Back-up locatie"
 msgid "Backup:"
 msgstr "Back-up:"
 
-#: templates/settings.html:72
+#: templates/settings.html:80
 msgid "Beta"
 msgstr "Beta"
 
@@ -248,7 +252,7 @@ msgstr "Verbroken toegang"
 msgid "Browse"
 msgstr "Bladeren"
 
-#: scripts/controllers/SystemSettingsController.js:25
+#: scripts/controllers/SystemSettingsController.js:33
 msgid "Browser default"
 msgstr "Browser standaard"
 
@@ -288,11 +292,11 @@ msgstr "Gedeeltelijke tijdelijke database samenstellen ..."
 msgid "Busy ..."
 msgstr "Bezig ..."
 
-#: templates/settings.html:82
+#: templates/settings.html:90
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:37
+#: scripts/controllers/AppController.js:43
 #: scripts/controllers/EditBackupController.js:293
 #: scripts/controllers/EditBackupController.js:308
 #: scripts/controllers/EditBackupController.js:342
@@ -310,7 +314,7 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:596
 #: scripts/services/EditUriBuiltins.js:669
 #: scripts/services/EditUriBuiltins.js:686 templates/delete.html:54
-#: templates/export.html:26 templates/settings.html:137
+#: templates/export.html:26 templates/settings.html:145
 #: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Annuleren"
@@ -353,7 +357,7 @@ msgstr "Klik op de AuthID link om een AuthID aan te maken"
 
 #: templates/home.html:30
 msgid "Commandline ..."
-msgstr ""
+msgstr "Opdrachtregel ..."
 
 #: templates/home.html:29
 msgid "Compact now"
@@ -405,19 +409,19 @@ msgstr "Bevestiging vereist"
 msgid "Connect"
 msgstr "Verbind"
 
-#: index.html:317
+#: index.html:318
 msgid "Connect now"
 msgstr "Verbind nu"
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
-msgstr ""
+msgstr "Verbinding maken met taak ..."
 
-#: index.html:318
+#: index.html:319
 msgid "Connecting..."
 msgstr "Verbinden..."
 
-#: index.html:309
+#: index.html:310
 msgid "Connection lost"
 msgstr "Verbinding verbroken"
 
@@ -426,7 +430,7 @@ msgstr "Verbinding verbroken"
 msgid "Connection worked!"
 msgstr "Verbinding werkt!"
 
-#: index.html:313
+#: index.html:314
 msgid "Connnecting to server ..."
 msgstr "Verbinden met server ..."
 
@@ -466,7 +470,7 @@ msgstr "Kern-opties"
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr "Tellen ({{files}} bestanden gevonden, {{size}})"
 
-#: templates/settings.html:102
+#: templates/settings.html:110
 msgid "Crashes only"
 msgstr "Alleen crashes"
 
@@ -536,21 +540,21 @@ msgstr "Aangepaste opslagklasse ({{class}})"
 
 #: templates/home.html:27
 msgid "Database ..."
-msgstr ""
+msgstr "Database ..."
 
 #: scripts/services/AppUtils.js:90 templates/addoredit.html:314
 msgid "Days"
 msgstr "Dagen"
 
-#: scripts/controllers/SystemSettingsController.js:26
+#: scripts/controllers/SystemSettingsController.js:34
 msgid "Default"
 msgstr "Standaard"
 
-#: templates/settings.html:59
+#: templates/settings.html:67
 msgid "Default ({{channelname}})"
 msgstr "Standaard ({{channelname}})"
 
-#: templates/settings.html:122
+#: templates/settings.html:130
 msgid "Default options"
 msgstr "Standaard opties"
 
@@ -621,6 +625,10 @@ msgstr "Uitgeschakeld"
 msgid "Dismiss"
 msgstr "Afwijzen"
 
+#: templates/settings.html:49
+msgid "Display and color theme"
+msgstr "Weergave en kleurenschema"
+
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
 msgstr "Wilt u de back-up \"{{name}}\" echt verwijderen?"
@@ -629,27 +637,27 @@ msgstr "Wilt u de back-up \"{{name}}\" echt verwijderen?"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Wilt u de lokale database voor: {{name}} echt verwijderen?"
 
-#: index.html:139 index.html:267
+#: index.html:140 index.html:268
 msgid "Donate"
 msgstr "Doneren"
 
-#: index.html:142 index.html:270
+#: index.html:143 index.html:271
 msgid "Donate with Bitcoins"
 msgstr "Doneer met Bitcoins"
 
-#: index.html:145 index.html:273
+#: index.html:146 index.html:274
 msgid "Donate with PayPal"
 msgstr "Doneer met PayPal"
 
-#: templates/settings.html:49 templates/settings.html:51
+#: templates/settings.html:57 templates/settings.html:59
 msgid "Donation messages"
 msgstr "Doneer-berichten"
 
-#: templates/settings.html:53
+#: templates/settings.html:61
 msgid "Donation messages are hidden, click to show"
 msgstr "Doneer-berichten zijn verborgen, klik om ze weer te geven"
 
-#: templates/settings.html:52
+#: templates/settings.html:60
 msgid "Donation messages are visible, click to hide"
 msgstr "Doneer-berichten zijn zichtbaar, klik om ze te verbergen"
 
@@ -677,7 +685,7 @@ msgstr "Update downloaden ..."
 msgid "Duplicate option {{opt}}"
 msgstr "Dupliceer optie {{opt}}"
 
-#: index.html:261
+#: index.html:262
 msgid "Duplicati Website"
 msgstr "Duplicati Website"
 
@@ -706,12 +714,12 @@ msgid "Edit ..."
 msgstr "Bewerken ..."
 
 #: templates/addoredit.html:170 templates/addoredit.html:345
-#: templates/edituri.html:39 templates/settings.html:126
+#: templates/edituri.html:39 templates/settings.html:134
 msgid "Edit as list"
 msgstr "Bewerk als lijst"
 
 #: templates/addoredit.html:173 templates/addoredit.html:348
-#: templates/edituri.html:42 templates/settings.html:132
+#: templates/edituri.html:42 templates/settings.html:140
 msgid "Edit as text"
 msgstr "Bewerk als tekst"
 
@@ -805,7 +813,7 @@ msgstr "Fout"
 msgid "Error!"
 msgstr "Fout!"
 
-#: templates/settings.html:101
+#: templates/settings.html:109
 msgid "Errors and crashes"
 msgstr "Fouten en crashes"
 
@@ -845,7 +853,7 @@ msgstr "Sluit reguliere expressie uit"
 msgid "Existing file found"
 msgstr "Bestaand bestand gevonden"
 
-#: templates/settings.html:77
+#: templates/settings.html:85
 msgid "Experimental"
 msgstr "Experimenteel"
 
@@ -917,7 +925,7 @@ msgstr "Standaard instellingen voor back-up inlezen mislukt:"
 msgid "Failed to restore files: {{message}}"
 msgstr "Herstellen bestanden mislukt: {{message}}"
 
-#: scripts/controllers/SystemSettingsController.js:101
+#: scripts/controllers/SystemSettingsController.js:110
 msgid "Failed to save:"
 msgstr "Opslaan mislukt:"
 
@@ -1006,7 +1014,7 @@ msgstr "Verberg"
 msgid "Hide hidden folders"
 msgstr "Verberg verborgen bestanden"
 
-#: index.html:206 scripts/services/AppUtils.js:61
+#: index.html:207 scripts/services/AppUtils.js:61
 msgid "Home"
 msgstr "Start"
 
@@ -1113,6 +1121,10 @@ msgstr ""
 msgid "Import failed"
 msgstr "Importeren mislukt"
 
+#: templates/addwizard.html:15
+msgid "Import from a file"
+msgstr "Importeer vanuit een bestand"
+
 #: templates/import.html:30
 msgid "Importing ..."
 msgstr "Importeren ..."
@@ -1133,7 +1145,7 @@ msgstr "Reguliere expressie opnemen"
 msgid "Incorrect answer, try again"
 msgstr "Incorrect antwoord, probeer opnieuw"
 
-#: templates/settings.html:83
+#: templates/settings.html:91
 msgid "Individual builds for developers only."
 msgstr "Individuele builds alleen voor ontwikkelaars."
 
@@ -1258,7 +1270,7 @@ msgstr "Log gegevens voor <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Log gegevens van de server"
 
-#: index.html:227
+#: index.html:228
 msgid "Log out"
 msgstr "Uitloggen"
 
@@ -1278,7 +1290,7 @@ msgstr "Onderhoud"
 msgid "Manually type path"
 msgstr "Voer pad handmatig in"
 
-#: index.html:150 templates/addoredit.html:123 templates/addoredit.html:165
+#: index.html:151 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:340 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1372,11 +1384,11 @@ msgstr "Volgende"
 msgid "Next scheduled run:"
 msgstr "Volgende geplande uitvoering:"
 
-#: index.html:181
+#: index.html:182
 msgid "Next scheduled task:"
 msgstr "Volgende geplande taak:"
 
-#: index.html:178
+#: index.html:179
 msgid "Next task:"
 msgstr "Volgende taak:"
 
@@ -1435,7 +1447,7 @@ msgstr "Geen items om te herstellen, selecteer één of meer items"
 msgid "No passphrase entered"
 msgstr "Geen wachtwoordzin ingegeven"
 
-#: index.html:183
+#: index.html:184
 msgid "No scheduled tasks"
 msgstr "Geen geplande taken"
 
@@ -1443,11 +1455,11 @@ msgstr "Geen geplande taken"
 msgid "Non-matching passphrase"
 msgstr "Niet-bijbehorende wachtwoordzin"
 
-#: templates/settings.html:103
+#: templates/settings.html:111
 msgid "None / disabled"
 msgstr "Geen / uitgeschakeld"
 
-#: scripts/controllers/AppController.js:37
+#: scripts/controllers/AppController.js:43
 #: scripts/controllers/EditBackupController.js:73
 #: scripts/controllers/EditBackupController.js:81
 #: scripts/controllers/RestoreDirectController.js:24
@@ -1455,7 +1467,7 @@ msgstr "Geen / uitgeschakeld"
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
 #: scripts/services/EditUriBuiltins.js:120 templates/restore.html:147
-#: templates/settings.html:138
+#: templates/settings.html:146
 msgid "OK"
 msgstr "OK"
 
@@ -1467,8 +1479,8 @@ msgstr "OpenStack AuthURI"
 msgid "OpenStack Object Storage / Swift"
 msgstr "OpenStack Object Storage / Swift"
 
-#: scripts/controllers/SystemSettingsController.js:112
-#: scripts/controllers/SystemSettingsController.js:123
+#: scripts/controllers/SystemSettingsController.js:121
+#: scripts/controllers/SystemSettingsController.js:132
 msgid "Operation failed:"
 msgstr "Bewerking mislukt:"
 
@@ -1485,7 +1497,7 @@ msgid "Optional authentication username"
 msgstr "Optionele authenticatie gebruikersnaam"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/settings.html:125 templates/settings.html:131
+#: templates/settings.html:133 templates/settings.html:139
 msgid "Options"
 msgstr "Opties"
 
@@ -1555,7 +1567,7 @@ msgstr "Pauze"
 msgid "Pause after startup or hibernation"
 msgstr "Pauzeer na opstarten of slaapmodus"
 
-#: scripts/controllers/AppController.js:35
+#: scripts/controllers/AppController.js:41
 msgid "Pause options"
 msgstr "Pauzeer-opties"
 
@@ -1649,7 +1661,7 @@ msgstr "Rapportage:"
 msgid "Reset"
 msgstr "Reset"
 
-#: index.html:212 templates/restore.html:131
+#: index.html:213 templates/restore.html:131
 msgid "Restore"
 msgstr "Herstellen"
 
@@ -1691,7 +1703,7 @@ msgstr "Herstel lees/schrijfpermissies"
 msgid "Restoring files ..."
 msgstr "Bestanden worden hersteld ..."
 
-#: index.html:215
+#: index.html:216
 msgid "Resume"
 msgstr "Hervat"
 
@@ -1709,13 +1721,13 @@ msgstr "Uitvoeren ..."
 
 #: templates/commandline.html:58
 msgid "Running ...."
-msgstr ""
+msgstr "Uitvoeren ..."
 
 #: templates/commandline.html:47
 msgid "Running commandline entry"
-msgstr ""
+msgstr "Opdrachtregelinvoer in uitvoering"
 
-#: index.html:170
+#: index.html:171
 msgid "Running task:"
 msgstr "Taak in uitvoering:"
 
@@ -1723,7 +1735,7 @@ msgstr "Taak in uitvoering:"
 msgid "S3 Compatible"
 msgstr "S3 Compatible"
 
-#: templates/settings.html:60
+#: templates/settings.html:68
 msgid "Same as the base install version: {{channelname}}"
 msgstr "Zelfde als de basis installatie versie: {{channelname}}"
 
@@ -1809,7 +1821,7 @@ msgstr "Server gepauzeerd"
 msgid "Server state properties"
 msgstr "Server status eigenschappen"
 
-#: index.html:218 templates/settings.html:2
+#: index.html:219 templates/settings.html:2
 msgid "Settings"
 msgstr "Instellingen"
 
@@ -1827,7 +1839,7 @@ msgstr "Toon geavanceerde editor"
 msgid "Show hidden folders"
 msgstr "Toon verborgen mappen"
 
-#: index.html:221
+#: index.html:222
 msgid "Show log"
 msgstr "Log weergeven"
 
@@ -1863,7 +1875,7 @@ msgstr "Bronmappen"
 msgid "Source:"
 msgstr "Bron:"
 
-#: templates/settings.html:78
+#: templates/settings.html:86
 msgid "Specific builds for developers only."
 msgstr "Specifieke builds alleen voor ontwikkelaars."
 
@@ -1882,32 +1894,32 @@ msgstr "Starten van het herstelproces ..."
 
 #: scripts/controllers/StateController.js:107
 msgid "Stop after the current file"
-msgstr ""
+msgstr "Stop na het huidige bestand"
 
 #: scripts/controllers/StateController.js:98
 msgid "Stop after upload"
-msgstr ""
+msgstr "Stop na de upload"
 
 #: scripts/controllers/StateController.js:107
 #: scripts/controllers/StateController.js:98
 msgid "Stop now"
-msgstr ""
+msgstr "Nu stoppen"
 
 #: scripts/controllers/StateController.js:96
 msgid "Stop running backup"
-msgstr ""
+msgstr "Stop de back-up in uitvoering"
 
 #: scripts/controllers/StateController.js:105
 msgid "Stop running task"
-msgstr ""
+msgstr "Stop de taak in uitvoering"
 
-#: index.html:166
+#: index.html:167
 msgid "Stopping after upload:"
-msgstr ""
+msgstr "Stop na de upload:"
 
-#: index.html:171
+#: index.html:172
 msgid "Stopping task:"
-msgstr ""
+msgstr "Taak wordt gestopt:"
 
 #: templates/edituri.html:3
 msgid "Storage Type"
@@ -1942,7 +1954,7 @@ msgstr "Zon"
 msgid "Symbolic link"
 msgstr "Symbolische link"
 
-#: templates/settings.html:98
+#: templates/settings.html:106
 msgid "System default ({{levelname}})"
 msgstr "Systeem standaard ({{levelname}})"
 
@@ -2010,10 +2022,18 @@ msgstr ""
 "De bucket naam hoort te beginnen met uw gebruikersnaam, automatisch "
 "voorvoegen?"
 
-#: index.html:310
+#: index.html:311
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr ""
 "De verbinding met de server is verbroken, opnieuw proberen over {{time}} ..."
+
+#: templates/settings.html:53
+msgid "The dark theme (by Michal)"
+msgstr "Het donkere thema (door Michal)"
+
+#: templates/settings.html:52
+msgid "The default blue on white theme (by Alex)"
+msgstr "Het standaard blauw op wit thema (door Alex)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2155,7 +2175,7 @@ msgstr "Vertrouw host certificaat?"
 msgid "Trust server certificate?"
 msgstr "Vertrouw server certificaat?"
 
-#: templates/settings.html:73
+#: templates/settings.html:81
 msgid ""
 "Try out the new features we are working on. Don't use with important data."
 msgstr ""
@@ -2178,7 +2198,7 @@ msgstr "Onbekende back-up grootte en versies"
 msgid "Until resumed"
 msgstr "Tot hervatting"
 
-#: templates/settings.html:56
+#: templates/settings.html:64
 msgid "Update channel"
 msgstr "Updatekanaal"
 
@@ -2198,7 +2218,7 @@ msgstr "Upload volumegrootte"
 msgid "Uploading verification file ..."
 msgstr "Uploaden controlebestand ..."
 
-#: templates/settings.html:105
+#: templates/settings.html:113
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <a href=\"{{link}}\" "
@@ -2209,11 +2229,11 @@ msgstr ""
 "href=\"{{link}}\" target=\"_blank\">openbare gebruikstatistieken</a> te "
 "genereren."
 
-#: templates/settings.html:93
+#: templates/settings.html:101
 msgid "Usage statistics"
 msgstr "Gebruikstatistieken"
 
-#: templates/settings.html:99
+#: templates/settings.html:107
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr "Gebruikstatistieken, waarschuwingen, fouten en crashes"
 
@@ -2242,8 +2262,8 @@ msgid "User has too many permissions"
 msgstr "Gebruiker heeft teveel permissies"
 
 #: templates/settings.html:37
-msgid "User interface language"
-msgstr "Gebruikersinterface-taal"
+msgid "User interface settings"
+msgstr "Gebruikersinterface instellingen"
 
 #: scripts/services/EditUriBuiltins.js:552
 #: scripts/services/EditUriBuiltins.js:632
@@ -2296,7 +2316,7 @@ msgstr "Erg sterk"
 msgid "Very weak"
 msgstr "Erg zwak"
 
-#: index.html:246
+#: index.html:247
 msgid "Visit us on"
 msgstr "Bezoek ons op"
 
@@ -2320,13 +2340,13 @@ msgstr "Wachten op het starten van de taak"
 
 #: templates/commandline.html:54
 msgid "Waiting for task to start ...."
-msgstr ""
+msgstr "Wachten op het starten van de taak ..."
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload ..."
 msgstr "Wachten op upload ..."
 
-#: templates/settings.html:100
+#: templates/settings.html:108
 msgid "Warnings, errors and crashes"
 msgstr "Waarschuwingen, fouten en crashes"
 
@@ -2424,12 +2444,16 @@ msgid ""
 "You can stop the backup immediately, or stop after the current file has been"
 " uploaded."
 msgstr ""
+"De back-up kan onmiddellijk worden gestopt, of stoppen nadat het huidige "
+"bestand is geüpload."
 
 #: scripts/controllers/StateController.js:106
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and the stop."
 msgstr ""
+"De taak kan onmiddellijk worden gestopt, of het proces toestaan om door te "
+"gaan met het huidige bestand en dan stoppen."
 
 #: scripts/controllers/EditBackupController.js:351
 msgid ""

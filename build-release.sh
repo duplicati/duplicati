@@ -178,6 +178,9 @@ done
 rm -rf "${UPDATE_SOURCE}/"*.mdb;
 rm -rf "${UPDATE_SOURCE}/"*.pdb;
 
+# Remove all library docs files
+rm -rf "${UPDATE_SOURCE}/"*.xml;
+
 # Remove all .DS_Store and Thumbs.db files
 find  . -type f -name ".DS_Store" | xargs rm -rf
 find  . -type f -name "Thumbs.db" | xargs rm -rf

@@ -37,7 +37,7 @@ msgstr "Tunniste \"Access Key ID\" palveluun AWS"
 msgid "AWS IAM Policy"
 msgstr "Palvelun AWS IAM-asetukset"
 
-#: index.html:224 index.html:240
+#: index.html:225 index.html:241
 msgid "About"
 msgstr "Tietoja"
 
@@ -74,11 +74,15 @@ msgstr "Aktivointi epäonnistui"
 msgid "Add a new backup"
 msgstr "Lisää uusi varmuuskopio"
 
+#: templates/addoredit.html:149
+msgid "Add a path directly"
+msgstr ""
+
 #: templates/advancedoptionseditor.html:46
 msgid "Add advanced option"
 msgstr "Anna harvoin tarvittava valitsin"
 
-#: index.html:209
+#: index.html:210
 msgid "Add backup"
 msgstr "Lisää varmuuskopio"
 
@@ -119,7 +123,7 @@ msgstr "Kaikki Hyper-V-virtuaalikoneet"
 msgid "All Microsoft SQL Databases"
 msgstr "Kaikki Microsoft SQL -tietokannat"
 
-#: templates/settings.html:107
+#: templates/settings.html:115
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
 "information. They contain information about hardware and operating system, "
@@ -165,7 +169,7 @@ msgstr ""
 "\n"
 "Haluatko käyttää samaa tietokantaa?"
 
-#: templates/settings.html:95
+#: templates/settings.html:103
 msgid "Anonymous usage reports"
 msgstr "Anonyymit käyttöraportit"
 
@@ -232,7 +236,7 @@ msgstr "Varmuuskopion sijainti"
 msgid "Backup:"
 msgstr "Varmuuskopio:"
 
-#: templates/settings.html:72
+#: templates/settings.html:80
 msgid "Beta"
 msgstr "Beta"
 
@@ -248,7 +252,7 @@ msgstr "Pääsy epäonnistui"
 msgid "Browse"
 msgstr "Selaa"
 
-#: scripts/controllers/SystemSettingsController.js:25
+#: scripts/controllers/SystemSettingsController.js:33
 msgid "Browser default"
 msgstr "Selaimen oletusasetus"
 
@@ -288,11 +292,11 @@ msgstr "Koostan osittaista tilapäistä tietokantaa ..."
 msgid "Busy ..."
 msgstr "Työskentelen ..."
 
-#: templates/settings.html:82
+#: templates/settings.html:90
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:37
+#: scripts/controllers/AppController.js:43
 #: scripts/controllers/EditBackupController.js:293
 #: scripts/controllers/EditBackupController.js:308
 #: scripts/controllers/EditBackupController.js:342
@@ -310,7 +314,7 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:596
 #: scripts/services/EditUriBuiltins.js:669
 #: scripts/services/EditUriBuiltins.js:686 templates/delete.html:54
-#: templates/export.html:26 templates/settings.html:137
+#: templates/export.html:26 templates/settings.html:145
 #: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Peruuta"
@@ -405,7 +409,7 @@ msgstr "Tarvitsen vahvistuksen"
 msgid "Connect"
 msgstr "Yhdistä"
 
-#: index.html:317
+#: index.html:318
 msgid "Connect now"
 msgstr "Yhdistä nyt"
 
@@ -413,11 +417,11 @@ msgstr "Yhdistä nyt"
 msgid "Connecting to task ...."
 msgstr ""
 
-#: index.html:318
+#: index.html:319
 msgid "Connecting..."
 msgstr "Yhdistän ..."
 
-#: index.html:309
+#: index.html:310
 msgid "Connection lost"
 msgstr "Yhteys katkesi"
 
@@ -426,7 +430,7 @@ msgstr "Yhteys katkesi"
 msgid "Connection worked!"
 msgstr "Yhteys toimi!"
 
-#: index.html:313
+#: index.html:314
 msgid "Connnecting to server ..."
 msgstr "Yhdistän palvelimeen ..."
 
@@ -466,7 +470,7 @@ msgstr "Ydinasetukset"
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr "Lasketaan tiedostoja. (Löydetty {{files}} tiedostoa, {{size}})"
 
-#: templates/settings.html:102
+#: templates/settings.html:110
 msgid "Crashes only"
 msgstr "Vain kaatumiset"
 
@@ -542,15 +546,15 @@ msgstr ""
 msgid "Days"
 msgstr "Päivää"
 
-#: scripts/controllers/SystemSettingsController.js:26
+#: scripts/controllers/SystemSettingsController.js:34
 msgid "Default"
 msgstr "Oletus"
 
-#: templates/settings.html:59
+#: templates/settings.html:67
 msgid "Default ({{channelname}})"
 msgstr "Oletus ({{channelname}})"
 
-#: templates/settings.html:122
+#: templates/settings.html:130
 msgid "Default options"
 msgstr "Oletusasetukset"
 
@@ -620,6 +624,10 @@ msgstr "Positetteu käytöstä"
 msgid "Dismiss"
 msgstr "Ohita"
 
+#: templates/settings.html:49
+msgid "Display and color theme"
+msgstr ""
+
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
 msgstr "Haluatko varmasti poistaa varmuuskopion  \"{{name}}\"?"
@@ -629,28 +637,28 @@ msgid "Do you really want to delete the local database for: {{name}}"
 msgstr ""
 "Haluatko varmasti poistaa varmuuskopion {{name}} paikallisen tietokannan?"
 
-#: index.html:139 index.html:267
+#: index.html:140 index.html:268
 msgid "Donate"
 msgstr "Lahjoita"
 
-#: index.html:142 index.html:270
+#: index.html:143 index.html:271
 msgid "Donate with Bitcoins"
 msgstr "Lahjoita Bitcoineja"
 
-#: index.html:145 index.html:273
+#: index.html:146 index.html:274
 msgid "Donate with PayPal"
 msgstr "Lahjoita PayPal:n kautta"
 
-#: templates/settings.html:49 templates/settings.html:51
+#: templates/settings.html:57 templates/settings.html:59
 msgid "Donation messages"
 msgstr "Lahjoituskehoitukset"
 
-#: templates/settings.html:53
+#: templates/settings.html:61
 msgid "Donation messages are hidden, click to show"
 msgstr ""
 "Lahjoituskehoitukset on poistettu käytöstä. Klikkaa ottaaksesi ne käyttöön."
 
-#: templates/settings.html:52
+#: templates/settings.html:60
 msgid "Donation messages are visible, click to hide"
 msgstr "Lahjoituskehoitukset ovat käytössä. Klikkaa poistaaksesi ne käytöstä."
 
@@ -678,7 +686,7 @@ msgstr "Lataan päivitystä ..."
 msgid "Duplicate option {{opt}}"
 msgstr "Sama valitsin {{opt}} annettiin kahdesti"
 
-#: index.html:261
+#: index.html:262
 msgid "Duplicati Website"
 msgstr "Duplicatin verkkosivu"
 
@@ -708,12 +716,12 @@ msgid "Edit ..."
 msgstr "Muokkaa ..."
 
 #: templates/addoredit.html:170 templates/addoredit.html:345
-#: templates/edituri.html:39 templates/settings.html:126
+#: templates/edituri.html:39 templates/settings.html:134
 msgid "Edit as list"
 msgstr "Muokkaa listana"
 
 #: templates/addoredit.html:173 templates/addoredit.html:348
-#: templates/edituri.html:42 templates/settings.html:132
+#: templates/edituri.html:42 templates/settings.html:140
 msgid "Edit as text"
 msgstr "Muokkaa tekstinä"
 
@@ -806,7 +814,7 @@ msgstr "Virhe"
 msgid "Error!"
 msgstr "Virhe!"
 
-#: templates/settings.html:101
+#: templates/settings.html:109
 msgid "Errors and crashes"
 msgstr "Virheet ja kaatumiset"
 
@@ -846,7 +854,7 @@ msgstr "Ohita säännöllistä ilmaisua vastaavat kohteet"
 msgid "Existing file found"
 msgstr "Löydettiin olemassaoleva tiedosto"
 
-#: templates/settings.html:77
+#: templates/settings.html:85
 msgid "Experimental"
 msgstr "Experimental"
 
@@ -918,7 +926,7 @@ msgstr "Varmuuskopion oletusasetusten lukeminen epäonnistui:"
 msgid "Failed to restore files: {{message}}"
 msgstr "Tiedostojen palauttaminen epäonnistui: {{message}}"
 
-#: scripts/controllers/SystemSettingsController.js:101
+#: scripts/controllers/SystemSettingsController.js:110
 msgid "Failed to save:"
 msgstr "Tallennus epäonnistui:"
 
@@ -1007,7 +1015,7 @@ msgstr "Piilota"
 msgid "Hide hidden folders"
 msgstr "Älä näytä piilotettuja kansioita"
 
-#: index.html:206 scripts/services/AppUtils.js:61
+#: index.html:207 scripts/services/AppUtils.js:61
 msgid "Home"
 msgstr "Etusivu"
 
@@ -1115,6 +1123,10 @@ msgstr ""
 msgid "Import failed"
 msgstr "Tuominen epäonnistui"
 
+#: templates/addwizard.html:15
+msgid "Import from a file"
+msgstr ""
+
 #: templates/import.html:30
 msgid "Importing ..."
 msgstr "Tuon ..."
@@ -1135,7 +1147,7 @@ msgstr "Sisällytä säännöllistä ilmaisua vastaavat kohteet"
 msgid "Incorrect answer, try again"
 msgstr "Virheellinen vastaus. Yritä uudelleen."
 
-#: templates/settings.html:83
+#: templates/settings.html:91
 msgid "Individual builds for developers only."
 msgstr "Kehittäjille tarkoitetut testiversiot"
 
@@ -1259,7 +1271,7 @@ msgstr "Varmuuskopion <b>{{Backup.Backup.Name}}</b> lokitiedot"
 msgid "Log data from the server"
 msgstr "Palvelimen lokitiedot"
 
-#: index.html:227
+#: index.html:228
 msgid "Log out"
 msgstr "Kirjaudu ulos"
 
@@ -1279,7 +1291,7 @@ msgstr "Ylläpito"
 msgid "Manually type path"
 msgstr "Anna polku"
 
-#: index.html:150 templates/addoredit.html:123 templates/addoredit.html:165
+#: index.html:151 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:340 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1373,11 +1385,11 @@ msgstr "Seuraava"
 msgid "Next scheduled run:"
 msgstr "Seuraava varmuuskopio tehdään:"
 
-#: index.html:181
+#: index.html:182
 msgid "Next scheduled task:"
 msgstr "Seuraava ajoitettu tehtävä:"
 
-#: index.html:178
+#: index.html:179
 msgid "Next task:"
 msgstr "Seuraava tehtävä:"
 
@@ -1436,7 +1448,7 @@ msgstr ""
 msgid "No passphrase entered"
 msgstr "Et antanut salasanaa"
 
-#: index.html:183
+#: index.html:184
 msgid "No scheduled tasks"
 msgstr "Ei ajastettuja tehtäviä"
 
@@ -1444,11 +1456,11 @@ msgstr "Ei ajastettuja tehtäviä"
 msgid "Non-matching passphrase"
 msgstr "Salasanat eivät ole samat"
 
-#: templates/settings.html:103
+#: templates/settings.html:111
 msgid "None / disabled"
 msgstr "Ei mitään/poistettu käytöstä"
 
-#: scripts/controllers/AppController.js:37
+#: scripts/controllers/AppController.js:43
 #: scripts/controllers/EditBackupController.js:73
 #: scripts/controllers/EditBackupController.js:81
 #: scripts/controllers/RestoreDirectController.js:24
@@ -1456,7 +1468,7 @@ msgstr "Ei mitään/poistettu käytöstä"
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
 #: scripts/services/EditUriBuiltins.js:120 templates/restore.html:147
-#: templates/settings.html:138
+#: templates/settings.html:146
 msgid "OK"
 msgstr "OK"
 
@@ -1468,8 +1480,8 @@ msgstr "Openstack autentikointiosoite"
 msgid "OpenStack Object Storage / Swift"
 msgstr "OpenStack Object Storage / Swift"
 
-#: scripts/controllers/SystemSettingsController.js:112
-#: scripts/controllers/SystemSettingsController.js:123
+#: scripts/controllers/SystemSettingsController.js:121
+#: scripts/controllers/SystemSettingsController.js:132
 msgid "Operation failed:"
 msgstr "Toimenpide epäonnistui"
 
@@ -1486,7 +1498,7 @@ msgid "Optional authentication username"
 msgstr "Käyttäjätunnus (ei välttämätön)"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/settings.html:125 templates/settings.html:131
+#: templates/settings.html:133 templates/settings.html:139
 msgid "Options"
 msgstr "Valitsimet"
 
@@ -1556,7 +1568,7 @@ msgstr "Tauko"
 msgid "Pause after startup or hibernation"
 msgstr "Tauko käynnistyksen tai lepotilasta heräämisen jälkeen"
 
-#: scripts/controllers/AppController.js:35
+#: scripts/controllers/AppController.js:41
 msgid "Pause options"
 msgstr ""
 
@@ -1650,7 +1662,7 @@ msgstr "Raportoin:"
 msgid "Reset"
 msgstr "Palauta edelliset asetukset"
 
-#: index.html:212 templates/restore.html:131
+#: index.html:213 templates/restore.html:131
 msgid "Restore"
 msgstr "Palauta"
 
@@ -1692,7 +1704,7 @@ msgstr "Palauta luku- ja kirjoitusoikeudet"
 msgid "Restoring files ..."
 msgstr "Palautan tiedostoja ..."
 
-#: index.html:215
+#: index.html:216
 msgid "Resume"
 msgstr "Jatka"
 
@@ -1716,7 +1728,7 @@ msgstr ""
 msgid "Running commandline entry"
 msgstr ""
 
-#: index.html:170
+#: index.html:171
 msgid "Running task:"
 msgstr "Suoritettava tehtävä:"
 
@@ -1724,7 +1736,7 @@ msgstr "Suoritettava tehtävä:"
 msgid "S3 Compatible"
 msgstr "S3-yhteensopiva"
 
-#: templates/settings.html:60
+#: templates/settings.html:68
 msgid "Same as the base install version: {{channelname}}"
 msgstr "Sama kuin asennettu versio: {{channelname}}"
 
@@ -1810,7 +1822,7 @@ msgstr "Palvelin on pysäytetty"
 msgid "Server state properties"
 msgstr "Palvelimen tila"
 
-#: index.html:218 templates/settings.html:2
+#: index.html:219 templates/settings.html:2
 msgid "Settings"
 msgstr "Asetukset"
 
@@ -1828,7 +1840,7 @@ msgstr "Näytä asetusten muokkain"
 msgid "Show hidden folders"
 msgstr "Näytä piilotetut tiedostot"
 
-#: index.html:221
+#: index.html:222
 msgid "Show log"
 msgstr "Näytä loki"
 
@@ -1864,7 +1876,7 @@ msgstr "Lähekansiot"
 msgid "Source:"
 msgstr "Varmuuskopioitavat tiedostot:"
 
-#: templates/settings.html:78
+#: templates/settings.html:86
 msgid "Specific builds for developers only."
 msgstr "Testiversiot kehittäjille."
 
@@ -1902,11 +1914,11 @@ msgstr ""
 msgid "Stop running task"
 msgstr ""
 
-#: index.html:166
+#: index.html:167
 msgid "Stopping after upload:"
 msgstr ""
 
-#: index.html:171
+#: index.html:172
 msgid "Stopping task:"
 msgstr ""
 
@@ -1943,7 +1955,7 @@ msgstr "Su"
 msgid "Symbolic link"
 msgstr "Symbolinen linkki"
 
-#: templates/settings.html:98
+#: templates/settings.html:106
 msgid "System default ({{levelname}})"
 msgstr "Järjestelmän oletus ({{levelname}})"
 
@@ -2012,9 +2024,17 @@ msgstr ""
 "Bucketin nimen pitäisi alkaa käyttäjätunnuksellasi. Haluatko liittää "
 "tunnuksesi nimen alkuun automaattisesti?"
 
-#: index.html:310
+#: index.html:311
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr "Yhteys palvelimeen katkesi, yritetään uudelleen {{time}} kuluttua ..."
+
+#: templates/settings.html:53
+msgid "The dark theme (by Michal)"
+msgstr ""
+
+#: templates/settings.html:52
+msgid "The default blue on white theme (by Alex)"
+msgstr ""
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2142,7 +2162,7 @@ msgstr "Luota palvelimen varmenteeseen?"
 msgid "Trust server certificate?"
 msgstr "Luota palvelimen varmenteeseen?"
 
-#: templates/settings.html:73
+#: templates/settings.html:81
 msgid ""
 "Try out the new features we are working on. Don't use with important data."
 msgstr ""
@@ -2165,7 +2185,7 @@ msgstr ""
 msgid "Until resumed"
 msgstr "Toistaiseksi"
 
-#: templates/settings.html:56
+#: templates/settings.html:64
 msgid "Update channel"
 msgstr "Päivityskanava"
 
@@ -2185,7 +2205,7 @@ msgstr "Lähetettävän datatiedoston koko"
 msgid "Uploading verification file ..."
 msgstr "Lähetetään varmennustiedostoa ..."
 
-#: templates/settings.html:105
+#: templates/settings.html:113
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <a href=\"{{link}}\" "
@@ -2195,11 +2215,11 @@ msgstr ""
 "uusia ominaisuuksia. Käytämme raportteja <a href=\"{{link}}\" "
 "target=\"_blank\">julkisten käyttötilastojen</a> luomiseen."
 
-#: templates/settings.html:93
+#: templates/settings.html:101
 msgid "Usage statistics"
 msgstr "Käyttötilastot"
 
-#: templates/settings.html:99
+#: templates/settings.html:107
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr "Käyttötilastot, varoitukset, virheet ja kaatumiset"
 
@@ -2228,8 +2248,8 @@ msgid "User has too many permissions"
 msgstr "Käyttäjällä on liikaa oikeuksia"
 
 #: templates/settings.html:37
-msgid "User interface language"
-msgstr "Käyttöliittymän kieli"
+msgid "User interface settings"
+msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:552
 #: scripts/services/EditUriBuiltins.js:632
@@ -2282,7 +2302,7 @@ msgstr "Hyvin vahva"
 msgid "Very weak"
 msgstr "Hyvin heikko"
 
-#: index.html:246
+#: index.html:247
 msgid "Visit us on"
 msgstr "Tutustu meihin"
 
@@ -2308,7 +2328,7 @@ msgstr ""
 msgid "Waiting for upload ..."
 msgstr "Odotetaan lähetystä ..."
 
-#: templates/settings.html:100
+#: templates/settings.html:108
 msgid "Warnings, errors and crashes"
 msgstr "Varoitukset, virheet ja kaatumiset"
 

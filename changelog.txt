@@ -1,3 +1,26 @@
+2017-06-15 - 2.0.1.66_canary_2017-06-15
+==========
+* Removed the warning text on the settings page
+* Added internal system for better database upgrades, thanks @Danstahr
+* Included Jottacloud backend in the build output, thanks @Danstahr
+* Fixed an arugment-out-of-range error in the "compare" method, thanks @Danstahr
+* Added support for reading and writing filters in external scripts, thanks @IGTHORN
+* Added an environment variable to override the default file-system case-sensitivity
+* Improved recreate database speeds, thanks @zed9h
+
+2017-06-09 - 2.0.1.65_canary_2017-06-09
+==========
+* Updated the Azure libraries
+* Cleaned the deployed builds from XML files
+* Fixed an out-of-bounds error, thanks @okoetter
+* Updated localizations
+* Fixed a bug where the SSL certificate was reported to the client
+
+2017-06-02 - 2.0.1.64_canary_2017-06-02
+==========
+* Compile all executables without `Prefer32Bit`
+* Fixed not showing the commandline arguments if the input is incorrect
+
 2017-06-01 - 2.0.1.63_canary_2017-06-01
 ==========
 * Rebuild, gpg was removed from the build maching causing 2.0.1.62 to be a partially unsigned build
