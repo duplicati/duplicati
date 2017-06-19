@@ -120,9 +120,9 @@ namespace Duplicati.Library.Main.Operation
                         if (tmp.Length == 0)
                             throw new UserInformationException(string.Format("Found {0} files at the remote storage, but none that could be parsed", rawlist.Count));
                         else if (types.Length == 1)
-                            throw new UserInformationException(string.Format("Found {0} parse-able files with the prefix {1}, did you forget to set the backup-prefix?", tmp.Length, types[0]));
+                            throw new UserInformationException(string.Format("Found {0} parse-able files with the prefix {1}, did you forget to set the backup prefix?", tmp.Length, types[0]));
                         else
-                            throw new UserInformationException(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup-prefix?", tmp.Length, rawlist.Count, string.Join(", ", types)));
+                            throw new UserInformationException(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup prefix?", tmp.Length, rawlist.Count, string.Join(", ", types)));
                     }
                 }
 
