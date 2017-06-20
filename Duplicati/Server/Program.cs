@@ -563,6 +563,16 @@ namespace Duplicati.Server
                 Library.UsageReporter.Reporter.SetReportLevel(reportLevel, disableUsageReporter);
         }
 
+        public static void UpdateThrottleSpeeds()
+        {
+            if (Program.WorkThread == null)
+                return;
+            
+            var cur = Program.WorkThread.CurrentTask;
+            if (cur != null)
+                cur.UpdateThrottleSpeed();
+        }
+
         private static void SignalNewEvent(object sender, EventArgs e)
         {
             StatusEventNotifyer.SignalNewEvent();

@@ -695,13 +695,13 @@ msgstr "Сайт Duplicati "
 
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
-"Для каждой резервной копии существует связанная с ней локальная база данных, которая хранит на локальной машине информацию об удаленной резервной копии.\n"
-"При удалении резервной копии вы можете также удалить и локальную базу данных, никак не влияя на возможность восстановления удалённых файлов.\n"
-"Если вы используете локальную базу данных для резервного копирования из командной строки, то вы должны сохранить базу данных."
+"Каждая резервная копия имеет связанную с ней локальную базу данных, которая хранит информацию об удаленной резервной копии на локальной машине.\n"
+"            При удалении бэкапа, можно также удалить локальную базу данных без ущерба для возможности восстановления удаленных файлов.\n"
+"            Если вы используете локальную базу данных для резервного копирования из командной строки, следует сохранить базу данных."
 
 #: templates/localdatabase.html:8
 msgid ""

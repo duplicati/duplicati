@@ -1,0 +1,27 @@
+<div ng-controller="ThrottleController" class="throttlesettings">
+    <form class="styled">
+        <div class="input mixed multiple" ng-class="selection.uploadthrottleenabled ? '' : 'disabled'">
+            <input type="checkbox" class="checkbox" name="uploadthrottleenabled" ng-model="selection.uploadthrottleenabled">
+            <label ng-click="selection.uploadthrottleenabled = !selection.uploadthrottleenabled" for="uploadspeed" translate>Max upload speed</label>
+
+            <input ng-disabled="!selection.uploadthrottleenabled" type="number" id="uploadspeed" name="uploadspeed" parse-size-number="uppercase" ng-model="selection.uploadspeed" />
+            <select ng-disabled="!selection.uploadthrottleenabled" parse-size-multiplier="uppercase" ng-model="selection.uploadspeed" ng-options="item.value as item.name for item in speedMultipliers">
+            </select>
+        </div>
+
+        <div class="input mixed multiple" ng-class="selection.downloadthrottleenabled ? '' : 'disabled'">
+            <input type="checkbox" class="checkbox" name="downloadthrottleenabled" ng-model="selection.downloadthrottleenabled">
+
+            <label ng-click="selection.downloadthrottleenabled = !selection.downloadthrottleenabled" for="downloadspeed" translate>Max download speed</label>
+
+            <input ng-disabled="!selection.downloadthrottleenabled" type="number" id="downloadspeed" name="downloadspeed" parse-size-number="uppercase" ng-model="selection.downloadspeed" />
+            <select ng-disabled="!selection.downloadthrottleenabled" parse-size-multiplier="uppercase" ng-model="selection.downloadspeed" ng-options="item.value as item.name for item in speedMultipliers">
+            </select>
+        </div>
+
+        <div>
+        Note that speeds are entered in bytes, and line speeds are typically reported in bits. Use a factor of 8 to convert, such that an 8 mbit/s line is equivalent to 1 MByte/s.
+        <div>
+	</form>
+
+</div>

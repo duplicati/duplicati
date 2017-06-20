@@ -110,6 +110,9 @@ CREATE TABLE "BlocklistHash" (
 	"Hash" TEXT NOT NULL
 );
 
+/* Faster database recreation */
+CREATE UNIQUE INDEX "BlocklistHashBlocksetIDIndex" ON "BlocklistHash" ("BlocksetID", "Index");
+
 /*
 The blockset is a list of blocks
 Note that Length is actually redundant,
@@ -241,4 +244,4 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (6);
+INSERT INTO "Version" ("Version") VALUES (7);

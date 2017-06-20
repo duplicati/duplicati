@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-01 10:40+0200\n"
+"POT-Creation-Date: 2017-06-14 23:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Markus Greitner <christian.weller@gmx.net>, 2017\n"
 "Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
@@ -3561,8 +3561,8 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:220
-msgid "Disables synethic filelist"
-msgstr "Deaktiviere die synthetische Dateiliste"
+msgid "Disables synthetic filelist"
+msgstr ""
 
 #: Library/Main/Strings.cs:221
 msgid ""

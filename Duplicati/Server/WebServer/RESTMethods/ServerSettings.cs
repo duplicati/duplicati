@@ -78,22 +78,26 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 serversettings.Remove("server-ssl-certificate");
 				serversettings.Remove("ServerSSLCertificate");
 
-				Program.DataConnection.ApplicationSettings.UpdateSettings(serversettings, false);
+                if (serversettings.Any())
+				    Program.DataConnection.ApplicationSettings.UpdateSettings(serversettings, false);
 
-                // Update based on inputs
-                var existing = Program.DataConnection.Settings.ToDictionary(x => x.Name, x => x);
-                foreach (var g in globalsettings)
-                    if (g.Value == null)
-                        existing.Remove(g.Key);
-                    else
-                    {
-                        if (existing.ContainsKey(g.Key))
-                            existing[g.Key].Value = g.Value;
+                if (globalsettings.Any())
+                {
+                    // Update based on inputs
+                    var existing = Program.DataConnection.Settings.ToDictionary(x => x.Name, x => x);
+                    foreach (var g in globalsettings)
+                        if (g.Value == null)
+                            existing.Remove(g.Key);
                         else
-                            existing[g.Key] = new Setting() { Name = g.Key, Value = g.Value };
-                    }
+                        {
+                            if (existing.ContainsKey(g.Key))
+                                existing[g.Key].Value = g.Value;
+                            else
+                                existing[g.Key] = new Setting() { Name = g.Key, Value = g.Value };
+                        }
 
-                Program.DataConnection.Settings = existing.Select(x => x.Value).ToArray();
+                    Program.DataConnection.Settings = existing.Select(x => x.Value).ToArray();
+                }
 
                 info.OutputOK();
             }

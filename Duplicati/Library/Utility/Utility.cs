@@ -849,9 +849,20 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                //TODO: This should probably be determined by filesystem rather than OS,
-                // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
-                return IsClientLinux && !IsClientOSX;
+				var str = Environment.GetEnvironmentVariable("FILESYSTEM_CASE_SENSITIVE");
+
+                if (!string.IsNullOrWhiteSpace(str))
+                {
+                    str = str.Trim();
+                    if (new[] { "yes", "1", "on", "true" }.Contains(str, StringComparer.OrdinalIgnoreCase))
+                        return true;
+                    if (new[] { "no", "0", "off", "false" }.Contains(str, StringComparer.OrdinalIgnoreCase))
+                        return false;
+                }
+
+				//TODO: This should probably be determined by filesystem rather than OS,
+				// OSX can actually have the disks formated as Case Sensitive, but insensitive is default
+				return IsClientLinux && !IsClientOSX;
             }
         }
 
