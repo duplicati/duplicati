@@ -699,13 +699,32 @@ namespace Duplicati.Library.Main
                 }
             }
         }
-        
-        private void HandleProgress(long pg)
+
+        private string m_lastThrottleUploadValue = null;
+		private string m_lastThrottleDownloadValue = null;
+
+		private void HandleProgress(ThrottledStream ts, long pg)
         {
             // TODO: Should we pause here as well?
             // It might give annoying timeouts for transfers
             if (m_taskControl != null)
                 m_taskControl.TaskControlRendevouz();
+
+            // Update the throttle speeds if they have changed
+            string tmp;
+            m_options.RawOptions.TryGetValue("throttle-upload", out tmp);
+            if (tmp != m_lastThrottleUploadValue)
+            {
+                ts.WriteSpeed = m_options.MaxUploadPrSecond;
+                m_lastThrottleUploadValue = tmp;
+            }
+
+			m_options.RawOptions.TryGetValue("throttle-download", out tmp);
+            if (tmp != m_lastThrottleDownloadValue)
+            {
+                ts.ReadSpeed = m_options.MaxDownloadPrSecond;
+                m_lastThrottleDownloadValue = tmp;
+            }
 
             m_statwriter.BackendProgressUpdater.UpdateProgress(pg);
         }
@@ -735,7 +754,7 @@ namespace Duplicati.Library.Main
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
             else
@@ -829,7 +848,7 @@ namespace Duplicati.Library.Main
                         using (var ss = new ShaderStream(nextTierWriter, false))
                         {
                             using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                             {
                                 taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
                                 if (taskDecrypter != null) taskDecrypter.Start();
@@ -914,7 +933,7 @@ namespace Duplicati.Library.Main
                     using (var ss = new ShaderStream(hs, true))
                     {
                         using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                         { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;

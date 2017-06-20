@@ -6,6 +6,7 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     $scope.localized = {};
     $scope.location = $location;
     $scope.saved_theme = $scope.active_theme = $cookies.get('current-theme') || 'default';
+    $scope.throttle_active = false;
 
     // If we want the theme settings
     // to be persisted on the server,
@@ -52,7 +53,23 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     };
 
     $scope.throttleOptions = function() {
-        alert('Throttle options are not implemented yet');
+        DialogService.htmlDialog(
+            gettextCatalog.getString('Throttle settings'), 
+            'templates/throttle.html', 
+            [gettextCatalog.getString('OK'), gettextCatalog.getString('Cancel')], 
+            function(index, text, cur) {
+                if (index == 0 && cur != null && cur.uploadspeed != null && cur.downloadspeed != null) {
+                    var patchdata = {
+                        'max-download-speed': cur.downloadthrottleenabled ? cur.downloadspeed : '',
+                        'max-upload-speed': cur.uploadthrottleenabled ? cur.uploadspeed : '',
+                    };
+
+                    AppService.patch('/serversettings', patchdata, {headers: {'Content-Type': 'application/json; charset=utf-8'}}).then(function(data) {
+                        $scope.throttle_active = cur.downloadthrottleenabled || cur.uploadthrottleenabled;
+                    }, AppUtils.connectionError);
+                }
+            }
+        );
     };
 
     function updateCurrentPage() {
@@ -139,6 +156,12 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
             $scope.active_theme = $scope.saved_theme;
         else
             $scope.active_theme = args.theme || '';
-
     });
+
+    AppService.get('/serversettings').then(function(data) {
+        var ut = data.data['max-upload-speed'];
+        var dt = data.data['max-download-speed'];
+        $scope.throttle_active = (ut != null && ut.trim().length != 0) || (dt != null && dt.trim().length != 0);
+
+    }, AppUtils.connectionError);
 });

@@ -1017,9 +1017,21 @@ namespace Duplicati.Library.Main
                 t.Abort();
         }
 
-        #region IDisposable Members
+        public long MaxUploadSpeed
+        {
+            get { return m_options.MaxUploadPrSecond; }
+            set { m_options.MaxUploadPrSecond = value; }
+        }
 
-        public void Dispose()
+		public long MaxDownloadSpeed
+		{
+			get { return m_options.MaxDownloadPrSecond; }
+			set { m_options.MaxDownloadPrSecond = value; }
+		}
+
+		#region IDisposable Members
+
+		public void Dispose()
         {
         }
 
