@@ -565,6 +565,9 @@ namespace Duplicati.Server
 
         public static void UpdateThrottleSpeeds()
         {
+            if (Program.WorkThread == null)
+                return;
+            
             var cur = Program.WorkThread.CurrentTask;
             if (cur != null)
                 cur.UpdateThrottleSpeed();
