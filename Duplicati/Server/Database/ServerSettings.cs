@@ -90,12 +90,9 @@ namespace Duplicati.Server.Database
                         m_values.Remove(k.Key);
                     else
                         m_values[k.Key] = newsettings[k.Key];
-
-                SaveSettings();
             }
 
-            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
-            Program.StatusEventNotifyer.SignalNewEvent();
+			SaveSettings();
         }
             
         private void SaveSettings()
@@ -108,8 +105,13 @@ namespace Duplicati.Server.Database
                     Value = n.Value
             }, Database.Connection.SERVER_SETTINGS_ID);
 
-            // In case the usage reporter is enabled or disabled, refresh now
-            Program.StartOrStopUsageReporter();
+			System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+			Program.StatusEventNotifyer.SignalNewEvent();
+
+			// In case the usage reporter is enabled or disabled, refresh now
+			Program.StartOrStopUsageReporter();
+            // If throttle options were changed, update now
+            Program.UpdateThrottleSpeeds();
         }
         
         public string StartupDelayDuration
