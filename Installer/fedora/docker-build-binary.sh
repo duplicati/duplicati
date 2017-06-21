@@ -62,6 +62,8 @@ mv "${DIRNAME}.tar.bz2" "${RPMBUILD}/SOURCES/"
 cp duplicati.xpm "${RPMBUILD}/SOURCES/"
 cp make-binary-package.sh "${RPMBUILD}/SOURCES/duplicati-make-binary-package.sh"
 cp duplicati-install-recursive.sh "${RPMBUILD}/SOURCES/duplicati-install-recursive.sh"
+cp duplicati.service "${RPMBUILD}/SOURCES/duplicati.service"
+cp duplicati.default "${RPMBUILD}/SOURCES/duplicati.default"
 
 echo "%global _builddate ${BUILDDATE}" > "${RPMBUILD}/SOURCES/duplicati-buildinfo.spec"
 echo "%global _buildversion ${VERSION}" >> "${RPMBUILD}/SOURCES/duplicati-buildinfo.spec"

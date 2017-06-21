@@ -54,6 +54,8 @@ mv "${DIRNAME}.tar.bz2" ~/rpmbuild/SOURCES/
 cp duplicati.xpm ~/rpmbuild/SOURCES/
 cp make-binary-package.sh ~/rpmbuild/SOURCES/duplicati-make-binary-package.sh
 cp duplicati-install-recursive.sh ~/rpmbuild/SOURCES/duplicati-install-recursive.sh
+cp duplicati.service ~/rpmbuild/SOURCES/duplicati.service
+cp duplicati.default ~/rpmbuild/SOURCES/duplicati.default
 
 echo "%global _builddate ${BUILDDATE}" >> ~/rpmbuild/SOURCES/duplicati-buildinfo.spec
 echo "%global _buildversion ${VERSION}" >> ~/rpmbuild/SOURCES/duplicati-buildinfo.spec
