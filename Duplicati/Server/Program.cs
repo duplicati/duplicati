@@ -25,18 +25,13 @@ namespace Duplicati.Server
         /// <summary>
         /// Gets the folder where Duplicati data is stored
         /// </summary>
-        public static string DATAFOLDER { get { return Library.Utility.Utility.AppendDirSeparator(Library.Utility.Utility.ExpandEnvironmentVariables("%" + DATAFOLDER_ENV_NAME + "%").TrimStart('"').TrimEnd('"')); } }
+        public static string DataFolder { get; private set; }
 
         /// <summary>
         /// The single instance
         /// </summary>
         public static SingleInstance Instance = null;
-
-        /// <summary>
-        /// A flag indicating if database encryption is in use
-        /// </summary>
-        public static bool UseDatabaseEncryption;
-
+        
         /// <summary>
         /// This is the only access to the database
         /// </summary>
@@ -174,36 +169,12 @@ namespace Duplicati.Server
             }
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
-            bool writeConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
-
-            //If we are on windows we encrypt the database by default
-            //We do not encrypt on Linux as most distros use a SQLite library without encryption support,
-            //Linux users can use an encrypted home folder, or install a SQLite library with encryption support
-            if (!Library.Utility.Utility.IsClientLinux && string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME)))
-            {
-                //Note that the password here is a default password and public knowledge
-                //
-                //The purpose of this is to prevent casual read of the database, as well
-                // as protect from harddisk string scans, not to protect from determined
-                // attacks.
-                //
-                //If you desire better security, start Duplicati once with the commandline option
-                // --unencrypted-database to decrypt the database.
-                //Then set the environment variable DUPLICATI_DB_KEY to the desired key, 
-                // and run Duplicati again without the --unencrypted-database option 
-                // to re-encrypt it with the new key
-                //
-                //If you change the key, please note that you need to supply the same
-                // key when restoring the setup, as the setup being backed up will
-                // be encrypted as well.
-                Environment.SetEnvironmentVariable(DB_KEY_ENV_NAME, Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42");
-            }
-
-
+            var writeConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
+            
             //Find commandline options here for handling special startup cases
-            Dictionary<string, string> commandlineOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args));
+            var commandlineOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args));
 
-            foreach(string s in args)
+            foreach(var s in args)
                 if (
                     s.Equals("help", StringComparison.InvariantCultureIgnoreCase) ||
                     s.Equals("/help", StringComparison.InvariantCultureIgnoreCase) ||
@@ -238,68 +209,9 @@ namespace Duplicati.Server
                 commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
             }
 #endif
-            // Allow override of the environment variables from the commandline
-            if (commandlineOptions.ContainsKey("server-datafolder"))
-                Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, commandlineOptions["server-datafolder"]);
-            if (commandlineOptions.ContainsKey("server-encryption-key"))
-                Environment.SetEnvironmentVariable(DB_KEY_ENV_NAME, commandlineOptions["server-encryption-key"]);
-
-            //Set the %DUPLICATI_HOME% env variable, if it is not already set
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME)))
-            {
-#if DEBUG
-                //debug mode uses a lock file located in the app folder
-                Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, StartupPath);
-#else
-                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
-
-                if (portableMode)
-                {
-                    //Portable mode uses a data folder in the application home dir
-                    Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(StartupPath, "data"));
-                    System.IO.Directory.SetCurrentDirectory(StartupPath);
-                }
-                else
-                {
-                    //Normal release mode uses the systems "Application Data" folder
-                    Environment.SetEnvironmentVariable(DATAFOLDER_ENV_NAME, System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName));
-                }
-#endif
-            }
-
+            
             try
             {
-                try
-                {
-                    //This will also create Program.DATAFOLDER if it does not exist
-                    Instance = new SingleInstance(Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName, Program.DATAFOLDER);
-                }
-                catch (Exception ex)
-                {
-                    if (writeConsole)
-                    {
-                        Console.WriteLine(Strings.Program.StartupFailure(ex));
-                        return;
-                    }
-                    else
-                    {
-                        throw new Exception(Strings.Program.StartupFailure(ex));
-                    }
-                }
-
-                if (!Instance.IsFirstInstance)
-                {
-                    if (writeConsole)
-                    {
-                        Console.WriteLine(Strings.Program.AnotherInstanceDetected);
-                        return;
-                    }
-                    else
-                    {
-                        throw new SingleInstance.MultipleInstanceException(Strings.Program.AnotherInstanceDetected);
-                    }
-                }
-
                 // Setup the log redirect
                 Duplicati.Library.Logging.Log.CurrentLog = Program.LogHandler;
 
@@ -313,72 +225,47 @@ namespace Duplicati.Server
                     if (commandlineOptions.ContainsKey("log-level"))
                         Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(commandlineOptions["log-level"], true, out loglevel);
 
-                    Program.LogHandler.SetServerFile(commandlineOptions["log-file"], loglevel); 
+                    Program.LogHandler.SetServerFile(commandlineOptions["log-file"], loglevel);
                 }
 
-                Version sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
-                if (sqliteVersion < new Version(3, 6, 3))
-                {
-                    if (writeConsole)
-                    {
-                        //The official Mono SQLite provider is also broken with less than 3.6.3
-                        Console.WriteLine(Strings.Program.WrongSQLiteVersion(sqliteVersion, "3.6.3"));
-                        return;
-                    }
-                    else
-                    {
-                        throw new Exception(Strings.Program.WrongSQLiteVersion(sqliteVersion, "3.6.3"));
-                    }
-                }
-
-                //Create the connection instance
-                var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection();
-
-                try
-                {
-                    DatabasePath = System.IO.Path.Combine(Program.DATAFOLDER, "Duplicati-server.sqlite");
-                    if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
-                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
-
-#if DEBUG
-                    //Default is to not use encryption for debugging
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : false;
-#else
-                    Program.UseDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") ? !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true) : true;
-#endif
-                    con.ConnectionString = "Data Source=" + DatabasePath;
-
-                    //Attempt to open the database, handling any encryption present
-                    OpenDatabase(con);
-
-                    Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Duplicati.Server.Database.Connection));
-                }
-                catch (Exception ex)
-                {
-                    //Unwrap the reflection exceptions
-                    if (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
-                        ex = ex.InnerException;
-
-                    if (writeConsole)
-                    {
-                        Console.WriteLine(Strings.Program.DatabaseOpenError(ex.Message));
-                        return;
-                    }
-                    else
-                    {
-                        throw new Exception(Strings.Program.DatabaseOpenError(ex.Message), ex);
-                    }
-                }
-
-                DataConnection = new Duplicati.Server.Database.Connection(con);
+                DataConnection = GetDatabaseConnection(commandlineOptions);
 
                 if (!DataConnection.ApplicationSettings.FixedInvalidBackupId)
                     DataConnection.FixInvalidBackupId();
+
+                try
+                {
+                    //This will also create DATAFOLDER if it does not exist
+                    Instance = new SingleInstance(Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName, DataFolder);
+                }
+                catch (Exception ex)
+                {
+                    if (writeConsole)
+                    {
+                        Console.WriteLine(Strings.Program.StartupFailure(ex));
+                        return;
+                    }
+
+                    throw new Exception(Strings.Program.StartupFailure(ex));
+                }
+
+                if (!Instance.IsFirstInstance)
+                {
+                    if (writeConsole)
+                    {
+                        Console.WriteLine(Strings.Program.AnotherInstanceDetected);
+                        return;
+                    }
+
+                    throw new SingleInstance.MultipleInstanceException(Strings.Program.AnotherInstanceDetected);
+                }
 
                 StartOrStopUsageReporter();
 
                 if (commandlineOptions.ContainsKey("webservice-password"))
                     Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
+
+                Program.DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
                     
@@ -386,8 +273,7 @@ namespace Duplicati.Server
                 {
                     Program.DataConnection.LogError(null, "Error in updater", obj);
                 };
-
-
+                
                 UpdatePoller = new UpdatePollThread();
                 DateTime lastPurge = new DateTime(0);
 
@@ -549,6 +435,107 @@ namespace Duplicati.Server
             }
         }
 
+        public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions)
+        {
+            var dbPassword = Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME);
+
+            //If we are on windows we encrypt the database by default
+            //We do not encrypt on Linux as most distros use a SQLite library without encryption support,
+            //Linux users can use an encrypted home folder, or install a SQLite library with encryption support
+
+            //Note that the password here is a default password and public knowledge
+            //
+            //The purpose of this is to prevent casual read of the database, as well
+            // as protect from harddisk string scans, not to protect from determined
+            // attacks.
+            //
+            //If you desire better security, start Duplicati once with the commandline option
+            // --unencrypted-database to decrypt the database.
+            //Then set the environment variable DUPLICATI_DB_KEY to the desired key, 
+            // and run Duplicati again without the --unencrypted-database option 
+            // to re-encrypt it with the new key
+            //
+            //If you change the key, please note that you need to supply the same
+            // key when restoring the setup, as the setup being backed up will
+            // be encrypted as well.
+            if (!Library.Utility.Utility.IsClientLinux && string.IsNullOrEmpty(dbPassword))
+                dbPassword = Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42";
+
+            // Allow override of the environment variables from the commandline
+            if (commandlineOptions.ContainsKey("server-encryption-key"))
+                dbPassword = commandlineOptions["server-encryption-key"];
+
+            var serverDataFolder = Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME);
+            if (commandlineOptions.ContainsKey("server-datafolder"))
+                serverDataFolder = commandlineOptions["server-datafolder"];
+
+            if (string.IsNullOrEmpty(serverDataFolder))
+            {
+#if DEBUG
+                //debug mode uses a lock file located in the app folder
+                DataFolder = StartupPath;
+#else
+                bool portableMode =
+commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
+
+                if (portableMode)
+                {
+                    //Portable mode uses a data folder in the application home dir
+                    DataFolder = System.IO.Path.Combine(StartupPath, "data");
+                    System.IO.Directory.SetCurrentDirectory(StartupPath);
+                }
+                else
+                {
+                    //Normal release mode uses the systems "Application Data" folder
+                    DataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
+                }
+#endif
+            }
+            else
+                DataFolder = Library.Utility.Utility.AppendDirSeparator(Library.Utility.Utility.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
+
+            var sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
+
+            if (sqliteVersion < new Version(3, 6, 3))
+            {
+                //The official Mono SQLite provider is also broken with less than 3.6.3
+                throw new Exception(Strings.Program.WrongSQLiteVersion(sqliteVersion, "3.6.3"));
+            }
+
+            //Create the connection instance
+            var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection();
+
+            try
+            {
+                DatabasePath = System.IO.Path.Combine(DataFolder, "Duplicati-server.sqlite");
+
+                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
+#if DEBUG
+                //Default is to not use encryption for debugging
+                var useDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") && !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
+#else
+                var useDatabaseEncryption = !commandlineOptions.ContainsKey("unencrypted-database") || !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
+#endif
+                con.ConnectionString = "Data Source=" + DatabasePath;
+
+                //Attempt to open the database, handling any encryption present
+                OpenDatabase(con, useDatabaseEncryption, dbPassword);
+
+                Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Database.Connection));
+            }
+            catch (Exception ex)
+            {
+                //Unwrap the reflection exceptions
+                if (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
+                    ex = ex.InnerException;
+
+                throw new Exception(Strings.Program.DatabaseOpenError(ex.Message));
+            }
+
+            return new Database.Connection(con);
+        }
+
         public static void StartOrStopUsageReporter()
         {
             var disableUsageReporter = 
@@ -631,15 +618,14 @@ namespace Duplicati.Server
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>
         /// <param name="con">The SQLite connection object</param>
-        internal static void OpenDatabase(System.Data.IDbConnection con)
+        /// <param name="useDatabaseEncryption">Specify if database is encrypted</param>
+        /// <param name="password">Encryption password</param>
+        public static void OpenDatabase(System.Data.IDbConnection con, bool useDatabaseEncryption, string password)
         {
-            bool noEncryption = !Program.UseDatabaseEncryption;
-            string password = Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME);
-
             System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new Type[] { typeof(string) });
             string attemptedPassword;
 
-            if (noEncryption || string.IsNullOrEmpty(password))
+            if (!useDatabaseEncryption || string.IsNullOrEmpty(password))
                 attemptedPassword = null; //No encryption specified, attempt to open without
             else
                 attemptedPassword = password; //Encryption specified, attempt to open with
@@ -668,13 +654,11 @@ namespace Duplicati.Server
                         throw;
 
                     //Open failed, now try the reverse
-                    if (attemptedPassword == null)
-                        attemptedPassword = password;
-                    else
-                        attemptedPassword = null;
+                    attemptedPassword = attemptedPassword == null ? password : null;
 
                     con.Close();
-                    setPwdMethod.Invoke(con, new object[] { attemptedPassword });
+                    if (setPwdMethod != null)
+                        setPwdMethod.Invoke(con, new object[] { attemptedPassword });
                     con.Open();
 
                     // Do a dummy query to make sure we have a working db
@@ -696,7 +680,7 @@ namespace Duplicati.Server
 
                 //The open method succeeded with the non-default method, now change the password
                 System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new Type[] { typeof(string) });
-                changePwdMethod.Invoke(con, new object[] { noEncryption ? null : password });
+                changePwdMethod.Invoke(con, new object[] { useDatabaseEncryption ? password : null });
             }
         }
 
