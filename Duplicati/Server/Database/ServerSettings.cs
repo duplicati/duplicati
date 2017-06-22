@@ -39,6 +39,8 @@ namespace Duplicati.Server.Database
             public const string SERVER_PORT_CHANGED = "server-port-changed";
             public const string SERVER_PASSPHRASE = "server-passphrase";
             public const string SERVER_PASSPHRASE_SALT = "server-passphrase-salt";
+            public const string SERVER_PASSPHRASETRAYICON = "server-passphrase-trayicon";
+            public const string SERVER_PASSPHRASETRAYICONHASH = "server-passphrase-trayicon-hash";
             public const string UPDATE_CHECK_LAST = "last-update-check";
             public const string UPDATE_CHECK_INTERVAL = "update-check-interval";
             public const string UPDATE_CHECK_NEW_VERSION = "update-check-latest";
@@ -62,7 +64,7 @@ namespace Duplicati.Server.Database
             ReloadSettings();
         }
 
-        private void ReloadSettings()
+        public void ReloadSettings()
         {
             lock(m_connection.m_lock)
             {
@@ -91,11 +93,12 @@ namespace Duplicati.Server.Database
                     else
                         m_values[k.Key] = newsettings[k.Key];
 
-                SaveSettings();
             }
 
-            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
-            Program.StatusEventNotifyer.SignalNewEvent();
+            SaveSettings();
+            
+            if (newsettings.Keys.Contains(CONST.SERVER_PASSPHRASE))
+                GenerateWebserverPasswordTrayIcon();
         }
             
         private void SaveSettings()
@@ -108,8 +111,13 @@ namespace Duplicati.Server.Database
                     Value = n.Value
             }, Database.Connection.SERVER_SETTINGS_ID);
 
-            // In case the usage reporter is enabled or disabled, refresh now
-            Program.StartOrStopUsageReporter();
+			System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+			Program.StatusEventNotifyer.SignalNewEvent();
+
+			// In case the usage reporter is enabled or disabled, refresh now
+			Program.StartOrStopUsageReporter();
+            // If throttle options were changed, update now
+            Program.UpdateThrottleSpeeds();
         }
         
         public string StartupDelayDuration
@@ -278,7 +286,6 @@ namespace Duplicati.Server.Database
                     m_values[CONST.SERVER_PASSPHRASE] = "";
                     m_values[CONST.SERVER_PASSPHRASE_SALT] = "";
                 }
-                SaveSettings();
             }
             else
             {
@@ -299,9 +306,41 @@ namespace Duplicati.Server.Database
                     m_values[CONST.SERVER_PASSPHRASE] = pwd;
                     m_values[CONST.SERVER_PASSPHRASE_SALT] = salt;
                 }
-
-                SaveSettings();
             }
+
+            SaveSettings();
+            GenerateWebserverPasswordTrayIcon();
+        }
+
+        public string WebserverPasswordTrayIcon => m_values[CONST.SERVER_PASSPHRASETRAYICON];
+
+        public string WebserverPasswordTrayIconHash => m_values[CONST.SERVER_PASSPHRASETRAYICONHASH];
+
+        public void GenerateWebserverPasswordTrayIcon()
+        {
+            var password = "";
+            var pwd = "";
+
+            if (!string.IsNullOrEmpty(m_values[CONST.SERVER_PASSPHRASE]))
+            {
+                password = Guid.NewGuid().ToString();
+                var buf = Convert.FromBase64String(m_values[CONST.SERVER_PASSPHRASE_SALT]);
+
+                var sha256 = System.Security.Cryptography.SHA256.Create();
+                var str = System.Text.Encoding.UTF8.GetBytes(password);
+
+                sha256.TransformBlock(str, 0, str.Length, str, 0);
+                sha256.TransformFinalBlock(buf, 0, buf.Length);
+                pwd = Convert.ToBase64String(sha256.Hash);
+            }
+            
+            lock (m_connection.m_lock)
+            {
+                m_values[CONST.SERVER_PASSPHRASETRAYICON] = password;
+                m_values[CONST.SERVER_PASSPHRASETRAYICONHASH] = pwd;
+            }
+
+            SaveSettings();
         }
 
         public DateTime LastUpdateCheck

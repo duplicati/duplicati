@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
@@ -15,6 +16,8 @@ namespace Duplicati.GUI.TrayIcon
         private const string XSRF_COOKIE = "xsrf-token";
         private const string XSRF_HEADER = "X-XSRF-Token";
         private const string AUTH_COOKIE = "session-auth";
+
+        private const string TRAYICON_HEADER = "X-TrayIcon-Client";
 
         private class BackgroundRequest
         {
@@ -212,7 +215,8 @@ namespace Duplicati.GUI.TrayIcon
             var req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT);
             req.Method = "POST";
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-			req.ContentType = "application/x-www-form-urlencoded";
+            req.Headers.Add(TRAYICON_HEADER, "true");
+            req.ContentType = "application/x-www-form-urlencoded";
 
 			Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
             var body = System.Text.Encoding.ASCII.GetBytes("get-nonce=1");
@@ -230,7 +234,8 @@ namespace Duplicati.GUI.TrayIcon
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT);
             req.Method = "POST";
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-			req.ContentType = "application/x-www-form-urlencoded";
+            req.Headers.Add(TRAYICON_HEADER, "true");
+            req.ContentType = "application/x-www-form-urlencoded";
 			if (req.CookieContainer == null)
                 req.CookieContainer = new System.Net.CookieContainer();
             req.CookieContainer.Add(new System.Net.Cookie("session-nonce", nonce, "/", req.RequestUri.Host));
@@ -278,6 +283,7 @@ namespace Duplicati.GUI.TrayIcon
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(m_baseUri + STATUS_WINDOW);
             req.Method = "GET";
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.Headers.Add(TRAYICON_HEADER, "true");
             if (req.CookieContainer == null)
                 req.CookieContainer = new System.Net.CookieContainer();
 
@@ -304,7 +310,7 @@ namespace Duplicati.GUI.TrayIcon
                 }
                 catch (System.Net.WebException wex)
                 {
-                    var httpex = wex.Response as System.Net.HttpWebResponse;
+                    var httpex = wex.Response as HttpWebResponse;
                     if (httpex == null)
                         throw;
 
@@ -315,28 +321,25 @@ namespace Duplicati.GUI.TrayIcon
                         httpex.StatusDescription.IndexOf("XSRF", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         hasTriedXSRF = true;
-                        string t = null;
-                        try 
-                        { 
-                            var c = httpex.Cookies[XSRF_COOKIE];
-                            if (c != null)
-                                t = c.Value;
-                        }
-                        catch
-                        {
-                        }
+                        var t = httpex.Cookies[XSRF_COOKIE]?.Value;
 
-                        if (!string.IsNullOrWhiteSpace(t))
-                            m_xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(t);
-                        else
-                            m_xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(GetXSRFToken());
+                        if (string.IsNullOrWhiteSpace(t))
+                            t = GetXSRFToken();
+
+                        m_xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(t);
                     }
                     else if (
                         !hasTriedPassword &&
                         wex.Status == System.Net.WebExceptionStatus.ProtocolError &&
-                        httpex.StatusCode == System.Net.HttpStatusCode.Unauthorized &&
-                        !string.IsNullOrWhiteSpace(m_password))
+                        httpex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                     {
+                        Program.databaseConnection?.ApplicationSettings?.ReloadSettings();
+                        //Can survive if server password is changed via web ui
+                        if (Program.databaseConnection?.ApplicationSettings?.WebserverPasswordTrayIcon != m_password)
+                            m_password = Program.databaseConnection?.ApplicationSettings?.WebserverPasswordTrayIcon;
+                        else
+                            hasTriedPassword = true;
+
                         m_authtoken = GetAuthToken();
                     }
                     else
@@ -357,6 +360,7 @@ namespace Duplicati.GUI.TrayIcon
             if (m_xsrftoken != null)
                 req.Headers.Add(XSRF_HEADER, m_xsrftoken);
             req.UserAgent = "Duplicati TrayIcon Monitor, v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.Headers.Add(TRAYICON_HEADER, "true");
             if (req.CookieContainer == null)
                 req.CookieContainer = new System.Net.CookieContainer();
 
@@ -364,9 +368,10 @@ namespace Duplicati.GUI.TrayIcon
                 req.CookieContainer.Add(new System.Net.Cookie(AUTH_COOKIE, m_authtoken, "/", req.RequestUri.Host));
             if (m_xsrftoken != null)
                 req.CookieContainer.Add(new System.Net.Cookie(XSRF_COOKIE, m_xsrftoken, "/", req.RequestUri.Host));
-
+            
             //Wrap it all in async stuff
             var areq = new Library.Utility.AsyncHttpRequest(req);
+            req.AllowWriteStreamBuffering = true;
 
             //Assign the timeout, and add a little processing time as well
             if (endpoint.Equals("/serverstate", StringComparison.InvariantCultureIgnoreCase) && queryparams.ContainsKey("duration"))
@@ -449,14 +454,8 @@ namespace Duplicati.GUI.TrayIcon
         {
             get 
             { 
-                try
-                {
-                    if (m_authtoken != null)
-                        return m_baseUri + STATUS_WINDOW + "?auth-token=" + GetAuthToken();
-                }
-                catch
-                {
-                }
+                if (m_authtoken != null)
+                    return m_baseUri + STATUS_WINDOW + "?auth-token=" + GetAuthToken();
                 
                 return m_baseUri + STATUS_WINDOW; 
             }

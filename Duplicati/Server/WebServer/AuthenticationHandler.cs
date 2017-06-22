@@ -32,6 +32,8 @@ namespace Duplicati.Server.WebServer
         private const string XSRF_COOKIE_NAME = "xsrf-token";
         private const string XSRF_HEADER_NAME = "X-XSRF-Token";
 
+        private const string TRAYICON_HEADER_NAME = "X-TrayIcon-Client";
+
         public const string LOGIN_SCRIPT_URI = "/login.cgi";
         public const string LOGOUT_SCRIPT_URI = "/logout.cgi";
         public const string CAPTCHA_IMAGE_URI = RESTHandler.API_URI_PATH + "/captcha/";
@@ -179,6 +181,11 @@ namespace Duplicati.Server.WebServer
                         return true;
                     }
 
+                    var password = Program.DataConnection.ApplicationSettings.WebserverPassword;
+
+                    if (request.Headers[TRAYICON_HEADER_NAME] == "true")
+                        password = Program.DataConnection.ApplicationSettings.WebserverPasswordTrayIconHash;
+                    
                     var buf = new byte[32];
                     var expires = DateTime.UtcNow.AddMinutes(AUTH_TIMEOUT_MINUTES);
                     m_prng.GetBytes(buf);
@@ -186,7 +193,7 @@ namespace Duplicati.Server.WebServer
 
                     var sha256 = System.Security.Cryptography.SHA256.Create();
                     sha256.TransformBlock(buf, 0, buf.Length, buf, 0);
-                    buf = Convert.FromBase64String(Program.DataConnection.ApplicationSettings.WebserverPassword);
+                    buf = Convert.FromBase64String(password);
                     sha256.TransformFinalBlock(buf, 0, buf.Length);
                     var pwd = Convert.ToBase64String(sha256.Hash);
 

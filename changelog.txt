@@ -1,3 +1,13 @@
+2017-06-21 - 2.0.1.67_canary_2017-06-21
+==========
+* Fixed the main menu "floating" up on small screens
+* Fixed some issues with stopping a backup
+* Fixed the help dialog for HubiC suggesting the default/ prefix
+* Changed some texts in the UI
+* Added live throttle control options
+* Added option for TrayIcon to connect to the server without the password, if it can read the local database
+* Added systed service file for RPM installs
+
 2017-06-15 - 2.0.1.66_canary_2017-06-15
 ==========
 * Removed the warning text on the settings page

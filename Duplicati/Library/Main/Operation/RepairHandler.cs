@@ -129,9 +129,9 @@ namespace Duplicati.Library.Main.Operation
                     if (tp.ParsedVolumes.Count() == 0 && tp.OtherVolumes.Count() > 0)
                     {
                         if (tp.BackupPrefixes.Length == 1)
-                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup-prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
                         else
-                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup-prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
                     }
                     else if (tp.ParsedVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
                     {
