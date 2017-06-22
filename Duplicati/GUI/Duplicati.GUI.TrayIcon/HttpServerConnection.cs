@@ -259,6 +259,9 @@ namespace Duplicati.GUI.TrayIcon
             var sha256 = System.Security.Cryptography.SHA256.Create();
             var password = m_password;
 
+            if (m_password == null)
+                return "";
+
             if (!m_saltedpassword)
             {
                 var str = System.Text.Encoding.UTF8.GetBytes(m_password);

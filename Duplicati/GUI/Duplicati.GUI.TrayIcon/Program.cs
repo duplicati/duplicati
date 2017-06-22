@@ -64,6 +64,9 @@ namespace Duplicati.GUI.TrayIcon
         
         public static void RealMain(string[] _args)
         {
+            if (Duplicati.Library.Utility.Utility.IsClientWindows)
+                Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
@@ -94,8 +97,8 @@ namespace Duplicati.GUI.TrayIcon
                     Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
 
                 return;
-            }            
-            
+            }
+
             options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
             
             string toolkit;
@@ -174,7 +177,10 @@ namespace Duplicati.GUI.TrayIcon
 
             if (options.TryGetValue(HOSTURL_OPTION, out url))
                 serverURL = new Uri(url);
-            
+
+            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
+            new Duplicati.Library.Modules.Builtin.HttpOptions().Configure(options);
+
             using (hosted)
             {
                 var reSpawn = 0;
@@ -227,10 +233,17 @@ namespace Duplicati.GUI.TrayIcon
                     }
                     catch (WebException ex)
                     {
-                        System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
-                        Console.WriteLine("Request error: " + ex.Message);
+                        System.Diagnostics.Trace.WriteLine("Request error: " + ex.ToString());
+                        Console.WriteLine("Request error: " + ex.ToString());
 
                         reSpawn++;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine("Unexpected error: " + ex.ToString());
+                        Console.WriteLine("Unexpected error: " + ex.ToString());
+
+                        reSpawn = 3;
                     }
                 } while (reSpawn < 3);
             }
