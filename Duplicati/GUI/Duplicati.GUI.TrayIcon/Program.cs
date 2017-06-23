@@ -242,8 +242,7 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         System.Diagnostics.Trace.WriteLine("Unexpected error: " + ex.ToString());
                         Console.WriteLine("Unexpected error: " + ex.ToString());
-
-                        reSpawn = 3;
+                        return;
                     }
                 } while (reSpawn < 3);
             }
