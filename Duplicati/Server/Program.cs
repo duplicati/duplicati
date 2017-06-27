@@ -475,8 +475,7 @@ namespace Duplicati.Server
                 //debug mode uses a lock file located in the app folder
                 DataFolder = StartupPath;
 #else
-                bool portableMode =
-commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
+                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
 
                 if (portableMode)
                 {
@@ -486,11 +485,36 @@ commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseB
                 }
                 else
                 {
-                    //Normal release mode uses the systems "Application Data" folder
-                    DataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
+                    //Normal release mode uses the systems "(Local) Application Data" folder
+                    // %LOCALAPPDATA% on Windows, ~/.config on Linux
+
+                    // Special handling for Windows:
+                    //   - Older versions use %APPDATA%
+                    //   - but new versions use %LOCALAPPDATA%
+                    //
+                    //  If we find a new version, lets use that
+                    //    otherwise use the older location
+                    //
+
+                    serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
+                    if (Duplicati.Library.Utility.Utility.IsClientWindows)
+                    {
+                        var localappdata = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
+
+                        var prefile = System.IO.Path.Combine(serverDataFolder, "Duplicati-server.sqlite");
+                        var curfile = System.IO.Path.Combine(localappdata, "Duplicati-server.sqlite");
+
+                        // If the new file exists, we use that
+                        // If the new file does not exist, and the old file exists we use the old
+                        // Otherwise we use the new location
+                        if (System.IO.File.Exists(curfile) || !System.IO.File.Exists(prefile))
+                            serverDataFolder = localappdata;
+                    }
+
+                    DataFolder = serverDataFolder;
                 }
 #endif
-            }
+			}
             else
                 DataFolder = Library.Utility.Utility.AppendDirSeparator(Library.Utility.Utility.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
 
