@@ -210,6 +210,9 @@ namespace Duplicati.GUI.TrayIcon
                                 // If the server shuts down, shut down the tray-icon as well
                                 Action shutdownEvent = () =>
                                 {
+                                    // Make sure we do not start again after 
+                                    // a controlled exit
+                                    reSpawn = 100;
                                     tk.InvokeExit();
                                 };
 
@@ -217,6 +220,9 @@ namespace Duplicati.GUI.TrayIcon
                                     hosted.InstanceShutdown += shutdownEvent;
 
                                 tk.Init(_args);
+
+                                // If the tray-icon quits, stop the server
+                                reSpawn = 100;
 
                                 // Make sure that the server shutdown does not access the tray-icon,
                                 // as it would be disposed by now
