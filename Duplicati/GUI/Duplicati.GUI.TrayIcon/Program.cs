@@ -178,8 +178,7 @@ namespace Duplicati.GUI.TrayIcon
             if (options.TryGetValue(HOSTURL_OPTION, out url))
                 serverURL = new Uri(url);
 
-            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
-            new Duplicati.Library.Modules.Builtin.HttpOptions().Configure(options);
+            System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
 
             using (hosted)
             {
@@ -189,7 +188,7 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     try
                     {
-                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword))
+                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, options))
                         {
                             using (var tk = RunTrayIcon(toolkit))
                             {
