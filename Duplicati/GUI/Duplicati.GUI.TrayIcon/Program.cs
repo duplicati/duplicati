@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Windows.Forms;
-  using Duplicati.GUI.TrayIcon.Windows;
-  using Duplicati.Library.Interface;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -241,7 +239,6 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         System.Diagnostics.Trace.WriteLine("Request error: " + ex.ToString());
                         Console.WriteLine("Request error: " + ex.ToString());
-                        WinFormsRunner.Instance = null;
 
                         reSpawn++;
                     }
