@@ -586,19 +586,20 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.validaters['hubic']       = function(scope, continuation) {
 
-        var prefix = 'HubiC-DeskBackup_Duplicati/';
+        var prefix1 = 'HubiC-DeskBackup_Duplicati/';
+        var prefix2 = 'default/'
 
         EditUriBackendConfig.validaters['onedrive'](scope, function() {
 
             var p = (scope.Path || '').trim();
 
-            if (p.length > 0 && p.indexOf('default/') != 0 && p.indexOf(prefix) != 0) {
-                DialogService.dialog(gettextCatalog.getString('Adjust path name?'), gettextCatalog.getString('The path should start with "{{prefix}}" or "{{def}}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', {prefix: prefix, def: 'default' }), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
+            if (p.length > 0 && p.indexOf(prefix2) != 0 && p.indexOf(prefix1) != 0) {
+                DialogService.dialog(gettextCatalog.getString('Adjust path name?'), gettextCatalog.getString('The path should start with "{{prefix1}}" or "{{prefix2}}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', {prefix1: prefix1, prefix2: prefix2 }), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                     if (ix == 2) {
                         while (p.indexOf('/') == 0)
                             p = p.substr(1);
 
-                        scope.Path = prefix + p;
+                        scope.Path = prefix2 + p;
                     }
                     if (ix == 1 || ix == 2)
                         continuation();
@@ -611,7 +612,6 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     };
 
     EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['onedrive'];
-    EditUriBackendConfig.validaters['hubic']       = EditUriBackendConfig.validaters['onedrive'];
     EditUriBackendConfig.validaters['gcs']         = EditUriBackendConfig.validaters['onedrive'];
     EditUriBackendConfig.validaters['amzcd']       = EditUriBackendConfig.validaters['onedrive'];
     EditUriBackendConfig.validaters['box']         = EditUriBackendConfig.validaters['onedrive'];

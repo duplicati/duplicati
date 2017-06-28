@@ -434,7 +434,7 @@ msgid "Connection worked!"
 msgstr ""
 
 #: index.html:314
-msgid "Connnecting to server ..."
+msgid "Connecting to server ..."
 msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:624

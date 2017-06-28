@@ -69,9 +69,37 @@ namespace Duplicati.Library.Utility
 		private double m_current_write_speed;
 
 		/// <summary>
-        /// The number of ticks to have passed before a sample is taken
-        /// </summary>
+		/// The time the last read was sampled
+		/// </summary>
+		private DateTime m_last_limit_update;
+
+		/// <summary>
+		/// The number of ticks to have passed before a sample is taken
+		/// </summary>
 		private const long SAMPLE_PERIOD = TimeSpan.TicksPerSecond / 4;
+
+		/// <summary>
+		/// The number of ticks to have passed before the limits updater is called
+		/// </summary>
+		private const long UPDATE_PERIOD = TimeSpan.TicksPerSecond;
+
+		/// <summary>
+		/// Callback method used to update limits
+		/// </summary>
+		private readonly Action<ThrottledStream> m_updateLimits;
+
+		/// <summary>
+		/// Creates a throttle around a stream.
+		/// </summary>
+		/// <param name="basestream">The stream to throttle</param>
+		/// <param name="readspeed">The maximum number of bytes pr. second to read. Specify a number less than 1 to allow unlimited speed.</param>
+		/// <param name="writespeed">The maximum number of bytes pr. second to write. Specify a number less than 1 to allow unlimited speed.</param>
+        public ThrottledStream(Stream basestream, Action<ThrottledStream> updateLimits)
+			: base(basestream)
+		{
+            m_last_read_sample = m_last_write_sample = m_last_limit_update = new DateTime(0);
+            m_updateLimits = updateLimits;
+		}
 
         /// <summary>
         /// Creates a throttle around a stream.
@@ -85,7 +113,8 @@ namespace Duplicati.Library.Utility
             m_readspeed = readspeed;
             m_writespeed = writespeed;
 
-			m_last_read_sample = m_last_write_sample = new DateTime(0);
+			m_last_read_sample = m_last_write_sample = m_last_limit_update = new DateTime(0);
+            m_updateLimits = null;
         }
 
 		/// <summary>
@@ -102,6 +131,7 @@ namespace Duplicati.Library.Utility
 			{
 				// To avoid excessive waiting, the delay will wait at most 2 seconds,
 				// so we split the blocks to limit the number of seconds we can wait
+				UpdateLimits();
 				var chunksize = (int)Math.Min(remaining, m_readspeed <= 0 ? remaining : m_readspeed * 2);
 				DelayIfRequired(ref m_readspeed, chunksize, ref m_last_read_sample, ref m_current_read_counter, ref m_current_read_speed);
 
@@ -128,8 +158,9 @@ namespace Duplicati.Library.Utility
         {
 			while (count > 0)
 			{
-				// To avoid excessive waiting, the delay will wait at most 2 seconds,
-				// so we split the blocks to limit the number of seconds we can wait
+                // To avoid excessive waiting, the delay will wait at most 2 seconds,
+                // so we split the blocks to limit the number of seconds we can wait
+                UpdateLimits();
 				var chunksize = (int)Math.Min(count, m_writespeed <= 0 ? count : m_writespeed * 2);
 				DelayIfRequired(ref m_writespeed, chunksize, ref m_last_write_sample, ref m_current_write_counter, ref m_current_write_speed);
 				m_basestream.Write(buffer, offset, chunksize);
@@ -169,6 +200,19 @@ namespace Duplicati.Library.Utility
 		/// Gets the actual measured write speed.
 		/// </summary>
 		public double MeasuredWriteSpeed { get { return m_current_write_speed; } }
+
+        /// <summary>
+        /// Helper method called to update the limits
+        /// </summary>
+        private void UpdateLimits()
+        {
+            var now = DateTime.Now;
+            if (m_updateLimits != null && now.Ticks - m_last_limit_update.Ticks > UPDATE_PERIOD)
+            {
+                m_updateLimits(this);
+                m_last_limit_update = now;
+            }
+        }
 
 		/// <summary>
 		/// Calculates the speed, and inserts appropriate delays

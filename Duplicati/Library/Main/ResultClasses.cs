@@ -717,7 +717,12 @@ namespace Duplicati.Library.Main
 
                 // If we are aborted, throw exception
                 if (m_controlState == TaskControlState.Abort)
+                {
                     System.Threading.Thread.CurrentThread.Abort();
+
+                    // For some reason, aborting the current thread does not always throw an exception
+                    throw new CancelException();
+                }
 
                 return m_controlState;
             }

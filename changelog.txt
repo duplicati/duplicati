@@ -1,3 +1,22 @@
+2017-06-28 - 2.0.1.68_canary_2017-06-28
+==========
+* Fixed an issue with password managers setting the password on configuration export
+* Updated SQLite to 1.0.105.2 (3.19.3) on Windows
+* Fixed an issue that prevented the TrayIcon "Quit" menu item from working
+* Now using %LOCALAPPDATA% for storing local files on Windows, unless %APPDATA% already has data
+* Updated AWS S3 libraries
+* Switched to new Authenticode signing key
+
+2017-06-21 - 2.0.1.67_canary_2017-06-21
+==========
+* Fixed the main menu "floating" up on small screens
+* Fixed some issues with stopping a backup
+* Fixed the help dialog for HubiC suggesting the default/ prefix
+* Changed some texts in the UI
+* Added live throttle control options
+* Added option for TrayIcon to connect to the server without the password, if it can read the local database
+* Added systed service file for RPM installs
+
 2017-06-15 - 2.0.1.66_canary_2017-06-15
 ==========
 * Removed the warning text on the settings page

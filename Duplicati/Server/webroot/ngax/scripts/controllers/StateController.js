@@ -24,7 +24,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
     function updateStateDisplay() {
         var text = gettextCatalog.getString('Running ...');
         var pg = -1;
-        if ($scope.state.lastPgEvent != null)
+        if ($scope.state.lastPgEvent != null && $scope.state.activeTask != null)
         {
             text = ServerStatus.progress_state_text[$scope.state.lastPgEvent.Phase || ''] || $scope.state.lastPgEvent.Phase;
 
@@ -72,6 +72,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
     };
 
     $scope.$watch('state.lastPgEvent', updateStateDisplay, true);
+    $scope.$on('serverstatechanged', updateStateDisplay);
 
     $scope.stopDialog = function() {
         if ($scope.activeTaskID == null)
