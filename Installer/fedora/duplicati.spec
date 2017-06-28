@@ -42,6 +42,7 @@ Patch1:	%{namer}-0001-remove-unittest.patch
 BuildRequires:  mono-devel gnome-sharp-devel
 BuildRequires:  desktop-file-utils
 BuildRequires:  dos2unix
+BuildRequires:  systemd
 
 Requires:	desktop-file-utils
 Requires:	bash
@@ -201,15 +202,25 @@ mv Duplicati/Library/Snapshots/lvm-scripts/create-lvm-snapshot.sh Tools/
 mv Duplicati/Library/Snapshots/lvm-scripts/find-volume.sh Tools/
 mv Duplicati/Library/Modules/Builtin/run-script-example.sh Tools/
 
+# Install the service:
+install -p -D -m 755 Installer/fedora/%{namer}.service %{_unitdir}
+install -p -D -m 644 Installer/fedora/%{namer}.default %{_sysconfdir}/sysconfig/
+
+
 %post
 /bin/touch --no-create %{_datadir}/icons/hicolor || :
 %{_bindir}/gtk-update-icon-cache \
   --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
+%systemd_post %{namer}.service
+
+%preun
+%systemd_preun %{namer}.service
 
 %postun
 /bin/touch --no-create %{_datadir}/icons/hicolor || :
 %{_bindir}/gtk-update-icon-cache \
   --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
+%systemd_postun_with_restart %{namer}.service
 
 %posttrans
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
@@ -223,6 +234,9 @@ mv Duplicati/Library/Modules/Builtin/run-script-example.sh Tools/
 
 
 %changelog
+* Wed Jun 21 2017 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20170621.git
+- Added the service file to the install
+
 * Fri Jan 13 2017 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20170113.git
 - Fixed NuGet restore
 

@@ -1,0 +1,11 @@
+# Defaults for duplicati initscript
+# sourced by /lib/systemd/system/duplicati.service
+# installed at /etc/sysconfig/duplicati.default by the maintainer scripts
+# copy to /etc/sysconfig/duplicati and edit if required
+
+#
+# This is a POSIX shell fragment
+#
+
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS=""

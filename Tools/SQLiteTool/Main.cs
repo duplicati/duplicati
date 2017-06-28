@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace SQLiteTool
 {
@@ -14,20 +15,31 @@ namespace SQLiteTool
 				return;
 			}
 	
-			using (var connection = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.Utility.SQLiteLoader.SQLiteConnectionType))
+            using (var connection = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType))
 			{
-				connection.ConnectionString = "Data Source=" + args[0];
+                if ((args[0] ?? string.Empty).IndexOf("Data Source", StringComparison.OrdinalIgnoreCase) >= 0)
+                    connection.ConnectionString = args[0];
+                else
+				    connection.ConnectionString = "Data Source=" + args[0];
+                
+                Console.WriteLine("Opening with connection string: {0}", connection.ConnectionString);
+
 				connection.Open();
 				
-				var query = args[1];
-				try { query = System.IO.File.ReadAllText(args[1]); }
+                var query = args[1] ?? string.Empty;
+				try 
+                {
+                    if (query.IndexOfAny(Path.GetInvalidPathChars()) < 0 && File.Exists(query))
+                        query = System.IO.File.ReadAllText(args[1]); 
+                }
 				catch {}
 				
 				var begin = DateTime.Now;
 				
 				using(var cmd = connection.CreateCommand())
 				{
-					cmd.CommandText = query;					
+					cmd.CommandText = query;
+                    Console.WriteLine("Setting query: {0}", cmd.CommandText);
 					using (var rd = cmd.ExecuteReader())
 					{
 						Console.WriteLine("Execution took: {0:mm\\:ss\\.fff}", DateTime.Now - begin);

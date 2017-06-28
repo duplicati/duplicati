@@ -29,7 +29,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
                 }
             );
         } else {
-            $scope.DownloadURL = AppService.get_export_url($scope.BackupID, $scope.Passphrase);
+            $scope.DownloadURL = AppService.get_export_url($scope.BackupID, $scope.UseEncryption ? $scope.Passphrase : null);
             $scope.Completed = true;
         }
 
