@@ -17,7 +17,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string XSRF_HEADER = "X-XSRF-Token";
         private const string AUTH_COOKIE = "session-auth";
 
-        private const string TRAYICON_HEADER = "X-TrayIcon-Client";
+        private const string TRAYICONPASSWORDSOURCE_HEADER = "X-TrayIcon-PasswordSource";
 
         private class BackgroundRequest
         {
@@ -62,13 +62,15 @@ namespace Duplicati.GUI.TrayIcon
 
         private readonly Dictionary<string, string> m_updateRequest;
         private readonly Dictionary<string, string> m_options;
+        private readonly bool m_dbPasswordSourceDatabase;
+        private string m_TrayIconHeaderValue => m_dbPasswordSourceDatabase ? "database" : "user";
 
         public IServerStatus Status { get { return m_status; } }
 
         private object m_lock = new object();
         private Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
 
-        public HttpServerConnection(Uri server, string password, bool saltedpassword, Dictionary<string, string> options)
+        public HttpServerConnection(Uri server, string password, bool saltedpassword, bool dbPasswordSourceDatabase, Dictionary<string, string> options)
         {
             m_baseUri = server.ToString();
             if (!m_baseUri.EndsWith("/"))
@@ -81,6 +83,7 @@ namespace Duplicati.GUI.TrayIcon
             m_password = password;
             m_saltedpassword = saltedpassword;
             m_options = options;
+            m_dbPasswordSourceDatabase = dbPasswordSourceDatabase;
 
             m_updateRequest = new Dictionary<string, string>();
             m_updateRequest["longpoll"] = "false";
@@ -223,7 +226,7 @@ namespace Duplicati.GUI.TrayIcon
                 req.Method = "POST";
                 req.UserAgent = "Duplicati TrayIcon Monitor, v" +
                                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-                req.Headers.Add(TRAYICON_HEADER, "true");
+                req.Headers.Add(TRAYICONPASSWORDSOURCE_HEADER, m_TrayIconHeaderValue);
                 req.ContentType = "application/x-www-form-urlencoded";
 
                 Duplicati.Library.Utility.AsyncHttpRequest areq = new Library.Utility.AsyncHttpRequest(req);
@@ -250,7 +253,7 @@ namespace Duplicati.GUI.TrayIcon
                 req.Method = "POST";
                 req.UserAgent = "Duplicati TrayIcon Monitor, v" +
                                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-                req.Headers.Add(TRAYICON_HEADER, "true");
+                req.Headers.Add(TRAYICONPASSWORDSOURCE_HEADER, m_TrayIconHeaderValue);
                 req.ContentType = "application/x-www-form-urlencoded";
                 if (req.CookieContainer == null)
                     req.CookieContainer = new System.Net.CookieContainer();
@@ -311,7 +314,7 @@ namespace Duplicati.GUI.TrayIcon
                 req.Method = "GET";
                 req.UserAgent = "Duplicati TrayIcon Monitor, v" +
                                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-                req.Headers.Add(TRAYICON_HEADER, "true");
+                req.Headers.Add(TRAYICONPASSWORDSOURCE_HEADER, m_TrayIconHeaderValue);
                 if (req.CookieContainer == null)
                     req.CookieContainer = new System.Net.CookieContainer();
 
@@ -361,12 +364,16 @@ namespace Duplicati.GUI.TrayIcon
                         wex.Status == System.Net.WebExceptionStatus.ProtocolError &&
                         httpex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                     {
-                        Program.databaseConnection?.ApplicationSettings?.ReloadSettings();
-                        //Can survive if server password is changed via web ui
-                        if (Program.databaseConnection?.ApplicationSettings?.WebserverPasswordTrayIcon != m_password)
-                            m_password = Program.databaseConnection?.ApplicationSettings?.WebserverPasswordTrayIcon;
-                        else
-                            hasTriedPassword = true;
+                        if (m_dbPasswordSourceDatabase)
+                        {
+                            Program.databaseConnection.ApplicationSettings.ReloadSettings();
+
+                            //Can survive if server password is changed via web ui
+                            if (Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon != m_password)
+                                m_password = Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
+                            else
+                                hasTriedPassword = true;
+                        }
 
                         m_authtoken = GetAuthToken();
                     }
@@ -395,7 +402,7 @@ namespace Duplicati.GUI.TrayIcon
                     req.Headers.Add(XSRF_HEADER, m_xsrftoken);
                 req.UserAgent = "Duplicati TrayIcon Monitor, v" +
                                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-                req.Headers.Add(TRAYICON_HEADER, "true");
+                req.Headers.Add(TRAYICONPASSWORDSOURCE_HEADER, m_TrayIconHeaderValue);
                 if (req.CookieContainer == null)
                     req.CookieContainer = new System.Net.CookieContainer();
 

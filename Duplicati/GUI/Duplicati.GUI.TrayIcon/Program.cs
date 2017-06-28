@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Windows.Forms;
-using Duplicati.Library.Interface;
+  using Duplicati.GUI.TrayIcon.Windows;
+  using Duplicati.Library.Interface;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -177,9 +178,7 @@ namespace Duplicati.GUI.TrayIcon
 
             if (options.TryGetValue(HOSTURL_OPTION, out url))
                 serverURL = new Uri(url);
-
-            System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-
+            
             using (hosted)
             {
                 var reSpawn = 0;
@@ -188,7 +187,9 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     try
                     {
-                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, options))
+                        System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
+                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null, options))
                         {
                             using (var tk = RunTrayIcon(toolkit))
                             {
@@ -234,6 +235,7 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         System.Diagnostics.Trace.WriteLine("Request error: " + ex.ToString());
                         Console.WriteLine("Request error: " + ex.ToString());
+                        WinFormsRunner.Instance = null;
 
                         reSpawn++;
                     }
