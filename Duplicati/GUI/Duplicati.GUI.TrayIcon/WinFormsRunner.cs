@@ -107,15 +107,8 @@ namespace Duplicati.GUI.TrayIcon.Windows
         private Form m_handleProvider;
         private NotifyIcon m_trayIcon;
 
-        public static WinFormsRunner Instance = null;
-        
         public override void Init (string[] args)
         {
-            if (WinFormsRunner.Instance != null)
-                throw new Duplicati.Library.Interface.UserInformationException("Multiple trayicon instances not allowed!");
-
-            WinFormsRunner.Instance = this;
-
             //We need this ugly hack to get a handle that we can call Invoke on,
             // and sadly the TrayIcon does not expose one, and forcing the context menu
             // to create one causes weird "lost clicks"

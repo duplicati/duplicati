@@ -442,7 +442,7 @@ msgid "Connection worked!"
 msgstr "Verbindung erfolgreich!"
 
 #: index.html:314
-msgid "Connnecting to server ..."
+msgid "Connecting to server ..."
 msgstr "Verbinde mit Server..."
 
 #: scripts/services/EditUriBuiltins.js:624 templates/backends/azure.html:2

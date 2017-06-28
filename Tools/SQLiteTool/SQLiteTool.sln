@@ -5,6 +5,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLiteTool", "SQLiteTool.cs
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Localization", "..\..\Duplicati\Library\Localization\Duplicati.Library.Localization.csproj", "{B68F2214-951F-4F78-8488-66E1ED3F50BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SQLiteHelper", "..\..\Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj", "{2C838169-B187-4B09-8768-1C24C2521C8D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Interface", "..\..\Duplicati\Library\Interface\Duplicati.Library.Interface.csproj", "{C5899F45-B0FF-483C-9D38-24A9FCAAB237}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +25,18 @@ Global
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C838169-B187-4B09-8768-1C24C2521C8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5899F45-B0FF-483C-9D38-24A9FCAAB237}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5899F45-B0FF-483C-9D38-24A9FCAAB237}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5899F45-B0FF-483C-9D38-24A9FCAAB237}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5899F45-B0FF-483C-9D38-24A9FCAAB237}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = SQLiteTool.csproj
