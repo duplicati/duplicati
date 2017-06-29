@@ -212,6 +212,9 @@ namespace Duplicati.Server.WebServer
         {
             HttpServer.HttpServer server = new HttpServer.HttpServer();
 
+            if (string.Equals(Environment.GetEnvironmentVariable("SYNO_DSM_AUTH") ?? string.Empty, "1"))
+                server.Add(new SynologyAuthenticationHandler());
+
             server.Add(new AuthenticationHandler());
 
             server.Add(new RESTHandler());

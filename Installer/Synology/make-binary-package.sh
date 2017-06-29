@@ -60,9 +60,9 @@ rm -rf ./licenses/alphavss
 rm -rf ./licenses/MonoMac
 rm -rf ./licenses/gpg
 
-# Install extra control items for Synology
+# Install extra items for Synology
 cp -R ../web-extra/* webroot/
-cp ../CGIProxyHandler.exe .
+cp ../dsm.duplicati.conf .
 
 DIRSIZE_KB=`BLOCKSIZE=1024 du -s | cut -d '.' -f 1`
 let "DIRSIZE=DIRSIZE_KB*1024"
