@@ -32,6 +32,12 @@ namespace Duplicati.Library.Utility
     public static class Win32
     {
 
+        #region Consts
+
+        public const int ATTACH_PARENT_PROCESS = -1;
+
+        #endregion
+
         #region Enums
 
         [FlagsAttribute]
@@ -51,6 +57,16 @@ namespace Duplicati.Library.Utility
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
+
+        /// <summary>
+        /// Attaches the calling process to the console of the specified process.
+        /// </summary>
+        /// <param name="dwProcessId">[in] Identifier of the process, usually will be ATTACH_PARENT_PROCESS</param>
+        /// <returns>If the function succeeds, the return value is nonzero.
+        /// If the function fails, the return value is zero.
+        /// To get extended error information, call Marshal.GetLastWin32Error.</returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool AttachConsole(int dwProcessId);
 
         #endregion
     }
