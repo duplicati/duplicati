@@ -1,3 +1,8 @@
+2017-06-29 - 2.0.1.69_canary_2017-06-29
+==========
+* Added support for attaching the console to the service on Windows, thanks @mnaiman
+* Fixed a crash when starting the trayicon with a password set, thanks @mnaiman
+
 2017-06-28 - 2.0.1.68_canary_2017-06-28
 ==========
 * Fixed an issue with password managers setting the password on configuration export
