@@ -168,9 +168,21 @@ namespace Duplicati.GUI.TrayIcon
                 password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                 saltedpassword = false;
             }
-            
+
             if (databaseConnection != null)
-                serverURL = (new UriBuilder(serverURL) {Port = databaseConnection.ApplicationSettings.LastWebserverPort}).Uri;
+            {
+                var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
+                var scheme = "http";
+
+                if (cert != null && cert.HasPrivateKey)
+                    scheme = "https";
+
+                serverURL = (new UriBuilder(serverURL)
+                    {
+                        Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
+                        Scheme = scheme
+                    }).Uri;
+            }
 
             string url;
 
