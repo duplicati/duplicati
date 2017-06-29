@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -280,7 +280,7 @@ namespace Duplicati.GUI.TrayIcon
             var sha256 = System.Security.Cryptography.SHA256.Create();
             var password = m_password;
 
-            if (m_password == null)
+            if (string.IsNullOrWhiteSpace(m_password))
                 return "";
 
             if (!m_saltedpassword)
@@ -388,12 +388,15 @@ namespace Duplicati.GUI.TrayIcon
             queryparams["format"] = "json";
 
             string query = EncodeQueryString(queryparams);
-            var httpOptions = new Duplicati.Library.Modules.Builtin.HttpOptions();
-            httpOptions.Configure(m_options);
 
-            using (httpOptions)
+			// TODO: This can interfere with running backups, 
+            // as the System.Net.ServicePointManager is shared with
+            // all connections doing ftp/http requests
+			using (var httpOptions = new Duplicati.Library.Modules.Builtin.HttpOptions())
             {
-                var req =
+				httpOptions.Configure(m_options);
+
+				var req =
                     (System.Net.HttpWebRequest) System.Net.WebRequest.Create(
                         new Uri(m_apiUri + endpoint + '?' + query));
                 req.Method = method;
