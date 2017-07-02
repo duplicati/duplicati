@@ -6,6 +6,9 @@ PACKAGE_NAME_SIMPLE="$(echo "$SYNOPKG_PKGNAME" | awk '{print tolower($0)}' | sed
 PACKAGE_DIR="${SYNOPKG_PKGDEST}"
 PACKAGE_UPGRADE_FLAG="/tmp/${PACKAGE_NAME_SIMPLE}.upgrade"
 
+# We need more space than what /tmp holds
+PACKAGE_TEMP_DIR="${PACKAGE_DIR}/temp"
+
 # These control how the authentication is integrated
 SYNO_LOGIN_CGI=/usr/syno/synoman/webman/login.cgi
 SYNO_AUTHENTICATE_CGI=/usr/syno/synoman/webman/modules/authenticate.cgi
@@ -28,7 +31,9 @@ DaemonStart() {
 	if [ $? == 0 ]; then
 		echo "Starting ${PACKAGE_NAME_SIMPLE}."
 
-		mono "${PACKAGE_DIR}/Duplicati.Server.exe" &
+		mkdir -p "${PACKAGE_TEMP_DIR}"
+
+		TMP_DIR="${PACKAGE_TEMP_DIR}" TEMP="${PACKAGE_TEMP_DIR}" mono "${PACKAGE_DIR}/Duplicati.Server.exe" &
 		echo $! > "$PID_FILE"		
 
 		cp -f ${PACKAGE_DIR}/dsm.duplicati.conf /usr/local/etc/nginx/conf.d/
