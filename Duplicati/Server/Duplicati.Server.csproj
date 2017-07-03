@@ -124,6 +124,7 @@
     <Compile Include="WebServer\CaptchaUtil.cs" />
     <Compile Include="WebServer\RESTMethods\Captcha.cs" />
     <Compile Include="WebServer\RESTMethods\CommandLine.cs" />
+    <Compile Include="WebServer\SynologyAuthenticationHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
