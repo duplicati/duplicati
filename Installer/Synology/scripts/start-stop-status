@@ -33,7 +33,14 @@ DaemonStart() {
 
 		mkdir -p "${PACKAGE_TEMP_DIR}"
 
-		TMP_DIR="${PACKAGE_TEMP_DIR}" TEMP="${PACKAGE_TEMP_DIR}" mono "${PACKAGE_DIR}/Duplicati.Server.exe" &
+		SYNO_DSM_AUTH=${SYNO_DSM_AUTH} \
+		SYNO_SKIP_XSRF=${SYNO_SKIP_XSRF} \
+		SYNO_ALL_USERS=${SYNO_ALL_USERS} \
+		SYNO_AUTHENTICATE_CGI="${SYNO_AUTHENTICATE_CGI}" \
+		SYNO_LOGIN_CGI="${SYNO_LOGIN_CGI}" \
+		TMP_DIR="${PACKAGE_TEMP_DIR}" \
+		TEMP="${PACKAGE_TEMP_DIR}" \
+		mono "${PACKAGE_DIR}/Duplicati.Server.exe" &
 		echo $! > "$PID_FILE"		
 
 		cp -f ${PACKAGE_DIR}/dsm.duplicati.conf /usr/local/etc/nginx/conf.d/
