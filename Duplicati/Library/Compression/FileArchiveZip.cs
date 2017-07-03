@@ -52,11 +52,15 @@ namespace Duplicati.Library.Compression
         /// The commandline option for toggling the compression method
         /// </summary>
         private const string COMPRESSION_METHOD_OPTION = "zip-compression-method";
+		/// <summary>
+		/// The commandline option for toggling the zip64 support
+		/// </summary>
+		private const string COMPRESSION_ZIP64_OPTION = "zip-compression-zip64";
 
-        /// <summary>
-        /// The default compression level
-        /// </summary>
-        private const SharpCompress.Compressors.Deflate.CompressionLevel DEFAULT_COMPRESSION_LEVEL = SharpCompress.Compressors.Deflate.CompressionLevel.Level9;
+		/// <summary>
+		/// The default compression level
+		/// </summary>
+		private const SharpCompress.Compressors.Deflate.CompressionLevel DEFAULT_COMPRESSION_LEVEL = SharpCompress.Compressors.Deflate.CompressionLevel.Level9;
 
         /// <summary>
         /// The default compression method
@@ -64,9 +68,19 @@ namespace Duplicati.Library.Compression
         private const CompressionType DEFAULT_COMPRESSION_METHOD = CompressionType.Deflate;
 
         /// <summary>
+        /// The default setting for the zip64 support
+        /// </summary>
+        private const bool DEFAULT_ZIP64 = false;
+
+        /// <summary>
         /// Taken from SharpCompress ZipCentralDirectorEntry.cs
         /// </summary>
         private const int CENTRAL_HEADER_ENTRY_SIZE = 8 + 2 + 2 + 4 + 4 + 4 + 4 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 4;
+
+        /// <summary>
+        /// The size of the extended zip64 header
+        /// </summary>
+        private const int CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA = 2 + 2 + 8 + 8 + 8 + 4;
 
         /// <summary>
         /// This property indicates that this current instance should write to a file
@@ -116,6 +130,11 @@ namespace Duplicati.Library.Compression
         /// The name of the file being read
         /// </summary>
         private string m_filename;
+
+        /// <summary>
+        /// A flag indicating if zip64 is in use
+        /// </summary>
+        private bool m_usingZip64;
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands
@@ -202,6 +221,11 @@ namespace Duplicati.Library.Compression
                 compression.CompressionType = DEFAULT_COMPRESSION_METHOD;
                 compression.DeflateCompressionLevel = DEFAULT_COMPRESSION_LEVEL;
 
+                m_usingZip64 = compression.UseZip64 =
+                    options.ContainsKey(COMPRESSION_ZIP64_OPTION)
+                    ? Duplicati.Library.Utility.Utility.ParseBoolOption(options, COMPRESSION_ZIP64_OPTION)
+                    : DEFAULT_ZIP64;
+
                 string cpmethod;
                 CompressionType tmptype;
                 if (options.TryGetValue(COMPRESSION_METHOD_OPTION, out cpmethod) && Enum.TryParse<SharpCompress.Common.CompressionType>(cpmethod, true, out tmptype))
@@ -250,8 +274,9 @@ namespace Duplicati.Library.Compression
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(COMPRESSION_LEVEL_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}),
                     new CommandLineArgument(COMPRESSION_LEVEL_OPTION_ALIAS, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, Strings.FileArchiveZip.CompressionlevelDeprecated(COMPRESSION_LEVEL_OPTION)),
-                    new CommandLineArgument(COMPRESSION_METHOD_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionmethodShort, Strings.FileArchiveZip.CompressionmethodLong(COMPRESSION_LEVEL_OPTION), DEFAULT_COMPRESSION_METHOD.ToString(), null, Enum.GetNames(typeof(CompressionType)))
-                });
+                    new CommandLineArgument(COMPRESSION_METHOD_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionmethodShort, Strings.FileArchiveZip.CompressionmethodLong(COMPRESSION_LEVEL_OPTION), DEFAULT_COMPRESSION_METHOD.ToString(), null, Enum.GetNames(typeof(CompressionType))),
+                    new CommandLineArgument(COMPRESSION_METHOD_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.FileArchiveZip.Compressionzip64Short, Strings.FileArchiveZip.Compressionzip64Long, DEFAULT_ZIP64.ToString())
+				});
             }
         }
 
@@ -395,6 +420,9 @@ namespace Duplicati.Library.Compression
                 throw new InvalidOperationException("Cannot write while reading");
 
             m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
+            if (m_usingZip64)
+                m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA;
+            
             return ((ZipWriter)m_writer).WriteToStream(file, new ZipWriterEntryOptions()
             {
                 DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressors.Deflate.CompressionLevel.None : m_defaultCompressionLevel,
