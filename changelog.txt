@@ -1,3 +1,16 @@
+2017-07-15 - 2.0.1.73_experimental_2017-07-15
+==========
+This version is the same as 2.0.1.72_canary.
+Som of the changes from 2.0.1.61_experimental:
+
+* Added a "dark" theme
+* Updated thirdparty libraries
+* Added JottaCloud backend
+* Improved database rebuild speed
+* Added throttle controls to the WebUI
+* Switched to %LOCALAPPDATA% for storing data on Windows
+* And more ...
+
 2017-07-05 - 2.0.1.72_canary_2017-07-05
 ==========
 * Fix duplicate `zip-compression-level` warning
