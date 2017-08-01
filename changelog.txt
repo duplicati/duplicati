@@ -1,3 +1,11 @@
+2017-08-01 - 2.0.2.1_beta_2017-08-01
+==========
+This is the first Beta release of Duplicati 2.0.
+
+It is a rebuild of version 2.0.1.73, intended for users who prefer a stable version instead of "bleeding edge" updates.
+
+Thanks to everyone who has used Duplicati, reported bugs and contributed fixes!
+
 2017-07-15 - 2.0.1.73_experimental_2017-07-15
 ==========
 This version is the same as 2.0.1.72_canary.
