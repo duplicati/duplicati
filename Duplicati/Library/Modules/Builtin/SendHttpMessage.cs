@@ -188,6 +188,7 @@ namespace Duplicati.Library.Modules.Builtin {
 
             m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_SENDALL);
 
+            commandlineOptions.TryGetValue(OPTION_MESSAGE, out m_body);
             if (string.IsNullOrEmpty(m_body))
                 m_body = DEFAULT_MESSAGE;
         }
