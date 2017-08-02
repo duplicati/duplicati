@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Windows.Forms;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.GUI.TrayIcon
@@ -64,6 +63,9 @@ namespace Duplicati.GUI.TrayIcon
         
         public static void RealMain(string[] _args)
         {
+            if (Duplicati.Library.Utility.Utility.IsClientWindows)
+                Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
@@ -94,8 +96,8 @@ namespace Duplicati.GUI.TrayIcon
                     Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
 
                 return;
-            }            
-            
+            }
+
             options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
             
             string toolkit;
@@ -183,7 +185,9 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     try
                     {
-                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword))
+                        System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
+                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null, options))
                         {
                             using (var tk = RunTrayIcon(toolkit))
                             {
@@ -233,10 +237,16 @@ namespace Duplicati.GUI.TrayIcon
                     }
                     catch (WebException ex)
                     {
-                        System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
-                        Console.WriteLine("Request error: " + ex.Message);
+                        System.Diagnostics.Trace.WriteLine("Request error: " + ex.ToString());
+                        Console.WriteLine("Request error: " + ex.ToString());
 
                         reSpawn++;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine("Unexpected error: " + ex.ToString());
+                        Console.WriteLine("Unexpected error: " + ex.ToString());
+                        return;
                     }
                 } while (reSpawn < 3);
             }
