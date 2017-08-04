@@ -48,6 +48,7 @@ namespace Duplicati.Library.Main
         PurgeBrokenFiles,
         PurgeFiles,
         SendMail,
+        Vacuum,
     }
 
     /// <summary>

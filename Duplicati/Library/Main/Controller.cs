@@ -496,6 +496,13 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public Library.Interface.IVacuumResults Vacuum()
+        {
+            return RunAction(new VacuumResult(), result => {
+                new Operation.VacuumHandler(m_options, result).Run();
+            });
+        }
+
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {

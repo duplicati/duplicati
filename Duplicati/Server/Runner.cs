@@ -655,7 +655,12 @@ namespace Duplicati.Server
                                 Program.Scheduler.Reschedule();
                                 return null;
                             }
-
+                        case DuplicatiOperation.Vacuum:
+                            {
+                                var r = controller.Vacuum();
+                                UpdateMetadata(backup, r);
+                                return r;
+                            }
                         default:
                             //TODO: Log this
                             return null;

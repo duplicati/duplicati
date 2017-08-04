@@ -325,5 +325,8 @@ namespace Duplicati.Library.Interface
         IEnumerable<string> Lines { get; }
     }
 
+    public interface IVacuumResults : IBasicResults
+    {
+    }
 }
 

@@ -11,7 +11,7 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, purge
+  Commands: backup, find, restore, delete, compact, test, compare, purge, vacuum
   Reparing: repair, affected, list-broken-files, purge-broken-files
   Debugging: debug, logging, create-report, test-filters, system-info, send-mail
   Targets: %BACKENDS%
@@ -265,7 +265,13 @@ Usage: test-filters <source-path> [<options>]
 Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
   Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
-  
+
+# =============================================================================
+> duplicati.commandline.exe help vacuum
+
+Usage: vacuum <storage-URL> [<options>]
+
+  Rebuilds the local database, repacking it into a minimal amount of disk space. 
   
 # =============================================================================
 > duplicati.commandline.exe help debug
@@ -462,9 +468,7 @@ Duplicati can send email notifications after each operation. Use the send-mail c
 	  The backend url
     %LOCALPATH%
 	  The path to the local folders involved (i.e. the folders being backed up)
-
-
-  
+	  
 # =============================================================================
 > duplicati.commandline.exe help advanced
 > duplicati.commandline.exe help option
