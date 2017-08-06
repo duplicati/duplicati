@@ -80,7 +80,7 @@
     <Compile Include="Volumes\IndexVolumeWriter.cs" />
     <Compile Include="Volumes\IndexVolumeReader.cs" />
     <Compile Include="AsyncDownloader.cs" />
-    <Compile Include="Blockprocessor.cs" />
+    <Compile Include="BlockProcessor.cs" />
     <Compile Include="DatabaseLocator.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="BackendManager.cs" />

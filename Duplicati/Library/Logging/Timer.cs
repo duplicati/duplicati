@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Duplicati.Library.Logging
@@ -28,7 +29,9 @@ namespace Duplicati.Library.Logging
     /// </summary>
     public class Timer : IDisposable
     {
-        private DateTime m_begin;
+        private static readonly long nanosPerTick = (1000000000L / Stopwatch.Frequency);
+
+        private Stopwatch m_stopwatch;
         private string m_operation;
 
         /// <summary>
@@ -37,11 +40,18 @@ namespace Duplicati.Library.Logging
         /// <param name="operation">The name of the operation being performed</param>
         public Timer(string operation)
         {
-            m_operation = operation;
-            m_begin = DateTime.Now;
             if (Log.LogLevel == LogMessageType.Profiling)
-                Log.WriteMessage(string.Format("Starting - {0}", m_operation), LogMessageType.Profiling);
+            {
+                m_operation = operation;
+                m_stopwatch = Stopwatch.StartNew();
 
+                Log.WriteMessage(string.Format("Starting - {0}", m_operation), LogMessageType.Profiling);
+            }
+        }
+
+        private static long getElapsedMicros(Stopwatch stopwatch)
+        {
+            return stopwatch.ElapsedTicks * nanosPerTick / 1000;
         }
 
         #region IDisposable Members
@@ -55,10 +65,9 @@ namespace Duplicati.Library.Logging
                 return;
 
             if (Log.LogLevel == LogMessageType.Profiling)
-                Log.WriteMessage(string.Format("{0} took {1:hh\\:mm\\:ss\\.fff}", m_operation, DateTime.Now - m_begin), LogMessageType.Profiling);
+                Log.WriteMessage(string.Format("{0} took {1} microseconds", m_operation, getElapsedMicros(m_stopwatch)), LogMessageType.Profiling);
             m_operation = null;
         }
-
         #endregion
     }
 }

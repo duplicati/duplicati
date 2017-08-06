@@ -6,36 +6,31 @@ using System.IO;
 
 namespace Duplicati.Library.Main
 {
-    public class Blockprocessor : IDisposable
+    public class BlockProcessor : IDisposable
     {
         private Stream m_stream;
-        private byte[] m_buffer;
         private bool m_depleted = false;
 
-        public Blockprocessor(Stream stream, byte[] buffer)
+        public BlockProcessor(Stream stream, int bufferSizeBytes)
         {
             if (stream == null)
                 throw new ArgumentNullException("stream");
 
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            m_stream = stream;
-            m_buffer = buffer;
+            m_stream = new BufferedStream(stream, bufferSizeBytes);
         }
 
-        public int Readblock()
+        public int ReadBlock(byte[] buffer)
         {
             if (m_depleted)
                 return 0;
             
-            var bytesleft = m_buffer.Length;
+            var bytesleft = buffer.Length;
             var bytesread = 0;
             var read = 1;
 
             while (bytesleft > 0 && read > 0)
             {
-                read = m_stream.Read(m_buffer, bytesread, bytesleft);
+                read = m_stream.Read(buffer, bytesread, bytesleft);
                 bytesleft -= read;
                 bytesread += read;
             }
@@ -52,7 +47,6 @@ namespace Duplicati.Library.Main
             if (m_stream != null)
                 m_stream.Dispose();
             m_stream = null;
-            m_buffer = null;
         }
     }
 }

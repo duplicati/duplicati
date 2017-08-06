@@ -6,6 +6,7 @@ using System.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Interface;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -693,7 +694,7 @@ namespace Duplicati.Library.Main.Operation
                 m_blocksize = m_options.Blocksize;
                 m_maxmetadatasize = (m_blocksize / (long)m_options.BlockhashSize) * m_blocksize;
 
-                m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
+                m_blockbuffer = new byte[m_options.Blocksize];
                 m_blocklistbuffer = new byte[m_options.Blocksize];
 
                 m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
@@ -1133,30 +1134,43 @@ namespace Duplicati.Library.Main.Operation
             return true;
         }
 
-        private long ProcessStream(System.IO.Stream stream, Library.Interface.CompressionHint hint, BackendManager backend, Library.Utility.FileBackedStringList blocklisthashes, Library.Utility.FileBackedStringList hashcollector, bool skipfilehash)
+        private long ProcessStream(
+            System.IO.Stream stream, 
+            Library.Interface.CompressionHint hint, 
+            BackendManager backend, 
+            Library.Utility.FileBackedStringList blockListHashes, 
+            Library.Utility.FileBackedStringList hashCollector, 
+            bool skipfilehash)
         {
             int blocklistoffset = 0;
             long filesize = 0;
 
-            using(var fs = new Blockprocessor(stream, m_blockbuffer))
+            using(var fs = new BlockProcessor(stream, m_options.FileReadBufferSize))
             {
                 m_filehasher.Initialize();
+                
+                var bytesRead = fs.ReadBlock(m_blockbuffer);
 
-                var offset = 0;
-                var remaining = fs.Readblock();
-
-                do
+                while (bytesRead > 0)
                 {
-                    var size = Math.Min(m_blocksize, remaining);
+                    var size = Math.Min(m_blocksize, bytesRead);                 
+
+                    byte[] blockkey = null;
 
                     if (!skipfilehash)
-                        m_filehasher.TransformBlock(m_blockbuffer, offset, size, m_blockbuffer, offset);
-                    
-                    var blockkey = m_blockhasher.ComputeHash(m_blockbuffer, offset, size);
+                    {
+                        Parallel.Invoke(
+                            () => m_filehasher.TransformBlock(m_blockbuffer, 0, size, m_blockbuffer, 0),
+                            () => blockkey = m_blockhasher.ComputeHash(m_blockbuffer, 0, size));
+                    } else
+                    {
+                        blockkey = m_blockhasher.ComputeHash(m_blockbuffer, 0, size);
+                    }
+
                     if (m_blocklistbuffer.Length - blocklistoffset < blockkey.Length)
                     {
                         var blkey = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
-                        blocklisthashes.Add(blkey);
+                        blockListHashes.Add(blkey);
                         AddBlockToOutput(backend, blkey, m_blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                         blocklistoffset = 0;
                     }
@@ -1165,8 +1179,8 @@ namespace Duplicati.Library.Main.Operation
                     blocklistoffset += blockkey.Length;
 
                     var key = Convert.ToBase64String(blockkey);
-                    AddBlockToOutput(backend, key, m_blockbuffer, offset, size, hint, false);
-                    hashcollector.Add(key);
+                    AddBlockToOutput(backend, key, m_blockbuffer, 0, size, hint, false);
+                    hashCollector.Add(key);
                     filesize += size;
 
                     if (!skipfilehash)
@@ -1176,22 +1190,14 @@ namespace Duplicati.Library.Main.Operation
                             return -1;
                     }
 
-                    remaining -= size;
-                    offset += size;
-
-                    if (remaining == 0)
-                    {
-                        offset = 0;
-                        remaining = fs.Readblock();
-                    }
-
-                } while (remaining > 0);
+                    bytesRead = fs.ReadBlock(m_blockbuffer);
+                };
 
                 //If all fits in a single block, don't bother with blocklists
-                if (hashcollector.Count > 1)
+                if (hashCollector.Count > 1)
                 {
                     var blkeyfinal = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
-                    blocklisthashes.Add(blkeyfinal);
+                    blockListHashes.Add(blkeyfinal);
                     AddBlockToOutput(backend, blkeyfinal, m_blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                 }
             }
