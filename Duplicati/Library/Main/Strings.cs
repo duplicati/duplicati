@@ -224,6 +224,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DontcompressrestorepathsLong { get { return LC.L(@"When restore a subset of a backup into a new folder, the shortest possible path is used to avoid generating deep paths with empty folders. Use this flag to skip this compression, such that the entire original folder structure is preserved, including upper level empty folders."); } }
         public static string AllowfullremovalShort { get { return LC.L(@"Allow removing all filesets"); } }
         public static string AllowfullremovalLong { get { return LC.L(@"By default, the last fileset cannot be removed. This is a safeguard to make sure that all remote data is not deleted by a configuration mistake. Use this flag to disable that protection, such that all filesets can be deleted."); } }
+        public static string AutoVacuumShort { get { return LC.L(@"Allow automatic rebuilding of local database to save space."); } }
+        public static string AutoVacuumLong { get { return LC.L(@"Some operations that manipulate the local database leave unused entries behind. These entries are not deleted from a hard drive until a VACUUM operation is run. This operation saves disk space in the long run but needs to temporarily create a copy of all valid entries in the database. Setting this to true will allow Duplicati to perform VACUUM operations at its discretion."); } }
     }
 
     internal static class Common

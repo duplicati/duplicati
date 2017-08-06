@@ -517,6 +517,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
 
                     new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
+
+                    new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                 });
 
                 return lst;
@@ -1743,6 +1745,14 @@ namespace Duplicati.Library.Main
         public bool RepairOnlyPaths
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "repair-only-paths"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating whether the VACUUM operation should ever be run automatically.
+        /// </summary>
+        public bool AutoVacuum
+        {
+            get { return GetBool("auto-vacuum"); }
         }
 
         /// <summary>
