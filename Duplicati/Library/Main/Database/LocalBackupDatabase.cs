@@ -753,7 +753,7 @@ namespace Duplicati.Library.Main.Database
 
             using(var cmd = m_connection.CreateCommand(transaction))
             {
-                var c = cmd.ExecuteNonQuery(@"SELECT COUNT(*) FROM ""Block"" WHERE ""VolumeID"" = ? ", volumeid);
+                var c = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Block"" WHERE ""VolumeID"" = ? ", -1, volumeid);
                 if (c != 0)
                     throw new Exception(string.Format("Failed to safe-delete volume {0}, blocks: {1}", name, c));
 
