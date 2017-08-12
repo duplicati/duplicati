@@ -107,7 +107,7 @@ namespace Duplicati.UnitTest
 
                 opts["passphrase"] = "123456";
                 opts["debug-output"] = "";
-                opts["log-level"] = "profiling";
+                opts["log-level"] = "error";
                 opts["log-file"] = LOGFILE;
                 opts["dblock-size"] = "10mb";
                 opts["dbpath"] = DBFILE;
