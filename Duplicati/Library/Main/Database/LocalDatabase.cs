@@ -789,16 +789,21 @@ ON
                 if (itemswithnoblocklisthash != 0)
                     throw new InvalidDataException(string.Format("Found {0} file(s) with missing blocklist hashes", itemswithnoblocklisthash));
 
-                if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
-                    throw new Exception("Detected file entries with not associated blocks");
+                if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Blockset"" WHERE ""Length"" != 0 AND ""ID"" NOT IN (SELECT ""BlocksetId"" FROM ""BlocksetEntry"")") != 0)
+                {
+                    throw new Exception("Detected non-empty blocksets with no associated blocks!");
+                }
 
+                if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""ID"" FROM ""Blockset"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
+                    throw new Exception("Detected files associated with non-existing blocksets!");
 
                 if (verifyfilelists)
                 {
                     using(var cmd2 = m_connection.CreateCommand(transaction))
                     foreach(var filesetid in cmd.ExecuteReaderEnumerable(@"SELECT ""ID"" FROM ""Fileset"" ").Select(x => x.ConvertValueToInt64(0, -1)))
                     {
-                        var expandedlist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, filesetid);
+                            var expandedCmd = string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS);
+                        var expandedlist = cmd2.ExecuteScalarInt64(expandedCmd, 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, filesetid);
                         //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
                         var storedlist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?"), 0, filesetid);
 
@@ -955,40 +960,41 @@ FROM
     FROM 
         (
         SELECT 
-            ""A"".""Path"" AS ""Path"", 
-            ""D"".""Lastmodified"" AS ""Lastmodified"", 
-            ""B"".""Length"" AS ""Filelength"", 
-            ""B"".""FullHash"" AS ""Filehash"", 
-            ""E"".""FullHash"" AS ""Metahash"", 
-            ""E"".""Length"" AS ""Metalength"", 
-            ""A"".""BlocksetID"" AS ""BlocksetID"",
-            ""F"".""Hash"" AS ""FirstBlockHash"",
-            ""F"".""Size"" AS ""FirstBlockSize"",
-            ""H"".""Hash"" AS ""FirstMetaBlockHash"",
-            ""H"".""Size"" AS ""FirstMetaBlockSize"",
-            ""C"".""BlocksetID"" AS ""MetablocksetID""
+	        ""A"".""Path"" AS ""Path"", 
+	        ""D"".""Lastmodified"" AS ""Lastmodified"", 
+	        ""B"".""Length"" AS ""Filelength"", 
+	        ""B"".""FullHash"" AS ""Filehash"", 
+	        ""E"".""FullHash"" AS ""Metahash"", 
+	        ""E"".""Length"" AS ""Metalength"",
+	        ""A"".""BlocksetID"" AS ""BlocksetID"",
+	        ""F"".""Hash"" AS ""FirstBlockHash"",
+	        ""F"".""Size"" AS ""FirstBlockSize"",
+	        ""H"".""Hash"" AS ""FirstMetaBlockHash"",
+	        ""H"".""Size"" AS ""FirstMetaBlockSize"",
+	        ""C"".""BlocksetID"" AS ""MetablocksetID""
         FROM 
-            ""File"" A, 
-            ""Blockset"" B, 
-            ""Metadataset"" C, 
-            ""FilesetEntry"" D, 
-            ""Blockset"" E, 
-            ""Block"" F,
-            ""BlocksetEntry"" G,
-            ""Block"" H,
-            ""BlocksetEntry"" I
+	        ""File"" A	
+        LEFT JOIN ""Blockset"" B
+          ON ""A"".""BlocksetID"" = ""B"".""ID"" 
+        LEFT JOIN ""Metadataset"" C  
+          ON ""A"".""MetadataID"" = ""C"".""ID""
+        LEFT JOIN ""FilesetEntry"" D
+          ON ""A"".""ID"" = ""D"".""FileID""
+        LEFT JOIN ""Blockset"" E
+          ON ""E"".""ID"" = ""C"".""BlocksetID""
+        LEFT JOIN ""BlocksetEntry"" G
+          ON ""B"".""ID"" = ""G"".""BlocksetID""
+        LEFT JOIN ""Block"" F 
+          ON ""G"".""BlockID"" = ""F"".""ID""  
+        LEFT JOIN ""BlocksetEntry"" I
+          ON ""E"".""ID"" = ""I"".""BlocksetID""
+        LEFT JOIN ""Block"" H 
+          ON ""I"".""BlockID"" = ""H"".""ID""
         WHERE 
-            ""A"".""ID"" = ""D"".""FileID"" 
-            AND ""D"".""FilesetID"" = ? 
-            AND ""A"".""BlocksetID"" = ""B"".""ID"" 
-            AND ""A"".""MetadataID"" = ""C"".""ID"" 
-            AND ""E"".""ID"" = ""C"".""BlocksetID""
-            AND ""B"".""ID"" = ""G"".""BlocksetID""
-            AND ""G"".""BlockID"" = ""F"".""ID""
-            AND ""G"".""Index"" = 0
-            AND ""I"".""BlocksetID"" = ""E"".""ID""
-            AND ""I"".""BlockID"" = ""H"".""ID""
-            AND ""I"".""Index"" = 0
+          ""A"".""BlocksetId"" >= 0 AND
+          ""D"".""FilesetID"" = ? AND
+          (""I"".""Index"" = 0 OR ""I"".""Index"" IS NULL) AND  
+          (""G"".""Index"" = 0 OR ""G"".""Index"" IS NULL)
         ) J
     LEFT OUTER JOIN 
         ""BlocklistHash"" K 

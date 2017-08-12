@@ -103,13 +103,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                             var lastread = 0;
                             var buf = new byte[blocksize];
                             var lastupdate = DateTime.Now;
-                            var firstBlock = true;
 
                             // Core processing loop, read blocks of data and hash individually
-                            while (((lastread = await stream.ForceStreamReadAsync(buf, blocksize)) != 0) || firstBlock)
+                            while (((lastread = await stream.ForceStreamReadAsync(buf, blocksize)) != 0))
                             {
-                                firstBlock = false;
-
                                 // Run file hashing concurrently to squeeze a little extra concurrency out of it
                                 var pftask = Task.Run(() => filehasher.TransformBlock(buf, 0, lastread, buf, 0));
 
