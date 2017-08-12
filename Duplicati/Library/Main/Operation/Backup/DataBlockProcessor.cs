@@ -82,14 +82,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                             // If the volume is full, send to upload
                             if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
                             {
-                                // When uploading a new volume, we register the volumes and then flush the transaction
+                                //When uploading a new volume, we register the volumes and then flush the transaction
                                 // this ensures that the local database and remote storage are as closely related as possible
                                 await database.UpdateRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                             
                                 blockvolume.Close();
 
                                 await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
-                                
+
                                 await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, true));
                                 blockvolume = null;
                             }
