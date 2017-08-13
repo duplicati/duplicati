@@ -53,6 +53,9 @@ namespace Duplicati.Library.Main.Volumes
             else
                 m_localfile = new Library.Utility.TempFile();
 
+            // TODO(danstahr): This is a hack! Figure out why the file is being disposed of prematurely.
+            m_localfile.Protected = true;
+
             ResetRemoteFilename(options, timestamp);
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);
             
@@ -76,6 +79,8 @@ namespace Duplicati.Library.Main.Volumes
             if (m_compression != null)
                 try { m_compression.Dispose(); }
                 finally { m_compression = null; }
+
+            m_localfile.Protected = false;
 
             if (m_localfile != null)
                 try { m_localfile.Dispose(); }
