@@ -439,6 +439,12 @@ namespace Duplicati.Library.Main.Operation
                             throw;
                     }
 
+                // Restore empty files. They might not have any blocks so don't appear in any volume.
+                foreach (var file in database.GetFilesToRestore(true).Where(item => item.Length == 0)) {
+                    // Just create the file and close it right away, empty statement is intentional.
+                    using (m_systemIO.FileCreate(file.Path)) ;
+                }
+
                 // Enforcing the length of files is now already done during ScanForExistingTargetBlocks
                 // and thus not necessary anymore.
 
@@ -778,8 +784,6 @@ namespace Duplicati.Library.Main.Operation
                 {
                     // Find the largest common prefix
                     var largest_prefix = options.DontCompressRestorePaths ? "" : database.GetLargestPrefix();
-                    if (options.DontCompressRestorePaths)
-                        largest_prefix = "";
 
                     result.AddVerboseMessage("Mapping restore path prefix to \"{0}\" to \"{1}\"", largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
     
