@@ -3608,7 +3608,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:220
 msgid "Disables synthetic filelist"
-msgstr ""
+msgstr "Выключает искусственный список файлов"
 
 #: Library/Main/Strings.cs:221
 msgid ""

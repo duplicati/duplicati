@@ -426,7 +426,7 @@ msgid "Connection worked!"
 msgstr "连接正常！"
 
 #: index.html:314
-msgid "Connecting to server ..."
+msgid "Connnecting to server ..."
 msgstr "正在连接服务器…"
 
 #: scripts/services/EditUriBuiltins.js:624 templates/backends/azure.html:2

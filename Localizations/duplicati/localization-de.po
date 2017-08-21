@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-06-14 23:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Markus Greitner <christian.weller@gmx.net>, 2017\n"
+"Last-Translator: Christian Fröhlich <github@febrildur.de>, 2017\n"
 "Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -3459,7 +3459,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:201
 msgid "Skip restored file check"
-msgstr ""
+msgstr "Überprüfung wiederhergestellter Dateien überspringen"
 
 #: Library/Main/Strings.cs:202
 msgid ""
@@ -3605,6 +3605,8 @@ msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
+"Die Verschlüsselungs-Bibliothek unterstützt wiederverwendbare "
+"Transformationen für den Hash-Algorithmus {0} nicht"
 
 #: Library/Main/Strings.cs:232
 #, csharp-format
@@ -3631,6 +3633,9 @@ msgid ""
 "This module will ask the user for an encryption password on the command line"
 " unless encryption is disabled or the password is supplied by other means"
 msgstr ""
+"Dieses Modul fragt den User in der Kommandozeile nach einem "
+"Verschlüsselungs-Passwort, es sei denn Verschlüsselung ist abgeschaltet oder"
+" das Passwort wird durch andere Mittel bereitgestellt."
 
 #: Library/Modules/Builtin/Strings.cs:9
 msgid "Password prompt"
@@ -3750,6 +3755,8 @@ msgid ""
 "This module works internaly to parse source parameters to backup Hyper-V "
 "virtual machines"
 msgstr ""
+"Dieses Modul arbeitet intern um Quellparameter zu erfassen die für ein "
+"Backup einer Hyper-V - Maschine nötig sind."
 
 #: Library/Modules/Builtin/Strings.cs:37
 msgid "Configure Hyper-V module"
@@ -3760,6 +3767,8 @@ msgid ""
 "This module works internaly to parse source parameters to backup Microsoft "
 "SQL Server databases"
 msgstr ""
+"Dieses Modul arbeitet intern um Quellparameter zu erfassen die für ein "
+"Backup einer Microsoft SQL Server Datenbank nötig sind."
 
 #: Library/Modules/Builtin/Strings.cs:42
 msgid "Configure Microsoft SQL Server module"
@@ -3768,7 +3777,7 @@ msgstr "Microsoft SQL Server-Modul konfigurieren"
 #: Library/Modules/Builtin/Strings.cs:45
 msgid ""
 "Executes a script before starting an operation, and again on completion"
-msgstr ""
+msgstr "Führt das Script vor und nach einer Operation aus."
 
 #: Library/Modules/Builtin/Strings.cs:46
 msgid "Run script"
@@ -3779,6 +3788,8 @@ msgid ""
 "Executes a script after performing an operation. The script will receive the"
 " operation results written to stdout."
 msgstr ""
+"Führt das Script nach einer Operation aus. Das Script erhält die erhält die "
+"Ausgaben der Operation per stdout."
 
 #: Library/Modules/Builtin/Strings.cs:48
 msgid "Run a script on exit"
@@ -3815,6 +3826,9 @@ msgid ""
 "Executes a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
 msgstr ""
+"Führt das Script aus, bevor eine Operation ausgeführt wird. Die Ausführung "
+"der Operation wird blockiert, so lange bis das Script beendet ist oder das "
+"Zeitlimit überschritten."
 
 #: Library/Modules/Builtin/Strings.cs:55
 msgid "Run a script on startup"
@@ -4005,6 +4019,8 @@ msgid ""
 "The users who should have the messages sent, specify multiple users "
 "separated with commas"
 msgstr ""
+"Falls Sie wünschen das mehrere Benutzer Nachrichten erhalten, geben Sie "
+"diese bitte Komma-separiert ein."
 
 #: Library/Modules/Builtin/Strings.cs:109
 #: Library/Modules/Builtin/Strings.cs:139
@@ -4066,6 +4082,8 @@ msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
 msgstr ""
+"Standardmäßig werden E-Mails nur nach dem Backup-Vorgang gesendet. Mittels "
+"dieser Option werden E-Mails für alle Vorgänge gesendet."
 
 #: Library/Modules/Builtin/Strings.cs:128
 msgid "XMPP report module"
@@ -4103,11 +4121,11 @@ msgstr "HTTP Report-URL"
 
 #: Library/Modules/Builtin/Strings.cs:149
 msgid "The name of the parameter to send the message as"
-msgstr ""
+msgstr "Der Name des Parameters mit dem die Nachricht übertragen wird."
 
 #: Library/Modules/Builtin/Strings.cs:150
 msgid "The name of the parameter to send the message as."
-msgstr ""
+msgstr "Der Name des Parameters mit dem die Nachricht übertragen wird."
 
 #: Library/Modules/Builtin/Strings.cs:151
 msgid "Extra parameters to add to the http message"
@@ -4195,10 +4213,12 @@ msgid ""
 "The number of files returned by USN was zero. This is likely an error. To "
 "remedy this, USN has been disabled."
 msgstr ""
+"Die Anzahl der durch USN zurückgegebenen Dateien war null. Da dies "
+"vermutlich ein Fehler ist, wurde USN deaktiviert."
 
 #: Library/Snapshots/Strings.cs:20
 msgid "Calling process does not have the backup privilege"
-msgstr ""
+msgstr "Dem aufrufenden Prozess fehlt das backup Recht."
 
 #: Library/SQLiteHelper/Strings.cs:4
 msgid "backup"
@@ -4242,6 +4262,7 @@ msgstr "Ungültige Größenangabe: {0}"
 #: Library/Utility/Strings.cs:10
 msgid "The SSL certificate validator was called in an incorrect order"
 msgstr ""
+"Der SSL-Zertifikatsprüfer wurde in einer ungültigen Reihenfolge aufgerufen."
 
 #: Library/Utility/Strings.cs:11
 #, csharp-format
@@ -4381,6 +4402,8 @@ msgid ""
 "Activates portable mode where the database is placed below the program "
 "executable"
 msgstr ""
+"Aktivierten den Portable Mode bei dem die Datenbank neben dem ausführbaren "
+"Programm abgelegt wird."
 
 #: Server/Strings.cs:18
 #, csharp-format
@@ -4412,6 +4435,8 @@ msgid ""
 "The path to the folder where the static files for the webserver is present. "
 "The folder must be located beneath the installation folder"
 msgstr ""
+"Der Pfad zum Ordner in dem sich die statischen Dateien des Webservers "
+"befinden. Der Pfad muss sich unterhalb des Installationsordners befinden."
 
 #: Server/Strings.cs:24
 msgid ""
@@ -4426,6 +4451,8 @@ msgid ""
 "The certificate and key file in PKCS #12 format the webserver use for SSL. "
 "Only RSA/DSA keys are supported."
 msgstr ""
+"Zertifikats- und Schlüsseldatei im PKCS#12-Format, welche der Webserver für "
+"SSL nutzt. Es werden nur RSA/DSA Schlüssel unterstützt."
 
 #: Server/Strings.cs:26
 msgid "The password for decryption of certificate PKCS #12 file."
@@ -4461,6 +4488,9 @@ msgid ""
 " responding. If this option is enabled, the server reads stdin and writes a "
 "reply to each line read"
 msgstr ""
+"Wenn die Software im Hintergrund läuft, muss der Hintergrunddienst prüfen, "
+"ob der Prozess noch antwortet. Ist diese Option aktiviert, liest die "
+"Software den Standard-Input und antwortet auf jede empfangene Zeile."
 
 #: Server/Strings.cs:33
 msgid "Sets the folder where settings are stored"
@@ -4488,6 +4518,10 @@ msgid ""
 "database. This option can also be set with the environment variable {0}. Use"
 " the option --{1} to disable the database scrambling."
 msgstr ""
+"Diese Option setzt den Schlüssel um die Lokale Einstellungsdatenbank zu "
+"verschlüsseln. Diese kann ebenso durch die Umgebungsvariable {0} gesetzt "
+"werden. Benutzen Sie die Option --{1} um das verschlüsseln der Datenbank zu "
+"deaktivieren."
 
 #: Server/Strings.cs:39
 #, csharp-format

@@ -4,11 +4,11 @@
 # Vadim P <kladzey@gmail.com>, 2017
 # Alex McArrow <alex.mcarrow@gmail.com>, 2017
 # Rondo Van <hope2013@mail.ru>, 2017
-# Jony Rh <info@jonyrh.ru>, 2017
+# Jony Rh <jonyrh@mail.ru>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Jony Rh <info@jonyrh.ru>, 2017\n"
+"Last-Translator: Jony Rh <jonyrh@mail.ru>, 2017\n"
 "Language-Team: Russian (https://www.transifex.com/duplicati/teams/67655/ru/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -436,7 +436,7 @@ msgid "Connection worked!"
 msgstr "Подключение работает!"
 
 #: index.html:314
-msgid "Connecting to server ..."
+msgid "Connnecting to server ..."
 msgstr "Подключение к серверу..."
 
 #: scripts/services/EditUriBuiltins.js:624 templates/backends/azure.html:2

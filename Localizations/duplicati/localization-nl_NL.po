@@ -3729,7 +3729,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:220
 msgid "Disables synthetic filelist"
-msgstr ""
+msgstr "Schakelt synthetische bestandenlijst uit"
 
 #: Library/Main/Strings.cs:221
 msgid ""

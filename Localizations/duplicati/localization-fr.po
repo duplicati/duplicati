@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-06-14 23:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: franck aubert <franck.aubert@gmail.com>, 2017\n"
+"Last-Translator: Zakaria YAHI <zakyahi@msn.com>, 2017\n"
 "Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -371,17 +371,17 @@ msgstr "Configure la police SSL à utiliser quand le chiffrement est activé"
 #: Library/Backend/AlternativeFTP/Strings.cs:26
 #, csharp-format
 msgid "Error on deleting file: {0}"
-msgstr ""
+msgstr "Erreur sur la suppression du fichier: {0}"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:27
 #, csharp-format
 msgid "Error reading file: {0}"
-msgstr ""
+msgstr "Erreur sur la lecture du fichier: {0}"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:28
 #, csharp-format
 msgid "Error writing file: {0}"
-msgstr ""
+msgstr "Erreur sur l'enregistrement du fichier: {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
@@ -813,8 +813,8 @@ msgid ""
 "formats are \"ftp://hostname/folder\" or "
 "\"ftp://username:password@hostname/folder\""
 msgstr ""
-"Ce back-end peut lire et écrire des données dans un back-end basé sur un FTP"
-" en utilisant un client FTP alternatif. Les formats autorisés sont "
+"Ce back-end peut lire et écrire des données sur un serveur FTP en utilisant "
+"un client FTP alternatif. Les formats autorisés sont "
 "\"ftp://serveur/dossier\" ou \"ftp://utilisateur:passe@serveur/dossier\""
 
 #: Library/Backend/FTP/Strings.cs:8
@@ -1024,6 +1024,11 @@ msgid ""
 "custom device with option \"{0}\" you are free to name the mount point as "
 "you like."
 msgstr ""
+"Le point de montage a utiliser sur le serveur. Le défaut est \"Archive\" "
+"pour utiliser le point de montage intégré. Paramétrer cette option sur "
+"\"Sync\" pour utiliser le point de montage intégré en remplacement, ou si "
+"vous avez spécifié un périphérique personnalisé a l'aide de l'option \"{0}\""
+" vous pouvez nommer le point de montage comme vous le désirez"
 
 #: Library/Backend/Mega/Strings.cs:4
 msgid "mega.nz"
@@ -1336,10 +1341,12 @@ msgid ""
 "Use this option to specify a storage class. If this option is not used, the "
 "server will choose a default storage class."
 msgstr ""
+"Utilisez cette option pour définir une classe de stockage. Si cette option "
+"n'est pas utilisée, le serveur choisira une classe de stockage par défaut."
 
 #: Library/Backend/S3/Strings.cs:37
 msgid "Specify storage class"
-msgstr ""
+msgstr "Définissez une classe de stockage."
 
 #: Library/Backend/SharePoint/Strings.cs:6
 msgid "Microsoft SharePoint"
@@ -1362,17 +1369,25 @@ msgid ""
 "option enables that authentication method. This is likely only available "
 "with windows servers and clients."
 msgstr ""
+"Si le serveur et le client utilisent tous les deux une authentification "
+"intégrée, cette option active cette méthode d'authentification. Il "
+"semblerait que ça ne soit le cas qu'avec des serveurs et clients Windows."
 
 #: Library/Backend/SharePoint/Strings.cs:13
 #: Library/Backend/WEBDAV/Strings.cs:12
 msgid "Use windows integrated authentication to connect to the server"
 msgstr ""
+"Utilisez l'authentification intégrée de Windows pour vous connecter au "
+"serveur."
 
 #: Library/Backend/SharePoint/Strings.cs:14
 msgid ""
 "Use this option to have files moved to the recycle bin folder instead of "
 "removing them permanently when compacting or deleting backups."
 msgstr ""
+"Utilisez cette option pour que les fichiers soient envoyés dans la corbeille"
+" plutôt que supprimés définitivement lorsque les backups sont compressées ou"
+" supprimées."
 
 #: Library/Backend/SharePoint/Strings.cs:15
 msgid "Move deleted files to the recycle bin"
@@ -1395,6 +1410,9 @@ msgid ""
 "Use this option to specify a custom value for timeouts of web operation when"
 " communicating with SharePoint Server. Recommended value is 180s."
 msgstr ""
+"Utilisez cette option pour définir une valeur personnalisée pour les "
+"timeouts des opérations web lors des communications avec un serveur "
+"SharePoint. La valeur recommandée est 180s. "
 
 #: Library/Backend/SharePoint/Strings.cs:21
 msgid "Set timeout for SharePoint web operations."
@@ -1449,7 +1467,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:5
 msgid "SSH Key Generator"
-msgstr ""
+msgstr "Générateur de clef SSH"
 
 #: Library/Backend/SSHv2/Strings.cs:6
 msgid "Public key username"
@@ -1465,7 +1483,7 @@ msgstr "Le type de clé"
 
 #: Library/Backend/SSHv2/Strings.cs:9
 msgid "Determines the type of key to generate"
-msgstr ""
+msgstr "Détermine le type de clef à générer"
 
 #: Library/Backend/SSHv2/Strings.cs:10
 msgid "The key length"
@@ -1539,7 +1557,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:32 Library/Backend/SSHv2/Strings.cs:34
 msgid "Uses a SSH private key to authenticate"
-msgstr ""
+msgstr "Utilise une clef privée pour s'authentifier"
 
 #: Library/Backend/SSHv2/Strings.cs:33
 #, csharp-format
@@ -1640,7 +1658,7 @@ msgstr ""
 #: Library/Compression/Strings.cs:4
 #, csharp-format
 msgid "Please use the {0} option instead"
-msgstr ""
+msgstr "Utilisez l'option {0} à la place"
 
 #: Library/Compression/Strings.cs:5 Library/Compression/Strings.cs:21
 msgid ""
@@ -1741,7 +1759,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:6
 msgid "Empty passphrase not allowed"
-msgstr ""
+msgstr "Phrase de passe vide interdite"
 
 #: Library/Encryption/Strings.cs:7
 msgid ""
@@ -1832,7 +1850,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:27
 msgid "Use GPG Armor"
-msgstr ""
+msgstr "Utilisez GPG Armor"
 
 #: Library/Encryption/Strings.cs:28
 msgid "Overrides the GPG command supplied for decryption"
@@ -1931,7 +1949,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:22
 msgid "Do you want to test the connection?"
-msgstr ""
+msgstr "Voulez-vous tester la connexion ?"
 
 #: Library/Interface/Strings.cs:23
 #, csharp-format
@@ -2071,7 +2089,7 @@ msgstr ""
 #: Library/Main/Strings.cs:9
 #, csharp-format
 msgid "The option {0} is deprecated: {1}"
-msgstr ""
+msgstr "L'option {0} est dépréciée : {1}"
 
 #: Library/Main/Strings.cs:10
 #, csharp-format
@@ -2081,7 +2099,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:11
 msgid "No source folders specified for backup"
-msgstr ""
+msgstr "Pas de dossier source spécifié pour sauvegarde"
 
 #: Library/Main/Strings.cs:12
 #, csharp-format
@@ -2144,12 +2162,12 @@ msgstr ""
 #: Library/Main/Strings.cs:22
 #, csharp-format
 msgid "The operation {0} has started"
-msgstr ""
+msgstr "L'opération {0} a débuté"
 
 #: Library/Main/Strings.cs:23
 #, csharp-format
 msgid "The operation {0} has completed"
-msgstr ""
+msgstr "L'opération {0} est complétée"
 
 #: Library/Main/Strings.cs:24
 #, csharp-format
@@ -2159,7 +2177,7 @@ msgstr ""
 #: Library/Main/Strings.cs:25
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
-msgstr ""
+msgstr "Chemin invalide : \"{0}\" ({1})"
 
 #: Library/Main/Strings.cs:26
 #, csharp-format
@@ -2178,6 +2196,7 @@ msgstr ""
 #: Library/Main/Strings.cs:32
 msgid "A flag indicating that Duplicati should remove unused files"
 msgstr ""
+"Un flag pour indiquer à Duplicati de supprimer les fichiers inutilisés"
 
 #: Library/Main/Strings.cs:33
 msgid ""
@@ -2232,7 +2251,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:42
 msgid "Max number of kilobytes to download pr. second"
-msgstr ""
+msgstr "Nombre maximum de kilo-octets par seconde pour télécharger"
 
 #: Library/Main/Strings.cs:43
 msgid ""
@@ -2306,7 +2325,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:56
 msgid "Show all versions"
-msgstr ""
+msgstr "Afficher toutes les versions"
 
 #: Library/Main/Strings.cs:57
 msgid ""
@@ -2337,7 +2356,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:62
 msgid "Time to wait between retries"
-msgstr ""
+msgstr "Temps d'attente entre les essais"
 
 #: Library/Main/Strings.cs:63
 msgid "Use this option to attach extra files to the newly uploaded filelists."
@@ -2369,7 +2388,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:69
 msgid "Temporary storage folder"
-msgstr ""
+msgstr "Dossier de stockage temporaire"
 
 #: Library/Main/Strings.cs:70
 msgid ""
@@ -3889,7 +3908,7 @@ msgstr ""
 #: Library/Utility/Strings.cs:28
 #, csharp-format
 msgid "{0} bytes"
-msgstr "{0} bytes"
+msgstr "{0} octets"
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format

@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: pl\n"
-"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>=14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
 #: CommandLine/Program.cs:300
 msgid "Toggle automatic updates"
@@ -275,7 +275,7 @@ msgstr ""
 #: Library/Backend/AlternativeFTP/Strings.cs:18
 #: Library/Backend/FTP/Strings.cs:22
 msgid "Disable upload verification"
-msgstr ""
+msgstr "Wyłącz weryfikację przesyłania"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:19
 msgid ""
@@ -315,17 +315,17 @@ msgstr ""
 #: Library/Backend/AlternativeFTP/Strings.cs:26
 #, csharp-format
 msgid "Error on deleting file: {0}"
-msgstr ""
+msgstr "Błąd podczas usuwania pliku: {0}"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:27
 #, csharp-format
 msgid "Error reading file: {0}"
-msgstr ""
+msgstr "Błąd odczytu pliku: {0}"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:28
 #, csharp-format
 msgid "Error writing file: {0}"
-msgstr ""
+msgstr "Błąd zapisu pliku: {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
@@ -1689,7 +1689,7 @@ msgstr "wartość domyślna"
 
 #: Library/Interface/Strings.cs:6
 msgid "[DEPRECATED]"
-msgstr ""
+msgstr "[DEPRECATED]"
 
 #: Library/Interface/Strings.cs:7
 msgid "values"
@@ -1697,11 +1697,11 @@ msgstr "wartości"
 
 #: Library/Interface/Strings.cs:10
 msgid "Boolean"
-msgstr ""
+msgstr "Boole'owski"
 
 #: Library/Interface/Strings.cs:11
 msgid "Enumeration"
-msgstr ""
+msgstr "Wyliczanie"
 
 #: Library/Interface/Strings.cs:12
 msgid "Flags"
@@ -1709,7 +1709,7 @@ msgstr "Flagi"
 
 #: Library/Interface/Strings.cs:13
 msgid "Integer"
-msgstr ""
+msgstr "Liczba całkowita"
 
 #: Library/Interface/Strings.cs:14
 msgid "Path"
@@ -1721,7 +1721,7 @@ msgstr "Rozmiar"
 
 #: Library/Interface/Strings.cs:16
 msgid "String"
-msgstr ""
+msgstr "Łańcuch"
 
 #: Library/Interface/Strings.cs:17
 msgid "Timespan"
@@ -1729,7 +1729,7 @@ msgstr "Przedział czasowy"
 
 #: Library/Interface/Strings.cs:18
 msgid "Unknown"
-msgstr ""
+msgstr "Nieznany"
 
 #: Library/Interface/Strings.cs:21
 #, csharp-format
@@ -1798,7 +1798,7 @@ msgstr "Utworzono Folder!"
 
 #: Library/Interface/Strings.cs:39
 msgid "The requested folder does not exist"
-msgstr ""
+msgstr "Żądany folder nie istnieje"
 
 #: Library/Interface/Strings.cs:40
 #, csharp-format

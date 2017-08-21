@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-14 23:19+0200\n"
+"POT-Creation-Date: 2017-08-21 10:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,11 +17,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: CommandLine/Program.cs:300
+#: CommandLine/Program.cs:301
 msgid "Toggle automatic updates"
 msgstr ""
 
-#: CommandLine/Program.cs:300
+#: CommandLine/Program.cs:301
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -885,7 +885,7 @@ msgstr ""
 msgid "Missing the folder: {0}"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:11
+#: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:13
 #, csharp-format
 msgid "File not found: {0}"
 msgstr ""
@@ -1413,7 +1413,7 @@ msgstr ""
 msgid "Please use the {0} option instead"
 msgstr ""
 
-#: Library/Compression/Strings.cs:5 Library/Compression/Strings.cs:21
+#: Library/Compression/Strings.cs:5 Library/Compression/Strings.cs:23
 msgid ""
 "This option controls the compression level used. A setting of zero gives no "
 "compression, and a setting of 9 gives maximum compression."
@@ -1436,57 +1436,67 @@ msgid "Sets the Zip compression method"
 msgstr ""
 
 #: Library/Compression/Strings.cs:9
+msgid "Toggles Zip64 support"
+msgstr ""
+
+#: Library/Compression/Strings.cs:10
+msgid ""
+"The zip64 format is required for files larger than 4GiB, use this flag to "
+"toggle it"
+msgstr ""
+
+#: Library/Compression/Strings.cs:11
 msgid ""
 "This module provides the industry standard Zip compression. Files created "
 "with this module can be read by any standard-compliant zip application."
 msgstr ""
 
-#: Library/Compression/Strings.cs:10
+#: Library/Compression/Strings.cs:12
 msgid "Zip compression"
 msgstr ""
 
-#: Library/Compression/Strings.cs:14
+#: Library/Compression/Strings.cs:16
 msgid "Archive not opened for writing"
 msgstr ""
 
-#: Library/Compression/Strings.cs:15
+#: Library/Compression/Strings.cs:17
 msgid "Archive not opened for reading"
 msgstr ""
 
-#: Library/Compression/Strings.cs:16
+#: Library/Compression/Strings.cs:18
 msgid "The given file is not part of this archive"
 msgstr ""
 
-#: Library/Compression/Strings.cs:17
+#: Library/Compression/Strings.cs:19
 msgid "7z Archive with LZMA2 support."
 msgstr ""
 
-#: Library/Compression/Strings.cs:18
+#: Library/Compression/Strings.cs:20
 msgid "7z Archive"
 msgstr ""
 
-#: Library/Compression/Strings.cs:19
+#: Library/Compression/Strings.cs:21
 msgid ""
 "The number of threads used in LZMA 2 compression. Defaults to the number of "
 "processor cores."
 msgstr ""
 
-#: Library/Compression/Strings.cs:20
+#: Library/Compression/Strings.cs:22
 msgid "Number of threads used in compression"
 msgstr ""
 
-#: Library/Compression/Strings.cs:22
+#: Library/Compression/Strings.cs:24
 msgid "Sets the 7z compression level"
 msgstr ""
 
-#: Library/Compression/Strings.cs:23
+#: Library/Compression/Strings.cs:25
 msgid ""
 "This option controls the compression algorithm used. Enabling this option "
 "will cause 7z to use the fast algorithm, which produces slightly less "
 "compression."
 msgstr ""
 
-#: Library/Compression/Strings.cs:24
+#: Library/Compression/Strings.cs:26
 msgid "Sets the 7z fast algorithm usage"
 msgstr ""
 
@@ -1795,12 +1805,12 @@ msgstr ""
 msgid "Failed to recover from error deleting file {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1103
+#: Library/Main/BackendManager.cs:1122
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1116
+#: Library/Main/BackendManager.cs:1135
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr ""
@@ -3002,23 +3012,37 @@ msgid ""
 "this flag to disable that protection, such that all filesets can be deleted."
 msgstr ""
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:227
+msgid "Allow automatic rebuilding of local database to save space."
+msgstr ""
+
+#: Library/Main/Strings.cs:228
+msgid ""
+"Some operations that manipulate the local database leave unused entries "
+"behind. These entries are not deleted from a hard drive until a VACUUM "
+"operation is run. This operation saves disk space in the long run but needs "
+"to temporarily create a copy of all valid entries in the database. Setting "
+"this to true will allow Duplicati to perform VACUUM operations at its "
+"discretion."
+msgstr ""
+
+#: Library/Main/Strings.cs:233
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:234
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:235
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 
-#: Library/Main/Strings.cs:234
+#: Library/Main/Strings.cs:236
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr ""

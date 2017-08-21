@@ -3096,7 +3096,7 @@ msgstr "如果 Duplicati 检测到前一备份没有完成，它将生成一份�
 
 #: Library/Main/Strings.cs:220
 msgid "Disables synthetic filelist"
-msgstr ""
+msgstr "禁用虚拟文件列表"
 
 #: Library/Main/Strings.cs:221
 msgid ""

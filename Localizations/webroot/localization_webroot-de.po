@@ -11,10 +11,11 @@
 # Bruno Holliger <bholliger@gmx.net>, 2017
 # Christian Kotzbauer <christian.kotzbauer@gmail.com>, 2017
 # Heiko Fröbel <djheiks@googlemail.com>, 2017
+# Felix Alexa <mail@theforcer.de>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Heiko Fröbel <djheiks@googlemail.com>, 2017\n"
+"Last-Translator: Felix Alexa <mail@theforcer.de>, 2017\n"
 "Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -86,7 +87,7 @@ msgstr "Neues Backup hinzufügen"
 
 #: templates/addoredit.html:149
 msgid "Add a path directly"
-msgstr ""
+msgstr "Direkten Pfad eingeben"
 
 #: templates/advancedoptionseditor.html:46
 msgid "Add advanced option"
@@ -426,7 +427,7 @@ msgstr "Jetzt verbinden"
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
-msgstr ""
+msgstr "Verbinde mit Aufgabe..."
 
 #: index.html:319
 msgid "Connecting..."
@@ -442,7 +443,7 @@ msgid "Connection worked!"
 msgstr "Verbindung erfolgreich!"
 
 #: index.html:314
-msgid "Connecting to server ..."
+msgid "Connnecting to server ..."
 msgstr "Verbinde mit Server..."
 
 #: scripts/services/EditUriBuiltins.js:624 templates/backends/azure.html:2
@@ -637,7 +638,7 @@ msgstr "Verwerfen"
 
 #: templates/settings.html:49
 msgid "Display and color theme"
-msgstr ""
+msgstr "Anzeige und Farbthema"
 
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
@@ -1133,7 +1134,7 @@ msgstr "Import fehlgeschlagen"
 
 #: templates/addwizard.html:15
 msgid "Import from a file"
-msgstr ""
+msgstr "Von einer Datei importieren"
 
 #: templates/import.html:30
 msgid "Importing ..."
@@ -1734,7 +1735,7 @@ msgstr "Läuft ...."
 
 #: templates/commandline.html:47
 msgid "Running commandline entry"
-msgstr ""
+msgstr "Führe Kommandozeilenbefehl aus"
 
 #: index.html:171
 msgid "Running task:"
@@ -2037,11 +2038,11 @@ msgstr ""
 
 #: templates/settings.html:53
 msgid "The dark theme (by Michal)"
-msgstr ""
+msgstr "Dunkles Thema (von Michal)"
 
 #: templates/settings.html:52
 msgid "The default blue on white theme (by Alex)"
-msgstr ""
+msgstr "Blau-auf-Weiß Thema (von Alex)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2270,7 +2271,7 @@ msgstr "Nutzer hat zu viele Rechte"
 
 #: templates/settings.html:37
 msgid "User interface settings"
-msgstr ""
+msgstr "Einstellungen der Benutzeroberfläche"
 
 #: scripts/services/EditUriBuiltins.js:552
 #: scripts/services/EditUriBuiltins.js:632
@@ -2449,12 +2450,16 @@ msgid ""
 "You can stop the backup immediately, or stop after the current file has been"
 " uploaded."
 msgstr ""
+"Das Backup kann sofort angehalten werden, oder nachdem die aktuelle Datei "
+"hochgeladen wurde."
 
 #: scripts/controllers/StateController.js:106
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and the stop."
 msgstr ""
+"Die Aufgabe kann sofort angehalten werden, oder nachdem der Prozess die "
+"aktuelle Datei abgeschlossen hat."
 
 #: scripts/controllers/EditBackupController.js:351
 msgid ""
