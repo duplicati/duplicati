@@ -7,28 +7,21 @@ These are currently not working ...
 [![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/issue)](http://www.issuestats.com/github/duplicati/duplicati/)
 -->
 
+<!--
+Removed Gitter
+[![Join the chat at https://gitter.im/duplicati/Lobby](https://badges.gitter.im/duplicati/Lobby.svg)](https://gitter.im/duplicati/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+-->
 
 [![Build Status on Travis-CI](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
 [![Build status on AppVeyor](https://ci.appveyor.com/api/projects/status/h8s5nau9mn311hq0/branch/master?svg=true)](https://ci.appveyor.com/project/kenkendk/duplicati/branch/master)
 [![Bountysource](https://www.bountysource.com/badge/tracker?tracker_id=4870652)](https://www.bountysource.com/teams/duplicati?tracker_ids=4870652&utm_medium=shield&utm_campaign=TRACKER_BADGE)
 [![Coverage Status](https://coveralls.io/repos/github/duplicati/duplicati/badge.svg?branch=HEAD)](https://coveralls.io/github/duplicati/duplicati?branch=HEAD)
 [![License](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE.txt)
-[![Join the chat at https://gitter.im/duplicati/Lobby](https://badges.gitter.im/duplicati/Lobby.svg)](https://gitter.im/duplicati/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
 
-  * Amazon S3
-  * OneDrive
-  * Google Drive (Google Docs)
-  * Rackspace Cloud Files
-  * HubiC
-  * Backblaze (B2)
-  * Amazon Cloud Drive (AmzCD)
-  * Swift / OpenStack
-  * WebDAV
-  * SSH (SFTP)
-  * FTP
-  * and more
+&nbsp;&nbsp; *Amazon S3, OneDrive, Google Drive, Rackspace Cloud Files, HubiC, Backblaze (B2), Amazon Cloud Drive (AmzCD), Swift / OpenStack, WebDAV,  SSH (SFTP), FTP, and more!*
 
 Duplicati is licensed under LGPL and available for Windows, OSX and Linux (.NET 4.5+ or Mono required). 
 
@@ -37,13 +30,17 @@ Download
 
 The latest version of Duplicati is an experimental version for the Duplicati 2.0 release. 
 
-[Click here to download the latest Duplicati 2.0 experimental release.](http://www.duplicati.com/download)
+[Click here to download the latest Duplicati 2.0 beta release.](http://www.duplicati.com/download)
 
-The experimental release will automatically notify you of updates and allows you to upgrade with a single click (or command in the terminal).
+The beta release will automatically notify you of updates and allows you to upgrade with a single click (or command in the terminal).
 For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases) or choose another update channel in the UI or on the commandline.
 
 All releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The latest signature file and latest ASCII signature file are also available from [the Duplicati download page](https://github.com/duplicati/duplicati/releases).
 
+Support
+=======
+
+Duplicati is supported by an [active community and you can reach them via our forum](https://forum.duplicati.com).
 
 Features
 ========
