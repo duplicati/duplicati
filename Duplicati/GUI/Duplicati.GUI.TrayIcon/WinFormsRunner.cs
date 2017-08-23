@@ -126,6 +126,7 @@ namespace Duplicati.GUI.TrayIcon.Windows
             m_trayIcon = new NotifyIcon();
             m_trayIcon.DoubleClick += new EventHandler(m_trayIcon_DoubleClick);
             m_trayIcon.Click += new EventHandler(m_trayIcon_Click);
+            m_trayIcon.Text = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName;
             base.Init(args);
         }
         
