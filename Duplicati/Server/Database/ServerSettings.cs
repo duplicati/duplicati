@@ -51,7 +51,8 @@ namespace Duplicati.Server.Database
             public const string HAS_FIXED_INVALID_BACKUPID = "has-fixed-invalid-backup-id";
             public const string UPDATE_CHANNEL = "update-channel";
             public const string USAGE_REPORTER_LEVEL = "usage-reporter-level";
-        }
+			public const string HAS_ASKED_FOR_PASSWORD_PROTECTION = "has-asked-for-password-protection";
+		}
         
         private Dictionary<string, string> m_values;
         private Database.Connection m_connection;
@@ -201,7 +202,25 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public bool UnackedError
+		public bool HasAskedForPasswordProtection
+		{
+			get
+			{
+                var tp = m_values[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION];
+				if (string.IsNullOrEmpty(tp))
+					return true;
+
+				return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION);
+			}
+			set
+			{
+				lock (m_connection.m_lock)
+					m_values[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION] = value.ToString();
+				SaveSettings();
+			}
+		}
+
+		public bool UnackedError
         {
             get
             {
