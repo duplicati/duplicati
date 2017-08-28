@@ -140,8 +140,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DeletedfilesShort { get { return LC.L(@"List of deleted files"); } }
         public static string FilehashlookupsizeLong { get { return LC.L(@"A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log."); } }
         public static string FilehashlookupsizeShort { get { return LC.L(@"Memory used by the file hash"); } }
-        public static string DisablefilepathcacheShort { get { return LC.L(@"This option can be used to reduce the memory footprint by not keeping paths and modification timestamps in memory"); } }
-        public static string DisablefilepathcacheLong { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
+        public static string DisablefilepathcacheLong { get { return LC.L(@"This option can be used to reduce the memory footprint by not keeping paths and modification timestamps in memory"); } }
+        public static string DisablefilepathcacheShort { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
         public static string StoremetadataLong { get { return LC.L(@"Stores metadata, such as file timestamps and attributes. This increases the required storage space as well as the processing time."); } }
         public static string StoremetadataShort { get { return LC.L(@"Enables storing file metadata"); } }
         public static string StoremetadataDeprecated { get { return LC.L(@"This option is no longer used as metadata is now stored by default"); } }
