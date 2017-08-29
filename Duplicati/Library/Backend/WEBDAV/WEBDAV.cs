@@ -241,7 +241,10 @@ namespace Duplicati.Library.Backend
                         ((wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.NotFound || (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.Conflict))
                     throw new Interface.FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
-                throw;
+                if (wex.Response as System.Net.HttpWebResponse != null && (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.MethodNotAllowed)
+                    throw new UserInformationException(Strings.WEBDAV.MethodNotAllowedError((wex.Response as System.Net.HttpWebResponse).StatusCode), wex);
+
+					throw;
             }
         }
 
