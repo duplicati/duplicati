@@ -11,8 +11,9 @@ namespace Duplicati.Library.Backend.Strings {
         public static string DescriptionIntegratedAuthenticationLong { get { return LC.L(@"If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only available with windows servers and clients."); } }
         public static string DescriptionIntegratedAuthenticationShort { get { return LC.L(@"Use windows integrated authentication to connect to the server"); } }
         public static string DisplayName { get { return LC.L(@"WebDAV"); } }
-        public static string MissingFolderError(string foldername, string message) { return LC.L(@"The folder {0} was not found, message: {1}", foldername, message); }
-        public static string SeenThenNotFoundError(string foldername, string filename, string extension, string errormessage) { return LC.L(@"When listing the folder {0} the file {1} was listed, but the server now reports that the file is not found.
+        public static string MethodNotAllowedError(System.Net.HttpStatusCode statuscode) { return LC.L(@"The server returned the error code {0} ({1}), indicating that the server does not support WebDAV connections", (int)statuscode, statuscode); }
+		public static string MissingFolderError(string foldername, string message) { return LC.L(@"The folder {0} was not found, message: {1}", foldername, message); }
+		public static string SeenThenNotFoundError(string foldername, string filename, string extension, string errormessage) { return LC.L(@"When listing the folder {0} the file {1} was listed, but the server now reports that the file is not found.
 This can be because the file is deleted or unavailable, but it can also be because the file extension {2} is blocked by the web server. IIS blocks unknown extensions by default.
 Error message: {3}", foldername, filename, extension, errormessage); }
         public static string DescriptionUseSSLLong { get { return LC.L(@"Use this flag to communicate using Secure Socket Layer (SSL) over http (https)."); } }
