@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend
         public const string LOCATION_OPTION = "s3-location-constraint";
         public const string SSL_OPTION = "use-ssl";
 
-        public static readonly KeyValuePair<string, string>[] KNOWN_S3_PROVIDERS = new KeyValuePair<string,string>[] {
+        public static readonly KeyValuePair<string, string>[] KNOWN_S3_PROVIDERS = new KeyValuePair<string, string>[] {
             new KeyValuePair<string, string>("Amazon S3", "s3.amazonaws.com"),
             new KeyValuePair<string, string>("Hosteurope", "cs.hosteurope.de"),
             new KeyValuePair<string, string>("Dunkel", "dcs.dunkel.de"),
@@ -43,6 +43,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("dinCloud - Chicago", "d3-ord.dincloud.com"),
             new KeyValuePair<string, string>("dinCloud - Los Angeles", "d3-lax.dincloud.com"),
             new KeyValuePair<string, string>("IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net"),
+            new KeyValuePair<string, string>("Wasabi Hot Storage", "s3.wasasbisys.com"),
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
