@@ -257,7 +257,12 @@ namespace Duplicati.Library.Backend
             if (m_prefix.Length != 0 && !m_prefix.EndsWith("/"))
                 m_prefix += "/";
 
-            m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+            // Auto-disable dns lookup for non AWS configurations
+            var hasForcePathStyle = options.ContainsKey("s3-ext-forcepathstyle");
+            if (!hasForcePathStyle && !DEFAULT_S3_LOCATION_BASED_HOSTS.Any(x => string.Equals(x.Value, host, StringComparison.OrdinalIgnoreCase)) && !string.Equals(host, "s3.amazonaws.com", StringComparison.OrdinalIgnoreCase))
+                options["s3-ext-forcepathstyle"] = "true";
+
+			m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
         }
 
         public static bool IsValidHostname(string bucketname)
