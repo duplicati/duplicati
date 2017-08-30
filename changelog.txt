@@ -1,3 +1,22 @@
+2017-08-30 - 2.0.2.2_canary_2017-08-30
+==========
+* Fixed not performing vacuum all the time, thanks @danstahr
+* Added Selectel as an OpenStack prodvider, thanks @febalist
+* Added a fix for hanging "Connecting ..." dialogs on some machines
+* Fixed an issue with the HTTP report module not using a custom message
+* Updated translations, added Danish to the list, thanks to all translators!
+* Improved error messages on passphrase change
+* Fixed a crash that happened in the scheduler if the clock was changed with more than 3 months
+* Fixed TrayIcon connecting over HTTPS if possible, thanks @mnaiman
+* Added options to SSH library that allows configuring the timeout values
+* Updated the Mega and SSH libraries
+* Added support for detecting MacPorts versions of Mono
+* Added a tooltip to the Windows trayicon
+* Changed the logic in S3 to auto-set `--s3-ext-forcepathstyle` if the destination is not a known Amazon server
+* Improved error message for WebDAV if the server returns 405
+* Added a startup dialog that asks users to password protect the UI
+* Added Wasabi as an S3 provider
+
 2017-08-01 - 2.0.2.1_beta_2017-08-01
 ==========
 This is the first Beta release of Duplicati 2.0.
