@@ -19,7 +19,6 @@ namespace Duplicati.Library.Backend.Sia
         private string m_apihost;
         private int m_apiport;
         private string m_targetpath;
-        private string m_password;
         private float m_redundancy;
         private System.Net.NetworkCredential m_user;
 
@@ -286,7 +285,7 @@ namespace Duplicati.Library.Backend.Sia
             string siafile = m_targetpath + "/" + remotename;
 
             try {
-                endpoint = string.Format("/renter/upload/{0}/{1}?source={2}&datapieces=1&paritypieces=12",
+                endpoint = string.Format("/renter/upload/{0}/{1}?source={2}",
                     m_targetpath, 
                     Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20"),
                     Library.Utility.Uri.UrlEncode(filename).Replace("+", "%20")
@@ -399,6 +398,7 @@ namespace Duplicati.Library.Backend.Sia
         {
             get
             {
+                Console.WriteLine("supportedcommands");
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(SIA_APIHOST, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaHostDescriptionShort, Strings.Sia.SiaHostDescriptionLong, null, new string[] {SIA_APIHOST}, null),
                     new CommandLineArgument(SIA_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Sia.SiaPasswordShort, Strings.Sia.SiaPasswordLong, null, new string[] {SIA_PASSWORD}, null),
