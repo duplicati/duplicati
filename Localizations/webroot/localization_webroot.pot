@@ -703,6 +703,10 @@ msgstr ""
 msgid "Duplicati Website"
 msgstr ""
 
+#: index.html:251
+msgid "Duplicati forum"
+msgstr ""
+
 #: templates/delete.html:15
 msgid ""
 "Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
@@ -971,6 +975,10 @@ msgstr ""
 msgid "Finished!"
 msgstr ""
 
+#: scripts/controllers/AppController.js:170
+msgid "First run setup"
+msgstr ""
+
 #: scripts/services/AppUtils.js:50
 msgid "Folder"
 msgstr ""
@@ -1102,6 +1110,12 @@ msgstr ""
 
 #: templates/delete.html:32
 msgid "If you want to use the backup later, you can export the configuration before deleting it"
+msgstr ""
+
+#: scripts/controllers/AppController.js:171
+msgid ""
+"If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
+"Do you want to set a password now?"
 msgstr ""
 
 #: templates/import.html:26
@@ -1473,6 +1487,10 @@ msgstr ""
 
 #: index.html:185
 msgid "No scheduled tasks"
+msgstr ""
+
+#: scripts/controllers/AppController.js:172
+msgid "No, my machine has only a single account"
 msgstr ""
 
 #: scripts/controllers/EditBackupController.js:231
@@ -2390,6 +2408,7 @@ msgstr ""
 msgid "Years"
 msgstr ""
 
+#: scripts/controllers/AppController.js:172
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:131
 #: scripts/controllers/EditBackupController.js:141
