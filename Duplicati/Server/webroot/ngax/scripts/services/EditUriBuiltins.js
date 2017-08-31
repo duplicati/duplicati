@@ -25,7 +25,8 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
     EditUriBackendConfig.templates['jottacloud']  = 'templates/backends/jottacloud.html';
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
 
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
@@ -360,6 +361,19 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
+    EditUriBackendConfig.parsers['sia'] = function (scope, module, server, port, path, options) {
+        if (options['--sia-targetpath'])
+            scope.Path = options['--sia-target-path'];
+        if (options['--sia-redundancy'])
+            scope.sia_redundancy = options['--sia-redundancy'];
+        if (options['--sia-password'])
+            scope.Password = options['--sia-password'];
+
+        var nukeopts = ['--sia-targetpath', '--sia-redundancy', '--sia-password'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    };
+
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function(scope) {
         var opts = {
@@ -524,7 +538,21 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         return url;
     };
 
-    EditUriBackendConfig.builders['jottacloud'] = function(scope) {
+    EditUriBackendConfig.builders['sia'] = function (scope) {
+        var opts = {};
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://{1}/{2}{3}',
+            scope.Backend.Key,
+            scope.Server || '',
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    }
+
+    EditUriBackendConfig.builders['jottacloud'] = function (scope) {
         var opts = { };
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
@@ -724,6 +752,17 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         var res =
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Password'));
+
+        if (res)
+            continuation();
+    };
+
+    EditUriBackendConfig.validaters['sia'] = function (scope, continuation) {
+        var res =
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Server'));
+
+        if (res && (scope['sia_redundancy'] || '').trim().length == 0 || parseInt(scope['sia_redundancy']) < 3)
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 3'));
 
         if (res)
             continuation();
