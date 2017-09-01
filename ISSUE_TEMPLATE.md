@@ -16,10 +16,10 @@ You may remove sections that aren't relevant to your particular case. You can al
 ### Description <!-- Describe the issue that you are experiencing below. -->
 Replace me
 
-### Steps to reproduce <!-- Use hyphens as bullet points to list the steps that reproduce the bug. -->
-- Replace me
-- Replace me
-- Replace me
+### Steps to reproduce <!-- List the steps to reproduce the bug if possible. -->
+1. Replace me
+2. Replace me
+3. ...
 
 **Actual result:** Describe here what happens after you run the steps above (i.e. the buggy behaviour)
 **Expected result:** Describe here what should happen after you run the steps above (i.e. what would be the correct behaviour)
