@@ -26,4 +26,4 @@ Replace me
 
 ### Screenshots <!-- You can drag & drop or paste your images below. -->
 
-### Debug log <!-- Posting a debug log helps the developers find and fix your issue more easily. -->
+### Debug log <!-- Posting a debug log helps the developers find and fix your issue more easily. Please wrap your code in a code block by using triple backticks. -->
