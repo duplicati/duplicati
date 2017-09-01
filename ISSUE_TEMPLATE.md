@@ -34,5 +34,4 @@ Replace me
 
 ### Debug log <!-- Posting a debug log helps the developers find and fix your issue more easily. Please wrap your code in code blocks. -->
 ```
-
 ```
