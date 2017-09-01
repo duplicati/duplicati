@@ -13,7 +13,7 @@ You may remove sections that aren't relevant to your particular case. You can al
 - **Operating system**: Replace me <!-- (Windows 10, macOS 10.12, Debian or Ubuntu, Fedora or RedHat, etc.) -->
 - **Backend**: Replace me <!-- (Amazon S3, OneDrive, Google Drive, FTP, WebDAV, Local, etc.) -->
 
-### Bug description <!-- Describe the issue that you are experiencing below. -->
+### Description <!-- Describe the issue that you are experiencing below. -->
 Replace me
 
 ### Steps to reproduce <!-- Use hyphens as bullet points to list the steps that reproduce the bug. -->
