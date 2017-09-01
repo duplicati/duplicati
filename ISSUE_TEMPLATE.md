@@ -24,9 +24,15 @@ Replace me
 2. Replace me
 3. ...
 
-**Actual result:** Describe here what happens after you run the steps above (i.e. the buggy behaviour)
-**Expected result:** Describe here what should happen after you run the steps above (i.e. what would be the correct behaviour)
+- **Actual result:** <!-- Describe what happens after you run the steps above (i.e. buggy behavior). -->
+Replace me
+- **Expected result:** <!-- Describe what should happen after you run the steps above (i.e. corrected behavior) -->
+Replace me
 
 ### Screenshots <!-- You can drag & drop or paste your images below. -->
+Replace me
 
-### Debug log <!-- Posting a debug log helps the developers find and fix your issue more easily. Please wrap your code in a code block by using triple backticks. -->
+### Debug log <!-- Posting a debug log helps the developers find and fix your issue more easily. Please wrap your code in code blocks. -->
+```
+
+```
