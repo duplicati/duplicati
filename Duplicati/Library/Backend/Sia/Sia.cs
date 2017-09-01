@@ -11,7 +11,6 @@ namespace Duplicati.Library.Backend.Sia
 {
     public class Sia : IBackend
     {
-        private const string SIA_APIHOST = "sia-apihost";
         private const string SIA_PASSWORD = "sia-password";
         private const string SIA_TARGETPATH = "sia-targetpath";
         private const string SIA_REDUNDANCY = "sia-redundancy";
@@ -34,12 +33,17 @@ namespace Duplicati.Library.Backend.Sia
             m_apiport = uri.Port;
             m_targetpath = uri.Path;
 
-            m_redundancy = 3.0F;
+            m_redundancy = 2.0F;
             if (options.ContainsKey(SIA_REDUNDANCY))
                 m_redundancy = float.Parse(options[SIA_REDUNDANCY]);
 
             if (m_apiport <= 0)
-                m_apiport = 9980;   
+                m_apiport = 9980;
+
+            if (options.ContainsKey(SIA_TARGETPATH))
+            {
+                m_targetpath = options[SIA_TARGETPATH];
+            }
 
             if (m_targetpath.StartsWith("/"))
                 m_targetpath = m_targetpath.Substring(1);
@@ -397,12 +401,11 @@ namespace Duplicati.Library.Backend.Sia
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
-            {
-                
+            {    
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(SIA_APIHOST, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaHostDescriptionShort, Strings.Sia.SiaHostDescriptionLong, null, new string[] {SIA_APIHOST}, null),
-                    new CommandLineArgument(SIA_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Sia.SiaPasswordShort, Strings.Sia.SiaPasswordLong, null, new string[] {SIA_PASSWORD}, null),
-                    new CommandLineArgument(SIA_REDUNDANCY, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaRedundancyDescriptionShort, Strings.Sia.SiaRedundancyDescriptionLong, null, new string[] {SIA_REDUNDANCY}, null),
+                    new CommandLineArgument(SIA_TARGETPATH, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaPathDescriptionShort, Strings.Sia.SiaPathDescriptionLong, null),
+                    new CommandLineArgument(SIA_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Sia.SiaPasswordShort, Strings.Sia.SiaPasswordLong, null),
+                    new CommandLineArgument(SIA_REDUNDANCY, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaRedundancyDescriptionShort, Strings.Sia.SiaRedundancyDescriptionLong, null),
                 });
             }
         }

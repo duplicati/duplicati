@@ -363,11 +363,11 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.parsers['sia'] = function (scope, module, server, port, path, options) {
         if (options['--sia-targetpath'])
-            scope.Path = options['--sia-target-path'];
+            scope.sia_targetpath = options['--sia-targetpath'];
         if (options['--sia-redundancy'])
             scope.sia_redundancy = options['--sia-redundancy'];
         if (options['--sia-password'])
-            scope.Password = options['--sia-password'];
+            scope.sia_password = options['--sia-password'];
 
         var nukeopts = ['--sia-targetpath', '--sia-redundancy', '--sia-password'];
         for (var x in nukeopts)
@@ -539,13 +539,18 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     };
 
     EditUriBackendConfig.builders['sia'] = function (scope) {
-        var opts = {};
+        var opts = {
+            'sia-password': scope.sia_password,
+            'sia-targetpath': scope.sia_targetpath,
+            'sia-redundancy': scope.sia_redundancy
+        };
+
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
         var url = AppUtils.format('{0}://{1}/{2}{3}',
             scope.Backend.Key,
             scope.Server || '',
-            scope.Path || '',
+            scope.sia_targetpath || '',
             AppUtils.encodeDictAsUrl(opts)
         );
 
@@ -761,8 +766,8 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         var res =
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Server'));
 
-        if (res && (scope['sia_redundancy'] || '').trim().length == 0 || parseInt(scope['sia_redundancy']) < 3)
-            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 3'));
+        if (res && (scope['sia_redundancy'] || '').trim().length == 0 || parseInt(scope['sia_redundancy']) < 2)
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 2'));
 
         if (res)
             continuation();
