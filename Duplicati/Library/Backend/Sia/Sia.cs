@@ -398,7 +398,7 @@ namespace Duplicati.Library.Backend.Sia
         {
             get
             {
-                Console.WriteLine("supportedcommands");
+                
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(SIA_APIHOST, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaHostDescriptionShort, Strings.Sia.SiaHostDescriptionLong, null, new string[] {SIA_APIHOST}, null),
                     new CommandLineArgument(SIA_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Sia.SiaPasswordShort, Strings.Sia.SiaPasswordLong, null, new string[] {SIA_PASSWORD}, null),

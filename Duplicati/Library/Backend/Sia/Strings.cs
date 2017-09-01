@@ -3,7 +3,7 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class Sia
     {
-        public static string DisplayName { get { return LC.L(@"SIA Collaborative Cloud"); } }
+        public static string DisplayName { get { return LC.L(@"Sia Decentralized Cloud"); } }
         public static string Description { get { return LC.L(@"This backend can read and write data to Sia."); } }
         public static string SiaHostDescriptionShort { get { return LC.L(@"Sia address"); } }
         public static string SiaHostDescriptionLong { get { return LC.L(@"Sia address, ie 127.0.0.1:9980"); } }
