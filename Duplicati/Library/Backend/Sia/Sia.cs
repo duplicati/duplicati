@@ -45,8 +45,10 @@ namespace Duplicati.Library.Backend.Sia
                 m_targetpath = options[SIA_TARGETPATH];
             }
 
-            if (m_targetpath.StartsWith("/"))
+            while (m_targetpath.StartsWith("/"))
                 m_targetpath = m_targetpath.Substring(1);
+            while (m_targetpath.EndsWith("/"))
+                m_targetpath = m_targetpath.Remove(m_targetpath.Length - 1);
 
             if (m_targetpath.Length == 0)
                 m_targetpath = "backup";
