@@ -14,8 +14,8 @@ You may remove sections that aren't relevant to your particular case. You can al
 - **Operating system**: Replace me
 - **Backend**: Replace me
 
-### Bug description
-Describe here the issue that you are experiencing.
+### Bug description <!-- Describe the issue that you are experiencing below. -->
+Replace me
 
 ### Steps to reproduce
 - using hyphens as bullet points
