@@ -155,6 +155,9 @@ namespace Duplicati.Library.Backend.Sia
         private bool IsUploadComplete(string siafilename)
         {
             SiaFileList fl = GetFiles();
+            if (fl.Files == null)
+                return false;
+
             foreach (var f in fl.Files)
             {
                 if (f.Siapath == siafilename)
@@ -206,6 +209,9 @@ namespace Duplicati.Library.Backend.Sia
         private bool IsDownloadComplete(string siafilename, string localname)
         {
             SiaDownloadList fl = GetDownloads();
+            if (fl.Files == null)
+                return false;
+
             foreach (var f in fl.Files)
             {
                 if (f.Siapath == siafilename)
@@ -262,15 +268,18 @@ namespace Duplicati.Library.Backend.Sia
             try
             {
                 SiaFileList fl = GetFiles();
+                if (fl.Files == null)
+                    return files;
+
                 foreach (var f in fl.Files)
                 {
                     // Sia returns a complete file list, but we're only interested in files that are
                     // in our target path
                     if (f.Siapath.StartsWith(m_targetpath))
                     {
-                        FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length+1));
+                        FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1));
                         fe.Size = f.Filesize;
-                        fe.IsFolder = false; 
+                        fe.IsFolder = false;
                         files.Add(fe);
                     }
                 }
