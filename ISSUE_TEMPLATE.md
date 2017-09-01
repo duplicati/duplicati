@@ -3,10 +3,9 @@ This is a bug report template. By following the instructions below and filling o
 You may remove sections that aren't relevant to your particular case. You can also preview your report before submitting it.
 -->
 
-<!-- Let's begin with a checklist: replace the empty checkbox [ ] below with a checked one [x] if you already searched for duplicate bugs -->
-
-I have:
-- [ ] searched open and closed issues for duplicates
+### Checklist
+<!-- Let's begin with a checklist: Please search to see if an issue has already been created for your report.Replace the empty checkbox [ ] below with a checked one [x] if you already searched for duplicate bugs. By preventing duplicates, you will help the developers focus on the important stuff. -->
+- [ ] **I have searched open and closed issues for duplicates.**
 
 ----------------------------------------
 
