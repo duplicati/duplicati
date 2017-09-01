@@ -9,11 +9,10 @@ You may remove sections that aren't relevant to your particular case. You can al
 
 ----------------------------------------
 
-### Version info
-<!-- please replace the examples with your info -->
-**Duplicati Version:** 0.0.0.0
-**Operating System:**
-**Backend:**
+### Version info <!-- Please replace the following examples with your info. -->
+- **Duplicati version**: 0.0.0.0
+- **Operating system**: Replace me
+- **Backend**: Replace me
 
 ### Bug description
 Describe here the issue that you are experiencing.
