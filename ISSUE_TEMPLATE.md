@@ -8,10 +8,13 @@ You may remove sections that aren't relevant to your particular case. You can al
 
 ----------------------------------------
 
-### Version info <!-- (Please replace the following examples with your info.) -->
-- **Duplicati version**: 0.0.0.0
-- **Operating system**: Replace me <!-- (Windows 10, macOS 10.12, Debian or Ubuntu, Fedora or RedHat, etc.) -->
-- **Backend**: Replace me <!-- (Amazon S3, OneDrive, Google Drive, FTP, WebDAV, Local, etc.) -->
+### Version info
+- **Duplicati version**: <!-- What version of Duplicati are you using? Please replace the version tag below. -->
+0.0.0.0
+- **Operating system**: <!-- Ex: Windows 10, macOS 10.12, Debian or Ubuntu, Fedora or RedHat, etc. -->
+Replace me
+- **Backend**: <!-- Ex: Amazon S3, OneDrive, Google Drive, FTP, WebDAV, local, etc. -->
+Replace me
 
 ### Description <!-- Describe the issue that you are experiencing below. -->
 Replace me
