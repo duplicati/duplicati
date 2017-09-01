@@ -22,8 +22,7 @@ Replace me
 **Actual result:** Describe here what happens after you run the steps above (i.e. the buggy behaviour)
 **Expected result:** Describe here what should happen after you run the steps above (i.e. what would be the correct behaviour)
 
-### Screenshots
-<!-- you can drag and drop images below -->
+### Screenshots <!-- You can drag & drop or paste your images below. -->
 
 ### debug log
 <!-- posting a debug log helps the developers to fix your issue -->
