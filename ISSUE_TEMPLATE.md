@@ -14,10 +14,10 @@ You may remove sections that aren't relevant to your particular case. You can al
 ### Bug description <!-- Describe the issue that you are experiencing below. -->
 Replace me
 
-### Steps to reproduce
-- using hyphens as bullet points
-- list the steps
-- that reproduce the bug
+### Steps to reproduce <!-- Use hyphens as bullet points to list the steps that reproduce the bug. -->
+- Replace me
+- Replace me
+- Replace me
 
 **Actual result:** Describe here what happens after you run the steps above (i.e. the buggy behaviour)
 **Expected result:** Describe here what should happen after you run the steps above (i.e. what would be the correct behaviour)
