@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-08-31 21:06+0200\n"
+"POT-Creation-Date: 2017-09-01 09:49+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1320,8 +1320,8 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:35
 msgid ""
-"Use this option to manage the internal timeout for SSH operations if "
-"operations. If this options is set to zero, the operations will not time out"
+"Use this option to manage the internal timeout for SSH operations. If this "
+"options is set to zero, the operations will not time out"
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:36
