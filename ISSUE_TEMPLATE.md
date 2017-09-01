@@ -4,7 +4,7 @@ You may remove sections that aren't relevant to your particular case. You can al
 -->
 
 <!-- Let's begin with a checklist: Please search to see if an issue has already been created for your report.Replace the empty checkbox [ ] below with a checked one [x] if you already searched for duplicate bugs. -->
-- [ ] **I have searched open and closed issues for duplicates.**
+- [ ] I have searched open and closed issues for duplicates.
 
 ----------------------------------------
 
