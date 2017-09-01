@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-08-21 10:06+0200\n"
+"POT-Creation-Date: 2017-08-31 21:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -698,7 +698,7 @@ msgid "FTP"
 msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:19 Library/Backend/TahoeLAFS/Strings.cs:8
-#: Library/Backend/WEBDAV/Strings.cs:14
+#: Library/Backend/WEBDAV/Strings.cs:15
 #, csharp-format
 msgid "The folder {0} was not found, message: {1}"
 msgstr ""
@@ -1098,7 +1098,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/S3/Strings.cs:34 Library/Backend/TahoeLAFS/Strings.cs:6
-#: Library/Backend/WEBDAV/Strings.cs:19
+#: Library/Backend/WEBDAV/Strings.cs:20
 msgid "Instructs Duplicati to use an SSL (https) connection"
 msgstr ""
 
@@ -1319,15 +1319,37 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:35
-msgid "SFTP (SSH)"
+msgid ""
+"Use this option to manage the internal timeout for SSH operations if "
+"operations. If this options is set to zero, the operations will not time out"
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:36
+msgid "Sets the operation timeout value"
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:37
+msgid ""
+"This option can be used to enable the keep-alive interval for the SSH "
+"connection. If the connection is idle, aggressive firewalls might close the "
+"connection. Using keep-alive will keep the connection open in this scenario. "
+"If this value is set to zero, the keep-alive is disabled."
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:38
+msgid "Sets a keepalive value"
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:39
+msgid "SFTP (SSH)"
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:40
 #, csharp-format
 msgid "Unable to set folder to {0}, error message: {1}"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:37
+#: Library/Backend/SSHv2/Strings.cs:41
 #, csharp-format
 msgid ""
 "Validation of server fingerprint failed. Server returned fingerprint "
@@ -1335,7 +1357,7 @@ msgid ""
 "the-middle attack!"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:38
+#: Library/Backend/SSHv2/Strings.cs:42
 #, csharp-format
 msgid ""
 "Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
@@ -1348,7 +1370,7 @@ msgid ""
 "format is \"tahoe://hostname:port/uri/$DIRCAP\"."
 msgstr ""
 
-#: Library/Backend/TahoeLAFS/Strings.cs:5 Library/Backend/WEBDAV/Strings.cs:18
+#: Library/Backend/TahoeLAFS/Strings.cs:5 Library/Backend/WEBDAV/Strings.cs:19
 msgid ""
 "Use this flag to communicate using Secure Socket Layer (SSL) over http "
 "(https)."
@@ -1387,7 +1409,14 @@ msgstr ""
 msgid "WebDAV"
 msgstr ""
 
-#: Library/Backend/WEBDAV/Strings.cs:15
+#: Library/Backend/WEBDAV/Strings.cs:14
+#, csharp-format
+msgid ""
+"The server returned the error code {0} ({1}), indicating that the server "
+"does not support WebDAV connections"
+msgstr ""
+
+#: Library/Backend/WEBDAV/Strings.cs:16
 #, csharp-format
 msgid ""
 "When listing the folder {0} the file {1} was listed, but the server now "
@@ -1398,13 +1427,13 @@ msgid ""
 "Error message: {3}"
 msgstr ""
 
-#: Library/Backend/WEBDAV/Strings.cs:20
+#: Library/Backend/WEBDAV/Strings.cs:21
 msgid ""
 "To aid in debugging issues, it is possible to set a path to a file that will "
 "be overwritten with the PROPFIND response"
 msgstr ""
 
-#: Library/Backend/WEBDAV/Strings.cs:21
+#: Library/Backend/WEBDAV/Strings.cs:22
 msgid "Dump the PROPFIND response"
 msgstr ""
 

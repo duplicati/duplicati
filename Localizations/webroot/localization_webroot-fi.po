@@ -37,7 +37,7 @@ msgstr "Tunniste \"Access Key ID\" palveluun AWS"
 msgid "AWS IAM Policy"
 msgstr "Palvelun AWS IAM-asetukset"
 
-#: index.html:225 index.html:241
+#: index.html:226 index.html:242
 msgid "About"
 msgstr "Tietoja"
 
@@ -82,7 +82,7 @@ msgstr ""
 msgid "Add advanced option"
 msgstr "Anna harvoin tarvittava valitsin"
 
-#: index.html:210
+#: index.html:211
 msgid "Add backup"
 msgstr "Lisää varmuuskopio"
 
@@ -99,7 +99,7 @@ msgstr "Lisää polku"
 msgid "Adjust bucket name?"
 msgstr "Muuta ämpärin nimeä?"
 
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 msgid "Adjust path name?"
 msgstr "Muuta polkua?"
 
@@ -296,7 +296,8 @@ msgstr "Työskentelen ..."
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:43
+#: scripts/controllers/AppController.js:44
+#: scripts/controllers/AppController.js:59
 #: scripts/controllers/EditBackupController.js:293
 #: scripts/controllers/EditBackupController.js:308
 #: scripts/controllers/EditBackupController.js:342
@@ -307,11 +308,11 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:107
-#: scripts/controllers/StateController.js:98
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:99
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:46
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 #: scripts/services/EditUriBuiltins.js:669
 #: scripts/services/EditUriBuiltins.js:686 templates/delete.html:54
 #: templates/export.html:26 templates/settings.html:145
@@ -354,6 +355,10 @@ msgstr "Valitseensin tallennustyyppi"
 #: templates/backends/gcs.html:11 templates/backends/oauth.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Klikkaa AuthID-linkkiä luodaksesi AuthID-tunnisteen"
+
+#: index.html:156 index.html:199
+msgid "Click to set throttle options"
+msgstr ""
 
 #: templates/home.html:30
 msgid "Commandline ..."
@@ -409,19 +414,23 @@ msgstr "Tarvitsen vahvistuksen"
 msgid "Connect"
 msgstr "Yhdistä"
 
-#: index.html:318
+#: index.html:319
 msgid "Connect now"
 msgstr "Yhdistä nyt"
+
+#: index.html:315
+msgid "Connecting to server ..."
+msgstr ""
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
 msgstr ""
 
-#: index.html:319
+#: index.html:320
 msgid "Connecting..."
 msgstr "Yhdistän ..."
 
-#: index.html:310
+#: index.html:311
 msgid "Connection lost"
 msgstr "Yhteys katkesi"
 
@@ -429,10 +438,6 @@ msgstr "Yhteys katkesi"
 #: scripts/directives/backupEditUri.js:54
 msgid "Connection worked!"
 msgstr "Yhteys toimi!"
-
-#: index.html:314
-msgid "Connnecting to server ..."
-msgstr "Yhdistän palvelimeen ..."
 
 #: scripts/services/EditUriBuiltins.js:624 templates/backends/azure.html:2
 msgid "Container name"
@@ -637,15 +642,15 @@ msgid "Do you really want to delete the local database for: {{name}}"
 msgstr ""
 "Haluatko varmasti poistaa varmuuskopion {{name}} paikallisen tietokannan?"
 
-#: index.html:140 index.html:268
+#: index.html:141 index.html:269
 msgid "Donate"
 msgstr "Lahjoita"
 
-#: index.html:143 index.html:271
+#: index.html:144 index.html:272
 msgid "Donate with Bitcoins"
 msgstr "Lahjoita Bitcoineja"
 
-#: index.html:146 index.html:274
+#: index.html:147 index.html:275
 msgid "Donate with PayPal"
 msgstr "Lahjoita PayPal:n kautta"
 
@@ -686,19 +691,20 @@ msgstr "Lataan päivitystä ..."
 msgid "Duplicate option {{opt}}"
 msgstr "Sama valitsin {{opt}} annettiin kahdesti"
 
-#: index.html:262
+#: index.html:263
 msgid "Duplicati Website"
 msgstr "Duplicatin verkkosivu"
 
+#: index.html:251
+msgid "Duplicati forum"
+msgstr ""
+
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
-"Jokaisella varmuuskopiolla on oma paikallinen tietokanta, joka sisältää tiedot etäpalvelimella olevista varmuuskopioista.\n"
-"Poistaessasi varmuuskopion voit poistaa myös paikallisen tietokannan. Tämä ei vaikuta mitenkään kykyyn palauttaa varmuuuskopioituja tietoja.\n"
-"Jos käytät Duplicatia komentoriviltä, on suositeltavaa säilyttää tietokanta."
 
 #: templates/localdatabase.html:8
 msgid ""
@@ -952,6 +958,10 @@ msgstr "Suodattimet"
 msgid "Finished!"
 msgstr "Valmis!"
 
+#: scripts/controllers/AppController.js:170
+msgid "First run setup"
+msgstr ""
+
 #: scripts/services/AppUtils.js:50
 msgid "Folder"
 msgstr "Kansio"
@@ -1015,7 +1025,7 @@ msgstr "Piilota"
 msgid "Hide hidden folders"
 msgstr "Älä näytä piilotettuja kansioita"
 
-#: index.html:207 scripts/services/AppUtils.js:61
+#: index.html:208 scripts/services/AppUtils.js:61
 msgid "Home"
 msgstr "Etusivu"
 
@@ -1102,6 +1112,12 @@ msgstr ""
 "Jos haluat luoda varmuuskopion myöhemmin uudelleen, voit viedä tiedostoon "
 "ennen poistamista."
 
+#: scripts/controllers/AppController.js:171
+msgid ""
+"If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
+"Do you want to set a password now?"
+msgstr ""
+
 #: templates/import.html:26
 msgid "Import"
 msgstr "Tuo"
@@ -1185,8 +1201,8 @@ msgid "KByte/s"
 msgstr "KB/s"
 
 #: templates/addoredit.html:303
-msgid "Keep backups"
-msgstr "Säilytettävien varmuuskopioiden lukumäärä"
+msgid "Keep this number of backups"
+msgstr ""
 
 #: templates/settings.html:39
 msgid "Language in user interface"
@@ -1271,7 +1287,7 @@ msgstr "Varmuuskopion <b>{{Backup.Backup.Name}}</b> lokitiedot"
 msgid "Log data from the server"
 msgstr "Palvelimen lokitiedot"
 
-#: index.html:228
+#: index.html:229
 msgid "Log out"
 msgstr "Kirjaudu ulos"
 
@@ -1291,7 +1307,15 @@ msgstr "Ylläpito"
 msgid "Manually type path"
 msgstr "Anna polku"
 
-#: index.html:151 templates/addoredit.html:123 templates/addoredit.html:165
+#: templates/throttle.html:15
+msgid "Max download speed"
+msgstr ""
+
+#: templates/throttle.html:5
+msgid "Max upload speed"
+msgstr ""
+
+#: index.html:152 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:340 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1385,11 +1409,11 @@ msgstr "Seuraava"
 msgid "Next scheduled run:"
 msgstr "Seuraava varmuuskopio tehdään:"
 
-#: index.html:182
+#: index.html:183
 msgid "Next scheduled task:"
 msgstr "Seuraava ajoitettu tehtävä:"
 
-#: index.html:179
+#: index.html:180
 msgid "Next task:"
 msgstr "Seuraava tehtävä:"
 
@@ -1410,7 +1434,7 @@ msgstr "Seuraavalla kerralla"
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
 #: scripts/services/EditUriBuiltins.js:46
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 #: scripts/services/EditUriBuiltins.js:669
 #: scripts/services/EditUriBuiltins.js:686
 msgid "No"
@@ -1448,9 +1472,13 @@ msgstr ""
 msgid "No passphrase entered"
 msgstr "Et antanut salasanaa"
 
-#: index.html:184
+#: index.html:185
 msgid "No scheduled tasks"
 msgstr "Ei ajastettuja tehtäviä"
+
+#: scripts/controllers/AppController.js:172
+msgid "No, my machine has only a single account"
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:231
 msgid "Non-matching passphrase"
@@ -1460,7 +1488,8 @@ msgstr "Salasanat eivät ole samat"
 msgid "None / disabled"
 msgstr "Ei mitään/poistettu käytöstä"
 
-#: scripts/controllers/AppController.js:43
+#: scripts/controllers/AppController.js:44
+#: scripts/controllers/AppController.js:59
 #: scripts/controllers/EditBackupController.js:73
 #: scripts/controllers/EditBackupController.js:81
 #: scripts/controllers/RestoreDirectController.js:24
@@ -1501,6 +1530,12 @@ msgstr "Käyttäjätunnus (ei välttämätön)"
 #: templates/settings.html:133 templates/settings.html:139
 msgid "Options"
 msgstr "Valitsimet"
+
+#: templates/settings.html:131
+msgid ""
+"Options added here are applied to all backups, but can be overridden in each"
+" individual backup"
+msgstr ""
 
 #: templates/restore.html:81
 msgid "Original location"
@@ -1568,7 +1603,7 @@ msgstr "Tauko"
 msgid "Pause after startup or hibernation"
 msgstr "Tauko käynnistyksen tai lepotilasta heräämisen jälkeen"
 
-#: scripts/controllers/AppController.js:41
+#: scripts/controllers/AppController.js:42
 msgid "Pause options"
 msgstr ""
 
@@ -1662,7 +1697,7 @@ msgstr "Raportoin:"
 msgid "Reset"
 msgstr "Palauta edelliset asetukset"
 
-#: index.html:213 templates/restore.html:131
+#: index.html:214 templates/restore.html:131
 msgid "Restore"
 msgstr "Palauta"
 
@@ -1704,7 +1739,7 @@ msgstr "Palauta luku- ja kirjoitusoikeudet"
 msgid "Restoring files ..."
 msgstr "Palautan tiedostoja ..."
 
-#: index.html:216
+#: index.html:217
 msgid "Resume"
 msgstr "Jatka"
 
@@ -1728,7 +1763,7 @@ msgstr ""
 msgid "Running commandline entry"
 msgstr ""
 
-#: index.html:171
+#: index.html:172
 msgid "Running task:"
 msgstr "Suoritettava tehtävä:"
 
@@ -1822,7 +1857,7 @@ msgstr "Palvelin on pysäytetty"
 msgid "Server state properties"
 msgstr "Palvelimen tila"
 
-#: index.html:219 templates/settings.html:2
+#: index.html:220 templates/settings.html:2
 msgid "Settings"
 msgstr "Asetukset"
 
@@ -1840,7 +1875,7 @@ msgstr "Näytä asetusten muokkain"
 msgid "Show hidden folders"
 msgstr "Näytä piilotetut tiedostot"
 
-#: index.html:222
+#: index.html:223
 msgid "Show log"
 msgstr "Näytä loki"
 
@@ -1893,32 +1928,32 @@ msgstr "Käynnistän ..."
 msgid "Starting the restore process ..."
 msgstr "Aloitan tiedostojen palauttamisen ..."
 
-#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:108
 msgid "Stop after the current file"
 msgstr ""
 
-#: scripts/controllers/StateController.js:98
+#: scripts/controllers/StateController.js:99
 msgid "Stop after upload"
 msgstr ""
 
-#: scripts/controllers/StateController.js:107
-#: scripts/controllers/StateController.js:98
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:99
 msgid "Stop now"
 msgstr ""
 
-#: scripts/controllers/StateController.js:96
+#: scripts/controllers/StateController.js:97
 msgid "Stop running backup"
 msgstr ""
 
-#: scripts/controllers/StateController.js:105
+#: scripts/controllers/StateController.js:106
 msgid "Stop running task"
 msgstr ""
 
-#: index.html:167
+#: index.html:168
 msgid "Stopping after upload:"
 msgstr ""
 
-#: index.html:172
+#: index.html:173
 msgid "Stopping task:"
 msgstr ""
 
@@ -2024,7 +2059,7 @@ msgstr ""
 "Bucketin nimen pitäisi alkaa käyttäjätunnuksellasi. Haluatko liittää "
 "tunnuksesi nimen alkuun automaattisesti?"
 
-#: index.html:311
+#: index.html:312
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr "Yhteys palvelimeen katkesi, yritetään uudelleen {{time}} kuluttua ..."
 
@@ -2068,15 +2103,12 @@ msgid ""
 "'/'"
 msgstr "Polun pitää olla absoluuttinen, eli sen tulee alkaa vinoviivalla \"/\""
 
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 msgid ""
-"The path should start with \"{{prefix}}\" or \"{{def}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
+"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
 "\n"
 "Do you want to add the prefix to the path automatically?"
 msgstr ""
-"Polun pitäisi alkaa merkkijonolla \"{{prefix}}\" tai\"{{def}}\", tai muuten et näe tiedostoja HubiC:n selainkäyttöliittymässä.\n"
-"\n"
-"Haluatko lisätä etuliitteen polkuun automaattisesti?"
 
 #: templates/backends/s3.html:28
 msgid "The region parameter is only applied when creating a new bucket"
@@ -2131,6 +2163,10 @@ msgstr "Tässä kuussa"
 #: scripts/controllers/RestoreController.js:35
 msgid "This week"
 msgstr "Tällä viikolla"
+
+#: scripts/controllers/AppController.js:57
+msgid "Throttle settings"
+msgstr ""
 
 #: scripts/services/AppUtils.js:106
 msgid "Thu"
@@ -2302,7 +2338,7 @@ msgstr "Hyvin vahva"
 msgid "Very weak"
 msgstr "Hyvin heikko"
 
-#: index.html:247
+#: index.html:248
 msgid "Visit us on"
 msgstr "Tutustu meihin"
 
@@ -2366,6 +2402,7 @@ msgstr "Mihin tiedostot palautetaan?"
 msgid "Years"
 msgstr "Vuotta"
 
+#: scripts/controllers/AppController.js:172
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:131
 #: scripts/controllers/EditBackupController.js:141
@@ -2379,7 +2416,7 @@ msgstr "Vuotta"
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
 #: scripts/services/EditUriBuiltins.js:46
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 #: scripts/services/EditUriBuiltins.js:669
 #: scripts/services/EditUriBuiltins.js:686
 msgid "Yes"
@@ -2419,13 +2456,13 @@ msgstr ""
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "Käytössä oleva versio: {{appname}} {{version}}"
 
-#: scripts/controllers/StateController.js:97
+#: scripts/controllers/StateController.js:98
 msgid ""
 "You can stop the backup immediately, or stop after the current file has been"
 " uploaded."
 msgstr ""
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:107
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and the stop."
@@ -2557,18 +2594,18 @@ msgstr "tavua/s"
 msgid "custom"
 msgstr "mukautettu"
 
-#: templates/addoredit.html:306
-msgid "for a specific time"
-msgstr "määrätyksi ajaksi"
-
-#: templates/addoredit.html:305
-msgid "forever"
-msgstr "ikuisesti"
-
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
 msgid "resume now"
 msgstr "jatka nyt"
+
+#: templates/addoredit.html:305
+msgid "unlimited"
+msgstr ""
+
+#: templates/addoredit.html:306
+msgid "until they are older than"
+msgstr ""
 
 #: templates/about.html:11
 msgid ""

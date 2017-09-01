@@ -5,10 +5,11 @@
 # Alex McArrow <alex.mcarrow@gmail.com>, 2017
 # Rondo Van <hope2013@mail.ru>, 2017
 # Jony Rh <jonyrh@mail.ru>, 2017
+# Andrey <andrey@mailbox.org>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Jony Rh <jonyrh@mail.ru>, 2017\n"
+"Last-Translator: Andrey <andrey@mailbox.org>, 2017\n"
 "Language-Team: Russian (https://www.transifex.com/duplicati/teams/67655/ru/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -41,7 +42,7 @@ msgstr "AWS Access Key"
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Policy"
 
-#: index.html:225 index.html:241
+#: index.html:226 index.html:242
 msgid "About"
 msgstr "О программе"
 
@@ -86,7 +87,7 @@ msgstr "Добавить путь непосредственно"
 msgid "Add advanced option"
 msgstr "Добавить расширенный параметр"
 
-#: index.html:210
+#: index.html:211
 msgid "Add backup"
 msgstr "Добавить резервную копию"
 
@@ -103,7 +104,7 @@ msgstr "Добавить путь"
 msgid "Adjust bucket name?"
 msgstr "Изменить имя блока?"
 
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 msgid "Adjust path name?"
 msgstr "Изменить имя пути?"
 
@@ -301,7 +302,8 @@ msgstr "Занят ..."
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:43
+#: scripts/controllers/AppController.js:44
+#: scripts/controllers/AppController.js:59
 #: scripts/controllers/EditBackupController.js:293
 #: scripts/controllers/EditBackupController.js:308
 #: scripts/controllers/EditBackupController.js:342
@@ -312,11 +314,11 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:107
-#: scripts/controllers/StateController.js:98
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:99
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:46
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 #: scripts/services/EditUriBuiltins.js:669
 #: scripts/services/EditUriBuiltins.js:686 templates/delete.html:54
 #: templates/export.html:26 templates/settings.html:145
@@ -359,6 +361,10 @@ msgstr "Для начала выберите тип хранилища"
 #: templates/backends/gcs.html:11 templates/backends/oauth.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Нажмите на ссылку AuthID для создания AuthID"
+
+#: index.html:156 index.html:199
+msgid "Click to set throttle options"
+msgstr ""
 
 #: templates/home.html:30
 msgid "Commandline ..."
@@ -414,19 +420,23 @@ msgstr "Необходимо подтверждение"
 msgid "Connect"
 msgstr "Подключение"
 
-#: index.html:318
+#: index.html:319
 msgid "Connect now"
 msgstr "Подключиться сейчас"
+
+#: index.html:315
+msgid "Connecting to server ..."
+msgstr "Подключение к серверу ..."
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
 msgstr "Подключение к задаче..."
 
-#: index.html:319
+#: index.html:320
 msgid "Connecting..."
 msgstr "Подключение..."
 
-#: index.html:310
+#: index.html:311
 msgid "Connection lost"
 msgstr "Потеряно соединение"
 
@@ -434,10 +444,6 @@ msgstr "Потеряно соединение"
 #: scripts/directives/backupEditUri.js:54
 msgid "Connection worked!"
 msgstr "Подключение работает!"
-
-#: index.html:314
-msgid "Connnecting to server ..."
-msgstr "Подключение к серверу..."
 
 #: scripts/services/EditUriBuiltins.js:624 templates/backends/azure.html:2
 msgid "Container name"
@@ -641,15 +647,15 @@ msgstr "Вы действительно хотите удалить резерв
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Вы действительно хотите удалить локальную базу данных для: {{name}}"
 
-#: index.html:140 index.html:268
+#: index.html:141 index.html:269
 msgid "Donate"
 msgstr "Пожертвовать"
 
-#: index.html:143 index.html:271
+#: index.html:144 index.html:272
 msgid "Donate with Bitcoins"
 msgstr "Пожертвовать через Bitcoin"
 
-#: index.html:146 index.html:274
+#: index.html:147 index.html:275
 msgid "Donate with PayPal"
 msgstr "Пожертвовать через PayPal"
 
@@ -689,19 +695,23 @@ msgstr "Загрузка обновления..."
 msgid "Duplicate option {{opt}}"
 msgstr "Дублировать параметр {{opt}}"
 
-#: index.html:262
+#: index.html:263
 msgid "Duplicati Website"
 msgstr "Сайт Duplicati "
 
+#: index.html:251
+msgid "Duplicati forum"
+msgstr ""
+
 #: templates/delete.html:15
 msgid ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\r\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\r\n"
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
-"Каждая резервная копия имеет связанную с ней локальную базу данных, которая хранит информацию об удаленной резервной копии на локальной машине.\n"
-"            При удалении бэкапа, можно также удалить локальную базу данных без ущерба для возможности восстановления удаленных файлов.\n"
-"            Если вы используете локальную базу данных для резервного копирования из командной строки, следует сохранить базу данных."
+"Для каждой резервной копии существует связанная с ней локальная база данных, которая хранит на локальной машине информацию об удаленной резервной копии.\n"
+"При удалении резервной копии вы можете также удалить и локальную базу данных, никак не влияя на возможность восстановления удалённых файлов.\n"
+"Если вы используете локальную базу данных для резервного копирования из командной строки, то вы должны сохранить базу данных."
 
 #: templates/localdatabase.html:8
 msgid ""
@@ -958,6 +968,10 @@ msgstr "Фильтры"
 msgid "Finished!"
 msgstr "Готово!"
 
+#: scripts/controllers/AppController.js:170
+msgid "First run setup"
+msgstr ""
+
 #: scripts/services/AppUtils.js:50
 msgid "Folder"
 msgstr "Папка"
@@ -1021,7 +1035,7 @@ msgstr "Скрыть"
 msgid "Hide hidden folders"
 msgstr "Скрыть скрытые папки"
 
-#: index.html:207 scripts/services/AppUtils.js:61
+#: index.html:208 scripts/services/AppUtils.js:61
 msgid "Home"
 msgstr "Главная"
 
@@ -1107,6 +1121,12 @@ msgstr ""
 "Если вы хотите использовать резервное копирование позже, вы можете "
 "экспортировать конфигурацию перед ее удалением"
 
+#: scripts/controllers/AppController.js:171
+msgid ""
+"If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
+"Do you want to set a password now?"
+msgstr ""
+
 #: templates/import.html:26
 msgid "Import"
 msgstr "Импорт"
@@ -1189,8 +1209,8 @@ msgid "KByte/s"
 msgstr "КБ/сек"
 
 #: templates/addoredit.html:303
-msgid "Keep backups"
-msgstr "Срок хранения"
+msgid "Keep this number of backups"
+msgstr ""
 
 #: templates/settings.html:39
 msgid "Language in user interface"
@@ -1277,7 +1297,7 @@ msgstr "Данные журнала для <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Сообщения журнала сервера"
 
-#: index.html:228
+#: index.html:229
 msgid "Log out"
 msgstr "Выход"
 
@@ -1297,7 +1317,15 @@ msgstr "Техническое обслуживание"
 msgid "Manually type path"
 msgstr "Ввести путь вручную"
 
-#: index.html:151 templates/addoredit.html:123 templates/addoredit.html:165
+#: templates/throttle.html:15
+msgid "Max download speed"
+msgstr "Максимальная скорость загрузки"
+
+#: templates/throttle.html:5
+msgid "Max upload speed"
+msgstr "Максимальная скорость выгрузки"
+
+#: index.html:152 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:340 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1391,11 +1419,11 @@ msgstr "Далее"
 msgid "Next scheduled run:"
 msgstr "Следующий запланированный запуск:"
 
-#: index.html:182
+#: index.html:183
 msgid "Next scheduled task:"
 msgstr "Следующее запланированное задание:"
 
-#: index.html:179
+#: index.html:180
 msgid "Next task:"
 msgstr "Следующая задача:"
 
@@ -1416,7 +1444,7 @@ msgstr "В следующий раз"
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
 #: scripts/services/EditUriBuiltins.js:46
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 #: scripts/services/EditUriBuiltins.js:669
 #: scripts/services/EditUriBuiltins.js:686
 msgid "No"
@@ -1453,9 +1481,13 @@ msgstr ""
 msgid "No passphrase entered"
 msgstr "Не введена кодовая фраза"
 
-#: index.html:184
+#: index.html:185
 msgid "No scheduled tasks"
 msgstr "Нет запланированных задач"
+
+#: scripts/controllers/AppController.js:172
+msgid "No, my machine has only a single account"
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:231
 msgid "Non-matching passphrase"
@@ -1465,7 +1497,8 @@ msgstr "Кодовые фразы не совпадают"
 msgid "None / disabled"
 msgstr "Нет / отключено"
 
-#: scripts/controllers/AppController.js:43
+#: scripts/controllers/AppController.js:44
+#: scripts/controllers/AppController.js:59
 #: scripts/controllers/EditBackupController.js:73
 #: scripts/controllers/EditBackupController.js:81
 #: scripts/controllers/RestoreDirectController.js:24
@@ -1506,6 +1539,12 @@ msgstr "Необязательное имя пользователя"
 #: templates/settings.html:133 templates/settings.html:139
 msgid "Options"
 msgstr "Параметры"
+
+#: templates/settings.html:131
+msgid ""
+"Options added here are applied to all backups, but can be overridden in each"
+" individual backup"
+msgstr ""
 
 #: templates/restore.html:81
 msgid "Original location"
@@ -1573,7 +1612,7 @@ msgstr "Пауза"
 msgid "Pause after startup or hibernation"
 msgstr "Пауза после запуска или спящего режима"
 
-#: scripts/controllers/AppController.js:41
+#: scripts/controllers/AppController.js:42
 msgid "Pause options"
 msgstr "Параметры паузы"
 
@@ -1667,7 +1706,7 @@ msgstr "Отчетность:"
 msgid "Reset"
 msgstr "Сбросить"
 
-#: index.html:213 templates/restore.html:131
+#: index.html:214 templates/restore.html:131
 msgid "Restore"
 msgstr "Восстановление"
 
@@ -1709,7 +1748,7 @@ msgstr "Восстановить разрешения чтения/записи"
 msgid "Restoring files ..."
 msgstr "Восстановление файлов ..."
 
-#: index.html:216
+#: index.html:217
 msgid "Resume"
 msgstr "Продолжить"
 
@@ -1733,7 +1772,7 @@ msgstr "Выполнение..."
 msgid "Running commandline entry"
 msgstr "Выполнение записи командной строки"
 
-#: index.html:171
+#: index.html:172
 msgid "Running task:"
 msgstr "Выполняемая задача:"
 
@@ -1828,7 +1867,7 @@ msgstr "Сервер приостановлен"
 msgid "Server state properties"
 msgstr "Свойства состояния сервера"
 
-#: index.html:219 templates/settings.html:2
+#: index.html:220 templates/settings.html:2
 msgid "Settings"
 msgstr "Настройки"
 
@@ -1846,7 +1885,7 @@ msgstr "Текстовое отображение"
 msgid "Show hidden folders"
 msgstr "Показать скрытые папки"
 
-#: index.html:222
+#: index.html:223
 msgid "Show log"
 msgstr "Журнал"
 
@@ -1899,32 +1938,32 @@ msgstr "Начинаю ..."
 msgid "Starting the restore process ..."
 msgstr "Запуск процесса восстановления ..."
 
-#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:108
 msgid "Stop after the current file"
 msgstr "Остановиться после текущего файла"
 
-#: scripts/controllers/StateController.js:98
+#: scripts/controllers/StateController.js:99
 msgid "Stop after upload"
 msgstr "Остановить после выгрузки"
 
-#: scripts/controllers/StateController.js:107
-#: scripts/controllers/StateController.js:98
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:99
 msgid "Stop now"
 msgstr "Остановить сейчас"
 
-#: scripts/controllers/StateController.js:96
+#: scripts/controllers/StateController.js:97
 msgid "Stop running backup"
 msgstr "Остановить резервное копирование"
 
-#: scripts/controllers/StateController.js:105
+#: scripts/controllers/StateController.js:106
 msgid "Stop running task"
 msgstr "Остановить задачу"
 
-#: index.html:167
+#: index.html:168
 msgid "Stopping after upload:"
 msgstr "Остановка после выгрузки:"
 
-#: index.html:172
+#: index.html:173
 msgid "Stopping task:"
 msgstr "Остановка задачи:"
 
@@ -2028,7 +2067,7 @@ msgstr ""
 "Имя bucket следует начинать с вашего имени пользователя, вставить "
 "автоматически?"
 
-#: index.html:311
+#: index.html:312
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr "Потеряно соединение с сервером, повторная попытка через {{time}} ..."
 
@@ -2079,15 +2118,12 @@ msgid ""
 msgstr ""
 "Путь должен быть абсолютным, то есть он должен начинаться с косой черты «/»"
 
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 msgid ""
-"The path should start with \"{{prefix}}\" or \"{{def}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
+"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
 "\n"
 "Do you want to add the prefix to the path automatically?"
 msgstr ""
-"Путь должен начинаться префиксом «{{prefix}}» или «{{def}}», в противном случае вы не сможете увидеть файлы в веб-интерфейсе HubiC.\n"
-"\n"
-"Вы хотите добавить префикс в путь автоматически?"
 
 #: templates/backends/s3.html:28
 msgid "The region parameter is only applied when creating a new bucket"
@@ -2143,6 +2179,10 @@ msgstr "В этом месяце"
 #: scripts/controllers/RestoreController.js:35
 msgid "This week"
 msgstr "На этой неделе"
+
+#: scripts/controllers/AppController.js:57
+msgid "Throttle settings"
+msgstr ""
 
 #: scripts/services/AppUtils.js:106
 msgid "Thu"
@@ -2317,7 +2357,7 @@ msgstr "Очень надёжный"
 msgid "Very weak"
 msgstr "Очень слабый"
 
-#: index.html:247
+#: index.html:248
 msgid "Visit us on"
 msgstr "Посетите нас на"
 
@@ -2381,6 +2421,7 @@ msgstr "Куда вы хотите восстановить файлы?"
 msgid "Years"
 msgstr "Лет"
 
+#: scripts/controllers/AppController.js:172
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:131
 #: scripts/controllers/EditBackupController.js:141
@@ -2394,7 +2435,7 @@ msgstr "Лет"
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
 #: scripts/services/EditUriBuiltins.js:46
-#: scripts/services/EditUriBuiltins.js:596
+#: scripts/services/EditUriBuiltins.js:597
 #: scripts/services/EditUriBuiltins.js:669
 #: scripts/services/EditUriBuiltins.js:686
 msgid "Yes"
@@ -2436,7 +2477,7 @@ msgstr ""
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "Вы используете {{appname}} {{version}}"
 
-#: scripts/controllers/StateController.js:97
+#: scripts/controllers/StateController.js:98
 msgid ""
 "You can stop the backup immediately, or stop after the current file has been"
 " uploaded."
@@ -2444,7 +2485,7 @@ msgstr ""
 "Вы можете остановить резервное копирование немедленно или после завершения "
 "выгрузки текущего файла."
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:107
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and the stop."
@@ -2581,18 +2622,18 @@ msgstr "байт/сек"
 msgid "custom"
 msgstr "пользовательские"
 
-#: templates/addoredit.html:306
-msgid "for a specific time"
-msgstr "ограничен"
-
-#: templates/addoredit.html:305
-msgid "forever"
-msgstr "не ограничен"
-
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
 msgid "resume now"
 msgstr "возобновить сейчас"
+
+#: templates/addoredit.html:305
+msgid "unlimited"
+msgstr ""
+
+#: templates/addoredit.html:306
+msgid "until they are older than"
+msgstr ""
 
 #: templates/about.html:11
 msgid ""
