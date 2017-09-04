@@ -214,6 +214,7 @@ namespace Duplicati.Server
                 internal long m_backendFileSize;
                 internal long m_backendFileProgress;
                 internal long m_backendSpeed;
+                internal bool m_backendIsBlocking;
                 
                 internal string m_currentFilename;
                 internal long m_currentFilesize;
@@ -246,6 +247,7 @@ namespace Duplicati.Server
                 public long BackendFileSize { get { return m_backendFileSize; } }
                 public long BackendFileProgress { get { return m_backendFileProgress; } }
                 public long BackendSpeed { get { return m_backendSpeed; } }
+                public bool BackendIsBlocking { get { return m_backendIsBlocking; } }
                 public string CurrentFilename { get { return m_currentFilename; } }
                 public long CurrentFilesize { get { return m_currentFilesize; } }
                 public long CurrentFileoffset { get { return m_currentFileoffset; } }
@@ -274,7 +276,7 @@ namespace Duplicati.Server
                 lock(m_lock)
                 {
                     if (m_backendProgress != null)
-                        m_backendProgress.Update(out m_state.m_backendAction, out m_state.m_backendPath, out m_state.m_backendFileSize, out m_state.m_backendFileProgress, out m_state.m_backendSpeed);
+                        m_backendProgress.Update(out m_state.m_backendAction, out m_state.m_backendPath, out m_state.m_backendFileSize, out m_state.m_backendFileProgress, out m_state.m_backendSpeed, out m_state.m_backendIsBlocking);
                     if (m_operationProgress != null)
                     {
                         m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset);
