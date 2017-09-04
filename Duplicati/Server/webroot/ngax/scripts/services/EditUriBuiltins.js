@@ -766,6 +766,11 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         var res =
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Server'));
 
+        var re = new RegExp('^(([a-zA-Z0-9-])|(\/(?!\/)))*$');
+        if (res && !re.test(scope['sia_targetpath'])) {
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Invalid characters in path'));
+        }
+
         if (res && (scope['sia_redundancy'] || '').trim().length == 0 || parseInt(scope['sia_redundancy']) < 2)
             res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 2'));
 

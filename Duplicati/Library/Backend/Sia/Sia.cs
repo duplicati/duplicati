@@ -44,7 +44,8 @@ namespace Duplicati.Library.Backend.Sia
             {
                 m_targetpath = options[SIA_TARGETPATH];
             }
-
+            while(m_targetpath.Contains("//"))
+                m_targetpath = m_targetpath.Replace("//","/");
             while (m_targetpath.StartsWith("/"))
                 m_targetpath = m_targetpath.Substring(1);
             while (m_targetpath.EndsWith("/"))
