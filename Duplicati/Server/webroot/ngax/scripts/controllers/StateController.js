@@ -42,8 +42,12 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
                         pg = 0;
                     else if (pg >= 0.90)
                         pg = 0.90;
-
-                    text = gettextCatalog.getString('{{files}} files ({{size}}) to go', { files: filesleft, size: AppUtils.formatSizeString(sizeleft) });
+                    
+                    // If we have a speed append it
+                    var speed_txt = ($scope.state.lastPgEvent.BackendSpeed < 0) ? "" : " at "+AppUtils.formatSizeString($scope.state.lastPgEvent.BackendSpeed)+"/s";
+                    
+                    // Finally construct the whole text
+                    text = gettextCatalog.getString('{{files}} files ({{size}}) to go {{speed_txt}}', { files: filesleft, size: AppUtils.formatSizeString(sizeleft), speed_txt: speed_txt});
                 }
             }
             else if ($scope.state.lastPgEvent.Phase == 'Backup_Finalize' || $scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload')
