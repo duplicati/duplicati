@@ -33,19 +33,26 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(tempdir))
                 tempdir = System.IO.Path.GetTempPath();
 
-            if (buffersize <= 1024)
+            if (buffersize < 1024)
                 buffersize = 64 * 1024;
-            
-            return CallContextSettings<SystemSettings>.StartContext(new SystemSettings() {
+
+            return CallContextSettings<SystemSettings>.StartContext(new SystemSettings()
+            {
                 Tempdir = tempdir,
                 Buffersize = buffersize
             });
         }
 
-        public static string Tempdir 
-        { 
-            get { return CallContextSettings<SystemSettings>.Settings.Tempdir; } 
-            set 
+        public static string Tempdir
+        {
+            get 
+            {
+                var tf = CallContextSettings<SystemSettings>.Settings.Tempdir;
+                if (string.IsNullOrWhiteSpace(tf))
+                    tf = System.IO.Path.GetTempPath();
+                return tf;
+            }
+            set
             {
                 lock (CallContextSettings<SystemSettings>._lock)
                 {
@@ -55,7 +62,17 @@ namespace Duplicati.Library.Utility
                 }
             }
         }
-        public static long Buffersize => CallContextSettings<SystemSettings>.Settings.Buffersize;
+
+        public static long Buffersize 
+        {
+            get
+            {
+                var bs = CallContextSettings<SystemSettings>.Settings.Buffersize;
+                if (bs < 1024)
+					bs = 64 * 1024;
+                return bs;
+			}
+        }
 	}
 
 
