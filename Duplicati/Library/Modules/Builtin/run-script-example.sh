@@ -100,6 +100,10 @@
 # contain : to separate multiple folders. This value can be changed by echoing
 # --localpath = "new value".
 
+# DUPLICATI__PARSED_RESULT
+# This is a value indicating how well the operation was performed.
+# It can take the values: Unknown, Success, Warning, Error, Fatal.
+
 
 
 ###############################################################################
