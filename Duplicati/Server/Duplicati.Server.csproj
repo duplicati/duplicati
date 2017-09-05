@@ -5,7 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <Prefer32Bit>False</Prefer32Bit>    
+    <Prefer32Bit>False</Prefer32Bit>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Server</RootNamespace>
     <AssemblyName>Duplicati.Server</AssemblyName>
@@ -181,6 +181,10 @@
     <ProjectReference Include="..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
       <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>
       <Name>Duplicati.Library.Backend.SharePoint</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
+      <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
+      <Name>Duplicati.Library.Backend.Sia</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
       <Project>{FF2BF37C-E502-4C98-BEA0-701671DDFA08}</Project>
