@@ -180,6 +180,8 @@ namespace Duplicati.Library.Main.Strings
         public static string KeepversionsLong { get { return LC.L(@"Use this option to set number of versions to keep, supply -1 to keep all versions"); } }
         public static string KeeptimeShort { get { return LC.L(@"Keep all versions within a timespan"); } }
         public static string KeeptimeLong { get { return LC.L(@"Use this option to set the timespan in which backups are kept."); } }
+        public static string KeepstaggeredversionsShort { get { return LC.L(@"Reduce versions kept with increasing age"); } }
+        public static string KeepstaggeredversionsLong { get { return LC.L(@"Use this option to reduce the number of versions that are kept with increasing version age."); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
         public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }
         public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
