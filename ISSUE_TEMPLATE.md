@@ -24,7 +24,7 @@ Replace me
 3. ...
 
 <!-- For "Actual result", describe what happens after you run the steps above (i.e. buggy behavior). -->
-<!-- For "Expected result", escribe what should happen after you run the steps above (i.e. corrected behavior). -->
+<!-- For "Expected result", describe what should happen after you run the steps above (i.e. corrected behavior). -->
 - **Actual result:** 
 Replace me
 - **Expected result:**
