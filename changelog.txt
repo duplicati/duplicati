@@ -1,3 +1,11 @@
+2017-09-08 - 2.0.2.3_canary_2017-09-08
+==========
+* Added Italian and Chinese (Taiwan) to languages
+* Fixed periodically loosing http certificate overrides
+* Added status variables to mail/jabber/script/http reporters
+* Added a Sia backend (thanks @fuffenz)
+* Fixed issue with using Azure backend
+
 2017-08-30 - 2.0.2.2_canary_2017-08-30
 ==========
 * Fixed not performing vacuum all the time, thanks @danstahr
