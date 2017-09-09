@@ -865,6 +865,22 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrWhiteSpace(m_options.Prefix) && m_options.Prefix.Contains("-"))
                 throw new Interface.UserInformationException("The prefix cannot contain hyphens (-)");
 
+            //Check validity of keep-staggered-versions option value
+            try
+            {
+                foreach (var configEntry in m_options.KeepStaggeredVersion)
+                {
+                    if (configEntry.Value >= configEntry.Key)
+                    {
+                        throw new Interface.UserInformationException("A time frame cannot be smaller than its interval");
+                    }
+                }
+            }
+            catch (Exception e) // simply reading the option value might also result in an exception due to incorrect formatting
+            {
+                throw new Interface.UserInformationException(string.Format("An error occoured while processing the value of --{0}", "keep-staggered-versions"), e);
+            }
+
             //No point in going through with this if we can't report
             if (log == null)
                 return;
