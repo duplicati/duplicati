@@ -819,161 +819,20 @@ namespace Duplicati.Library.Main
                     return staggeredVersionConfig;
                 }
 
-                // Default config
-                if (v == "default")
+                var periodIntervalStrings = v.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var periodIntervalString in periodIntervalStrings)
                 {
-                    staggeredVersionConfig.Add(TimeSpan.FromHours(24), TimeSpan.Zero); // Every version for 24 hours
-                    staggeredVersionConfig.Add(TimeSpan.FromDays(7), TimeSpan.FromHours(24)); // One version per 24 hours for 7 days
-                    staggeredVersionConfig.Add(TimeSpan.FromDays(90), TimeSpan.FromDays(7)); // One version per 7 days for 90 days
-                    staggeredVersionConfig.Add(TimeSpan.Zero, TimeSpan.FromDays(30)); // one version every 30 days for the rest of the time
-                }
-                else
-                {
-                    var periodIntervalStrings = v.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    var periodInterval = periodIntervalString.Split(':');
+                    var period = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[0]);
+                    var interval = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[1]);
 
-                    foreach (var periodIntervalString in periodIntervalStrings)
-                    {
-                        var periodInterval = periodIntervalString.Split(':');
-                        if (periodInterval.Length != 2)
-                        {
-                            // TODO: Log Warning?
-                            staggeredVersionConfig.Clear();
-                            break; // Invalid config entry -> Discard whole config, so this feature is disable just to be on the safe side
-                        }
-
-                        var period = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[0]);
-                        var interval = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[1]);
-
-                        staggeredVersionConfig.Add(period, interval);
-                    }
+                    staggeredVersionConfig.Add(period, interval);
                 }
 
                 return staggeredVersionConfig;
             }
         }
-                
-        /// <summary>
-        /// Gets the filesets selected for deletion
-        /// </summary>
-        /// <returns>The filesets to delete</returns>
-        /// <param name="backups">The list of backups that can be deleted</param>
-        public DateTime[] GetFilesetsToDelete (DateTime[] backups)
-        {
-            if (backups.Length == 0)
-                return backups;
-
-            if (backups.Distinct().Count() != backups.Length)
-                throw new Exception(string.Format("List of backup timestamps contains duplicates: {0}", string.Join(", ", backups.Select(x => x.ToString()))));
-
-            List<DateTime> res = new List<DateTime>();
-                
-            var versions = this.Version;
-            if (versions != null && versions.Length > 0) 
-                foreach (var ix in versions.Distinct())
-                    if (ix >= 0 && ix < backups.Length)
-                        res.Add(backups[ix]);
-            
-            var keepVersions = this.KeepVersions;
-            if (keepVersions > 0 && keepVersions < backups.Length)
-                res.AddRange(backups.Skip(keepVersions));
-            
-            var keepTime = this.KeepTime;
-            if (keepTime.Ticks > 0)
-                res.AddRange(backups.SkipWhile(x => x >= keepTime));
-            
-            res.AddRange(ApplyStaggeredVersioning(backups));
-
-            var filtered = res.Distinct().OrderByDescending(x => x).AsEnumerable();
-            
-            var removeCount = filtered.Count();
-            if (removeCount > backups.Length)
-                throw new Exception(string.Format("Too many entries {0} vs {1}, lists: {2} vs {3}", removeCount, backups.Length, string.Join(", ", filtered.Select(x => x.ToString())),string.Join(", ", backups.Select(x => x.ToString()))));
-
-            return filtered.ToArray();
-        }
-
-        /// <summary>
-        /// Thins out the backups according to the configuration.
-        /// Backups that are not within any of the specified time frames will will NOT be deleted.
-        /// </summary>
-        /// <returns>The filesets to delete</returns>
-        /// <param name="backups">The list of backups that can be deleted</param>
-        private List<DateTime> ApplyStaggeredVersioning(DateTime[] backups)
-        {
-            // Any work to do?
-            if (this.KeepStaggeredVersion.Count == 0 || backups.Length == 0)
-            {
-                return new List<DateTime>(); // no backups to delete
-            }
-
-            // Work with a copy to not modify the enumeration that the caller passed
-            List<DateTime> clonedBackups = new List<DateTime>(backups);
-
-            // Make sure the backups are in descending order (newest backup in the beginning)
-            clonedBackups = clonedBackups.OrderByDescending(x => x).ToList();
-
-            // Keep reference to most current backup, since it should never be deleted due to the thinning out
-            DateTime newestBackup = clonedBackups[0];
-
-            // Calculate the date for each period based on the current DateTime
-            var timeFramesIntervales = new List<KeyValuePair<DateTime, TimeSpan>>();
-            foreach (var configEntry in this.KeepStaggeredVersion.ToList())
-            {
-                var period = configEntry.Key;
-                var interval = configEntry.Value;
-
-                DateTime periodEnd;
-                if (period > TimeSpan.Zero)
-                {
-                    periodEnd = DateTime.Now - period;
-                }
-                else
-                {
-                    periodEnd = DateTime.MinValue; // periods equal or below 0 mean "biggest time frame possible"
-                }
-                timeFramesIntervales.Add(new KeyValuePair<DateTime, TimeSpan>(periodEnd, interval));
-            }
-
-            timeFramesIntervales = timeFramesIntervales.OrderByDescending(x => x.Key).ToList();
-
-            // For each period collect all potentiel backups in the time frame and thin out 
-            // according to the specified interval, starting with the oldest backup in the time frame
-            // If backups are not within any time frame, they will NOT be deleted here.
-            // The --keep-time and --keep-versions switched should be used to ultimately delete backups that are too old
-            List<DateTime> backupsToDelete = new List<DateTime>();
-            foreach (var timeFrameInterval in timeFramesIntervales)
-            {
-                List<DateTime> backupsInTimeFrame = new List<DateTime>();
-                while (clonedBackups.Count > 0 && clonedBackups[0] >= timeFrameInterval.Key)
-                {
-                    backupsInTimeFrame.Insert(0, clonedBackups[0]); // Insert at begining to reverse order, which is nessecary for next step
-                    clonedBackups.RemoveAt(0); // remove from here to not handle the same backup in two time frames
-                }
-
-                // Run through backups in this time frame
-                DateTime? lastKept = null;
-                foreach (DateTime backup in backupsInTimeFrame)
-                {
-                    // Keep this backup if
-                    // - no backup has yet been added to the time frame (keeps at least the oldest backup in a time frame)
-                    // - difference between last added backup and this backup is bigger than the specified interval
-                    if (lastKept == null || (backup - lastKept.Value) >= timeFrameInterval.Value)
-                    {
-                        lastKept = backup;
-                    }
-                    else
-                    {
-                        backupsToDelete.Add(backup);
-                    }
-                }
-            }
-
-            // If newest backup was marked for deletion in this process, remove it from being removed
-            backupsToDelete.Remove(newestBackup);
-
-            return backupsToDelete;
-        }
-        
 
         /// <summary>
         /// Gets the encryption passphrase
