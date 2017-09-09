@@ -108,7 +108,8 @@ namespace Duplicati.Library.Utility
 
                 // Prevent in-memory buffering causing out-of-memory issues
                 ((HttpWebRequest)m_request).AllowReadStreamBuffering = HttpContextSettings.BufferRequests;
-                ((HttpWebRequest)m_request).ServerCertificateValidationCallback = HttpContextSettings.CertificateValidator.ValidateServerCertficate;
+				if (HttpContextSettings.CertificateValidator != null)
+					((HttpWebRequest)m_request).ServerCertificateValidationCallback = HttpContextSettings.CertificateValidator.ValidateServerCertficate;
             }
 		}
 
