@@ -1,3 +1,7 @@
+2017-09-09 - 2.0.2.4_canary_2017-09-09
+==========
+* Fixed an issue that cause Duplicati GUI to fail on startup
+
 2017-09-08 - 2.0.2.3_canary_2017-09-08
 ==========
 * Added Italian and Chinese (Taiwan) to languages
