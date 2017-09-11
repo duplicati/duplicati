@@ -12,5 +12,6 @@
 </div>
 <div class="input text">
     <label for="sia_redundancy" translate>Minimum redundancy</label>
-    <input type="text" name="sia_redundancy" id="sia_redundancy" ng-model="$parent.sia_redundancy" placeholder="{{'3'}}" />
+    <input type="text" name="sia_redundancy" id="sia_redundancy" ng-model="$parent.sia_redundancy" placeholder="{{'1.5'}}" />
 </div>
+<div>Choose 1.0 for fast backup, 1.5 for decent reliability, 2.0 for safer upload but slow backup.<br />Note that Sia will still boost redundancy later as long as you're connected to your hosts.</div>
