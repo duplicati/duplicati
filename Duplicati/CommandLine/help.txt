@@ -454,7 +454,7 @@ Duplicati can send email notifications after each operation. Use the send-mail c
   --send-mail-password=<password>
     Required password to authenticate with SMTP server.
   --send-mail-level=<level>
-    When email messages are sent: "Success", "Warning", "Error" are possible.
+    When email messages are sent: "Success", "Warning", "Error", "Fatal", "All" are possible.
   --send-mail-any-operation=true
     Also send emails after other operations like restore etc.
 	
