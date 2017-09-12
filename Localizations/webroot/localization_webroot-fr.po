@@ -2490,7 +2490,7 @@ msgstr ""
 
 #: templates/about.html:26
 msgid "You are currently running {{appname}} {{version}}"
-msgstr "Vous êtes actuellement entrain d'utiliser {{appname}} {{version}}"
+msgstr "Vous êtes actuellement en train d'utiliser {{appname}} {{version}}"
 
 #: scripts/controllers/StateController.js:98
 msgid ""
