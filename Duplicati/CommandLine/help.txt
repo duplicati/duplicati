@@ -127,7 +127,7 @@ Usage: restore <storage-URL> ["<filename>"] [<options>]
     Restore files from a specific backup.
 
 
-	
+    
 # =============================================================================
 > duplicati.commandline.exe help delete
 
@@ -159,8 +159,8 @@ Usage: compact <storage-URL> [<options>]
     Files smaller than this size are considered to be small and will be compacted with other small files as soon as there are <small-file-max-count> of them. --small-file-size=20 means 20% of <dblock-size>. 
   --threshold=<percent_value> 
     The amount of old data that a dblock file can contain before it is considered to be replaced.
-	
-	
+    
+    
 
   
 # =============================================================================
@@ -457,20 +457,20 @@ Duplicati can send email notifications after each operation. Use the send-mail c
     When email messages are sent: "Success", "Warning", "Error", "Fatal", "All" are possible.
   --send-mail-any-operation=true
     Also send emails after other operations like restore etc.
-	
+    
   Allowed placeholders are:
     %PARSEDRESULT%
       The parsed result op the operation: Success, Warning, Error
     %RESULT%
-	  When used in the body, this is the result/log of the backup, 
+      When used in the body, this is the result/log of the backup, 
       When used in the subject line, this is the same as %PARSEDRESULT%
     %OPERATIONNAME%
-	  The name of the operation, usually "backup", but could also be "restore" etc.
+      The name of the operation, usually "backup", but could also be "restore" etc.
     %REMOTEURL%
-	  The backend url
+      The backend url
     %LOCALPATH%
-	  The path to the local folders involved (i.e. the folders being backed up)
-	  
+      The path to the local folders involved (i.e. the folders being backed up)
+      
 # =============================================================================
 > duplicati.commandline.exe help advanced
 > duplicati.commandline.exe help option
