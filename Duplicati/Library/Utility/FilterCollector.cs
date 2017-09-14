@@ -41,12 +41,19 @@ namespace Duplicati.Library.Utility
             return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) => {
                 if (key.Equals("include", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), true));
-                    return false;
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), true));
+                        return false;
+                    }
                 }
                 else if (key.Equals("exclude", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), false));
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), false));
+                        return false;
+                    }
                     return false;
                 }
 
@@ -56,12 +63,12 @@ namespace Duplicati.Library.Utility
                 return true;
             });
         }
-
+        
         public static Tuple<Dictionary<string, string>, Library.Utility.IFilter> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
         {
             var fc = new FilterCollector();
             var opts = fc.DoExtractOptions(args, callbackHandler);
             return new Tuple<Dictionary<string, string>, Library.Utility.IFilter>(opts, fc.Filter);
         }
-    }}
-
+    }
+}
