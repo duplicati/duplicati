@@ -100,6 +100,7 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%APP_PATH%", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());
                 tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Library.Utility.Utility.IsClientLinux ? "/source" : "D:\\source");
+                tp = tp.Replace("%EXAMPLE_WILDCARD_DRIVE_SOURCE_PATH%", Library.Utility.Utility.IsClientLinux ? "/source" : "*:\\source");
                 tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Library.Utility.Utility.IsClientLinux ? "/source/myfile.txt" : "D:\\source\\file.txt");
                 tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Library.Utility.Utility.IsClientLinux ? "/restore" : "D:\\restore");
                 tp = tp.Replace("%ENCRYPTIONMODULES%", string.Join(", ", Library.DynamicLoader.EncryptionLoader.Keys));
@@ -107,11 +108,22 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
                 tp = tp.Replace("%DEFAULTCOMPRESSIONMODULE%", opts.CompressionModule);
                 tp = tp.Replace("%GENERICMODULES%", string.Join(", ", Library.DynamicLoader.GenericLoader.Keys));
-
+                
                 tp = tp.Replace("%COMMON_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Common.OrderBy(x => x)));
                 tp = tp.Replace("%WINDOWS_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Windows.OrderBy(x => x)));
                 tp = tp.Replace("%OSX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.OSX.OrderBy(x => x)));
                 tp = tp.Replace("%LINUX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Linux.OrderBy(x => x)));
+
+                if (!Library.Utility.Utility.IsClientWindows)
+                {
+                    // Specifying the Singleline option allows . to match newlines, so this will detect spans that cover multiple lines
+                    tp = System.Text.RegularExpressions.Regex.Replace(tp, "\\%IF_WINDOWS\\%.*\\%END_IF_WINDOWS\\%", string.Empty, System.Text.RegularExpressions.RegexOptions.Singleline);
+                }
+                else
+                {
+                    tp = tp.Replace("%IF_WINDOWS%", string.Empty);
+                    tp = tp.Replace("%END_IF_WINDOWS%", string.Empty);
+                }
 
                 if (tp.Contains("%MAINOPTIONS%"))
                 {
