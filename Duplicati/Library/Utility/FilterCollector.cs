@@ -54,6 +54,10 @@ namespace Duplicati.Library.Utility
                         m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), false));
                         return false;
                     }
+                }
+                else if (key.Equals("default-filters", StringComparison.InvariantCultureIgnoreCase) || key.Equals("default-filter", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    m_filters.AddRange(DefaultFilters.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(value ?? string.Empty)));
                     return false;
                 }
 

@@ -84,6 +84,8 @@ namespace Duplicati.CommandLine
                     topic = "exclude";
                 else if (System.Environment.CommandLine.IndexOf("--include", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     topic = "include";
+                else if (System.Environment.CommandLine.IndexOf("--default-filters", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    topic = "default-filters";
             }
 
 
@@ -105,6 +107,11 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
                 tp = tp.Replace("%DEFAULTCOMPRESSIONMODULE%", opts.CompressionModule);
                 tp = tp.Replace("%GENERICMODULES%", string.Join(", ", Library.DynamicLoader.GenericLoader.Keys));
+
+                tp = tp.Replace("%COMMON_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Common.OrderBy(x => x)));
+                tp = tp.Replace("%WINDOWS_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Windows.OrderBy(x => x)));
+                tp = tp.Replace("%OSX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.OSX.OrderBy(x => x)));
+                tp = tp.Replace("%LINUX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Linux.OrderBy(x => x)));
 
                 if (tp.Contains("%MAINOPTIONS%"))
                 {
