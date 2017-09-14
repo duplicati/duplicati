@@ -1,3 +1,8 @@
+2017-09-14 - 2.0.2.5_canary_2017-09-14
+==========
+* Added support for wildcards in source paths on Windows, thanks @tygill
+* Improved default values for Sia backend, thanks @fuffenz
+
 2017-09-09 - 2.0.2.4_canary_2017-09-09
 ==========
 * Fixed an issue that cause Duplicati GUI to fail on startup
