@@ -1030,15 +1030,15 @@ namespace Duplicati.Library.Main
             set { m_options.MaxUploadPrSecond = value; }
         }
 
-		public long MaxDownloadSpeed
-		{
-			get { return m_options.MaxDownloadPrSecond; }
-			set { m_options.MaxDownloadPrSecond = value; }
-		}
+        public long MaxDownloadSpeed
+        {
+            get { return m_options.MaxDownloadPrSecond; }
+            set { m_options.MaxDownloadPrSecond = value; }
+        }
 
-		#region IDisposable Members
+        #region IDisposable Members
 
-		public void Dispose()
+        public void Dispose()
         {
         }
 
