@@ -204,27 +204,50 @@ namespace Duplicati.Library.Main
                 for (int i = 0; i < inputsources.Length; i++)
                 {
                     List<string> expandedSources = new List<string>();
-                    if (inputsources[i].StartsWith("*:"))
+
+                    if (Library.Utility.Utility.IsClientWindows && (inputsources[i].StartsWith("*:") || inputsources[i].StartsWith("?:")))
                     {
+                        // *: drive paths are only supported on Windows clients
                         // Lazily load the drive info
-                        if (drives == null)
-                        {
-                            // *: drive paths are only supported on Windows clients
-                            if (Library.Utility.Utility.IsClientWindows)
-                            {
-                                drives = System.IO.DriveInfo.GetDrives();
-                            }
-                            else
-                            {
-                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceFolderWildcardDriveNotSupportedError(inputsources[i]));
-                            }
-                        }
+                        drives = drives ?? System.IO.DriveInfo.GetDrives();
 
                         // Replace the drive letter with each available drive
                         string sourcePath = inputsources[i].Substring(1);
                         foreach (System.IO.DriveInfo drive in drives)
                         {
-                            expandedSources.Add(drive.Name[0] + sourcePath);
+                            string expandedSource = drive.Name[0] + sourcePath;
+                            result.AddVerboseMessage(@"Adding source path ""{0}"" due to wildcard source path ""{1}""", expandedSource, inputsources[i]);
+                            expandedSources.Add(expandedSource);
+                        }
+                    }
+                    else if (Library.Utility.Utility.IsClientWindows && inputsources[i].StartsWith(@"\\?\Volume{", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        // In order to specify a drive by it's volume name, adopt the volume guid path syntax:
+                        //   \\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
+                        // The volume guid can be found using the 'mountvol' commandline tool.
+                        // However, instead of using this path with Windows APIs directory, it is adapted here to a standard path.
+                        Guid volumeGuid;
+                        if (Guid.TryParse(inputsources[i].Substring(@"\\?\Volume{".Length, @"XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".Length), out volumeGuid))
+                        {
+                            string driveLetter = Library.Utility.Utility.GetDriveLetterFromVolumeGuid(volumeGuid);
+                            if (!string.IsNullOrEmpty(driveLetter))
+                            {
+                                string expandedSource = driveLetter + inputsources[i].Substring(@"\\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}".Length);
+                                result.AddVerboseMessage(@"Adding source path ""{0}"" in place of volume guid source path ""{1}""", expandedSource, inputsources[i]);
+                                expandedSources.Add(expandedSource);
+                            }
+                            else
+                            {
+                                // If we aren't allow to have missing sources, throw an exception indicating we couldn't find a drive where this volume is mounted
+                                if (!m_options.AllowMissingSource)
+                                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameNotFoundError(inputsources[i], volumeGuid));
+                            }
+                        }
+                        else
+                        {
+                            // If we aren't allow to have missing sources, throw an exception indicating we couldn't find this volume
+                            if (!m_options.AllowMissingSource)
+                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameInvalidError(inputsources[i]));
                         }
                     }
                     else
@@ -243,7 +266,7 @@ namespace Duplicati.Library.Main
                         catch (Exception ex)
                         {
                             // Note that we use the original source (with the *) in the error
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(inputsources[i], ex.Message), ex);
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(expandedSource, ex.Message), ex);
                         }
 
                         var fi = new System.IO.FileInfo(source);
@@ -612,7 +635,7 @@ namespace Duplicati.Library.Main
                 finally
                 {
                     m_currentTask = null;
-                m_currentTaskThread = null;
+                    m_currentTaskThread = null;
                 }
             }
         }
