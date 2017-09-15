@@ -10,7 +10,7 @@ else
 	RELEASE_TYPE=$1
 fi
 
-RELEASE_VERSION="2.0.1.${RELEASE_INC_VERSION}"
+RELEASE_VERSION="2.0.2.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
 
 RELEASE_CHANGELOG_FILE="changelog.txt"
@@ -32,6 +32,29 @@ XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
+
+# Newer GPG needs this to allow input from a non-terminal
+export GPG_TTY=$(tty)
+
+if [ ! -f "$GPG" ]; then
+	echo "gpg executable not found: $GPG"
+	exit 1
+fi
+
+if [ ! -f "$XBUILD" ]; then
+	echo "xbuild/msbuild executable not found: $XBUILD"
+	exit 1
+fi
+
+if [ ! -f "$MONO" ]; then
+	echo "mono executable not found: $MONO"
+	exit 1
+fi
+
+if [ ! -f "$NUGET" ]; then
+	echo "NuGet executable not found: $NUGET"
+	exit 1
+fi
 
 # The "OTHER_UPLOADS" setting is no longer used
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
@@ -138,6 +161,13 @@ for FN in Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll; do
 	cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
 done
 
+# Fix for some support libraries not being picked up
+for BACKEND in Duplicati/Library/Backend/*; do
+	if [ -d "${BACKEND}/bin/Release/" ]; then
+		cp "${BACKEND}/bin/Release/"*.dll "${UPDATE_SOURCE}"
+	fi
+done
+
 # Install the assembly redirects for all Duplicati .exe files
 find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Installer/AssemblyRedirects.xml {}.config \;
 
@@ -154,6 +184,9 @@ done
 # Clean debug files, if any
 rm -rf "${UPDATE_SOURCE}/"*.mdb;
 rm -rf "${UPDATE_SOURCE}/"*.pdb;
+
+# Remove all library docs files
+rm -rf "${UPDATE_SOURCE}/"*.xml;
 
 # Remove all .DS_Store and Thumbs.db files
 find  . -type f -name ".DS_Store" | xargs rm -rf

@@ -717,7 +717,12 @@ namespace Duplicati.Library.Main
 
                 // If we are aborted, throw exception
                 if (m_controlState == TaskControlState.Abort)
+                {
                     System.Threading.Thread.CurrentThread.Abort();
+
+                    // For some reason, aborting the current thread does not always throw an exception
+                    throw new CancelException();
+                }
 
                 return m_controlState;
             }
@@ -1164,6 +1169,11 @@ namespace Duplicati.Library.Main
     {
         public override OperationMode MainOperation { get { return OperationMode.SendMail; } }
         public IEnumerable<string> Lines { get; set; }
+    }
+
+    internal class VacuumResult : BasicResults, IVacuumResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.Vacuum; } }
     }
 }
 

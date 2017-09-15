@@ -25,7 +25,8 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
     EditUriBackendConfig.templates['jottacloud']  = 'templates/backends/jottacloud.html';
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
 
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
@@ -360,6 +361,19 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
+    EditUriBackendConfig.parsers['sia'] = function (scope, module, server, port, path, options) {
+        if (options['--sia-targetpath'])
+            scope.sia_targetpath = options['--sia-targetpath'];
+        if (options['--sia-redundancy'])
+            scope.sia_redundancy = options['--sia-redundancy'];
+        if (options['--sia-password'])
+            scope.sia_password = options['--sia-password'];
+
+        var nukeopts = ['--sia-targetpath', '--sia-redundancy', '--sia-password'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    };
+
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function(scope) {
         var opts = {
@@ -524,7 +538,26 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         return url;
     };
 
-    EditUriBackendConfig.builders['jottacloud'] = function(scope) {
+    EditUriBackendConfig.builders['sia'] = function (scope) {
+        var opts = {
+            'sia-password': scope.sia_password,
+            'sia-targetpath': scope.sia_targetpath,
+            'sia-redundancy': scope.sia_redundancy
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://{1}/{2}{3}',
+            scope.Backend.Key,
+            scope.Server || '',
+            scope.sia_targetpath || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    }
+
+    EditUriBackendConfig.builders['jottacloud'] = function (scope) {
         var opts = { };
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
@@ -586,19 +619,20 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.validaters['hubic']       = function(scope, continuation) {
 
-        var prefix = 'HubiC-DeskBackup_Duplicati/';
+        var prefix1 = 'HubiC-DeskBackup_Duplicati/';
+        var prefix2 = 'default/'
 
         EditUriBackendConfig.validaters['onedrive'](scope, function() {
 
             var p = (scope.Path || '').trim();
 
-            if (p.length > 0 && p.indexOf('default/') != 0 && p.indexOf(prefix) != 0) {
-                DialogService.dialog(gettextCatalog.getString('Adjust path name?'), gettextCatalog.getString('The path should start with "{{prefix}}" or "{{def}}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', {prefix: prefix, def: 'default' }), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
+            if (p.length > 0 && p.indexOf(prefix2) != 0 && p.indexOf(prefix1) != 0) {
+                DialogService.dialog(gettextCatalog.getString('Adjust path name?'), gettextCatalog.getString('The path should start with "{{prefix1}}" or "{{prefix2}}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', {prefix1: prefix1, prefix2: prefix2 }), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                     if (ix == 2) {
                         while (p.indexOf('/') == 0)
                             p = p.substr(1);
 
-                        scope.Path = prefix + p;
+                        scope.Path = prefix2 + p;
                     }
                     if (ix == 1 || ix == 2)
                         continuation();
@@ -611,7 +645,6 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     };
 
     EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['onedrive'];
-    EditUriBackendConfig.validaters['hubic']       = EditUriBackendConfig.validaters['onedrive'];
     EditUriBackendConfig.validaters['gcs']         = EditUriBackendConfig.validaters['onedrive'];
     EditUriBackendConfig.validaters['amzcd']       = EditUriBackendConfig.validaters['onedrive'];
     EditUriBackendConfig.validaters['box']         = EditUriBackendConfig.validaters['onedrive'];
@@ -724,6 +757,22 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         var res =
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Password'));
+
+        if (res)
+            continuation();
+    };
+
+    EditUriBackendConfig.validaters['sia'] = function (scope, continuation) {
+        var res =
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Server'));
+
+        var re = new RegExp('^(([a-zA-Z0-9-])|(\/(?!\/)))*$');
+        if (res && !re.test(scope['sia_targetpath'])) {
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Invalid characters in path'));
+        }
+
+        if (res && (scope['sia_redundancy'] || '').trim().length == 0 || parseFloat(scope['sia_redundancy']) < 1.0)
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 1.0'));
 
         if (res)
             continuation();

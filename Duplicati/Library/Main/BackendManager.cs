@@ -699,13 +699,32 @@ namespace Duplicati.Library.Main
                 }
             }
         }
-        
-        private void HandleProgress(long pg)
+
+        private string m_lastThrottleUploadValue = null;
+		private string m_lastThrottleDownloadValue = null;
+
+		private void HandleProgress(ThrottledStream ts, long pg)
         {
             // TODO: Should we pause here as well?
             // It might give annoying timeouts for transfers
             if (m_taskControl != null)
                 m_taskControl.TaskControlRendevouz();
+
+            // Update the throttle speeds if they have changed
+            string tmp;
+            m_options.RawOptions.TryGetValue("throttle-upload", out tmp);
+            if (tmp != m_lastThrottleUploadValue)
+            {
+                ts.WriteSpeed = m_options.MaxUploadPrSecond;
+                m_lastThrottleUploadValue = tmp;
+            }
+
+			m_options.RawOptions.TryGetValue("throttle-download", out tmp);
+            if (tmp != m_lastThrottleDownloadValue)
+            {
+                ts.ReadSpeed = m_options.MaxDownloadPrSecond;
+                m_lastThrottleDownloadValue = tmp;
+            }
 
             m_statwriter.BackendProgressUpdater.UpdateProgress(pg);
         }
@@ -735,7 +754,7 @@ namespace Duplicati.Library.Main
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
             else
@@ -829,7 +848,7 @@ namespace Duplicati.Library.Main
                         using (var ss = new ShaderStream(nextTierWriter, false))
                         {
                             using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                             {
                                 taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
                                 if (taskDecrypter != null) taskDecrypter.Start();
@@ -914,7 +933,7 @@ namespace Duplicati.Library.Main
                     using (var ss = new ShaderStream(hs, true))
                     {
                         using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                         { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;
@@ -1162,12 +1181,20 @@ namespace Duplicati.Library.Main
             req.SetLocalfilename(localpath);
             req.Encrypted = true; //Prevent encryption
             req.NotTrackedInDb = true; //Prevent Db updates
-            
-            if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
+
+            try
             {
-                req.WaitForComplete();
-                if (req.Exception != null)
-                    throw req.Exception;
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                if (m_queue.Enqueue(req) && m_options.SynchronousUpload)
+                {
+                    req.WaitForComplete();
+                    if (req.Exception != null)
+                        throw req.Exception;
+                }
+            }
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
             
             if (m_lastException != null)
@@ -1208,20 +1235,28 @@ namespace Duplicati.Library.Main
                 req.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(indexfile, req2);
             }
 
-            m_db.FlushDbMessages(true);
-            
-            if (m_queue.Enqueue(req) && (m_options.SynchronousUpload || synchronous))
+            try
             {
-                req.WaitForComplete();
-                if (req.Exception != null)
-                    throw req.Exception;
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                m_db.FlushDbMessages(true);
+
+                if (m_queue.Enqueue(req) && (m_options.SynchronousUpload || synchronous))
+                {
+                    req.WaitForComplete();
+                    if (req.Exception != null)
+                        throw req.Exception;
+                }
+
+                if (req2 != null && m_queue.Enqueue(req2) && (m_options.SynchronousUpload || synchronous))
+                {
+                    req2.WaitForComplete();
+                    if (req2.Exception != null)
+                        throw req2.Exception;
+                }
             }
-            
-            if (req2 != null && m_queue.Enqueue(req2) && (m_options.SynchronousUpload || synchronous))
+            finally
             {
-                req2.WaitForComplete();
-                if (req2.Exception != null)
-                    throw req2.Exception;
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
             
             if (m_lastException != null)
@@ -1235,8 +1270,16 @@ namespace Duplicati.Library.Main
 
             hash = null; size = -1;
             var req = new FileEntryItem(OperationType.Get, remotename, -1, null);
-            if (m_queue.Enqueue(req))
-                ((IDownloadWaitHandle) req).Wait(out hash, out size);
+            try
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                if (m_queue.Enqueue(req))
+                    ((IDownloadWaitHandle)req).Wait(out hash, out size);
+            }
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
+            }
 
             if (m_lastException != null)
                 throw m_lastException;
@@ -1250,10 +1293,18 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
 
             var req = new FileEntryItem(OperationType.Get, remotename, size, hash);
-            if (m_queue.Enqueue(req))
-                ((IDownloadWaitHandle)req).Wait();
+            try
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                if (m_queue.Enqueue(req))
+                    ((IDownloadWaitHandle)req).Wait();
+            }
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
+            }
 
-            if (m_lastException != null)
+			if (m_lastException != null)
                 throw m_lastException;
 
             return (Library.Utility.TempFile)req.Result;
@@ -1265,10 +1316,18 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
 
             var req = new FileEntryItem(OperationType.Get, remotename, size, hash);
-            if (m_queue.Enqueue(req))
-                return req;
+            try
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                if (m_queue.Enqueue(req))
+                    return req;
+            }
+			finally
+			{
+				m_statwriter.BackendProgressUpdater.SetBlocking(false);
+			}
 
-            if (m_lastException != null)
+			if (m_lastException != null)
                 throw m_lastException;
             else
                 throw new InvalidOperationException("GetAsync called after backend is shut down");
@@ -1284,11 +1343,19 @@ namespace Duplicati.Library.Main
 
             var req = new FileEntryItem(OperationType.Get, remotename, size, hash);
             req.VerifyHashOnly = true;
-            if (m_queue.Enqueue(req))
+            try
             {
-                req.WaitForComplete();
-                if (req.Exception != null)
-                    throw req.Exception;
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                if (m_queue.Enqueue(req))
+                {
+                    req.WaitForComplete();
+                    if (req.Exception != null)
+                        throw req.Exception;
+                }
+            }
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
 
             if (m_lastException != null)
@@ -1301,11 +1368,19 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
 
             var req = new FileEntryItem(OperationType.List, null);
-            if (m_queue.Enqueue(req))
+            try
             {
-                req.WaitForComplete();
-                if (req.Exception != null)
-                    throw req.Exception;
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                if (m_queue.Enqueue(req))
+                {
+                    req.WaitForComplete();
+                    if (req.Exception != null)
+                        throw req.Exception;
+                }
+            }
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
 
             if (m_lastException != null)
@@ -1316,34 +1391,49 @@ namespace Duplicati.Library.Main
 
         public void WaitForComplete(LocalDatabase db, System.Data.IDbTransaction transation)
         {
-            m_db.FlushDbMessages(db, transation);
-            if (m_lastException != null)
-                throw m_lastException;
+            try
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                m_db.FlushDbMessages(db, transation);
+                if (m_lastException != null)
+                    throw m_lastException;
 
-            var item = new FileEntryItem(OperationType.Terminate, null);
-            if (m_queue.Enqueue(item))
-                item.WaitForComplete();
+                var item = new FileEntryItem(OperationType.Terminate, null);
+                if (m_queue.Enqueue(item))
+                    item.WaitForComplete();
 
-            m_db.FlushDbMessages(db, transation);
+                m_db.FlushDbMessages(db, transation);
 
-            if (m_lastException != null)
-                throw m_lastException;
+                if (m_lastException != null)
+                    throw m_lastException;
+            }
+            finally
+            {
+            }
         }
 
         public void WaitForEmpty(LocalDatabase db, System.Data.IDbTransaction transation)
         {
-            m_db.FlushDbMessages(db, transation);
-            if (m_lastException != null)
-                throw m_lastException;
+            try
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                m_db.FlushDbMessages(db, transation);
+                if (m_lastException != null)
+                    throw m_lastException;
 
-            var item = new FileEntryItem(OperationType.Nothing, null);
-            if (m_queue.Enqueue(item))
-                item.WaitForComplete();
+                var item = new FileEntryItem(OperationType.Nothing, null);
+                if (m_queue.Enqueue(item))
+                    item.WaitForComplete();
 
-            m_db.FlushDbMessages(db, transation);
+                m_db.FlushDbMessages(db, transation);
 
-            if (m_lastException != null)
-                throw m_lastException;
+                if (m_lastException != null)
+                    throw m_lastException;
+            }
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
+            }
         }
 
         public void CreateFolder(string remotename)
@@ -1352,11 +1442,19 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
 
             var req = new FileEntryItem(OperationType.CreateFolder, remotename);
-            if (m_queue.Enqueue(req))
+            try
             {
-                req.WaitForComplete();
-                if (req.Exception != null)
-                    throw req.Exception;
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                if (m_queue.Enqueue(req))
+                {
+                    req.WaitForComplete();
+                    if (req.Exception != null)
+                        throw req.Exception;
+                }
+            }
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
 
             if (m_lastException != null)
@@ -1370,11 +1468,19 @@ namespace Duplicati.Library.Main
                 
             m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, size, null);
             var req = new FileEntryItem(OperationType.Delete, remotename, size, null);
-            if (m_queue.Enqueue(req) && synchronous)
+            try
             {
-                req.WaitForComplete();
-                if (req.Exception != null)
-                    throw req.Exception;
+                m_statwriter.BackendProgressUpdater.SetBlocking(true);
+                if (m_queue.Enqueue(req) && synchronous)
+                {
+                    req.WaitForComplete();
+                    if (req.Exception != null)
+                        throw req.Exception;
+                }
+            }
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
 
             if (m_lastException != null)

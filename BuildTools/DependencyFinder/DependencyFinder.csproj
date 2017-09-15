@@ -5,6 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProjectGuid>{3E891818-579A-4C06-8066-4C702BFA5921}</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <Prefer32Bit>False</Prefer32Bit>    
     <RootNamespace>DependencyFinder</RootNamespace>
     <AssemblyName>DependencyFinder</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>

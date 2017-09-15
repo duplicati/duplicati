@@ -97,6 +97,9 @@ write_random_file(1024 * 1024, SOURCE_FOLDER + os.sep + "1MB.test")
 write_random_file(100 * 1024, SOURCE_FOLDER + os.sep + "subfolder" + os.sep + "100KB.test")
 sha1_source = sha1_folder(SOURCE_FOLDER)
 
+# Dismiss the password request
+driver.find_element_by_link_text("No, my machine has only a single account").click()
+
 # Add new backup
 driver.find_element_by_link_text("Add backup").click()
 

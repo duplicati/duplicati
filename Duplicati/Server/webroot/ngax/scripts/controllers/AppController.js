@@ -5,6 +5,13 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
 
     $scope.localized = {};
     $scope.location = $location;
+    $scope.saved_theme = $scope.active_theme = $cookies.get('current-theme') || 'default';
+    $scope.throttle_active = false;
+
+    // If we want the theme settings
+    // to be persisted on the server,
+    // set to "true" here
+    var save_theme_on_server = false;
 
     $scope.doReconnect = function() {
         ServerStatus.reconnect();
@@ -46,10 +53,29 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     };
 
     $scope.throttleOptions = function() {
-        alert('Throttle options are not implemented yet');
+        DialogService.htmlDialog(
+            gettextCatalog.getString('Throttle settings'), 
+            'templates/throttle.html', 
+            [gettextCatalog.getString('OK'), gettextCatalog.getString('Cancel')], 
+            function(index, text, cur) {
+                if (index == 0 && cur != null && cur.uploadspeed != null && cur.downloadspeed != null) {
+                    var patchdata = {
+                        'max-download-speed': cur.downloadthrottleenabled ? cur.downloadspeed : '',
+                        'max-upload-speed': cur.uploadthrottleenabled ? cur.uploadspeed : '',
+                    };
+
+                    AppService.patch('/serversettings', patchdata, {headers: {'Content-Type': 'application/json; charset=utf-8'}}).then(function(data) {
+                        $scope.throttle_active = cur.downloadthrottleenabled || cur.uploadthrottleenabled;
+                    }, AppUtils.connectionError);
+                }
+            }
+        );
     };
 
     function updateCurrentPage() {
+
+        $scope.active_theme = $scope.saved_theme;
+
         if ($location.$$path == '/' || $location.$$path == '')
             $scope.current_page = 'home';
         else if ($location.$$path == '/addstart' || $location.$$path == '/add' || $location.$$path == '/import')
@@ -78,4 +104,80 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     $scope.$watch('location.$$path', updateCurrentPage);
     updateCurrentPage();
 
+    function loadCurrentTheme() {
+        if (save_theme_on_server) {
+            AppService.get('/uisettings/ngax').then(
+                function(data) {
+                    var theme = 'default';
+                    if (data.data != null && (data.data['theme'] || '').trim().length > 0)
+                        theme = data.data['theme'];
+
+                    var now = new Date();
+                    var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+                    $cookies.put('current-theme', theme, { expires: exp });
+                    $scope.saved_theme = $scope.active_theme = theme;
+                }, function() {}
+            );
+        }
+    };
+
+    // In case the cookie is out-of-sync
+    loadCurrentTheme();
+
+    $scope.$on('update_theme', function(event, args) {
+        var theme = 'default';
+        if (args != null && (args.theme || '').trim().length != 0)
+            theme = args.theme;
+
+        if (save_theme_on_server) {
+            // Set it here to avoid flickering when the page changes
+            $scope.saved_theme = $scope.active_theme = theme;
+
+            AppService.patch('/uisettings/ngax', { 'theme': theme }, {'headers': {'Content-Type': 'application/json'}}).then(
+                function(data) {
+                    var now = new Date();
+                    var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+                    $cookies.put('current-theme', theme, { expires: exp });
+                    $scope.saved_theme = $scope.active_theme = theme;
+                }, function() {}
+            );
+        } else {
+            var now = new Date();
+            var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+            $cookies.put('current-theme', theme, { expires: exp });
+            $scope.saved_theme = $scope.active_theme = theme;
+        }
+
+        loadCurrentTheme();
+    });
+
+    $scope.$on('preview_theme', function(event, args) {
+        if (args == null || (args.theme + '').trim().length == 0)
+            $scope.active_theme = $scope.saved_theme;
+        else
+            $scope.active_theme = args.theme || '';
+    });
+
+    AppService.get('/serversettings').then(function(data) {
+        var ut = data.data['max-upload-speed'];
+        var dt = data.data['max-download-speed'];
+        $scope.throttle_active = (ut != null && ut.trim().length != 0) || (dt != null && dt.trim().length != 0);
+
+        var firstpw = data.data['has-asked-for-password-protection'];
+        var haspw = data.data['server-passphrase'];
+        if (!firstpw && haspw == '') {
+            DialogService.dialog(
+                gettextCatalog.getString('First run setup'),
+                gettextCatalog.getString('If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\nDo you want to set a password now?'),                
+                [gettextCatalog.getString('No, my machine has only a single account'), gettextCatalog.getString('Yes')],
+                function(btn) {
+                    AppService.patch('/serversettings', { 'has-asked-for-password-protection': 'true'}, {'headers': {'Content-Type': 'application/json'}});
+                    if (btn == 1) {
+                        $location.path('/settings');
+                    }
+                }
+            );
+        }
+
+    }, AppUtils.connectionError);
 });

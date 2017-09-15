@@ -476,7 +476,7 @@ body {
             .state {
                 float: left;
                 color: darken(@hColor, 10%);
-                width: 545px;
+                width: 580px;
                 padding: 13px 15px;
                 margin: 10px 20px;
                 border: 1px darken(@hColor, 10%) solid;
@@ -585,11 +585,11 @@ body {
                     height: 26px;
                     display: inline-block;
                     cursor: pointer;
-                    background: url('../img/throttle-inactive.png');
+                    background: url('../img/throttle.png');
                 }
 
-                > pause.active {
-                    background: url('../img/throttle.png');
+                > .throttle.inactive {
+                    opacity: 0.5;
                 }
             }
 
@@ -2083,6 +2083,40 @@ div.modal-dialog {
     }
 }
 
+.throttlesettings
+{
+    div.multiple {
+
+        select {
+            width: auto;
+            margin-right: 5px;
+        }
+
+        input {
+            width: 100px;
+        }
+
+        input.checkbox {
+            width: auto;
+        }
+
+        label {
+            line-height: 35px;
+            padding: 0 15px;
+            width: auto;
+            min-width: 150px;
+        }
+    }
+
+    .disabled {
+        color: lighten(@tColor, 25%);
+        input, select {
+            color: lighten(@tColor, 25%);
+        }
+    }
+
+}
+
 // Smaller screen sizes
 @media (max-width: 1200px) {
     body {
@@ -2153,7 +2187,7 @@ div.modal-dialog {
 
                 .mainmenu {
                     display: none;
-                    position: absolute;
+                    position: fixed;
                     background: none repeat scroll 0 0 white;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
                     left: 10px;
@@ -2177,7 +2211,7 @@ div.modal-dialog {
                 .content {
                     float: none;
                     padding: 20px 20px;
-                    margin: 0 auto;
+                    margin: 0px auto 30px auto;
 
                     .state {
                         width: auto;
@@ -2331,6 +2365,8 @@ div.modal-dialog {
                 padding-bottom: 10px;
 
                 .content {
+                    margin: 0px auto;
+
                     div.add,
                     div.restore {
                         form {

@@ -44,8 +44,34 @@ namespace Duplicati.Library.Main
 
             if (!string.IsNullOrEmpty(options.Dbpath))
                 return options.Dbpath;
-         
-            var folder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duplicati");
+
+			//Normal mode uses the systems "(Local) Application Data" folder
+			// %LOCALAPPDATA% on Windows, ~/.config on Linux
+
+			// Special handling for Windows:
+			//   - Older versions use %APPDATA%
+			//   - but new versions use %LOCALAPPDATA%
+			//
+			//  If we find a new version, lets use that
+			//    otherwise use the older location
+			//
+
+			var folder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duplicati");
+
+			if (Duplicati.Library.Utility.Utility.IsClientWindows)
+			{
+				var newlocation = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Duplicati");
+
+				var prevfile = System.IO.Path.Combine(folder, "dbconfig.json");
+				var curfile = System.IO.Path.Combine(newlocation, "dbconfig.json");
+
+				// If the new file exists, we use that
+				// If the new file does not exist, and the old file exists we use the old
+				// Otherwise we use the new location
+				if (System.IO.File.Exists(curfile) || !System.IO.File.Exists(prevfile))
+					folder = newlocation;
+			}
+
             if (!System.IO.Directory.Exists(folder))
                 System.IO.Directory.CreateDirectory(folder);
                 

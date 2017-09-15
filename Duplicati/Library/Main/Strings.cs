@@ -24,6 +24,7 @@ namespace Duplicati.Library.Main.Strings
         public static string FailedOperationMessage(OperationMode operationname, string errormessage) { return LC.L(@"The operation {0} has failed with error: {1}", operationname, errormessage); }
         public static string InvalidPathError(string path, string message) { return LC.L(@"Invalid path: ""{0}"" ({1})", path, message); }
         public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
+        public static string SourceFolderWildcardDriveNotSupportedError(string foldername) { return LC.L(@"The source folder {0} uses a wildcard drive, which is only supported on Windows, aborting backup", foldername); }
     }
 
     internal static class Options
@@ -140,8 +141,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DeletedfilesShort { get { return LC.L(@"List of deleted files"); } }
         public static string FilehashlookupsizeLong { get { return LC.L(@"A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log."); } }
         public static string FilehashlookupsizeShort { get { return LC.L(@"Memory used by the file hash"); } }
-        public static string DisablefilepathcacheShort { get { return LC.L(@"This option can be used to reduce the memory footprint by not keeping paths and modification timestamps in memory"); } }
-        public static string DisablefilepathcacheLong { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
+        public static string DisablefilepathcacheLong { get { return LC.L(@"This option can be used to reduce the memory footprint by not keeping paths and modification timestamps in memory"); } }
+        public static string DisablefilepathcacheShort { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
         public static string StoremetadataLong { get { return LC.L(@"Stores metadata, such as file timestamps and attributes. This increases the required storage space as well as the processing time."); } }
         public static string StoremetadataShort { get { return LC.L(@"Enables storing file metadata"); } }
         public static string StoremetadataDeprecated { get { return LC.L(@"This option is no longer used as metadata is now stored by default"); } }
@@ -217,13 +218,15 @@ namespace Duplicati.Library.Main.Strings
         public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of Hyper-V machines (Windows only)"); } }
         public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the IDs of machines to include in the backup. Specify multiple machine IDs with a semicolon separator. (You can use this Powershell command to get ID 'Get-VM | ft VMName, ID')"); } }
         public static string DisablesyntehticfilelistLong { get { return LC.L(@"If Duplicati detects that the previous backup did not complete, it will generate a filelist that is a merge of the last completed backup and the contents that were uploaded in the incomplete backup session."); } }
-        public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disables synethic filelist"); } }
+        public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disables synthetic filelist"); } }
         public static string CheckfiletimeonlyLong { get { return LC.L(@"This flag instructs Duplicati to not look at metadata or filesize when deciding to scan a file for changes. Use this option if you have a large number of files and notice that the scanning takes a long time with unmodified files."); } }
         public static string CheckfiletimeonlyShort { get { return LC.L(@"Checks only file lastmodified"); } }
         public static string DontcompressrestorepathsShort { get { return LC.L(@"Disables path compresion on restore"); } }
         public static string DontcompressrestorepathsLong { get { return LC.L(@"When restore a subset of a backup into a new folder, the shortest possible path is used to avoid generating deep paths with empty folders. Use this flag to skip this compression, such that the entire original folder structure is preserved, including upper level empty folders."); } }
         public static string AllowfullremovalShort { get { return LC.L(@"Allow removing all filesets"); } }
         public static string AllowfullremovalLong { get { return LC.L(@"By default, the last fileset cannot be removed. This is a safeguard to make sure that all remote data is not deleted by a configuration mistake. Use this flag to disable that protection, such that all filesets can be deleted."); } }
+        public static string AutoVacuumShort { get { return LC.L(@"Allow automatic rebuilding of local database to save space."); } }
+        public static string AutoVacuumLong { get { return LC.L(@"Some operations that manipulate the local database leave unused entries behind. These entries are not deleted from a hard drive until a VACUUM operation is run. This operation saves disk space in the long run but needs to temporarily create a copy of all valid entries in the database. Setting this to true will allow Duplicati to perform VACUUM operations at its discretion."); } }
     }
 
     internal static class Common

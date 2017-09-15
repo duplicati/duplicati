@@ -57,6 +57,7 @@ namespace Duplicati.Library.Backend.OpenStack
             new KeyValuePair<string, string>("Rackspace US", "https://identity.api.rackspacecloud.com/v2.0"),
             new KeyValuePair<string, string>("Rackspace UK", "https://lon.identity.api.rackspacecloud.com/v2.0"),
             new KeyValuePair<string, string>("OVH Cloud Storage", "https://auth.cloud.ovh.net/v2.0"),
+            new KeyValuePair<string, string>("Selectel Cloud Storage", "https://auth.selcdn.ru"),
         };
             
         private class OpenStackAuthRequest

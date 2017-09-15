@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-04 22:22+0200\n"
+"POT-Creation-Date: 2017-08-31 21:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: franck aubert <franck.aubert@gmail.com>, 2017\n"
+"Last-Translator: Zakaria YAHI <zakyahi@msn.com>, 2017\n"
 "Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Language: fr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: CommandLine/Program.cs:300
+#: CommandLine/Program.cs:301
 msgid "Toggle automatic updates"
 msgstr "Activer les mises à jour automatiques"
 
-#: CommandLine/Program.cs:300
+#: CommandLine/Program.cs:301
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -367,6 +367,21 @@ msgstr ""
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr "Configure la police SSL à utiliser quand le chiffrement est activé"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:26
+#, csharp-format
+msgid "Error on deleting file: {0}"
+msgstr "Erreur sur la suppression du fichier: {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:27
+#, csharp-format
+msgid "Error reading file: {0}"
+msgstr "Erreur sur la lecture du fichier: {0}"
+
+#: Library/Backend/AlternativeFTP/Strings.cs:28
+#, csharp-format
+msgid "Error writing file: {0}"
+msgstr "Erreur sur l'enregistrement du fichier: {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:23
 msgid ""
@@ -798,8 +813,8 @@ msgid ""
 "formats are \"ftp://hostname/folder\" or "
 "\"ftp://username:password@hostname/folder\""
 msgstr ""
-"Ce back-end peut lire et écrire des données dans un back-end basé sur un FTP"
-" en utilisant un client FTP alternatif. Les formats autorisés sont "
+"Ce back-end peut lire et écrire des données sur un serveur FTP en utilisant "
+"un client FTP alternatif. Les formats autorisés sont "
 "\"ftp://serveur/dossier\" ou \"ftp://utilisateur:passe@serveur/dossier\""
 
 #: Library/Backend/FTP/Strings.cs:8
@@ -842,7 +857,7 @@ msgid "FTP"
 msgstr "FTP"
 
 #: Library/Backend/FTP/Strings.cs:19 Library/Backend/TahoeLAFS/Strings.cs:8
-#: Library/Backend/WEBDAV/Strings.cs:14
+#: Library/Backend/WEBDAV/Strings.cs:15
 #, csharp-format
 msgid "The folder {0} was not found, message: {1}"
 msgstr "Le dossier {0} n'a pas été trouvé, message: {1}"
@@ -1009,6 +1024,11 @@ msgid ""
 "custom device with option \"{0}\" you are free to name the mount point as "
 "you like."
 msgstr ""
+"Le point de montage a utiliser sur le serveur. Le défaut est \"Archive\" "
+"pour utiliser le point de montage intégré. Paramétrer cette option sur "
+"\"Sync\" pour utiliser le point de montage intégré en remplacement, ou si "
+"vous avez spécifié un périphérique personnalisé a l'aide de l'option \"{0}\""
+" vous pouvez nommer le point de montage comme vous le désirez"
 
 #: Library/Backend/Mega/Strings.cs:4
 msgid "mega.nz"
@@ -1060,7 +1080,7 @@ msgstr "Dossier créé automatiquement"
 msgid "Missing the folder: {0}"
 msgstr "Dossier manquant: {0}"
 
-#: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:11
+#: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:13
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Fichier non trouvé: {0}"
@@ -1312,7 +1332,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/S3/Strings.cs:34 Library/Backend/TahoeLAFS/Strings.cs:6
-#: Library/Backend/WEBDAV/Strings.cs:19
+#: Library/Backend/WEBDAV/Strings.cs:20
 msgid "Instructs Duplicati to use an SSL (https) connection"
 msgstr "Indiquez à Duplicati d'utiliser des connections SSL (https)"
 
@@ -1321,10 +1341,12 @@ msgid ""
 "Use this option to specify a storage class. If this option is not used, the "
 "server will choose a default storage class."
 msgstr ""
+"Utilisez cette option pour définir une classe de stockage. Si cette option "
+"n'est pas utilisée, le serveur choisira une classe de stockage par défaut."
 
 #: Library/Backend/S3/Strings.cs:37
 msgid "Specify storage class"
-msgstr ""
+msgstr "Définissez une classe de stockage."
 
 #: Library/Backend/SharePoint/Strings.cs:6
 msgid "Microsoft SharePoint"
@@ -1347,17 +1369,25 @@ msgid ""
 "option enables that authentication method. This is likely only available "
 "with windows servers and clients."
 msgstr ""
+"Si le serveur et le client utilisent tous les deux une authentification "
+"intégrée, cette option active cette méthode d'authentification. Il "
+"semblerait que ça ne soit le cas qu'avec des serveurs et clients Windows."
 
 #: Library/Backend/SharePoint/Strings.cs:13
 #: Library/Backend/WEBDAV/Strings.cs:12
 msgid "Use windows integrated authentication to connect to the server"
 msgstr ""
+"Utilisez l'authentification intégrée de Windows pour vous connecter au "
+"serveur."
 
 #: Library/Backend/SharePoint/Strings.cs:14
 msgid ""
 "Use this option to have files moved to the recycle bin folder instead of "
 "removing them permanently when compacting or deleting backups."
 msgstr ""
+"Utilisez cette option pour que les fichiers soient envoyés dans la corbeille"
+" plutôt que supprimés définitivement lorsque les backups sont compressées ou"
+" supprimées."
 
 #: Library/Backend/SharePoint/Strings.cs:15
 msgid "Move deleted files to the recycle bin"
@@ -1380,6 +1410,9 @@ msgid ""
 "Use this option to specify a custom value for timeouts of web operation when"
 " communicating with SharePoint Server. Recommended value is 180s."
 msgstr ""
+"Utilisez cette option pour définir une valeur personnalisée pour les "
+"timeouts des opérations web lors des communications avec un serveur "
+"SharePoint. La valeur recommandée est 180s. "
 
 #: Library/Backend/SharePoint/Strings.cs:21
 msgid "Set timeout for SharePoint web operations."
@@ -1434,7 +1467,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:5
 msgid "SSH Key Generator"
-msgstr ""
+msgstr "Générateur de clef SSH"
 
 #: Library/Backend/SSHv2/Strings.cs:6
 msgid "Public key username"
@@ -1450,7 +1483,7 @@ msgstr "Le type de clé"
 
 #: Library/Backend/SSHv2/Strings.cs:9
 msgid "Determines the type of key to generate"
-msgstr ""
+msgstr "Détermine le type de clef à générer"
 
 #: Library/Backend/SSHv2/Strings.cs:10
 msgid "The key length"
@@ -1524,7 +1557,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:32 Library/Backend/SSHv2/Strings.cs:34
 msgid "Uses a SSH private key to authenticate"
-msgstr ""
+msgstr "Utilise une clef privée pour s'authentifier"
 
 #: Library/Backend/SSHv2/Strings.cs:33
 #, csharp-format
@@ -1536,15 +1569,37 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:35
+msgid ""
+"Use this option to manage the internal timeout for SSH operations if "
+"operations. If this options is set to zero, the operations will not time out"
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:36
+msgid "Sets the operation timeout value"
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:37
+msgid ""
+"This option can be used to enable the keep-alive interval for the SSH "
+"connection. If the connection is idle, aggressive firewalls might close the "
+"connection. Using keep-alive will keep the connection open in this scenario."
+" If this value is set to zero, the keep-alive is disabled."
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:38
+msgid "Sets a keepalive value"
+msgstr ""
+
+#: Library/Backend/SSHv2/Strings.cs:39
 msgid "SFTP (SSH)"
 msgstr "SFTP (SSH)"
 
-#: Library/Backend/SSHv2/Strings.cs:36
+#: Library/Backend/SSHv2/Strings.cs:40
 #, csharp-format
 msgid "Unable to set folder to {0}, error message: {1}"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:37
+#: Library/Backend/SSHv2/Strings.cs:41
 #, csharp-format
 msgid ""
 "Validation of server fingerprint failed. Server returned fingerprint "
@@ -1552,7 +1607,7 @@ msgid ""
 "in-the-middle attack!"
 msgstr ""
 
-#: Library/Backend/SSHv2/Strings.cs:38
+#: Library/Backend/SSHv2/Strings.cs:42
 #, csharp-format
 msgid ""
 "Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
@@ -1565,7 +1620,7 @@ msgid ""
 "format is \"tahoe://hostname:port/uri/$DIRCAP\"."
 msgstr ""
 
-#: Library/Backend/TahoeLAFS/Strings.cs:5 Library/Backend/WEBDAV/Strings.cs:18
+#: Library/Backend/TahoeLAFS/Strings.cs:5 Library/Backend/WEBDAV/Strings.cs:19
 msgid ""
 "Use this flag to communicate using Secure Socket Layer (SSL) over http "
 "(https)."
@@ -1604,7 +1659,14 @@ msgstr ""
 msgid "WebDAV"
 msgstr "WebDAV"
 
-#: Library/Backend/WEBDAV/Strings.cs:15
+#: Library/Backend/WEBDAV/Strings.cs:14
+#, csharp-format
+msgid ""
+"The server returned the error code {0} ({1}), indicating that the server "
+"does not support WebDAV connections"
+msgstr ""
+
+#: Library/Backend/WEBDAV/Strings.cs:16
 #, csharp-format
 msgid ""
 "When listing the folder {0} the file {1} was listed, but the server now reports that the file is not found.\n"
@@ -1612,22 +1674,22 @@ msgid ""
 "Error message: {3}"
 msgstr ""
 
-#: Library/Backend/WEBDAV/Strings.cs:20
+#: Library/Backend/WEBDAV/Strings.cs:21
 msgid ""
 "To aid in debugging issues, it is possible to set a path to a file that will"
 " be overwritten with the PROPFIND response"
 msgstr ""
 
-#: Library/Backend/WEBDAV/Strings.cs:21
+#: Library/Backend/WEBDAV/Strings.cs:22
 msgid "Dump the PROPFIND response"
 msgstr ""
 
 #: Library/Compression/Strings.cs:4
 #, csharp-format
 msgid "Please use the {0} option instead"
-msgstr ""
+msgstr "Utilisez l'option {0} à la place"
 
-#: Library/Compression/Strings.cs:5 Library/Compression/Strings.cs:21
+#: Library/Compression/Strings.cs:5 Library/Compression/Strings.cs:23
 msgid ""
 "This option controls the compression level used. A setting of zero gives no "
 "compression, and a setting of 9 gives maximum compression."
@@ -1650,57 +1712,67 @@ msgid "Sets the Zip compression method"
 msgstr "Configurer la méthode de compression Zip"
 
 #: Library/Compression/Strings.cs:9
+msgid "Toggles Zip64 support"
+msgstr ""
+
+#: Library/Compression/Strings.cs:10
+msgid ""
+"The zip64 format is required for files larger than 4GiB, use this flag to "
+"toggle it"
+msgstr ""
+
+#: Library/Compression/Strings.cs:11
 msgid ""
 "This module provides the industry standard Zip compression. Files created "
 "with this module can be read by any standard-compliant zip application."
 msgstr ""
 
-#: Library/Compression/Strings.cs:10
+#: Library/Compression/Strings.cs:12
 msgid "Zip compression"
 msgstr "Compression Zip"
 
-#: Library/Compression/Strings.cs:14
+#: Library/Compression/Strings.cs:16
 msgid "Archive not opened for writing"
 msgstr ""
 
-#: Library/Compression/Strings.cs:15
+#: Library/Compression/Strings.cs:17
 msgid "Archive not opened for reading"
 msgstr ""
 
-#: Library/Compression/Strings.cs:16
+#: Library/Compression/Strings.cs:18
 msgid "The given file is not part of this archive"
 msgstr ""
 
-#: Library/Compression/Strings.cs:17
+#: Library/Compression/Strings.cs:19
 msgid "7z Archive with LZMA2 support."
 msgstr ""
 
-#: Library/Compression/Strings.cs:18
+#: Library/Compression/Strings.cs:20
 msgid "7z Archive"
 msgstr "Archive 7z"
 
-#: Library/Compression/Strings.cs:19
+#: Library/Compression/Strings.cs:21
 msgid ""
 "The number of threads used in LZMA 2 compression. Defaults to the number of "
 "processor cores."
 msgstr ""
 
-#: Library/Compression/Strings.cs:20
+#: Library/Compression/Strings.cs:22
 msgid "Number of threads used in compression"
 msgstr "Nombre de passes utilisées en compression"
 
-#: Library/Compression/Strings.cs:22
+#: Library/Compression/Strings.cs:24
 msgid "Sets the 7z compression level"
 msgstr "Configurer le niveau de compression 7z"
 
-#: Library/Compression/Strings.cs:23
+#: Library/Compression/Strings.cs:25
 msgid ""
 "This option controls the compression algorithm used. Enabling this option "
 "will cause 7z to use the fast algorithm, which produces slightly less "
 "compression."
 msgstr ""
 
-#: Library/Compression/Strings.cs:24
+#: Library/Compression/Strings.cs:26
 msgid "Sets the 7z fast algorithm usage"
 msgstr ""
 
@@ -1726,7 +1798,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:6
 msgid "Empty passphrase not allowed"
-msgstr ""
+msgstr "Phrase de passe vide interdite"
 
 #: Library/Encryption/Strings.cs:7
 msgid ""
@@ -1817,7 +1889,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:27
 msgid "Use GPG Armor"
-msgstr ""
+msgstr "Utilisez GPG Armor"
 
 #: Library/Encryption/Strings.cs:28
 msgid "Overrides the GPG command supplied for decryption"
@@ -1916,7 +1988,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:22
 msgid "Do you want to test the connection?"
-msgstr ""
+msgstr "Voulez-vous tester la connexion ?"
 
 #: Library/Interface/Strings.cs:23
 #, csharp-format
@@ -2006,12 +2078,12 @@ msgstr ""
 msgid "Failed to recover from error deleting file {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1103
+#: Library/Main/BackendManager.cs:1122
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1116
+#: Library/Main/BackendManager.cs:1135
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr ""
@@ -2056,7 +2128,7 @@ msgstr ""
 #: Library/Main/Strings.cs:9
 #, csharp-format
 msgid "The option {0} is deprecated: {1}"
-msgstr ""
+msgstr "L'option {0} est dépréciée : {1}"
 
 #: Library/Main/Strings.cs:10
 #, csharp-format
@@ -2066,7 +2138,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:11
 msgid "No source folders specified for backup"
-msgstr ""
+msgstr "Pas de dossier source spécifié pour sauvegarde"
 
 #: Library/Main/Strings.cs:12
 #, csharp-format
@@ -2129,12 +2201,12 @@ msgstr ""
 #: Library/Main/Strings.cs:22
 #, csharp-format
 msgid "The operation {0} has started"
-msgstr ""
+msgstr "L'opération {0} a débuté"
 
 #: Library/Main/Strings.cs:23
 #, csharp-format
 msgid "The operation {0} has completed"
-msgstr ""
+msgstr "L'opération {0} est complétée"
 
 #: Library/Main/Strings.cs:24
 #, csharp-format
@@ -2144,7 +2216,7 @@ msgstr ""
 #: Library/Main/Strings.cs:25
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
-msgstr ""
+msgstr "Chemin invalide : \"{0}\" ({1})"
 
 #: Library/Main/Strings.cs:26
 #, csharp-format
@@ -2163,6 +2235,7 @@ msgstr ""
 #: Library/Main/Strings.cs:32
 msgid "A flag indicating that Duplicati should remove unused files"
 msgstr ""
+"Un flag pour indiquer à Duplicati de supprimer les fichiers inutilisés"
 
 #: Library/Main/Strings.cs:33
 msgid ""
@@ -2217,7 +2290,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:42
 msgid "Max number of kilobytes to download pr. second"
-msgstr ""
+msgstr "Nombre maximum de kilo-octets par seconde pour télécharger"
 
 #: Library/Main/Strings.cs:43
 msgid ""
@@ -2291,7 +2364,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:56
 msgid "Show all versions"
-msgstr ""
+msgstr "Afficher toutes les versions"
 
 #: Library/Main/Strings.cs:57
 msgid ""
@@ -2322,7 +2395,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:62
 msgid "Time to wait between retries"
-msgstr ""
+msgstr "Temps d'attente entre les essais"
 
 #: Library/Main/Strings.cs:63
 msgid "Use this option to attach extra files to the newly uploaded filelists."
@@ -2354,7 +2427,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:69
 msgid "Temporary storage folder"
-msgstr ""
+msgstr "Dossier de stockage temporaire"
 
 #: Library/Main/Strings.cs:70
 msgid ""
@@ -3179,7 +3252,7 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:220
-msgid "Disables synethic filelist"
+msgid "Disables synthetic filelist"
 msgstr ""
 
 #: Library/Main/Strings.cs:221
@@ -3217,23 +3290,37 @@ msgid ""
 "this flag to disable that protection, such that all filesets can be deleted."
 msgstr ""
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:227
+msgid "Allow automatic rebuilding of local database to save space."
+msgstr ""
+
+#: Library/Main/Strings.cs:228
+msgid ""
+"Some operations that manipulate the local database leave unused entries "
+"behind. These entries are not deleted from a hard drive until a VACUUM "
+"operation is run. This operation saves disk space in the long run but needs "
+"to temporarily create a copy of all valid entries in the database. Setting "
+"this to true will allow Duplicati to perform VACUUM operations at its "
+"discretion."
+msgstr ""
+
+#: Library/Main/Strings.cs:233
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:234
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:235
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 
-#: Library/Main/Strings.cs:234
+#: Library/Main/Strings.cs:236
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr ""
@@ -3874,7 +3961,7 @@ msgstr ""
 #: Library/Utility/Strings.cs:28
 #, csharp-format
 msgid "{0} bytes"
-msgstr "{0} bytes"
+msgstr "{0} octets"
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format

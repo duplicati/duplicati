@@ -5,6 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <Prefer32Bit>False</Prefer32Bit>
     <RootNamespace>Duplicati.CommandLine.BackendTool</RootNamespace>
     <AssemblyName>Duplicati.CommandLine.BackendTool</AssemblyName>
     <SignAssembly>false</SignAssembly>
@@ -63,6 +64,10 @@
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
+      <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
+      <Name>Duplicati.Library.Backend.Jottacloud</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
       <Name>Duplicati.Library.Backend.S3</Name>
@@ -70,6 +75,10 @@
     <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
       <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>
       <Name>Duplicati.Library.Backend.SharePoint</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
+      <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
+      <Name>Duplicati.Library.Backend.Sia</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
       <Project>{FF2BF37C-E502-4C98-BEA0-701671DDFA08}</Project>

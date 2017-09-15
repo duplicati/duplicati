@@ -33,6 +33,7 @@ namespace Duplicati.Server
             void Abort();
             void Pause();
             void Resume();
+            void UpdateThrottleSpeed();
             void SetController(Duplicati.Library.Main.Controller controller);
         }
         
@@ -82,7 +83,49 @@ namespace Duplicati.Server
                 if (c != null)
                     c.Resume();
             }
-            
+
+            public long OriginalUploadSpeed { get; set; }
+            public long OriginalDownloadSpeed { get; set; }
+
+			public void UpdateThrottleSpeed()
+			{
+				var controller = this.Controller;
+				if (controller == null)
+					return;
+
+				var job_upload_throttle = this.OriginalUploadSpeed <= 0 ? long.MaxValue : this.OriginalUploadSpeed;
+				var job_download_throttle = this.OriginalDownloadSpeed <= 0 ? long.MaxValue : this.OriginalDownloadSpeed;
+
+				var server_upload_throttle = long.MaxValue;
+				var server_download_throttle = long.MaxValue;
+
+				try
+				{
+					if (!string.IsNullOrWhiteSpace(Program.DataConnection.ApplicationSettings.UploadSpeedLimit))
+						server_upload_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(Program.DataConnection.ApplicationSettings.UploadSpeedLimit, "kb");
+				}
+				catch { }
+
+				try
+				{
+					if (!string.IsNullOrWhiteSpace(Program.DataConnection.ApplicationSettings.DownloadSpeedLimit))
+						server_download_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(Program.DataConnection.ApplicationSettings.DownloadSpeedLimit, "kb");
+				}
+				catch { }
+
+				var upload_throttle = Math.Min(job_upload_throttle, server_upload_throttle);
+				var download_throttle = Math.Min(job_download_throttle, server_download_throttle);
+
+				if (upload_throttle <= 0 || upload_throttle == long.MaxValue)
+					upload_throttle = 0;
+
+				if (download_throttle <= 0 || download_throttle == long.MaxValue)
+					download_throttle = 0;
+
+				controller.MaxUploadSpeed = upload_throttle;
+				controller.MaxDownloadSpeed = download_throttle;
+			}
+
             private readonly long m_taskID;
             
             public RunnerData()
@@ -171,6 +214,7 @@ namespace Duplicati.Server
                 internal long m_backendFileSize;
                 internal long m_backendFileProgress;
                 internal long m_backendSpeed;
+                internal bool m_backendIsBlocking;
                 
                 internal string m_currentFilename;
                 internal long m_currentFilesize;
@@ -203,6 +247,7 @@ namespace Duplicati.Server
                 public long BackendFileSize { get { return m_backendFileSize; } }
                 public long BackendFileProgress { get { return m_backendFileProgress; } }
                 public long BackendSpeed { get { return m_backendSpeed; } }
+                public bool BackendIsBlocking { get { return m_backendIsBlocking; } }
                 public string CurrentFilename { get { return m_currentFilename; } }
                 public long CurrentFilesize { get { return m_currentFilesize; } }
                 public long CurrentFileoffset { get { return m_currentFileoffset; } }
@@ -231,7 +276,7 @@ namespace Duplicati.Server
                 lock(m_lock)
                 {
                     if (m_backendProgress != null)
-                        m_backendProgress.Update(out m_state.m_backendAction, out m_state.m_backendPath, out m_state.m_backendFileSize, out m_state.m_backendFileProgress, out m_state.m_backendSpeed);
+                        m_backendProgress.Update(out m_state.m_backendAction, out m_state.m_backendPath, out m_state.m_backendFileSize, out m_state.m_backendFileProgress, out m_state.m_backendSpeed, out m_state.m_backendIsBlocking);
                     if (m_operationProgress != null)
                     {
                         m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset);
@@ -488,9 +533,24 @@ namespace Duplicati.Server
                 using(tempfolder)
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
-                    ((RunnerData)data).Controller = controller;
-                    
-                    switch (data.Operation)
+                    try 
+                    {
+                        if (options.ContainsKey("throttle-upload"))
+                            ((RunnerData)data).OriginalUploadSpeed = Duplicati.Library.Utility.Sizeparser.ParseSize(options["throttle-upload"], "kb");
+                    }
+                    catch { }
+
+					try
+					{
+						if (options.ContainsKey("throttle-download"))
+                            ((RunnerData)data).OriginalDownloadSpeed = Duplicati.Library.Utility.Sizeparser.ParseSize(options["throttle-download"], "kb");
+					}
+					catch { }
+
+					((RunnerData)data).Controller = controller;
+                    data.UpdateThrottleSpeed();
+
+					switch (data.Operation)
                     {
                         case DuplicatiOperation.Backup:
                             {
@@ -597,7 +657,12 @@ namespace Duplicati.Server
                                 Program.Scheduler.Reschedule();
                                 return null;
                             }
-
+                        case DuplicatiOperation.Vacuum:
+                            {
+                                var r = controller.Vacuum();
+                                UpdateMetadata(backup, r);
+                                return r;
+                            }
                         default:
                             //TODO: Log this
                             return null;
@@ -843,6 +908,8 @@ namespace Duplicati.Server
                 select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }
+
+
     }
 }
 

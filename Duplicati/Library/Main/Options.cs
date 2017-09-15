@@ -497,7 +497,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("no-auto-compact", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoautocompactShort, Strings.Options.NoautocompactLong, "false"),
                     new CommandLineArgument("small-file-size", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilesizeShort, Strings.Options.SmallfilesizeLong),
-                    new CommandLineArgument("small-file-max-count", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilemaxcountShort, Strings.Options.SmallfilemaxcountLong, DEFAULT_SMALL_FILE_MAX_COUNT.ToString()),
+                    new CommandLineArgument("small-file-max-count", CommandLineArgument.ArgumentType.Integer, Strings.Options.SmallfilemaxcountShort, Strings.Options.SmallfilemaxcountLong, DEFAULT_SMALL_FILE_MAX_COUNT.ToString()),
 
                     new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong, "false"),
                     new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
@@ -517,6 +517,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
 
                     new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
+
+                    new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                 });
 
                 return lst;
@@ -1743,6 +1745,14 @@ namespace Duplicati.Library.Main
         public bool RepairOnlyPaths
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "repair-only-paths"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating whether the VACUUM operation should ever be run automatically.
+        /// </summary>
+        public bool AutoVacuum
+        {
+            get { return GetBool("auto-vacuum"); }
         }
 
         /// <summary>

@@ -10,8 +10,8 @@ $(document).ready(function() {
 
         // First we grab the nonce and salt
         $.ajax({
-            url: '/login.cgi',
-            type: 'GET',
+            url: './login.cgi',
+            type: 'POST',
             dataType: 'json',
             data: {'get-nonce': 1}
         })
@@ -21,8 +21,8 @@ $(document).ready(function() {
             var noncedpwd = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(CryptoJS.enc.Base64.parse(data.Nonce) + saltedpwd)).toString(CryptoJS.enc.Base64);
 
             $.ajax({
-                url: '/login.cgi',
-                type: 'GET',
+                url: './login.cgi',
+                type: 'POST',
                 dataType: 'json',
                 data: {'password': noncedpwd }
             })

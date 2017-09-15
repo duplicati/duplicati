@@ -5,6 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <Prefer32Bit>False</Prefer32Bit>
     <RootNamespace>Duplicati.CommandLine.RecoveryTool</RootNamespace>
     <AssemblyName>Duplicati.CommandLine.RecoveryTool</AssemblyName>
     <SignAssembly>false</SignAssembly>
@@ -82,6 +83,10 @@
       <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
       <Name>Duplicati.Library.Backend.HubiC</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
+      <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
+      <Name>Duplicati.Library.Backend.Jottacloud</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
       <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
       <Name>Duplicati.Library.Backend.OneDrive</Name>
@@ -97,6 +102,10 @@
     <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
       <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>
       <Name>Duplicati.Library.Backend.SharePoint</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
+      <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
+      <Name>Duplicati.Library.Backend.Sia</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
       <Project>{FF2BF37C-E502-4C98-BEA0-701671DDFA08}</Project>

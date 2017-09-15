@@ -7,8 +7,10 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3B546BD0-7549-4CE3-9B68-5C149B8AA2E7}</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <Prefer32Bit>False</Prefer32Bit>    
     <RootNamespace>SQLiteTool</RootNamespace>
     <AssemblyName>SQLiteTool</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -34,9 +36,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj">
-      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Library.Utility</Name>
+    <ProjectReference Include="..\..\Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
+      <Project>{2C838169-B187-4B09-8768-1C24C2521C8D}</Project>
+      <Name>Duplicati.Library.SQLiteHelper</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

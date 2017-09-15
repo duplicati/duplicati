@@ -11,7 +11,7 @@
 
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, purge
+  Commands: backup, find, restore, delete, compact, test, compare, purge, vacuum
   Reparing: repair, affected, list-broken-files, purge-broken-files
   Debugging: debug, logging, create-report, test-filters, system-info, send-mail
   Targets: %BACKENDS%
@@ -73,7 +73,9 @@ Usage: backup <storage-URL> "<source-path>" [<options>]
   Makes a backup of <source-path> and stores it in <storage-URL>. The format for <storage-URL> is 
     protocol://username:password@hostname:port/path?backend_option1=value1&backend_option2=value2. 
   Multiple source paths can be specified if they are separated by a space.
-
+%IF_WINDOWS%
+  On Windows clients, the source paths can be specified using a wildcard (*) in place of the drive name, for example, "%EXAMPLE_WILDCARD_DRIVE_SOURCE_PATH%". In this case, the source path will be backed up from all drives on which the path exists. This can be especially useful when backing up sources on removable drives, whose drive letters may not be reliable. When using --allow-missing-source, the backup will succeed as long as at least one path matches the wildcarded path.
+%END_IF_WINDOWS%
   <username> must not contain : and <password> must not contain @. If they do, specify username and password using --auth-username and --auth-password, or url-encode them.
 
   --auth-password=<string>
@@ -265,7 +267,13 @@ Usage: test-filters <source-path> [<options>]
 Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
   Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
-  
+
+# =============================================================================
+> duplicati.commandline.exe help vacuum
+
+Usage: vacuum <storage-URL> [<options>]
+
+  Rebuilds the local database, repacking it into a minimal amount of disk space. 
   
 # =============================================================================
 > duplicati.commandline.exe help debug
@@ -446,7 +454,7 @@ Duplicati can send email notifications after each operation. Use the send-mail c
   --send-mail-password=<password>
     Required password to authenticate with SMTP server.
   --send-mail-level=<level>
-    When email messages are sent: "Success", "Warning", "Error" are possible.
+    When email messages are sent: "Success", "Warning", "Error", "Fatal", "All" are possible.
   --send-mail-any-operation=true
     Also send emails after other operations like restore etc.
 	
@@ -462,9 +470,7 @@ Duplicati can send email notifications after each operation. Use the send-mail c
 	  The backend url
     %LOCALPATH%
 	  The path to the local folders involved (i.e. the folders being backed up)
-
-
-  
+	  
 # =============================================================================
 > duplicati.commandline.exe help advanced
 > duplicati.commandline.exe help option

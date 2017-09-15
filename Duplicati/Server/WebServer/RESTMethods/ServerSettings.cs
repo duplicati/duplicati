@@ -40,6 +40,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
             foreach (var n in adv_props)
                 dict[n.Name] = n.Value;
 
+            string sslcert;
+            dict.TryGetValue("server-ssl-certificate", out sslcert);
+            dict["server-ssl-certificate"] = (!string.IsNullOrWhiteSpace(sslcert)).ToString();
+
             info.OutputOK(dict);
         }
 
@@ -71,22 +75,29 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 var serversettings = data.Where(x => !string.IsNullOrWhiteSpace(x.Key)).ToDictionary(x => x.Key, x => x.Key.StartsWith("--", StringComparison.Ordinal) ? null : x.Value);
                 var globalsettings = data.Where(x => !string.IsNullOrWhiteSpace(x.Key) && x.Key.StartsWith("--", StringComparison.Ordinal));
 
-                Program.DataConnection.ApplicationSettings.UpdateSettings(serversettings, false);
+                serversettings.Remove("server-ssl-certificate");
+				serversettings.Remove("ServerSSLCertificate");
 
-                // Update based on inputs
-                var existing = Program.DataConnection.Settings.ToDictionary(x => x.Name, x => x);
-                foreach (var g in globalsettings)
-                    if (g.Value == null)
-                        existing.Remove(g.Key);
-                    else
-                    {
-                        if (existing.ContainsKey(g.Key))
-                            existing[g.Key].Value = g.Value;
+                if (serversettings.Any())
+				    Program.DataConnection.ApplicationSettings.UpdateSettings(serversettings, false);
+
+                if (globalsettings.Any())
+                {
+                    // Update based on inputs
+                    var existing = Program.DataConnection.Settings.ToDictionary(x => x.Name, x => x);
+                    foreach (var g in globalsettings)
+                        if (g.Value == null)
+                            existing.Remove(g.Key);
                         else
-                            existing[g.Key] = new Setting() { Name = g.Key, Value = g.Value };
-                    }
+                        {
+                            if (existing.ContainsKey(g.Key))
+                                existing[g.Key].Value = g.Value;
+                            else
+                                existing[g.Key] = new Setting() { Name = g.Key, Value = g.Value };
+                        }
 
-                Program.DataConnection.Settings = existing.Select(x => x.Value).ToArray();
+                    Program.DataConnection.Settings = existing.Select(x => x.Value).ToArray();
+                }
 
                 info.OutputOK();
             }

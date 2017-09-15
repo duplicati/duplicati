@@ -196,27 +196,72 @@ namespace Duplicati.Library.Main
                 if (inputsources == null || inputsources.Length == 0)
                     throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError);
 
-                var sources = new List<string>(inputsources);
+                var sources = new List<string>(inputsources.Length);
+
+                System.IO.DriveInfo[] drives = null;
 
                 //Make sure they all have the same format and exist
-                for(int i = 0; i < sources.Count; i++)
+                for (int i = 0; i < inputsources.Length; i++)
                 {
-                    try
+                    List<string> expandedSources = new List<string>();
+                    if (inputsources[i].StartsWith("*:"))
                     {
-                        sources[i] = System.IO.Path.GetFullPath(sources[i]);
+                        // Lazily load the drive info
+                        if (drives == null)
+                        {
+                            // *: drive paths are only supported on Windows clients
+                            if (Library.Utility.Utility.IsClientWindows)
+                            {
+                                drives = System.IO.DriveInfo.GetDrives();
+                            }
+                            else
+                            {
+                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceFolderWildcardDriveNotSupportedError(inputsources[i]));
+                            }
+                        }
+
+                        // Replace the drive letter with each available drive
+                        string sourcePath = inputsources[i].Substring(1);
+                        foreach (System.IO.DriveInfo drive in drives)
+                        {
+                            expandedSources.Add(drive.Name[0] + sourcePath);
+                        }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
+                        expandedSources.Add(inputsources[i]);
                     }
 
-                    var fi = new System.IO.FileInfo(sources[i]);
-                    var di = new System.IO.DirectoryInfo(sources[i]);
-                    if (!(fi.Exists || di.Exists) && !m_options.AllowMissingSource)
-                        throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(sources[i]));
+                    bool foundAnyPaths = false;
+                    foreach (string expandedSource in expandedSources)
+                    {
+                        string source;
+                        try
+                        {
+                            source = System.IO.Path.GetFullPath(expandedSource);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Note that we use the original source (with the *) in the error
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(inputsources[i], ex.Message), ex);
+                        }
 
-                    if (!fi.Exists)
-                        sources[i] = Library.Utility.Utility.AppendDirSeparator(sources[i]);
+                        var fi = new System.IO.FileInfo(source);
+                        var di = new System.IO.DirectoryInfo(source);
+                        if (fi.Exists || di.Exists)
+                        {
+                            foundAnyPaths = true;
+
+                            if (!fi.Exists)
+                                source = Library.Utility.Utility.AppendDirSeparator(source);
+
+                            sources.Add(source);
+                        }
+                    }
+
+                    // If no paths were found, and we aren't allowed to have missing sources, throw an error
+                    if (!foundAnyPaths && !m_options.AllowMissingSource)
+                        throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(inputsources[i]));
                 }
 
                 //Sanity check for duplicate files/folders
@@ -496,6 +541,13 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public Library.Interface.IVacuumResults Vacuum()
+        {
+            return RunAction(new VacuumResult(), result => {
+                new Operation.VacuumHandler(m_options, result).Run();
+            });
+        }
+
         private T RunAction<T>(T result, Action<T> method)
             where T : ISetCommonOptions, ITaskControl, Logging.ILog
         {
@@ -671,13 +723,15 @@ namespace Duplicati.Library.Main
             foreach (Library.Interface.IGenericModule m in DynamicLoader.GenericLoader.Modules)
                 m_options.LoadedModules.Add(new KeyValuePair<bool, Library.Interface.IGenericModule>(Array.IndexOf<string>(m_options.DisableModules, m.Key.ToLower()) < 0 && (m.LoadAsDefault || Array.IndexOf<string>(m_options.EnableModules, m.Key.ToLower()) >= 0), m));
 
+            // Make the filter read-n-write able in the generic modules
+            var pristinefilter = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
+            m_options.RawOptions["filter"] = pristinefilter;
+            
+            // Store the URL connection options separately, as these should only be visible to modules implementing IConnectionModule
             var conopts = new Dictionary<string, string>(m_options.RawOptions);
             var qp = new Library.Utility.Uri(m_backend).QueryParameters;
-            foreach(var k in qp.Keys)
+            foreach (var k in qp.Keys)
                 conopts[(string)k] = qp[(string)k];
-
-            // Make the filter read-n-write able in the generic modules
-            var pristinefilter = conopts["filter"] = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
 
             foreach (var mx in m_options.LoadedModules)
                 if (mx.Key)
@@ -704,9 +758,12 @@ namespace Duplicati.Library.Main
                         ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
 
-            // If the filters were changed, read them back in
-            if (pristinefilter != conopts["filter"])
-                filter = FilterExpression.Deserialize(pristinefilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
+            // If the filters were changed by a module, read them back in
+            if (pristinefilter != m_options.RawOptions["filter"])
+            {
+                filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
+            }
+            m_options.RawOptions.Remove("filter"); // "--filter" is not a supported command line option
 
             OperationRunning(true);
 
@@ -1012,9 +1069,21 @@ namespace Duplicati.Library.Main
                 t.Abort();
         }
 
-        #region IDisposable Members
+        public long MaxUploadSpeed
+        {
+            get { return m_options.MaxUploadPrSecond; }
+            set { m_options.MaxUploadPrSecond = value; }
+        }
 
-        public void Dispose()
+		public long MaxDownloadSpeed
+		{
+			get { return m_options.MaxDownloadPrSecond; }
+			set { m_options.MaxDownloadPrSecond = value; }
+		}
+
+		#region IDisposable Members
+
+		public void Dispose()
         {
         }
 

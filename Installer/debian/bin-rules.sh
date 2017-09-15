@@ -65,3 +65,6 @@ override_dh_auto_install:
 	find build/lib/duplicati/* -type f -name \*.exe | xargs chmod 755
 	find build/lib/duplicati/* -type f -name \*.sh | xargs chmod 755
 	dh_install
+	
+override_dh_systemd_enable:
+	dh_systemd_enable --no-enable

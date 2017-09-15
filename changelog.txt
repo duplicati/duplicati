@@ -1,3 +1,136 @@
+2017-09-14 - 2.0.2.5_canary_2017-09-14
+==========
+* Added support for wildcards in source paths on Windows, thanks @tygill
+* Improved default values for Sia backend, thanks @fuffenz
+
+2017-09-09 - 2.0.2.4_canary_2017-09-09
+==========
+* Fixed an issue that cause Duplicati GUI to fail on startup
+
+2017-09-08 - 2.0.2.3_canary_2017-09-08
+==========
+* Added Italian and Chinese (Taiwan) to languages
+* Fixed periodically loosing http certificate overrides
+* Added status variables to mail/jabber/script/http reporters
+* Added a Sia backend (thanks @fuffenz)
+* Fixed issue with using Azure backend
+
+2017-08-30 - 2.0.2.2_canary_2017-08-30
+==========
+* Fixed not performing vacuum all the time, thanks @danstahr
+* Added Selectel as an OpenStack prodvider, thanks @febalist
+* Added a fix for hanging "Connecting ..." dialogs on some machines
+* Fixed an issue with the HTTP report module not using a custom message
+* Updated translations, added Danish to the list, thanks to all translators!
+* Improved error messages on passphrase change
+* Fixed a crash that happened in the scheduler if the clock was changed with more than 3 months
+* Fixed TrayIcon connecting over HTTPS if possible, thanks @mnaiman
+* Added options to SSH library that allows configuring the timeout values
+* Updated the Mega and SSH libraries
+* Added support for detecting MacPorts versions of Mono
+* Added a tooltip to the Windows trayicon
+* Changed the logic in S3 to auto-set `--s3-ext-forcepathstyle` if the destination is not a known Amazon server
+* Improved error message for WebDAV if the server returns 405
+* Added a startup dialog that asks users to password protect the UI
+* Added Wasabi as an S3 provider
+
+2017-08-01 - 2.0.2.1_beta_2017-08-01
+==========
+This is the first Beta release of Duplicati 2.0.
+
+It is a rebuild of version 2.0.1.73, intended for users who prefer a stable version instead of "bleeding edge" updates.
+
+Thanks to everyone who has used Duplicati, reported bugs and contributed fixes!
+
+2017-07-15 - 2.0.1.73_experimental_2017-07-15
+==========
+This version is the same as 2.0.1.72_canary.
+Som of the changes from 2.0.1.61_experimental:
+
+* Added a "dark" theme
+* Updated thirdparty libraries
+* Added JottaCloud backend
+* Improved database rebuild speed
+* Added throttle controls to the WebUI
+* Switched to %LOCALAPPDATA% for storing data on Windows
+* And more ...
+
+2017-07-05 - 2.0.1.72_canary_2017-07-05
+==========
+* Fix duplicate `zip-compression-level` warning
+
+2017-07-04 - 2.0.1.71_canary_2017-07-04
+==========
+* Fixed a problem with the Synology package allowing access without being authenticated with DSM
+
+2017-07-04 - 2.0.1.70_canary_2017-07-04
+==========
+* Added support for enabling zip64
+* Rewrote the Synology package to use nginx proxy features instead of CGI
+* Added code signature to Synology package
+
+2017-06-29 - 2.0.1.69_canary_2017-06-29
+==========
+* Added support for attaching the console to the service on Windows, thanks @mnaiman
+* Fixed a crash when starting the trayicon with a password set, thanks @mnaiman
+
+2017-06-28 - 2.0.1.68_canary_2017-06-28
+==========
+* Fixed an issue with password managers setting the password on configuration export
+* Updated SQLite to 1.0.105.2 (3.19.3) on Windows
+* Fixed an issue that prevented the TrayIcon "Quit" menu item from working
+* Now using %LOCALAPPDATA% for storing local files on Windows, unless %APPDATA% already has data
+* Updated AWS S3 libraries
+* Switched to new Authenticode signing key
+
+2017-06-21 - 2.0.1.67_canary_2017-06-21
+==========
+* Fixed the main menu "floating" up on small screens
+* Fixed some issues with stopping a backup
+* Fixed the help dialog for HubiC suggesting the default/ prefix
+* Changed some texts in the UI
+* Added live throttle control options
+* Added option for TrayIcon to connect to the server without the password, if it can read the local database
+* Added systed service file for RPM installs
+
+2017-06-15 - 2.0.1.66_canary_2017-06-15
+==========
+* Removed the warning text on the settings page
+* Added internal system for better database upgrades, thanks @Danstahr
+* Included Jottacloud backend in the build output, thanks @Danstahr
+* Fixed an arugment-out-of-range error in the "compare" method, thanks @Danstahr
+* Added support for reading and writing filters in external scripts, thanks @IGTHORN
+* Added an environment variable to override the default file-system case-sensitivity
+* Improved recreate database speeds, thanks @zed9h
+
+2017-06-09 - 2.0.1.65_canary_2017-06-09
+==========
+* Updated the Azure libraries
+* Cleaned the deployed builds from XML files
+* Fixed an out-of-bounds error, thanks @okoetter
+* Updated localizations
+* Fixed a bug where the SSL certificate was reported to the client
+
+2017-06-02 - 2.0.1.64_canary_2017-06-02
+==========
+* Compile all executables without `Prefer32Bit`
+* Fixed not showing the commandline arguments if the input is incorrect
+
+2017-06-01 - 2.0.1.63_canary_2017-06-01
+==========
+* Rebuild, gpg was removed from the build maching causing 2.0.1.62 to be a partially unsigned build
+
+2017-06-01 - 2.0.1.62_canary_2017-06-01
+==========
+* Caching is now enabled for static content in the WebUI, thanks @mknjc
+* Fixed an issue with `--deleted-files`, thanks @downpoured
+* Added permissions testing for the "Test connection" on aFTP, thanks @vnau
+* Changed some `GET` calls to `POST` for the login sequence
+* Fixed not being able to change the usagereporter level
+* Added support for setting a theme
+* Added the "dark" theme, thanks Michal
+* Updated SharpCompress to the latest version
+
 2017-05-30 - 2.0.1.61_experimental_2017-05-30
 ==========
 This experimental release contains all the changes from canary v2.0.1.60,

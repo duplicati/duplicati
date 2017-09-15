@@ -1041,6 +1041,24 @@ namespace Duplicati.CommandLine
 
             return 0;
         }
+
+        public static int Vacuum(
+            TextWriter outwriter, 
+            Action<Duplicati.Library.Main.Controller> setup,
+            List<string> args, Dictionary<string, string> options, 
+            Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1)
+                return PrintWrongNumberOfArguments(outwriter, args, 1);
+
+            using (
+                var controller = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            {
+                setup(controller);
+                controller.Vacuum();
+            }
+            return 0;
+        }
     }
 }
 

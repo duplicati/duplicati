@@ -6,6 +6,23 @@ PACKAGE_NAME_SIMPLE="$(echo "$SYNOPKG_PKGNAME" | awk '{print tolower($0)}' | sed
 PACKAGE_DIR="${SYNOPKG_PKGDEST}"
 PACKAGE_UPGRADE_FLAG="/tmp/${PACKAGE_NAME_SIMPLE}.upgrade"
 
+# We need more space than what /tmp holds
+PACKAGE_TEMP_DIR="${PACKAGE_DIR}/temp"
+
+# These control how the authentication is integrated
+SYNO_LOGIN_CGI=/usr/syno/synoman/webman/login.cgi
+SYNO_AUTHENTICATE_CGI=/usr/syno/synoman/webman/modules/authenticate.cgi
+
+# If all users should have access, set to "1"
+SYNO_ALL_USERS=0
+
+# If we should disable verification of Synology's XSRF tokens, set to "1"
+SYNO_SKIP_XSRF=0
+
+# If we should disable Synology auth completely, set to "0"
+SYNO_DSM_AUTH=1
+
+
 # Start & Stop Varables
 PID_FILE="/var/run/${PACKAGE_NAME_SIMPLE}.pid"
 
@@ -13,9 +30,21 @@ DaemonStart() {
 	DaemonStatus
 	if [ $? == 0 ]; then
 		echo "Starting ${PACKAGE_NAME_SIMPLE}."
-				
+
+		mkdir -p "${PACKAGE_TEMP_DIR}"
+
+		SYNO_DSM_AUTH=${SYNO_DSM_AUTH} \
+		SYNO_SKIP_XSRF=${SYNO_SKIP_XSRF} \
+		SYNO_ALL_USERS=${SYNO_ALL_USERS} \
+		SYNO_AUTHENTICATE_CGI="${SYNO_AUTHENTICATE_CGI}" \
+		SYNO_LOGIN_CGI="${SYNO_LOGIN_CGI}" \
+		TMP_DIR="${PACKAGE_TEMP_DIR}" \
+		TEMP="${PACKAGE_TEMP_DIR}" \
 		mono "${PACKAGE_DIR}/Duplicati.Server.exe" &
 		echo $! > "$PID_FILE"		
+
+		cp -f ${PACKAGE_DIR}/dsm.duplicati.conf /usr/local/etc/nginx/conf.d/
+
 	else
 		echo "${PACKAGE_NAME_SIMPLE} already running."
 	fi
@@ -32,6 +61,8 @@ DaemonStop() {
 		kill $(cat "$PID_FILE");
 		rm -f "$PID_FILE"
 		
+		rm -f /usr/local/etc/nginx/conf.d/dsm.duplicati.conf
+
 		sleep 3
 	else
 		echo "Nothing to stop for ${PACKAGE_NAME_SIMPLE}."

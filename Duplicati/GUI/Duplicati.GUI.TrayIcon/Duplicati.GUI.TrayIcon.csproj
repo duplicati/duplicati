@@ -66,6 +66,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="appindicator-sharp">
       <HintPath>..\..\..\thirdparty\appindicator-sharp\appindicator-sharp.dll</HintPath>
@@ -159,6 +160,10 @@
     <ProjectReference Include="..\..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
+      <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
+      <Name>Duplicati.Library.Backend.Jottacloud</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
       <Project>{d4c37c33-5e73-4b56-b2c3-dc4a6baa36bb}</Project>
@@ -308,6 +313,10 @@
       <Project>{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}</Project>
       <Name>Duplicati.Library.Backend.AlternativeFTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
+      <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
+      <Name>Duplicati.Library.Backend.Sia</Name>
+    </ProjectReference>   
     <ProjectReference Include="..\..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
       <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
       <Name>Duplicati.Library.Backend.Dropbox</Name>

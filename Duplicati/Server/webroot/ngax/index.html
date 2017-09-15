@@ -27,6 +27,7 @@
 
     <link rel="stylesheet" type="text/css" href="styles/smoothness/jquery-ui.min.css">
     <link rel="stylesheet" type="text/css" href="styles/style.css">
+    <link rel="stylesheet" type="text/css" href="styles/themes.css">
     <link rel="stylesheet" type="text/css" href="../oem/ngax/styles/oem.css" />
     <link rel="stylesheet" type="text/css" href="../customized/customized.css" />
 
@@ -93,6 +94,7 @@
     <script type="text/javascript" src="scripts/controllers/AddWizardController.js"></script>
     <script type="text/javascript" src="scripts/controllers/PauseController.js"></script>
     <script type="text/javascript" src="scripts/controllers/CommandlineController.js"></script>
+    <script type="text/javascript" src="scripts/controllers/ThrottleController.js"></script>
 
     <script type="text/javascript" src="scripts/filters/timeremaining.js"></script>
     <script type="text/javascript" src="scripts/filters/highlight.js"></script>
@@ -119,7 +121,7 @@
     <script type="text/javascript" src="../customized/customized.js"></script>
 
 </head>
-<body ng-controller="AppController">
+<body ng-controller="AppController" class="theme-{{active_theme}}">
      
     <div class="container">
         <div class="header">
@@ -151,7 +153,7 @@
 
             <div class="action-icons-small">
                 <div class="pause" ng-class="{'active': state.programState != 'Running'}" ng-click="pauseOptions()" title="{{state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></div>
-                <!-- <div class="throttle" ng-click="throttleOptions()"></div> -->
+                <div class="throttle {{throttle_active ? 'active' : 'inactive'}}" ng-click="throttleOptions()" title="{{'Click to set throttle options' | translate}}" alt="{{'Click to set throttle options' | translate}}"></div>
             </div>
 
             <div class="statepadding">
@@ -194,7 +196,7 @@
 
                 <div class="action-icons">
                     <div class="pause" ng-class="{'active': state.programState != 'Running'}" ng-click="pauseOptions()" title="{{state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></div>
-                    <!--<div class="throttle" ng-click="throttleOptions()"></div> -->
+                    <div class="throttle {{throttle_active ? 'active' : 'inactive'}}" ng-click="throttleOptions()" title="{{'Click to set throttle options' | translate}}" alt="{{'Click to set throttle options' | translate}}"></div>
                 </div>
             </div>            
         </div>
@@ -246,7 +248,7 @@
                 {{'Visit us on' | translate}}
                 <ul>
                     <li>
-                        <a href="https://groups.google.com/forum/#!forum/duplicati" target="_blank"><img src="img/social/ggroups.png" alt="Google Groups" title="Google Groups" width="28" /></a>
+                        <a href="https://forum.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="{{'Duplicati forum' | translate}}" title="{{'Duplicati forum' | translate}}" width="28" /></a>
                     </li>
                     <li>
                         <a href="https://github.com/duplicati" target="_blank"><img src="img/social/github.png" alt="Github" title="Github" /></a>
@@ -257,9 +259,9 @@
                     <li>
                         <a href="https://plus.google.com/105271984558189185842" target="_blank"><img src="img/social/google.png" alt="Google Plus" title="Google Plus" /></a>
                     </li>
-                    <li>
+                    <!-- <li>
                         <a href="http://www.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="{{'Duplicati Website' | translate}}" title="{{'Duplicati Website' | translate}}" /></a>
-                    </li>
+                    </li> -->
                 </ul>
             </div>
             
@@ -311,7 +313,7 @@
                 The connection to the server is lost, attempting again in {{time}} ...
             </div>
             <div class="content" translate ng-hide="state.connectionState !='connecting'">
-                Connnecting to server ...
+                Connecting to server ...
             </div>
             <div class="content buttons">
                 <a href ng-show="state.connectionState != 'connecting'" ng-click="doReconnect()" class="button" translate>Connect now</a>
