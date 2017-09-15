@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend.Sia
             m_apiport = uri.Port;
             m_targetpath = uri.Path;
 
-            m_redundancy = 2.0F;
+            m_redundancy = 1.5F;
             if (options.ContainsKey(SIA_REDUNDANCY))
                 m_redundancy = float.Parse(options[SIA_REDUNDANCY]);
 
@@ -76,6 +76,18 @@ namespace Duplicati.Library.Backend.Sia
             req.UserAgent = string.Format("Sia-Agent (Duplicati SIA client {0})", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
             return req;
+        }
+
+        private string getResponseBodyOnError(string context, System.Net.WebException wex)
+        {
+            string body = "";
+            System.Net.HttpWebResponse response = (System.Net.HttpWebResponse)wex.Response;
+            using (System.IO.Stream data = response.GetResponseStream())
+            using (var reader = new System.IO.StreamReader(data))
+            {
+                body = reader.ReadToEnd();
+            }
+            return string.Format("{0} failed, response: {1}", context, body);
         }
 
         public class SiaFile
@@ -123,10 +135,10 @@ namespace Duplicati.Library.Backend.Sia
         private SiaFileList GetFiles()
         {
             var fl = new SiaFileList();
+            string endpoint = string.Format("/renter/files");
 
             try
             {
-                string endpoint = string.Format("/renter/files");
                 System.Net.HttpWebRequest req = CreateRequest(endpoint);
                 req.Method = System.Net.WebRequestMethods.Http.Get;
 
@@ -150,7 +162,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (System.Net.WebException wex)
             {
-                throw new Exception("failed to call /renter/files " + wex.Message);
+                throw new Exception(getResponseBodyOnError(endpoint, wex));
             }
             return fl;
         }
@@ -165,7 +177,7 @@ namespace Duplicati.Library.Backend.Sia
             {
                 if (f.Siapath == siafilename)
                 {
-                    if (f.Available == true && f.Redundancy >= m_redundancy && f.Uploadprogress >= 100)
+                    if (f.Available == true && f.Redundancy >= m_redundancy /* && f.Uploadprogress >= 100 */ )
                     {
                         return true;
                     }
@@ -177,10 +189,10 @@ namespace Duplicati.Library.Backend.Sia
         private SiaDownloadList GetDownloads()
         {
             var fl = new SiaDownloadList();
+            string endpoint = string.Format("/renter/downloads");
 
             try
             {
-                string endpoint = string.Format("/renter/downloads");
                 System.Net.HttpWebRequest req = CreateRequest(endpoint);
                 req.Method = System.Net.WebRequestMethods.Http.Get;
 
@@ -204,7 +216,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (System.Net.WebException wex)
             {
-                throw new Exception("failed to call /renter/downloads " + wex.Message);
+                throw new Exception(getResponseBodyOnError(endpoint, wex));
             }
             return fl;
         }
@@ -326,7 +338,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (System.Net.WebException wex)
             {
-                throw new Exception("failed to call " + endpoint + " err " + wex.Message);
+                throw new Exception(getResponseBodyOnError(endpoint, wex));
             }
         }
 
@@ -374,7 +386,7 @@ namespace Duplicati.Library.Backend.Sia
                 if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
-                    throw;
+                    throw new Exception(getResponseBodyOnError(endpoint, wex));
             }
         }
 
@@ -405,7 +417,7 @@ namespace Duplicati.Library.Backend.Sia
                 if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
-                    throw;
+                    throw new Exception(getResponseBodyOnError(endpoint, wex));
             }
         }
 
@@ -415,9 +427,9 @@ namespace Duplicati.Library.Backend.Sia
             get
             {    
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(SIA_TARGETPATH, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaPathDescriptionShort, Strings.Sia.SiaPathDescriptionLong, null),
+                    new CommandLineArgument(SIA_TARGETPATH, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaPathDescriptionShort, Strings.Sia.SiaPathDescriptionLong, "/backup"),
                     new CommandLineArgument(SIA_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Sia.SiaPasswordShort, Strings.Sia.SiaPasswordLong, null),
-                    new CommandLineArgument(SIA_REDUNDANCY, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaRedundancyDescriptionShort, Strings.Sia.SiaRedundancyDescriptionLong, null),
+                    new CommandLineArgument(SIA_REDUNDANCY, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaRedundancyDescriptionShort, Strings.Sia.SiaRedundancyDescriptionLong, "1.5"),
                 });
             }
         }
