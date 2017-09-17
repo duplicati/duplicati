@@ -104,8 +104,6 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
     this.require_username_and_password = function(scope) {
         if ((scope.Username || '').trim().length == 0)
             return self.show_error_dialog(gettextCatalog.getString('You must fill in the username'));
-        if ((scope.Password || '').trim().length == 0)
-            return self.show_error_dialog(gettextCatalog.getString('You must fill in the password'));
 
         return true;
     };
