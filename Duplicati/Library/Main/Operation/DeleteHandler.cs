@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation
                     Utility.UpdateOptionsFromDb(db, m_options);
                     Utility.VerifyParameters(db, m_options);
                     
-                    DoRun(db, ref tr, false, false);
+                    DoRun(db, ref tr, false, false, null);
                     
                     if (!m_options.Dryrun)
                     {
@@ -73,10 +73,13 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBacked, bool forceCompact)
-        {       
-            using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
+        public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBacked, bool forceCompact, BackendManager sharedManager)
+        {
+            // Workaround where we allow a running backendmanager to be used
+            using(var bk = sharedManager == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db) : null)
             {
+                var backend = bk ?? sharedManager;
+
                 if (!hasVerifiedBacked && !m_options.NoBackendverification)
                     FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
                 
@@ -142,7 +145,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoAutoCompact && (forceCompact || (toDelete != null && toDelete.Length > 0)))
                 {
                     m_result.CompactResults = new CompactResults(m_result);
-                    new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref transaction);
+                    new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref transaction, sharedManager);
                 }
                 
                 m_result.SetResults(
