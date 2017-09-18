@@ -97,6 +97,7 @@ namespace Duplicati.CommandLine
                 knownCommands["test-filters"] = Commands.TestFilters;
                 knownCommands["test-filter"] = Commands.TestFilters;
                 knownCommands["affected"] = Commands.Affected;
+                knownCommands["vacuum"] = Commands.Vacuum;
 
                 knownCommands["system-info"] = Commands.SystemInfo;
                 knownCommands["systeminfo"] = Commands.SystemInfo;

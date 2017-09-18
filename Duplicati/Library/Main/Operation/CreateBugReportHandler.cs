@@ -60,6 +60,10 @@ namespace Duplicati.Library.Main.Operation
                 {
                     m_result.SetDatabase(db);
                     db.Fix();
+                    if (m_options.AutoVacuum)
+                    {
+                        db.Vacuum();
+                    }
                 }
                 
                 using(var cm = DynamicLoader.CompressionLoader.GetModule(module, m_targetpath, m_options.RawOptions))

@@ -1323,8 +1323,6 @@ ORDER BY
 
                 tr.Commit();
             }
-
-            Vacuum();
         }
         
         public virtual void Dispose()

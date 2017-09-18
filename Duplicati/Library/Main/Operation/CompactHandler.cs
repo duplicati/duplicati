@@ -62,8 +62,11 @@ namespace Duplicati.Library.Main.Operation
                             tr.Commit();
                         if (changed)
                         {
-                            db.WriteResults();                    
-                            db.Vacuum();
+                            db.WriteResults();
+                            if (m_options.AutoVacuum)
+                            {
+                                db.Vacuum();
+                            }
                         }
                     }
                     else

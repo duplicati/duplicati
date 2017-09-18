@@ -196,27 +196,72 @@ namespace Duplicati.Library.Main
                 if (inputsources == null || inputsources.Length == 0)
                     throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError);
 
-                var sources = new List<string>(inputsources);
+                var sources = new List<string>(inputsources.Length);
+
+                System.IO.DriveInfo[] drives = null;
 
                 //Make sure they all have the same format and exist
-                for(int i = 0; i < sources.Count; i++)
+                for (int i = 0; i < inputsources.Length; i++)
                 {
-                    try
+                    List<string> expandedSources = new List<string>();
+                    if (inputsources[i].StartsWith("*:"))
                     {
-                        sources[i] = System.IO.Path.GetFullPath(sources[i]);
+                        // Lazily load the drive info
+                        if (drives == null)
+                        {
+                            // *: drive paths are only supported on Windows clients
+                            if (Library.Utility.Utility.IsClientWindows)
+                            {
+                                drives = System.IO.DriveInfo.GetDrives();
+                            }
+                            else
+                            {
+                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceFolderWildcardDriveNotSupportedError(inputsources[i]));
+                            }
+                        }
+
+                        // Replace the drive letter with each available drive
+                        string sourcePath = inputsources[i].Substring(1);
+                        foreach (System.IO.DriveInfo drive in drives)
+                        {
+                            expandedSources.Add(drive.Name[0] + sourcePath);
+                        }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(sources[i], ex.Message), ex);
+                        expandedSources.Add(inputsources[i]);
                     }
 
-                    var fi = new System.IO.FileInfo(sources[i]);
-                    var di = new System.IO.DirectoryInfo(sources[i]);
-                    if (!(fi.Exists || di.Exists) && !m_options.AllowMissingSource)
-                        throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(sources[i]));
+                    bool foundAnyPaths = false;
+                    foreach (string expandedSource in expandedSources)
+                    {
+                        string source;
+                        try
+                        {
+                            source = System.IO.Path.GetFullPath(expandedSource);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Note that we use the original source (with the *) in the error
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(inputsources[i], ex.Message), ex);
+                        }
 
-                    if (!fi.Exists)
-                        sources[i] = Library.Utility.Utility.AppendDirSeparator(sources[i]);
+                        var fi = new System.IO.FileInfo(source);
+                        var di = new System.IO.DirectoryInfo(source);
+                        if (fi.Exists || di.Exists)
+                        {
+                            foundAnyPaths = true;
+
+                            if (!fi.Exists)
+                                source = Library.Utility.Utility.AppendDirSeparator(source);
+
+                            sources.Add(source);
+                        }
+                    }
+
+                    // If no paths were found, and we aren't allowed to have missing sources, throw an error
+                    if (!foundAnyPaths && !m_options.AllowMissingSource)
+                        throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(inputsources[i]));
                 }
 
                 //Sanity check for duplicate files/folders
@@ -493,6 +538,13 @@ namespace Duplicati.Library.Main
             {
                 result.Lines = new string[0];
                 System.Threading.Thread.Sleep(5);
+            });
+        }
+
+        public Library.Interface.IVacuumResults Vacuum()
+        {
+            return RunAction(new VacuumResult(), result => {
+                new Operation.VacuumHandler(m_options, result).Run();
             });
         }
 

@@ -69,6 +69,7 @@
     <Compile Include="HashCalculatingStream.cs" />
     <Compile Include="DirectStreamLink.cs" />
     <Compile Include="HostKeyException.cs" />
+    <Compile Include="CallContextSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

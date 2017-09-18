@@ -933,13 +933,6 @@ namespace Duplicati.Server.Database
 
                 tr.Commit();
             }
-
-            using(var cmd = m_connection.CreateCommand())
-            {
-                cmd.CommandText = "VACUUM";
-                cmd.ExecuteNonQuery();
-            }
-
         }
         
         private static long NormalizeDateTimeToEpochSeconds(DateTime input)

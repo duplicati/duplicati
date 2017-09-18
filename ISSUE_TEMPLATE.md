@@ -1,32 +1,39 @@
-<!-- This is a bug report template. By following the instructions below and filling out the sections with your information, you will help the developers to get all the necessary data to fix your issue.
-You can also preview your report before submitting it. You may remove sections that aren't relevant to your particular case.
+<!-- Thank you for taking the time to submit an issue using this template. By following the instructions and filling out the sections below, you will help the developers get the necessary information to fix your issue. You may remove sections that aren't relevant to your particular case. You can also preview your report before submitting it. -->
 
-Let's begin with a checklist: replace the empty checkbox [ ] below with a checked one [x] if you already searched for duplicate bugs -->
-
-I have:
-- [ ] searched open and closed issues for duplicates
+<!-- Please search to see if an issue has already been created for your report. -->
+<!-- Replace the empty checkbox [ ] below with a checked one [x] if you already searched for duplicate bugs. -->
+- [ ] I have searched open and closed issues for duplicates.
 
 ----------------------------------------
 
-### Version info
-<!-- please replace the examples with your info -->
-**Duplicati Version:** 0.0.0.0
-**Operating System:**
-**Backend:**
+## Environment info
+<!-- Please include some relevant information about your environment. -->
+<!-- For "Backend", please indicate the backup destination (e.g. Amazon S3, OneDrive, FTP, WebDAV, local). -->
+- **Duplicati version**: 0.0.0.0
+- **Operating system**: Replace me
+- **Backend**: Replace me
 
-### Bug description
-Describe here the issue that you are experiencing.
+## Description
+<!-- Describe the issue that you are experiencing below. -->
+Replace me
 
-### Steps to reproduce
-- using hyphens as bullet points
-- list the steps
-- that reproduce the bug
+## Steps to reproduce
+<!-- List the steps to reproduce the bug if possible. -->
+1. Replace me
+2. Replace me
+3. ...
 
-**Actual result:** Describe here what happens after you run the steps above (i.e. the buggy behaviour)
-**Expected result:** Describe here what should happen after you run the steps above (i.e. what would be the correct behaviour)
+<!-- For "Actual result", describe what happens after you run the steps above (i.e. buggy behavior). -->
+<!-- For "Expected result", describe what should happen after you run the steps above (i.e. corrected behavior). -->
+- **Actual result**:
+Replace me
+- **Expected result**:
+Replace me
 
-### Screenshots
-<!-- you can drag and drop images below -->
+## Screenshots
+<!-- Make it easier to get your point across with screenshots. -->
+<!-- You can drag & drop or paste your images below. -->
 
-### debug log
-<!-- posting a debug log helps the developers to fix your issue -->
+## Debug log
+<!-- Posting a debug log helps the developers find and fix your particular issue more easily. -->
+<!-- Please wrap your code in code blocks with triple back-ticks to increase readability. -->

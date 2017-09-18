@@ -63,7 +63,6 @@ namespace Duplicati.Library.Main.Database
                     tr.Commit();
                 
                 cmd.Transaction = null;
-                cmd.ExecuteNonQuery("VACUUM");
             }
         }
     }

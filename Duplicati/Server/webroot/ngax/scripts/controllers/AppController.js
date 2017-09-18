@@ -163,5 +163,21 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
         var dt = data.data['max-download-speed'];
         $scope.throttle_active = (ut != null && ut.trim().length != 0) || (dt != null && dt.trim().length != 0);
 
+        var firstpw = data.data['has-asked-for-password-protection'];
+        var haspw = data.data['server-passphrase'];
+        if (!firstpw && haspw == '') {
+            DialogService.dialog(
+                gettextCatalog.getString('First run setup'),
+                gettextCatalog.getString('If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\nDo you want to set a password now?'),                
+                [gettextCatalog.getString('No, my machine has only a single account'), gettextCatalog.getString('Yes')],
+                function(btn) {
+                    AppService.patch('/serversettings', { 'has-asked-for-password-protection': 'true'}, {'headers': {'Content-Type': 'application/json'}});
+                    if (btn == 1) {
+                        $location.path('/settings');
+                    }
+                }
+            );
+        }
+
     }, AppUtils.connectionError);
 });

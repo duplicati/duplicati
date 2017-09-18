@@ -153,21 +153,21 @@ namespace Duplicati.Library.Main
                         if (!options.AllowPassphraseChange)
                         {
                             if (newDict[k.Key] == "no-encryption")
-                                throw new Duplicati.Library.Interface.UserInformationException("Unsupported removal of passphrase");
+                                throw new Duplicati.Library.Interface.UserInformationException("You have attempted to remove the passphrase on an existing backup, which is not supported. Please configure a new clean backup if you want to remove the passphrase.");
                             else if (opts[k.Key] == "no-encryption")
-                                throw new Duplicati.Library.Interface.UserInformationException("Unsupported addition of passphrase");
+                                throw new Duplicati.Library.Interface.UserInformationException("You have attempted to add a passphrase to an existing backup, which is not supported. Please configure a new clean backup if you want to add a passphrase.");
                             else
-                                throw new Duplicati.Library.Interface.UserInformationException("Unsupported change of passphrase");
+                                throw new Duplicati.Library.Interface.UserInformationException("You have attempted to change a passphrase to an existing backup, which is not supported. Please configure a new clean backup if you want to change the passphrase.");
                         }
                     }
                     else
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Unsupported change of parameter \"{0}\" from \"{1}\" to \"{2}\"", k.Key, opts[k.Key], k.Value));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("You have attempted to change the parameter \"{0}\" from \"{1}\" to \"{2}\", which is not supported. Please configure a new clean backup if you want to change the parameter.", k.Key, opts[k.Key], k.Value));
                     
                 }
                             
             //Extra sanity check
             if (db.GetBlocksLargerThan(options.Blocksize) > 0)
-                throw new Duplicati.Library.Interface.UserInformationException("Unsupported block-size change detected");
+                throw new Duplicati.Library.Interface.UserInformationException("You have attempted to change the block-size on an existing backup, which is not supported. Please configure a new clean backup if you want to change the block-size.");
         
             if (needsUpdate)
             {

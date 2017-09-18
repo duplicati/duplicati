@@ -33,7 +33,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Size of buffers for copying stream
         /// </summary>
-        public static long DEFAULT_BUFFER_SIZE = 64 * 1024;
+        public static long DEFAULT_BUFFER_SIZE => SystemContextSettings.Buffersize;
 
         /// <summary>
         /// A value indicating if the current process is running in 64bit mode

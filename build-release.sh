@@ -161,6 +161,13 @@ for FN in Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll; do
 	cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
 done
 
+# Fix for some support libraries not being picked up
+for BACKEND in Duplicati/Library/Backend/*; do
+	if [ -d "${BACKEND}/bin/Release/" ]; then
+		cp "${BACKEND}/bin/Release/"*.dll "${UPDATE_SOURCE}"
+	fi
+done
+
 # Install the assembly redirects for all Duplicati .exe files
 find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Installer/AssemblyRedirects.xml {}.config \;
 
