@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Operation
                     Utility.UpdateOptionsFromDb(db, m_options);
                     Utility.VerifyParameters(db, m_options);
                     
-                    var changed = DoCompact(db, false, ref tr);
+                    var changed = DoCompact(db, false, ref tr, null);
                     
                     if (changed && m_options.UploadVerificationFile)
                         FilelistProcessor.UploadVerificationFile(m_backendurl, m_options, m_result.BackendWriter, db, null);
@@ -83,15 +83,17 @@ namespace Duplicati.Library.Main.Operation
             }
         }
         
-        internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, ref System.Data.IDbTransaction transaction)
+        internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, ref System.Data.IDbTransaction transaction, BackendManager sharedBackend)
         {
             var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
             report.ReportCompactData(m_result);
             
             if (report.ShouldReclaim || report.ShouldCompact)
             {
-                using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
+				// Workaround where we allow a running backendmanager to be used
+				using(var bk = sharedBackend == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db) : null)
                 {
+                    var backend = bk ?? sharedBackend;
                     if (!hasVerifiedBackend && !m_options.NoBackendverification)
                         FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter);
         
