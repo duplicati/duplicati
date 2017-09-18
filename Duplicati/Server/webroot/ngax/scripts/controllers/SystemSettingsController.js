@@ -54,8 +54,8 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
         $scope.requireRemotePassword = data.data['server-passphrase'] != null && data.data['server-passphrase'] != '';
         $scope.remotePassword = data.data['server-passphrase'];
         $scope.allowRemoteAccess = data.data['server-listen-interface'] != 'loopback';
-        $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
-        $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1);
+        $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1) == "" ? "0" : data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
+        $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1) == "" ? "s" : data.data['startup-delay'].substr(-1);
         $scope.updateChannel = data.data['update-channel'];
         $scope.originalUpdateChannel = data.data['update-channel'];
         $scope.usageReporterLevel = data.data['usage-reporter-level'];

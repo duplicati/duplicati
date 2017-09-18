@@ -264,15 +264,15 @@ namespace Duplicati.Library.Modules.Builtin
             if (!m_sendAll && !string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
                 return;
 
-			ParsedResultType level;
-			if (result is Exception)
-				level = ParsedResultType.Fatal;
-			else if (result != null && result is Library.Interface.IBasicResults)
-				level = ((IBasicResults)result).ParsedResult;
-			else
-				level = ParsedResultType.Error;
+            ParsedResultType level;
+            if (result is Exception)
+                level = ParsedResultType.Fatal;
+            else if (result != null && result is Library.Interface.IBasicResults)
+                level = ((IBasicResults)result).ParsedResult;
+            else
+                level = ParsedResultType.Error;
 
-			m_parsedresultlevel = level.ToString();
+            m_parsedresultlevel = level.ToString();
 
             if (string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
             {
