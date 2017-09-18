@@ -97,25 +97,30 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%MONO%", Library.Utility.Utility.IsMono ? "mono " : "");
                 tp = tp.Replace("%APP_PATH%", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());
-                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Library.Utility.Utility.IsClientLinux ? "/source" : "D:\\source");
-                tp = tp.Replace("%EXAMPLE_WILDCARD_DRIVE_SOURCE_PATH%", Library.Utility.Utility.IsClientLinux ? "/source" : "*:\\source");
-                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Library.Utility.Utility.IsClientLinux ? "/source/myfile.txt" : "D:\\source\\file.txt");
-                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Library.Utility.Utility.IsClientLinux ? "/restore" : "D:\\restore");
+                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Library.Utility.Utility.IsClientLinux ? "/source" : @"D:\source");
+                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Library.Utility.Utility.IsClientLinux ? "/source/myfile.txt" : @"D:\source\file.txt");
+                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Library.Utility.Utility.IsClientLinux ? "/restore" : @"D:\restore");
                 tp = tp.Replace("%ENCRYPTIONMODULES%", string.Join(", ", Library.DynamicLoader.EncryptionLoader.Keys));
                 tp = tp.Replace("%COMPRESSIONMODULES%", string.Join(", ", Library.DynamicLoader.CompressionLoader.Keys));
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
                 tp = tp.Replace("%DEFAULTCOMPRESSIONMODULE%", opts.CompressionModule);
                 tp = tp.Replace("%GENERICMODULES%", string.Join(", ", Library.DynamicLoader.GenericLoader.Keys));
 
-                if (!Library.Utility.Utility.IsClientWindows)
+                if (Library.Utility.Utility.IsClientWindows)
                 {
-                    // Specifying the Singleline option allows . to match newlines, so this will detect spans that cover multiple lines
-                    tp = System.Text.RegularExpressions.Regex.Replace(tp, "\\%IF_WINDOWS\\%.*\\%END_IF_WINDOWS\\%", string.Empty, System.Text.RegularExpressions.RegexOptions.Singleline);
+                    // These properties are only valid for Windows
+                    tp = tp.Replace("%EXAMPLE_WILDCARD_DRIVE_SOURCE_PATH%", @"*:\source");
+                    tp = tp.Replace("%EXAMPLE_VOLUME_GUID_SOURCE_PATH%", @"\\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}\source");
+                    tp = tp.Replace("%KNOWN_DRIVES_AND_VOLUMES%", string.Join(Environment.NewLine + "    ", Library.Utility.Utility.GetVolumeGuidsAndDriveLetters().Select(pair => string.Format("{0}  {1}", pair.Key, pair.Value))));
+
+                    // We don't need to hide things between these tags on Windows
+                    tp = tp.Replace("%IF_WINDOWS%", string.Empty);
+                    tp = tp.Replace("%END_IF_WINDOWS%", string.Empty);
                 }
                 else
                 {
-                    tp = tp.Replace("%IF_WINDOWS%", string.Empty);
-                    tp = tp.Replace("%END_IF_WINDOWS%", string.Empty);
+                    // Specifying the Singleline option allows . to match newlines, so this will detect spans that cover multiple lines
+                    tp = System.Text.RegularExpressions.Regex.Replace(tp, @"\%IF_WINDOWS\%.*\%END_IF_WINDOWS\%", string.Empty, System.Text.RegularExpressions.RegexOptions.Singleline);
                 }
 
                 if (tp.Contains("%MAINOPTIONS%"))
