@@ -27,7 +27,7 @@ namespace Duplicati.Server.WebServer
         public const string API_URI_PATH = "/api/v1";
         public static readonly int API_URI_SEGMENTS = API_URI_PATH.Split(new char[] {'/'}).Length;
 
-        private static readonly Dictionary<string, IRESTMethod> _modules = new Dictionary<string, IRESTMethod>(StringComparer.InvariantCultureIgnoreCase);
+        private static readonly Dictionary<string, IRESTMethod> _modules = new Dictionary<string, IRESTMethod>(StringComparer.OrdinalIgnoreCase);
 
         public static IDictionary<string, IRESTMethod> Modules { get { return _modules; } }
 
@@ -98,7 +98,7 @@ namespace Duplicati.Server.WebServer
                     var opts = x.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
                     var lang = opts.FirstOrDefault();
                     var weight =
-                    opts.Where(y => y.StartsWith("q=", StringComparison.InvariantCultureIgnoreCase))
+                    opts.Where(y => y.StartsWith("q=", StringComparison.OrdinalIgnoreCase))
                         .Select(y =>
                         {
                             float f;
@@ -229,7 +229,7 @@ namespace Duplicati.Server.WebServer
             
         public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
         {
-            if (!request.Uri.AbsolutePath.StartsWith(API_URI_PATH, StringComparison.InvariantCultureIgnoreCase))
+            if (!request.Uri.AbsolutePath.StartsWith(API_URI_PATH, StringComparison.OrdinalIgnoreCase))
                 return false;
 
             var module = request.Uri.Segments.Skip(API_URI_SEGMENTS).FirstOrDefault();

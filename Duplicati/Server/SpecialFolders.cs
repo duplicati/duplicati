@@ -24,8 +24,8 @@ namespace Duplicati.Server
     public static class SpecialFolders
     {
         public static readonly Serializable.TreeNode[] Nodes;
-        private static readonly Dictionary<string, string> PathMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-        private static readonly Dictionary<string, string> DisplayMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        private static readonly Dictionary<string, string> PathMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, string> DisplayMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public static string ExpandEnvironmentVariables(string path)
         {

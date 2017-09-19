@@ -118,18 +118,18 @@ namespace Duplicati.Library.UsageReporter
                             }
                         }
 
-                        var primary = keys.FirstOrDefault(x => string.Equals(x.Item1, "PRETTY_NAME", StringComparison.InvariantCultureIgnoreCase));
+                        var primary = keys.FirstOrDefault(x => string.Equals(x.Item1, "PRETTY_NAME", StringComparison.OrdinalIgnoreCase));
                         if (primary != null)
                             return primary.Item2;
 
-                        var name = keys.FirstOrDefault(x => string.Equals(x.Item1, "NAME", StringComparison.InvariantCultureIgnoreCase));
-                        var version = keys.FirstOrDefault(x => string.Equals(x.Item1, "VERSION", StringComparison.InvariantCultureIgnoreCase));
+                        var name = keys.FirstOrDefault(x => string.Equals(x.Item1, "NAME", StringComparison.OrdinalIgnoreCase));
+                        var version = keys.FirstOrDefault(x => string.Equals(x.Item1, "VERSION", StringComparison.OrdinalIgnoreCase));
 
-                        name = name ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "DISTRIB_ID", StringComparison.InvariantCultureIgnoreCase));
-                        name = name ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "ID", StringComparison.InvariantCultureIgnoreCase));
+                        name = name ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "DISTRIB_ID", StringComparison.OrdinalIgnoreCase));
+                        name = name ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "ID", StringComparison.OrdinalIgnoreCase));
 
-                        version = version ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "DISTRIB_RELEASE", StringComparison.InvariantCultureIgnoreCase));
-                        version = version ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "VERSION_ID", StringComparison.InvariantCultureIgnoreCase));
+                        version = version ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "DISTRIB_RELEASE", StringComparison.OrdinalIgnoreCase));
+                        version = version ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "VERSION_ID", StringComparison.OrdinalIgnoreCase));
 
                         if (name != null && version != null)
                             return string.Format("{0} {1}", name.Item2, version.Item2);

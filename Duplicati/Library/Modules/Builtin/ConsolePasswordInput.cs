@@ -47,14 +47,14 @@ namespace Duplicati.Library.Modules.Builtin
 
             //First see if a password is actually required for the action
             foreach (string s in PASSPHRASELESS_ACTIONS)
-                if (string.Equals(s, commandlineOptions["main-action"], StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals(s, commandlineOptions["main-action"], StringComparison.OrdinalIgnoreCase))
                     return;
 
             //See if a password is already present or encryption is disabled
             if (!commandlineOptions.ContainsKey("passphrase") && !Duplicati.Library.Utility.Utility.ParseBoolOption(commandlineOptions, "no-encryption"))
             {
                 //Get the passphrase
-                bool confirm = string.Equals(commandlineOptions["main-action"], "backup", StringComparison.InvariantCultureIgnoreCase);
+                bool confirm = string.Equals(commandlineOptions["main-action"], "backup", StringComparison.OrdinalIgnoreCase);
                 commandlineOptions["passphrase"] = ReadPassphraseFromConsole(confirm);
             }
         }

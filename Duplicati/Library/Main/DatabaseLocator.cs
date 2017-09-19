@@ -102,17 +102,17 @@ namespace Duplicati.Library.Main
                 {
                     foreach(var o in sopts)
                     {
-                        if (username == null && o.Aliases != null && o.Aliases.Contains("auth-username", StringComparer.InvariantCultureIgnoreCase) && ropts.ContainsKey(o.Name))
+                        if (username == null && o.Aliases != null && o.Aliases.Contains("auth-username", StringComparer.OrdinalIgnoreCase) && ropts.ContainsKey(o.Name))
                             username = ropts[o.Name];
-                        if (password == null && o.Aliases != null && o.Aliases.Contains("auth-password", StringComparer.InvariantCultureIgnoreCase) && ropts.ContainsKey(o.Name))
+                        if (password == null && o.Aliases != null && o.Aliases.Contains("auth-password", StringComparer.OrdinalIgnoreCase) && ropts.ContainsKey(o.Name))
                             password = ropts[o.Name];
                     }
                 
                     foreach(var o in sopts)
                     {
-                        if (username == null && o.Name.Equals("auth-username", StringComparison.InvariantCultureIgnoreCase) && ropts.ContainsKey("auth-username"))
+                        if (username == null && o.Name.Equals("auth-username", StringComparison.OrdinalIgnoreCase) && ropts.ContainsKey("auth-username"))
                             username = ropts["auth-username"];
-                        if (password == null && o.Name.Equals("auth-password", StringComparison.InvariantCultureIgnoreCase) && ropts.ContainsKey("auth-password"))
+                        if (password == null && o.Name.Equals("auth-password", StringComparison.OrdinalIgnoreCase) && ropts.ContainsKey("auth-password"))
                             password = ropts["auth-password"];
                     }
                 }

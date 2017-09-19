@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using Duplicati.Library.Localization.Short;
+using Duplicati.Library.Utility;
 using System.IO;
 
 namespace Duplicati.CommandLine
@@ -72,7 +73,7 @@ namespace Duplicati.CommandLine
         {
             get
             {
-                var knownCommands = new Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.InvariantCultureIgnoreCase);
+                var knownCommands = new Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.OrdinalIgnoreCase);
                 knownCommands["help"] = Commands.Help;
                 knownCommands["example"] = Commands.Examples;
                 knownCommands["examples"] = Commands.Examples;
@@ -126,7 +127,7 @@ namespace Duplicati.CommandLine
                 verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
                 verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose");
 
-                if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.InvariantCultureIgnoreCase))
+                if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.OrdinalIgnoreCase))
                 {
                     var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
                     outwriter.WriteLine(System.IO.File.ReadAllText(path));
@@ -141,7 +142,7 @@ namespace Duplicati.CommandLine
                     }
 
                 // Probe for "help" to avoid extra processing
-                bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.InvariantCultureIgnoreCase));
+                bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase));
                 if (!isHelp && ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile"))))
                 {
                     string filename;
@@ -175,7 +176,7 @@ namespace Duplicati.CommandLine
                     command = "help";
 
                 // Update probe for help
-                isHelp = string.Equals(command, "help", StringComparison.InvariantCultureIgnoreCase);
+                isHelp = string.Equals(command, "help", StringComparison.OrdinalIgnoreCase);
 
                 // Skip the env read if the command is help, otherwise we may report weirdness
                 if (!isHelp)
@@ -296,6 +297,7 @@ namespace Duplicati.CommandLine
                     new Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
                     new Library.Interface.CommandLineArgument("include", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.IncludeShort, Strings.Program.IncludeLong),
                     new Library.Interface.CommandLineArgument("exclude", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.ExcludeShort, Strings.Program.ExcludeLong),
+                    new Library.Interface.CommandLineArgument("default-filters", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.DefaultFiltersShort, Strings.Program.DefaultFiltersLong(DefaultFilterSet.Windows.ToString(), DefaultFilterSet.OSX.ToString(), DefaultFilterSet.Linux.ToString(), DefaultFilterSet.All.ToString()), string.Empty, new[] { "default-filter" }),
                     new Library.Interface.CommandLineArgument("control-files", Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.ControlFilesOptionShort, Strings.Program.ControlFilesOptionLong, "false"),
                     new Library.Interface.CommandLineArgument("quiet-console", Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.QuietConsoleOptionShort, Strings.Program.QuietConsoleOptionLong, "false"),
                     new Library.Interface.CommandLineArgument("auto-update", Library.Interface.CommandLineArgument.ArgumentType.Boolean, LC.L("Toggle automatic updates"), LC.L("Set this option if you prefer to have the commandline version automatically update"), "false"),
@@ -375,7 +377,7 @@ namespace Duplicati.CommandLine
                            cargs[1] = newtarget;
                    }
 
-                if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.InvariantCultureIgnoreCase))
+                if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
                        cargs.AddRange(newsource);
                 else if (newsource.Count > 0 && Library.Utility.Utility.ParseBoolOption(options, "verbose"))
                     outwriter.WriteLine(Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);

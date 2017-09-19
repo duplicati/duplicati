@@ -385,7 +385,7 @@ namespace Duplicati.CommandLine
         {
             var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
             
-            if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.InvariantCultureIgnoreCase)).Any())
+            if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.OrdinalIgnoreCase)).Any())
             {
                 outwriter.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions)); 
                 return 200;
@@ -643,7 +643,7 @@ namespace Duplicati.CommandLine
             var tests = 1L;
             if (args.Count == 2)
             {
-                if (new string[] { "all", "everything" }.Contains(args[1], StringComparer.InvariantCultureIgnoreCase))
+                if (new string[] { "all", "everything" }.Contains(args[1], StringComparer.OrdinalIgnoreCase))
                     tests = long.MaxValue;
                 else
                     tests = Convert.ToInt64(args[1]);

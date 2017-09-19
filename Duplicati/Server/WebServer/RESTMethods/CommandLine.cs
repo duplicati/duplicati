@@ -146,7 +146,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             else
             {
-                if (!key.EndsWith("/abort", StringComparison.InvariantCultureIgnoreCase))
+                if (!key.EndsWith("/abort", StringComparison.OrdinalIgnoreCase))
                 {
                     info.ReportClientError("Only abort commands are allowed");
                     return;

@@ -100,13 +100,13 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
 
-			ParsedResultType level;
-			if (result is Exception)
-				level = ParsedResultType.Fatal;
-			else if (result != null && result is Library.Interface.IBasicResults)
-				level = ((IBasicResults)result).ParsedResult;
-			else
-				level = ParsedResultType.Error;
+            ParsedResultType level;
+            if (result is Exception)
+                level = ParsedResultType.Fatal;
+            else if (result != null && result is Library.Interface.IBasicResults)
+                level = ((IBasicResults)result).ParsedResult;
+            else
+                level = ParsedResultType.Error;
 
             using (TempFile tmpfile = new TempFile())
             {
@@ -204,7 +204,7 @@ namespace Duplicati.Library.Modules.Builtin
                 if (level != null)
                     psi.EnvironmentVariables["DUPLICATI__PARSED_RESULT"] = level.Value.ToString();
                 
-				if (localpath != null)
+                if (localpath != null)
                     psi.EnvironmentVariables["DUPLICATI__LOCALPATH"] = string.Join(System.IO.Path.PathSeparator.ToString(), localpath);
 
                 string stderr = null;
@@ -277,18 +277,18 @@ namespace Duplicati.Library.Modules.Builtin
                                 value = value.Substring(1, value.Length - 2);
                         }
 
-                        if (string.Equals(key, "remoteurl", StringComparison.InvariantCultureIgnoreCase))
+                        if (string.Equals(key, "remoteurl", StringComparison.OrdinalIgnoreCase))
                         {
                             remoteurl = value;
                         }
-                        else if (string.Equals(key, "localpath", StringComparison.InvariantCultureIgnoreCase))
+                        else if (string.Equals(key, "localpath", StringComparison.OrdinalIgnoreCase))
                         {
                             localpath = value.Split(System.IO.Path.PathSeparator);
                         }
                         else if (
-                            string.Equals(key, "eventname", StringComparison.InvariantCultureIgnoreCase) || 
-                            string.Equals(key, "operationname", StringComparison.InvariantCultureIgnoreCase) ||
-                            string.Equals(key, "main-action", StringComparison.InvariantCultureIgnoreCase) ||
+                            string.Equals(key, "eventname", StringComparison.OrdinalIgnoreCase) || 
+                            string.Equals(key, "operationname", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(key, "main-action", StringComparison.OrdinalIgnoreCase) ||
                             key == ""
                         )
                         {

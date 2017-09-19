@@ -73,7 +73,7 @@ namespace Duplicati.Library.Main.Volumes
                 dict[RemoteVolumeType.Files] = "dlist";
                 dict[RemoteVolumeType.Index] = "dindex";
                 
-                var reversedict = new Dictionary<string, RemoteVolumeType>(System.StringComparer.InvariantCultureIgnoreCase);
+                var reversedict = new Dictionary<string, RemoteVolumeType>(System.StringComparer.OrdinalIgnoreCase);
                 foreach(var x in dict)
                     reversedict[x.Value] = x.Key;
                                 

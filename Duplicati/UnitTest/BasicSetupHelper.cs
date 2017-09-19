@@ -62,7 +62,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         public static readonly bool DEBUG_OUTPUT =
             new[] { "1", "true", "on", "yes" }
-            .Contains(Environment.GetEnvironmentVariable("DEBUG_OUTPUT") ?? "", StringComparer.InvariantCultureIgnoreCase);
+            .Contains(Environment.GetEnvironmentVariable("DEBUG_OUTPUT") ?? "", StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Writes a message to TestContext.Progress and Console.Out

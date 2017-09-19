@@ -70,7 +70,7 @@ namespace Duplicati.Library.Utility
                 if (certHash != null && m_validHashes != null) 
                     foreach(var hash in m_validHashes)
                     {
-                        if (!string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.InvariantCultureIgnoreCase))
+                        if (!string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase))
                         return true;
                     }
             }

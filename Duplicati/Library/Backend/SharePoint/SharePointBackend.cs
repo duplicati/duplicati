@@ -303,7 +303,7 @@ namespace Duplicati.Library.Backend
             // Now go through path and see where we land a success.
             string[] pathParts = path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             // first we look for the doc library
-            int docLibrary = Array.FindIndex(pathParts, p => StringComparer.InvariantCultureIgnoreCase.Equals(p, "documents"));
+            int docLibrary = Array.FindIndex(pathParts, p => StringComparer.OrdinalIgnoreCase.Equals(p, "documents"));
             if (docLibrary >= 0)
             {
                 string testUrl = new Utility.Uri(orgUrl.Scheme, orgUrl.Host,

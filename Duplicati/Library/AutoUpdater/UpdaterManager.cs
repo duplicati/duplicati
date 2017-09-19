@@ -343,7 +343,7 @@ namespace Duplicati.Library.AutoUpdater
                                 return null;
 
                             // Don't install a debug update on a release build and vice versa
-                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.InvariantCultureIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
+                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
                                 return null;
 
                             ReleaseType rt;
@@ -479,7 +479,7 @@ namespace Duplicati.Library.AutoUpdater
                         {
                             foreach(var file in zip.ListFilesWithSize(""))
                             {
-                                if (System.IO.Path.IsPathRooted(file.Key) || file.Key.Trim().StartsWith("..", StringComparison.InvariantCultureIgnoreCase))
+                                if (System.IO.Path.IsPathRooted(file.Key) || file.Key.Trim().StartsWith("..", StringComparison.OrdinalIgnoreCase))
                                     throw new Exception(string.Format("Out-of-place file path detected: {0}", file.Key));
 
                                 var targetpath = System.IO.Path.Combine(tempfolder, file.Key);

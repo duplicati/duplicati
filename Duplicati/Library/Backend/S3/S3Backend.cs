@@ -200,7 +200,7 @@ namespace Duplicati.Library.Backend
                 //Change in S3, now requires that you use location specific endpoint
                 if (!string.IsNullOrEmpty(locationConstraint))
                     foreach(KeyValuePair<string, string> kvp in DEFAULT_S3_LOCATION_BASED_HOSTS)
-                        if (kvp.Key.Equals(locationConstraint, StringComparison.InvariantCultureIgnoreCase))
+                        if (kvp.Key.Equals(locationConstraint, StringComparison.OrdinalIgnoreCase))
                         {
                             s3host = kvp.Value;
                             break;
@@ -263,7 +263,7 @@ namespace Duplicati.Library.Backend
             if (!hasForcePathStyle && !DEFAULT_S3_LOCATION_BASED_HOSTS.Any(x => string.Equals(x.Value, host, StringComparison.OrdinalIgnoreCase)) && !string.Equals(host, "s3.amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
-			m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+            m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
         }
 
         public static bool IsValidHostname(string bucketname)

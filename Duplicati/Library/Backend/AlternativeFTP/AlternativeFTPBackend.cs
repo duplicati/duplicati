@@ -226,7 +226,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                     }
                     else if (filename.Contains("/"))
                     {
-                        remotePath += filename.Substring(0, filename.LastIndexOf("/", StringComparison.InvariantCulture));
+                        remotePath += filename.Substring(0, filename.LastIndexOf("/", StringComparison.Ordinal));
                     }
                     // else: stripping the filename in this case ignoring it
                 }
@@ -583,7 +583,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 var certHash = (_validHashes != null && _validHashes.Length > 0) ? CoreUtility.ByteArrayAsHexString(e.Certificate.GetCertHash()) : null;
                 if (certHash != null)
                 {
-                    if (_validHashes.Any(hash => !string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.InvariantCultureIgnoreCase)))
+                    if (_validHashes.Any(hash => !string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase)))
                     {
                         e.Accept = true;
                     }

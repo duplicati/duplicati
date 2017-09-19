@@ -103,10 +103,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         {
                             var basename = ipx.Backup.Name;
                             var c = 0;
-                            while (c++ < 100 && Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                            while (c++ < 100 && Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
                                 ipx.Backup.Name = basename + " (" + c.ToString() + ")";
 
-                            if (Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                            if (Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
                             {
                                 info.BodyWriter.SetOK();
                                 info.Response.ContentType = "text/html";
@@ -148,7 +148,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         public void POST(string key, RequestInfo info)
         {
-            if ("import".Equals(key, StringComparison.InvariantCultureIgnoreCase))
+            if ("import".Equals(key, StringComparison.OrdinalIgnoreCase))
             {
                 ImportBackup(info);
                 return;
@@ -194,7 +194,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                     lock(Program.DataConnection.m_lock)
                     {
-                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase)).Any())
+                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
                         {
                             info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name);
                             return;

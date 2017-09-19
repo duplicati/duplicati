@@ -226,7 +226,7 @@ namespace Duplicati.Library.SQLiteHelper
                     throw new Duplicati.Library.Interface.UserInformationException(Strings.DatabaseUpgrader.InvalidVersionError(dbversion, versions.Count, System.IO.Path.GetDirectoryName(sourcefile)));
                 else if (dbversion < versions.Count) // will need action, collect vars for preparser
                 {
-                    preparserVars = new Dictionary<string, IComparable>(StringComparer.InvariantCultureIgnoreCase);
+                    preparserVars = new Dictionary<string, IComparable>(StringComparer.OrdinalIgnoreCase);
                     cmd.CommandText = "SELECT sqlite_version()";
                     System.Version sqliteversion;
                     if (Version.TryParse(cmd.ExecuteScalar().ToString(), out sqliteversion))
