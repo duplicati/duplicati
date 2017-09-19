@@ -1,3 +1,17 @@
+2017-09-19 - 2.0.2.7_canary_2017-09-19
+==========
+* Fixed an issue with S3 IAM not working if the destination had subfolders
+* Fixed an issue where the backup would error out reporting an extra file that was just deleted
+* Fixed an issue with AmzCD not honoring the consistency delay in all cases
+* Added support for GUID based source folders on Windows, thanks @tygill
+* Fixed not being able to set "no delay" for startup settings, thanks @Pectojin
+* Added nice-level to Duplicati-server on Linux-based installs, thanks @z0rc
+* Re-introduced the machine name in the WebUI page title, thanks @Pectojin
+* Reduced size of PNG images, thanks @PeterDaveHello
+* Added default filters to exclude temp folders and similar, thanks @tygill
+* Fixed all string compares to use ordinal compare, thanks @tygill
+* Fixed a case where temporary files were not removed after verification
+
 2017-09-16 - 2.0.2.6_canary_2017-09-16
 ==========
 * Added an experiemental --use-block-cache flag to test performance potential
