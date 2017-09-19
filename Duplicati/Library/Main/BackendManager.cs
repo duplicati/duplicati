@@ -1062,12 +1062,17 @@ namespace Duplicati.Library.Main
                     else
                         item.Hash = fileHash;
                 }
-                
-                if (!item.VerifyHashOnly)
+
+                if (item.VerifyHashOnly)
+                {
+                    tmpfile.Dispose();
+                }
+                else
                 {
                     item.Result = tmpfile;
                     tmpfile = null;
                 }
+                    
             }
             catch
             {
