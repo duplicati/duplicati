@@ -46,9 +46,9 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain(() => m_db.RegisterRemoteVolume(name, type, state, m_transaction));
         }
 
-        public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash)
+        public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup = false, TimeSpan deleteGraceTime = default(TimeSpan))
         {
-            return RunOnMain(() => m_db.UpdateRemoteVolume(name, state, size, hash, m_transaction));
+            return RunOnMain(() => m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, m_transaction));
         }
 
         public Task CommitTransactionAsync(string message, bool restart = true)

@@ -172,7 +172,17 @@ namespace Duplicati.Library.Main.Operation.Common
             m_stats = stats;
             m_taskreader = taskreader;
             m_log = new LogWrapper(m_logchannel);
-        }
+            m_backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, options.RawOptions);
+			
+            var shortname = m_backendurl;
+
+			// Try not to leak hostnames or other information in the error messages
+			try { shortname = new Library.Utility.Uri(shortname).Scheme; }
+			catch { }
+
+			if (m_backend == null)
+			    throw new Duplicati.Library.Interface.UserInformationException(string.Format("Backend not supported: {0}", shortname));
+		}
             
         protected Task<T> RunRetryOnMain<T>(FileEntryItem fe, Func<Task<T>> method)
         {
@@ -254,11 +264,11 @@ namespace Duplicati.Library.Main.Operation.Common
             await tcs.Task;
         }
 
-        public Task DeleteFileAsync(string remotename, long size)
+        public Task DeleteFileAsync(string remotename, bool suppressCleanup = false)
         {
             var fe = new FileEntryItem(BackendActionType.Delete, remotename);
             return RunRetryOnMain(fe, () =>
-                DoDelete(fe)
+                DoDelete(fe, suppressCleanup)
             );
         }
 
@@ -434,7 +444,7 @@ namespace Duplicati.Library.Main.Operation.Common
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
             else
@@ -450,9 +460,9 @@ namespace Duplicati.Library.Main.Operation.Common
 
             if (m_options.ListVerifyUploads)
             {
-                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if (f == null)
-                    throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", f.Name));
+                    throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
                 else if (f.Size != item.Size && f.Size >= 0)
                     throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
             }
@@ -489,7 +499,7 @@ namespace Duplicati.Library.Main.Operation.Common
             return r;
         }
 
-        private async Task<bool> DoDelete(FileEntryItem item)
+        private async Task<bool> DoDelete(FileEntryItem item, bool suppressCleanup)
         {
             if (m_options.Dryrun)
             {
@@ -538,7 +548,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 await m_database.LogRemoteOperationAsync("delete", item.RemoteFilename, result);
             }
 
-            await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null);
+            await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null, suppressCleanup, TimeSpan.FromHours(2));
             await m_stats.SendEventAsync(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size);
 
             return true;
@@ -581,7 +591,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 {
                     using (var fs = System.IO.File.OpenWrite(tmpfile))
                     using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                    using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, HandleProgress))
+                    using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                         ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
                 }
                 else
@@ -629,10 +639,10 @@ namespace Duplicati.Library.Main.Operation.Common
 
                             // Auto-guess the encryption module
                             var ext = (System.IO.Path.GetExtension(item.RemoteFilename) ?? "").TrimStart('.');
-                            if (!string.Equals(m_options.EncryptionModule, ext, StringComparison.InvariantCultureIgnoreCase))
+                            if (!string.Equals(m_options.EncryptionModule, ext, StringComparison.OrdinalIgnoreCase))
                             {
                                 // Check if the file is encrypted with something else
-                                if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                                 {
                                     using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions))
                                         if (encmodule != null)
@@ -642,7 +652,7 @@ namespace Duplicati.Library.Main.Operation.Common
                                         }
                                 }
                                 // Check if the file is not encrypted
-                                else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                                 {
                                     await m_log.WriteVerboseAsync("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule);
                                 }
@@ -688,12 +698,31 @@ namespace Duplicati.Library.Main.Operation.Common
             }
         }
 
-        private void HandleProgress(long pg)
-        {
+		private string m_lastThrottleUploadValue = null;
+		private string m_lastThrottleDownloadValue = null;
+
+		private void HandleProgress(ThrottledStream ts, long pg)
+		{
             if (!m_taskreader.TransferProgressAsync.WaitForTask().Result)
                 throw new OperationCanceledException();
-            
-            m_stats.UpdateBackendProgress(pg);
+
+			// Update the throttle speeds if they have changed
+			string tmp;
+			m_options.RawOptions.TryGetValue("throttle-upload", out tmp);
+			if (tmp != m_lastThrottleUploadValue)
+			{
+				ts.WriteSpeed = m_options.MaxUploadPrSecond;
+				m_lastThrottleUploadValue = tmp;
+			}
+
+			m_options.RawOptions.TryGetValue("throttle-download", out tmp);
+			if (tmp != m_lastThrottleDownloadValue)
+			{
+				ts.ReadSpeed = m_options.MaxDownloadPrSecond;
+				m_lastThrottleDownloadValue = tmp;
+			}
+
+			m_stats.UpdateBackendProgress(pg);
         }
 
         protected override void Dispose(bool disposing)
