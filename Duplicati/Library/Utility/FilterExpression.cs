@@ -65,7 +65,10 @@ namespace Duplicati.Library.Utility
             private const char MULTIPLE_WILDCARD = '*';
             
             
-            private static readonly System.Text.RegularExpressions.RegexOptions REGEXP_OPTIONS = Library.Utility.Utility.IsFSCaseSensitive ? System.Text.RegularExpressions.RegexOptions.Compiled : System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase;
+            private static readonly System.Text.RegularExpressions.RegexOptions REGEXP_OPTIONS =
+                System.Text.RegularExpressions.RegexOptions.Compiled |
+                System.Text.RegularExpressions.RegexOptions.ExplicitCapture |
+                (Library.Utility.Utility.IsFSCaseSensitive ? System.Text.RegularExpressions.RegexOptions.None : System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             
             public FilterEntry(string filter)
             {

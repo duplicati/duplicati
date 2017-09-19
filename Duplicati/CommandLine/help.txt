@@ -17,7 +17,7 @@ See duplicati.commandline.exe help <topic> for more information.
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, encryption, compression
-  Advanced: mail, advanced, returncodes, filter, <option>
+  Advanced: mail, advanced, returncodes, filter, default-filter-sets, <option>
 
 http://www.duplicati.com/              Version: %VERSION%
 
@@ -424,12 +424,38 @@ For speed limits, use the same format. If you enter 1MB this will be 1MB/sec.
 > duplicati.commandline.exe help filter
 > duplicati.commandline.exe help filters
 
-Duplicati can apply globbing and regex filter rules to backup and restore specific files only. Globbing filters can be used in file names. To specify a regex filter put the file name in [brackets]. 
+Duplicati can apply globbing and regex filter rules to backup and restore specific files only. Globbing filters can be used in file names. To specify a regex filter put the filter in [brackets]. 
   Globbing: *.txt
   Regex: [.*test\.txt]
+  
+  --include=<filter>
+    Adds an include filter
+  --exclude=<filter>
+    Adds an exclude filter
+  --default-filters=<filter-sets>
+    Which default filter sets should be used. Valid sets are "Windows", "OSX", "Linux", and "All".
 
 Inside scripts and the commandline --parameters-file, where multiple filters are supplied with a single option, filters must be prefixed with either a plus (+) or a (-), for include and exclude respectively. Example:
   +*.txt%PATH_SEPARATOR%-[.*\.xyz]%PATH_SEPARATOR%+*
+
+
+# =============================================================================
+> duplicati.commandline.exe help default-filter-set
+> duplicati.commandline.exe help default-filter-sets
+
+Duplicati has some built-in filters for different operating systems. In addition to the sets below, there is the special set "All", which selects all filters. These sets are specified via the --default-filters parameter.
+
+  Common
+    %COMMON_FILTERS%
+
+  Windows
+    %WINDOWS_FILTERS%
+
+  OSX
+    %OSX_FILTERS%
+
+  Linux
+    %LINUX_FILTERS%
 
 
 # =============================================================================
