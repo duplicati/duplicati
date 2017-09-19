@@ -41,7 +41,7 @@ namespace Duplicati.Library.Utility
         /// /// </summary>
         private static readonly Dictionary<string, DefaultFilterSet> defaultFilterSetMapping =
             ((DefaultFilterSet[])Enum.GetValues(typeof(DefaultFilterSet)))
-            .ToDictionary(val => val.ToString(), val => val, StringComparer.InvariantCultureIgnoreCase);
+            .ToDictionary(val => val.ToString(), val => val, StringComparer.OrdinalIgnoreCase);
         
         /// <summary>
         /// Filters common for all operating systems
