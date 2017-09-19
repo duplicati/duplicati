@@ -374,7 +374,7 @@ namespace Duplicati.Library.Main
                         db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
                     else if (e is DbUpdate && ((DbUpdate)e).State == RemoteVolumeState.Deleted)
                     {
-                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, RemoteVolumeState.Deleted, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, true, transaction);
+                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, RemoteVolumeState.Deleted, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, true, TimeSpan.FromHours(2), transaction);
                         volsRemoved.Add(((DbUpdate)e).Remotename);
                     }
                     else if (e is DbUpdate)

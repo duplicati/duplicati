@@ -1372,5 +1372,67 @@ namespace Duplicati.Library.Utility
                 return buf;
             }
         }
+
+        /// <summary>
+        /// Gets the drive letter from the given volume guid.
+        /// This method cannot be inlined since the System.Management types are not implemented in Mono
+        /// </summary>
+        /// <param name="volumeGuid">Volume guid</param>
+        /// <returns>Drive letter, as a single character, or null if the volume wasn't found</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static string GetDriveLetterFromVolumeGuid(Guid volumeGuid)
+        {
+            // Based on this answer:
+            // https://stackoverflow.com/questions/10186277/how-to-get-drive-information-by-volume-id
+            using (System.Management.ManagementObjectSearcher searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
+            {
+                string targetId = string.Format(@"\\?\Volume{{{0}}}\", volumeGuid);
+                foreach (System.Management.ManagementObject obj in searcher.Get())
+                {
+                    if (string.Equals(obj["DeviceID"].ToString(), targetId, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        object driveLetter = obj["DriveLetter"];
+                        if (driveLetter != null)
+                        {
+                            return obj["DriveLetter"].ToString();
+                        }
+                        else
+                        {
+                            // The volume was found, but doesn't have a drive letter associated with it.
+                            break;
+                        }
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets all volume guids and their associated drive letters.
+        /// This method cannot be inlined since the System.Management types are not implemented in Mono
+        /// </summary>
+        /// <returns>Pairs of drive letter to volume guids</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static IEnumerable<KeyValuePair<string, string>> GetVolumeGuidsAndDriveLetters()
+        {
+            using (System.Management.ManagementObjectSearcher searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
+            {
+                foreach (System.Management.ManagementObject obj in searcher.Get())
+                {
+                    object deviceIdObj = obj["DeviceID"];
+                    object driveLetterObj = obj["DriveLetter"];
+                    if (deviceIdObj != null && driveLetterObj != null)
+                    {
+                        string deviceId = deviceIdObj.ToString();
+                        string driveLetter = driveLetterObj.ToString();
+                        if (!string.IsNullOrEmpty(deviceId) && !string.IsNullOrEmpty(driveLetter))
+                        {
+                            yield return new KeyValuePair<string, string>(driveLetter + @"\", deviceId);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

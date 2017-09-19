@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:ng="http://angularjs.org" ng-app="backupApp">
+<html xmlns:ng="http://angularjs.org" ng-app="backupApp" ng-controller="AppController">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Duplicati</title>
+    <title ng-bind-template="{{systemInfo.MachineName}} - {{brandingService.appName}}"></title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -121,7 +121,7 @@
     <script type="text/javascript" src="../customized/customized.js"></script>
 
 </head>
-<body ng-controller="AppController" class="theme-{{active_theme}}">
+<body class="theme-{{active_theme}}">
      
     <div class="container">
         <div class="header">

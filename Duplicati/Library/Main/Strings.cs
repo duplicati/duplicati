@@ -1,3 +1,4 @@
+using System;
 using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Main.Strings
@@ -24,7 +25,8 @@ namespace Duplicati.Library.Main.Strings
         public static string FailedOperationMessage(OperationMode operationname, string errormessage) { return LC.L(@"The operation {0} has failed with error: {1}", operationname, errormessage); }
         public static string InvalidPathError(string path, string message) { return LC.L(@"Invalid path: ""{0}"" ({1})", path, message); }
         public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
-        public static string SourceFolderWildcardDriveNotSupportedError(string foldername) { return LC.L(@"The source folder {0} uses a wildcard drive, which is only supported on Windows, aborting backup", foldername); }
+        public static string SourceVolumeNameInvalidError(string filename) { return LC.L(@"The source {0} uses an invalid volume name, aborting backup", filename); }
+        public static string SourceVolumeNameNotFoundError(string filename, Guid volumeGuid) { return LC.L(@"The source {0} is on volume {1}, which could not be found, aborting backup", filename, volumeGuid); }
     }
 
     internal static class Options
@@ -143,7 +145,9 @@ namespace Duplicati.Library.Main.Strings
         public static string FilehashlookupsizeShort { get { return LC.L(@"Memory used by the file hash"); } }
         public static string DisablefilepathcacheLong { get { return LC.L(@"This option can be used to reduce the memory footprint by not keeping paths and modification timestamps in memory"); } }
         public static string DisablefilepathcacheShort { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
-        public static string StoremetadataLong { get { return LC.L(@"Stores metadata, such as file timestamps and attributes. This increases the required storage space as well as the processing time."); } }
+		public static string UseblockcacheShort { get { return LC.L(@"This option can be used to increase speed in exchange for extra memory use."); } }
+		public static string UseblockcacheLong { get { return LC.L(@"Store an in-memory block cache"); } }
+		public static string StoremetadataLong { get { return LC.L(@"Stores metadata, such as file timestamps and attributes. This increases the required storage space as well as the processing time."); } }
         public static string StoremetadataShort { get { return LC.L(@"Enables storing file metadata"); } }
         public static string StoremetadataDeprecated { get { return LC.L(@"This option is no longer used as metadata is now stored by default"); } }
         public static string MetadatahashlookupsizeLong { get { return LC.L(@"A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log."); } }

@@ -217,8 +217,11 @@ namespace Duplicati.Server
 
                 if (commandlineOptions.ContainsKey("log-file"))
                 {
+#if DEBUG
+                    // Only delete the --log-file when in DEBUG mode. Otherwise, don't delete and just append logs.
                     if (System.IO.File.Exists(commandlineOptions["log-file"]))
                         System.IO.File.Delete(commandlineOptions["log-file"]);
+#endif
 
                     var loglevel = Duplicati.Library.Logging.LogMessageType.Error;
 
