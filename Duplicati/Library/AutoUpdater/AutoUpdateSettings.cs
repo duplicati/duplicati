@@ -145,9 +145,9 @@ namespace Duplicati.Library.AutoUpdater
 
 
                 // Update from older builds
-                if (string.Equals(channelstring, "preview", StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals(channelstring, "preview", StringComparison.OrdinalIgnoreCase))
                     channelstring = ReleaseType.Experimental.ToString();
-                if (string.Equals(channelstring, "rene", StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals(channelstring, "rene", StringComparison.OrdinalIgnoreCase))
                     channelstring = ReleaseType.Canary.ToString();
                 
                 ReleaseType rt;

@@ -39,7 +39,7 @@ namespace Duplicati.Library.Utility
         private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
         {
             return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) => {
-                if (key.Equals("include", StringComparison.InvariantCultureIgnoreCase))
+                if (key.Equals("include", StringComparison.OrdinalIgnoreCase))
                 {
                     if (!string.IsNullOrEmpty(value))
                     {
@@ -47,7 +47,7 @@ namespace Duplicati.Library.Utility
                         return false;
                     }
                 }
-                else if (key.Equals("exclude", StringComparison.InvariantCultureIgnoreCase))
+                else if (key.Equals("exclude", StringComparison.OrdinalIgnoreCase))
                 {
                     if (!string.IsNullOrEmpty(value))
                     {

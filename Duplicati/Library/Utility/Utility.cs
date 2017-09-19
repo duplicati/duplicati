@@ -1389,7 +1389,7 @@ namespace Duplicati.Library.Utility
                 string targetId = string.Format(@"\\?\Volume{{{0}}}\", volumeGuid);
                 foreach (System.Management.ManagementObject obj in searcher.Get())
                 {
-                    if (string.Equals(obj["DeviceID"].ToString(), targetId, StringComparison.InvariantCultureIgnoreCase))
+                    if (string.Equals(obj["DeviceID"].ToString(), targetId, StringComparison.OrdinalIgnoreCase))
                     {
                         object driveLetter = obj["DriveLetter"];
                         if (driveLetter != null)

@@ -87,44 +87,44 @@ namespace Duplicati.Server
             public long OriginalUploadSpeed { get; set; }
             public long OriginalDownloadSpeed { get; set; }
 
-			public void UpdateThrottleSpeed()
-			{
-				var controller = this.Controller;
-				if (controller == null)
-					return;
+            public void UpdateThrottleSpeed()
+            {
+                var controller = this.Controller;
+                if (controller == null)
+                    return;
 
-				var job_upload_throttle = this.OriginalUploadSpeed <= 0 ? long.MaxValue : this.OriginalUploadSpeed;
-				var job_download_throttle = this.OriginalDownloadSpeed <= 0 ? long.MaxValue : this.OriginalDownloadSpeed;
+                var job_upload_throttle = this.OriginalUploadSpeed <= 0 ? long.MaxValue : this.OriginalUploadSpeed;
+                var job_download_throttle = this.OriginalDownloadSpeed <= 0 ? long.MaxValue : this.OriginalDownloadSpeed;
 
-				var server_upload_throttle = long.MaxValue;
-				var server_download_throttle = long.MaxValue;
+                var server_upload_throttle = long.MaxValue;
+                var server_download_throttle = long.MaxValue;
 
-				try
-				{
-					if (!string.IsNullOrWhiteSpace(Program.DataConnection.ApplicationSettings.UploadSpeedLimit))
-						server_upload_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(Program.DataConnection.ApplicationSettings.UploadSpeedLimit, "kb");
-				}
-				catch { }
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(Program.DataConnection.ApplicationSettings.UploadSpeedLimit))
+                        server_upload_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(Program.DataConnection.ApplicationSettings.UploadSpeedLimit, "kb");
+                }
+                catch { }
 
-				try
-				{
-					if (!string.IsNullOrWhiteSpace(Program.DataConnection.ApplicationSettings.DownloadSpeedLimit))
-						server_download_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(Program.DataConnection.ApplicationSettings.DownloadSpeedLimit, "kb");
-				}
-				catch { }
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(Program.DataConnection.ApplicationSettings.DownloadSpeedLimit))
+                        server_download_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(Program.DataConnection.ApplicationSettings.DownloadSpeedLimit, "kb");
+                }
+                catch { }
 
-				var upload_throttle = Math.Min(job_upload_throttle, server_upload_throttle);
-				var download_throttle = Math.Min(job_download_throttle, server_download_throttle);
+                var upload_throttle = Math.Min(job_upload_throttle, server_upload_throttle);
+                var download_throttle = Math.Min(job_download_throttle, server_download_throttle);
 
-				if (upload_throttle <= 0 || upload_throttle == long.MaxValue)
-					upload_throttle = 0;
+                if (upload_throttle <= 0 || upload_throttle == long.MaxValue)
+                    upload_throttle = 0;
 
-				if (download_throttle <= 0 || download_throttle == long.MaxValue)
-					download_throttle = 0;
+                if (download_throttle <= 0 || download_throttle == long.MaxValue)
+                    download_throttle = 0;
 
-				controller.MaxUploadSpeed = upload_throttle;
-				controller.MaxDownloadSpeed = download_throttle;
-			}
+                controller.MaxUploadSpeed = upload_throttle;
+                controller.MaxDownloadSpeed = download_throttle;
+            }
 
             private readonly long m_taskID;
             
@@ -492,7 +492,7 @@ namespace Duplicati.Server
                 // Pack in the system or task config for easy restore
                 if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
                 {
-                    var all_tasks = string.Equals(options["store-task-config"], "all", StringComparison.InvariantCultureIgnoreCase) || string.Equals(options["store-task-config"], "*", StringComparison.InvariantCultureIgnoreCase);
+                    var all_tasks = string.Equals(options["store-task-config"], "all", StringComparison.OrdinalIgnoreCase) || string.Equals(options["store-task-config"], "*", StringComparison.OrdinalIgnoreCase);
                     var this_task = Duplicati.Library.Utility.Utility.ParseBool(options["store-task-config"], false);
 
                     options.Remove("store-task-config");
@@ -540,17 +540,17 @@ namespace Duplicati.Server
                     }
                     catch { }
 
-					try
-					{
-						if (options.ContainsKey("throttle-download"))
+                    try
+                    {
+                        if (options.ContainsKey("throttle-download"))
                             ((RunnerData)data).OriginalDownloadSpeed = Duplicati.Library.Utility.Sizeparser.ParseSize(options["throttle-download"], "kb");
-					}
-					catch { }
+                    }
+                    catch { }
 
-					((RunnerData)data).Controller = controller;
+                    ((RunnerData)data).Controller = controller;
                     data.UpdateThrottleSpeed();
 
-					switch (data.Operation)
+                    switch (data.Operation)
                     {
                         case DuplicatiOperation.Backup:
                             {
@@ -836,12 +836,12 @@ namespace Duplicati.Server
             if (options.TryGetValue("enable-module", out enabledModules))
             {
                 var emods = (enabledModules ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                options["enable-module"] = string.Join(",", emods.Where(x => module.Equals(x, StringComparison.InvariantCultureIgnoreCase)));
+                options["enable-module"] = string.Join(",", emods.Where(x => module.Equals(x, StringComparison.OrdinalIgnoreCase)));
             }
             
             options.TryGetValue("disable-module", out disabledModules);
             var mods = (disabledModules ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.InvariantCultureIgnoreCase));
+            options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.OrdinalIgnoreCase));
         }
         
         private static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)

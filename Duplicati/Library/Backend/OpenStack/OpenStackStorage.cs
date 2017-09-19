@@ -255,7 +255,7 @@ namespace Duplicati.Library.Backend.OpenStack
             m_accessToken = resp.access.token;
 
             // Grab the endpoint now that we have received it anyway
-            var fileservice = resp.access.serviceCatalog.Where(x => string.Equals(x.type, "object-store", StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+            var fileservice = resp.access.serviceCatalog.Where(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             if (fileservice == null)
                 throw new Exception("No object-store service found, is this service supported by the provider?");
 

@@ -220,7 +220,7 @@ namespace Duplicati.Library.Main
                             expandedSources.Add(expandedSource);
                         }
                     }
-                    else if (Library.Utility.Utility.IsClientWindows && inputsources[i].StartsWith(@"\\?\Volume{", StringComparison.InvariantCultureIgnoreCase))
+                    else if (Library.Utility.Utility.IsClientWindows && inputsources[i].StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
                     {
                         // In order to specify a drive by it's volume name, adopt the volume guid path syntax:
                         //   \\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}

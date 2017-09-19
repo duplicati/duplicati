@@ -148,7 +148,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                         foreach(var f in resp.items)
                         {
                             var name = f.name;
-                            if (name.StartsWith(m_prefix, StringComparison.InvariantCultureIgnoreCase))
+                            if (name.StartsWith(m_prefix, StringComparison.OrdinalIgnoreCase))
                                 name = name.Substring(m_prefix.Length);
                             if (f.size == null)
                                 res.Add(new FileEntry(name));
