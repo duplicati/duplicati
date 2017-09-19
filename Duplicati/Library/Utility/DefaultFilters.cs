@@ -23,12 +23,10 @@ namespace Duplicati.Library.Utility
     public enum DefaultFilterSet
     {
         None = 0,
-        Platform = 1,
-        Common = 2,
-        Windows = 4,
-        OSX = 8,
-        Linux = 16,
-        All = Common | Windows | OSX | Linux,
+        Windows = 1,
+        OSX = 2,
+        Linux = 4,
+        All = Windows | OSX | Linux,
     }
 
     /// <summary>
@@ -113,10 +111,8 @@ namespace Duplicati.Library.Utility
             }
 
             // If no filter sets are specified, we use the default for the platform we're on
-            if (!anyOptions || (filterSets & DefaultFilterSet.Platform) == DefaultFilterSet.Platform)
+            if (!anyOptions)
             {
-                filterSets |= DefaultFilterSet.Common;
-
                 if (Utility.IsClientWindows)
                 {
                     filterSets |= DefaultFilterSet.Windows;
@@ -133,11 +129,12 @@ namespace Duplicati.Library.Utility
                 }
             }
 
-            IEnumerable<string> filters = Enumerable.Empty<string>();
-            if ((filterSets & DefaultFilterSet.Common) == DefaultFilterSet.Common)
+            if (filterSets == DefaultFilterSet.None)
             {
-                filters = filters.Concat(DefaultFilters.Common);
+                return Enumerable.Empty<FilterExpression>();
             }
+
+            IEnumerable<string> filters = DefaultFilters.Common;
 
             if ((filterSets & DefaultFilterSet.Windows) == DefaultFilterSet.Windows)
             {

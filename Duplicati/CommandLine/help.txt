@@ -430,7 +430,7 @@ Duplicati can apply globbing and regex filter rules to backup and restore specif
   --exclude=<filter>
     Adds an exclude filter
   --default-filters=<filter-sets>
-    Which default filter sets should be used. Valid sets are "Platform", "Common", "Windows", "OSX", "Linux", and "All".
+    Which default filter sets should be used. Valid sets are "Windows", "OSX", "Linux", and "All".
 
 Inside scripts and the commandline --parameters-file, where multiple filters are supplied with a single option, filters must be prefixed with either a plus (+) or a (-), for include and exclude respectively. Example:
   +*.txt%PATH_SEPARATOR%-[.*\.xyz]%PATH_SEPARATOR%+*
@@ -440,7 +440,7 @@ Inside scripts and the commandline --parameters-file, where multiple filters are
 > duplicati.commandline.exe help default-filter-set
 > duplicati.commandline.exe help default-filter-sets
 
-Duplicati has some built-in filters for different operating systems. In addition to the sets below, there are two special sets: "Platform", which selects the "Common" and platform specific filters, and "All", which selects all filters. These sets are specified via the --default-filters parameter.
+Duplicati has some built-in filters for different operating systems. In addition to the sets below, there is the special set "All", which selects all filters. These sets are specified via the --default-filters parameter.
 
   Common
     %COMMON_FILTERS%
