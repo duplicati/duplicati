@@ -92,7 +92,7 @@ namespace Duplicati.Library.Localization
                     var names =
                         from name in SearchAssembly.GetManifestResourceNames()
                         let m = CI_MATCHER.Match(name)
-                        let c = m.Success && string.Equals(m.Value, fn, StringComparison.InvariantCultureIgnoreCase) ? LocalizationService.ParseCulture(m.Groups["culture"].Value) : null
+                        let c = m.Success && string.Equals(m.Value, fn, StringComparison.OrdinalIgnoreCase) ? LocalizationService.ParseCulture(m.Groups["culture"].Value) : null
                         where c != null
                         select name;
 

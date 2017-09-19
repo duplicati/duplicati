@@ -30,7 +30,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
-            if (key.Equals("server-ssl-certificate", StringComparison.InvariantCultureIgnoreCase) || key.Equals("ServerSSLCertificate", StringComparison.InvariantCultureIgnoreCase))
+            if (key.Equals("server-ssl-certificate", StringComparison.OrdinalIgnoreCase) || key.Equals("ServerSSLCertificate", StringComparison.OrdinalIgnoreCase))
             {
                 info.OutputOK(Program.DataConnection.ApplicationSettings.ServerSSLCertificate == null ? "False" : "True");
                 return;
@@ -38,7 +38,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             if (key.StartsWith("--", StringComparison.Ordinal))
             {
-                var prop = Program.DataConnection.Settings.FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.InvariantCultureIgnoreCase));
+                var prop = Program.DataConnection.Settings.FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase));
                 info.OutputOK(prop == null ? null : prop.Value);
             }
             else
@@ -59,17 +59,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
-			if (key.Equals("server-ssl-certificate", StringComparison.InvariantCultureIgnoreCase) || key.Equals("ServerSSLCertificate", StringComparison.InvariantCultureIgnoreCase))
-			{
-				info.OutputError(null, System.Net.HttpStatusCode.BadRequest, "Can only update SSL certificate from commandline");
-				return;
-			}
+            if (key.Equals("server-ssl-certificate", StringComparison.OrdinalIgnoreCase) || key.Equals("ServerSSLCertificate", StringComparison.OrdinalIgnoreCase))
+            {
+                info.OutputError(null, System.Net.HttpStatusCode.BadRequest, "Can only update SSL certificate from commandline");
+                return;
+            }
 
-			if (key.StartsWith("--", StringComparison.Ordinal))
+            if (key.StartsWith("--", StringComparison.Ordinal))
             {
                 var settings = Program.DataConnection.Settings.ToList();
 
-                var prop = settings.Where(x => string.Equals(key, x.Name, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                var prop = settings.Where(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if (prop == null)
                     settings.Add(prop = new Database.Setting() { Name = key, Value = info.Request.Form["data"].Value });
                 else

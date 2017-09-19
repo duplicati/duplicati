@@ -349,7 +349,7 @@ namespace Duplicati.GUI.TrayIcon
                         !hasTriedXSRF &&
                         wex.Status == System.Net.WebExceptionStatus.ProtocolError &&
                         httpex.StatusCode == System.Net.HttpStatusCode.BadRequest &&
-                        httpex.StatusDescription.IndexOf("XSRF", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                        httpex.StatusDescription.IndexOf("XSRF", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         hasTriedXSRF = true;
                         var t = httpex.Cookies[XSRF_COOKIE]?.Value;
@@ -389,14 +389,14 @@ namespace Duplicati.GUI.TrayIcon
 
             string query = EncodeQueryString(queryparams);
 
-			// TODO: This can interfere with running backups, 
+            // TODO: This can interfere with running backups, 
             // as the System.Net.ServicePointManager is shared with
             // all connections doing ftp/http requests
-			using (var httpOptions = new Duplicati.Library.Modules.Builtin.HttpOptions())
+            using (var httpOptions = new Duplicati.Library.Modules.Builtin.HttpOptions())
             {
-				httpOptions.Configure(m_options);
+                httpOptions.Configure(m_options);
 
-				var req =
+                var req =
                     (System.Net.HttpWebRequest) System.Net.WebRequest.Create(
                         new Uri(m_apiUri + endpoint + '?' + query));
                 req.Method = method;
@@ -419,7 +419,7 @@ namespace Duplicati.GUI.TrayIcon
                 req.AllowWriteStreamBuffering = true;
 
                 //Assign the timeout, and add a little processing time as well
-                if (endpoint.Equals("/serverstate", StringComparison.InvariantCultureIgnoreCase) &&
+                if (endpoint.Equals("/serverstate", StringComparison.OrdinalIgnoreCase) &&
                     queryparams.ContainsKey("duration"))
                     areq.Timeout = (int) (Duplicati.Library.Utility.Timeparser.ParseTimeSpan(queryparams["duration"]) +
                                           TimeSpan.FromSeconds(5)).TotalMilliseconds;

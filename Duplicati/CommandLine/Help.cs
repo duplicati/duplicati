@@ -14,7 +14,7 @@ namespace Duplicati.CommandLine
 
         static Help()
         {
-            _document = new Dictionary<string,string>(StringComparer.InvariantCultureIgnoreCase);
+            _document = new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
 
             using (System.IO.StreamReader sr = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(RESOURCE_NAME)))
             {
@@ -38,9 +38,9 @@ namespace Duplicati.CommandLine
                         }
 
                         string[] elems = line.Split(new string[] {" ", "\t"}, StringSplitOptions.RemoveEmptyEntries);
-                        if (elems.Length >= 2 && string.Equals(elems[elems.Length - 2], "help", StringComparison.InvariantCultureIgnoreCase))
+                        if (elems.Length >= 2 && string.Equals(elems[elems.Length - 2], "help", StringComparison.OrdinalIgnoreCase))
                             keywords.Add(elems[elems.Length - 1]);
-                        else if (elems.Length == 3 && string.Equals(elems[elems.Length - 1], "help", StringComparison.InvariantCultureIgnoreCase))
+                        else if (elems.Length == 3 && string.Equals(elems[elems.Length - 1], "help", StringComparison.OrdinalIgnoreCase))
                             keywords.Add("help");
                     }
                     else
@@ -76,13 +76,13 @@ namespace Duplicati.CommandLine
             if (string.IsNullOrWhiteSpace(topic))
                 topic = "help";
 
-            if (string.Equals("help", topic, StringComparison.InvariantCultureIgnoreCase))
+            if (string.Equals("help", topic, StringComparison.OrdinalIgnoreCase))
             {
                 if (options.Count == 1)
                     topic = new List<string>(options.Keys)[0];
-                else if (System.Environment.CommandLine.IndexOf("--exclude", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                else if (System.Environment.CommandLine.IndexOf("--exclude", StringComparison.OrdinalIgnoreCase) >= 0)
                     topic = "exclude";
-                else if (System.Environment.CommandLine.IndexOf("--include", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                else if (System.Environment.CommandLine.IndexOf("--include", StringComparison.OrdinalIgnoreCase) >= 0)
                     topic = "include";
             }
 
@@ -186,7 +186,7 @@ namespace Duplicati.CommandLine
                     IList<Library.Interface.ICommandLineArgument> args = null;
                     bool found = false;
                     foreach (Duplicati.Library.Interface.IBackend backend in Library.DynamicLoader.BackendLoader.Backends)
-                        if (string.Equals(backend.ProtocolKey, topic, StringComparison.InvariantCultureIgnoreCase))
+                        if (string.Equals(backend.ProtocolKey, topic, StringComparison.OrdinalIgnoreCase))
                         {
                             args = backend.SupportedCommands;
                             found = true;
@@ -195,7 +195,7 @@ namespace Duplicati.CommandLine
 
                     if (args == null)
                         foreach (Duplicati.Library.Interface.IEncryption module in Library.DynamicLoader.EncryptionLoader.Modules)
-                            if (string.Equals(module.FilenameExtension, topic, StringComparison.InvariantCultureIgnoreCase))
+                            if (string.Equals(module.FilenameExtension, topic, StringComparison.OrdinalIgnoreCase))
                             {
                                 args = module.SupportedCommands;
                                 found = true;
@@ -204,7 +204,7 @@ namespace Duplicati.CommandLine
 
                     if (args == null)
                         foreach (Duplicati.Library.Interface.ICompression module in Library.DynamicLoader.CompressionLoader.Modules)
-                            if (string.Equals(module.FilenameExtension, topic, StringComparison.InvariantCultureIgnoreCase))
+                            if (string.Equals(module.FilenameExtension, topic, StringComparison.OrdinalIgnoreCase))
                             {
                                 args = module.SupportedCommands;
                                 found = true;
@@ -213,7 +213,7 @@ namespace Duplicati.CommandLine
 
                     if (args == null)
                         foreach (Duplicati.Library.Interface.IGenericModule module in Library.DynamicLoader.GenericLoader.Modules)
-                            if (string.Equals(module.Key, topic, StringComparison.InvariantCultureIgnoreCase))
+                            if (string.Equals(module.Key, topic, StringComparison.OrdinalIgnoreCase))
                             {
                                 args = module.SupportedCommands;
                                 found = true;
@@ -244,7 +244,7 @@ namespace Duplicati.CommandLine
                 List<string> lines = new List<string>();
 
                 foreach (Duplicati.Library.Interface.IBackend backend in Library.DynamicLoader.BackendLoader.Backends)
-                    if (string.Equals(backend.ProtocolKey, topic, StringComparison.InvariantCultureIgnoreCase))
+                    if (string.Equals(backend.ProtocolKey, topic, StringComparison.OrdinalIgnoreCase))
                     {
                         PrintBackend(backend, lines);
                         break;
@@ -252,7 +252,7 @@ namespace Duplicati.CommandLine
 
                 if (lines.Count == 0)
                     foreach (Duplicati.Library.Interface.IEncryption mod in Library.DynamicLoader.EncryptionLoader.Modules)
-                        if (string.Equals(mod.FilenameExtension, topic, StringComparison.InvariantCultureIgnoreCase))
+                        if (string.Equals(mod.FilenameExtension, topic, StringComparison.OrdinalIgnoreCase))
                         {
                             PrintEncryptionModule(mod, lines);
                             break;
@@ -260,7 +260,7 @@ namespace Duplicati.CommandLine
 
                 if (lines.Count == 0)
                     foreach (Duplicati.Library.Interface.ICompression mod in Library.DynamicLoader.CompressionLoader.Modules)
-                        if (string.Equals(mod.FilenameExtension, topic, StringComparison.InvariantCultureIgnoreCase))
+                        if (string.Equals(mod.FilenameExtension, topic, StringComparison.OrdinalIgnoreCase))
                         {
                             PrintCompressionModule(mod, lines);
                             break;
@@ -268,7 +268,7 @@ namespace Duplicati.CommandLine
 
                 if (lines.Count == 0)
                     foreach (Duplicati.Library.Interface.IGenericModule mod in Library.DynamicLoader.GenericLoader.Modules)
-                        if (string.Equals(mod.Key, topic, StringComparison.InvariantCultureIgnoreCase))
+                        if (string.Equals(mod.Key, topic, StringComparison.OrdinalIgnoreCase))
                         {
                             PrintGenericModule(mod, lines);
                             break;
@@ -298,7 +298,7 @@ namespace Duplicati.CommandLine
 
             foreach (Duplicati.Library.Interface.ICommandLineArgument arg in args)
             {
-                if (string.Equals(arg.Name, topic, StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals(arg.Name, topic, StringComparison.OrdinalIgnoreCase))
                 {
                     Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
                     return;
@@ -307,7 +307,7 @@ namespace Duplicati.CommandLine
                 if (arg.Aliases != null)
                     foreach (string k in arg.Aliases)
                     {
-                        if (string.Equals(k, topic, StringComparison.InvariantCultureIgnoreCase))
+                        if (string.Equals(k, topic, StringComparison.OrdinalIgnoreCase))
                         {
                             Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
                             return;
@@ -437,7 +437,7 @@ namespace Duplicati.CommandLine
 
         private class Matcher
         {
-            Dictionary<string, Library.Interface.ICommandLineArgument> args = new Dictionary<string, Library.Interface.ICommandLineArgument>(StringComparer.InvariantCultureIgnoreCase);
+            Dictionary<string, Library.Interface.ICommandLineArgument> args = new Dictionary<string, Library.Interface.ICommandLineArgument>(StringComparer.OrdinalIgnoreCase);
 
             public Matcher()
             {

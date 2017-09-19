@@ -53,7 +53,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 if (tp.Attempts > 0)
                     tp.Attempts--;
                 
-                return tp.Attempts >= 0 && string.Equals(tp.Answer, answer, StringComparison.InvariantCultureIgnoreCase) && tp.Target == target && tp.Expires >= DateTime.Now;
+                return tp.Attempts >= 0 && string.Equals(tp.Answer, answer, StringComparison.OrdinalIgnoreCase) && tp.Target == target && tp.Expires >= DateTime.Now;
             }
         }
 

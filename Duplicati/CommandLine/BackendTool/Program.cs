@@ -59,17 +59,17 @@ namespace Duplicati.CommandLine.BackendTool
                 string command = null;
                 if (args.Count >= 2)
                 {
-                    if (args[0].Equals("list", StringComparison.InvariantCultureIgnoreCase))
+                    if (args[0].Equals("list", StringComparison.OrdinalIgnoreCase))
                         command = "list";
-                    else if (args[0].Equals("get", StringComparison.InvariantCultureIgnoreCase))
+                    else if (args[0].Equals("get", StringComparison.OrdinalIgnoreCase))
                         command = "get";
-                    else if (args[0].Equals("put", StringComparison.InvariantCultureIgnoreCase))
+                    else if (args[0].Equals("put", StringComparison.OrdinalIgnoreCase))
                         command = "put";
-                    else if (args[0].Equals("delete", StringComparison.InvariantCultureIgnoreCase))
+                    else if (args[0].Equals("delete", StringComparison.OrdinalIgnoreCase))
                         command = "delete";
-                    else if (args[0].Equals("create-folder", StringComparison.InvariantCultureIgnoreCase))
+                    else if (args[0].Equals("create-folder", StringComparison.OrdinalIgnoreCase))
                         command = "create";
-                    else if (args[0].Equals("createfolder", StringComparison.InvariantCultureIgnoreCase))
+                    else if (args[0].Equals("createfolder", StringComparison.OrdinalIgnoreCase))
                         command = "create";
                 }
 

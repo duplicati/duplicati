@@ -209,7 +209,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                     if (fe != null)
                     {
-                        fe.IsFolder = FOLDER_MIMETYPE.Equals(n.mimeType, StringComparison.InvariantCultureIgnoreCase);
+                        fe.IsFolder = FOLDER_MIMETYPE.Equals(n.mimeType, StringComparison.OrdinalIgnoreCase);
                         res.Add(fe);
 
                         if (!fe.IsFolder)

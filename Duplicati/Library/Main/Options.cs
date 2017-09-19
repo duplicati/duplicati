@@ -481,8 +481,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
                     new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
                     new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true"),
-					new CommandLineArgument("use-block-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UseblockcacheShort, Strings.Options.UseblockcacheLong, "false"),
-					new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
+                    new CommandLineArgument("use-block-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UseblockcacheShort, Strings.Options.UseblockcacheLong, "false"),
+                    new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, Strings.Options.DeletedfilesLong("changed-files")),
                     new CommandLineArgument("disable-synthetic-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablesyntheticfilelistShort, Strings.Options.DisablesyntehticfilelistLong, "false"),
 
@@ -1083,13 +1083,13 @@ namespace Duplicati.Library.Main
                 if (!m_options.TryGetValue("snapshot-policy", out strategy))
                     strategy = "";
 
-                if (string.Equals(strategy, "on", StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals(strategy, "on", StringComparison.OrdinalIgnoreCase))
                     return OptimizationStrategy.On;
-                else if (string.Equals(strategy, "off", StringComparison.InvariantCultureIgnoreCase))
+                else if (string.Equals(strategy, "off", StringComparison.OrdinalIgnoreCase))
                     return OptimizationStrategy.Off;
-                else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
+                else if (string.Equals(strategy, "required", StringComparison.OrdinalIgnoreCase))
                     return OptimizationStrategy.Required;
-                else if (string.Equals(strategy, "auto", StringComparison.InvariantCultureIgnoreCase))
+                else if (string.Equals(strategy, "auto", StringComparison.OrdinalIgnoreCase))
                     return OptimizationStrategy.Auto;
                 else
                     return OptimizationStrategy.Off;
@@ -1144,13 +1144,13 @@ namespace Duplicati.Library.Main
                 if (!m_options.TryGetValue("usn-policy", out strategy))
                     strategy = "";
 
-                if (string.Equals(strategy, "on", StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals(strategy, "on", StringComparison.OrdinalIgnoreCase))
                     return OptimizationStrategy.On;
-                else if (string.Equals(strategy, "off", StringComparison.InvariantCultureIgnoreCase))
+                else if (string.Equals(strategy, "off", StringComparison.OrdinalIgnoreCase))
                     return OptimizationStrategy.Off;
-                else if (string.Equals(strategy, "required", StringComparison.InvariantCultureIgnoreCase))
+                else if (string.Equals(strategy, "required", StringComparison.OrdinalIgnoreCase))
                     return OptimizationStrategy.Required;
-                else if (string.Equals(strategy, "auto", StringComparison.InvariantCultureIgnoreCase))
+                else if (string.Equals(strategy, "auto", StringComparison.OrdinalIgnoreCase))
                     return OptimizationStrategy.Auto;
                 else
                     return OptimizationStrategy.Off;
@@ -1220,7 +1220,7 @@ namespace Duplicati.Library.Main
                     value = null;
 
                 foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
-                    if (s.Equals(value, StringComparison.InvariantCultureIgnoreCase))
+                    if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return true;
 
                 return false;
@@ -1239,7 +1239,7 @@ namespace Duplicati.Library.Main
                     value = null;
 
                 foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
-                    if (s.Equals(value, StringComparison.InvariantCultureIgnoreCase))
+                    if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
                 return Duplicati.Library.Logging.LogMessageType.Warning;
@@ -1463,7 +1463,7 @@ namespace Duplicati.Library.Main
             get
             {
                 return Library.Utility.Utility.ParseBoolOption(m_options, "use-block-cache");
-			}
+            }
         }
         
         

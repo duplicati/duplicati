@@ -30,7 +30,7 @@ namespace Duplicati.Library.Backend
 
         private OAuthHelper m_oauth;
 
-        private Dictionary<string, string> m_fileidCache = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        private Dictionary<string, string> m_fileidCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
@@ -118,7 +118,7 @@ namespace Duplicati.Library.Backend
                 return null;
 
             foreach(var r in res.data)
-                if (string.Equals(r.name, folder, StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals(r.name, folder, StringComparison.OrdinalIgnoreCase))
                     return r;
 
              return null;
@@ -258,7 +258,7 @@ namespace Duplicati.Library.Backend
                         m_fileidCache.Add(r.name, r.id);
 
                         var fe = new FileEntry(r.name, r.size, r.updated_time, r.updated_time);
-                        fe.IsFolder = string.Equals(r.type, "folder", StringComparison.InvariantCultureIgnoreCase);
+                        fe.IsFolder = string.Equals(r.type, "folder", StringComparison.OrdinalIgnoreCase);
                         files.Add(fe);
                     }
                 }
@@ -397,7 +397,7 @@ namespace Duplicati.Library.Backend
                 using(var resp = (HttpWebResponse)areq.GetResponse())
                 {
                     var packtype = resp.Headers["BITS-Packet-Type"];
-                    if (!packtype.Equals("Ack", StringComparison.InvariantCultureIgnoreCase))
+                    if (!packtype.Equals("Ack", StringComparison.OrdinalIgnoreCase))
                         throw new Exception(string.Format("Unable to create BITS transfer, got status: {0}", packtype));
                     
                     sessionid = resp.Headers["BITS-Session-Id"];

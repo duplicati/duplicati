@@ -83,7 +83,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, backup, extra), false) as Duplicati.Library.Interface.IListResults;
 
-            if (r.EncryptedFiles && backup.Settings.Any(x => string.Equals("--no-encryption", x.Name, StringComparison.InvariantCultureIgnoreCase)))
+            if (r.EncryptedFiles && backup.Settings.Any(x => string.Equals("--no-encryption", x.Name, StringComparison.OrdinalIgnoreCase)))
                 info.ReportServerError("encrypted-storage");
             else
                 info.OutputOK(r.Filesets);
@@ -539,7 +539,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             return;
                         }
 
-                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.InvariantCultureIgnoreCase) && x.ID != data.Backup.ID).Any())
+                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase) && x.ID != data.Backup.ID).Any())
                         {
                             info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name);
                             return;

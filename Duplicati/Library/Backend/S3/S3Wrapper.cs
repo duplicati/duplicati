@@ -47,9 +47,9 @@ namespace Duplicati.Library.Backend
             //cfg.UserAgent = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " S3 client with AWS SDK v" + cfg.GetType().Assembly.GetName().Version.ToString();
             cfg.BufferSize = (int)Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE;
 
-            foreach(var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.InvariantCultureIgnoreCase)))
+            foreach(var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
             {
-                var prop = cfg.GetType().GetProperties().Where(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                var prop = cfg.GetType().GetProperties().Where(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if (prop != null && prop.CanWrite)
                 {
                     if (prop.PropertyType == typeof(bool))

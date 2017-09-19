@@ -176,10 +176,10 @@ namespace Duplicati.Server
 
             foreach(var s in args)
                 if (
-                    s.Equals("help", StringComparison.InvariantCultureIgnoreCase) ||
-                    s.Equals("/help", StringComparison.InvariantCultureIgnoreCase) ||
-                    s.Equals("usage", StringComparison.InvariantCultureIgnoreCase) ||
-                    s.Equals("/usage", StringComparison.InvariantCultureIgnoreCase))
+                    s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("usage", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
                     commandlineOptions["help"] = "";
 
             //If the commandline issues --help, just stop here
@@ -517,7 +517,7 @@ namespace Duplicati.Server
                     DataFolder = serverDataFolder;
                 }
 #endif
-			}
+            }
             else
                 DataFolder = Library.Utility.Utility.AppendDirSeparator(Library.Utility.Utility.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
 
@@ -566,9 +566,9 @@ namespace Duplicati.Server
         public static void StartOrStopUsageReporter()
         {
             var disableUsageReporter = 
-                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "none", StringComparison.InvariantCultureIgnoreCase)
+                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "none", StringComparison.OrdinalIgnoreCase)
                 ||
-                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "disabled", StringComparison.InvariantCultureIgnoreCase);
+                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "disabled", StringComparison.OrdinalIgnoreCase);
 
             Library.UsageReporter.ReportType reportLevel;
             if (!Enum.TryParse<Library.UsageReporter.ReportType>(DataConnection.ApplicationSettings.UsageReporterLevel, true, out reportLevel))                    

@@ -701,9 +701,9 @@ namespace Duplicati.Library.Main
         }
 
         private string m_lastThrottleUploadValue = null;
-		private string m_lastThrottleDownloadValue = null;
+        private string m_lastThrottleDownloadValue = null;
 
-		private void HandleProgress(ThrottledStream ts, long pg)
+        private void HandleProgress(ThrottledStream ts, long pg)
         {
             // TODO: Should we pause here as well?
             // It might give annoying timeouts for transfers
@@ -719,7 +719,7 @@ namespace Duplicati.Library.Main
                 m_lastThrottleUploadValue = tmp;
             }
 
-			m_options.RawOptions.TryGetValue("throttle-download", out tmp);
+            m_options.RawOptions.TryGetValue("throttle-download", out tmp);
             if (tmp != m_lastThrottleDownloadValue)
             {
                 ts.ReadSpeed = m_options.MaxDownloadPrSecond;
@@ -770,7 +770,7 @@ namespace Duplicati.Library.Main
 
             if (m_options.ListVerifyUploads)
             {
-                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if (f == null)
                     throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
                 else if (f.Size != item.Size && f.Size >= 0)
@@ -1000,17 +1000,17 @@ namespace Duplicati.Library.Main
                             {
                                 // Auto-guess the encryption module
                                 var ext = (System.IO.Path.GetExtension(item.RemoteFilename) ?? "").TrimStart('.');
-                                if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.InvariantCultureIgnoreCase))
+                                if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.OrdinalIgnoreCase))
                                 {
                                     // Check if the file is encrypted with something else
-                                    if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                    if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                                     {
                                         m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
                                         useDecrypter = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions);
                                         useDecrypter = useDecrypter ?? m_encryption;
                                     }
                                     // Check if the file is not encrypted
-                                    else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                    else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                                     {
                                         m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule);
                                         useDecrypter = null;
@@ -1304,7 +1304,7 @@ namespace Duplicati.Library.Main
                 m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
 
-			if (m_lastException != null)
+            if (m_lastException != null)
                 throw m_lastException;
 
             return (Library.Utility.TempFile)req.Result;
@@ -1322,12 +1322,12 @@ namespace Duplicati.Library.Main
                 if (m_queue.Enqueue(req))
                     return req;
             }
-			finally
-			{
-				m_statwriter.BackendProgressUpdater.SetBlocking(false);
-			}
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
+            }
 
-			if (m_lastException != null)
+            if (m_lastException != null)
                 throw m_lastException;
             else
                 throw new InvalidOperationException("GetAsync called after backend is shut down");
