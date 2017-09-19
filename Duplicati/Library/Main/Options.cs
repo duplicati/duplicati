@@ -1476,13 +1476,8 @@ namespace Duplicati.Library.Main
         {
             get
             {
-<<<<<<< HEAD
-                return Library.Utility.Utility.ParseBoolOption(m_options, "use-block-cache");
-			}
-=======
                 return Library.Utility.Utility.ParseBoolOption(m_options, "use-block-cache");
             }
->>>>>>> master
         }
         
         
