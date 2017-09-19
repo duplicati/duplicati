@@ -315,7 +315,7 @@ namespace Duplicati.Library.Main.Operation
                                 await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, true);
 
                                 // Start the uploader process
-                                uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result, m_result.TaskReader);
+                                uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result, m_result.TaskReader, stats);
 
                                 // If we have an interrupted backup, grab the 
                                 string lasttempfilelist = null;

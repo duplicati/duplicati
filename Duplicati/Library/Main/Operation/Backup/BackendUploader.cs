@@ -76,7 +76,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class BackendUploader
     {
-        public static Task Run(Common.BackendHandler backend, Options options, Common.DatabaseCommon database, BackupResults results, Common.ITaskReader taskreader)
+        public static Task Run(Common.BackendHandler backend, Options options, Common.DatabaseCommon database, BackupResults results, Common.ITaskReader taskreader, StatsCollector stats)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -139,19 +139,41 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (!ex.IsRetiredException())
                             throw;
                     }
-                    
+
                     while(active >= max_pending)
                     {
                         var top = inProgress.Dequeue();
-                        await top.Value;
-                        active -= top.Key;
+
+                        // See if we are done
+                        if (await Task.WhenAny(top.Value, Task.Delay(500)) != top.Value)
+                        {
+                            try
+                            {
+                                stats.SetBlocking(true);
+                                await top.Value;
+                            }
+                            finally
+                            {
+                                stats.SetBlocking(false);
+                            }
+                        }
+
+						active -= top.Key;
                     }
                 }
 
                 results.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
 
-                while(inProgress.Count > 0)
-                    await inProgress.Dequeue().Value;
+                try
+                {
+                    stats.SetBlocking(true);
+                    while (inProgress.Count > 0)
+                        await inProgress.Dequeue().Value;
+                }
+                finally
+                {
+                    stats.SetBlocking(false);
+                }
             });
                                 
         }

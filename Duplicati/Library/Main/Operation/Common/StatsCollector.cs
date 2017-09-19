@@ -40,6 +40,12 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             m_bw.BackendProgressUpdater.UpdateProgress(pg);
         }
+
+        public void SetBlocking(bool isBlocked)
+        {
+            if (m_bw.BackendProgressUpdater != null)
+                m_bw.BackendProgressUpdater.SetBlocking(isBlocked);
+        }
     }
 }
 
