@@ -81,14 +81,14 @@ namespace Duplicati.Library.UsageReporter
                     for(var i = 0; i < 20; i++)
                     {
                         await Task.Delay(TimeSpan.FromSeconds(1));
-                        if (self.Input.IsRetired)
+                        if (await self.Input.IsRetiredAsync)
                             return;
                     }
 
                     foreach (var f in GetAbandonedFiles(null))
                     {
                         // Check if we should exit
-                        if (self.Input.IsRetired)
+                        if (await self.Input.IsRetiredAsync)
                             return;
                     
                         await self.Output.WriteAsync(f);
@@ -133,7 +133,7 @@ namespace Duplicati.Library.UsageReporter
 
                             foreach (var f in GetAbandonedFiles(tf))
                             {
-                                if (self.Input.IsRetired)
+                                if (await self.Input.IsRetiredAsync)
                                     return;
                             
                                 self.Output.WriteNoWait(f);
