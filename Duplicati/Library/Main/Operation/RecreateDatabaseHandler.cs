@@ -299,7 +299,7 @@ namespace Duplicati.Library.Main.Operation
             
                 if (!m_options.RepairOnlyPaths)
                 {
-                    var hashalg = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                    var hashalg = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
                     if (hashalg == null)
                         throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                     var hashsize = hashalg.HashSize / 8;

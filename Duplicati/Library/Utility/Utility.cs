@@ -575,7 +575,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(System.IO.Stream stream)
         {
-            return Convert.ToBase64String(System.Security.Cryptography.HashAlgorithm.Create(HashAlgorithm).ComputeHash(stream));
+            return Convert.ToBase64String(HashAlgorithmHelper.Create(HashAlgorithm).ComputeHash(stream));
         }
 
         /// <summary>

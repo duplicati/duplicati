@@ -43,8 +43,8 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var log = new LogWrapper(self.LogChannel);
                 var blocksize = options.Blocksize;
-                var filehasher = System.Security.Cryptography.HashAlgorithm.Create(options.FileHashAlgorithm);
-                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm);
+                var filehasher = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.FileHashAlgorithm);
+                var blockhasher = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm);
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
                 var maxmetadatasize = (options.Blocksize / (long)options.BlockhashSize) * options.Blocksize;
 

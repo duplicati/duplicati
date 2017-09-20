@@ -27,7 +27,7 @@ namespace Duplicati.Library.Main.Operation.Common
     {
         public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.DatabaseCommon database)
         {
-            using(var h = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm))
+            using(var h = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm))
             {
                 var w = new IndexVolumeWriter(options);
                 w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);

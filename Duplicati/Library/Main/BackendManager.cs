@@ -451,14 +451,14 @@ namespace Duplicati.Library.Main
         public static string CalculateFileHash(string filename)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-            using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
+            using (var hasher = HashAlgorithmHelper.Create(VOLUME_HASH))
                 return Convert.ToBase64String(hasher.ComputeHash(fs));
         }
 
         /// <summary> Calculate file hash directly on stream object (for piping) </summary>
         public static string CalculateFileHash(System.IO.Stream stream)
         {
-            using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
+            using (var hasher = HashAlgorithmHelper.Create(VOLUME_HASH))
                 return Convert.ToBase64String(hasher.ComputeHash(stream));
         }
 
@@ -469,7 +469,7 @@ namespace Duplicati.Library.Main
         public static System.Security.Cryptography.CryptoStream GetFileHasherStream
             (System.IO.Stream stream, System.Security.Cryptography.CryptoStreamMode mode, out Func<string> getHash)
         {
-            var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH);
+            var hasher = HashAlgorithmHelper.Create(VOLUME_HASH);
             System.Security.Cryptography.CryptoStream retHasherStream =
                 new System.Security.Cryptography.CryptoStream(stream, hasher, mode);
             getHash = () =>
@@ -678,7 +678,7 @@ namespace Duplicati.Library.Main
                 IndexVolumeWriter wr = null;
                 try
                 {
-                    var hashsize = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
+                    var hashsize = HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm).HashSize / 8;
                     wr = new IndexVolumeWriter(m_options);
                     using(var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
                         wr.CopyFrom(rd, x => x == oldname ? newname : x);

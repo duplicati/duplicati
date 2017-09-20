@@ -84,7 +84,7 @@ namespace Duplicati.CommandLine
                     topic = "exclude";
                 else if (System.Environment.CommandLine.IndexOf("--include", StringComparison.OrdinalIgnoreCase) >= 0)
                     topic = "include";
-                else if (System.Environment.CommandLine.IndexOf("--default-filters", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                else if (System.Environment.CommandLine.IndexOf("--default-filters", StringComparison.OrdinalIgnoreCase) >= 0)
                     topic = "default-filters";
             }
 
