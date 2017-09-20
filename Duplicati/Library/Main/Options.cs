@@ -1372,7 +1372,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                return System.Security.Cryptography.HashAlgorithm.Create(BlockHashAlgorithm).HashSize / 8;
+                return Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8;
             }
         }
 

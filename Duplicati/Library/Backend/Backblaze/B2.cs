@@ -177,7 +177,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 var p = measure.Position;
 
                 // Compute the hash
-                using(var hashalg = System.Security.Cryptography.HashAlgorithm.Create("sha1"))
+                using(var hashalg = Duplicati.Library.Utility.HashAlgorithmHelper.Create("sha1"))
                     sha1 = Library.Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
 
                 // Reset the stream position

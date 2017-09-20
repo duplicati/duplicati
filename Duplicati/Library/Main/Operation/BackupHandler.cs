@@ -378,7 +378,7 @@ namespace Duplicati.Library.Main.Operation
         {
             if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
             {
-                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                var blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
                 var hashsize = blockhasher.HashSize / 8;
 
                 foreach (var blockfile in m_database.GetMissingIndexFiles())
@@ -696,8 +696,8 @@ namespace Duplicati.Library.Main.Operation
                 m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
                 m_blocklistbuffer = new byte[m_options.Blocksize];
 
-                m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+                m_blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
+                m_filehasher = Library.Utility.HashAlgorithmHelper.Create(m_options.FileHashAlgorithm);
 
                 if (m_blockhasher == null)
                     throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
