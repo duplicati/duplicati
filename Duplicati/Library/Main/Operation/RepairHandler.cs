@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.Operation
 
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter, null);
                 var buffer = new byte[m_options.Blocksize];
-                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                var blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
                 var hashsize = blockhasher.HashSize / 8;
 
                 if (blockhasher == null)
@@ -300,7 +300,7 @@ namespace Duplicati.Library.Main.Operation
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
 
-                                var h = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                                var h = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
                                 
                                 foreach(var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
                                 {                               
