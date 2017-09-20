@@ -1,3 +1,9 @@
+2017-09-20 - 2.0.2.8_canary_2017-09-20
+==========
+* Fixed passwordless SSH setup, thanks @Pectojin
+* More fixes to the SSL certificate override issue
+* Changed hash provider to use the native CNG version if available
+
 2017-09-19 - 2.0.2.7_canary_2017-09-19
 ==========
 * Fixed an issue with S3 IAM not working if the destination had subfolders
