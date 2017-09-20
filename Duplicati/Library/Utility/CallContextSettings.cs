@@ -16,7 +16,9 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using System.Net.Security;
 using System.Runtime.Remoting.Messaging;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Utility
 {
@@ -85,7 +87,7 @@ namespace Duplicati.Library.Utility
         /// Internal struct with properties
         /// </summary>
         private struct HttpSettings
-		{
+        {
             /// <summary>
             /// Gets or sets the operation timeout.
             /// </summary>
@@ -106,7 +108,7 @@ namespace Duplicati.Library.Utility
             /// </summary>
             /// <value>The certificate validator.</value>
             public SslCertificateValidator CertificateValidator;
-		}
+        }
 
         /// <summary>
         /// Starts a new session
@@ -117,15 +119,37 @@ namespace Duplicati.Library.Utility
         /// <param name="bufferRequests">If set to <c>true</c> http requests are buffered.</param>
         public static IDisposable StartSession(TimeSpan operationTimeout = default(TimeSpan), TimeSpan readwriteTimeout = default(TimeSpan), bool bufferRequests = false, bool acceptAnyCertificate = false, string[] allowedCertificates = null)
         {
-            return CallContextSettings<HttpSettings>.StartContext(new HttpSettings() {
+            // Make sure we always use our own version of the callback
+			System.Net.ServicePointManager.ServerCertificateValidationCallback = ServicePointManagerCertificateCallback;
+
+            return CallContextSettings<HttpSettings>.StartContext(new HttpSettings()
+            {
                 OperationTimeout = operationTimeout,
                 ReadWriteTimeout = readwriteTimeout,
                 BufferRequests = bufferRequests,
-                CertificateValidator = acceptAnyCertificate || (allowedCertificates != null) 
+                CertificateValidator = acceptAnyCertificate || (allowedCertificates != null)
                     ? new SslCertificateValidator(acceptAnyCertificate, allowedCertificates)
                     : null
             });
-		}
+        }
+
+        /// <summary>
+        /// The callback used to defer the call context, such that each scope can have its own callback
+        /// </summary>
+        /// <returns><c>true</c>, if point manager certificate callback was serviced, <c>false</c> otherwise.</returns>
+        /// <param name="sender">The sender of the validation.</param>
+        /// <param name="certificate">The certificate to validate.</param>
+        /// <param name="chain">The certificate chain.</param>
+        /// <param name="sslPolicyErrors">Errors discovered.</param>
+        private static bool ServicePointManagerCertificateCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            // If we have a custom SSL validator, invoke it
+            if (HttpContextSettings.CertificateValidator != null)
+                return CertificateValidator.ValidateServerCertficate(sender, certificate, chain, sslPolicyErrors);
+
+            // Default is to only approve certificates without errors
+            return sslPolicyErrors == SslPolicyErrors.None;
+        }
 
         /// <summary>
         /// Gets the operation timeout.
