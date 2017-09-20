@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Security;
 using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography.X509Certificates;
@@ -147,8 +148,29 @@ namespace Duplicati.Library.Utility
             if (HttpContextSettings.CertificateValidator != null)
                 return CertificateValidator.ValidateServerCertficate(sender, certificate, chain, sslPolicyErrors);
 
-            // Default is to only approve certificates without errors
-            return sslPolicyErrors == SslPolicyErrors.None;
+			// Default is to only approve certificates without errors
+			var result = sslPolicyErrors == SslPolicyErrors.None;
+
+            // Hack: If we have no validator, see if the context is all messed up
+            // This is not the right way, but ServicePointManager is not designed right for this
+            var any = false;
+            foreach (var v in CallContextSettings<HttpSettings>.GetAllInstances())
+                if (v.CertificateValidator != null)
+                {
+					var t = v.CertificateValidator.ValidateServerCertficate(sender, certificate, chain, sslPolicyErrors);
+                    
+                    // First instance overrides framework result
+                    if (!any)
+                        result = t;
+
+                    // If there are more, we see if anyone will accept it
+                    else
+                        result |= t;
+                
+                    any = true;
+                }
+
+            return result;
         }
 
         /// <summary>
@@ -193,6 +215,15 @@ namespace Duplicati.Library.Utility
         /// Lock for protecting the dictionary
         /// </summary>
         public static readonly object _lock = new object();
+
+        /// <summary>
+        /// Gets all instances currently registered
+        /// </summary>
+        internal static T[] GetAllInstances()
+        {
+            lock (_lock)
+                return _setttings.Values.ToArray();
+        }
 
         /// <summary>
         /// Gets or sets the values in the current call context
