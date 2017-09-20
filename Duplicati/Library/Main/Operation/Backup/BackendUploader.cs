@@ -91,7 +91,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var active = 0;
                 var lastSize = -1L;
                 
-                while(!self.Input.IsRetired && await taskreader.ProgressAsync)
+                while(!await self.Input.IsRetiredAsync && await taskreader.ProgressAsync)
                 {
                     try
                     {

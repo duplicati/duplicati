@@ -46,7 +46,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var lst = new List<VolumeUploadRequest>();
 
-                while(!self.Input.IsRetired)
+                while(!await self.Input.IsRetiredAsync)
                     try
                     {
                         lst.Add((VolumeUploadRequest)await self.Input.ReadAsync());

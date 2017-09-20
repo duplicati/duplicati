@@ -24,6 +24,6 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// The log channel coordinats log messages
         /// </summary>
-        public static readonly ChannelMarkerWrapper<LogMessage> LogChannel = new ChannelMarkerWrapper<LogMessage>("LogChannel");
+        public static readonly ChannelMarkerWrapper<LogMessage> LogChannel = new ChannelMarkerWrapper<LogMessage>(new ChannelNameAttribute("LogChannel"));
     }
 }
