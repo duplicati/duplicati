@@ -1,4 +1,5 @@
 <!-- Thank you for taking the time to submit an issue using this template. By following the instructions and filling out the sections below, you will help the developers get the necessary information to fix your issue. You may remove sections that aren't relevant to your particular case. You can also preview your report before submitting it. -->
+<!-- Love Duplicati? Please consider supporting our collective at https://opencollective.com/duplicati/donate. -->
 
 <!-- Please search to see if an issue has already been created for your report. -->
 <!-- Replace the empty checkbox [ ] below with a checked one [x] if you already searched for duplicate bugs. -->
