@@ -119,6 +119,8 @@ namespace Duplicati.Library.Main.Strings
         public static string UploadUnchangedBackupsShort { get { return LC.L(@"Upload empty backup files"); } }
         public static string QuotasizeLong { get { return LC.L(@"This value can be used to set a known upper limit on the amount of space a backend has. If the backend reports the size itself, this value is ignored"); } }
         public static string QuotasizeShort { get { return LC.L(@"A reported maximum storage"); } }
+        public static string DefaultFiltersLong(string windows, string osx, string linux, string all) { return LC.L(@"Exclude files that match the given filter sets. Which default filter sets should be used. Valid sets are ""{0}"", ""{1}"", ""{2}"", and ""{3}"". If this parameter is set with no value, the set for the current operating system will be used.", windows, osx, linux, all); }
+        public static string DefaultFiltersShort { get { return LC.L(@"Default filter sets"); } }
         public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
         public static string SymlinkpolicyLong(string store, string ignore, string follow) { return LC.L(@"Use this option to handle symlinks differently. The ""{0}"" option will simply record a symlink with its name and destination, and a restore will recreate the symlink as a link. Use the option ""{1}"" to ignore all symlinks and not store any information about them. Previous versions of Duplicati used the setting ""{2}"", which will cause symlinked files to be included and restore as normal files.", store, ignore, follow); }
         public static string HardlinkpolicyShort { get { return LC.L(@"Hardlink handling"); } }

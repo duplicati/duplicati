@@ -26,8 +26,6 @@ namespace Duplicati.CommandLine.Strings {
         public static string IncludeShort { get { return LC.L(@"Include files"); } }
         public static string ExcludeLong { get { return LC.L(@"Exclude files that match this filter. The special character * means any number of character, and the special character ? means any single character, use *.txt to exclude all files with a txt extension. Regular expressions are also supported and can be supplied by using hard braces, i.e. [.*\.txt]."); } }
         public static string ExcludeShort { get { return LC.L(@"Exclude files"); } }
-        public static string DefaultFiltersLong(string windows, string osx, string linux, string all) { return LC.L(@"Exclude files that match the given filter sets. Which default filter sets should be used. Valid sets are ""{0}"", ""{1}"", ""{2}"", and ""{3}"". If this parameter is set with no value, the set for the current operating system will be used.", windows, osx, linux, all); }
-        public static string DefaultFiltersShort { get { return LC.L(@"Default filter sets"); } }
         public static string ControlFilesOptionShort { get { return LC.L(@"If this option is used with a backup operation, it is interpreted as a list of files to add to the filesets. When used with list or restore, it will list or restore the control files instead of the normal files."); } }
         public static string ControlFilesOptionLong { get { return LC.L(@"Use control files"); } }
         public static string QuietConsoleOptionLong { get { return LC.L(@"If this option is set, progress reports and other messages that would normally go to the console will be redirected to the log."); } }
