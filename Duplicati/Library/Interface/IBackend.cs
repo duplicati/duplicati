@@ -48,7 +48,6 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// Returns a list of files found on the remote location
         /// </summary>
-        /// <param name="url">The url passed</param>
         /// <returns>The list of files</returns>
         List<IFileEntry> List();
 
@@ -82,7 +81,7 @@ namespace Duplicati.Library.Interface
         /// </summary>
         string Description { get; }
 
-                /// <summary>
+        /// <summary>
         /// The purpose of this method is to test the connection to the remote backend.
         /// If any problem is encountered, this method should throw an exception.
         /// If the encountered problem is a missing target &quot;folder&quot;,
