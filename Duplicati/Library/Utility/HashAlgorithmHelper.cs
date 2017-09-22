@@ -22,27 +22,10 @@ namespace Duplicati.Library.Utility
 {
 	/// <summary>
 	/// This class helps picking the fastest hash algorithm implementation,
-	/// which is what <seealso cref="System.Security.Cryptography.HashAlgorithm.Create"/> should do, but does not.
+    /// which is what <seealso cref="System.Security.Cryptography.HashAlgorithm.Create()"/> should do, but does not.
 	/// </summary>
 	public static class HashAlgorithmHelper
     {
-        /// <summary>
-        /// Cache of known types
-        /// </summary>
-        private static readonly Dictionary<string, Type> _knownTypes = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
-
-        /// <summary>
-        /// Static initializer to pre-populate the type table
-        /// </summary>
-        static HashAlgorithmHelper()
-        {
-            _knownTypes["MD5"] = typeof(MD5Cng);
-			_knownTypes["SHA1"] = typeof(SHA1Cng);
-			_knownTypes["SHA256"] = typeof(SHA256Cng);
-			_knownTypes["SHA384"] = typeof(SHA384Cng);
-			_knownTypes["SHA512"] = typeof(SHA512Cng);
-		}
-
         /// <summary>
         /// Create the hash algorithm with the specified name.
         /// </summary>
@@ -50,15 +33,7 @@ namespace Duplicati.Library.Utility
         /// <param name="name">The name of the algorithm to create.</param>
         public static HashAlgorithm Create(string name)
         {
-            Type known;
-            if (!_knownTypes.TryGetValue(name, out known))
-                known = _knownTypes[name] = Type.GetType("System.Security.Cryptography." + name.ToUpperInvariant() + "Cng", false, true);
-
-            if (known == null || known.GetConstructor(Type.EmptyTypes) == null)
-                return HashAlgorithm.Create(name);
-            else
-			    return (HashAlgorithm)Activator.CreateInstance(known);
-
+            return FasterHashing.FasterHash.Create(name);
         }
     }
 }

@@ -1,0 +1,7 @@
+{
+    "name": "FasterHashing",
+    "description": "An native hashing library wrapper",
+    "link": "https://github.com/kenkendk/FasterHashing",
+    "license": "MIT",
+    "notes": ""
+}
