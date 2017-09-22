@@ -592,12 +592,12 @@ namespace Duplicati.CommandLine
 
                     if (parsedStats.TotalQuotaSpace >= 0)
                     {
-                        output.MessageEvent(string.Format("  Total quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.TotalQuotaSpace)));
+                        output.MessageEvent(string.Format("  Total remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.TotalQuotaSpace)));
                     }
 
                     if (parsedStats.FreeQuotaSpace >= 0)
                     {
-                        output.MessageEvent(string.Format("  Available quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.FreeQuotaSpace)));
+                        output.MessageEvent(string.Format("  Available remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.FreeQuotaSpace)));
                     }
                 }
                 
