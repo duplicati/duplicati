@@ -582,16 +582,29 @@ namespace Duplicati.CommandLine
             {
                 var parsedStats = result.BackendStatistics as Duplicati.Library.Interface.IParsedBackendStatistics;
                 output.MessageEvent(string.Format("  Duration of backup: {0:hh\\:mm\\:ss}", result.Duration));
-                if (parsedStats != null && parsedStats.KnownFileCount > 0)
+                if (parsedStats != null)
                 {
-                    output.MessageEvent(string.Format("  Remote files: {0}", parsedStats.KnownFileCount));
-                    output.MessageEvent(string.Format("  Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
+                    if (parsedStats.KnownFileCount > 0)
+                    {
+                        output.MessageEvent(string.Format("  Remote files: {0}", parsedStats.KnownFileCount));
+                        output.MessageEvent(string.Format("  Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
+                    }
+
+                    if (parsedStats.TotalQuotaSpace >= 0)
+                    {
+                        output.MessageEvent(string.Format("  Total remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.TotalQuotaSpace)));
+                    }
+
+                    if (parsedStats.FreeQuotaSpace >= 0)
+                    {
+                        output.MessageEvent(string.Format("  Available remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.FreeQuotaSpace)));
+                    }
                 }
                 
                 output.MessageEvent(string.Format("  Files added: {0}", result.AddedFiles));
                 output.MessageEvent(string.Format("  Files deleted: {0}", result.DeletedFiles));
                 output.MessageEvent(string.Format("  Files changed: {0}", result.ModifiedFiles));
-                
+
                 output.MessageEvent(string.Format("  Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
                 output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
             }

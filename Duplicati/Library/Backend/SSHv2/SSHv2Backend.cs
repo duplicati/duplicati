@@ -257,7 +257,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(keyfile))
                 con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(keyfile, m_password));
             else
-                con = new SftpClient(m_server, m_port, m_username, m_password);
+                con = new SftpClient(m_server, m_port, m_username, m_password ?? string.Empty);
 
             con.HostKeyReceived += delegate (object sender, HostKeyEventArgs e)
             {

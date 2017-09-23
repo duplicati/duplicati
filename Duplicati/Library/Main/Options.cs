@@ -22,6 +22,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
 {
@@ -471,6 +472,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
                     
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
+
+                    new CommandLineArgument("default-filters", CommandLineArgument.ArgumentType.String, Strings.Options.DefaultFiltersShort, Strings.Options.DefaultFiltersLong(DefaultFilterSet.Windows.ToString(), DefaultFilterSet.OSX.ToString(), DefaultFilterSet.Linux.ToString(), DefaultFilterSet.All.ToString()), string.Empty, new[] { "default-filter" }),
 
                     new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, Strings.Options.SymlinkpolicyLong("store", "ignore", "follow"), Enum.GetName(typeof(SymlinkStrategy), SymlinkStrategy.Store), null, Enum.GetNames(typeof(SymlinkStrategy))),
                     new CommandLineArgument("hardlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.HardlinkpolicyShort, Strings.Options.HardlinkpolicyLong("first", "all", "none"), Enum.GetName(typeof(HardlinkStrategy), HardlinkStrategy.All), null, Enum.GetNames(typeof(HardlinkStrategy))),
