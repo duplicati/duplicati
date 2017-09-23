@@ -216,9 +216,9 @@ namespace Duplicati.Library.Main.Operation
                                      where n.FileType == RemoteVolumeType.Files orderby n.Time descending
                                      select n).ToList();
 
-            log.KnownFileCount = remotelist.Count();
+            log.KnownFileCount = remotelist.Count;
             log.KnownFileSize = remotelist.Select(x => Math.Max(0, x.File.Size)).Sum();
-            log.UnknownFileCount = unknownlist.Count();
+            log.UnknownFileCount = unknownlist.Count;
             log.UnknownFileSize = unknownlist.Select(x => Math.Max(0, x.Size)).Sum();
             log.BackupListCount = filesets.Count;
             log.LastBackupDate = filesets.Count == 0 ? new DateTime(0) : filesets[0].Time.ToLocalTime();
