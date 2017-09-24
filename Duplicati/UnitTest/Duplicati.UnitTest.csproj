@@ -47,6 +47,9 @@
     <Compile Include="Issue1723.cs" />
     <Compile Include="PurgeTesting.cs" />
     <Compile Include="CompressionTests.cs" />
+    <Compile Include="UtilityTests.cs">
+      <IncludeInPackage>false</IncludeInPackage>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
