@@ -100,9 +100,8 @@ namespace Duplicati.UnitTest
                            select Library.Utility.Utility.ExpandEnvironmentVariables(x)).ToArray();
 
                 //Expand the tilde to home folder on Linux/OSX
-                if (Utility.IsClientLinux)
-                    folders = (from x in folders
-                               select x.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.Personal))).ToArray();
+                folders = (from x in folders
+                           select Utility.ExpandTilde(x)).ToArray();
 
                 foreach (var f in folders)
                     foreach (var n in f.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
