@@ -23,6 +23,7 @@ using System.Linq;
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Duplicati.Library.Utility
@@ -1015,6 +1016,24 @@ namespace Duplicati.Library.Utility
                 ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
                     .Replace(str.Replace("~", Regex.Escape(HOME_PATH)), (m) => 
                         Regex.Escape(lookup(m.Groups["name"].Value)));
+        }
+
+        /// <summary>
+        /// Get a fully-qualified path.
+        /// </summary>
+        /// <remarks>
+        /// On Unix-like systems, the '~' character is also replaced by the path to the user's home directory.
+        ///
+        /// The file or directory specified by <paramref name="path"/> does not have to exist.  If only a filename 
+        /// is provided as <paramref name="path"/>, the current working directory is prepended to the filename.
+        /// </remarks>
+        /// <param name="path">The file or directory for which to obtain absolute path information.</param>
+        /// <returns>The fully-qualified location of <paramref name="path"/>.</returns>
+        public static string GetFullPath(string path)
+        {
+            // We only replace "~" on Unix-like systems to avoid potential issues
+            // with paths like c:\Progra~1\ on Windows.
+            return Path.GetFullPath(IsClientLinux ? path.Replace("~", HOME_PATH) : path);
         }
 
         /// <summary>

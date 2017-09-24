@@ -29,7 +29,7 @@ namespace Duplicati.UnitTest
         private static readonly string SOURCE_FOLDERS =
             Path.Combine(
                 string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
-                ? Library.Utility.Utility.ExpandEnvironmentVariables(Path.Combine("~", "testdata"))
+                ? Library.Utility.Utility.GetFullPath(Path.Combine("~", "testdata"))
                 : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER")
             , "DSMCBE");
 
