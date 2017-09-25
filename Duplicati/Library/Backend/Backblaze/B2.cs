@@ -28,16 +28,18 @@ namespace Duplicati.Library.Backend.Backblaze
     {
         private const string B2_ID_OPTION = "b2-accountid";
         private const string B2_KEY_OPTION = "b2-applicationkey";
+		private const string B2_PAGESIZE_OPTION = "b2-page-size";
 
-        private const string B2_CREATE_BUCKET_TYPE_OPTION = "b2-create-bucket-type";
+		private const string B2_CREATE_BUCKET_TYPE_OPTION = "b2-create-bucket-type";
         private const string DEFAULT_BUCKET_TYPE = "allPrivate";
 
-        private const int PAGE_SIZE = 200;
+        private const int DEFAULT_PAGE_SIZE = 500;
 
         private string m_bucketname;
         private string m_prefix;
         private string m_urlencodedprefix;
         private string m_bucketType;
+        private int m_pagesize;
         private B2AuthHelper m_helper;
         private UploadUrlResponse m_uploadUrl;
 
@@ -89,9 +91,18 @@ namespace Duplicati.Library.Backend.Backblaze
                 throw new UserInformationException(Strings.B2.NoB2UserIDError);
             if (string.IsNullOrEmpty(accountKey))
                 throw new UserInformationException(Strings.B2.NoB2KeyError);
-
+            
             m_helper = new B2AuthHelper(accountId, accountKey);
-        }
+
+			m_pagesize = DEFAULT_PAGE_SIZE;
+            if (options.ContainsKey(B2_PAGESIZE_OPTION))
+            {
+                int.TryParse(options[B2_PAGESIZE_OPTION], out m_pagesize);
+
+                if (m_pagesize <= 0)
+                    throw new UserInformationException(Strings.B2.InvalidPageSizeError(B2_PAGESIZE_OPTION, options[B2_PAGESIZE_OPTION]));
+            }
+		}
 
         private BucketEntity Bucket
         {
@@ -153,7 +164,8 @@ namespace Duplicati.Library.Backend.Backblaze
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.B2.AuthPasswordDescriptionShort, Strings.B2.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.B2.AuthUsernameDescriptionShort, Strings.B2.AuthUsernameDescriptionLong),
                     new CommandLineArgument(B2_CREATE_BUCKET_TYPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2createbuckettypeDescriptionShort, Strings.B2.B2createbuckettypeDescriptionLong, DEFAULT_BUCKET_TYPE),
-                });
+                    new CommandLineArgument(B2_PAGESIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.B2.B2pagesizeDescriptionShort, Strings.B2.B2pagesizeDescriptionLong, DEFAULT_PAGE_SIZE.ToString()),
+				});
 
             }
         }
@@ -297,7 +309,7 @@ namespace Duplicati.Library.Backend.Backblaze
                     string.Format("{0}/b2api/v1/b2_list_file_versions", m_helper.APIUrl),
                     new ListFilesRequest() {
                         BucketID = Bucket.BucketID,
-                        MaxFileCount = PAGE_SIZE,
+                    MaxFileCount = m_pagesize,
                         StartFileID = nextFileID,
                         StartFileName = nextFileName
                     }
