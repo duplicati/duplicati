@@ -1035,7 +1035,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <remarks>
         /// On Unix-like systems, the '~' character is also replaced by the path to the user's home directory.
-        ///
+        /// <para />
         /// The file or directory specified by <paramref name="path"/> does not have to exist.  If only a filename 
         /// is provided as <paramref name="path"/>, the current working directory is prepended to the filename.
         /// </remarks>
