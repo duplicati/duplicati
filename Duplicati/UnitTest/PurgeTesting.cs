@@ -58,21 +58,21 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(res.AddedFiles, round1.Length);
             }
 
-            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(3));
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round2.Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(res.AddedFiles, round2.Length - round1.Length);
             }
 
-            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(3));
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(res.AddedFiles, filenames.Count - round2.Length);
             }
 
-            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(3));
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             var last_ts = DateTime.Now;
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { list_sets_only = true }), null))
@@ -123,7 +123,7 @@ namespace Duplicati.UnitTest
             }
 
             // Since we make the operations back-to-back, the purge timestamp can drift beyond the current time
-            var wait_target = last_ts.AddSeconds(6) - DateTime.Now;
+            var wait_target = last_ts.AddSeconds(10) - DateTime.Now;
             if (wait_target.TotalMilliseconds > 0)
                 System.Threading.Thread.Sleep(wait_target);
 

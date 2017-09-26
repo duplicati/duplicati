@@ -438,6 +438,15 @@ namespace Duplicati.Library.Backend
 
         #region IQuotaEnabledBackend Members
 
+        public IQuotaInfo Quota
+        {
+            get
+            {
+                WLID_QuotaInfo quota = this.GetQuotaInfo();
+                return new QuotaInfo(quota.Quota ?? -1, quota.Available ?? -1);
+            }
+        }
+
         public long TotalQuotaSpace
         {
             get

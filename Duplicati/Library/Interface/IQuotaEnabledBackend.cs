@@ -11,16 +11,10 @@ namespace Duplicati.Library.Interface
     public interface IQuotaEnabledBackend : IBackend
     {
         /// <summary>
-        /// The total number of bytes available on the backend,
-        /// may return -1 if the particular host implementation
-        /// does not support quotas, but the backend does
+        /// Gets information about the quota on this backend.
+        /// This may return null if the particular host implementation
+        /// does not support quotas, but the backend does.
         /// </summary>
-        long TotalQuotaSpace { get; }
-        /// <summary>
-        /// The total number of unused bytes on the backend,
-        /// may return -1 if the particular host implementation
-        /// does not support quotas, but the backend does
-        /// </summary>
-        long FreeQuotaSpace { get; }
+        IQuotaInfo Quota { get; }
     }
 }
