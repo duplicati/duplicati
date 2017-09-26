@@ -157,7 +157,7 @@ namespace Duplicati.Library.Utility
             : this()
         {
             if (maxCapacity <= 0)
-                throw new ArgumentException("maxCapacity must be a positive number", nameof(maxCapacity));
+                throw new ArgumentException("The maximum capacity must be a positive number", nameof(maxCapacity));
 
             m_maxCapacity = maxCapacity;
         }
