@@ -314,26 +314,12 @@ namespace Duplicati.Library.Backend
             return new System.IO.DriveInfo(root);
         }
 
-        public long TotalQuotaSpace
+        public IQuotaInfo Quota
         {
             get
             {
-                try { return GetDrive().TotalSize; }
-                catch { }
-
-                return -1;
-            }
-        }
-
-
-        public long FreeQuotaSpace
-        {
-            get
-            {
-                try { return GetDrive().AvailableFreeSpace; }
-                catch { }
-
-                return -1;
+                System.IO.DriveInfo driveInfo = this.GetDrive();
+                return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
             }
         }
 

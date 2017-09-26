@@ -325,25 +325,19 @@ namespace Duplicati.Library.Backend.GoogleDrive
         #endregion
 
         #region IQuotaEnabledBackend implementation
-        public long TotalQuotaSpace
+        public IQuotaInfo Quota
         {
             get
             {
-                try { return GetAboutInfo().quotaBytesTotal ?? -1; }
-                catch { }
-
-                return -1;
-            }
-        }
-
-        public long FreeQuotaSpace
-        {
-            get
-            {
-                try { return GetAboutInfo().quotaBytesUsed ?? -1; }
-                catch { }
-
-                return -1;
+                try
+                {
+                    GoogleDriveAboutResponse about = this.GetAboutInfo();
+                    return new QuotaInfo(about.quotaBytesTotal ?? -1, about.quotaBytesUsed ?? -1);
+                }
+                catch
+                {
+                    return null;
+                }
             }
         }
         #endregion

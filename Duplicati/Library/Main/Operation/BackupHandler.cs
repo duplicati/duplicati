@@ -422,12 +422,12 @@ namespace Duplicati.Library.Main.Operation
             {
                 try
                 {
-					if (m_options.NoBackendverification)
-					{
-						FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
-						UpdateStorageStatsFromDatabase();
-					}
-					else
+                    if (m_options.NoBackendverification)
+                    {
+                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
+                        UpdateStorageStatsFromDatabase();
+                    }
+                    else
                         FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
                 }
                 catch (Exception ex)
@@ -640,33 +640,39 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-		/// <summary>
-		/// Handler for computing backend statistics, without relying on a remote folder listing
-		/// </summary>
-		private void UpdateStorageStatsFromDatabase()
-		{
-			if (m_result.BackendWriter != null)
-			{
-				m_result.BackendWriter.KnownFileCount = m_database.GetRemoteVolumes().Count();
-				m_result.BackendWriter.KnownFileSize = m_database.GetRemoteVolumes().Select(x => Math.Max(0, x.Size)).Sum();
+        /// <summary>
+        /// Handler for computing backend statistics, without relying on a remote folder listing
+        /// </summary>
+        private void UpdateStorageStatsFromDatabase()
+        {
+            if (m_result.BackendWriter != null)
+            {
+                m_result.BackendWriter.KnownFileCount = m_database.GetRemoteVolumes().Count();
+                m_result.BackendWriter.KnownFileSize = m_database.GetRemoteVolumes().Select(x => Math.Max(0, x.Size)).Sum();
 
-				m_result.BackendWriter.UnknownFileCount = 0;
-				m_result.BackendWriter.UnknownFileSize = 0;
+                m_result.BackendWriter.UnknownFileCount = 0;
+                m_result.BackendWriter.UnknownFileSize = 0;
 
-				m_result.BackendWriter.BackupListCount = m_database.FilesetTimes.Count();
-				m_result.BackendWriter.LastBackupDate = m_database.FilesetTimes.FirstOrDefault().Value.ToLocalTime();
+                m_result.BackendWriter.BackupListCount = m_database.FilesetTimes.Count();
+                m_result.BackendWriter.LastBackupDate = m_database.FilesetTimes.FirstOrDefault().Value.ToLocalTime();
 
-				// TODO: If we have a BackendManager, we should query through that
-				using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
-					if (backend is Library.Interface.IQuotaEnabledBackend)
-					{
-						m_result.BackendWriter.TotalQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).TotalQuotaSpace;
-						m_result.BackendWriter.FreeQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).FreeQuotaSpace;
-				}
-			}
+                // TODO: If we have a BackendManager, we should query through that
+                using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
+                {
+                    if (backend is Library.Interface.IQuotaEnabledBackend)
+                    {
+                        Library.Interface.IQuotaInfo quota = ((Library.Interface.IQuotaEnabledBackend)backend).Quota;
+                        if (quota != null)
+                        {
+                            m_result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
+                            m_result.BackendWriter.FreeQuotaSpace = quota.FreeQuotaSpace;
+                        }
+                    }
+                }
+            }
 
-			m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
-		}
+            m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
+        }
 
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
@@ -839,13 +845,13 @@ namespace Duplicati.Library.Main.Operation
                                 
                             m_transaction = null;
 
-							if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
-							{
-								if (m_options.NoBackendverification)
-									UpdateStorageStatsFromDatabase();
-								else
-									PostBackupVerification();
-							}
+                            if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
+                            {
+                                if (m_options.NoBackendverification)
+                                    UpdateStorageStatsFromDatabase();
+                                else
+                                    PostBackupVerification();
+                            }
                         }
                         
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
