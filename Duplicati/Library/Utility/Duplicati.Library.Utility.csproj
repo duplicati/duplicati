@@ -41,7 +41,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
     <Reference Include="FasterHashing">
-      <HintPath>..\..\..\packages\FasterHashing.1.2\lib\net45\FasterHashing.dll</HintPath>
+      <HintPath>..\..\..\packages\FasterHashing.1.2.1\lib\net45\FasterHashing.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
