@@ -123,7 +123,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -145,7 +145,7 @@ namespace Duplicati.Library.Backend
             get { return "tahoe"; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             TahoeEl data;
 
@@ -184,7 +184,6 @@ namespace Duplicati.Library.Backend
             if (data == null || data.node == null || data.nodetype != "dirnode")
                 throw new Exception("Invalid folder listing response");
                 
-            var files = new List<IFileEntry>();
             foreach (var e in data.node.children)
             {
                 if (e.Value == null || e.Value.node == null)
@@ -205,10 +204,8 @@ namespace Duplicati.Library.Backend
                 if (isFile)
                     fe.Size = e.Value.node.size;                
 
-                files.Add(fe);
+                yield return fe;
             }
-
-            return files;
         }
 
         public void Put(string remotename, string filename)

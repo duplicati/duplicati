@@ -135,12 +135,15 @@ namespace Duplicati.Library.Backend
             m_client.DeleteObject(objectDeleteRequest);
         }
 
-        public virtual List<IFileEntry> ListBucket(string bucketName, string prefix)
+        public virtual IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
         {
             bool isTruncated = true;
             string filename = null;
 
-            List<IFileEntry> files = new List<IFileEntry>();
+            //TODO: Figure out if this is the case with AWSSDK too
+            //Unfortunately S3 sometimes reports duplicate values when requesting more than one page of results
+            //So, track the files that have already been returned and skip any duplicates.
+            HashSet<string> alreadyReturned = new HashSet<string>();
 
             //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)
@@ -161,29 +164,17 @@ namespace Duplicati.Library.Backend
 
                 foreach (S3Object obj in listResponse.S3Objects)
                 {
-                    files.Add(new FileEntry(
-                        obj.Key,
-                        obj.Size,
-                        obj.LastModified,
-                        obj.LastModified
-                    ));
-
+                    if (alreadyReturned.Add(obj.Key))
+                    {
+                        yield return new FileEntry(
+                            obj.Key,
+                            obj.Size,
+                            obj.LastModified,
+                            obj.LastModified
+                        );
+                    }
                 }
             }
-
-            //TODO: Figure out if this is the case with AWSSDK too
-            //Unfortunately S3 sometimes reports duplicate values when requesting more than one page of results
-            Dictionary<string, string> tmp = new Dictionary<string, string>();
-            for (int i = 0; i < files.Count; i++)
-                if (tmp.ContainsKey(files[i].Name))
-                {
-                    files.RemoveAt(i);
-                    i--;
-                }
-                else
-                    tmp.Add(files[i].Name, null);
-
-            return files;
         }
 
         public void RenameFile(string bucketName, string source, string target)

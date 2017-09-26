@@ -125,115 +125,11 @@ namespace Duplicati.Library.Backend
             get { return "webdav"; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             try
             {
-                var req = CreateRequest("");
-
-                req.Method = "PROPFIND";
-                req.Headers.Add("Depth", "1");
-                req.ContentType = "text/xml";
-                req.ContentLength = PROPFIND_BODY.Length;
-
-                var areq = new Utility.AsyncHttpRequest(req);
-                using (System.IO.Stream s = areq.GetRequestStream())
-                    s.Write(PROPFIND_BODY, 0, PROPFIND_BODY.Length);
-                
-                var doc = new System.Xml.XmlDocument();
-                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
-                {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-
-                    if (!string.IsNullOrEmpty(m_debugPropfindFile))
-                    {
-                        using (var rs = areq.GetResponseStream())
-                        using (var fs = new System.IO.FileStream(m_debugPropfindFile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                            Utility.Utility.CopyStream(rs, fs, false, m_copybuffer);
-
-                        doc.Load(m_debugPropfindFile);
-                    }
-                    else
-                    {
-                        using (var rs = areq.GetResponseStream())
-                            doc.Load(rs);
-                    }
-                }
-
-                System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
-                nm.AddNamespace("D", "DAV:");
-
-                List<IFileEntry> files = new List<IFileEntry>();
-                m_filenamelist = new List<string>();
-
-                foreach (System.Xml.XmlNode n in doc.SelectNodes("D:multistatus/D:response/D:href", nm))
-                {
-                    //IIS uses %20 for spaces and %2B for +
-                    //Apache uses %20 for spaces and + for +
-                    string name = Library.Utility.Uri.UrlDecode(n.InnerText.Replace("+", "%2B"));
-
-                    string cmp_path;
-                    
-                    //TODO: This list is getting ridiculous, should change to regexps
-                    
-                    if (name.StartsWith(m_url))
-                        cmp_path = m_url;
-                    else if (name.StartsWith(m_rawurl))
-                        cmp_path = m_rawurl;
-                    else if (name.StartsWith(m_rawurlPort))
-                        cmp_path = m_rawurlPort;
-                    else if (name.StartsWith(m_path))
-                        cmp_path = m_path;
-                    else if (name.StartsWith("/" + m_path))
-                        cmp_path = "/" + m_path;
-                    else if (name.StartsWith(m_sanitizedUrl))
-                        cmp_path = m_sanitizedUrl;
-                    else if (name.StartsWith(m_reverseProtocolUrl))
-                        cmp_path = m_reverseProtocolUrl;
-                    else
-                        continue;
-
-                    if (name.Length <= cmp_path.Length)
-                        continue;
-
-                    name = name.Substring(cmp_path.Length);
-
-                    long size = -1;
-                    DateTime lastAccess = new DateTime();
-                    DateTime lastModified = new DateTime();
-                    bool isCollection = false;
-
-                    System.Xml.XmlNode stat = n.ParentNode.SelectSingleNode("D:propstat/D:prop", nm);
-                    if (stat != null)
-                    {
-                        System.Xml.XmlNode s = stat.SelectSingleNode("D:getcontentlength", nm);
-                        if (s != null)
-                            size = long.Parse(s.InnerText);
-                        s = stat.SelectSingleNode("D:getlastmodified", nm);
-                        if (s != null)
-                            try
-                            {
-                                //Not important if this succeeds
-                                lastAccess = lastModified = DateTime.Parse(s.InnerText, System.Globalization.CultureInfo.InvariantCulture);
-                            }
-                            catch { }
-
-                        s = stat.SelectSingleNode("D:iscollection", nm);
-                        if (s != null)
-                            isCollection = s.InnerText.Trim() == "1";
-                        else
-                            isCollection = (stat.SelectSingleNode("D:resourcetype/D:collection", nm) != null);
-                    }
-
-                    FileEntry fe = new FileEntry(name, size, lastAccess, lastModified);
-                    fe.IsFolder = isCollection;
-                    files.Add(fe);
-                    m_filenamelist.Add(name);
-                }
-
-                return files;
+                return this.ListWithouExceptionCatch();
             }
             catch (System.Net.WebException wex)
             {
@@ -244,7 +140,114 @@ namespace Duplicati.Library.Backend
                 if (wex.Response as System.Net.HttpWebResponse != null && (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.MethodNotAllowed)
                     throw new UserInformationException(Strings.WEBDAV.MethodNotAllowedError((wex.Response as System.Net.HttpWebResponse).StatusCode), wex);
 
-					throw;
+                    throw;
+            }
+        }
+
+        private IEnumerable<IFileEntry> ListWithouExceptionCatch()
+        {
+            var req = CreateRequest("");
+
+            req.Method = "PROPFIND";
+            req.Headers.Add("Depth", "1");
+            req.ContentType = "text/xml";
+            req.ContentLength = PROPFIND_BODY.Length;
+
+            var areq = new Utility.AsyncHttpRequest(req);
+            using (System.IO.Stream s = areq.GetRequestStream())
+                s.Write(PROPFIND_BODY, 0, PROPFIND_BODY.Length);
+
+            var doc = new System.Xml.XmlDocument();
+            using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
+            {
+                int code = (int)resp.StatusCode;
+                if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
+                    throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+
+                if (!string.IsNullOrEmpty(m_debugPropfindFile))
+                {
+                    using (var rs = areq.GetResponseStream())
+                    using (var fs = new System.IO.FileStream(m_debugPropfindFile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                        Utility.Utility.CopyStream(rs, fs, false, m_copybuffer);
+
+                    doc.Load(m_debugPropfindFile);
+                }
+                else
+                {
+                    using (var rs = areq.GetResponseStream())
+                        doc.Load(rs);
+                }
+            }
+
+            System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
+            nm.AddNamespace("D", "DAV:");
+
+            List<IFileEntry> files = new List<IFileEntry>();
+            m_filenamelist = new List<string>();
+
+            foreach (System.Xml.XmlNode n in doc.SelectNodes("D:multistatus/D:response/D:href", nm))
+            {
+                //IIS uses %20 for spaces and %2B for +
+                //Apache uses %20 for spaces and + for +
+                string name = Library.Utility.Uri.UrlDecode(n.InnerText.Replace("+", "%2B"));
+
+                string cmp_path;
+
+                //TODO: This list is getting ridiculous, should change to regexps
+
+                if (name.StartsWith(m_url))
+                    cmp_path = m_url;
+                else if (name.StartsWith(m_rawurl))
+                    cmp_path = m_rawurl;
+                else if (name.StartsWith(m_rawurlPort))
+                    cmp_path = m_rawurlPort;
+                else if (name.StartsWith(m_path))
+                    cmp_path = m_path;
+                else if (name.StartsWith("/" + m_path))
+                    cmp_path = "/" + m_path;
+                else if (name.StartsWith(m_sanitizedUrl))
+                    cmp_path = m_sanitizedUrl;
+                else if (name.StartsWith(m_reverseProtocolUrl))
+                    cmp_path = m_reverseProtocolUrl;
+                else
+                    continue;
+
+                if (name.Length <= cmp_path.Length)
+                    continue;
+
+                name = name.Substring(cmp_path.Length);
+
+                long size = -1;
+                DateTime lastAccess = new DateTime();
+                DateTime lastModified = new DateTime();
+                bool isCollection = false;
+
+                System.Xml.XmlNode stat = n.ParentNode.SelectSingleNode("D:propstat/D:prop", nm);
+                if (stat != null)
+                {
+                    System.Xml.XmlNode s = stat.SelectSingleNode("D:getcontentlength", nm);
+                    if (s != null)
+                        size = long.Parse(s.InnerText);
+                    s = stat.SelectSingleNode("D:getlastmodified", nm);
+                    if (s != null)
+                        try
+                        {
+                            //Not important if this succeeds
+                            lastAccess = lastModified = DateTime.Parse(s.InnerText, System.Globalization.CultureInfo.InvariantCulture);
+                        }
+                        catch { }
+
+                    s = stat.SelectSingleNode("D:iscollection", nm);
+                    if (s != null)
+                        isCollection = s.InnerText.Trim() == "1";
+                    else
+                        isCollection = (stat.SelectSingleNode("D:resourcetype/D:collection", nm) != null);
+                }
+
+                FileEntry fe = new FileEntry(name, size, lastAccess, lastModified);
+                fe.IsFolder = isCollection;
+                m_filenamelist.Add(name);
+                yield return fe;
             }
         }
 
@@ -308,7 +311,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

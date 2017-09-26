@@ -98,8 +98,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_oauth = new OAuthHelper(authid, this.ProtocolKey);
             m_oauth.AutoAuthHeader = true;
         }
-
-
+        
 
         private class ListBucketResponse
         {
@@ -130,39 +129,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             public string location { get; set; }
             public string storageClass { get; set; }
         }
+
         #region IBackend implementation
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             try
             {
-                var res = new List<IFileEntry>();
-                string token = null;
-                do
-                {
-                    var url = string.Format("{0}/b/{1}/o?prefix={2}", API_URL, m_bucket, Library.Utility.Uri.UrlEncode(m_prefix));
-                    if (!string.IsNullOrEmpty(token))
-                        url += string.Format("&pageToken={0}", token);
-                    var resp = m_oauth.ReadJSONResponse<ListBucketResponse>(url);
-
-                    if (resp.items != null)
-                        foreach(var f in resp.items)
-                        {
-                            var name = f.name;
-                            if (name.StartsWith(m_prefix, StringComparison.OrdinalIgnoreCase))
-                                name = name.Substring(m_prefix.Length);
-                            if (f.size == null)
-                                res.Add(new FileEntry(name));
-                            else if (f.updated == null)
-                                res.Add(new FileEntry(name, f.size.Value));
-                            else
-                                res.Add(new FileEntry(name, f.size.Value, f.updated.Value, f.updated.Value));
-                        }
-
-                    token = resp.nextPageToken;
-
-                } while(!string.IsNullOrEmpty(token));
-
-                return res;
+                return this.ListWithoutExceptionCatch();
             }
             catch (WebException wex)
             {
@@ -171,6 +144,35 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 else
                     throw;
             }
+        }
+
+        private IEnumerable<IFileEntry> ListWithoutExceptionCatch()
+        {
+            string token = null;
+            do
+            {
+                var url = string.Format("{0}/b/{1}/o?prefix={2}", API_URL, m_bucket, Library.Utility.Uri.UrlEncode(m_prefix));
+                if (!string.IsNullOrEmpty(token))
+                    url += string.Format("&pageToken={0}", token);
+                var resp = m_oauth.ReadJSONResponse<ListBucketResponse>(url);
+
+                if (resp.items != null)
+                    foreach (var f in resp.items)
+                    {
+                        var name = f.name;
+                        if (name.StartsWith(m_prefix, StringComparison.OrdinalIgnoreCase))
+                            name = name.Substring(m_prefix.Length);
+                        if (f.size == null)
+                            yield return new FileEntry(name);
+                        else if (f.updated == null)
+                            yield return new FileEntry(name, f.size.Value);
+                        else
+                            yield return new FileEntry(name, f.size.Value, f.updated.Value, f.updated.Value);
+                    }
+
+                token = resp.nextPageToken;
+
+            } while (!string.IsNullOrEmpty(token));
         }
 
         public void Put(string remotename, string filename)
@@ -195,7 +197,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

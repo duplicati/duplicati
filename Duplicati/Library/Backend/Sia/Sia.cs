@@ -258,7 +258,7 @@ namespace Duplicati.Library.Backend.Sia
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -277,15 +277,23 @@ namespace Duplicati.Library.Backend.Sia
         }
 
          
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
-            var files = new List<IFileEntry>();
             try
             {
                 SiaFileList fl = GetFiles();
-                if (fl.Files == null)
-                    return files;
+                return ListWithoutExceptionCatch(fl);
+            }
+            catch (System.Net.WebException wex)
+            {
+                throw new Exception("failed to call /renter/files "+wex.Message);
+            }
+        }
 
+        private IEnumerable<IFileEntry> ListWithoutExceptionCatch(SiaFileList fl)
+        {
+            if (fl.Files != null)
+            {
                 foreach (var f in fl.Files)
                 {
                     // Sia returns a complete file list, but we're only interested in files that are
@@ -295,16 +303,10 @@ namespace Duplicati.Library.Backend.Sia
                         FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1));
                         fe.Size = f.Filesize;
                         fe.IsFolder = false;
-                        files.Add(fe);
+                        yield return fe;
                     }
                 }
             }
-            catch (System.Net.WebException wex)
-            {
-                throw new Exception("failed to call /renter/files "+wex.Message);
-            }
-
-            return files;
         }
 
         public void Put(string remotename, string filename)

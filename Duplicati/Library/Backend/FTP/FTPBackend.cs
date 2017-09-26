@@ -170,12 +170,12 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             return List("");
         }
-        
-        public List<IFileEntry> List(string filename)
+
+        public IEnumerable<IFileEntry> List(string filename)
         {
             var req = CreateRequest(filename);
             req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
@@ -183,21 +183,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                var lst = new List<IFileEntry>();
-                var areq = new Utility.AsyncHttpRequest(req);
-                using (var resp = areq.GetResponse())
-                using (var rs = areq.GetResponseStream())
-                using (var sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
-                {
-                    string line;
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        FileEntry f = ParseLine(line);
-                        if (f != null)
-                            lst.Add(f);
-                    }
-                }
-                return lst;
+                return ListWithoutExceptionCatch(req);
             }
             catch (System.Net.WebException wex)
             {
@@ -205,6 +191,23 @@ namespace Duplicati.Library.Backend
                     throw new Interface.FolderMissingException(Strings.FTPBackend.MissingFolderError(req.RequestUri.PathAndQuery, wex.Message), wex);
                 else
                     throw;
+            }
+        }
+
+        private IEnumerable<IFileEntry> ListWithoutExceptionCatch(System.Net.FtpWebRequest req)
+        {   
+            var areq = new Utility.AsyncHttpRequest(req);
+            using (var resp = areq.GetResponse())
+            using (var rs = areq.GetResponseStream())
+            using (var sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    FileEntry f = ParseLine(line);
+                    if (f != null)
+                        yield return f;
+                }
             }
         }
 
@@ -227,7 +230,7 @@ namespace Duplicati.Library.Backend
                 
                 if (m_listVerify) 
                 {
-                    List<IFileEntry> files = List(remotename);
+                    IEnumerable<IFileEntry> files = List(remotename);
                     foreach(IFileEntry fe in files)
                         if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename) || fe.Name.EndsWith("\\" + remotename)) 
                         {
@@ -308,7 +311,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

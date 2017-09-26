@@ -170,16 +170,15 @@ namespace Duplicati.Library.Backend.Mega
 
         #region IBackend implementation
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             if (m_filecache == null)
                 ResetFileCache();
             
-            return (
+            return
                 from n in m_filecache.Values
                 let item = n.OrderByDescending(x => x.ModificationDate).First()
-                select (IFileEntry)new FileEntry(item.Name, item.Size, item.ModificationDate ?? new DateTime(0), item.ModificationDate ?? new DateTime(0))
-            ).ToList();
+                select new FileEntry(item.Name, item.Size, item.ModificationDate ?? new DateTime(0), item.ModificationDate ?? new DateTime(0));
         }
 
         public void Put(string remotename, string filename)
@@ -218,7 +217,7 @@ namespace Duplicati.Library.Backend.Mega
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

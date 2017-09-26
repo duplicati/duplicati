@@ -393,8 +393,8 @@ namespace Duplicati.Library.Backend
             testContextForWeb(ctx, true);
         }
 
-        public List<IFileEntry> List() { return doList(false); }
-        private List<IFileEntry> doList(bool useNewContext)
+        public IEnumerable<IFileEntry> List() { return doList(false); }
+        private IEnumerable<IFileEntry> doList(bool useNewContext)
         {
             SP.ClientContext ctx = getSpClientContext(useNewContext);
             try
@@ -407,26 +407,29 @@ namespace Duplicati.Library.Backend
                 if (!remoteFolder.Exists)
                     throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
 
-                List<IFileEntry> files = new List<IFileEntry>(remoteFolder.Folders.Count + remoteFolder.Files.Count);
-                foreach (var f in remoteFolder.Folders.Where(ff => ff.Exists))
-                {
-                    FileEntry fe = new FileEntry(f.Name, -1, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
-                    fe.IsFolder = true;
-                    files.Add(fe);
-                }
-                foreach (var f in remoteFolder.Files.Where(ff => ff.Exists))
-                {
-                    FileEntry fe = new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
-                    fe.IsFolder = false;
-                    files.Add(fe);
-                }
-                return files;
+                return doListWithoutExceptionCatch(remoteFolder);
             }
             catch (ServerException) { throw; /* rethrow if Server answered */ }
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
             catch { if (!useNewContext) /* retry */ return doList(true); else throw; }
             finally { }
+        }
+
+        private IEnumerable<IFileEntry> doListWithoutExceptionCatch(SP.Folder remoteFolder)
+        {
+            foreach (var f in remoteFolder.Folders.Where(ff => ff.Exists))
+            {
+                FileEntry fe = new FileEntry(f.Name, -1, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
+                fe.IsFolder = true;
+                yield return fe;
+            }
+            foreach (var f in remoteFolder.Files.Where(ff => ff.Exists))
+            {
+                FileEntry fe = new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
+                fe.IsFolder = false;
+                yield return fe;
+            }
         }
 
         public void Get(string remotename, string filename)

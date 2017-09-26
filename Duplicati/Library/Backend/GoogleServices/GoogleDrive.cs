@@ -189,44 +189,14 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         #region IBackend implementation
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             try
             {
-                var res = new List<IFileEntry>();
                 m_filecache.Clear();
 
-                foreach(var n in ListFolder(CurrentFolderId))
-                {
-                    FileEntry fe = null;
-
-                    if (n.fileSize == null)
-                        fe = new FileEntry(n.title);
-                    else if (n.modifiedDate == null)
-                        fe = new FileEntry(n.title, n.fileSize.Value);
-                    else
-                        fe = new FileEntry(n.title, n.fileSize.Value, n.modifiedDate.Value, n.modifiedDate.Value);
-
-                    if (fe != null)
-                    {
-                        fe.IsFolder = FOLDER_MIMETYPE.Equals(n.mimeType, StringComparison.OrdinalIgnoreCase);
-                        res.Add(fe);
-
-                        if (!fe.IsFolder)
-                        {
-                            GoogleDriveFolderItem[] lst;
-                            if (!m_filecache.TryGetValue(fe.Name, out lst))
-                                m_filecache[fe.Name] = new GoogleDriveFolderItem[] { n };
-                            else
-                            {
-                                Array.Resize(ref lst, lst.Length + 1);
-                                lst[lst.Length - 1] = n;
-                            }
-                        }
-                    }
-                }
-
-                return res;
+                // For now, this class assumes that List() fully populates the file cache
+                return ListWithoutExceptionCatch().ToList();
             }
             catch
             {
@@ -234,7 +204,42 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                 throw;
             }
+        }
 
+        private IEnumerable<IFileEntry> ListWithoutExceptionCatch()
+        {
+            foreach (var n in ListFolder(CurrentFolderId))
+            {
+                FileEntry fe = null;
+
+                if (n.fileSize == null)
+                    fe = new FileEntry(n.title);
+                else if (n.modifiedDate == null)
+                    fe = new FileEntry(n.title, n.fileSize.Value);
+                else
+                    fe = new FileEntry(n.title, n.fileSize.Value, n.modifiedDate.Value, n.modifiedDate.Value);
+
+                if (fe != null)
+                {
+                    fe.IsFolder = FOLDER_MIMETYPE.Equals(n.mimeType, StringComparison.OrdinalIgnoreCase);
+
+                    if (!fe.IsFolder)
+                    {
+                        GoogleDriveFolderItem[] lst;
+                        if (!m_filecache.TryGetValue(fe.Name, out lst))
+                        {
+                            m_filecache[fe.Name] = new GoogleDriveFolderItem[] { n };
+                        }
+                        else
+                        {
+                            Array.Resize(ref lst, lst.Length + 1);
+                            lst[lst.Length - 1] = n;
+                        }
+                    }
+
+                    yield return fe;
+                }
+            }
         }
 
         public void Put(string remotename, string filename)
@@ -274,7 +279,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

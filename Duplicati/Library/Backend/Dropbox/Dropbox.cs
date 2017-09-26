@@ -67,32 +67,34 @@ namespace Duplicati.Library.Backend
 
             return ife;
         }
-
-        public List<IFileEntry> List()
+        
+        public IEnumerable<IFileEntry> List()
         {
             try
             {
-                var list = new List<IFileEntry>();
-                var lfr = dbx.ListFiles(m_path);
-              
-                foreach (var md in lfr.entries)
-                    list.Add(ParseEntry(md));
-
-                while (lfr.has_more)
-                {
-                    lfr = dbx.ListFilesContinue(lfr.cursor);
-                    foreach (var md in lfr.entries)
-                        list.Add(ParseEntry(md));
-                }
-
-                return list;
+                return ListWithoutExceptionCatch();
             }
             catch (DropboxException de)
             {
                 if (de.errorJSON["error"][".tag"].ToString() == "path" && de.errorJSON["error"]["path"][".tag"].ToString() == "not_found")
                     throw new FolderMissingException();
-                
+
                 throw;
+            }
+        }
+
+        private IEnumerable<IFileEntry> ListWithoutExceptionCatch()
+        {
+            var lfr = dbx.ListFiles(m_path);
+
+            foreach (var md in lfr.entries)
+                yield return ParseEntry(md);
+
+            while (lfr.has_more)
+            {
+                lfr = dbx.ListFilesContinue(lfr.cursor);
+                foreach (var md in lfr.entries)
+                    yield return ParseEntry(md);
             }
         }
 
@@ -136,7 +138,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

@@ -106,7 +106,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -313,10 +313,8 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
-            var files = new List<IFileEntry>();
-
             string path = ".";
 
             CreateConnection();
@@ -324,9 +322,7 @@ namespace Duplicati.Library.Backend
 
             foreach (Renci.SshNet.Sftp.SftpFile ls in m_con.ListDirectory(path))
                 if (ls.Name.ToString() != "." && ls.Name.ToString() != "..")
-                    files.Add(new FileEntry(ls.Name.ToString(), ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory });
-
-            return files;
+                    yield return new FileEntry(ls.Name.ToString(), ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory };
         }
 
         public static Renci.SshNet.PrivateKeyFile ValidateKeyFile(string filename, string password)
