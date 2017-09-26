@@ -822,12 +822,15 @@ namespace Duplicati.Library.Main.Operation
                                         
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
                         using(new Logging.Timer("Async backend wait"))
-                            backend.WaitForComplete(m_database, m_transaction);
+                            backend.WaitForEmpty(m_database, m_transaction);
                             
                         if (m_result.TaskControlRendevouz() != TaskControlState.Stop) 
                             CompactIfRequired(backend, lastVolumeSize);
-                        
-                        if (m_options.UploadVerificationFile)
+
+						using (new Logging.Timer("Async backend wait"))
+                            backend.WaitForComplete(m_database, m_transaction);
+
+						if (m_options.UploadVerificationFile)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
                             FilelistProcessor.UploadVerificationFile(backend.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
