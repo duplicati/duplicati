@@ -305,17 +305,14 @@ namespace Duplicati.Library.Backend.OpenStack
         }
         #endregion
         #region IBackend implementation
-        public IEnumerable<IFileEntry> List()
+
+        private T HandleListExceptions<T>(Func<T> func)
         {
-            var plainurl = JoinUrls(SimpleStorageEndPoint, m_container) + string.Format("?format=json&delimiter=/&limit={0}", PAGE_LIMIT);
-            if (!string.IsNullOrEmpty(m_prefix))
-                plainurl += "&prefix=" + Library.Utility.Uri.UrlEncode(m_prefix);
-            
             try
             {
-                return ListWithoutExceptionCatch(plainurl);
+                return func();
             }
-            catch(WebException wex)
+            catch (WebException wex)
             {
                 if (wex.Response is HttpWebResponse && (((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound))
                     throw new FolderMissingException();
@@ -324,8 +321,12 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        private IEnumerable<IFileEntry> ListWithoutExceptionCatch(string plainurl)
+        public IEnumerable<IFileEntry> List()
         {
+            var plainurl = JoinUrls(SimpleStorageEndPoint, m_container) + string.Format("?format=json&delimiter=/&limit={0}", PAGE_LIMIT);
+            if (!string.IsNullOrEmpty(m_prefix))
+                plainurl += "&prefix=" + Library.Utility.Uri.UrlEncode(m_prefix);
+
             var url = plainurl;
 
             while (true)
@@ -333,7 +334,7 @@ namespace Duplicati.Library.Backend.OpenStack
                 var req = m_helper.CreateRequest(url);
                 req.Accept = "application/json";
 
-                var items = m_helper.ReadJSONResponse<OpenStackStorageItem[]>(req);
+                var items = HandleListExceptions(() => m_helper.ReadJSONResponse<OpenStackStorageItem[]>(req));
                 foreach (var n in items)
                 {
                     var name = n.name;

@@ -170,6 +170,28 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
+        private T HandleListExceptions<T>(Func<T> func, System.Net.FtpWebRequest req)
+        {
+            T ret = default(T);
+            HandleListExceptions(() => ret = func(), req);
+            return ret;
+        }
+
+        private void HandleListExceptions(Action action, System.Net.FtpWebRequest req)
+        {
+            try
+            {
+                action();
+            }
+            catch (System.Net.WebException wex)
+            {
+                if (wex.Response as System.Net.FtpWebResponse != null && (wex.Response as System.Net.FtpWebResponse).StatusCode == System.Net.FtpStatusCode.ActionNotTakenFileUnavailable)
+                    throw new Interface.FolderMissingException(Strings.FTPBackend.MissingFolderError(req.RequestUri.PathAndQuery, wex.Message), wex);
+                else
+                    throw;
+            }
+        }
+
         public IEnumerable<IFileEntry> List()
         {
             return List("");
@@ -181,32 +203,55 @@ namespace Duplicati.Library.Backend
             req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
             req.UseBinary = false;
 
+            System.Net.WebResponse resp = null;
+            System.IO.Stream rs = null;
+            System.IO.StreamReader sr = null;
+
             try
             {
-                return ListWithoutExceptionCatch(req);
-            }
-            catch (System.Net.WebException wex)
-            {
-                if (wex.Response as System.Net.FtpWebResponse != null && (wex.Response as System.Net.FtpWebResponse).StatusCode == System.Net.FtpStatusCode.ActionNotTakenFileUnavailable)
-                    throw new Interface.FolderMissingException(Strings.FTPBackend.MissingFolderError(req.RequestUri.PathAndQuery, wex.Message), wex);
-                else
-                    throw;
-            }
-        }
-
-        private IEnumerable<IFileEntry> ListWithoutExceptionCatch(System.Net.FtpWebRequest req)
-        {   
-            var areq = new Utility.AsyncHttpRequest(req);
-            using (var resp = areq.GetResponse())
-            using (var rs = areq.GetResponseStream())
-            using (var sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
-            {
+                HandleListExceptions(
+                    () =>
+                        {
+                            var areq = new Utility.AsyncHttpRequest(req);
+                            resp = areq.GetResponse();
+                            rs = areq.GetResponseStream();
+                            sr = new System.IO.StreamReader(new StreamReadHelper(rs));
+                        },
+                    req);
+                
                 string line;
-                while ((line = sr.ReadLine()) != null)
+                while ((line = HandleListExceptions(() => sr.ReadLine(), req)) != null)
                 {
                     FileEntry f = ParseLine(line);
                     if (f != null)
                         yield return f;
+                }
+            }
+            finally
+            {
+                try
+                {
+                    if (sr != null)
+                    {
+                        sr.Dispose();
+                    }
+                }
+                finally
+                {
+                    try
+                    {
+                        if (rs != null)
+                        {
+                            rs.Dispose();
+                        }
+                    }
+                    finally
+                    {
+                        if (resp != null)
+                        {
+                            resp.Dispose();
+                        }
+                    }
                 }
             }
         }

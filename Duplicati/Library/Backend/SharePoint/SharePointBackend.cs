@@ -392,43 +392,50 @@ namespace Duplicati.Library.Backend
             SP.ClientContext ctx = getSpClientContext(true);
             testContextForWeb(ctx, true);
         }
-
+        
         public IEnumerable<IFileEntry> List() { return doList(false); }
         private IEnumerable<IFileEntry> doList(bool useNewContext)
         {
             SP.ClientContext ctx = getSpClientContext(useNewContext);
+            SP.Folder remoteFolder = null;
+            bool retry = false;
             try
             {
-                SP.Folder remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
+                remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
                 ctx.Load(remoteFolder, f => f.Exists);
                 ctx.Load(remoteFolder, f => f.Files, f => f.Folders);
 
                 wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
                 if (!remoteFolder.Exists)
                     throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
-
-                return doListWithoutExceptionCatch(remoteFolder);
             }
             catch (ServerException) { throw; /* rethrow if Server answered */ }
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
-            catch { if (!useNewContext) /* retry */ return doList(true); else throw; }
-            finally { }
-        }
+            catch { if (!useNewContext) /* retry */ retry = true; else throw; }
 
-        private IEnumerable<IFileEntry> doListWithoutExceptionCatch(SP.Folder remoteFolder)
-        {
-            foreach (var f in remoteFolder.Folders.Where(ff => ff.Exists))
+            if (retry)
             {
-                FileEntry fe = new FileEntry(f.Name, -1, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
-                fe.IsFolder = true;
-                yield return fe;
+                // An exception was caught, and List() should be retried.
+                foreach (IFileEntry file in doList(true))
+                {
+                    yield return file;
+                }
             }
-            foreach (var f in remoteFolder.Files.Where(ff => ff.Exists))
+            else
             {
-                FileEntry fe = new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
-                fe.IsFolder = false;
-                yield return fe;
+                foreach (var f in remoteFolder.Folders.Where(ff => ff.Exists))
+                {
+                    FileEntry fe = new FileEntry(f.Name, -1, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
+                    fe.IsFolder = true;
+                    yield return fe;
+                }
+                foreach (var f in remoteFolder.Files.Where(ff => ff.Exists))
+                {
+                    FileEntry fe = new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
+                    fe.IsFolder = false;
+                    yield return fe;
+                }
             }
         }
 

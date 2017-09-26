@@ -275,23 +275,19 @@ namespace Duplicati.Library.Backend.Sia
         {
             get { return "sia"; }
         }
-
-         
+        
         public IEnumerable<IFileEntry> List()
         {
+            SiaFileList fl;
             try
             {
-                SiaFileList fl = GetFiles();
-                return ListWithoutExceptionCatch(fl);
+                fl = GetFiles();
             }
             catch (System.Net.WebException wex)
             {
                 throw new Exception("failed to call /renter/files "+wex.Message);
             }
-        }
 
-        private IEnumerable<IFileEntry> ListWithoutExceptionCatch(SiaFileList fl)
-        {
             if (fl.Files != null)
             {
                 foreach (var f in fl.Files)

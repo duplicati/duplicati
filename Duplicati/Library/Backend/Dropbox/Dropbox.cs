@@ -67,12 +67,12 @@ namespace Duplicati.Library.Backend
 
             return ife;
         }
-        
-        public IEnumerable<IFileEntry> List()
+
+        private T HandleListExceptions<T>(Func<T> func)
         {
             try
             {
-                return ListWithoutExceptionCatch();
+                return func();
             }
             catch (DropboxException de)
             {
@@ -83,16 +83,16 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        private IEnumerable<IFileEntry> ListWithoutExceptionCatch()
+        public IEnumerable<IFileEntry> List()
         {
-            var lfr = dbx.ListFiles(m_path);
-
+            var lfr = HandleListExceptions(() => dbx.ListFiles(m_path));
+              
             foreach (var md in lfr.entries)
                 yield return ParseEntry(md);
 
             while (lfr.has_more)
             {
-                lfr = dbx.ListFilesContinue(lfr.cursor);
+                lfr = HandleListExceptions(() => dbx.ListFilesContinue(lfr.cursor));
                 foreach (var md in lfr.entries)
                     yield return ParseEntry(md);
             }

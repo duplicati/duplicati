@@ -130,12 +130,11 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             public string storageClass { get; set; }
         }
 
-        #region IBackend implementation
-        public IEnumerable<IFileEntry> List()
+        private T HandleListExceptions<T>(Func<T> func)
         {
             try
             {
-                return this.ListWithoutExceptionCatch();
+                return func();
             }
             catch (WebException wex)
             {
@@ -146,7 +145,8 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
         }
 
-        private IEnumerable<IFileEntry> ListWithoutExceptionCatch()
+        #region IBackend implementation
+        public IEnumerable<IFileEntry> List()
         {
             string token = null;
             do
@@ -154,7 +154,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 var url = string.Format("{0}/b/{1}/o?prefix={2}", API_URL, m_bucket, Library.Utility.Uri.UrlEncode(m_prefix));
                 if (!string.IsNullOrEmpty(token))
                     url += string.Format("&pageToken={0}", token);
-                var resp = m_oauth.ReadJSONResponse<ListBucketResponse>(url);
+                var resp = HandleListExceptions(() => m_oauth.ReadJSONResponse<ListBucketResponse>(url));
 
                 if (resp.items != null)
                     foreach (var f in resp.items)
