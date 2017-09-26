@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.Database
             public bool TryGetChild(string name, out FolderEntry v)
             {
                 if (string.IsNullOrEmpty(name))
-                    throw new ArgumentException("Invalid pathname.", "name");
+                    throw new ArgumentException("Invalid pathname.", nameof(name));
                     
                 if (m_folders == null)
                 {

@@ -207,7 +207,7 @@ namespace Duplicati.Library.Compression
         public FileArchiveZip(string filename, Dictionary<string, string> options)
         {
             if (string.IsNullOrEmpty(filename) && filename.Trim().Length == 0)
-                throw new ArgumentException("Invalid filename.", "filename");
+                throw new ArgumentException("Invalid filename.", nameof(filename));
 
             if (File.Exists(filename) && new FileInfo(filename).Length > 0)
             {
