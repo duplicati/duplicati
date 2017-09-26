@@ -114,7 +114,7 @@ namespace Duplicati.Library.Snapshots
                 drive = drive.Substring(0, drive.Length - 1);
 
             if (!drive.EndsWith(":"))
-                throw new ArgumentException("drive");
+                throw new ArgumentException("The drive specification must end with a colon.", "drive");
 
             Win32API.DDD_Flags flags = 0;
             if (!notifyShell)
