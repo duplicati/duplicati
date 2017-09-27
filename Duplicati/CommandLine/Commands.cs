@@ -550,22 +550,29 @@ namespace Duplicati.CommandLine
                 {
                     if (previousPhase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest)
                         output.MessageEvent("Remote backup verification completed");
-                
-                    if (phase == Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles)
+
+                    switch (phase)
                     {
-                        output.MessageEvent("Scanning local files ...");
-                        periodicOutput.SetReady();
+                        case Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles:
+                            output.MessageEvent("Scanning local files ...");
+                            periodicOutput.SetReady();
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_Finalize:
+                            periodicOutput.SetFinished();
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_PreBackupVerify:
+                            output.MessageEvent("Checking remote backup ...");
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_PostBackupVerify:
+                            output.MessageEvent("Checking remote backup ...");
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest:
+                            output.MessageEvent("Verifying remote backup ...");
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_Compact:
+                            output.MessageEvent("Compacting remote backup ...");
+                            break;
                     }
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Finalize)
-                        periodicOutput.SetFinished();
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PreBackupVerify)
-                        output.MessageEvent("Checking remote backup ...");
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupVerify)
-                        output.MessageEvent("Checking remote backup ...");
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest)
-                        output.MessageEvent("Verifying remote backup ...");
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Compact)
-                        output.MessageEvent("Compacting remote backup ...");
                 };
                 
                 periodicOutput.WriteOutput += (progress, files, size, counting) => {
