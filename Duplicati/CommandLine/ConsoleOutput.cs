@@ -72,16 +72,24 @@ namespace Duplicati.CommandLine
             lock(m_lock)
                 if (type == BackendEventType.Started)
                 {
-                    if (action == BackendActionType.Put)
-                        Output.WriteLine("  Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size));
-                    else if (action == BackendActionType.Get)
-                        Output.WriteLine("  Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
-                    else if (action == BackendActionType.List)
-                        Output.WriteLine("  Listing remote folder ...");
-                    else if (action == BackendActionType.CreateFolder)
-                        Output.WriteLine("  Creating remote folder ...");
-                    else if (action == BackendActionType.Delete)
-                        Output.WriteLine("  Deleting file {0}{1} ...", path, size < 0 ? "" : (" (" + Library.Utility.Utility.FormatSizeString(size) + ")"));
+                    switch (action)
+                    {
+                        case BackendActionType.Put:
+                            Output.WriteLine("  Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size));
+                            break;
+                        case BackendActionType.Get:
+                            Output.WriteLine("  Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
+                            break;
+                        case BackendActionType.List:
+                            Output.WriteLine("  Listing remote folder ...");
+                            break;
+                        case BackendActionType.CreateFolder:
+                            Output.WriteLine("  Creating remote folder ...");
+                            break;
+                        case BackendActionType.Delete:
+                            Output.WriteLine("  Deleting file {0}{1} ...", path, size < 0 ? "" : (" (" + Library.Utility.Utility.FormatSizeString(size) + ")"));
+                            break;
+                    }
                 }
         }
                         
