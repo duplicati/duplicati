@@ -158,7 +158,7 @@ namespace Duplicati.Library.Utility
                     catch
                     {
                     }
-                throw new ArgumentException(Strings.Uri.UriParseError(url), "url");
+                throw new ArgumentException(Strings.Uri.UriParseError(url), nameof(url));
             }
                 
             this.Scheme = m.Groups["scheme"].Value;

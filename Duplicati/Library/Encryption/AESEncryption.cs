@@ -71,7 +71,7 @@ namespace Duplicati.Library.Encryption
         public AESEncryption(string passphrase, Dictionary<string, string> options)
         {
             if(string.IsNullOrEmpty(passphrase))
-                throw new ArgumentException(Strings.AESEncryption.EmptyKeyError, "passphrase");
+                throw new ArgumentException(Strings.AESEncryption.EmptyKeyError, nameof(passphrase));
 
             m_key = passphrase;
 
