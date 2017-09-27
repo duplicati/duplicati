@@ -119,8 +119,11 @@ namespace Duplicati.Library.Main.Operation
                     else
                         m_result.AddDryrunMessage(string.Format("Would delete remote fileset: {0}", f.Key));
                 }
-                
-                backend.WaitForComplete(db, transaction);
+
+                if (sharedManager == null)
+                    backend.WaitForComplete(db, transaction);
+                else
+                    backend.WaitForEmpty(db, transaction);
                 
                 var count = lst.Length;
                 if (!m_options.Dryrun)

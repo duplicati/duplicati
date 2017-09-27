@@ -101,19 +101,17 @@ namespace Duplicati.Library.Main.Operation
                 throw new Duplicati.Library.Interface.UserInformationException(s);
             }
 
-            var lookup = new Dictionary<string, string>();
-            var doubles = new Dictionary<string, string>();
+            var lookup = new HashSet<string>();
+            var doubles = new HashSet<string>();
             foreach(var v in tp.ParsedVolumes)
             {
-                if (lookup.ContainsKey(v.File.Name))
-                    doubles[v.File.Name] = null;
-                else
-                    lookup[v.File.Name] = null;
+                if (!lookup.Add(v.File.Name))
+                    doubles.Add(v.File.Name);
             }
 
             if (doubles.Count > 0)
             {
-                var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles.Keys));
+                var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles));
                 log.AddError(s, null);
                 throw new Duplicati.Library.Interface.UserInformationException(s);
             }
