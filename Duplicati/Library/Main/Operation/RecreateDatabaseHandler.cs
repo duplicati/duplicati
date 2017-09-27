@@ -221,9 +221,10 @@ namespace Duplicati.Library.Main.Operation
                                             var expectedmetablocklisthashes = (expectedmetablocks + hashes_pr_block - 1) / hashes_pr_block;
                                             if (expectedmetablocks <= 1) expectedmetablocklisthashes = 0;
 
+                                            var metadataid = long.MinValue;
                                             if (fe.Type == FilelistEntryType.Folder)
                                             {
-                                                var metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
+                                                metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
                                                 restoredb.AddDirectoryEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
                                             }
                                             else if (fe.Type == FilelistEntryType.File)
@@ -233,7 +234,7 @@ namespace Duplicati.Library.Main.Operation
                                                 if (expectedblocks <= 1) expectedblocklisthashes = 0;
 
                                                 var blocksetid = restoredb.AddBlockset(fe.Hash, fe.Size, fe.BlocklistHashes, expectedblocklisthashes, tr);
-                                                var metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
+                                                metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
                                                 restoredb.AddFileEntry(filesetid, fe.Path, fe.Time, blocksetid, metadataid, tr);
                                                 
                                                 if (fe.Size <= blocksize)
@@ -248,7 +249,7 @@ namespace Duplicati.Library.Main.Operation
                                             }
                                             else if (fe.Type == FilelistEntryType.Symlink)
                                             {
-                                                var metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
+                                                metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
                                                 restoredb.AddSymlinkEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
                                             }
                                             else
