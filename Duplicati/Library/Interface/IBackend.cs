@@ -46,10 +46,10 @@ namespace Duplicati.Library.Interface
         string ProtocolKey { get; }
 
         /// <summary>
-        /// Returns a list of files found on the remote location
+        /// Enumerates a list of files found on the remote location
         /// </summary>
         /// <returns>The list of files</returns>
-        List<IFileEntry> List();
+        IEnumerable<IFileEntry> List();
 
         /// <summary>
         /// Puts the content of the file to the url passed

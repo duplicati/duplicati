@@ -336,7 +336,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         #endregion
 
         #region IBackend implementation
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             EnforceConsistencyDelay(RemoteOperation.List);
 
@@ -416,7 +416,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         }
         public void Test()
         {
-            List();
+            this.TestList();
         }
         public void CreateFolder()
         {

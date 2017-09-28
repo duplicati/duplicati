@@ -194,17 +194,17 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             return List("");
         }
 
-        public List<IFileEntry> List(string filename)
+        public IEnumerable<IFileEntry> List(string filename)
         {
             return List(filename, false);
         }
 
-        private List<IFileEntry> List(string filename, bool stripFile)
+        private IEnumerable<IFileEntry> List(string filename, bool stripFile)
         {
             var list = new List<IFileEntry>();
             string remotePath = filename;

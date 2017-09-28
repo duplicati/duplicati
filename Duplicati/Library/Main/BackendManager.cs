@@ -1087,7 +1087,7 @@ namespace Duplicati.Library.Main
         {
             m_statwriter.SendEvent(BackendActionType.List, BackendEventType.Started, null, -1);
 
-            var r = m_backend.List();
+            var r = m_backend.List().ToList();
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("[");

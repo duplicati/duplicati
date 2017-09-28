@@ -42,6 +42,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BackendExtensions.cs" />
     <Compile Include="CommandLineArgument.cs" />
     <Compile Include="CommonStrings.cs" />
     <Compile Include="CustomExceptions.cs" />

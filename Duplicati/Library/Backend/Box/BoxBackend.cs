@@ -252,12 +252,11 @@ namespace Duplicati.Library.Backend.Box
 
         #region IBackend implementation
 
-        public System.Collections.Generic.List<IFileEntry> List()
+        public System.Collections.Generic.IEnumerable<IFileEntry> List()
         {
-            return (
+            return
                 from n in PagedFileListResponse(CurrentFolder, false)
-                select (IFileEntry)new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" }
-            ).ToList();
+                select (IFileEntry)new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
         }
 
         public void Put(string remotename, string filename)
@@ -295,7 +294,7 @@ namespace Duplicati.Library.Backend.Box
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

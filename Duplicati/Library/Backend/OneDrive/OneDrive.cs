@@ -212,7 +212,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(id))
             {
                 // Refresh the list of files, just in case
-                List();
+                foreach (IFileEntry file in List()) { /* We just need to iterate the whole list */ }
                 m_fileidCache.TryGetValue(name, out id);
 
                 if (string.IsNullOrWhiteSpace(id) && throwIfMissing)
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -250,13 +250,11 @@ namespace Duplicati.Library.Backend
             get { return "onedrive"; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             int offset = 0;
             int count = FILE_LIST_PAGE_SIZE;
-
-            var files = new List<IFileEntry>();
-
+            
             m_fileidCache.Clear();
 
             while(count == FILE_LIST_PAGE_SIZE)
@@ -273,7 +271,7 @@ namespace Duplicati.Library.Backend
 
                         var fe = new FileEntry(r.name, r.size.Value, r.updated_time.Value, r.updated_time.Value);
                         fe.IsFolder = string.Equals(r.type, "folder", StringComparison.OrdinalIgnoreCase);
-                        files.Add(fe);
+                        yield return fe;
                     }
                 }
                 else
@@ -282,10 +280,7 @@ namespace Duplicati.Library.Backend
                 }
 
                 offset += count;
-
             }
-
-            return files;
         }
 
         public void Put(string remotename, string filename)

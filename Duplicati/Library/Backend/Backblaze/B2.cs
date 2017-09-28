@@ -297,7 +297,7 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             m_filecache = null;
             var cache = new Dictionary<string, List<FileEntity>>();
@@ -392,7 +392,7 @@ namespace Duplicati.Library.Backend.Backblaze
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

@@ -159,7 +159,7 @@ namespace Duplicati.Library.Backend
             get { return "jottacloud"; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             var doc = new System.Xml.XmlDocument();
             try
@@ -181,7 +181,6 @@ namespace Duplicati.Library.Backend
             // element must be a "folder", else it could also have been a "mountPoint" (which has a very similar structure).
             // We must check for "deleted" attribute, because files/folders which has it is deleted (attribute contains the timestamp of deletion)
             // so we treat them as non-existant here.
-            List<IFileEntry> files = new List<IFileEntry>();
             var xRoot = doc.DocumentElement;
             if (xRoot.Attributes["deleted"] != null)
             {
@@ -192,7 +191,7 @@ namespace Duplicati.Library.Backend
                 // Subfolders are only listed with name. We can get a timestamp by sending a request for each folder, but that is probably not necessary?
                 FileEntry fe = new FileEntry(xFolder.Attributes["name"].Value);
                 fe.IsFolder = true;
-                files.Add(fe);
+                yield return fe;
             }
             foreach (System.Xml.XmlNode xFile in xRoot.SelectNodes("files/file[not(@deleted)]"))
             {
@@ -216,11 +215,10 @@ namespace Duplicati.Library.Backend
                         if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
                             lastModified = new DateTime();
                         FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
-                        files.Add(fe);
+                        yield return fe;
                     }
                 }
             }
-            return files;
         }
 
         public void Put(string remotename, string filename)
@@ -263,7 +261,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

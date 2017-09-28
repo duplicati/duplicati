@@ -164,30 +164,26 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
-            List<IFileEntry> ls = new List<IFileEntry>();
-
             PreAuthenticate();
 
             if (!System.IO.Directory.Exists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            foreach (string s in System.IO.Directory.GetFiles(m_path))
+            foreach (string s in System.IO.Directory.EnumerateFiles(m_path))
             {
                 System.IO.FileInfo fi = new System.IO.FileInfo(s);
-                ls.Add(new FileEntry(fi.Name, fi.Length, fi.LastAccessTime, fi.LastWriteTime));
+                yield return new FileEntry(fi.Name, fi.Length, fi.LastAccessTime, fi.LastWriteTime);
             }
 
-            foreach (string s in System.IO.Directory.GetDirectories(m_path))
+            foreach (string s in System.IO.Directory.EnumerateDirectories(m_path))
             {
                 System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(s);
                 FileEntry fe = new FileEntry(di.Name, 0, di.LastAccessTime, di.LastWriteTime);
                 fe.IsFolder = true;
-                ls.Add(fe);
+                yield return fe;
             }
-
-            return ls;
         }
 
 #if DEBUG_RETRY
@@ -265,7 +261,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
