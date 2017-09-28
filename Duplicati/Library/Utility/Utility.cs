@@ -23,6 +23,7 @@ using System.Linq;
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Duplicati.Library.Utility
@@ -983,7 +984,7 @@ namespace Duplicati.Library.Utility
         /// <param name="str">The string to expand.</param>
         public static string ExpandEnvironmentVariables(string str)
         {
-            return Environment.ExpandEnvironmentVariables(str.Replace("~", HOME_PATH));
+            return Environment.ExpandEnvironmentVariables(ExpandTilde(str));
         }
 
         /// <summary>
@@ -1013,8 +1014,36 @@ namespace Duplicati.Library.Utility
                 //IsClientLinux ? ENVIRONMENT_VARIABLE_MATCHER_LINUX : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
 
                 ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
-                    .Replace(str.Replace("~", Regex.Escape(HOME_PATH)), (m) => 
+                    .Replace(Regex.Escape(ExpandTilde(str)), (m) => 
                         Regex.Escape(lookup(m.Groups["name"].Value)));
+        }
+
+        /// <summary>
+        /// On Unix-like systems, expand the '~' character to the user's home directory.
+        /// </summary>
+        /// <param name="path">The path to expand.</param>
+        /// <returns>An expanded version of <paramref name="path"/>, with '~' replaced by the user's home directory.</returns>
+        public static string ExpandTilde(string path)
+        {
+            // We only replace '~' on Unix-like systems to avoid potential issues
+            // with paths like c:\Progra~1\ on Windows.
+            return IsClientLinux ? path.Replace("~", HOME_PATH) : path;
+        }
+
+        /// <summary>
+        /// Get a fully-qualified path.
+        /// </summary>
+        /// <remarks>
+        /// On Unix-like systems, the '~' character is also replaced by the path to the user's home directory.
+        /// <para />
+        /// The file or directory specified by <paramref name="path"/> does not have to exist.  If only a filename 
+        /// is provided as <paramref name="path"/>, the current working directory is prepended to the filename.
+        /// </remarks>
+        /// <param name="path">The file or directory for which to obtain absolute path information.</param>
+        /// <returns>The fully-qualified location of <paramref name="path"/>.</returns>
+        public static string GetFullPath(string path)
+        {
+            return Path.GetFullPath(ExpandTilde(path));
         }
 
         /// <summary>
