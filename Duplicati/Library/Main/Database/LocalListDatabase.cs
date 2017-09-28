@@ -349,7 +349,7 @@ namespace Duplicati.Library.Main.Database
                         dict[m_filesets[i].Key] = i;
 
                     using(var cmd = m_connection.CreateCommand())
-                    using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC ", m_tablename)))
+                    using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
                         while (rd.Read())
                         {
                             var id = rd.GetInt64(0);
