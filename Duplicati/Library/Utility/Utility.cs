@@ -1083,8 +1083,21 @@ namespace Duplicati.Library.Utility
         /// <returns>The unique items from <paramref name="collection"/>.</returns>
         public static ISet<T> GetUniqueItems<T>(IEnumerable<T> collection, out ISet<T> duplicateItems)
         {
-            HashSet<T> uniqueItems = new HashSet<T>();
-            duplicateItems = new HashSet<T>();
+            return Utility.GetUniqueItems(collection, EqualityComparer<T>.Default, out duplicateItems);
+        }
+
+        /// <summary>
+        /// Gets the unique items from a collection.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in <paramref name="collection"/>.</typeparam>
+        /// <param name="collection">The collection to remove duplicate items from.</param>
+        /// <param name="comparer">The <see cref="System.Collections.Generic.IEqualityComparer{T}"/> implementation to use when comparing values in the collection.</param>
+        /// <param name="duplicateItems">The duplicate items in <paramref name="collection"/>.</param>
+        /// <returns>The unique items from <paramref name="collection"/>.</returns>
+        public static ISet<T> GetUniqueItems<T>(IEnumerable<T> collection, IEqualityComparer<T> comparer, out ISet<T> duplicateItems)
+        {
+            HashSet<T> uniqueItems = new HashSet<T>(comparer);
+            duplicateItems = new HashSet<T>(comparer);
 
             foreach (T item in collection)
                 if (!uniqueItems.Add(item))
