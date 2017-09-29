@@ -1075,6 +1075,25 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Gets the unique items from a collection.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in <paramref name="collection"/>.</typeparam>
+        /// <param name="collection">The collection to remove duplicate items from.</param>
+        /// <param name="duplicateItems">The duplicate items in <paramref name="collection"/>.</param>
+        /// <returns>The unique items from <paramref name="collection"/>.</returns>
+        public static ISet<T> GetUniqueItems<T>(IEnumerable<T> collection, out ISet<T> duplicateItems)
+        {
+            HashSet<T> uniqueItems = new HashSet<T>();
+            duplicateItems = new HashSet<T>();
+
+            foreach (T item in collection)
+                if (!uniqueItems.Add(item))
+                    duplicateItems.Add(item);
+
+            return uniqueItems;
+        }
+
+        /// <summary>
         /// Helper method that replaces one file with another
         /// </summary>
         /// <param name="target">The file to replace</param>
