@@ -37,6 +37,16 @@ namespace Duplicati.UnitTest
 
             CollectionAssert.AreEquivalent(uniqueItems, actualUniqueItems);
             CollectionAssert.AreEquivalent(duplicateItems, actualDuplicateItems);
+
+            IEqualityComparer<string> comparer = StringComparer.OrdinalIgnoreCase;
+            uniqueItems = new string[] {"a", "b", "c"};
+            duplicateItems = new string[] { "a", "c" };
+
+            actualDuplicateItems = null;
+            actualUniqueItems = Utility.GetUniqueItems(collection, comparer, out actualDuplicateItems);
+
+            Assert.That(actualUniqueItems, Is.EquivalentTo(uniqueItems).Using(comparer));
+            Assert.That(actualDuplicateItems, Is.EquivalentTo(duplicateItems).Using(comparer));
         }
     }
 }
