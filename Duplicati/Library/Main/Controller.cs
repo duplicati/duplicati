@@ -288,13 +288,11 @@ namespace Duplicati.Library.Main
                 }
 
                 //Sanity check for duplicate files/folders
-                var pathDuplicates = sources.GroupBy(x => x, Library.Utility.Utility.ClientFilenameStringComparer)
-                      .Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+                ISet<string> pathDuplicates;
+                sources = Library.Utility.Utility.GetUniqueItems(sources, Library.Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).OrderBy(a => a).ToList();
 
                 foreach (var pathDuplicate in pathDuplicates)
                     result.AddVerboseMessage(string.Format("Removing duplicate source: {0}", pathDuplicate));
-
-                sources = sources.Distinct(Library.Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList();
 
                 //Sanity check for multiple inclusions of the same folder
                 for (int i = 0; i < sources.Count; i++)
