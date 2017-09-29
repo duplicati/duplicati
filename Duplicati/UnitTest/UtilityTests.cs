@@ -28,12 +28,12 @@ namespace Duplicati.UnitTest
         [Category("Utility")]
         public void GetUniqueItems()
         {
-            int[] collection = { 1, 1, 1, 2, 3, 3 };
-            int[] uniqueItems = { 1, 2, 3 };
-            int[] duplicateItems = { 1, 3 };
+            string[] collection = { "A", "a", "A", "b", "c", "c" };
+            string[] uniqueItems = { "A", "a", "b", "c" };
+            string[] duplicateItems = { "A", "c" };
 
-            ISet<int> actualDuplicateItems;
-            ISet<int> actualUniqueItems = Utility.GetUniqueItems(collection, out actualDuplicateItems);
+            ISet<string> actualDuplicateItems;
+            ISet<string> actualUniqueItems = Utility.GetUniqueItems(collection, out actualDuplicateItems);
 
             CollectionAssert.AreEquivalent(uniqueItems, actualUniqueItems);
             CollectionAssert.AreEquivalent(duplicateItems, actualDuplicateItems);
