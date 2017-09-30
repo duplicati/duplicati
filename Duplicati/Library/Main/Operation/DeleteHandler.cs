@@ -214,64 +214,48 @@ namespace Duplicati.Library.Main.Operation
                 return new List<DateTime>(); // don't delete any backups
             }
 
-            Logging.Log.WriteMessage("[Retention Policy]: Starting to thin out backups", Logging.LogMessageType.Information);
+            Logging.Log.WriteMessage("[Retention Policy]: Start checking if backups can be removed", Logging.LogMessageType.Information);
 
             // Work with a copy to not modify the enumeration that the caller passed
-            List<DateTime> clonedBackups = new List<DateTime>(backups);
+            List<DateTime> clonedBackupList = new List<DateTime>(backups);
 
             // Make sure the backups are in descending order (newest backup in the beginning)
-            clonedBackups = clonedBackups.OrderByDescending(x => x).ToList();
+            clonedBackupList = clonedBackupList.OrderByDescending(x => x).ToList();
 
-            // Most current backup should never get deleted due to the thinning out, so exclude it
-            clonedBackups.RemoveAt(0);
-
-            // Calculate the date for each period based on the current DateTime
-            var timeFramesIntervales = new List<KeyValuePair<DateTime, TimeSpan>>();
-            foreach (var configEntry in retentionPolicyOptionValue.ToList())
-            {
-                var period = configEntry.Key;
-                var interval = configEntry.Value;
-
-                DateTime periodEnd;
-                if (period > TimeSpan.Zero)
-                {
-                    periodEnd = DateTime.Now - period;
-                }
-                else
-                {
-                    periodEnd = DateTime.MinValue; // periods equal or below 0 mean "biggest time frame possible"
-                }
-                timeFramesIntervales.Add(new KeyValuePair<DateTime, TimeSpan>(periodEnd, interval));
-            }
-
-            timeFramesIntervales = timeFramesIntervales.OrderByDescending(x => x.Key).ToList();
+            // Most current backup should never get deleted in this process, so exclude it
+            clonedBackupList.RemoveAt(0);
 
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: Time frames and intervals pairs: {0}",
-                string.Join(", ", timeFramesIntervales.Select(x => x.Key + " / " + x.Value))), Logging.LogMessageType.Information);
-            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups to consider: {0}",
-                string.Join(", ", clonedBackups)), Logging.LogMessageType.Information);
+                string.Join(", ", retentionPolicyOptionValue.Select(x => x.Key + " / " + x.Value))), Logging.LogMessageType.Information);
 
-            // For each period collect all potentiel backups in the time frame and thin out 
-            // according to the specified interval, starting with the oldest backup in the time frame
+            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups to consider: {0}",
+                string.Join(", ", clonedBackupList)), Logging.LogMessageType.Information);
+
+            // Collect all potential backups in each time frame and thin out according to the specified interval,
+            // starting with the oldest backup in that time frame.
+            // The order in which the time frames values are checked has to be from the smallest to the largest.
             // If backups are not within any time frame, they will NOT be deleted here.
             // The --keep-time and --keep-versions switched should be used to ultimately delete backups that are too old
             List<DateTime> backupsToDelete = new List<DateTime>();
-            foreach (var timeFrameInterval in timeFramesIntervales)
+            var now = DateTime.Now;
+            foreach (var singleRetentionPolicyOptionValue in retentionPolicyOptionValue.OrderBy(x => x.Key))
             {
-                DateTime timeFrame = timeFrameInterval.Key;
-                TimeSpan interval = timeFrameInterval.Value;
+                var period = singleRetentionPolicyOptionValue.Key;
+                var interval = singleRetentionPolicyOptionValue.Value;
+
+                DateTime timeFrame = (period > TimeSpan.Zero) ? (now - period) : DateTime.MinValue; // period equal or below 0 means "biggest time frame possible"
 
                 Logging.Log.WriteMessage(string.Format("[Retention Policy]: Next time frame and interval pair: {0} / {1}", timeFrame, interval), Logging.LogMessageType.Profiling);
 
                 List<DateTime> backupsInTimeFrame = new List<DateTime>();
-                while (clonedBackups.Count > 0 && clonedBackups[0] >= timeFrame)
+                while (clonedBackupList.Count > 0 && clonedBackupList[0] >= timeFrame)
                 {
-                    backupsInTimeFrame.Insert(0, clonedBackups[0]); // Insert at begining to reverse order, which is nessecary for next step
-                    clonedBackups.RemoveAt(0); // remove from here to not handle the same backup in two time frames
+                    backupsInTimeFrame.Insert(0, clonedBackupList[0]); // Insert at begining to reverse order, which is nessecary for next step
+                    clonedBackupList.RemoveAt(0); // remove from here to not handle the same backup in two time frames
                 }
 
                 Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups in this time frame: {0}",
-                    string.Join(", ", backupsInTimeFrame)), Logging.LogMessageType.Information);
+                    string.Join(", ", backupsInTimeFrame)), Logging.LogMessageType.Profiling);
 
                 // Run through backups in this time frame
                 DateTime? lastKept = null;
@@ -294,7 +278,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups outside of all time frames and thus not checked: {0}",
-                    string.Join(", ", clonedBackups)), Logging.LogMessageType.Profiling);
+                    string.Join(", ", clonedBackupList)), Logging.LogMessageType.Profiling);
 
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups to delete: {0}",
                 string.Join(", ", backupsToDelete.OrderByDescending(x => x))), Logging.LogMessageType.Information);
