@@ -78,6 +78,7 @@
     <Compile Include="HashAlgorithmHelper.cs" />
     <Compile Include="Power\PowerSupply.cs" />
     <Compile Include="Power\IPowerSupplyState.cs" />
+    <Compile Include="Power\DefaultPowerSupplyState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
