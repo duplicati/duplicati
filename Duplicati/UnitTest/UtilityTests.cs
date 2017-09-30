@@ -32,12 +32,14 @@ namespace Duplicati.UnitTest
             string[] uniqueItems = { "A", "a", "b", "c" };
             string[] duplicateItems = { "A", "c" };
 
+            // Test with default comparer.
             ISet<string> actualDuplicateItems;
             ISet<string> actualUniqueItems = Utility.GetUniqueItems(collection, out actualDuplicateItems);
 
             CollectionAssert.AreEquivalent(uniqueItems, actualUniqueItems);
             CollectionAssert.AreEquivalent(duplicateItems, actualDuplicateItems);
 
+            // Test with custom comparer.
             IEqualityComparer<string> comparer = StringComparer.OrdinalIgnoreCase;
             uniqueItems = new string[] {"a", "b", "c"};
             duplicateItems = new string[] { "a", "c" };
@@ -48,6 +50,7 @@ namespace Duplicati.UnitTest
             Assert.That(actualUniqueItems, Is.EquivalentTo(uniqueItems).Using(comparer));
             Assert.That(actualDuplicateItems, Is.EquivalentTo(duplicateItems).Using(comparer));
 
+            // Test with empty collection.
             actualDuplicateItems = null;
             actualUniqueItems = Utility.GetUniqueItems(new string[0], out actualDuplicateItems);
 
