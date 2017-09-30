@@ -76,6 +76,7 @@
     <Compile Include="HostKeyException.cs" />
     <Compile Include="CallContextSettings.cs" />
     <Compile Include="HashAlgorithmHelper.cs" />
+    <Compile Include="Power\PowerSupply.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -95,5 +96,8 @@
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Power\" />
   </ItemGroup>
 </Project>
