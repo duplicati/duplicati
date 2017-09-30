@@ -601,7 +601,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var currentIsSmall = lastVolumeSize != -1 && lastVolumeSize <= m_options.SmallFileSize;
 
-            if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0 || m_options.KeepStaggeredVersion.Count > 0)
+            if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0 || m_options.RetentionPolicy.Count > 0)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);

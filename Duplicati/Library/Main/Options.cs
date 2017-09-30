@@ -509,7 +509,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
                     new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
-                    new CommandLineArgument("keep-staggered-versions", CommandLineArgument.ArgumentType.String, Strings.Options.KeepstaggeredversionsShort, Strings.Options.KeepstaggeredversionsLong),
+                    new CommandLineArgument("retention policy", CommandLineArgument.ArgumentType.String, Strings.Options.RetentionPolicyShort, Strings.Options.RetentionPolicyLong),
                     new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
                     new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false"),
@@ -806,17 +806,17 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the time frames and intervals for the staggered versioning
+        /// Gets the time frames and intervals for the retention policy
         /// </summary>        
-        public Dictionary<TimeSpan, TimeSpan> KeepStaggeredVersion
+        public Dictionary<TimeSpan, TimeSpan> RetentionPolicy
         {
             get {
-                var staggeredVersionConfig = new Dictionary<TimeSpan, TimeSpan>();
+                var retentionPolicyConfig = new Dictionary<TimeSpan, TimeSpan>();
 
                 string v;
-                m_options.TryGetValue("keep-staggered-versions", out v);
+                m_options.TryGetValue("retention-policy", out v);
                 if (string.IsNullOrEmpty(v)) { 
-                    return staggeredVersionConfig;
+                    return retentionPolicyConfig;
                 }
 
                 var periodIntervalStrings = v.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -827,10 +827,10 @@ namespace Duplicati.Library.Main
                     var period = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[0]);
                     var interval = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[1]);
 
-                    staggeredVersionConfig.Add(period, interval);
+                    retentionPolicyConfig.Add(period, interval);
                 }
 
-                return staggeredVersionConfig;
+                return retentionPolicyConfig;
             }
         }
 

@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
             if (keepTime.Ticks > 0)
                 res.AddRange(backups.SkipWhile(x => x >= keepTime));
 
-            res.AddRange(ApplyStaggeredVersioning(backups));
+            res.AddRange(ApplyRetentionPolicy(backups));
 
             var filtered = res.Distinct().OrderByDescending(x => x).AsEnumerable();
 
@@ -200,21 +200,21 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
-        /// Thins out the backups according to the configuration.
+        /// Deletes backups according to the retention policy configuration.
         /// Backups that are not within any of the specified time frames will will NOT be deleted.
         /// </summary>
         /// <returns>The filesets to delete</returns>
         /// <param name="backups">The list of backups that can be deleted</param>
-        private List<DateTime> ApplyStaggeredVersioning(DateTime[] backups)
+        private List<DateTime> ApplyRetentionPolicy(DateTime[] backups)
         {
             // Any work to do?
-            Dictionary<TimeSpan, TimeSpan> keepStaggeredVersionOptionValue = m_options.KeepStaggeredVersion;
-            if (keepStaggeredVersionOptionValue.Count == 0 || backups.Length == 0)
+            Dictionary<TimeSpan, TimeSpan> retentionPolicyOptionValue = m_options.RetentionPolicy;
+            if (retentionPolicyOptionValue.Count == 0 || backups.Length == 0)
             {
                 return new List<DateTime>(); // don't delete any backups
             }
 
-            Logging.Log.WriteMessage("[Staggered versioning]: Starting to thin out backups", Logging.LogMessageType.Information);
+            Logging.Log.WriteMessage("[Retention Policy]: Starting to thin out backups", Logging.LogMessageType.Information);
 
             // Work with a copy to not modify the enumeration that the caller passed
             List<DateTime> clonedBackups = new List<DateTime>(backups);
@@ -227,7 +227,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Calculate the date for each period based on the current DateTime
             var timeFramesIntervales = new List<KeyValuePair<DateTime, TimeSpan>>();
-            foreach (var configEntry in keepStaggeredVersionOptionValue.ToList())
+            foreach (var configEntry in retentionPolicyOptionValue.ToList())
             {
                 var period = configEntry.Key;
                 var interval = configEntry.Value;
@@ -246,9 +246,9 @@ namespace Duplicati.Library.Main.Operation
 
             timeFramesIntervales = timeFramesIntervales.OrderByDescending(x => x.Key).ToList();
 
-            Logging.Log.WriteMessage(string.Format("[Staggered versioning]: Time frames and intervals pairs: {0}",
+            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Time frames and intervals pairs: {0}",
                 string.Join(", ", timeFramesIntervales.Select(x => x.Key + " / " + x.Value))), Logging.LogMessageType.Information);
-            Logging.Log.WriteMessage(string.Format("[Staggered versioning]: Backups to consider: {0}",
+            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups to consider: {0}",
                 string.Join(", ", clonedBackups)), Logging.LogMessageType.Information);
 
             // For each period collect all potentiel backups in the time frame and thin out 
@@ -261,7 +261,7 @@ namespace Duplicati.Library.Main.Operation
                 DateTime timeFrame = timeFrameInterval.Key;
                 TimeSpan interval = timeFrameInterval.Value;
 
-                Logging.Log.WriteMessage(string.Format("[Staggered versioning]: Next time frame and interval pair: {0} / {1}", timeFrame, interval), Logging.LogMessageType.Profiling);
+                Logging.Log.WriteMessage(string.Format("[Retention Policy]: Next time frame and interval pair: {0} / {1}", timeFrame, interval), Logging.LogMessageType.Profiling);
 
                 List<DateTime> backupsInTimeFrame = new List<DateTime>();
                 while (clonedBackups.Count > 0 && clonedBackups[0] >= timeFrame)
@@ -270,7 +270,7 @@ namespace Duplicati.Library.Main.Operation
                     clonedBackups.RemoveAt(0); // remove from here to not handle the same backup in two time frames
                 }
 
-                Logging.Log.WriteMessage(string.Format("[Staggered versioning]: Backups in this time frame: {0}",
+                Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups in this time frame: {0}",
                     string.Join(", ", backupsInTimeFrame)), Logging.LogMessageType.Information);
 
                 // Run through backups in this time frame
@@ -282,21 +282,21 @@ namespace Duplicati.Library.Main.Operation
                     // - difference between last added backup and this backup is bigger than the specified interval
                     if (lastKept == null || (backup - lastKept.Value) >= interval)
                     {
-                        Logging.Log.WriteMessage(string.Format("[Staggered versioning]: Keeping backup: {0}", backup), Logging.LogMessageType.Profiling);
+                        Logging.Log.WriteMessage(string.Format("[Retention Policy]: Keeping backup: {0}", backup), Logging.LogMessageType.Profiling);
                         lastKept = backup;
                     }
                     else
                     {
-                        Logging.Log.WriteMessage(string.Format("[Staggered versioning]: Marking backup for deletion: {0}", backup), Logging.LogMessageType.Profiling);
+                        Logging.Log.WriteMessage(string.Format("[Retention Policy]: Marking backup for deletion: {0}", backup), Logging.LogMessageType.Profiling);
                         backupsToDelete.Add(backup);
                     }
                 }
             }
 
-            Logging.Log.WriteMessage(string.Format("[Staggered versioning]: Backups outside of all time frames and thus not checked: {0}",
+            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups outside of all time frames and thus not checked: {0}",
                     string.Join(", ", clonedBackups)), Logging.LogMessageType.Profiling);
 
-            Logging.Log.WriteMessage(string.Format("[Staggered versioning]: Backups to delete: {0}",
+            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups to delete: {0}",
                 string.Join(", ", backupsToDelete.OrderByDescending(x => x))), Logging.LogMessageType.Information);
 
             return backupsToDelete;

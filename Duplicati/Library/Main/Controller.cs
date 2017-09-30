@@ -865,10 +865,10 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrWhiteSpace(m_options.Prefix) && m_options.Prefix.Contains("-"))
                 throw new Interface.UserInformationException("The prefix cannot contain hyphens (-)");
 
-            //Check validity of keep-staggered-versions option value
+            //Check validity of retention-policy option value
             try
             {
-                foreach (var configEntry in m_options.KeepStaggeredVersion)
+                foreach (var configEntry in m_options.RetentionPolicy)
                 {
                     if (configEntry.Value >= configEntry.Key)
                     {
@@ -878,7 +878,7 @@ namespace Duplicati.Library.Main
             }
             catch (Exception e) // simply reading the option value might also result in an exception due to incorrect formatting
             {
-                throw new Interface.UserInformationException(string.Format("An error occoured while processing the value of --{0}", "keep-staggered-versions"), e);
+                throw new Interface.UserInformationException(string.Format("An error occoured while processing the value of --{0}", "retention-policy"), e);
             }
 
             //No point in going through with this if we can't report
