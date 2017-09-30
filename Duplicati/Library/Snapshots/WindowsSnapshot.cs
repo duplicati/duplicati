@@ -109,7 +109,7 @@ namespace Duplicati.Library.Snapshots
 
                 //Sanity check for duplicate files/folders
                 ISet<string> pathDuplicates;
-                m_sourcepaths = Utility.Utility.GetUniqueItems(m_sourcepaths, Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).OrderBy(a => a).ToList();
+                m_sourcepaths = Utility.Utility.GetUniqueItems(m_sourcepaths, Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).ToList();
 
                 foreach(var pathDuplicate in pathDuplicates)
                     Logging.Log.WriteMessage(string.Format("Removing duplicate source: {0}", pathDuplicate), Logging.LogMessageType.Information);
