@@ -47,6 +47,12 @@ namespace Duplicati.UnitTest
 
             Assert.That(actualUniqueItems, Is.EquivalentTo(uniqueItems).Using(comparer));
             Assert.That(actualDuplicateItems, Is.EquivalentTo(duplicateItems).Using(comparer));
+
+            actualDuplicateItems = null;
+            actualUniqueItems = Utility.GetUniqueItems(new string[0], out actualDuplicateItems);
+
+            Assert.IsNotNull(actualUniqueItems);
+            Assert.IsNotNull(actualDuplicateItems);
         }
     }
 }
