@@ -1,3 +1,13 @@
+2017-10-01 - 2.0.2.9_canary_2017-10-01
+==========
+* Updated libraries: NewtonSoft.Json, AzureBlob, AWS, SSH, SharpCompress, Meg, NGetText, MimeKit, MailKit, AlphaFS, CoCoL
+* Fixed the default-filters warning, thanks @tygill
+* Added quota reporting to OneDrive, thanks @tygill
+* Added a number of performance improvementes, thanks @warwickmm
+* Switched hashing to use FasterHashing which loads OpenSSL or Apple CC libraries for much faster hashing performance
+* Changed the `--zip-compression-method` option to report only the supported methods
+* Fixed error on Compact that was caused by backend re-use
+
 2017-09-20 - 2.0.2.8_canary_2017-09-20
 ==========
 * Fixed passwordless SSH setup, thanks @Pectojin
