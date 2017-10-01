@@ -25,5 +25,26 @@ namespace Duplicati.Library.Utility.Power
             Battery,
             Unknown
         }
+
+        public static Source GetSource()
+        {
+            IPowerSupplyState state;
+
+            // Since IsClientLinux returns true when on Mac OS X, we need to check IsClientOSX first.
+            if (Utility.IsClientOSX)
+            {
+                state = new DefaultPowerSupplyState();
+            }
+            else if (Utility.IsClientLinux)
+            {
+                state = new LinuxPowerSupplyState();
+            }
+            else
+            {
+                state = new DefaultPowerSupplyState();
+            }
+
+            return state.GetSource();
+        }
     }
 }
