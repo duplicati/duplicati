@@ -79,6 +79,7 @@
     <Compile Include="Power\PowerSupply.cs" />
     <Compile Include="Power\IPowerSupplyState.cs" />
     <Compile Include="Power\DefaultPowerSupplyState.cs" />
+    <Compile Include="Power\LinuxPowerSupplyState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
