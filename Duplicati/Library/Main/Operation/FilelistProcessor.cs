@@ -101,13 +101,8 @@ namespace Duplicati.Library.Main.Operation
                 throw new Duplicati.Library.Interface.UserInformationException(s);
             }
 
-            var lookup = new HashSet<string>();
-            var doubles = new HashSet<string>();
-            foreach(var v in tp.ParsedVolumes)
-            {
-                if (!lookup.Add(v.File.Name))
-                    doubles.Add(v.File.Name);
-            }
+            ISet<string> doubles;
+            Library.Utility.Utility.GetUniqueItems(tp.ParsedVolumes.Select(x => x.File.Name), out doubles);
 
             if (doubles.Count > 0)
             {
