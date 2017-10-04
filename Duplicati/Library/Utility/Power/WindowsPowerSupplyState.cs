@@ -15,40 +15,32 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+using System.Windows.Forms;
+
 namespace Duplicati.Library.Utility.Power
 {
-    public static class PowerSupply
+    public class WindowsPowerSupplyState : IPowerSupplyState
     {
-        public enum Source
+        public PowerSupply.Source GetSource()
         {
-            AC,
-            Battery,
-            Unknown
-        }
+            try
+            {
+                PowerLineStatus status = System.Windows.Forms.SystemInformation.PowerStatus.PowerLineStatus;
+                if (status == PowerLineStatus.Online)
+                {
+                    return PowerSupply.Source.AC;
+                }
+                if (status == PowerLineStatus.Offline)
+                {
+                    return PowerSupply.Source.Battery;
+                }
 
-        public static Source GetSource()
-        {
-            IPowerSupplyState state;
-
-            // Since IsClientLinux returns true when on Mac OS X, we need to check IsClientOSX first.
-            if (Utility.IsClientOSX)
-            {
-                state = new DefaultPowerSupplyState();
+                return PowerSupply.Source.Unknown;
             }
-            else if (Utility.IsClientLinux)
+            catch
             {
-                state = new LinuxPowerSupplyState();
+                return PowerSupply.Source.Unknown;
             }
-            else if (Utility.IsClientWindows)
-            {
-                state = new WindowsPowerSupplyState();
-            }
-            else
-            {
-                state = new DefaultPowerSupplyState();
-            }
-
-            return state.GetSource();
         }
     }
 }
