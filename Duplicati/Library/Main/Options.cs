@@ -509,6 +509,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("keep-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.KeepversionsShort, Strings.Options.KeepversionsLong, DEFAULT_KEEP_VERSIONS.ToString()),
                     new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
+                    new CommandLineArgument("retention-policy", CommandLineArgument.ArgumentType.String, Strings.Options.RetentionPolicyShort, Strings.Options.RetentionPolicyLong),
                     new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
                     new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
                     new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false"),
@@ -803,43 +804,34 @@ namespace Duplicati.Library.Main
                 return Library.Utility.Timeparser.ParseTimeInterval(v, DateTime.Now, true) - tolerance;
             }
         }
-                
+
         /// <summary>
-        /// Gets the filesets selected for deletion
-        /// </summary>
-        /// <returns>The filesets to delete</returns>
-        /// <param name="backups">The list of backups that can be deleted</param>
-        public DateTime[] GetFilesetsToDelete (DateTime[] backups)
+        /// Gets the time frames and intervals for the retention policy
+        /// </summary>        
+        public Dictionary<TimeSpan, TimeSpan> RetentionPolicy
         {
-            if (backups.Length == 0)
-                return backups;
+            get {
+                var retentionPolicyConfig = new Dictionary<TimeSpan, TimeSpan>();
 
-            if (backups.Distinct().Count() != backups.Length)
-                throw new Exception(string.Format("List of backup timestamps contains duplicates: {0}", string.Join(", ", backups.Select(x => x.ToString()))));
+                string v;
+                m_options.TryGetValue("retention-policy", out v);
+                if (string.IsNullOrEmpty(v)) { 
+                    return retentionPolicyConfig;
+                }
 
-            List<DateTime> res = new List<DateTime>();
-                
-            var versions = this.Version;
-            if (versions != null && versions.Length > 0) 
-                foreach (var ix in versions.Distinct())
-                    if (ix >= 0 && ix < backups.Length)
-                        res.Add(backups[ix]);
-            
-            var keepVersions = this.KeepVersions;
-            if (keepVersions > 0 && keepVersions < backups.Length)
-                res.AddRange(backups.Skip(keepVersions));
-                    
-            var keepTime = this.KeepTime;
-            if (keepTime.Ticks > 0)
-                res.AddRange(backups.SkipWhile(x => x >= keepTime));
-            
-            var filtered = res.Distinct().OrderByDescending(x => x).AsEnumerable();
-            
-            var removeCount = filtered.Count();
-            if (removeCount > backups.Length)
-                throw new Exception(string.Format("Too many entries {0} vs {1}, lists: {2} vs {3}", removeCount, backups.Length, string.Join(", ", filtered.Select(x => x.ToString())),string.Join(", ", backups.Select(x => x.ToString()))));
+                var periodIntervalStrings = v.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
-            return filtered.ToArray();
+                foreach (var periodIntervalString in periodIntervalStrings)
+                {
+                    var periodInterval = periodIntervalString.Split(':');
+                    var period = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[0]);
+                    var interval = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[1]);
+
+                    retentionPolicyConfig.Add(period, interval);
+                }
+
+                return retentionPolicyConfig;
+            }
         }
 
         /// <summary>

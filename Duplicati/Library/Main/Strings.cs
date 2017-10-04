@@ -180,6 +180,8 @@ namespace Duplicati.Library.Main.Strings
         public static string KeepversionsLong { get { return LC.L(@"Use this option to set number of versions to keep, supply -1 to keep all versions"); } }
         public static string KeeptimeShort { get { return LC.L(@"Keep all versions within a timespan"); } }
         public static string KeeptimeLong { get { return LC.L(@"Use this option to set the timespan in which backups are kept."); } }
+        public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
+        public static string RetentionPolicyLong { get { return LC.L(@"Use this option to reduce the number of versions that are kept with increasing version age by deleting most of the old backups. The expected format is a comma seperated list of collon sperated time frame and interval pairs. For example the value ""7D:0s,3M:1D,10Y:2M"" means ""For 7 day keep all backups, for 3 months keep one backup per day and for 10 years one backup every 2nd month"); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
         public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }
         public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
