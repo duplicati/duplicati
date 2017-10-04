@@ -43,6 +43,7 @@
     <Reference Include="FasterHashing">
       <HintPath>..\..\..\packages\FasterHashing.1.2.1\lib\net45\FasterHashing.dll</HintPath>
     </Reference>
+    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
@@ -76,6 +77,11 @@
     <Compile Include="HostKeyException.cs" />
     <Compile Include="CallContextSettings.cs" />
     <Compile Include="HashAlgorithmHelper.cs" />
+    <Compile Include="Power\PowerSupply.cs" />
+    <Compile Include="Power\IPowerSupplyState.cs" />
+    <Compile Include="Power\DefaultPowerSupplyState.cs" />
+    <Compile Include="Power\LinuxPowerSupplyState.cs" />
+    <Compile Include="Power\WindowsPowerSupplyState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -95,5 +101,8 @@
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Power\" />
   </ItemGroup>
 </Project>
