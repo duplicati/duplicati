@@ -163,10 +163,10 @@ namespace Duplicati.Library.Utility
         {
             return new[]
             {
-                DefaultFilters.CreateWildcardFilter(@"*/iPhoto Library/iPod Photo Cache/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Google/Chrome/*cache*"),
-                DefaultFilters.CreateWildcardFilter(@"*/Mozilla/Firefox/*cache*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Google/Chrome/Safe Browsing*"),
+                DefaultFilters.CreateWildcardFilter(@"*/iPhoto Library/iPod Photo Cache/*"),
+                DefaultFilters.CreateWildcardFilter(@"*/Mozilla/Firefox/*cache*"),
                 DefaultFilters.CreateRegexFilter(@".*/(cookies|permissions).sqllite(-.{3})?"),
             };
         }
@@ -218,19 +218,19 @@ namespace Duplicati.Library.Utility
                 DefaultFilters.CreateWildcardFilter(@"*/Thumbs.db"),
                 DefaultFilters.CreateWildcardFilter(@"*UsrClass.dat"),
                 DefaultFilters.CreateWildcardFilter(@"*UsrClass.dat.LOG"),
-                DefaultFilters.CreateWildcardFilter(@"?/hiberfil.sys"),
-                DefaultFilters.CreateWildcardFilter(@"?/pagefile.sys"),
-                DefaultFilters.CreateWildcardFilter(@"?/Program Files (x86)/*"),
-                DefaultFilters.CreateWildcardFilter(@"?/Program Files/*"),
-                DefaultFilters.CreateWildcardFilter(@"?/swapfile.sys"),
-                DefaultFilters.CreateWildcardFilter(@"?/System Volume Information/*"),
-                DefaultFilters.CreateWildcardFilter(@"?/Windows/Installer*"),
-                DefaultFilters.CreateWildcardFilter(@"?/Windows/Temp*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/autoexec.bat"),
                 DefaultFilters.CreateWildcardFilter(@"?:/Config.Msi*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/hiberfil.sys"),
+                DefaultFilters.CreateWildcardFilter(@"?:/pagefile.sys"),
+                DefaultFilters.CreateWildcardFilter(@"?:/Program Files (x86)/*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/Program Files/*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/ProgramData/*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/swapfile.sys"),
+                DefaultFilters.CreateWildcardFilter(@"?:/System Volume Information/*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/Windows.old/*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/Windows/*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/Windows/Installer*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/Windows/Temp*"),
             };
         }
 
