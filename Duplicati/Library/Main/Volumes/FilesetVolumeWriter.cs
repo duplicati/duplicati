@@ -83,15 +83,17 @@ namespace Duplicati.Library.Main.Volumes
             if (blocklisthashes != null)
             {
                 //Slightly akward, but we avoid writing if there are no entries 
-                var en = blocklisthashes.GetEnumerator();
-                if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
+                using (var en = blocklisthashes.GetEnumerator())
                 {
-                    m_writer.WritePropertyName("blocklists");
-                    m_writer.WriteStartArray();
-                    m_writer.WriteValue(en.Current);
-                    while (en.MoveNext())
+                    if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
+                    {
+                        m_writer.WritePropertyName("blocklists");
+                        m_writer.WriteStartArray();
                         m_writer.WriteValue(en.Current);
-                    m_writer.WriteEndArray();
+                        while (en.MoveNext())
+                            m_writer.WriteValue(en.Current);
+                        m_writer.WriteEndArray();
+                    }
                 }
             }
             else if (!string.IsNullOrWhiteSpace(blockhash))
