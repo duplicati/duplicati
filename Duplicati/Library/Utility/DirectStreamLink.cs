@@ -103,7 +103,7 @@ namespace Duplicati.Library.Utility
             m_passWriteThrough = passWriteThrough;
             m_blockOnFlush = blockOnFlush;
             m_blockOnClose = blockOnClose;
-            if (bufsize <= 0) throw new ArgumentOutOfRangeException("bufsize");
+            if (bufsize <= 0) throw new ArgumentOutOfRangeException(nameof(bufsize));
             m_buf = new byte[bufsize];
             m_readerStream = new LinkedReaderStream(this);
             m_writerStream = new LinkedWriterStream(this);

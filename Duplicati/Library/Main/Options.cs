@@ -1353,7 +1353,7 @@ namespace Duplicati.Library.Main
 
                 long blocksize = Library.Utility.Sizeparser.ParseSize(tmp, "kb");
                 if (blocksize > int.MaxValue || blocksize < 1024)
-                    throw new ArgumentOutOfRangeException("blocksize", string.Format("The blocksize cannot be less than {0}, nor larger than {1}", 1024, int.MaxValue));
+                    throw new ArgumentOutOfRangeException(nameof(blocksize), string.Format("The blocksize cannot be less than {0}, nor larger than {1}", 1024, int.MaxValue));
                 
                 return (int)blocksize;
             }
