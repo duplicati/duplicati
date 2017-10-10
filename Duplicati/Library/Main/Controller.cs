@@ -408,14 +408,20 @@ namespace Duplicati.Library.Main
                 using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
                 using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
                 {
-                    var list = bk.List();
+                    // Only delete files that match the expected pattern and prefix
+                    var list = bk.List()
+                        .Select(x => Volumes.VolumeBase.ParseFilename(x))
+                        .Where(x => x != null)
+                        .Where(x => x.Prefix == m_options.Prefix)
+                        .ToList();
+
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
                     result.OperationProgressUpdater.UpdateProgress(0);
                     for (var i = 0; i < list.Count; i++)
                     {
                         try
                         {
-                            bk.Delete(list[i].Name, list[i].Size, true);
+                            bk.Delete(list[i].File.Name, list[i].File.Size, true);
                         }
                         catch (Exception ex)
                         {
