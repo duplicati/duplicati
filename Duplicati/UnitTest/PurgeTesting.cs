@@ -193,11 +193,14 @@ namespace Duplicati.UnitTest
                 .Select(x => x.FullName)
                 .First();
 
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round2.Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(round2.Length - round1.Length, res.AddedFiles);
             }
+
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.Backup(new string[] { DATAFOLDER });
