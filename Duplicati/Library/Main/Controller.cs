@@ -425,7 +425,7 @@ namespace Duplicati.Library.Main
                         }
                         catch (Exception ex)
                         {
-                            result.AddWarning(string.Format("Failed to delete remote file: {0}", list[i].Name), ex);
+                            result.AddWarning(string.Format("Failed to delete remote file: {0}", list[i].File.Name), ex);
                         }
                         result.OperationProgressUpdater.UpdateProgress((float)i / list.Count);
                     }
