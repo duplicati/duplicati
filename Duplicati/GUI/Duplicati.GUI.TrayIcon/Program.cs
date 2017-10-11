@@ -21,6 +21,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
         private const string READCONFIGFROMDB_OPTION = "read-config-from-db";
 
+        private const string DETACHED_PROCESS = "detached-process";
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
         private const string DEFAULT_HOSTURL = "http://localhost:8200";
@@ -63,12 +64,12 @@ namespace Duplicati.GUI.TrayIcon
         
         public static void RealMain(string[] _args)
         {
-            if (Duplicati.Library.Utility.Utility.IsClientWindows)
-                Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
-
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
+            if (Duplicati.Library.Utility.Utility.IsClientWindows && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
+                Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+            
             foreach (string s in args)
                 if (
                     s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
@@ -415,14 +416,21 @@ namespace Duplicati.GUI.TrayIcon
                 if (SupportsRumps)
                     toolkits.Add(TOOLKIT_RUMPS);
                 
-                return new Duplicati.Library.Interface.ICommandLineArgument[]
+                var args = new List<Duplicati.Library.Interface.ICommandLineArgument>()
                 {
                     new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(false), null, toolkits.ToArray()),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                     new Duplicati.Library.Interface.CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),               
-                    new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser comand", "Set this option to override the default browser detection"),
+                    new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
                 };
+
+                if (Duplicati.Library.Utility.Utility.IsClientWindows)
+                {
+                    args.Add(new Duplicati.Library.Interface.CommandLineArgument(DETACHED_PROCESS, CommandLineArgument.ArgumentType.String, "Runs the tray-icon detached", "This option runs the tray-icon in detached mode, meaning that the process will exit immediately and not send output to the console of the caller"));
+                }
+
+                return args.ToArray();
             }
         }
     }
