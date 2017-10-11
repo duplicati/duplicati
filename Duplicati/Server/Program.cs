@@ -153,7 +153,7 @@ namespace Duplicati.Server
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
 
-        public static void RealMain(string[] args)
+        public static int RealMain(string[] args)
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
@@ -192,7 +192,7 @@ namespace Duplicati.Server
                     foreach(Library.Interface.ICommandLineArgument arg in SupportedCommands)
                         Console.WriteLine(Strings.Program.HelpDisplayFormat(arg.Name, arg.LongDescription));
 
-                    return;
+                    return 0;
                 }
                 else
                 {
@@ -246,7 +246,7 @@ namespace Duplicati.Server
                     if (writeConsole)
                     {
                         Console.WriteLine(Strings.Program.StartupFailure(ex));
-                        return;
+                        return 200;
                     }
 
                     throw new Exception(Strings.Program.StartupFailure(ex));
@@ -257,7 +257,7 @@ namespace Duplicati.Server
                     if (writeConsole)
                     {
                         Console.WriteLine(Strings.Program.AnotherInstanceDetected);
-                        return;
+                        return 200;
                     }
 
                     throw new SingleInstance.MultipleInstanceException(Strings.Program.AnotherInstanceDetected);
@@ -323,7 +323,7 @@ namespace Duplicati.Server
                 try 
                 {
                     PurgeTempFilesTimer = new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
-                } 
+                }
                 catch (ArgumentOutOfRangeException)
                 {
                     //Bugfix for older Mono, slightly more resources used to avoid large values in the period field
@@ -399,7 +399,10 @@ namespace Duplicati.Server
             {
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 if (writeConsole)
+                {
                     Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
+                    return 100;
+                }
                 else
                     throw mex;
             }
@@ -407,7 +410,10 @@ namespace Duplicati.Server
             {
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(ex.ToString()));
                 if (writeConsole)
+                {
                     Console.WriteLine(Strings.Program.SeriousError(ex.ToString()));
+                    return 100;
+                }
                 else
                     throw new Exception(Strings.Program.SeriousError(ex.ToString()), ex);
             }
@@ -434,8 +440,12 @@ namespace Duplicati.Server
 
                 if (LogHandler != null)
                     LogHandler.Dispose();
-
             }
+
+            if (UpdatePoller != null && UpdatePoller.IsUpdateRequested)
+                return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
+
+            return 0;
         }
 
         public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions)

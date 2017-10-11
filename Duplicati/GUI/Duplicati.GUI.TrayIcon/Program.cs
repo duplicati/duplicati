@@ -67,7 +67,7 @@ namespace Duplicati.GUI.TrayIcon
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
-            if (Duplicati.Library.Utility.Utility.IsClientWindows && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
+            if (Duplicati.Library.Utility.Utility.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
                 Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
             
             foreach (string s in args)
