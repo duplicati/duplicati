@@ -1,3 +1,16 @@
+2017-10-11 - 2.0.2.10_canary_2017-10-11
+==========
+* Fixed an issue with the compare command not working with filters
+* Fixed showing the full version number on the app on MacOS
+* Code quality cleanup, thanks @warwickmm
+* Added code to detect the power supply source, thanks @warwickmm
+* Fixed an issuw with quota detection for non-drive roots on Windows, thanks @t$
+* Implemented retention policy as a commandline switch, thanks @tekkiwulf
+* Improved default filters, thanks @tygill
+* Updated FasterHashing to fix problems on MacOS and with OpenSSL 1.1
+* Fixed the remote-file delete function to only delete Duplicati-related files
+* Added option to run the tray-icon detached from the console
+
 2017-10-01 - 2.0.2.9_canary_2017-10-01
 ==========
 * Updated libraries: NewtonSoft.Json, AzureBlob, AWS, SSH, SharpCompress, Meg, NGetText, MimeKit, MailKit, AlphaFS, CoCoL
