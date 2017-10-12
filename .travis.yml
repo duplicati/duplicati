@@ -8,6 +8,14 @@ addons:
   sauce_connect:
     username: $SAUCE_USERNAME
     access_key: $SAUCE_ACCESS_KEY
+  coverity_scan:
+    project:
+      name: "duplicati/duplicati"
+      description: "Duplicati Build submitted via Travis CI"
+    notification_email: kenneth@duplicati.com
+    build_command_prepend: "msbuild /t:Clean"
+    build_command:   "msbuild /t:Rebuild"
+    branch_pattern: coverity_scan
 env:
   global:
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -34,16 +42,6 @@ cache:
 
 before_install:
       - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-
-addons:
-  coverity_scan:
-    project:
-      name: "duplicati/duplicati"
-      description: "Duplicati Build submitted via Travis CI"
-    notification_email: kenneth@duplicati.com
-    build_command_prepend: "msbuild /t:Clean"
-    build_command:   "msbuild /t:Rebuild"
-    branch_pattern: coverity_scan
 
 script:
 # build duplicati
