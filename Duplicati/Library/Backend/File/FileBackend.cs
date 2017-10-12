@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using Duplicati.Library.Interface;
 
@@ -164,30 +165,26 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
-            List<IFileEntry> ls = new List<IFileEntry>();
-
             PreAuthenticate();
 
             if (!System.IO.Directory.Exists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            foreach (string s in System.IO.Directory.GetFiles(m_path))
+            foreach (string s in System.IO.Directory.EnumerateFiles(m_path))
             {
                 System.IO.FileInfo fi = new System.IO.FileInfo(s);
-                ls.Add(new FileEntry(fi.Name, fi.Length, fi.LastAccessTime, fi.LastWriteTime));
+                yield return new FileEntry(fi.Name, fi.Length, fi.LastAccessTime, fi.LastWriteTime);
             }
 
-            foreach (string s in System.IO.Directory.GetDirectories(m_path))
+            foreach (string s in System.IO.Directory.EnumerateDirectories(m_path))
             {
                 System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(s);
                 FileEntry fe = new FileEntry(di.Name, 0, di.LastAccessTime, di.LastWriteTime);
                 fe.IsFolder = true;
-                ls.Add(fe);
+                yield return fe;
             }
-
-            return ls;
         }
 
 #if DEBUG_RETRY
@@ -265,7 +262,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -315,29 +312,42 @@ namespace Duplicati.Library.Backend
                 root = System.IO.Path.GetPathRoot(m_path);
             }
 
-            return new System.IO.DriveInfo(root);
-        }
-
-        public long TotalQuotaSpace
-        {
-            get
+            // On Windows, DriveInfo is only valid for lettered drives. (e.g., not for UNC paths and shares)
+            // So only attempt to get it if we aren't on Windows or if the root starts with a letter.
+            if (!Utility.Utility.IsClientWindows || (root.Length > 0 && char.IsLetter(root[0])))
             {
-                try { return GetDrive().TotalSize; }
-                catch { }
-
-                return -1;
+                try
+                {
+                    return new System.IO.DriveInfo(root);
+                }
+                catch (ArgumentException)
+                {
+                    // If there was a problem, fall back to returning null
+                }
             }
+
+            return null;
         }
 
-
-        public long FreeQuotaSpace
+        public IQuotaInfo Quota
         {
             get
             {
-                try { return GetDrive().AvailableFreeSpace; }
-                catch { }
-
-                return -1;
+                System.IO.DriveInfo driveInfo = this.GetDrive();
+                if (driveInfo != null)
+                {
+                    return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
+                }
+                else if (Utility.Utility.IsClientWindows)
+                {
+                    // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
+                    // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
+                    return GetDiskFreeSpace(m_path);
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
@@ -348,6 +358,38 @@ namespace Duplicati.Library.Backend
             if (System.IO.File.Exists(target))
                 System.IO.File.Delete(target);
             System.IO.File.Move(source, target);
+        }
+
+        /// <summary>
+        /// Get the disk free space using the Win32 API's GetDiskFreeSpaceEx function.
+        /// </summary>
+        /// <param name="directory">Directory</param>
+        /// <returns>Quota info</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static QuotaInfo GetDiskFreeSpace(string directory)
+        {
+            ulong available;
+            ulong total;
+            ulong free;
+            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out free))
+            {
+                return new QuotaInfo((long)total, (long)available);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private static class WindowsDriveHelper
+        {
+            [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool GetDiskFreeSpaceEx(
+                string lpDirectoryName,
+                out ulong lpFreeBytesAvailable,
+                out ulong lpTotalNumberOfBytes,
+                out ulong lpTotalNumberOfFreeBytes);
         }
     }
 }

@@ -385,7 +385,7 @@ namespace Duplicati.CommandLine
         {
             var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
             
-            if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.InvariantCultureIgnoreCase)).Any())
+            if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.OrdinalIgnoreCase)).Any())
             {
                 outwriter.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions)); 
                 return 200;
@@ -471,24 +471,29 @@ namespace Duplicati.CommandLine
                     {
                         output.PhaseChanged += (phase, previousPhase) =>
                         {
-                            if (phase == Duplicati.Library.Main.OperationPhase.Restore_PreRestoreVerify)
-                                output.MessageEvent("Checking remote backup ...");
-                            else if (phase == Duplicati.Library.Main.OperationPhase.Restore_ScanForExistingFiles)
-                                output.MessageEvent("Checking existing target files ...");
-                            /*else if (phase == Duplicati.Library.Main.OperationPhase.Restore_DownloadingRemoteFiles)
-                                output.MessageEvent("Downloading remote files ..."); */
-                            else if (phase == Duplicati.Library.Main.OperationPhase.Restore_PatchWithLocalBlocks)
-                                output.MessageEvent("Updating target files with local data ...");
-                            else if (phase == Duplicati.Library.Main.OperationPhase.Restore_PostRestoreVerify)
+                            switch (phase)
                             {
-                                periodicOutput.SetFinished();
-                                periodicOutput.Join(TimeSpan.FromMilliseconds(100));
-                                output.MessageEvent("Verifying restored files ...");
+                                case Duplicati.Library.Main.OperationPhase.Restore_PreRestoreVerify:
+                                    output.MessageEvent("Checking remote backup ...");
+                                    break;
+                                case Duplicati.Library.Main.OperationPhase.Restore_ScanForExistingFiles:
+                                    output.MessageEvent("Checking existing target files ...");
+                                    break;
+                                case Duplicati.Library.Main.OperationPhase.Restore_PatchWithLocalBlocks:
+                                    output.MessageEvent("Updating target files with local data ...");
+                                    break;
+                                case Duplicati.Library.Main.OperationPhase.Restore_PostRestoreVerify:
+                                    periodicOutput.SetFinished();
+                                    periodicOutput.Join(TimeSpan.FromMilliseconds(100));
+                                    output.MessageEvent("Verifying restored files ...");
+                                    break;
+                                case Duplicati.Library.Main.OperationPhase.Restore_ScanForLocalBlocks:
+                                    output.MessageEvent("Scanning local files for needed data ...");
+                                    break;
+                                case Duplicati.Library.Main.OperationPhase.Restore_CreateTargetFolders:
+                                    periodicOutput.SetReady();
+                                    break;
                             }
-                            else if (phase == Duplicati.Library.Main.OperationPhase.Restore_ScanForLocalBlocks)
-                                output.MessageEvent("Scanning local files for needed data ...");
-                            else if (phase == Duplicati.Library.Main.OperationPhase.Restore_CreateTargetFolders)
-                                periodicOutput.SetReady();
                         };
 
                         periodicOutput.WriteOutput += (progress, files, size, counting) =>
@@ -545,22 +550,29 @@ namespace Duplicati.CommandLine
                 {
                     if (previousPhase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest)
                         output.MessageEvent("Remote backup verification completed");
-                
-                    if (phase == Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles)
+
+                    switch (phase)
                     {
-                        output.MessageEvent("Scanning local files ...");
-                        periodicOutput.SetReady();
+                        case Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles:
+                            output.MessageEvent("Scanning local files ...");
+                            periodicOutput.SetReady();
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_Finalize:
+                            periodicOutput.SetFinished();
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_PreBackupVerify:
+                            output.MessageEvent("Checking remote backup ...");
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_PostBackupVerify:
+                            output.MessageEvent("Checking remote backup ...");
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest:
+                            output.MessageEvent("Verifying remote backup ...");
+                            break;
+                        case Duplicati.Library.Main.OperationPhase.Backup_Compact:
+                            output.MessageEvent("Compacting remote backup ...");
+                            break;
                     }
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Finalize)
-                        periodicOutput.SetFinished();
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PreBackupVerify)
-                        output.MessageEvent("Checking remote backup ...");
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupVerify)
-                        output.MessageEvent("Checking remote backup ...");
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest)
-                        output.MessageEvent("Verifying remote backup ...");
-                    else if (phase == Duplicati.Library.Main.OperationPhase.Backup_Compact)
-                        output.MessageEvent("Compacting remote backup ...");
                 };
                 
                 periodicOutput.WriteOutput += (progress, files, size, counting) => {
@@ -582,16 +594,29 @@ namespace Duplicati.CommandLine
             {
                 var parsedStats = result.BackendStatistics as Duplicati.Library.Interface.IParsedBackendStatistics;
                 output.MessageEvent(string.Format("  Duration of backup: {0:hh\\:mm\\:ss}", result.Duration));
-                if (parsedStats != null && parsedStats.KnownFileCount > 0)
+                if (parsedStats != null)
                 {
-                    output.MessageEvent(string.Format("  Remote files: {0}", parsedStats.KnownFileCount));
-                    output.MessageEvent(string.Format("  Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
+                    if (parsedStats.KnownFileCount > 0)
+                    {
+                        output.MessageEvent(string.Format("  Remote files: {0}", parsedStats.KnownFileCount));
+                        output.MessageEvent(string.Format("  Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
+                    }
+
+                    if (parsedStats.TotalQuotaSpace >= 0)
+                    {
+                        output.MessageEvent(string.Format("  Total remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.TotalQuotaSpace)));
+                    }
+
+                    if (parsedStats.FreeQuotaSpace >= 0)
+                    {
+                        output.MessageEvent(string.Format("  Available remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.FreeQuotaSpace)));
+                    }
                 }
                 
                 output.MessageEvent(string.Format("  Files added: {0}", result.AddedFiles));
                 output.MessageEvent(string.Format("  Files deleted: {0}", result.DeletedFiles));
                 output.MessageEvent(string.Format("  Files changed: {0}", result.ModifiedFiles));
-                
+
                 output.MessageEvent(string.Format("  Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
                 output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
             }
@@ -643,7 +668,7 @@ namespace Duplicati.CommandLine
             var tests = 1L;
             if (args.Count == 2)
             {
-                if (new string[] { "all", "everything" }.Contains(args[1], StringComparer.InvariantCultureIgnoreCase))
+                if (new string[] { "all", "everything" }.Contains(args[1], StringComparer.OrdinalIgnoreCase))
                     tests = long.MaxValue;
                 else
                     tests = Convert.ToInt64(args[1]);

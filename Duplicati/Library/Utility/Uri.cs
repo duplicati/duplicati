@@ -139,7 +139,7 @@ namespace Duplicati.Library.Utility
             if (!m.Success || m.Length != url.Length)
             {
                 var path = url;
-                if (path.StartsWith("file://", StringComparison.InvariantCultureIgnoreCase))
+                if (path.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
                     path = path.Substring("file://".Length);
 
                 if (path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Utility
                     catch
                     {
                     }
-                throw new ArgumentException(Strings.Uri.UriParseError(url), "url");
+                throw new ArgumentException(Strings.Uri.UriParseError(url), nameof(url));
             }
                 
             this.Scheme = m.Groups["scheme"].Value;
@@ -447,9 +447,9 @@ namespace Duplicati.Library.Utility
             if (query.StartsWith("?"))
                 query = query.Substring(1);
             if (string.IsNullOrEmpty(query))
-                return new NameValueCollection(StringComparer.InvariantCultureIgnoreCase);
+                return new NameValueCollection(StringComparer.OrdinalIgnoreCase);
                 
-            var result = new NameValueCollection(StringComparer.InvariantCultureIgnoreCase);
+            var result = new NameValueCollection(StringComparer.OrdinalIgnoreCase);
             foreach(System.Text.RegularExpressions.Match m in RE_URLPARAM.Matches(query))
                 result.Add(UrlDecode(m.Groups["key"].Value), UrlDecode(m.Groups["value"].Success ? m.Groups["value"].Value : ""));
             

@@ -68,9 +68,9 @@ namespace Duplicati.Library.Main.Operation
                     
                     
                         if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || size < m_options.SkipFilesLargerThan)
-                            m_result.AddVerboseMessage("Including file: {0} ({1})", path, size <= 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
+                            m_result.AddVerboseMessage("Including file: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
                         else
-                            m_result.AddVerboseMessage("Excluding file due to size: {0} ({1})", path, size <= 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));                    
+                            m_result.AddVerboseMessage("Excluding file due to size: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));                    
                     }
                     
                 }

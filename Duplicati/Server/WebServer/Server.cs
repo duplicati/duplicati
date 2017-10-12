@@ -107,7 +107,7 @@ namespace Duplicati.Server.WebServer
             if (string.IsNullOrWhiteSpace(interfacestring))
                 interfacestring = DEFAULT_OPTION_INTERFACE;
 
-            if (interfacestring.Trim() == "*" || interfacestring.Trim().Equals("any", StringComparison.InvariantCultureIgnoreCase))
+            if (interfacestring.Trim() == "*" || interfacestring.Trim().Equals("any", StringComparison.OrdinalIgnoreCase) || interfacestring.Trim().Equals("all", StringComparison.OrdinalIgnoreCase))
                 listenInterface = System.Net.IPAddress.Any;
             else if (interfacestring.Trim() == "loopback")
                 listenInterface = System.Net.IPAddress.Loopback;

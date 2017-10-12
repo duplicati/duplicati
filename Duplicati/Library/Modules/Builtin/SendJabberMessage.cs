@@ -219,20 +219,20 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             //If we do not report this action, then skip
-            if (!m_sendAll && !string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
+            if (!m_sendAll && !string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
                 return;
 
-			ParsedResultType level;
-			if (result is Exception)
-				level = ParsedResultType.Fatal;
-			else if (result != null && result is Library.Interface.IBasicResults)
-				level = ((IBasicResults)result).ParsedResult;
-			else
-				level = ParsedResultType.Error;
+            ParsedResultType level;
+            if (result is Exception)
+                level = ParsedResultType.Fatal;
+            else if (result != null && result is Library.Interface.IBasicResults)
+                level = ((IBasicResults)result).ParsedResult;
+            else
+                level = ParsedResultType.Error;
 
-			m_parsedresultlevel = level.ToString();
+            m_parsedresultlevel = level.ToString();
 
-			if (string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
+            if (string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
             {
                 if (!m_levels.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase)))
                 {
@@ -349,7 +349,7 @@ namespace Duplicati.Library.Modules.Builtin
             input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            if (input.IndexOf("%RESULT%", StringComparison.InvariantCultureIgnoreCase) >= 0)
+            if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
                 using (TempFile tf = new TempFile())
                 {
                     RunScript.SerializeResult(tf, result);

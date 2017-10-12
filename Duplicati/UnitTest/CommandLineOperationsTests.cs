@@ -42,7 +42,7 @@ namespace Duplicati.UnitTest
             }
         }
 
-        [TestFixtureSetUp()]
+        [OneTimeSetUp]
         public override void PrepareSourceData()
         {
             base.PrepareSourceData();

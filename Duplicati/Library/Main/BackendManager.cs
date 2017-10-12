@@ -374,7 +374,7 @@ namespace Duplicati.Library.Main
                         db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
                     else if (e is DbUpdate && ((DbUpdate)e).State == RemoteVolumeState.Deleted)
                     {
-                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, RemoteVolumeState.Deleted, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, true, transaction);
+                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, RemoteVolumeState.Deleted, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, true, TimeSpan.FromHours(2), transaction);
                         volsRemoved.Add(((DbUpdate)e).Remotename);
                     }
                     else if (e is DbUpdate)
@@ -451,14 +451,14 @@ namespace Duplicati.Library.Main
         public static string CalculateFileHash(string filename)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-            using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
+            using (var hasher = HashAlgorithmHelper.Create(VOLUME_HASH))
                 return Convert.ToBase64String(hasher.ComputeHash(fs));
         }
 
         /// <summary> Calculate file hash directly on stream object (for piping) </summary>
         public static string CalculateFileHash(System.IO.Stream stream)
         {
-            using (var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH))
+            using (var hasher = HashAlgorithmHelper.Create(VOLUME_HASH))
                 return Convert.ToBase64String(hasher.ComputeHash(stream));
         }
 
@@ -469,7 +469,7 @@ namespace Duplicati.Library.Main
         public static System.Security.Cryptography.CryptoStream GetFileHasherStream
             (System.IO.Stream stream, System.Security.Cryptography.CryptoStreamMode mode, out Func<string> getHash)
         {
-            var hasher = System.Security.Cryptography.HashAlgorithm.Create(VOLUME_HASH);
+            var hasher = HashAlgorithmHelper.Create(VOLUME_HASH);
             System.Security.Cryptography.CryptoStream retHasherStream =
                 new System.Security.Cryptography.CryptoStream(stream, hasher, mode);
             getHash = () =>
@@ -678,7 +678,7 @@ namespace Duplicati.Library.Main
                 IndexVolumeWriter wr = null;
                 try
                 {
-                    var hashsize = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
+                    var hashsize = HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm).HashSize / 8;
                     wr = new IndexVolumeWriter(m_options);
                     using(var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
                         wr.CopyFrom(rd, x => x == oldname ? newname : x);
@@ -701,9 +701,9 @@ namespace Duplicati.Library.Main
         }
 
         private string m_lastThrottleUploadValue = null;
-		private string m_lastThrottleDownloadValue = null;
+        private string m_lastThrottleDownloadValue = null;
 
-		private void HandleProgress(ThrottledStream ts, long pg)
+        private void HandleProgress(ThrottledStream ts, long pg)
         {
             // TODO: Should we pause here as well?
             // It might give annoying timeouts for transfers
@@ -719,7 +719,7 @@ namespace Duplicati.Library.Main
                 m_lastThrottleUploadValue = tmp;
             }
 
-			m_options.RawOptions.TryGetValue("throttle-download", out tmp);
+            m_options.RawOptions.TryGetValue("throttle-download", out tmp);
             if (tmp != m_lastThrottleDownloadValue)
             {
                 ts.ReadSpeed = m_options.MaxDownloadPrSecond;
@@ -770,7 +770,7 @@ namespace Duplicati.Library.Main
 
             if (m_options.ListVerifyUploads)
             {
-                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 if (f == null)
                     throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
                 else if (f.Size != item.Size && f.Size >= 0)
@@ -1000,17 +1000,17 @@ namespace Duplicati.Library.Main
                             {
                                 // Auto-guess the encryption module
                                 var ext = (System.IO.Path.GetExtension(item.RemoteFilename) ?? "").TrimStart('.');
-                                if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.InvariantCultureIgnoreCase))
+                                if (!m_encryption.FilenameExtension.Equals(ext, StringComparison.OrdinalIgnoreCase))
                                 {
                                     // Check if the file is encrypted with something else
-                                    if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                    if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                                     {
                                         m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
                                         useDecrypter = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions);
                                         useDecrypter = useDecrypter ?? m_encryption;
                                     }
                                     // Check if the file is not encrypted
-                                    else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                                    else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                                     {
                                         m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule);
                                         useDecrypter = null;
@@ -1062,12 +1062,17 @@ namespace Duplicati.Library.Main
                     else
                         item.Hash = fileHash;
                 }
-                
-                if (!item.VerifyHashOnly)
+
+                if (item.VerifyHashOnly)
+                {
+                    tmpfile.Dispose();
+                }
+                else
                 {
                     item.Result = tmpfile;
                     tmpfile = null;
                 }
+                    
             }
             catch
             {
@@ -1082,7 +1087,7 @@ namespace Duplicati.Library.Main
         {
             m_statwriter.SendEvent(BackendActionType.List, BackendEventType.Started, null, -1);
 
-            var r = m_backend.List();
+            var r = m_backend.List().ToList();
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("[");
@@ -1304,7 +1309,7 @@ namespace Duplicati.Library.Main
                 m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
 
-			if (m_lastException != null)
+            if (m_lastException != null)
                 throw m_lastException;
 
             return (Library.Utility.TempFile)req.Result;
@@ -1322,12 +1327,12 @@ namespace Duplicati.Library.Main
                 if (m_queue.Enqueue(req))
                     return req;
             }
-			finally
-			{
-				m_statwriter.BackendProgressUpdater.SetBlocking(false);
-			}
+            finally
+            {
+                m_statwriter.BackendProgressUpdater.SetBlocking(false);
+            }
 
-			if (m_lastException != null)
+            if (m_lastException != null)
                 throw m_lastException;
             else
                 throw new InvalidOperationException("GetAsync called after backend is shut down");

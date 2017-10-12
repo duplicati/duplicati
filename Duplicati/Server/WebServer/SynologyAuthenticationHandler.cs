@@ -37,20 +37,20 @@ namespace Duplicati.Server.WebServer
         /// <summary>
         /// The path to the authenticate.cgi script
         /// </summary>
-		private readonly string AUTH_CGI = GetEnvArg("SYNO_AUTHENTICATE_CGI", "/usr/syno/synoman/webman/modules/authenticate.cgi");
+        private readonly string AUTH_CGI = GetEnvArg("SYNO_AUTHENTICATE_CGI", "/usr/syno/synoman/webman/modules/authenticate.cgi");
         /// <summary>
         /// A flag indicating if only admins are allowed
         /// </summary>
-		private readonly bool ADMIN_ONLY = !(GetEnvArg("SYNO_ALL_USERS", "0") == "1");
+        private readonly bool ADMIN_ONLY = !(GetEnvArg("SYNO_ALL_USERS", "0") == "1");
         /// <summary>
         /// A flag indicating if the XSRF token should be fetched automatically
         /// </summary>
-		private readonly bool AUTO_XSRF = GetEnvArg("SYNO_AUTO_XSRF", "1") == "1";
+        private readonly bool AUTO_XSRF = GetEnvArg("SYNO_AUTO_XSRF", "1") == "1";
 
         /// <summary>
         /// A flag indicating that the auth-module is fully disabled
         /// </summary>
-		private readonly bool FULLY_DISABLED;
+        private readonly bool FULLY_DISABLED;
 
         /// <summary>
         /// Re-evealuate the logins periodically to ensure it is still valid
@@ -70,7 +70,7 @@ namespace Duplicati.Server.WebServer
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Server.WebServer.SynologyAuthenticationHandler"/> class.
         /// </summary>
-		public SynologyAuthenticationHandler()
+        public SynologyAuthenticationHandler()
         {
             Console.WriteLine("Enabling Synology integrated authentication handler");
             var disable = false;
@@ -79,14 +79,14 @@ namespace Duplicati.Server.WebServer
                 Console.WriteLine("Disabling webserver as the login script is not found: {0}", LOGIN_CGI);
                 disable = true;
             }
-			if (!File.Exists(AUTH_CGI))
-			{
-				Console.WriteLine("Disabling webserver as the auth script is not found: {0}", AUTH_CGI);
-				disable = true;
-			}
+            if (!File.Exists(AUTH_CGI))
+            {
+                Console.WriteLine("Disabling webserver as the auth script is not found: {0}", AUTH_CGI);
+                disable = true;
+            }
 
             FULLY_DISABLED = disable;
-		}
+        }
 
         /// <summary>
         /// Processes the request
@@ -105,26 +105,26 @@ namespace Duplicati.Server.WebServer
             }
 
             var limitedAccess =
-                request.Uri.AbsolutePath.StartsWith(RESTHandler.API_URI_PATH, StringComparison.InvariantCultureIgnoreCase)
+                request.Uri.AbsolutePath.StartsWith(RESTHandler.API_URI_PATH, StringComparison.OrdinalIgnoreCase)
                    ||
-                request.Uri.AbsolutePath.StartsWith(AuthenticationHandler.LOGIN_SCRIPT_URI, StringComparison.InvariantCultureIgnoreCase)
+                request.Uri.AbsolutePath.StartsWith(AuthenticationHandler.LOGIN_SCRIPT_URI, StringComparison.OrdinalIgnoreCase)
                    ||
-                request.Uri.AbsolutePath.StartsWith(AuthenticationHandler.LOGOUT_SCRIPT_URI, StringComparison.InvariantCultureIgnoreCase);
+                request.Uri.AbsolutePath.StartsWith(AuthenticationHandler.LOGOUT_SCRIPT_URI, StringComparison.OrdinalIgnoreCase);
 
             if (!limitedAccess)
                 return false;
 
-			var tmpenv = new Dictionary<string, string>();
+            var tmpenv = new Dictionary<string, string>();
 
             tmpenv["REMOTE_ADDR"] = request.RemoteEndPoint.Address.ToString();
             tmpenv["REMOTE_PORT"] = request.RemoteEndPoint.Port.ToString();
 
             if (!string.IsNullOrWhiteSpace(request.Headers["X-Real-IP"]))
                 tmpenv["REMOTE_ADDR"] = request.Headers["X-Real-IP"];
-			if (!string.IsNullOrWhiteSpace(request.Headers["X-Real-IP"]))
-				tmpenv["REMOTE_PORT"] = request.Headers["X-Real-Port"];
+            if (!string.IsNullOrWhiteSpace(request.Headers["X-Real-IP"]))
+                tmpenv["REMOTE_PORT"] = request.Headers["X-Real-Port"];
 
-			var loginid = request.Cookies["id"]?.Value;
+            var loginid = request.Cookies["id"]?.Value;
             if (!string.IsNullOrWhiteSpace(loginid))
                 tmpenv["HTTP_COOKIE"] = "id=" + loginid;
 
@@ -143,7 +143,7 @@ namespace Duplicati.Server.WebServer
 
             if (string.IsNullOrWhiteSpace(xsrftoken) && AUTO_XSRF)
             {
-				var authre = new Regex(@"""SynoToken""\s?\:\s?""(?<token>[^""]+)""");
+                var authre = new Regex(@"""SynoToken""\s?\:\s?""(?<token>[^""]+)""");
                 try
                 {
                     var resp = ShellExec(LOGIN_CGI, env: tmpenv).Result;
@@ -157,59 +157,59 @@ namespace Duplicati.Server.WebServer
                 catch (Exception ex)
                 {
                     response.Status = System.Net.HttpStatusCode.InternalServerError;
-					response.Reason = "The system is incorrectly configured";
-					return true;
+                    response.Reason = "The system is incorrectly configured";
+                    return true;
 
-				}
-			}
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(xsrftoken))
-			    tmpenv["HTTP_X_SYNO_TOKEN"] = xsrftoken;
+                tmpenv["HTTP_X_SYNO_TOKEN"] = xsrftoken;
 
             cachestring = BuildCacheKey(tmpenv, xsrftoken);
 
             var username = GetEnvArg("SYNO_USERNAME");
-			if (string.IsNullOrWhiteSpace(username))
-			{
+            if (string.IsNullOrWhiteSpace(username))
+            {
                 try
                 {
                     username = ShellExec(AUTH_CGI, shell: false, exitcode: 0, env: tmpenv).Result;
                 }
                 catch (Exception ex)
                 {
-					response.Status = System.Net.HttpStatusCode.InternalServerError;
-					response.Reason = "The system is incorrectly configured";
-					return true;
-				}
-			}
+                    response.Status = System.Net.HttpStatusCode.InternalServerError;
+                    response.Reason = "The system is incorrectly configured";
+                    return true;
+                }
+            }
 
             if (string.IsNullOrWhiteSpace(username))
             {
-				response.Status = System.Net.HttpStatusCode.Forbidden;
-				response.Reason = "Permission denied, not logged in";
-				return true;
-			}
+                response.Status = System.Net.HttpStatusCode.Forbidden;
+                response.Reason = "Permission denied, not logged in";
+                return true;
+            }
 
-			username = username.Trim();
+            username = username.Trim();
 
             if (ADMIN_ONLY)
-			{
-				var groups = GetEnvArg("SYNO_GROUP_IDS");
+            {
+                var groups = GetEnvArg("SYNO_GROUP_IDS");
 
-				if (string.IsNullOrWhiteSpace(groups))
+                if (string.IsNullOrWhiteSpace(groups))
                     groups = ShellExec("id", "-G '" + username.Trim().Replace("'", "\\'") + "'", exitcode: 0).Result ?? string.Empty;
                 if (!groups.Split(new char[] { ' ' }).Contains("101"))
                 {
                     response.Status = System.Net.HttpStatusCode.Forbidden;
-					response.Reason = "Administrator login required";
-					return true;
-				}
-			}
+                    response.Reason = "Administrator login required";
+                    return true;
+                }
+            }
 
             // We are now authenticated, add to cache
             m_logincache[cachestring] = DateTime.Now + CACHE_TIMEOUT;
-			return false;
-		}
+            return false;
+        }
 
         /// <summary>
         /// Builds a cache key from the environment data
@@ -225,35 +225,35 @@ namespace Duplicati.Server.WebServer
             return string.Format("{0}:{1}/{2}?{3}", values["REMOTE_ADDR"], values["REMOTE_PORT"], values["HTTP_COOKIE"], xsrftoken);
         }
 
-		/// <summary>
-		/// Runs an external command
-		/// </summary>
-		/// <returns>The stdout data.</returns>
-		/// <param name="command">The executable</param>
-		/// <param name="args">The executable and the arguments.</param>
-		/// <param name="shell">If set to <c>true</c> use the shell context for execution.</param>
-		/// <param name="exitcode">Set the value to check for a particular exitcode.</param>
-		private static async Task<string> ShellExec(string command, string args = null, bool shell = false, int exitcode = -1, Dictionary<string, string> env = null)
-		{
-			var psi = new ProcessStartInfo()
-			{
-				FileName = command,
-				Arguments = shell ? null : args,
-				UseShellExecute = false,
-				RedirectStandardInput = shell,
-				RedirectStandardOutput = true
-			};
+        /// <summary>
+        /// Runs an external command
+        /// </summary>
+        /// <returns>The stdout data.</returns>
+        /// <param name="command">The executable</param>
+        /// <param name="args">The executable and the arguments.</param>
+        /// <param name="shell">If set to <c>true</c> use the shell context for execution.</param>
+        /// <param name="exitcode">Set the value to check for a particular exitcode.</param>
+        private static async Task<string> ShellExec(string command, string args = null, bool shell = false, int exitcode = -1, Dictionary<string, string> env = null)
+        {
+            var psi = new ProcessStartInfo()
+            {
+                FileName = command,
+                Arguments = shell ? null : args,
+                UseShellExecute = false,
+                RedirectStandardInput = shell,
+                RedirectStandardOutput = true
+            };
 
-			if (env != null)
-				foreach (var pk in env)
-					psi.EnvironmentVariables[pk.Key] = pk.Value;
+            if (env != null)
+                foreach (var pk in env)
+                    psi.EnvironmentVariables[pk.Key] = pk.Value;
 
             using (var p = System.Diagnostics.Process.Start(psi))
-			{
-				if (shell && args != null)
-					await p.StandardInput.WriteLineAsync(args);
+            {
+                if (shell && args != null)
+                    await p.StandardInput.WriteLineAsync(args);
 
-				var res = p.StandardOutput.ReadToEndAsync();
+                var res = p.StandardOutput.ReadToEndAsync();
 
                 var tries = 10;
                 var ms = (int)TimeSpan.FromSeconds(0.5).TotalMilliseconds;
@@ -263,26 +263,26 @@ namespace Duplicati.Server.WebServer
                     p.WaitForExit(ms);
                 }
 
-				if (!p.HasExited)
+                if (!p.HasExited)
                     try { p.Kill(); }
                     catch { }
 
                 if (!p.HasExited || (p.ExitCode != exitcode && exitcode != -1))
-					throw new Exception(string.Format("Exit code was: {0}, stdout: {1}", p.ExitCode, res));
-				return await res;
-			}
-		}
+                    throw new Exception(string.Format("Exit code was: {0}, stdout: {1}", p.ExitCode, res));
+                return await res;
+            }
+        }
 
-		/// <summary>
-		/// Gets the environment variable argument.
-		/// </summary>
-		/// <returns>The environment variable.</returns>
-		/// <param name="key">The name of the environment variable.</param>
-		/// <param name="default">The default value.</param>
-		private static string GetEnvArg(string key, string @default = null)
-		{
-			var res = Environment.GetEnvironmentVariable(key);
-			return string.IsNullOrWhiteSpace(res) ? @default : res.Trim();
-		}
-	}
+        /// <summary>
+        /// Gets the environment variable argument.
+        /// </summary>
+        /// <returns>The environment variable.</returns>
+        /// <param name="key">The name of the environment variable.</param>
+        /// <param name="default">The default value.</param>
+        private static string GetEnvArg(string key, string @default = null)
+        {
+            var res = Environment.GetEnvironmentVariable(key);
+            return string.IsNullOrWhiteSpace(res) ? @default : res.Trim();
+        }
+    }
 }

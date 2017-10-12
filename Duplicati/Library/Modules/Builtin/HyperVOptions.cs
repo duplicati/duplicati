@@ -214,7 +214,7 @@ namespace Duplicati.Library.Modules.Builtin
             if (paths == null || !Utility.Utility.IsClientWindows)
                 return false;
 
-            return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Count() > 0;
+            return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Any();
         }
 
         #endregion

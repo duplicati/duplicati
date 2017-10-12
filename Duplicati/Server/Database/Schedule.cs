@@ -38,7 +38,7 @@ namespace Duplicati.Server.Database
                     return null;
                     
                 var days = (from n in this.Rule.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries) 
-                           where n.StartsWith("AllowedWeekDays=", StringComparison.InvariantCultureIgnoreCase)
+                           where n.StartsWith("AllowedWeekDays=", StringComparison.OrdinalIgnoreCase)
                            select n.Substring("AllowedWeekDays=".Length).Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries))
                            .FirstOrDefault();
                 
@@ -59,7 +59,7 @@ namespace Duplicati.Server.Database
                     string.IsNullOrEmpty(this.Rule) ? 
                     new string[0] :
                     (from n in this.Rule.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries) 
-                               where !n.StartsWith("AllowedWeekDays=", StringComparison.InvariantCultureIgnoreCase)
+                               where !n.StartsWith("AllowedWeekDays=", StringComparison.OrdinalIgnoreCase)
                                select n);
                                                            
                 if (value != null && value.Length != 0)

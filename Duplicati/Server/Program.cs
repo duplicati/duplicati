@@ -176,10 +176,10 @@ namespace Duplicati.Server
 
             foreach(var s in args)
                 if (
-                    s.Equals("help", StringComparison.InvariantCultureIgnoreCase) ||
-                    s.Equals("/help", StringComparison.InvariantCultureIgnoreCase) ||
-                    s.Equals("usage", StringComparison.InvariantCultureIgnoreCase) ||
-                    s.Equals("/usage", StringComparison.InvariantCultureIgnoreCase))
+                    s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("usage", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
                     commandlineOptions["help"] = "";
 
             //If the commandline issues --help, just stop here
@@ -217,8 +217,11 @@ namespace Duplicati.Server
 
                 if (commandlineOptions.ContainsKey("log-file"))
                 {
+#if DEBUG
+                    // Only delete the --log-file when in DEBUG mode. Otherwise, don't delete and just append logs.
                     if (System.IO.File.Exists(commandlineOptions["log-file"]))
                         System.IO.File.Delete(commandlineOptions["log-file"]);
+#endif
 
                     var loglevel = Duplicati.Library.Logging.LogMessageType.Error;
 
@@ -514,7 +517,7 @@ namespace Duplicati.Server
                     DataFolder = serverDataFolder;
                 }
 #endif
-			}
+            }
             else
                 DataFolder = Library.Utility.Utility.AppendDirSeparator(Library.Utility.Utility.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
 
@@ -563,9 +566,9 @@ namespace Duplicati.Server
         public static void StartOrStopUsageReporter()
         {
             var disableUsageReporter = 
-                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "none", StringComparison.InvariantCultureIgnoreCase)
+                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "none", StringComparison.OrdinalIgnoreCase)
                 ||
-                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "disabled", StringComparison.InvariantCultureIgnoreCase);
+                string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "disabled", StringComparison.OrdinalIgnoreCase);
 
             Library.UsageReporter.ReportType reportLevel;
             if (!Enum.TryParse<Library.UsageReporter.ReportType>(DataConnection.ApplicationSettings.UsageReporterLevel, true, out reportLevel))                    

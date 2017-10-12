@@ -42,7 +42,7 @@
       <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
     </Reference>
     <Reference Include="SharpCompress">
-      <HintPath>..\..\..\packages\sharpcompress.0.18.0\lib\net45\SharpCompress.dll</HintPath>
+      <HintPath>..\..\..\packages\SharpCompress.0.18.2\lib\net45\SharpCompress.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

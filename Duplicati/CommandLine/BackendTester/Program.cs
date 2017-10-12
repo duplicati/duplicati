@@ -161,7 +161,7 @@ namespace Duplicati.CommandLine.BackendTester
 
             try
             {
-                List<Library.Interface.IFileEntry> curlist = null;
+                IEnumerable<Library.Interface.IFileEntry> curlist = null;
                 try
                 {
                     curlist = backend.List();

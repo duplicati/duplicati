@@ -3,7 +3,7 @@
 set -e
 if pgrep -x "Duplicati"; then
 	RES=`osascript \
-	-e "set question to display dialog \"Duplicati is currently running, you should quite before installing a new version\" with title \"Duplicati is already running\" buttons {\"Stop installation\", \"Continue\"} default button 1" \
+	-e "set question to display dialog \"Duplicati is currently running, you should quit before installing a new version\" with title \"Duplicati is already running\" buttons {\"Stop installation\", \"Continue\"} default button 1" \
 	-e "if button returned of question is equal to \"Stop installation\" then return \"STOP\""`
 	if [ "$RES" == "STOP" ];
 	then

@@ -598,7 +598,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.validaters['ssh'] = function(scope, continuation) {
         var res =
             EditUriBackendConfig.require_server(scope) &&
-            EditUriBackendConfig.require_username_and_password(scope);
+            EditUriBackendConfig.require_username(scope);
 
         if (res)
             EditUriBackendConfig.recommend_path(scope, continuation);

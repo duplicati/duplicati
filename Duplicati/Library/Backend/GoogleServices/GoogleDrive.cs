@@ -131,7 +131,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             {
                 // Figure out if we update or create the file
                 if (m_filecache.Count == 0)
-                    List();
+                    foreach (var file in List()) { /* Enumerate the full listing */ }
 
                 GoogleDriveFolderItem[] files;
                 m_filecache.TryGetValue(remotename, out files);
@@ -174,7 +174,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         {
             // Prevent repeated download url lookups
             if (m_filecache.Count == 0)
-                List();
+                foreach (var file in List()) { /* Enumerate the full listing */ }
 
             var fileid = GetFileEntries(remotename).OrderByDescending(x => x.createdDate).First().id;
 
@@ -189,14 +189,15 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         #region IBackend implementation
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
+            bool success = false;
             try
             {
-                var res = new List<IFileEntry>();
                 m_filecache.Clear();
 
-                foreach(var n in ListFolder(CurrentFolderId))
+                // For now, this class assumes that List() fully populates the file cache
+                foreach (var n in ListFolder(CurrentFolderId))
                 {
                     FileEntry fe = null;
 
@@ -209,34 +210,39 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                     if (fe != null)
                     {
-                        fe.IsFolder = FOLDER_MIMETYPE.Equals(n.mimeType, StringComparison.InvariantCultureIgnoreCase);
-                        res.Add(fe);
+                        fe.IsFolder = FOLDER_MIMETYPE.Equals(n.mimeType, StringComparison.OrdinalIgnoreCase);
 
                         if (!fe.IsFolder)
                         {
                             GoogleDriveFolderItem[] lst;
                             if (!m_filecache.TryGetValue(fe.Name, out lst))
+                            {
                                 m_filecache[fe.Name] = new GoogleDriveFolderItem[] { n };
+                            }
                             else
                             {
                                 Array.Resize(ref lst, lst.Length + 1);
                                 lst[lst.Length - 1] = n;
                             }
                         }
+
+                        yield return fe;
                     }
                 }
 
-                return res;
+                success = true;
             }
-            catch
+            finally
             {
-                m_filecache.Clear();
-
-                throw;
+                // If the enumeration either failed or didn't complete, clear the file cache.
+                // This way, other operations which require a fully populated file cache will see an empty one and can populate it themselves.
+                if (!success)
+                {
+                    m_filecache.Clear();
+                }
             }
-
         }
-
+        
         public void Put(string remotename, string filename)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
@@ -274,7 +280,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -319,25 +325,19 @@ namespace Duplicati.Library.Backend.GoogleDrive
         #endregion
 
         #region IQuotaEnabledBackend implementation
-        public long TotalQuotaSpace
+        public IQuotaInfo Quota
         {
             get
             {
-                try { return GetAboutInfo().quotaBytesTotal ?? -1; }
-                catch { }
-
-                return -1;
-            }
-        }
-
-        public long FreeQuotaSpace
-        {
-            get
-            {
-                try { return GetAboutInfo().quotaBytesUsed ?? -1; }
-                catch { }
-
-                return -1;
+                try
+                {
+                    GoogleDriveAboutResponse about = this.GetAboutInfo();
+                    return new QuotaInfo(about.quotaBytesTotal ?? -1, about.quotaBytesUsed ?? -1);
+                }
+                catch
+                {
+                    return null;
+                }
             }
         }
         #endregion

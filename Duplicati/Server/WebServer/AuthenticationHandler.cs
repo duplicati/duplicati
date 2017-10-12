@@ -153,7 +153,7 @@ namespace Duplicati.Server.WebServer
             Tuple<DateTime, string> tmpTuple;
             DateTime tmpDateTime;
 
-            if (LOGOUT_SCRIPT_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase))
+            if (LOGOUT_SCRIPT_URI.Equals(request.Uri.AbsolutePath, StringComparison.OrdinalIgnoreCase))
             {
                 if (!string.IsNullOrWhiteSpace(auth_token))
                 {
@@ -166,7 +166,7 @@ namespace Duplicati.Server.WebServer
 
                 return true;
             }
-            else if (LOGIN_SCRIPT_URI.Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase))
+            else if (LOGIN_SCRIPT_URI.Equals(request.Uri.AbsolutePath, StringComparison.OrdinalIgnoreCase))
             {
                 // Remove expired nonces
                 foreach(var k in (from n in m_activeNonces where DateTime.UtcNow > n.Value.Item1 select n.Key))
@@ -271,11 +271,11 @@ namespace Duplicati.Server.WebServer
             }
 
             var limitedAccess =
-                request.Uri.AbsolutePath.StartsWith(RESTHandler.API_URI_PATH, StringComparison.InvariantCultureIgnoreCase)
+                request.Uri.AbsolutePath.StartsWith(RESTHandler.API_URI_PATH, StringComparison.OrdinalIgnoreCase)
             ;
 
             // Override to allow the CAPTCHA call to go through
-            if (request.Uri.AbsolutePath.StartsWith(CAPTCHA_IMAGE_URI, StringComparison.InvariantCultureIgnoreCase) && request.Method == "GET")
+            if (request.Uri.AbsolutePath.StartsWith(CAPTCHA_IMAGE_URI, StringComparison.OrdinalIgnoreCase) && request.Method == "GET")
                 limitedAccess = false;
 
             if (limitedAccess)
@@ -323,7 +323,7 @@ namespace Duplicati.Server.WebServer
                 }
             }
 
-            if ("/".Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase) || "/index.html".Equals(request.Uri.AbsolutePath, StringComparison.InvariantCultureIgnoreCase))
+            if ("/".Equals(request.Uri.AbsolutePath, StringComparison.OrdinalIgnoreCase) || "/index.html".Equals(request.Uri.AbsolutePath, StringComparison.OrdinalIgnoreCase))
             {
                 response.Redirect("/login.html");
                 return true;

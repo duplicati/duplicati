@@ -35,9 +35,9 @@ namespace Duplicati.Library.Backend
         public const string SSH_FINGERPRINT_ACCEPT_ANY_OPTION = "ssh-accept-any-fingerprints";
         public const string KEYFILE_URI = "sshkey://";
         public const string SSH_TIMEOUT_OPTION = "ssh-operation-timeout";
-		public const string SSH_KEEPALIVE_OPTION = "ssh-keepalive";
+        public const string SSH_KEEPALIVE_OPTION = "ssh-keepalive";
 
-		Dictionary<string, string> m_options;
+        Dictionary<string, string> m_options;
 
         private string m_server;
         private string m_path;
@@ -46,9 +46,9 @@ namespace Duplicati.Library.Backend
         private string m_fingerprint;
         private bool m_fingerprintallowall;
         private TimeSpan m_operationtimeout;
-		private TimeSpan m_keepaliveinterval;
+        private TimeSpan m_keepaliveinterval;
 
-		private int m_port = 22;
+        private int m_port = 22;
 
         private SftpClient m_con;
 
@@ -97,16 +97,16 @@ namespace Duplicati.Library.Backend
 
             options.TryGetValue(SSH_KEEPALIVE_OPTION, out timeoutstr);
 
-			if (!string.IsNullOrWhiteSpace(timeoutstr))
+            if (!string.IsNullOrWhiteSpace(timeoutstr))
                 m_keepaliveinterval = Library.Utility.Timeparser.ParseTimeSpan(timeoutstr);
 
-		}
+        }
 
         #region IBackend Members
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -169,7 +169,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
                     new CommandLineArgument(SSH_TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.SSHv2Backend.DescriptionSshtimeoutShort, Strings.SSHv2Backend.DescriptionSshtimeoutLong, "0"),
                     new CommandLineArgument(SSH_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.SSHv2Backend.DescriptionSshkeepaliveShort, Strings.SSHv2Backend.DescriptionSshkeepaliveLong, "0"),
-				});
+                });
 
             }
         }
@@ -257,7 +257,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(keyfile))
                 con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(keyfile, m_password));
             else
-                con = new SftpClient(m_server, m_port, m_username, m_password);
+                con = new SftpClient(m_server, m_port, m_username, m_password ?? string.Empty);
 
             con.HostKeyReceived += delegate (object sender, HostKeyEventArgs e)
             {
@@ -282,8 +282,8 @@ namespace Duplicati.Library.Backend
 
             if (m_operationtimeout.Ticks != 0)
                 con.OperationTimeout = m_operationtimeout;
-			if (m_keepaliveinterval.Ticks != 0)
-				con.KeepAliveInterval = m_keepaliveinterval;
+            if (m_keepaliveinterval.Ticks != 0)
+                con.KeepAliveInterval = m_keepaliveinterval;
 
             con.Connect();
 
@@ -313,10 +313,8 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
-            var files = new List<IFileEntry>();
-
             string path = ".";
 
             CreateConnection();
@@ -324,14 +322,12 @@ namespace Duplicati.Library.Backend
 
             foreach (Renci.SshNet.Sftp.SftpFile ls in m_con.ListDirectory(path))
                 if (ls.Name.ToString() != "." && ls.Name.ToString() != "..")
-                    files.Add(new FileEntry(ls.Name.ToString(), ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory });
-
-            return files;
+                    yield return new FileEntry(ls.Name.ToString(), ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory };
         }
 
         public static Renci.SshNet.PrivateKeyFile ValidateKeyFile(string filename, string password)
         {
-            if (filename.StartsWith(KEYFILE_URI, StringComparison.InvariantCultureIgnoreCase))
+            if (filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
             {
                 using (var ms = new System.IO.MemoryStream())
                 using (var sr = new System.IO.StreamWriter(ms))

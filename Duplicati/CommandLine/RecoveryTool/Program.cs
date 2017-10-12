@@ -52,7 +52,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
 
-                bool isHelp = args.Count == 0 || (args.Count >= 1 && string.Equals(args[0], "help", StringComparison.InvariantCultureIgnoreCase));
+                bool isHelp = args.Count == 0 || (args.Count >= 1 && string.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase));
                 if (!isHelp && ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile"))))
                 {
                     string filename;
@@ -76,7 +76,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         return 100;
                 }
 
-                var actions = new Dictionary<string, CommandRunner>(StringComparer.InvariantCultureIgnoreCase);
+                var actions = new Dictionary<string, CommandRunner>(StringComparer.OrdinalIgnoreCase);
                 actions["download"] = Download.Run;
                 actions["recompress"] = Recompress.Run;
                 actions["index"] = Index.Run;
@@ -125,7 +125,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 cargs.AddRange(
                     from c in fargs
-                    where !string.IsNullOrWhiteSpace(c) && !c.StartsWith("#") && !c.StartsWith("!") && !c.StartsWith("REM ", StringComparison.InvariantCultureIgnoreCase)
+                    where !string.IsNullOrWhiteSpace(c) && !c.StartsWith("#") && !c.StartsWith("!") && !c.StartsWith("REM ", StringComparison.OrdinalIgnoreCase)
                     select c
                 );
                     

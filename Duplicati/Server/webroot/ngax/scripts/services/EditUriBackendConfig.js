@@ -110,4 +110,11 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
         return true;
     };
 
+    this.require_username = function(scope) {
+        if ((scope.Username || '').trim().length == 0)
+            return self.show_error_dialog(gettextCatalog.getString('You must fill in the username'));
+
+        return true;
+    };
+
 });

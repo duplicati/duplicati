@@ -221,39 +221,40 @@ namespace Duplicati.Library.Main.Operation
                                             var expectedmetablocklisthashes = (expectedmetablocks + hashes_pr_block - 1) / hashes_pr_block;
                                             if (expectedmetablocks <= 1) expectedmetablocklisthashes = 0;
 
-                                            if (fe.Type == FilelistEntryType.Folder)
+                                            var metadataid = long.MinValue;
+                                            switch (fe.Type)
                                             {
-                                                var metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
-                                                restoredb.AddDirectoryEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
-                                            }
-                                            else if (fe.Type == FilelistEntryType.File)
-                                            {
-                                                var expectedblocks = (fe.Size + blocksize - 1)  / blocksize;
-                                                var expectedblocklisthashes = (expectedblocks + hashes_pr_block - 1) / hashes_pr_block;
-                                                if (expectedblocks <= 1) expectedblocklisthashes = 0;
+                                                case FilelistEntryType.Folder:
+                                                    metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
+                                                    restoredb.AddDirectoryEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
+                                                    break;
+                                                case FilelistEntryType.File:
+                                                    var expectedblocks = (fe.Size + blocksize - 1) / blocksize;
+                                                    var expectedblocklisthashes = (expectedblocks + hashes_pr_block - 1) / hashes_pr_block;
+                                                    if (expectedblocks <= 1) expectedblocklisthashes = 0;
 
-                                                var blocksetid = restoredb.AddBlockset(fe.Hash, fe.Size, fe.BlocklistHashes, expectedblocklisthashes, tr);
-                                                var metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
-                                                restoredb.AddFileEntry(filesetid, fe.Path, fe.Time, blocksetid, metadataid, tr);
-                                                
-                                                if (fe.Size <= blocksize)
-                                                {
-                                                    if (!string.IsNullOrWhiteSpace(fe.Blockhash))
-                                                        restoredb.AddSmallBlocksetLink(fe.Hash, fe.Blockhash, fe.Blocksize, tr);
-                                                    else if (m_options.BlockHashAlgorithm == m_options.FileHashAlgorithm)
-                                                        restoredb.AddSmallBlocksetLink(fe.Hash, fe.Hash, fe.Size, tr);
-                                                    else
-                                                        m_result.AddWarning(string.Format("No block hash found for file: {0}", fe.Path), null);
-                                                }
-                                            }
-                                            else if (fe.Type == FilelistEntryType.Symlink)
-                                            {
-                                                var metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
-                                                restoredb.AddSymlinkEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
-                                            }
-                                            else
-                                            {
-                                                m_result.AddWarning(string.Format("Skipping file-entry with unknown type {0}: {1} ", fe.Type, fe.Path), null);
+                                                    var blocksetid = restoredb.AddBlockset(fe.Hash, fe.Size, fe.BlocklistHashes, expectedblocklisthashes, tr);
+                                                    metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
+                                                    restoredb.AddFileEntry(filesetid, fe.Path, fe.Time, blocksetid, metadataid, tr);
+
+                                                    if (fe.Size <= blocksize)
+                                                    {
+                                                        if (!string.IsNullOrWhiteSpace(fe.Blockhash))
+                                                            restoredb.AddSmallBlocksetLink(fe.Hash, fe.Blockhash, fe.Blocksize, tr);
+                                                        else if (m_options.BlockHashAlgorithm == m_options.FileHashAlgorithm)
+                                                            restoredb.AddSmallBlocksetLink(fe.Hash, fe.Hash, fe.Size, tr);
+                                                        else
+                                                            m_result.AddWarning(string.Format("No block hash found for file: {0}", fe.Path), null);
+                                                    }
+
+                                                    break;
+                                                case FilelistEntryType.Symlink:
+                                                    metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
+                                                    restoredb.AddSymlinkEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
+                                                    break;
+                                                default:
+                                                    m_result.AddWarning(string.Format("Skipping file-entry with unknown type {0}: {1} ", fe.Type, fe.Path), null);
+                                                    break;
                                             }
 
                                             if (fe.Metasize <= blocksize && (fe.Type == FilelistEntryType.Folder || fe.Type == FilelistEntryType.File || fe.Type == FilelistEntryType.Symlink))
@@ -299,7 +300,7 @@ namespace Duplicati.Library.Main.Operation
             
                 if (!m_options.RepairOnlyPaths)
                 {
-                    var hashalg = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                    var hashalg = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
                     if (hashalg == null)
                         throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                     var hashsize = hashalg.HashSize / 8;

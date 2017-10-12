@@ -200,7 +200,7 @@ namespace Duplicati.Library.Backend
                 //Change in S3, now requires that you use location specific endpoint
                 if (!string.IsNullOrEmpty(locationConstraint))
                     foreach(KeyValuePair<string, string> kvp in DEFAULT_S3_LOCATION_BASED_HOSTS)
-                        if (kvp.Key.Equals(locationConstraint, StringComparison.InvariantCultureIgnoreCase))
+                        if (kvp.Key.Equals(locationConstraint, StringComparison.OrdinalIgnoreCase))
                         {
                             s3host = kvp.Value;
                             break;
@@ -263,7 +263,7 @@ namespace Duplicati.Library.Backend
             if (!hasForcePathStyle && !DEFAULT_S3_LOCATION_BASED_HOSTS.Any(x => string.Equals(x.Value, host, StringComparison.OrdinalIgnoreCase)) && !string.Equals(host, "s3.amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
-			m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+            m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
         }
 
         public static bool IsValidHostname(string bucketname)
@@ -291,20 +291,11 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             try
             {
-                List<IFileEntry> lst = Connection.ListBucket(m_bucket, m_prefix);
-                for (int i = 0; i < lst.Count; i++)
-                {
-                    ((FileEntry)lst[i]).Name = lst[i].Name.Substring(m_prefix.Length);
-
-                    //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
-                    if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
-                        ((FileEntry)lst[i]).Name = lst[i].Name.Substring(1);
-                }
-                return lst;
+                return ListWithouExceptionCatch();
             }
             catch (Exception ex)
             {
@@ -314,6 +305,20 @@ namespace Duplicati.Library.Backend
                     throw new Interface.FolderMissingException(ex);
 
                 throw;
+            }
+        }
+
+        private IEnumerable<IFileEntry> ListWithouExceptionCatch()
+        {
+            foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
+            {
+                ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
+
+                //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
+                if (file.Name.StartsWith("/") && !m_prefix.StartsWith("/"))
+                    ((FileEntry)file).Name = file.Name.Substring(1);
+
+                yield return file;
             }
         }
 
@@ -429,7 +434,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
