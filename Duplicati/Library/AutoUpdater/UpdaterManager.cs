@@ -1046,7 +1046,10 @@ namespace Duplicati.Library.AutoUpdater
 
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
-            return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
+            if (Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("AUTOUPDATER_USE_APPDOMAIN"), false))
+                return RunFromMostRecentAppDomain(method, cmdargs, defaultstrategy);
+            else
+                return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
         }
 
         public static int RunFromMostRecentSpawn(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
