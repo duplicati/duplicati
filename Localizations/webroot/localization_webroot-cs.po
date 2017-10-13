@@ -1,132 +1,126 @@
 # Translators:
-# Valery <valery.naumenko@gmail.com>, 2016
-# Dmitry Kartsyn <kd@sparta-it.ru>, 2016
-# Vadim P <kladzey@gmail.com>, 2017
-# Alex McArrow <alex.mcarrow@gmail.com>, 2017
-# Rondo Van <hope2013@mail.ru>, 2017
-# Jony Rh <jonyrh@mail.ru>, 2017
-# Andrey <andrey@mailbox.org>, 2017
+# Pavel Borecki <pavel.borecki@gmail.com>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Andrey <andrey@mailbox.org>, 2017\n"
-"Language-Team: Russian (https://www.transifex.com/duplicati/teams/67655/ru/)\n"
+"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>, 2017\n"
+"Language-Team: Czech (https://www.transifex.com/duplicati/teams/67655/cs/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: ru\n"
-"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+"Language: cs\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
 #: templates/advancedoptionseditor.html:48
 msgid "- pick an option -"
-msgstr "- выберите параметр -"
+msgstr "- vyberte jednu z možností -"
 
 #: templates/delete.html:7 templates/localdatabase.html:4
 msgid "...loading..."
-msgstr "...загрузка..."
+msgstr "…načítání…"
 
 #: templates/backends/openstack.html:32
 msgid "API Key"
-msgstr "Ключ API"
+msgstr "Klíč k aplikačnímu programovému rozhraní (API)"
 
 #: scripts/services/EditUriBuiltins.js:691 templates/backends/s3.html:54
 #: templates/backends/s3.html:55
 msgid "AWS Access ID"
-msgstr "AWS Access ID"
+msgstr "Přístupový identifikátor ke službe AWS"
 
 #: scripts/services/EditUriBuiltins.js:692 templates/backends/s3.html:58
 #: templates/backends/s3.html:59
 msgid "AWS Access Key"
-msgstr "AWS Access Key"
+msgstr "Přístupový klíč ke službě AWS"
 
 #: scripts/services/EditUriBuiltins.js:135
 msgid "AWS IAM Policy"
-msgstr "AWS IAM Policy"
+msgstr "Zásady IAM služby AWS"
 
 #: index.html:226 index.html:242
 msgid "About"
-msgstr "О программе"
+msgstr "O aplikaci"
 
 #: templates/about.html:2
 msgid "About {{appname}}"
-msgstr "О {{appname}}"
+msgstr "O aplikaci {{appname}}"
 
 #: scripts/services/EditUriBuiltins.js:656 templates/backends/azure.html:11
 msgid "Access Key"
-msgstr "Ключ доступа"
+msgstr "Přístupový klíč"
 
 #: scripts/services/AppUtils.js:69
 msgid "Access denied"
-msgstr "Доступ запрещен"
+msgstr "Přístup odepřen"
 
 #: templates/settings.html:5
 msgid "Access to user interface"
-msgstr "Доступ в пользовательский интерфейс"
+msgstr "Přístup k uživatelskému rozhraní"
 
 #: scripts/services/EditUriBuiltins.js:655 templates/backends/azure.html:7
 msgid "Account name"
-msgstr "Имя учётной записи"
+msgstr "Název účtu"
 
 #: templates/notificationarea.html:27 templates/updatechangelog.html:11
 msgid "Activate"
-msgstr "Активировать"
+msgstr "Aktivovat"
 
 #: scripts/controllers/AboutController.js:54
 #: scripts/controllers/UpdateChangelogController.js:18
 msgid "Activate failed:"
-msgstr "Активация не удалась:"
+msgstr "Aktivace se nezdařila:"
 
 #: templates/addwizard.html:3
 msgid "Add a new backup"
-msgstr "Создать новую резервную копию"
+msgstr "Přidat novou zálohu"
 
 #: templates/addoredit.html:149
 msgid "Add a path directly"
-msgstr "Добавить путь непосредственно"
+msgstr "Přidat popis umístění přímo"
 
 #: templates/advancedoptionseditor.html:46
 msgid "Add advanced option"
-msgstr "Добавить расширенный параметр"
+msgstr "Přidat pokročilou volbu"
 
 #: index.html:211
 msgid "Add backup"
-msgstr "Добавить резервную копию"
+msgstr "Přidat zálohu"
 
 #: templates/addoredit.html:197
 msgid "Add filter"
-msgstr "Добавить фильтр"
+msgstr "Přidat filtr"
 
 #: templates/addoredit.html:152
 msgid "Add path"
-msgstr "Добавить путь"
+msgstr "Přidat popis umístění"
 
 #: scripts/services/EditUriBuiltins.js:702
 #: scripts/services/EditUriBuiltins.js:719
 msgid "Adjust bucket name?"
-msgstr "Изменить имя блока?"
+msgstr "Přizpůsobit název „nádoby“ (bucket)?"
 
 #: scripts/services/EditUriBuiltins.js:630
 msgid "Adjust path name?"
-msgstr "Изменить имя пути?"
+msgstr "Přizpůsobit popis umístění?"
 
 #: templates/restoredirect.html:66 templates/restoredirect.html:74
 msgid "Advanced Options"
-msgstr "Расширенные параметры"
+msgstr "Pokročilé volby"
 
 #: templates/addoredit.html:334 templates/edituri.html:28
 msgid "Advanced options"
-msgstr "Расширенные параметры"
+msgstr "Pokročilé volby"
 
 #: templates/home.html:25
 msgid "Advanced:"
-msgstr "Дополнительно:"
+msgstr "Pokročilé:"
 
 #: scripts/directives/sourceFolderPicker.js:423
 msgid "All Hyper-V Machines"
-msgstr "Все виртуальные машины Hyper-V"
+msgstr "Všechny Hyper-V stroje"
 
 #: scripts/directives/sourceFolderPicker.js:455
 msgid "All Microsoft SQL Databases"
-msgstr "Все базы данных Microsoft SQL"
+msgstr "Všechny Microsoft SQL databáze"
 
 #: templates/settings.html:115
 msgid ""
@@ -136,32 +130,28 @@ msgid ""
 "similar data. They do not contain paths, filenames, usernames, passwords or "
 "similar sensitive information."
 msgstr ""
-"Все отчеты об использовании отправляются анонимно и не содержат каких-либо "
-"персональных данных. Они содержат информацию об аппаратной конфигурации и "
-"операционной системе, тип бэкэнда, продолжительность  резервного "
-"копирования, общий размер исходных данных и подобные данные. Они не содержат"
-" пути, имена файлов, имена пользователей, пароли или любую другую "
-"конфиденциальную информацию."
+"Veškerá hlášení o využívání jsou posílána anonymně a neobsahují žádné osobní údaje. Obsahují informace o hardware a operačním systému, typu podpůrné vrstvy (backend), trvání zálohy, celkové velikosti zdrojových dat a podobně.\n"
+"Neobsahují popisy umístění, názvy souborů, uživatelská jména, hesla nebo podobné citlivé údaje."
 
 #: templates/settings.html:13
 msgid "Allow remote access (requires restart)"
-msgstr "Разрешить удалённый доступ (потребуется перезапуск)"
+msgstr "Umožnit přístup na dálku (vyžaduje restart)"
 
 #: templates/addoredit.html:268
 msgid "Allowed days"
-msgstr "Разрешенные дни"
+msgstr "Dny, ve které je přístup umožněn"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
-msgstr "Существующий файл был найден по новому пути"
+msgstr "V novém umístění byl nalezen už existující soubor"
 
 #: scripts/controllers/LocalDatabaseController.js:72
 msgid ""
 "An existing file was found at the new location\n"
 "Are you sure you want the database to point to an existing file?"
 msgstr ""
-"Существующий файл был найден по новому пути\n"
-"Вы точно хотите, чтобы база данных указывала на существующий файл?"
+"V novém umístění byl nalezen už existující soubor\n"
+"Opravdu chcete nasměrovat databázi do existujícího souboru?"
 
 #: scripts/controllers/EditBackupController.js:399
 msgid ""
@@ -170,18 +160,18 @@ msgid ""
 "\n"
 " Do you wish to use the existing database?"
 msgstr ""
-"Была обнаружена локальная база данных для хранилища.\n"
-"Повторное использование базы данных позволит экземплярам командной строки и сервера работать на одном и том же удаленном хранилище.\n"
+"Byla nalezena existující místní databáze pro ukládání.\n"
+"Opětovné využití databáze umožní, aby instance pro příkazový řádek a server fungovaly na stejném vzdáleném úložišti.\n"
 "\n"
-" Вы хотите использовать существующую базу данных?"
+"Chcete použít existující databázi?"
 
 #: templates/settings.html:103
 msgid "Anonymous usage reports"
-msgstr "Анонимные отчёты об использовании"
+msgstr "Anonymní hlášení o použití"
 
 #: templates/export.html:8
 msgid "As Command-line"
-msgstr "Как командная строка"
+msgstr "Jako příkazový řádek"
 
 #: scripts/services/EditUriBuiltins.js:614 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/oauth.html:8
@@ -191,60 +181,60 @@ msgstr "AuthID"
 
 #: templates/backends/generic.html:23 templates/backends/openstack.html:23
 msgid "Authentication password"
-msgstr "Пароль для аутентификации"
+msgstr "Ověřovací heslo"
 
 #: templates/backends/generic.html:19 templates/backends/openstack.html:19
 msgid "Authentication username"
-msgstr "Имя пользователя для аутентификации"
+msgstr "Ověřovací uživatelské jméno"
 
 #: scripts/controllers/EditBackupController.js:308
 msgid "Autogenerated passphrase"
-msgstr "Сгенерированный пароль"
+msgstr "Automaticky vytvořená heslová fráze"
 
 #: templates/addoredit.html:248
 msgid "Automatically run backups."
-msgstr "Запускать резервное копирование автоматически"
+msgstr "Spouštět zálohy automaticky."
 
 #: templates/backends/b2.html:12
 msgid "B2 Account ID"
-msgstr "B2 Account ID"
+msgstr "Identifikátor účtu u služby B2"
 
 #: templates/backends/b2.html:16
 msgid "B2 Application Key"
-msgstr "B2 Application Key"
+msgstr "Aplikační klíč ke službě B2"
 
 #: scripts/services/EditUriBuiltins.js:738 templates/backends/b2.html:13
 msgid "B2 Cloud Storage Account ID"
-msgstr "B2 Cloud Storage Account ID"
+msgstr "Identifikátor účtu u cloudového úložiště B2"
 
 #: scripts/services/EditUriBuiltins.js:739 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
-msgstr "B2 Cloud Storage Application Key"
+msgstr "Aplikační klíč ke cloudovému úložišti B2"
 
 #: templates/restore.html:132 templates/restore.html:70
 msgid "Back"
-msgstr "Назад"
+msgstr "Zpět"
 
 #: templates/about.html:66
 msgid "Backend modules:"
-msgstr "Модули бэкенда:"
+msgstr "Moduly podpůrných vrstev (backend):"
 
 #: templates/addoredit.html:88
 msgid "Backup destination"
-msgstr "Хранение резервной копии"
+msgstr "Cíl zálohy"
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
 msgid "Backup location"
-msgstr "Расположение резервной копии"
+msgstr "Umístění zálohy"
 
 #: templates/home.html:60
 msgid "Backup:"
-msgstr "Резервная копия:"
+msgstr "Záloha:"
 
 #: templates/settings.html:80
 msgid "Beta"
-msgstr "Beta"
+msgstr "Vývojová testovací (beta)"
 
 #: templates/restore.html:143
 msgid "Bitcoin: {{bitcoinaddr}}"
@@ -252,55 +242,55 @@ msgstr "Bitcoin: {{bitcoinaddr}}"
 
 #: scripts/services/AppUtils.js:67
 msgid "Broken access"
-msgstr "Битый доступ"
+msgstr "Nefunkční přístup"
 
 #: templates/backends/file.html:8 templates/restore.html:91
 msgid "Browse"
-msgstr "Обзор"
+msgstr "Procházet"
 
 #: scripts/controllers/SystemSettingsController.js:33
 msgid "Browser default"
-msgstr "Браузер по-умолчанию"
+msgstr "Výchozí nastavení webového prohlížeče"
 
 #: scripts/services/EditUriBuiltins.js:666
 #: scripts/services/EditUriBuiltins.js:690
 #: scripts/services/EditUriBuiltins.js:737
 msgid "Bucket Name"
-msgstr "Имя блока"
+msgstr "Název „nádoby“ (bucket)"
 
 #: templates/backends/gcs.html:15
 msgid "Bucket create location"
-msgstr "Место создания блока"
+msgstr "Umístění ve kterém „nádobu“ (bucket) vytvořit"
 
 #: templates/backends/s3.html:26
 msgid "Bucket create region"
-msgstr "Регион создания блока"
+msgstr "Oblast světa ve které „nádobu“ (bucket) vytvořit"
 
 #: templates/backends/b2.html:2 templates/backends/b2.html:3
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
 #: templates/backends/s3.html:19 templates/backends/s3.html:20
 msgid "Bucket name"
-msgstr "Имя блока"
+msgstr "Název „nádoby“ (bucket)"
 
 #: templates/backends/gcs.html:26
 msgid "Bucket storage class"
-msgstr "Класс хранения блока"
+msgstr "Třída úložiště nesoucí „nádobu“ (bucket)"
 
 #: scripts/services/ServerStatus.js:48
 msgid "Building list of files to restore ..."
-msgstr "Создание списка файлов для восстановления ..."
+msgstr "Vytváření seznamu souborů k obnovení…"
 
 #: scripts/controllers/RestoreController.js:361
 msgid "Building partial temporary database ..."
-msgstr "Создание частичной временной базы данных ..."
+msgstr "Vytváření částečné dočasné databáze…"
 
 #: templates/restore.html:59
 msgid "Busy ..."
-msgstr "Занят ..."
+msgstr "Zaneprázdněno…"
 
 #: templates/settings.html:90
 msgid "Canary"
-msgstr "Canary"
+msgstr "Kanárek"
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
@@ -324,294 +314,294 @@ msgstr "Canary"
 #: templates/export.html:26 templates/settings.html:145
 #: templates/waitarea.html:19
 msgid "Cancel"
-msgstr "Отмена"
+msgstr "Storno"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "Cannot move to existing file"
-msgstr "Не могу переместить в существующий файл"
+msgstr "Nelze přesunout do existujícího souboru"
 
 #: templates/about.html:5
 msgid "Changelog"
-msgstr "История изменений"
+msgstr "Seznam změn"
 
 #: templates/updatechangelog.html:2
 msgid "Changelog for {{appname}} {{version}}"
-msgstr "Список изменений для {{appname}} {{version}}"
+msgstr "Seznam změn v  {{appname}} {{version}}"
 
 #: scripts/controllers/UpdateChangelogController.js:24
 msgid "Check failed:"
-msgstr "Проверка не удалась:"
+msgstr "Zjištění se nezdařilo:"
 
 #: templates/about.html:35
 msgid "Check for updates now"
-msgstr "Проверить наличие обновлений"
+msgstr "Zjistit dostupnost případných aktualizací nyní"
 
 #: templates/captcha.html:10
 msgid "Checking ..."
-msgstr "Проверка"
+msgstr "Zjišťování…"
 
 #: templates/about.html:36
 msgid "Checking for updates ..."
-msgstr "Проверка обновлений ..."
+msgstr "Zjišťování dostupnosti případných aktualizací…"
 
 #: templates/edituri.html:16
 msgid "Chose a storage type to get started"
-msgstr "Для начала выберите тип хранилища"
+msgstr "Pro začátek vyberte typ úložiště"
 
 #: templates/backends/gcs.html:11 templates/backends/oauth.html:11
 msgid "Click the AuthID link to create an AuthID"
-msgstr "Нажмите на ссылку AuthID для создания AuthID"
+msgstr "AuthID vytvoříte kliknutím na odkaz AuthID"
 
 #: index.html:156 index.html:199
 msgid "Click to set throttle options"
-msgstr ""
+msgstr "Kliknutím nastavte předvolby přiškrcování"
 
 #: templates/home.html:30
 msgid "Commandline ..."
-msgstr "Командная строка..."
+msgstr "Příkazový řádek…"
 
 #: templates/home.html:29
 msgid "Compact now"
-msgstr "Уплотнить сейчас"
+msgstr "Zkompaktnit nyní"
 
 #: scripts/services/ServerStatus.js:41 scripts/services/ServerStatus.js:64
 msgid "Compacting remote data ..."
-msgstr "Уплотнение удаленных данных ..."
+msgstr "Zkompaktňování dat na protějšku…"
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup ..."
-msgstr "Завершение резервного копирования ..."
+msgstr "Dokončování zálohy…"
 
 #: scripts/services/ServerStatus.js:36
 msgid "Completing previous backup ..."
-msgstr "Завершение предыдущего резервного копирования ..."
+msgstr "Dokončování předchozí zálohy…"
 
 #: templates/about.html:67
 msgid "Compression modules:"
-msgstr "Модули сжатия:"
+msgstr "Komprimační moduly:"
 
 #: scripts/directives/sourceFolderPicker.js:381
 msgid "Computer"
-msgstr "Компьютер"
+msgstr "Počítač"
 
 #: templates/import.html:9
 msgid "Configuration file:"
-msgstr "Файл конфигурации:"
+msgstr "Soubor s nastaveními:"
 
 #: templates/home.html:17
 msgid "Configuration:"
-msgstr "Настройка:"
+msgstr "Nastavení:"
 
 #: templates/addwizard.html:9
 msgid "Configure a new backup"
-msgstr "Настройка новой резервной копии"
+msgstr "Nastavit novou zálohu"
 
 #: scripts/controllers/DeleteController.js:65
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Confirm delete"
-msgstr "Подтвердите удаление"
+msgstr "Potvrzení smazání"
 
 #: scripts/services/EditUriBackendConfig.js:66
 msgid "Confirmation required"
-msgstr "Необходимо подтверждение"
+msgstr "Vyžadováno potvrzení"
 
 #: templates/restoredirect.html:80
 msgid "Connect"
-msgstr "Подключение"
+msgstr "Připojit"
 
 #: index.html:319
 msgid "Connect now"
-msgstr "Подключиться сейчас"
+msgstr "Připojit nyní"
 
 #: index.html:315
 msgid "Connecting to server ..."
-msgstr "Подключение к серверу ..."
+msgstr "Připojování k serveru…"
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
-msgstr "Подключение к задаче..."
+msgstr "Připojování k úloze…"
 
 #: index.html:320
 msgid "Connecting..."
-msgstr "Подключение..."
+msgstr "Připojování…"
 
 #: index.html:311
 msgid "Connection lost"
-msgstr "Потеряно соединение"
+msgstr "Spojení ztraceno"
 
 #: scripts/directives/backupEditUri.js:51
 #: scripts/directives/backupEditUri.js:54
 msgid "Connection worked!"
-msgstr "Подключение работает!"
+msgstr "Spojení funguje!"
 
 #: scripts/services/EditUriBuiltins.js:657 templates/backends/azure.html:2
 msgid "Container name"
-msgstr "Имя контейнера"
+msgstr "Název kontejneru"
 
 #: templates/backends/openstack.html:37
 msgid "Container region"
-msgstr "Регион контейнера"
+msgstr "Region umístění kontejneru"
 
 #: templates/restore.html:69
 msgid "Continue"
-msgstr "Продолжить"
+msgstr "Pokračovat"
 
 #: scripts/controllers/EditBackupController.js:378
 msgid "Continue without encryption"
-msgstr "Продолжить без шифрования"
+msgstr "Pokračovat bez šifrování"
 
 #: scripts/controllers/DialogController.js:16
 msgid "Copied!"
-msgstr "Скопировано!"
+msgstr "Zkopírováno!"
 
 #: templates/addoredit.html:99 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
-msgstr "Скопировать URL-адрес назначения в буфер обмена"
+msgstr "Zkopírovat URL adresu cíle do schránky"
 
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
-msgstr "Копирование не удалось. Скопируйте URL-адрес вручную"
+msgstr "Kopie se nezdařila. Zkopírujte URL adresu ručně"
 
 #: scripts/services/AppUtils.js:603
 msgid "Core options"
-msgstr "Основные параметры"
+msgstr "Core volby"
 
 #: scripts/controllers/StateController.js:34
 msgid "Counting ({{files}} files found, {{size}})"
-msgstr "Подсчёт ({{files}} файлов найдено, {{size}})"
+msgstr "Počítání ({{files}} souborů nalezeno, {{size}})"
 
 #: templates/settings.html:110
 msgid "Crashes only"
-msgstr "Только падения"
+msgstr "Pouze pády"
 
 #: templates/home.html:36
 msgid "Create bug report ..."
-msgstr "Создать отчет об ошибке..."
+msgstr "Vyplnit hlášení chyby…"
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
-msgstr "Создать папку?"
+msgstr "Vytvořit složku?"
 
 #: scripts/services/EditUriBuiltins.js:121
 msgid "Created new limited user"
-msgstr "Создан новый ограниченный пользователь"
+msgstr "Vytvořit nový uživatelský účet s omezenými oprávněními"
 
 #: scripts/services/ServerStatus.js:59
 msgid "Creating bug report ..."
-msgstr "Создание отчета об ошибке..."
+msgstr "Vytváření hlášení chyby…"
 
 #: scripts/services/EditUriBuiltins.js:112
 msgid "Creating new user with limited access ..."
-msgstr "Создание нового пользователя с ограниченным доступом..."
+msgstr "Vytváření nového uživatele s omezeným přístupem…"
 
 #: scripts/services/ServerStatus.js:49
 msgid "Creating target folders ..."
-msgstr "Создание целевых папок..."
+msgstr "Vytváření cílových složek…"
 
 #: scripts/controllers/RestoreController.js:356
 msgid "Creating temporary backup ..."
-msgstr "Создание временной резервной копии..."
+msgstr "Vytváření dočasné zálohy…"
 
 #: scripts/services/EditUriBuiltins.js:112
 msgid "Creating user..."
-msgstr "Создание пользователя..."
+msgstr "Vytváření uživatelského účtu…"
 
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
-msgstr "Текущая версия — {{versionname}} ({{versionnumber}})"
+msgstr "Stávající verze je {{versionname}} ({{versionnumber}})"
 
 #: templates/backends/s3.html:14
 msgid "Custom S3 endpoint"
-msgstr "Пользовательский S3 endpoint"
+msgstr "Vlastní S3 koncový bod"
 
 #: templates/backends/openstack.html:13
 msgid "Custom authentication url"
-msgstr "Пользовательский URL-адрес аутентификации"
+msgstr "Vlastní ověřovací URL adresa"
 
 #: templates/backends/gcs.html:18
 msgid "Custom location ({{server}})"
-msgstr "Пользовательское местоположение ({{server}})"
+msgstr "Vlastní umístění ({{server}})"
 
 #: templates/backends/s3.html:32
 msgid "Custom region for creating buckets"
-msgstr "Пользовательский регион для создания buckets"
+msgstr "Vlastní region pro vytváření „nádob“ (bucket)"
 
 #: templates/backends/s3.html:29
 msgid "Custom region value ({{region}})"
-msgstr "Пользовательское значение региона ({{region}})"
+msgstr "Hodnota pro vlastní region ({{region}})"
 
 #: templates/backends/openstack.html:10 templates/backends/s3.html:11
 msgid "Custom server url ({{server}})"
-msgstr "Пользовательский URL-адрес сервера ({{server}})"
+msgstr "Vlastní URL adresa serveru ({{server}})"
 
 #: templates/backends/gcs.html:29 templates/backends/s3.html:41
 msgid "Custom storage class ({{class}})"
-msgstr "Пользовательский класс хранения ({{class}})"
+msgstr "Vlastní třída úložiště ({{class}})"
 
 #: templates/home.html:27
 msgid "Database ..."
-msgstr "База данных..."
+msgstr "Databáze…"
 
 #: scripts/services/AppUtils.js:90 templates/addoredit.html:314
 msgid "Days"
-msgstr "Дней"
+msgstr "Dnů"
 
 #: scripts/controllers/SystemSettingsController.js:34
 msgid "Default"
-msgstr "По умолчанию"
+msgstr "Výchozí"
 
 #: templates/settings.html:67
 msgid "Default ({{channelname}})"
-msgstr "По умолчанию ({{channelname}})"
+msgstr "Výchozí ({{channelname}})"
 
 #: templates/settings.html:130
 msgid "Default options"
-msgstr "Параметры по умолчанию"
+msgstr "Výchozí volby"
 
 #: templates/localdatabase.html:19
 msgid "Delete"
-msgstr "Удалить"
+msgstr "Smazat"
 
 #: templates/home.html:21
 msgid "Delete ..."
-msgstr "Удалить..."
+msgstr "Smazat…"
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
-msgstr "Удалить резервную копию"
+msgstr "Smazat zálohu"
 
 #: templates/delete.html:13
 msgid "Delete local database"
-msgstr "Удалить локальную базу данных"
+msgstr "Smazat místní databázi"
 
 #: templates/delete.html:38 templates/delete.html:47
 msgid "Delete remote files"
-msgstr "Удалить удаленные файлы"
+msgstr "Smazat soubory na protějšku"
 
 #: templates/delete.html:26
 msgid "Delete the local database"
-msgstr "Удалить локальную базу данных"
+msgstr "Smazat místní databázi"
 
 #: templates/delete.html:41
 msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
-msgstr "Удалить {{filecount}} файлов ({{filesize}}) из удаленного хранилища?"
+msgstr "Smazat {{filecount}} souborů ({{filesize}}) ze vzdáleného úložiště?"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
-msgstr "Удаление удаленных файлов..."
+msgstr "Mazání souborů na protějšku…"
 
 #: scripts/services/ServerStatus.js:40
 msgid "Deleting unwanted files ..."
-msgstr "Удаление нежелательных файлов ..."
+msgstr "Mazání nepotřebných souborů…"
 
 #: scripts/services/AppUtils.js:59
 msgid "Desktop"
-msgstr "Рабочий стол"
+msgstr "Osobní počítač"
 
 #: templates/addoredit.html:25
 msgid "Destination"
-msgstr "Хранение"
+msgstr "Cíl"
 
 #: templates/restore.html:141
 msgid ""
@@ -619,89 +609,89 @@ msgid ""
 "with a donation. We suggest {{smallamount}} for private use and "
 "{{largeamount}} for commercial use."
 msgstr ""
-"Мы помогли спасти ваши файлы? Если да, пожалуйста, подумайте о поддержке "
-"Duplicati пожертвованием. Мы предлагаем {{smallamount}} за частное "
-"использование и {{largeamount}} за коммерческое использование."
+"Pomohli jsme vám zachránit vaše soubory? Pokud ano, zvažte prosím podpoření "
+"Duplicati darem. Doporučujeme {{smallamount}} pro soukromé a {{largeamount}}"
+" pro komerční použití."
 
 #: templates/restorewizard.html:9
 msgid "Direct restore from backup files ..."
-msgstr "Прямое восстановление из резервной копии..."
+msgstr "Přímé obnovování ze záložních souborů…"
 
 #: templates/log.html:31
 msgid "Disabled"
-msgstr "Отключено"
+msgstr "Vypnuto"
 
 #: templates/notificationarea.html:10 templates/notificationarea.html:25
 msgid "Dismiss"
-msgstr "Скрыть"
+msgstr "Odmítnout"
 
 #: templates/settings.html:49
 msgid "Display and color theme"
-msgstr "Отображение и цветовая тема"
+msgstr "Motiv vzhledu zobrazení a barev"
 
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
-msgstr "Вы действительно хотите удалить резервную копию: «{{name}}» ?"
+msgstr "Opravdu chcete smazat zálohu: „{{name}}“?"
 
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Do you really want to delete the local database for: {{name}}"
-msgstr "Вы действительно хотите удалить локальную базу данных для: {{name}}"
+msgstr "Opravdu chcete smazat místní databázi pro: {{name}}"
 
 #: index.html:141 index.html:269
 msgid "Donate"
-msgstr "Пожертвовать"
+msgstr "Darovat"
 
 #: index.html:144 index.html:272
 msgid "Donate with Bitcoins"
-msgstr "Пожертвовать через Bitcoin"
+msgstr "Darovat v Bitcoinech"
 
 #: index.html:147 index.html:275
 msgid "Donate with PayPal"
-msgstr "Пожертвовать через PayPal"
+msgstr "Darovat prostřednictvím PayPal"
 
 #: templates/settings.html:57 templates/settings.html:59
 msgid "Donation messages"
-msgstr "Напоминания о пожертвовании"
+msgstr "Darovací zprávy"
 
 #: templates/settings.html:61
 msgid "Donation messages are hidden, click to show"
-msgstr "Напоминания о пожертвовании отключены, нажмите, чтобы показывать"
+msgstr "Darovací zprávy jsou skryté, kliknutím je zobrazíte"
 
 #: templates/settings.html:60
 msgid "Donation messages are visible, click to hide"
-msgstr "Напоминания о пожертвовании включены, нажмите, чтобы скрыть"
+msgstr "Darovací zprávy jsou zobrazené, kliknutím je skryjete"
 
 #: templates/export.html:45
 msgid "Done"
-msgstr "Готово"
+msgstr "Hotovo"
 
 #: templates/notificationarea.html:14
 msgid "Download"
-msgstr "Скачать"
+msgstr "Stáhnout"
 
 #: templates/notificationarea.html:28
 msgid "Downloading ..."
-msgstr "Загрузка ..."
+msgstr "Stahování…"
 
 #: scripts/services/ServerStatus.js:53
 msgid "Downloading files ..."
-msgstr "Загрузка файлов ..."
+msgstr "Stahování souborů…"
 
 #: templates/notificationarea.html:22
 msgid "Downloading update..."
-msgstr "Загрузка обновления..."
+msgstr "Stahování aktualizace…"
 
 #: scripts/services/AppUtils.js:265
 msgid "Duplicate option {{opt}}"
-msgstr "Дублировать параметр {{opt}}"
+msgstr "Volba duplikace {{opt}}"
 
 #: index.html:263
 msgid "Duplicati Website"
-msgstr "Сайт Duplicati "
+msgstr "Webové stránky projektu Duplicati"
 
 #: index.html:251
 msgid "Duplicati forum"
-msgstr "Форум Duplicati"
+msgstr "Diskuzní fórum o Duplicati"
 
 #: templates/delete.html:15
 msgid ""
@@ -709,9 +699,9 @@ msgid ""
 "            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
-"Для каждой резервной копии существует связанная с ней локальная база данных, которая хранит на локальной машине информацию об удаленной резервной копии.\n"
-"При удалении резервной копии вы можете также удалить и локальную базу данных, никак не влияя на возможность восстановления удалённых файлов.\n"
-"Если вы используете локальную базу данных для резервного копирования из командной строки, то вы должны сохранить базу данных."
+"Ke každé záloze je přiřazena místní databáze, která uchovává informace o vzdálené záloze na místním stroji.\n"
+"            Při mazání zálohy je také možné smazat lokální databázi aniž by tím byla postižena schopnost obnovovat vzdálené soubory.\n"
+"            Pokud používáte místní databáze pro zálohy z příkazového řádku, měli byste databázi ponechat."
 
 #: templates/localdatabase.html:8
 msgid ""
@@ -720,89 +710,86 @@ msgid ""
 "faster to perform many operations, and reduces the amount of data that needs"
 " to be downloaded for each operation."
 msgstr ""
-"Каждая резервная копия имеет локальную базу данных, связанную с ним, со "
-"сведениями об удаленной резервной копировании на местном компьютере. \\nЭто "
-"позволяет быстрее выполнять множество операций и уменьшает объем данных, "
-"который необходимо загрузить для каждой операции."
+"Ke každé záloze je přiřazena místní databáze, která uchovává informace o "
+"vzdálené záloze na místním stroji.\\nTo zrychluje provádění mnoha operací a "
+"snižuje množství dat které je při každé operaci třeba stahovat."
 
 #: templates/home.html:19
 msgid "Edit ..."
-msgstr "Изменить..."
+msgstr "Upravit…"
 
 #: templates/addoredit.html:170 templates/addoredit.html:345
 #: templates/edituri.html:39 templates/settings.html:134
 msgid "Edit as list"
-msgstr "Редактировать как список"
+msgstr "Upravit jako seznam"
 
 #: templates/addoredit.html:173 templates/addoredit.html:348
 #: templates/edituri.html:42 templates/settings.html:140
 msgid "Edit as text"
-msgstr "Редактировать как текст"
+msgstr "Upravit jako text"
 
 #: templates/export.html:18
 msgid "Encrypt file"
-msgstr "Шифровать файл"
+msgstr "Zašifrovat soubor"
 
 #: templates/addoredit.html:43 templates/restore.html:22
 #: templates/restoredirect.html:22 templates/restoredirect.html:58
 msgid "Encryption"
-msgstr "Шифрование"
+msgstr "Šifrování"
 
 #: scripts/controllers/EditBackupController.js:351
 msgid "Encryption changed"
-msgstr "Шифрование изменено"
+msgstr "Šifrování změněno"
 
 #: templates/about.html:68
 msgid "Encryption modules:"
-msgstr "Модули шифрования:"
+msgstr "Šifrovací moduly:"
 
 #: scripts/controllers/EditBackupController.js:73
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
-msgstr "Введите URL-адрес"
+msgstr "Zadejte URL adresu"
 
 #: templates/backends/azure.html:12
 msgid "Enter access key"
-msgstr "Введите ключ доступа"
+msgstr "Zadejte přístupový klíč"
 
 #: templates/backends/azure.html:8
 msgid "Enter account name"
-msgstr "Введите имя учетной записи"
+msgstr "Zadejte název účtu"
 
 #: templates/restoredirect.html:61
 msgid "Enter backup passphrase, if any"
-msgstr "Введите пароль резервной копии, если таковой имеется"
+msgstr "Zadejte záložní heslovou frázi, pokud existuje"
 
 #: templates/addwizard.html:10
 msgid "Enter configuration details"
-msgstr "Ввод сведений конфигурации"
+msgstr "Zadejte podrobnosti nastavení"
 
 #: templates/backends/azure.html:3
 msgid "Enter container name"
-msgstr "Введите имя контейнера"
+msgstr "Zadejte název kontejneru"
 
 #: templates/export.html:22 templates/import.html:15
 msgid "Enter encryption passphrase"
-msgstr "Введите пароль шифрования"
+msgstr "Zadejte šifrovací heslovou frázi"
 
 #: templates/addoredit.html:191
 msgid "Enter expression here"
-msgstr "Введите выражение здесь"
+msgstr "Sem zadejte výraz"
 
 #: templates/backends/jottacloud.html:3 templates/backends/mega.html:3
 msgid "Enter folder path name"
-msgstr "Введите путь папки"
+msgstr "Zadejte popis umístění složky"
 
 #: scripts/services/AppUtils.js:121
 msgid "Enter one option per line in command-line format, eg. {0}"
-msgstr ""
-"Введите по одному параметру в строке в формате командной строки, например "
-"{0}"
+msgstr "Každou z voleb zadejte zvlášť na samostatný řádek, např. {0}"
 
 #: templates/backends/file.html:7 templates/backends/generic.html:14
 #: templates/backends/oauth.html:3 templates/restore.html:90
 msgid "Enter the destination path"
-msgstr "Введите путь назначения"
+msgstr "Zadejte popis cílového umístění "
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
@@ -824,89 +811,89 @@ msgstr "Введите путь назначения"
 #: scripts/services/AppUtils.js:311 scripts/services/AppUtils.js:313
 #: scripts/services/AppUtils.js:321 scripts/services/AppUtils.js:323
 msgid "Error"
-msgstr "Ошибка"
+msgstr "Chyba"
 
 #: scripts/services/ServerStatus.js:66
 msgid "Error!"
-msgstr "Ошибка!"
+msgstr "Chyba!"
 
 #: templates/settings.html:109
 msgid "Errors and crashes"
-msgstr "Ошибки и падения"
+msgstr "Chyby a pády"
 
 #: templates/addoredit.html:204
 msgid "Exclude"
-msgstr "Исключить"
+msgstr "Vynechat"
 
 #: scripts/services/AppUtils.js:124
 msgid "Exclude directories whose names contain"
-msgstr "Исключить каталоги, имена которых содержат"
+msgstr "Vynechat složky jejichž názvy obsahují"
 
 #: scripts/services/AppUtils.js:167
 msgid "Exclude expression"
-msgstr "Выражение для исключения"
+msgstr "Výraz pro vynechané"
 
 #: scripts/services/AppUtils.js:142
 msgid "Exclude file"
-msgstr "Исключить файл"
+msgstr "Vynechat soubor"
 
 #: scripts/services/AppUtils.js:148
 msgid "Exclude file extension"
-msgstr "Исключить файловое расширение"
+msgstr "Vynechat soubory s příponami"
 
 #: scripts/services/AppUtils.js:130
 msgid "Exclude files whose names contain"
-msgstr "Исключить файлы, имена которых содержат"
+msgstr "Vynechat soubory jejichž názvy obsahují"
 
 #: scripts/services/AppUtils.js:136
 msgid "Exclude folder"
-msgstr "Исключить папку"
+msgstr "Vynechat složku"
 
 #: scripts/services/AppUtils.js:153
 msgid "Exclude regular expression"
-msgstr "Регулярное выражение для исключения"
+msgstr "Regulární výraz pro vynechávané"
 
 #: scripts/controllers/LocalDatabaseController.js:72
 msgid "Existing file found"
-msgstr "Найден существующий файл"
+msgstr "Nalezen existující soubor"
 
 #: templates/settings.html:85
 msgid "Experimental"
-msgstr "Experimental"
+msgstr "Experimentální"
 
 #: templates/export.html:27
 msgid "Export"
-msgstr "Экспорт"
+msgstr "Exportovat"
 
 #: templates/home.html:20
 msgid "Export ..."
-msgstr "Экспортировать..."
+msgstr "Exportovat…"
 
 #: templates/export.html:2
 msgid "Export backup configuration"
-msgstr "Экспорт конфигурации резервного копирования"
+msgstr "Exportovat zálohu nastavení"
 
 #: templates/delete.html:31 templates/delete.html:34
 msgid "Export configuration"
-msgstr "Экспорт конфигурации"
+msgstr "Exportovat nastavení"
 
 #: templates/export.html:31
 msgid "Exporting ..."
-msgstr "Экспортирование ..."
+msgstr "Exportování…"
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
-msgstr "FTP (Альтернативный)"
+msgstr "FTP (alternativní)"
 
 #: scripts/controllers/RestoreController.js:378
 msgid "Failed to build temporary database: {{message}}"
-msgstr "Не удалось построить временную базу данных: {{message}}"
+msgstr "Nepodařilo se vytvořit dočasnou databázi: {{message}}"
 
 #: scripts/directives/backupEditUri.js:143
 #: scripts/directives/backupEditUri.js:205
 #: scripts/directives/backupEditUri.js:239
 msgid "Failed to connect:"
-msgstr "Не удается подключиться:"
+msgstr "Nepodařilo se připojit:"
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
@@ -919,62 +906,62 @@ msgstr "Не удается подключиться:"
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
 msgid "Failed to connect: {{message}}"
-msgstr "Не удается подключиться: {{message}}"
+msgstr "Nepodařilo se připojit: {{message}}"
 
 #: scripts/controllers/LocalDatabaseController.js:38
 msgid "Failed to delete:"
-msgstr "Не удалось удалить:"
+msgstr "Nepodařilo se smazat:"
 
 #: scripts/controllers/RestoreController.js:114
 #: scripts/controllers/RestoreController.js:144
 msgid "Failed to fetch path information: {{message}}"
-msgstr "Не удалось получить сведения о пути: {{message}}"
+msgstr "Nepodařilo se stáhnout informaci o popisu umístění: {{message}}"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
-msgstr "Не удалось импортировать:"
+msgstr "Nepodařilo se importovat:"
 
 #: scripts/controllers/EditBackupController.js:632
 msgid "Failed to read backup defaults:"
-msgstr "Не удалось прочитать настройки по умолчанию для резервной копии:"
+msgstr "Nepodařilo se načíst výchozí parametry zálohy:"
 
 #: scripts/controllers/RestoreController.js:411
 msgid "Failed to restore files: {{message}}"
-msgstr "Не удалось восстановить файлы: {{message}}"
+msgstr "Nepodařilo se obnovit soubory: {{message}}"
 
 #: scripts/controllers/SystemSettingsController.js:110
 msgid "Failed to save:"
-msgstr "Не удалось сохранить:"
+msgstr "Nepodařilo se uložit:"
 
 #: scripts/controllers/RestoreController.js:120
 #: scripts/controllers/RestoreController.js:159
 msgid "Fetching path information ..."
-msgstr "Получение сведений о пути ..."
+msgstr "Získávání informací o popisu umístění…"
 
 #: scripts/services/AppUtils.js:73
 msgid "File"
-msgstr "Файл"
+msgstr "Soubor"
 
 #: templates/addoredit.html:227
 msgid "Files larger than:"
-msgstr "Файлы размером более:"
+msgstr "Soubory větší než:"
 
 #: templates/addoredit.html:159
 msgid "Filters"
-msgstr "Фильтры"
+msgstr "Filtry"
 
 #: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:55
 #: scripts/services/ServerStatus.js:65 templates/commandline.html:60
 msgid "Finished!"
-msgstr "Готово!"
+msgstr "Dokončeno!"
 
 #: scripts/controllers/AppController.js:170
 msgid "First run setup"
-msgstr "Настройка при первом запуске"
+msgstr "Úvodní nastavení při prvním spuštění"
 
 #: scripts/services/AppUtils.js:50
 msgid "Folder"
-msgstr "Папка"
+msgstr "Složka"
 
 #: templates/backends/b2.html:7 templates/backends/file.html:22
 #: templates/backends/file.html:6 templates/backends/jottacloud.html:2
@@ -982,94 +969,94 @@ msgstr "Папка"
 #: templates/backends/sia.html:6 templates/restore.html:105
 #: templates/restore.html:89
 msgid "Folder path"
-msgstr "Путь к папке"
+msgstr "Popis umístění složky"
 
 #: scripts/services/AppUtils.js:107
 msgid "Fri"
-msgstr "Пт"
+msgstr "Pá"
 
 #: scripts/services/AppUtils.js:83
 msgid "GByte"
-msgstr "ГБ"
+msgstr "GB"
 
 #: scripts/services/AppUtils.js:116
 msgid "GByte/s"
-msgstr "ГБ/сек"
+msgstr "GB/s"
 
 #: templates/backends/gcs.html:38
 msgid "GCS Project ID"
-msgstr "GCS Project ID"
+msgstr "GCS identifikátor projektu"
 
 #: templates/about.html:4 templates/addoredit.html:24 templates/log.html:9
 msgid "General"
-msgstr "Общие"
+msgstr "Obecné"
 
 #: templates/addoredit.html:36
 msgid "General backup settings"
-msgstr "Общие параметры резервного копирования"
+msgstr "Obecná nastavení zálohy"
 
 #: templates/addoredit.html:295
 msgid "General options"
-msgstr "Основные параметры"
+msgstr "Obecné volby"
 
 #: templates/addoredit.html:69
 msgid "Generate"
-msgstr "Сгенерировать"
+msgstr "Vytvořit"
 
 #: templates/backends/s3.html:63
 msgid "Generate IAM access policy"
-msgstr "Сгенерировать политики доступа IAM"
+msgstr "Vytvořit IAM zásady přístupu"
 
 #: scripts/controllers/RestoreController.js:66
 msgid "Getting file versions ..."
-msgstr "Получение версий файлов ..."
+msgstr "Získávání verzí souboru…"
 
 #: scripts/controllers/EditBackupController.js:17
 msgid "Hidden files"
-msgstr "Скрытые файлы"
+msgstr "Skryté soubory"
 
 #: templates/addoredit.html:64
 msgid "Hide"
-msgstr "Скрыть"
+msgstr "Skrýt"
 
 #: templates/backends/file.html:15 templates/restore.html:98
 msgid "Hide hidden folders"
-msgstr "Скрыть скрытые папки"
+msgstr "Skrýt skryté složky"
 
 #: index.html:208 scripts/services/AppUtils.js:61
 msgid "Home"
-msgstr "Главная"
+msgstr "Domovská složka"
 
 #: scripts/services/AppUtils.js:89 scripts/services/AppUtils.js:99
 #: templates/settings.html:33
 msgid "Hours"
-msgstr "часов"
+msgstr "Hodin"
 
 #: templates/restore.html:111
 msgid "How do you want to handle existing files?"
-msgstr "Как вы хотите обрабатывать существующие файлы?"
+msgstr "Jak chcete zacházet s existujícími soubory?"
 
 #: scripts/services/AppUtils.js:63
 msgid "Hyper-V Machine"
-msgstr "Hyper-V Машина"
+msgstr "Hyper-V stroj"
 
 #: scripts/directives/sourceFolderPicker.js:438
 msgid "Hyper-V Machine:"
-msgstr "Hyper-V Машина:"
+msgstr "Hyper-V stroj:"
 
 #: scripts/directives/sourceFolderPicker.js:417
 #: scripts/services/AppUtils.js:65
 msgid "Hyper-V Machines"
-msgstr "Hyper-V Машины"
+msgstr "Hyper-V stroje"
 
 #: scripts/directives/sourceFolderPicker.js:56
 #: scripts/directives/sourceFolderPicker.js:62
 msgid "ID:"
-msgstr "ID:"
+msgstr "Identifikátor:"
 
 #: templates/addoredit.html:251
 msgid "If a date was missed, the job will run as soon as possible."
-msgstr "Если дата была пропущена, задание будет выполнено как можно скорее."
+msgstr "Pokud chybělo datum, úloha bude spuštěna co možná nejdříve."
 
 #: templates/localdatabase.html:13
 msgid ""
@@ -1077,10 +1064,10 @@ msgid ""
 "that you perform a repair operation to synchronize the database.\\nIf the "
 "repair is unsuccesful, you can delete the local database and re-generate."
 msgstr ""
-"Если резервное копирование и внешнее хранилище не синхронизированы, "
-"Duplicati потребует выполнения операции исправления для синхронизации базы "
-"данных. \\nЕсли исправление не удастся, вы можете удалить локальную базу "
-"данных для повторного создания."
+"Pokud záloha a vzdálené úložiště ztratí synchronizaci, Duplicati bude "
+"potřebovat abyste provedli operaci opravy a databáze se "
+"synchronizovala.\\nPokud oprava nebude úspěšná, je možné smazat místní "
+"databázi a nechat ji znovu vytvořit."
 
 #: templates/export.html:41
 msgid ""
@@ -1088,9 +1075,9 @@ msgid ""
 "href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
 " as ...&quot;</a>"
 msgstr ""
-"Если файл резервной копии не загружаются автоматически, <a "
-"href=\"{{DownloadURL}}\" target=\"_blank\"> нажмите правой кнопкой мыши и "
-"выберите &quot;Сохранить как ...&quot;</a>"
+"Pokud soubor se zálohou nebyl stažen automaticky, <a "
+"href=\"{{DownloadURL}}\" target=\"_blank\">klikněte pravým tlačítkem a "
+"zvolte „Uložit jako…“;</a>"
 
 #: templates/notificationarea.html:7
 msgid ""
@@ -1098,353 +1085,351 @@ msgid ""
 "href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
 "&quot;Save as ...&quot;</a>"
 msgstr ""
-"Если файл резервной копии не загрузится автоматически, <a "
-"href=\"{{item.DownloadLink}}\" target=\"_blank\">нажмите правой кнопкой мыши"
-" и выберите &quot;Сохранить как ...&quot;</a>"
+"Pokud soubor se zálohou nebyl stažen automaticky, <a "
+"href=\"{{item.DownloadLink}}\" target=\"_blank\">klikněte pravým tlačítkem a"
+" zvolte „Uložit jako…“;</a>"
 
 #: scripts/services/EditUriBackendConfig.js:99
 msgid ""
 "If you do not enter a path, all files will be stored in the login folder.\n"
 "Are you sure this is what you want?"
 msgstr ""
-"Если вы не введете путь, все файлы будут храниться в папке логина.\n"
-"Вы уверены, что это то, что вы хотите?"
+"Pokud nezadáte popis umístění, všechny soubory budou uloženy v přihlašovací složce.\n"
+"Je to to, co chcete?"
 
 #: templates/backends/openstack.html:28
 msgid "If you do not enter an API Key, the tenant name is required"
-msgstr "Если вы не вводите ключ API,  требуется имя арендатора"
+msgstr "Pokud nezadáte klíč k API, je vyžadováno jméno nájemníka (tenant)"
 
 #: templates/delete.html:32
 msgid ""
 "If you want to use the backup later, you can export the configuration before"
 " deleting it"
 msgstr ""
-"Если вы хотите использовать резервное копирование позже, вы можете "
-"экспортировать конфигурацию перед ее удалением"
+"Pokud zálohu chcete použít později, můžete exportovat nastavení než jí "
+"smažete"
 
 #: scripts/controllers/AppController.js:171
 msgid ""
 "If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
 "Do you want to set a password now?"
 msgstr ""
-"Если ваш компьютер находится в многопользовательской среде (например, на компьютере имеется несколько учетных записей), вам необходимо установить пароль, чтобы другие пользователи не могли получать доступ к данным вашей учетной записи.\n"
-"Вы хотите установить пароль сейчас?"
+"Pokud je stroj používán vícero uživateli (tj. je na něm více než jeden uživatelský účet), je třeba nastavit heslo, které ostatním uživatelům brání v přístupu k datům ve vašem účtu.\n"
+"Nastavit heslo nyní?"
 
 #: templates/import.html:26
 msgid "Import"
-msgstr "Импорт"
+msgstr "Import"
 
 #: templates/addoredit.html:96 templates/restoredirect.html:39
 msgid "Import Destination URL"
-msgstr "Импортировать URL-адрес назначения"
+msgstr "Importovat URL adresu cíle"
 
 #: templates/import.html:3
 msgid "Import backup configuration"
-msgstr "Импорт настройки резервной копии"
+msgstr "Importovat nastavení zálohy"
 
 #: scripts/directives/backupEditUri.js:159
 msgid "Import completed, but no certificates were found after the import"
-msgstr "Импорт завершен, но после импорта не были найдены сертификаты"
+msgstr "Import dokončen, ale nebyly po něm nalezeny žádné certifikáty"
 
 #: scripts/directives/backupEditUri.js:159
 msgid "Import failed"
-msgstr "Ошибка импорта"
+msgstr "Import se nezdařil"
 
 #: templates/addwizard.html:15
 msgid "Import from a file"
-msgstr "Импортировать из файла"
+msgstr "Importovat ze souboru"
 
 #: templates/import.html:30
 msgid "Importing ..."
-msgstr "Импортирование ..."
+msgstr "Importování…"
 
 #: scripts/controllers/EditBackupController.js:141
 msgid "Include a file?"
-msgstr "Включить файл?"
+msgstr "Zahrnout soubor?"
 
 #: scripts/services/AppUtils.js:163
 msgid "Include expression"
-msgstr "Выражение для включения"
+msgstr "Výraz pro zahrnutí"
 
 #: scripts/services/AppUtils.js:158
 msgid "Include regular expression"
-msgstr "Регулярное выражение для включения"
+msgstr "Regulární výraz pro zahrnutí"
 
 #: templates/captcha.html:11
 msgid "Incorrect answer, try again"
-msgstr "Неправильный ответ, попробуйте еще раз"
+msgstr "Nesprávná odpověď, zkuste to znovu"
 
 #: templates/settings.html:91
 msgid "Individual builds for developers only."
-msgstr "Индивидуальные сборки только для разработчиков."
+msgstr "Jednotlivá sestavení pouze pro vývojáře."
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
-msgstr "Информация"
+msgstr "Informace"
 
 #: templates/notificationarea.html:26 templates/updatechangelog.html:10
 msgid "Install"
-msgstr "Установить"
+msgstr "Nainstalovat"
 
 #: scripts/controllers/UpdateChangelogController.js:14
 msgid "Install failed:"
-msgstr "Установка не удалась:"
+msgstr "Instalace se nezdařila:"
 
 #: scripts/services/EditUriBuiltins.js:771
 msgid "Invalid characters in path"
-msgstr "Недопустимые символы в пути"
+msgstr "Neplatné znaky v popisu umístění"
 
 #: scripts/controllers/EditBackupController.js:250
 #: scripts/controllers/EditBackupController.js:257
 msgid "Invalid retention time"
-msgstr "Недопустимое время хранения"
+msgstr "Neplatná doba ponechání"
 
 #: scripts/services/EditUriBuiltins.js:590
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
 msgstr ""
-"К некоторым FTP возможно подключиться без пароля.\n"
-"Вы уверены, что ваш FTP-сервер поддерживает вход без пароля?"
+"K některým FTP serverům je možné se připojit i bez hesla.\n"
+"Opravdu to tento FTP server umožňuje?"
 
 #: scripts/services/AppUtils.js:81
 msgid "KByte"
-msgstr "КБайт"
+msgstr "KB"
 
 #: scripts/services/AppUtils.js:114
 msgid "KByte/s"
-msgstr "КБ/сек"
+msgstr "KB/s"
 
 #: templates/addoredit.html:303
 msgid "Keep this number of backups"
-msgstr "Хранить данное количество резервных копий"
+msgstr "Ponechat tento počet záloh"
 
 #: templates/settings.html:39
 msgid "Language in user interface"
-msgstr "Язык пользовательского интерфейса"
+msgstr "Jazyk textů v uživatelském rozhraní"
 
 #: scripts/controllers/RestoreController.js:37
 msgid "Last month"
-msgstr "Последний месяц"
+msgstr "Minulý měsíc"
 
 #: templates/home.html:41
 msgid "Last successful run:"
-msgstr "Последний успешный запуск:"
+msgstr "Poslední úspěšný běh:"
 
 #: scripts/controllers/RestoreController.js:56
 msgid "Latest"
-msgstr "Последнее"
+msgstr "Poslední"
 
 #: templates/about.html:6
 msgid "Libraries"
-msgstr "Библиотеки"
+msgstr "Knihovny"
 
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates ..."
-msgstr "Список дат резервного копирования ..."
+msgstr "Vypisování datumů záloh…"
 
 #: scripts/services/ServerStatus.js:60 scripts/services/ServerStatus.js:62
 msgid "Listing remote files ..."
-msgstr "Список удаленных файлов..."
+msgstr "Vypisování vzdálených souborů…"
 
 #: templates/log.html:8
 msgid "Live"
-msgstr "Текущие"
+msgstr "Aktuální"
 
 #: templates/addwizard.html:16
 msgid "Load a configuration from an exported job or a storage provider"
-msgstr ""
-"Загрузить настройки из экспортированного задания или поставщика хранилища"
+msgstr "Načíst nastavení z exportované úlohy nebo z poskytovatele úložiště"
 
 #: templates/restorewizard.html:16
 msgid "Load destination from an exported job or a storage provider"
-msgstr ""
-"Загрузить назначение из экспортированного задания или поставщика хранилища"
+msgstr "Načíst cíl z exportované úlohy nebo poskytovatele úložiště"
 
 #: templates/log.html:23 templates/log.html:54 templates/log.html:68
 msgid "Load older data"
-msgstr "Загрузить старые данные"
+msgstr "Načíst starší data"
 
 #: templates/about.html:44 templates/about.html:49 templates/about.html:55
 #: templates/captcha.html:14 templates/log.html:15 templates/log.html:22
 #: templates/log.html:45 templates/log.html:53 templates/log.html:60
 #: templates/log.html:67 templates/updatechangelog.html:7
 msgid "Loading ..."
-msgstr "Загрузка ..."
+msgstr "Načítání…"
 
 #: templates/delete.html:40
 msgid "Loading remote storage usage ..."
-msgstr "Загрузка использования удаленного хранилища ..."
+msgstr "Načítání údajů o využití vzdáleného úložiště…"
 
 #: templates/localdatabase.html:2
 msgid "Local database for"
-msgstr "Локальная база данных для"
+msgstr "Místní databáze pro"
 
 #: templates/localdatabase.html:26
 msgid "Local database path:"
-msgstr "Путь локальной базы данных:"
+msgstr "Popis umístění místní databáze:"
 
 #: scripts/services/SystemInfo.js:77
 msgid "Local storage"
-msgstr "Локальное хранилище"
+msgstr "Místní úložiště"
 
 #: templates/localdatabase.html:23
 msgid "Location"
-msgstr "Местоположение"
+msgstr "Umístění"
 
 #: templates/backends/gcs.html:21
 msgid "Location where buckets are created"
-msgstr "Место где создаются buckets"
+msgstr "Umístění ve kterém jsou „nádoby“ (bucket) vytvářeny"
 
 #: templates/log.html:4
 msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
-msgstr "Данные журнала для <b>{{Backup.Backup.Name}}</b>"
+msgstr "Zaznamenávat (log) údaje pro <b>{{Backup.Backup.Name}}</b>"
 
 #: templates/log.html:3
 msgid "Log data from the server"
-msgstr "Сообщения журнала сервера"
+msgstr "Zaznamenávat data ze serveru"
 
 #: index.html:229
 msgid "Log out"
-msgstr "Выход"
+msgstr "Odhlásit se"
 
 #: scripts/services/AppUtils.js:82
 msgid "MByte"
-msgstr "Мбайт"
+msgstr "MB"
 
 #: scripts/services/AppUtils.js:115
 msgid "MByte/s"
-msgstr "Мбайт/с"
+msgstr "MB/s"
 
 #: templates/localdatabase.html:11
 msgid "Maintenance"
-msgstr "Техническое обслуживание"
+msgstr "Údržba"
 
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
-msgstr "Ввести путь вручную"
+msgstr "Zadejte popis umístění ručně"
 
 #: templates/throttle.html:15
 msgid "Max download speed"
-msgstr "Максимальная скорость загрузки"
+msgstr "Nejvyšší rychlost stahování"
 
 #: templates/throttle.html:5
 msgid "Max upload speed"
-msgstr "Максимальная скорость выгрузки"
+msgstr "Nejvyšší rychlost odesílání"
 
 #: index.html:152 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:340 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
-msgstr "Меню"
+msgstr "Nabídka"
 
 #: scripts/directives/sourceFolderPicker.js:471
 msgid "Microsoft SQL Database:"
-msgstr "База данных Microsoft SQL:"
+msgstr "Databáze Microsoft SQL:"
 
 #: scripts/directives/sourceFolderPicker.js:449
 msgid "Microsoft SQL Databases"
-msgstr "Баз данных Microsoft SQL"
+msgstr "Databáze Microsoft SQL"
 
 #: templates/backends/sia.html:14
 msgid "Minimum redundancy"
-msgstr "Минимальная избыточность"
+msgstr "Minimální redundance"
 
 #: scripts/services/EditUriBuiltins.js:775
 msgid "Minimum redundancy is 1.0"
-msgstr "Минимальная избыточность - 1.0"
+msgstr "Minimální redundance je 1.0"
 
 #: scripts/services/AppUtils.js:88 scripts/services/AppUtils.js:98
 #: templates/settings.html:32
 msgid "Minutes"
-msgstr "минут"
+msgstr "Minut"
 
 #: scripts/controllers/EditBackupController.js:217
 msgid "Missing name"
-msgstr "Отсутствует имя"
+msgstr "Chybějící název"
 
 #: scripts/controllers/EditBackupController.js:225
 msgid "Missing passphrase"
-msgstr "Отсутствующие парольная фраза"
+msgstr "Chybějící heslová fráze"
 
 #: scripts/controllers/EditBackupController.js:238
 msgid "Missing sources"
-msgstr "Отсутствуют источники"
+msgstr "Chybějící zdroje"
 
 #: scripts/services/AppUtils.js:103
 msgid "Mon"
-msgstr "Пн"
+msgstr "Po"
 
 #: scripts/services/AppUtils.js:92 templates/addoredit.html:316
 msgid "Months"
-msgstr "Месяцев"
+msgstr "Měsíců"
 
 #: templates/localdatabase.html:34
 msgid "Move existing database"
-msgstr "Перемещение существующей базы данных"
+msgstr "Přesunout existující databázi"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Move failed:"
-msgstr "Перемещение не удалось:"
+msgstr "Přesun se nezdařil:"
 
 #: scripts/services/AppUtils.js:53
 msgid "My Documents"
-msgstr "Мои документы"
+msgstr "Moje dokumenty"
 
 #: scripts/services/AppUtils.js:55
 msgid "My Music"
-msgstr "Моя музыка"
+msgstr "Hudba"
 
 #: templates/addoredit.html:40
 msgid "My Photos"
-msgstr "Мои фотографии"
+msgstr "Fotografie"
 
 #: scripts/services/AppUtils.js:57
 msgid "My Pictures"
-msgstr "Мои Картинки"
+msgstr "Obrázky"
 
 #: templates/addoredit.html:39
 msgid "Name"
-msgstr "Имя"
+msgstr "Název"
 
 #: templates/home.html:47
 msgid "Never"
-msgstr "Никогда"
+msgstr "Nikdy"
 
 #: templates/notificationarea.html:20
 msgid "New update found: {{message}}"
-msgstr "Найдено новое обновление: {{message}}"
+msgstr "Nalezena nová aktualizace: {{message}}"
 
 #: scripts/services/EditUriBuiltins.js:121
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
 msgstr ""
-"Новое имя пользователя — {{user}}.\n"
-"Обновлены учетные данные для использования нового пользователя с ограниченными правами"
+"Nové uživatelské jméno je {{user}}.\n"
+"Aktualizované přihlašovací údaje které použít pro uživatele s omezenými přístupovými právy"
 
 #: templates/addoredit.html:109 templates/addoredit.html:236
 #: templates/addoredit.html:286 templates/addoredit.html:78
 #: templates/addwizard.html:28 templates/restoredirect.html:52
 #: templates/restorewizard.html:30
 msgid "Next"
-msgstr "Далее"
+msgstr "Další"
 
 #: templates/home.html:51
 msgid "Next scheduled run:"
-msgstr "Следующий запланированный запуск:"
+msgstr "Příští naplánované spuštění:"
 
 #: index.html:183
 msgid "Next scheduled task:"
-msgstr "Следующее запланированное задание:"
+msgstr "Příští naplánovaná úloha:"
 
 #: index.html:180
 msgid "Next task:"
-msgstr "Следующая задача:"
+msgstr "Příští úloha:"
 
 #: templates/addoredit.html:254
 msgid "Next time"
-msgstr "В следующий раз"
+msgstr "Příště"
 
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:131
@@ -1463,7 +1448,7 @@ msgstr "В следующий раз"
 #: scripts/services/EditUriBuiltins.js:702
 #: scripts/services/EditUriBuiltins.js:719
 msgid "No"
-msgstr "Нет"
+msgstr "Ne"
 
 #: scripts/directives/backupEditUri.js:210
 msgid ""
@@ -1471,46 +1456,45 @@ msgid ""
 "\n"
 "Do you want to approve the reported host key?"
 msgstr ""
-"Сертификат не был указан ранее, пожалуйста проверьте с администратором сервера ключ: {{key}} \n"
+"Předtím nebyl určen žádný certifikát, ověřte se správcem serveru že klíč je správný: {{key}}\n"
 "\n"
-"Вы хотите утвердить полученный ключ сервера?"
+"Schvalujete tento klíč stroje?"
 
 #: templates/edituri.html:12
 msgid "No editor found for the &quot;{{backend}}&quot; storage type"
-msgstr "Не найден редактор для хранилища типа &quot;{{backend}}&quot;"
+msgstr "Nebyl nalezen žádný editor pro typ úložiště „{{backend}}“"
 
 #: scripts/controllers/EditBackupController.js:378 templates/addoredit.html:45
 msgid "No encryption"
-msgstr "Без шифрования"
+msgstr "Nešifrovat"
 
 #: scripts/controllers/RestoreController.js:192
 msgid "No items selected"
-msgstr "Элементы не выбраны"
+msgstr "Nejsou vybrané žádné položky"
 
 #: scripts/controllers/RestoreController.js:192
 msgid "No items to restore, please select one or more items"
-msgstr ""
-"Нет элементов для восстановления, выберите один или несколько элементов"
+msgstr "Žádné položky pro obnovení – vyberte alespoň jednu"
 
 #: scripts/controllers/ExportController.js:10
 msgid "No passphrase entered"
-msgstr "Не введена кодовая фраза"
+msgstr "Není zadaná žádná heslová fráze"
 
 #: index.html:185
 msgid "No scheduled tasks"
-msgstr "Нет запланированных задач"
+msgstr "Žádné naplánované úlohy"
 
 #: scripts/controllers/AppController.js:172
 msgid "No, my machine has only a single account"
-msgstr "Нет, мой компьютер имеет единственную учётную запись"
+msgstr "Ne, na mém stroji je pouze jediný uživatelský účet"
 
 #: scripts/controllers/EditBackupController.js:231
 msgid "Non-matching passphrase"
-msgstr "Кодовые фразы не совпадают"
+msgstr "Zadání heslové fráze se neshodují"
 
 #: templates/settings.html:111
 msgid "None / disabled"
-msgstr "Нет / отключено"
+msgstr "Žádné / vypnuté"
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
@@ -1527,70 +1511,70 @@ msgstr "OK"
 
 #: templates/backends/openstack.html:7
 msgid "OpenStack AuthURI"
-msgstr "OpenStack AuthURI"
+msgstr "AuthURI pro OpenStack"
 
 #: scripts/services/SystemInfo.js:50
 msgid "OpenStack Object Storage / Swift"
-msgstr "OpenStack Object Storage / Swift"
+msgstr "Objektové úložiště OpenStack (Swift)"
 
 #: scripts/controllers/SystemSettingsController.js:121
 #: scripts/controllers/SystemSettingsController.js:132
 msgid "Operation failed:"
-msgstr "Операция не удалась:"
+msgstr "Operace se nezdařila:"
 
 #: templates/home.html:11
 msgid "Operations:"
-msgstr "Операции:"
+msgstr "Operace:"
 
 #: templates/backends/file.html:34
 msgid "Optional authentication password"
-msgstr "Необязательный пароль аутентификации"
+msgstr "Volitelné ověřovací heslo"
 
 #: templates/backends/file.html:30
 msgid "Optional authentication username"
-msgstr "Необязательное имя пользователя"
+msgstr "Volitelné uživatelské jméno pro ověření"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
 #: templates/settings.html:133 templates/settings.html:139
 msgid "Options"
-msgstr "Параметры"
+msgstr "Předvolby"
 
 #: templates/settings.html:131
 msgid ""
 "Options added here are applied to all backups, but can be overridden in each"
 " individual backup"
 msgstr ""
-"Опции, добавленные здесь применяются ко всем резервным копиям, но могут быть"
-" переопределены для каждой резервной копии индивидуально"
+"Zde přidané volby jsou použity na všechny zálohy, ale je možné je přepsat v "
+"nastavení jednotlivých záloh"
 
 #: templates/restore.html:81
 msgid "Original location"
-msgstr "Исходное местоположение"
+msgstr "Původní umístění"
 
 #: scripts/services/SystemInfo.js:80
 msgid "Others"
-msgstr "Другие"
+msgstr "Ostatní"
 
 #: templates/restore.html:114
 msgid "Overwrite"
-msgstr "Перезаписать"
+msgstr "Přepsat"
 
 #: templates/addoredit.html:54 templates/export.html:21
 #: templates/restoredirect.html:60
 msgid "Passphrase"
-msgstr "Кодовая фраза"
+msgstr "Heslová fráze"
 
 #: templates/import.html:14
 msgid "Passphrase (if encrypted)"
-msgstr "Кодовая фраза (если зашифрован)"
+msgstr "Heslová fráze (v případě, že je použito šifrování)"
 
 #: scripts/controllers/EditBackupController.js:342
 msgid "Passphrase changed"
-msgstr "Кодовая фраза изменена"
+msgstr "Heslová fráze změněna"
 
 #: scripts/controllers/EditBackupController.js:231
 msgid "Passphrases are not matching"
-msgstr "Кодовые фразы не совпадают"
+msgstr "Zadání heslové fráze se neshodují"
 
 #: scripts/services/EditUriBuiltins.js:749
 #: scripts/services/EditUriBuiltins.js:759 templates/backends/file.html:33
@@ -1599,523 +1583,525 @@ msgstr "Кодовые фразы не совпадают"
 #: templates/backends/mega.html:12 templates/backends/openstack.html:22
 #: templates/settings.html:8
 msgid "Password"
-msgstr "Пароль"
+msgstr "Heslo"
 
 #: scripts/controllers/EditBackupController.js:27
 msgid "Passwords do not match"
-msgstr "Пароли не совпадают"
+msgstr "Zadání hesla se neshodují"
 
 #: scripts/services/ServerStatus.js:52
 msgid "Patching files with local blocks ..."
-msgstr "Исправление файлов локальными блоками ..."
+msgstr "Opravování souborů pomocí místních bloků…"
 
 #: scripts/controllers/EditBackupController.js:131
 msgid "Path not found"
-msgstr "Путь не найден"
+msgstr "Umístění nenalezeno"
 
 #: templates/backends/generic.html:13 templates/backends/oauth.html:2
 msgid "Path on server"
-msgstr "Путь на сервере"
+msgstr "Popis umístění na serveru"
 
 #: templates/backends/b2.html:8 templates/backends/s3.html:50
 msgid "Path or subfolder in the bucket"
-msgstr "Путь или подпапка в bucket"
+msgstr "Umístění nebo podsložka v „nádobě“ (bucket)"
 
 #: templates/settings.html:18
 msgid "Pause"
-msgstr "Пауза"
+msgstr "Pozastavit"
 
 #: templates/settings.html:16
 msgid "Pause after startup or hibernation"
-msgstr "Пауза после запуска или спящего режима"
+msgstr "Pozastavit po spuštění nebo hibernaci"
 
 #: scripts/controllers/AppController.js:42
 msgid "Pause options"
-msgstr "Параметры паузы"
+msgstr "Předvolby pozastavení"
 
 #: templates/restore.html:123
 msgid "Permissions"
-msgstr "Разрешения"
+msgstr "Přístupová práva"
 
 #: templates/restore.html:85
 msgid "Pick location"
-msgstr "Выберете местоположение"
+msgstr "Vyberte umístění"
 
 #: templates/restorewizard.html:10
 msgid "Point to your backup files and restore from there"
-msgstr "Укажите вашу резервную копию и восстановите данные из неё"
+msgstr "Nasměrujte na soubory se zálohou a obnovte odsud"
 
 #: templates/backends/generic.html:9
 msgid "Port"
-msgstr "Порт"
+msgstr "Port"
 
 #: templates/addoredit.html:110 templates/addoredit.html:237
 #: templates/addoredit.html:287 templates/addoredit.html:367
 #: templates/restoredirect.html:81
 msgid "Previous"
-msgstr "Назад"
+msgstr "Předchozí"
 
 #: templates/backends/gcs.html:39
 msgid "ProjectID is optional if the bucket exist"
-msgstr "ProjectID необязателен, если существует bucket"
+msgstr ""
+"Pokud „nádoba“ (bucket) existuje, je identifikátor projektu (ProjectID) "
+"nepovinný"
 
 #: scripts/services/SystemInfo.js:79
 msgid "Proprietary"
-msgstr "Проприетарное"
+msgstr "Proprietární"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
-msgstr "Очистка файлов ..."
+msgstr "Trvalé vymazávání souborů…"
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
-msgstr "Пересборка локальной базы данных ..."
+msgstr "Znovuvytváření místní databáze…"
 
 #: templates/localdatabase.html:20
 msgid "Recreate (delete and repair)"
-msgstr "Пересоздать (удалить и исправить)"
+msgstr "Vytvořit znovu (smazat a opravit)"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database ..."
-msgstr "Пересоздание базы данных ..."
+msgstr "Znovuvytváření databáze…"
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup ..."
-msgstr "Регистрация временной резервной копии ..."
+msgstr "Registrace dočasné zálohy…"
 
 #: scripts/controllers/EditBackupController.js:116
 msgid "Relative paths not allowed"
-msgstr "Относительные пути не допускаются"
+msgstr "Vztažené (relativní) popisy umístění není možné použít"
 
 #: templates/captcha.html:7
 msgid "Reload"
-msgstr "Перезагрузить"
+msgstr "Načíst znovu"
 
 #: templates/log.html:10
 msgid "Remote"
-msgstr "Удаленный"
+msgstr "Vzdálené"
 
 #: templates/addoredit.html:193
 msgid "Remove"
-msgstr "Удалить"
+msgstr "Odebrat"
 
 #: templates/advancedoptionseditor.html:40
 msgid "Remove option"
-msgstr "Удалить параметр"
+msgstr "Odebrat volbu"
 
 #: templates/localdatabase.html:18
 msgid "Repair"
-msgstr "Исправить"
+msgstr "Opravit"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Reparing ..."
-msgstr "Починка ..."
+msgstr "Opravování…"
 
 #: templates/addoredit.html:58
 msgid "Repeat Passphrase"
-msgstr "Повторить кодовую фразу"
+msgstr "Zopakování heslové fráze"
 
 #: templates/home.html:33
 msgid "Reporting:"
-msgstr "Отчетность:"
+msgstr "Hlášení:"
 
 #: templates/localdatabase.html:31
 msgid "Reset"
-msgstr "Сбросить"
+msgstr "Resetovat"
 
 #: index.html:214 templates/restore.html:131
 msgid "Restore"
-msgstr "Восстановление"
+msgstr "Obnovit"
 
 #: templates/restore.html:45
 msgid "Restore files"
-msgstr "Восстановить файлы"
+msgstr "Obnovit soubory"
 
 #: templates/home.html:14
 msgid "Restore files ..."
-msgstr "Восстановить файлы..."
+msgstr "Obnovit soubory…"
 
 #: templates/restore.html:46
 msgid "Restore files from {{backupname}}"
-msgstr "Восстановить файлы из {{backupname}}"
+msgstr "Obnovit soubory z {{backupname}}"
 
 #: templates/restore.html:48
 msgid "Restore from"
-msgstr "Восстановить из"
+msgstr "Obnovit z"
 
 #: templates/import.html:4
 msgid "Restore from backup configuration"
-msgstr "Восстановить из конфигурации резервной копии"
+msgstr "Obnovit nastavení ze zálohy"
 
 #: templates/restorewizard.html:15
 msgid "Restore from configuration ..."
-msgstr "Восстановление из конфигурации ..."
+msgstr "Obnovit z nastavení…"
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
 msgid "Restore options"
-msgstr "Параметры восстановления"
+msgstr "Volby obnovení"
 
 #: templates/restore.html:126
 msgid "Restore read/write permissions"
-msgstr "Восстановить разрешения чтения/записи"
+msgstr "Obnovit práva pro čtení/zápis"
 
 #: scripts/controllers/RestoreController.js:371
 #: scripts/controllers/RestoreController.js:393
 msgid "Restoring files ..."
-msgstr "Восстановление файлов ..."
+msgstr "Obnovování souborů…"
 
 #: index.html:217
 msgid "Resume"
-msgstr "Продолжить"
+msgstr "Pokračovat"
 
 #: templates/addoredit.html:259
 msgid "Run again every"
-msgstr "Запускать каждый"
+msgstr "Spustit znovu každou"
 
 #: templates/home.html:13 templates/home.html:47
 msgid "Run now"
-msgstr "Запустить сейчас"
+msgstr "Spustit nyní"
 
 #: scripts/controllers/StateController.js:25
 msgid "Running ..."
-msgstr "Запуск ..."
+msgstr "Spuštěné…"
 
 #: templates/commandline.html:58
 msgid "Running ...."
-msgstr "Выполнение..."
+msgstr "Spuštěné…"
 
 #: templates/commandline.html:47
 msgid "Running commandline entry"
-msgstr "Выполнение записи командной строки"
+msgstr "Spuštěná položka příkazového řádku"
 
 #: index.html:172
 msgid "Running task:"
-msgstr "Выполняемая задача:"
+msgstr "Spuštěná úloha:"
 
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
-msgstr "S3 совместимый"
+msgstr "Kompatibilní s S3"
 
 #: templates/settings.html:68
 msgid "Same as the base install version: {{channelname}}"
-msgstr "Такой же как в базовой версии: {{channelname}}"
+msgstr "Stejné jako základní nainstalovaná verze: {{channelname}}"
 
 #: scripts/services/AppUtils.js:108
 msgid "Sat"
-msgstr "Сб"
+msgstr "So"
 
 #: templates/addoredit.html:366 templates/localdatabase.html:32
 msgid "Save"
-msgstr "Сохранить"
+msgstr "Uložit"
 
 #: templates/localdatabase.html:33
 msgid "Save and repair"
-msgstr "Сохранить и исправить"
+msgstr "Uložit a opravit"
 
 #: templates/restore.html:118
 msgid "Save different versions with timestamp in file name"
-msgstr "Сохранить различные версии с отметкой времени в имени файла"
+msgstr "Uložit různé verze odlišené časovou značkou v názvu souboru"
 
 #: templates/import.html:19
 msgid "Save immediately"
-msgstr "Немедленно сохранить"
+msgstr "Okamžitě uložit"
 
 #: scripts/services/ServerStatus.js:50
 msgid "Scanning existing files ..."
-msgstr "Сканирование существующих файлов ..."
+msgstr "Skenování existujících souborů…"
 
 #: scripts/services/ServerStatus.js:51
 msgid "Scanning for local blocks ..."
-msgstr "Сканирование локальных блоков ..."
+msgstr "Skenování místních bloků…"
 
 #: templates/addoredit.html:245 templates/addoredit.html:27
 msgid "Schedule"
-msgstr "Расписание"
+msgstr "Plán"
 
 #: templates/restore.html:60
 msgid "Search"
-msgstr "Поиск"
+msgstr "Hledat"
 
 #: templates/restore.html:56
 msgid "Search for files"
-msgstr "Поиск файлов"
+msgstr "Hledat soubory"
 
 #: scripts/services/AppUtils.js:97 templates/settings.html:31
 msgid "Seconds"
-msgstr "Секунд"
+msgstr "Sekund"
 
 #: templates/log.html:29
 msgid "Select a log level and see messages as they happen:"
 msgstr ""
-"Выберите уровень ведения журнала и смотрите сообщения по мере прихода:"
+"Vyberte úroveň podrobnosti zaznamenávaných událostí a sledujte zprávy:"
 
 #: templates/restore.html:23 templates/restore.html:38
 #: templates/restoredirect.html:23
 msgid "Select files"
-msgstr "Выбор файлов"
+msgstr "Vybrat soubory"
 
 #: scripts/services/EditUriBuiltins.js:767 templates/backends/s3.html:8
 #: templates/backends/sia.html:2
 msgid "Server"
-msgstr "Сервер"
+msgstr "Server"
 
 #: templates/backends/generic.html:7
 msgid "Server and port"
-msgstr "Сервер и порт"
+msgstr "Server a port"
 
 #: templates/backends/generic.html:8
 msgid "Server hostname or IP"
-msgstr "Имя сервера или IP"
+msgstr "Název nebo IP adresa serveru"
 
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
 msgid "Server is currently paused,"
-msgstr "Сервер приостановлен,"
+msgstr "Server je nyní pozastavený,"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server is currently paused, do you want to resume now?"
-msgstr "Сервер в настоящее время приостановлен, вы хотите возобновить сейчас?"
+msgstr "Server je nyní pozastavený, chcete ho nyní znovu spustit?"
 
 #: templates/backends/sia.html:10
 msgid "Server password"
-msgstr "Пароль сервера"
+msgstr "Heslo serveru"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server paused"
-msgstr "Сервер приостановлен"
+msgstr "Server pozastaven"
 
 #: templates/about.html:71
 msgid "Server state properties"
-msgstr "Свойства состояния сервера"
+msgstr "Vlastnosti stavu serveru"
 
 #: index.html:220 templates/settings.html:2
 msgid "Settings"
-msgstr "Настройки"
+msgstr "Nastavení"
 
 #: templates/addoredit.html:65 templates/notificationarea.html:12
 #: templates/notificationarea.html:30
 msgid "Show"
-msgstr "Показать"
+msgstr "Zobrazit"
 
 #: templates/addoredit.html:128
 msgid "Show advanced editor"
-msgstr "Текстовое отображение"
+msgstr "Zobrazit pokročilý editor"
 
 #: templates/addoredit.html:139 templates/backends/file.html:16
 #: templates/restore.html:99
 msgid "Show hidden folders"
-msgstr "Показать скрытые папки"
+msgstr "Zobrazit skryté složky"
 
 #: index.html:223
 msgid "Show log"
-msgstr "Журнал"
+msgstr "Zobrazit záznam událostí (log)"
 
 #: templates/home.html:35
 msgid "Show log ..."
-msgstr "Показать журнал ..."
+msgstr "Zobrazit záznam událostí (log)…"
 
 #: templates/addoredit.html:131
 msgid "Show treeview"
-msgstr "Древовидное отображение"
+msgstr "Zobrazit stromový pohled"
 
 #: templates/backends/sia.html:11
 msgid "Sia server password"
-msgstr "Пароль сервера Sia"
+msgstr "Heslo Sia serveru"
 
 #: templates/backends/openstack.html:33
 msgid ""
 "Some OpenStack providers allow an API key instead of a password and tenant "
 "name"
 msgstr ""
-"Некоторые провайдеры OpenStack позволяют использовать ключ API вместо имени "
-"клиента и пароля"
+"Někteří poskytovatelé OpenStack umožňují použití klíče k API namísto hesla a"
+" jména nájemníka (tenant)"
 
 #: templates/addoredit.html:26
 msgid "Source Data"
-msgstr "Исходные данные"
+msgstr "Zdrojová data"
 
 #: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:120
 msgid "Source data"
-msgstr "Данные для резервирования"
+msgstr "Zdrojová data"
 
 #: templates/addoredit.html:145
 msgid "Source folders"
-msgstr "Исходные папки"
+msgstr "Zdrojové složky"
 
 #: templates/home.html:56
 msgid "Source:"
-msgstr "Источник:"
+msgstr "Zdroj:"
 
 #: templates/settings.html:86
 msgid "Specific builds for developers only."
-msgstr "Особые сборки только для разработчиков."
+msgstr "Konkrétní sestavení pouze pro vývojáře."
 
 #: scripts/services/SystemInfo.js:78
 msgid "Standard protocols"
-msgstr "Стандартные протоколы"
+msgstr "Standardní protokoly"
 
 #: scripts/services/ServerStatus.js:33 scripts/services/ServerStatus.js:45
 msgid "Starting ..."
-msgstr "Начинаю ..."
+msgstr "Spouštění…"
 
 #: scripts/controllers/RestoreController.js:367
 #: scripts/controllers/RestoreController.js:391
 msgid "Starting the restore process ..."
-msgstr "Запуск процесса восстановления ..."
+msgstr "Spouštění procesu obnovení…"
 
 #: scripts/controllers/StateController.js:112
 msgid "Stop after the current file"
-msgstr "Остановиться после текущего файла"
+msgstr "Zastavit po stávajícím souboru"
 
 #: scripts/controllers/StateController.js:103
 msgid "Stop after upload"
-msgstr "Остановить после выгрузки"
+msgstr "Zastavit po nahrání"
 
 #: scripts/controllers/StateController.js:103
 #: scripts/controllers/StateController.js:112
 msgid "Stop now"
-msgstr "Остановить сейчас"
+msgstr "Zastavit nyní"
 
 #: scripts/controllers/StateController.js:101
 msgid "Stop running backup"
-msgstr "Остановить резервное копирование"
+msgstr "Zastavit probíhající zálohu"
 
 #: scripts/controllers/StateController.js:110
 msgid "Stop running task"
-msgstr "Остановить задачу"
+msgstr "Zastavit probíhající úlohu"
 
 #: index.html:168
 msgid "Stopping after upload:"
-msgstr "Остановка после выгрузки:"
+msgstr "Zastavování po nahrávání:"
 
 #: index.html:173
 msgid "Stopping task:"
-msgstr "Остановка задачи:"
+msgstr "Zastavování úlohy:"
 
 #: templates/edituri.html:3
 msgid "Storage Type"
-msgstr "Тип хранилища"
+msgstr "Typ úložiště"
 
 #: templates/backends/s3.html:38
 msgid "Storage class"
-msgstr "Класс хранилища"
+msgstr "Třída úložiště"
 
 #: templates/backends/gcs.html:32
 msgid "Storage class for creating a bucket"
-msgstr "Класс хранения для создания bucket"
+msgstr "Třída úložiště pro vytváření „nádoby“ (bucket)"
 
 #: templates/log.html:7
 msgid "Stored"
-msgstr "Сохраненные"
+msgstr "Uloženo"
 
 #: scripts/controllers/EditBackupController.js:31
 msgid "Strong"
-msgstr "Сильный"
+msgstr "Silné"
 
 #: scripts/directives/backupEditUri.js:51
 #: scripts/directives/backupEditUri.js:54
 msgid "Success"
-msgstr "Успех"
+msgstr "Úspěch"
 
 #: scripts/services/AppUtils.js:109
 msgid "Sun"
-msgstr "Вс"
+msgstr "Ne"
 
 #: scripts/services/AppUtils.js:71
 msgid "Symbolic link"
-msgstr "Символическая ссылка"
+msgstr "Symbolický odkaz"
 
 #: templates/settings.html:106
 msgid "System default ({{levelname}})"
-msgstr "По умолчанию ({{levelname}})"
+msgstr "Systémové výchozí ({{levelname}})"
 
 #: scripts/controllers/EditBackupController.js:18
 msgid "System files"
-msgstr "Системные файлы"
+msgstr "Systémové soubory"
 
 #: templates/about.html:7
 msgid "System info"
-msgstr "Информация о системе"
+msgstr "Informace o systému"
 
 #: templates/about.html:63
 msgid "System properties"
-msgstr "Свойства системы"
+msgstr "Vlastnosti systému"
 
 #: scripts/services/AppUtils.js:84
 msgid "TByte"
-msgstr "ТБайт"
+msgstr "TB"
 
 #: scripts/services/AppUtils.js:117
 msgid "TByte/s"
-msgstr "ТБайт/s"
+msgstr "TB/s"
 
 #: templates/backends/sia.html:7
 msgid "Target path, ie /backup"
-msgstr "Целевой путь, т.е. /backup"
+msgstr "Popis umístění cíle, tj. /zaloha"
 
 #: templates/waitarea.html:5
 msgid "Task is running"
-msgstr "Выполняется задача"
+msgstr "Úloha je spuštěná"
 
 #: scripts/controllers/EditBackupController.js:19
 msgid "Temporary files"
-msgstr "Временные файлы"
+msgstr "Dočasné soubory"
 
 #: templates/backends/openstack.html:27
 msgid "Tenant Name"
-msgstr "Имя клиента"
+msgstr "Jméno nájemníka (tenant)"
 
 #: templates/edituri.html:21
 msgid "Test connection"
-msgstr "Проверить доступ"
+msgstr "Vyzkoušet spojení"
 
 #: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
 msgid "Testing ..."
-msgstr "Проверка ..."
+msgstr "Testování…"
 
 #: scripts/directives/backupEditUri.js:44
 msgid "Testing connection ..."
-msgstr "Проверка соединения..."
+msgstr "Zkouška spojení…"
 
 #: scripts/services/EditUriBuiltins.js:42
 msgid "Testing permissions ..."
-msgstr "Проверка разрешений ..."
+msgstr "Zkouška přístupových práv…"
 
 #: scripts/services/EditUriBuiltins.js:42
 msgid "Testing permissions..."
-msgstr "Проверка разрешений..."
+msgstr "Zkouška přístupových práv…"
 
 #: scripts/services/EditUriBuiltins.js:719
 msgid "The bucket name should be all lower-case, convert automatically?"
-msgstr "Имя bucket должно быть строчным, преобразовать автоматически?"
+msgstr "Název nádoby by měl být malými písmeny, převést automaticky?"
 
 #: scripts/services/EditUriBuiltins.js:702
 msgid ""
 "The bucket name should start with your username, prepend automatically?"
 msgstr ""
-"Имя bucket следует начинать с вашего имени пользователя, вставить "
-"автоматически?"
+"Název „nádoby“ (bucket) by měl začínat vaším uživatelským jménem – předřadit"
+" automaticky?"
 
 #: index.html:312
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
-msgstr "Потеряно соединение с сервером, повторная попытка через {{time}} ..."
+msgstr "Spojení se serverem ztraceno, opětovný pokus za {{time}}…"
 
 #: templates/settings.html:53
 msgid "The dark theme (by Michal)"
-msgstr "Тёмная тема (от Michael)"
+msgstr "Tmavé téma vzhledu (od Michala)"
 
 #: templates/settings.html:52
 msgid "The default blue on white theme (by Alex)"
-msgstr "Стандартная тема синий на белом (от Alex)"
+msgstr "Výchozí téma vzhledu modrá na bílé (od Alexe)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
 "The folder {{folder}} does not exist\n"
 "Create it now?"
 msgstr ""
-"Папка {{folder}} не существует\n"
-"Создать её?"
+"Složka {{folder}} neexistuje\n"
+"Vytvořit nyní?"
 
 #: scripts/directives/backupEditUri.js:212
 msgid ""
@@ -2123,13 +2109,13 @@ msgid ""
 "\n"
 "Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
 msgstr ""
-"Ключ узла изменился, пожалуйста, проверьте у администратора сервера так ли это, в противном случае вы можете быть жертвой атаки MAN-IN-THE-MIDDLE.\n"
+"Klíč stroje se změnil, zkontrolujte se správcem serveru zda je správný, protože byste mohli být obětí útoku typu člověk uprostřed (man-in-the-midle).\n"
 "\n"
-"Вы хотите ЗАМЕНИТЬ ваш ТЕКУЩИЙ ключ узла «{{prev}}» ПОЛУЧЕННЫМ ключом хоста: {{key}}?"
+"Chcete NAHRADIT STÁVAJÍCÍ klíč stroje \"{{prev}}\" NAHLÁŠENÝM klíčem stroje: {{key}}?"
 
 #: scripts/controllers/EditBackupController.js:131
 msgid "The path does not appear to exist, do you want to add it anyway?"
-msgstr "Путь, по-видимому, не существует, вы всё равно хотите его добавить?"
+msgstr "Popisované umístění zdá se neexistuje, přejete si ho přidat i tak?"
 
 #: scripts/controllers/EditBackupController.js:141
 msgid ""
@@ -2137,16 +2123,17 @@ msgid ""
 "\n"
 "Do you want to include the specified file?"
 msgstr ""
-"Путь не заканчивается символом «{{dirsep}}», что означает, что вы включаете файл, а не папку.\n"
+"Dané umístění nekončí na znak „{{dirsep}}“, což znamená, že jste zahrnuli soubor, ne složku.\n"
 "\n"
-"Вы хотите включить указанный файл?"
+"Chcete zahrnout daný soubor?"
 
 #: scripts/controllers/EditBackupController.js:116
 msgid ""
 "The path must be an absolute path, i.e. it must start with a forward slash "
 "'/'"
 msgstr ""
-"Путь должен быть абсолютным, то есть он должен начинаться с косой черты «/»"
+"Je třeba, aby se jednalo o úplný popis umístění, tj. aby začínal dopředným "
+"lomítkem „/“"
 
 #: scripts/services/EditUriBuiltins.js:630
 msgid ""
@@ -2154,44 +2141,42 @@ msgid ""
 "\n"
 "Do you want to add the prefix to the path automatically?"
 msgstr ""
-"Путь должен начинаться с «{{prefix1}}\" или \"{{prefix2}}\", иначе вы не сможете увидеть файлы через веб-интерфейс HubiC.\n"
+"Popis umístění by měl začínat na „{{prefix1}}“ nebo „{{prefix2}}“, jinak soubory neuvidíte ve webovém rozhraní HubiC.\n"
 "\n"
-"Вы хотите, чтобы префикс был добавлен в путь автоматически?"
+"Chcete přidat předponu k popisu umístění automaticky?"
 
 #: templates/backends/s3.html:28
 msgid "The region parameter is only applied when creating a new bucket"
-msgstr "Параметр «регион» применяется только при создании нового bucket"
+msgstr "Parametr region je použit pouze při vytváření nové „nádoby“ (bucket)"
 
 #: templates/backends/openstack.html:38
 msgid "The region parameter is only used when creating a bucket"
-msgstr "Параметр «регион» используется только при создании bucket"
+msgstr "Parametr region je použit pouze při vytváření „nádoby“ (bucket)"
 
 #: scripts/directives/backupEditUri.js:87
 msgid ""
 "The server certificate could not be validated.\n"
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
 msgstr ""
-"Не удалось проверить сертификат сервера.\n"
-"Вы хотите утвердить SSL-сертификат с хэшом: {{hash}}?"
+"Certifikát serveru se nepodařilo ověřit.\n"
+"Chcete schválit SSL certifikát s otiskem: {{hash}}?"
 
 #: templates/backends/s3.html:40
 msgid "The storage class affects the availability and price for a stored file"
-msgstr "Класс хранилища влияет на доступность и цену сохраненного файла"
+msgstr "Třída úložiště ovlivňuje dostupnost a cenu za uložení souboru"
 
 #: scripts/controllers/RestoreDirectController.js:106
 msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
-msgstr ""
-"Целевая папка содержит зашифрованные файлы, пожалуйста, укажите кодовую "
-"фразу"
+msgstr "Cílová složka obsahuje zašifrované soubory, zadejte heslovou frázi"
 
 #: scripts/services/EditUriBuiltins.js:47
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
 msgstr ""
-"Пользователь имеет слишком много прав. Вы хотите создать нового пользователя"
-" с ограниченными правами, с разрешениями только на выбранный путь?"
+"Uživatel má příliš vysoká přístupová práva. Chcete vytvořit nového uživatele"
+" s právy omezenými pouze na vybraný popis umístění?"
 
 #: scripts/controllers/RestoreController.js:305
 msgid ""
@@ -2200,98 +2185,96 @@ msgid ""
 "unexpected places. Are you sure you want to continue without choosing a "
 "destination folder?"
 msgstr ""
-"Эта резервная копия была создана в другой операционной системе. "
-"Восстановление файлов без указания папки назначения может повлечь "
-"восстановление файлов в неожиданных местах. Вы уверены, что вы хотите "
-"продолжить без выбора папки назначения?"
+"Tato záloha byla vytvořena na jiném operačním systému. Obnovení souborů bez "
+"zadání cílové složky může způsobit, že soubory budou obnoveny do "
+"neočekávaných míst. Opravdu chcete pokračovat bez zvolení cílové složky?"
 
 #: scripts/controllers/RestoreController.js:36
 msgid "This month"
-msgstr "В этом месяце"
+msgstr "Tento měsíc"
 
 #: scripts/controllers/RestoreController.js:35
 msgid "This week"
-msgstr "На этой неделе"
+msgstr "Tento týden"
 
 #: scripts/controllers/AppController.js:57
 msgid "Throttle settings"
-msgstr ""
+msgstr "Nastavení přiškrcování"
 
 #: scripts/services/AppUtils.js:106
 msgid "Thu"
-msgstr "Чт"
+msgstr "Čt"
 
 #: templates/export.html:14
 msgid "To File"
-msgstr "В файл"
+msgstr "Do soubour"
 
 #: scripts/controllers/DeleteController.js:66
 msgid ""
 "To confirm you want to delete all remote files for \"{{name}}\", please "
 "enter the word you see below"
 msgstr ""
-"Чтобы подтвердить, что вы хотите удалить все дистанционные файлы для "
-"«{{name}}», введите слово, которое вы видите ниже"
+"Svůj úmysl smazat všechny vzdálené soubory pro  „{{name}}“ potvrďte opsáním "
+"níže uvedeného slova "
 
 #: scripts/controllers/ExportController.js:10
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
-msgstr ""
-"Чтобы экспортировать без кодовой фразы, снимите флажок «Зашифровать файл»"
+msgstr "Pro exportování bez heslové fráze odškrtněte „Šifrovat soubor“"
 
 #: scripts/controllers/RestoreController.js:33
 msgid "Today"
-msgstr "Сегодня"
+msgstr "Út"
 
 #: scripts/directives/backupEditUri.js:214
 msgid "Trust host certificate?"
-msgstr "Доверять сертификату хоста?"
+msgstr "Důvěřovat certifikátu stroje?"
 
 #: scripts/directives/backupEditUri.js:87
 msgid "Trust server certificate?"
-msgstr "Доверять сертификату сервера?"
+msgstr "Důvěřovat certifikátu serveru?"
 
 #: templates/settings.html:81
 msgid ""
 "Try out the new features we are working on. Don't use with important data."
 msgstr ""
-"Попробуйте новые возможности, находящиеся в разработке. Не используйте с "
-"важными данными."
+"Vyzkoušejte nové funkce na kterých pracujeme. Nepoužívejte pro důležitá "
+"data."
 
 #: scripts/services/AppUtils.js:104
 msgid "Tue"
-msgstr "Вт"
+msgstr "Út"
 
 #: templates/restore.html:57
 msgid "Type to highlight files"
-msgstr "Напишите для выделения файлов"
+msgstr "Soubory zvýrazňujte psaním"
 
 #: templates/restorewizard.html:25
 msgid "Unknown backup size and versions"
-msgstr "Неизвестные размер резервной копии и версии"
+msgstr "Neznámá velikost a verze databáze"
 
 #: templates/pause.html:31
 msgid "Until resumed"
-msgstr "До возобновления"
+msgstr "Dokud není pokračováno"
 
 #: templates/settings.html:64
 msgid "Update channel"
-msgstr "Канал обновлений"
+msgstr "Aktualizační kanál"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Update failed:"
-msgstr "Обновление не удалось:"
+msgstr "Aktualizace se nezdařila:"
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid "Updating with existing database"
-msgstr "Обновление с существующей базой данных"
+msgstr "Aktualizace se stávající databází"
 
 #: templates/addoredit.html:297
 msgid "Upload volume size"
-msgstr "Размер выгружаемых томов"
+msgstr "Velikost nahrávaného svazku"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
-msgstr "Выгрузка файла проверки ..."
+msgstr "Nahrávání ověřovacího souboru…"
 
 #: templates/settings.html:113
 msgid ""
@@ -2299,45 +2282,45 @@ msgid ""
 " features. We use them to generate <a href=\"{{link}}\" "
 "target=\"_blank\">public usage statistics</a>"
 msgstr ""
-"Отчёты об использовании помогают нам улучшить пользовательский интерфейс и "
-"оценить влияние новых функций. Мы используем отчёты для генерации <a "
-"href=\"{{link}}\" target=\"_blank\">публичной статистики использования</a>"
+"Hlášení využití nám pomáhají zlepšovat pro uživatele dojem z používání "
+"aplikace a vyhodnocovat úspěšnost nových funkcí. Používáme je pro vytváření "
+"<a href=\"{{link}}\" target=\"_blank\">veřejných statistik o používání</a>"
 
 #: templates/settings.html:101
 msgid "Usage statistics"
-msgstr "Статистика использования"
+msgstr "Statistiky využití"
 
 #: templates/settings.html:107
 msgid "Usage statistics, warnings, errors, and crashes"
-msgstr "Статистика использования, предупреждения, ошибки и падения"
+msgstr "Statistiky využití, varování, chyby a pády"
 
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
-msgstr "Использовать SSL"
+msgstr "Použít SSL"
 
 #: scripts/controllers/EditBackupController.js:399
 msgid "Use existing database?"
-msgstr "Использовать существующую базу данных?"
+msgstr "Použít existující databázi?"
 
 #: scripts/controllers/EditBackupController.js:293
 msgid "Use weak passphrase"
-msgstr "Использовать слабую кодовую фразу"
+msgstr "Použít slabou heslovou frázi"
 
 #: scripts/controllers/EditBackupController.js:28
 msgid "Useless"
-msgstr "Бесполезно"
+msgstr "Nepoužitelné"
 
 #: scripts/directives/sourceFolderPicker.js:374
 msgid "User data"
-msgstr "Данные пользователя"
+msgstr "Uživatelská data"
 
 #: scripts/services/EditUriBuiltins.js:47
 msgid "User has too many permissions"
-msgstr "Пользователь имеет слишком много разрешений"
+msgstr "Uživatel má příliš mnoho oprávnění"
 
 #: templates/settings.html:37
 msgid "User interface settings"
-msgstr "Настройки  интерфейса"
+msgstr "Nastavení uživatelského rozhraní"
 
 #: scripts/services/EditUriBuiltins.js:585
 #: scripts/services/EditUriBuiltins.js:665
@@ -2347,112 +2330,113 @@ msgstr "Настройки  интерфейса"
 #: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
 #: templates/backends/mega.html:8 templates/backends/openstack.html:18
 msgid "Username"
-msgstr "Имя пользователя"
+msgstr "Uživatelské jméno"
 
 #: templates/restore.html:142
 msgid "VISA, Mastercard, ... via Paypal"
-msgstr "VISA, Mastercard, ... через Paypal"
+msgstr "VISA, Mastercard, … přes Paypal"
 
 #: templates/addoredit.html:151
 msgid "Validating ..."
-msgstr "Проверка ..."
+msgstr "Ověřování…"
 
 #: templates/home.html:28
 msgid "Verify files"
-msgstr "Проверить файлы"
+msgstr "Ověřit soubory"
 
 #: scripts/services/CaptchaService.js:32 scripts/services/ServerStatus.js:58
 #: templates/notificationarea.html:29
 msgid "Verifying ..."
-msgstr "Проверка ..."
+msgstr "Ověřování…"
 
 #: scripts/services/CaptchaService.js:32
 msgid "Verifying answer"
-msgstr "Проверка ответа"
+msgstr "Ověřování odpovědi"
 
 #: scripts/services/ServerStatus.js:34 scripts/services/ServerStatus.js:43
 msgid "Verifying backend data ..."
-msgstr "Проверка данных бэкенда ..."
+msgstr "Ověřování dat podpůrné vrstvy (backend)…"
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
-msgstr "Проверка дистанционных данных ..."
+msgstr "Ověřování vzdálených dat…"
 
 #: scripts/services/ServerStatus.js:54
 msgid "Verifying restored files ..."
-msgstr "Проверка восстановленных файлов ..."
+msgstr "Ověřování obnovených souborů…"
 
 #: scripts/controllers/EditBackupController.js:32
 msgid "Very strong"
-msgstr "Очень надёжный"
+msgstr "Velmi silné"
 
 #: scripts/controllers/EditBackupController.js:29
 msgid "Very weak"
-msgstr "Очень слабый"
+msgstr "Velmi slabé"
 
 #: index.html:248
 msgid "Visit us on"
-msgstr "Посетите нас на"
+msgstr "Navštivte nás na"
 
 #: templates/delete.html:21
 msgid ""
 "WARNING: The remote database is found to be in use by the commandline "
 "library"
 msgstr ""
-"ВНИМАНИЕ: Удаленная база данных используется библиотекой командной строки"
+"VAROVÁNÍ: bylo zjištěno, že vzdálená databáze je používána knihovnou pro "
+"příkazový řádek"
 
 #: templates/delete.html:44
 msgid "WARNING: This will prevent you from restoring the data in the future."
-msgstr "ВНИМАНИЕ: В будущем это не позволит вам восстановить данные."
+msgstr "VAROVÁNÍ: toto zabrání v budoucnu obnovovat data!"
 
 #: templates/waitarea.html:2
 msgid "Waiting for task to begin"
-msgstr "Ожидание начала задачи"
+msgstr "Čekání na zahájení úlohy"
 
 #: templates/commandline.html:54
 msgid "Waiting for task to start ...."
-msgstr "Ожидание запуска задачи..."
+msgstr "Čekání na zahájení úlohy…"
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload ..."
-msgstr "Ожидание выгрузки ..."
+msgstr "Čekání na nahrání…"
 
 #: templates/settings.html:108
 msgid "Warnings, errors and crashes"
-msgstr "Предупреждения, ошибки и падения"
+msgstr "Varování, chyby a pády"
 
 #: templates/addoredit.html:50
 msgid "We recommend that you encrypt all backups stored outside your system"
 msgstr ""
-"Мы рекомендуем зашифровать все резервные копии, хранящиеся вне вашей системы"
+"Doporučujeme šifrovat všechny zálohy, které jsou ukládány mimo váš stroj"
 
 #: scripts/controllers/EditBackupController.js:30
 msgid "Weak"
-msgstr "Слабый"
+msgstr "Slabé"
 
 #: scripts/controllers/EditBackupController.js:293
 msgid "Weak passphrase"
-msgstr "Слабая кодовая фраза"
+msgstr "Slabá heslová fráze"
 
 #: scripts/services/AppUtils.js:105
 msgid "Wed"
-msgstr "Ср"
+msgstr "St"
 
 #: scripts/services/AppUtils.js:91 templates/addoredit.html:315
 msgid "Weeks"
-msgstr "Недель"
+msgstr "Týdny"
 
 #: templates/restorewizard.html:3
 msgid "Where do you want to restore from?"
-msgstr "Откуда вы хотите восстановить данные?"
+msgstr "Odkud chcete obnovit?"
 
 #: templates/restore.html:78
 msgid "Where do you want to restore the files to?"
-msgstr "Куда вы хотите восстановить файлы?"
+msgstr "Kam chcete soubory obnovit?"
 
 #: scripts/services/AppUtils.js:93 templates/addoredit.html:317
 msgid "Years"
-msgstr "Лет"
+msgstr "Let"
 
 #: scripts/controllers/AppController.js:172
 #: scripts/controllers/DeleteController.js:77
@@ -2472,87 +2456,87 @@ msgstr "Лет"
 #: scripts/services/EditUriBuiltins.js:702
 #: scripts/services/EditUriBuiltins.js:719
 msgid "Yes"
-msgstr "Да"
+msgstr "Ano"
 
 #: scripts/controllers/EditBackupController.js:308
 msgid "Yes, I have stored the passphrase safely"
-msgstr "Да, я надёжно сохранил кодовую фразу"
+msgstr "Ano, heslovou frázi mám bezpečně uloženou"
 
 #: scripts/controllers/EditBackupController.js:351
 msgid "Yes, I'm brave!"
-msgstr "Да, я смелый!"
+msgstr "Ano, mám odvahu!"
 
 #: scripts/controllers/EditBackupController.js:342
 msgid "Yes, please break my backup!"
-msgstr "Да, пожалуйста, сломайте мою резервную копию!"
+msgstr "Ano, chci rozbít své zálohy!"
 
 #: scripts/controllers/RestoreController.js:34
 msgid "Yesterday"
-msgstr "Вчера"
+msgstr "Včera"
 
 #: scripts/directives/backupEditUri.js:153
 msgid ""
 "You appear to be running Mono with no SSL certificates loaded.\n"
 "Do you want to import the list of trusted certificates from Mozilla?"
 msgstr ""
-"Вы используете Mono без загруженных SSL-сертификатов.\n"
-"Вы хотите импортировать список доверенных сертификатов от Mozilla?"
+"Zdá se, že provozujete Mono bez načtených SSL certifikátů.\n"
+"Chcete importovat seznam důvěryhodných certifikátů z Mozilla?"
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid ""
 "You are changing the database path away from an existing database.\n"
 "Are you sure this is what you want?"
 msgstr ""
-"Вы меняете путь базы данных отличный от существующей базы данных.\n"
-"Вы уверены, что это то, что вы хотите?"
+"Měníte umístění databáze pryč z existující databáze.\n"
+"Opravdu je to to, co chcete?"
 
 #: templates/about.html:26
 msgid "You are currently running {{appname}} {{version}}"
-msgstr "Вы используете {{appname}} {{version}}"
+msgstr "Nyní provozujete {{appname}} {{version}}"
 
 #: scripts/controllers/StateController.js:102
 msgid ""
 "You can stop the backup immediately, or stop after the current file has been"
 " uploaded."
 msgstr ""
-"Вы можете остановить резервное копирование немедленно или после завершения "
-"выгрузки текущего файла."
+"Zálohu můžete zastavit buď teď hned, nebo po dokončení probíhajícího "
+"nahrávání souboru."
 
 #: scripts/controllers/StateController.js:111
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and the stop."
 msgstr ""
-"Вы можете завершить задачу немедленно или позволить процессу продолжить "
-"текущий файл и остановиться."
+"Úlohu můžete ukončit buď teď hned, nebo procesu umožnit zpracovat stávající "
+"soubor a pak zastavit."
 
 #: scripts/controllers/EditBackupController.js:351
 msgid ""
 "You have changed the encryption mode. This may break stuff. You are "
 "encouraged to create a new backup instead"
 msgstr ""
-"Вы изменили режим шифрования. Это может что-нибудь сломать. Вместо этого вам"
-" лучше создать новую резервную копию"
+"Změnili jste režim šifrování. To může něco rozbít. Doporučujeme namísto toho"
+" vytvořit novou zálohu"
 
 #: scripts/controllers/EditBackupController.js:342
 msgid ""
 "You have changed the passphrase, which is not supported. You are encouraged "
 "to create a new backup instead."
 msgstr ""
-"Вы изменили кодовую фразу, но это не поддерживается. Вместо этого вам стоит "
-"создать новую резервную копию."
+"Změnili jste heslovou frázi, což není podporováno. Doporučujeme namísto toho"
+" vytvořit novou zálohu."
 
 #: scripts/controllers/EditBackupController.js:378
 msgid ""
 "You have chosen not to encrypt the backup. Encryption is recommended for all"
 " data stored on a remote server."
 msgstr ""
-"Вы выбрали не шифровать резервную копию. Шифрование рекомендовано для всех "
-"данных, хранящихся на удаленном сервере."
+"Zvolili jste že záloha nebude šifrována. Šifrování je doporučeno pro veškerá"
+" data ukládaná na vzdálený server."
 
 #: scripts/controllers/RestoreController.js:299
 msgid "You have chosen to restore to a new location, but not entered one"
-msgstr "Вы выбрали новое место для восстановления, но не ввели его"
+msgstr "Zvolili jste obnovu do nového umístění, ale nezadali jste ho"
 
 #: scripts/controllers/EditBackupController.js:308
 msgid ""
@@ -2560,113 +2544,111 @@ msgid ""
 "of the passphrase, as the data cannot be recovered if you loose the "
 "passphrase."
 msgstr ""
-"Вы задали сложную кодовую фразу. Убедитесь, что вы надёжно сохранили кодовую"
-" фразу, поскольку данные не могут быть восстановлены без неё."
+"Vytvořili jste silnou heslovou frázi. Určitě si ji někam bezpečně "
+"poznamenejte, protože pokud ji ztratíte, data nepůjdou obnovit. "
 
 #: scripts/controllers/EditBackupController.js:238
 msgid "You must choose at least one source folder"
-msgstr "Вы должны выбрать по крайней мере одну исходную папку"
+msgstr "Je třeba zvolit alespoň jednu zdrojovou složku"
 
 #: scripts/controllers/EditBackupController.js:217
 msgid "You must enter a name for the backup"
-msgstr "Вам необходимо ввести имя резервной копии"
+msgstr "Je třeba zadat název zálohy"
 
 #: scripts/controllers/EditBackupController.js:225
 msgid "You must enter a passphrase or disable encryption"
-msgstr "Вы должны ввести кодовую фразу или отключить шифрование"
+msgstr "Buď je třeba zadat heslovou frázi nebo šifrování vypnout"
 
 #: scripts/controllers/EditBackupController.js:257
 msgid "You must enter a positive number of backups to keep"
-msgstr "Необходимо ввести положительное число резервных копий для хранения"
+msgstr "Je třeba zadat kladný počet záloh které uchovávat"
 
 #: scripts/services/EditUriBuiltins.js:677
 msgid "You must enter a tenant name if you do not provide an API Key"
-msgstr ""
-"Вам необходимо ввести имя арендатора, если вы не предоставите ключ API"
+msgstr "Pokud nezadáte klíč k API, je třeba zadat jméno nájemníka (tenant)"
 
 #: scripts/controllers/EditBackupController.js:250
 msgid "You must enter a valid duration for the time to keep backups"
-msgstr "Необходимо ввести допустимый срок времени хранения резервных копий"
+msgstr "Je třeba zadat platnou dobu po kterou ponechávat zálohy"
 
 #: scripts/services/EditUriBuiltins.js:674
 msgid "You must enter either a password or an API Key"
-msgstr "Вы должны ввести пароль или ключ API"
+msgstr "Je třeba zadat buď klíč k API nebo heslo"
 
 #: scripts/services/EditUriBuiltins.js:681
 msgid "You must enter either a password or an API Key, not both"
-msgstr "Вы должны ввести либо пароль, либо ключ API, но не оба"
+msgstr "Je třeba zadat buď heslo, nebo klíč k API – ne obojí naráz"
 
 #: scripts/services/EditUriBackendConfig.js:108
 msgid "You must fill in the password"
-msgstr "Вы должны заполнить пароль"
+msgstr "Je třeba vyplnit heslo"
 
 #: scripts/services/EditUriBackendConfig.js:85
 msgid "You must fill in the server name or address"
-msgstr "Вы должны заполнить имя сервера или адрес"
+msgstr "Je třeba vyplnit název nebo adresu serveru"
 
 #: scripts/services/EditUriBackendConfig.js:106
 msgid "You must fill in the username"
-msgstr "Вы должны заполнить имя пользователя"
+msgstr "Je třeba vyplnit uživatelské jméno"
 
 #: scripts/services/EditUriBackendConfig.js:78
 msgid "You must fill in {{field}}"
-msgstr "Вы должны заполнить {{field}}"
+msgstr "Je třeba vyplnit kolonku {{field}}"
 
 #: scripts/services/EditUriBuiltins.js:669
 msgid "You must select or fill in the AuthURI"
-msgstr "Вы должны выбрать или заполнить AuthURI"
+msgstr "Je třeba vybrat nebo vyplnit AuthURI"
 
 #: scripts/services/EditUriBuiltins.js:695
 msgid "You must select or fill in the server"
-msgstr "Вы должны выбрать или заполнить сервер"
+msgstr "Je třeba vybrat nebo vyplnit server"
 
 #: scripts/services/EditUriBackendConfig.js:92
 msgid "You must specify a path"
-msgstr "Вы должны указать путь"
+msgstr "Je třeba zadat popis umístění"
 
 #: templates/restore.html:139
 msgid "Your files and folders have been restored successfully."
-msgstr "Ваши файлы и папки были восстановлены успешно."
+msgstr "Soubory a složky byly úspěšně obnoveny."
 
 #: scripts/controllers/EditBackupController.js:293
 msgid "Your passphrase is easy to guess. Consider changing passphrase."
-msgstr ""
-"Вашу кодовую фразу легко отгадать. Подумайте об изменении кодовой фразы."
+msgstr "Vaše heslová fráze je snadno uhodnutelná. Zvažte volbu jiné."
 
 #: templates/addoredit.html:307
 msgid "a specific number"
-msgstr "пользовательский"
+msgstr "konkrétní číslo"
 
 #: templates/backends/gcs.html:3 templates/backends/openstack.html:3
 msgid "bucket/folder/subfolder"
-msgstr "bucket/папка/подпапка"
+msgstr "nadoba/slozka/podslozka"
 
 #: scripts/services/AppUtils.js:80
 msgid "byte"
-msgstr "байт"
+msgstr "B"
 
 #: scripts/services/AppUtils.js:113
 msgid "byte/s"
-msgstr "байт/сек"
+msgstr "B/s"
 
 #: templates/addoredit.html:262 templates/addoredit.html:318
 #: templates/advancedoptionseditor.html:28
 #: templates/advancedoptionseditor.html:35
 msgid "custom"
-msgstr "пользовательские"
+msgstr "vlastní"
 
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
 msgid "resume now"
-msgstr "возобновить сейчас"
+msgstr "pokračovat nyní"
 
 #: templates/addoredit.html:305
 msgid "unlimited"
-msgstr "неограниченный"
+msgstr "neomezené"
 
 #: templates/addoredit.html:306
 msgid "until they are older than"
-msgstr "пока они старее, чем"
+msgstr "dokud nejsou starší než"
 
 #: templates/about.html:11
 msgid ""
@@ -2675,33 +2657,31 @@ msgid ""
 "<a href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is licensed "
 "under the <a href=\"{{licenselink}}\">{{licensename}}</a>."
 msgstr ""
-"{{appname}} был разработан преимущественно <a "
-"href=\"{{mail1}}\">{{dev1}}</a> и <a href=\"{{mail2}}\">{{dev2}}</a>. "
-"{{appname}} может быть загружен с веб-сайта <a "
-"href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} лицензируется под "
-"<a href=\"{{licenselink}}\">{{licensename}}</a>."
+"{{appname}} bylo vyvynuto hlavně <a href=\"{{mail1}}\">{{dev1}}</a> a <a "
+"href=\"{{mail2}}\">{{dev2}}</a>. {{appname}} je možné si stáhnout z <a "
+"href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} je šířeno pod "
+"licencí <a href=\"{{licenselink}}\">{{licensename}}</a>."
 
 #: scripts/controllers/StateController.js:50
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
-msgstr ""
+msgstr "{{files}} souborů ({{size}}) zbývá {{speed_txt}}"
 
 #: templates/home.html:61 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
-msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} версия"
-msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} версии"
-msgstr[2] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} версий"
-msgstr[3] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} версий"
+msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} verze"
+msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} verze"
+msgstr[2] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} verzí"
 
 #: templates/pause.html:26
 msgid "{{number}} Hour"
-msgstr "{{number}} Часов"
+msgstr "{{number}} hodin"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6
 msgid "{{number}} Minutes"
-msgstr "{{number}} минут"
+msgstr "{{number}} minut"
 
 #: templates/home.html:42
 msgid "{{time}} (took {{duration}})"
-msgstr "{{time}} (заняло {{duration}})"
+msgstr "{{time}} (trvalo {{duration}})"
