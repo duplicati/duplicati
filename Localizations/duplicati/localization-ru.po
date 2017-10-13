@@ -1459,39 +1459,39 @@ msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:6
 msgid "Sia Decentralized Cloud"
-msgstr ""
+msgstr "Децентрализованное облако Sia"
 
 #: Library/Backend/Sia/Strings.cs:7
 msgid "This backend can read and write data to Sia."
-msgstr ""
+msgstr "Этот бэкэнд может читать и записывать данные в Sia."
 
 #: Library/Backend/Sia/Strings.cs:8
 msgid "Sia address"
-msgstr ""
+msgstr "Адрес Sia"
 
 #: Library/Backend/Sia/Strings.cs:9
 msgid "Sia address, ie 127.0.0.1:9980"
-msgstr ""
+msgstr "Адрес Sia, например, 127.0.0.1:9980"
 
 #: Library/Backend/Sia/Strings.cs:10
 msgid "Backup path"
-msgstr ""
+msgstr "Путь резервного копирования"
 
 #: Library/Backend/Sia/Strings.cs:11
 msgid "Target path, ie /backup"
-msgstr ""
+msgstr "Целевой путь, т.е. /backup"
 
 #: Library/Backend/Sia/Strings.cs:12 Library/Backend/Sia/Strings.cs:13
 msgid "Sia password"
-msgstr ""
+msgstr "Пароль Sia"
 
 #: Library/Backend/Sia/Strings.cs:14
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: Library/Backend/Sia/Strings.cs:15
 msgid "Minimum value is 3."
-msgstr ""
+msgstr "Минимальное значение - 3."
 
 #: Library/Backend/SSHv2/Strings.cs:4
 msgid "Module for generating SSH private/public keys"
@@ -2380,6 +2380,8 @@ msgid ""
 "The source folder {0} uses a wildcard drive, which is only supported on "
 "Windows, aborting backup"
 msgstr ""
+"Исходная папка {0} использует подстановочный диск, которые поддерживаются "
+"только в Windows. Резервное копирование будет прервано."
 
 #: Library/Main/Strings.cs:32
 msgid ""
@@ -3196,6 +3198,8 @@ msgstr "Уменьшить объем памяти, отключив поиск 
 msgid ""
 "This option can be used to increase speed in exchange for extra memory use."
 msgstr ""
+"Эта опция может использоваться для увеличения скорости в обмен на "
+"дополнительное использование памяти."
 
 #: Library/Main/Strings.cs:147
 msgid "Store an in-memory block cache"
@@ -3959,13 +3963,15 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:34
 msgid "Sets the default operation timeout"
-msgstr ""
+msgstr "Устанавливает тайм-аут по умолчанию"
 
 #: Library/Modules/Builtin/Strings.cs:35
 msgid ""
 "This option changes the default timeout for any HTTP request, the time "
 "covers the entire operation from initial packet to shutdown"
 msgstr ""
+"Эта опция изменяет тайм-аут по умолчанию для любого HTTP-запроса, время "
+"охватывает всю операцию от первого пакета до завершения"
 
 #: Library/Modules/Builtin/Strings.cs:36
 msgid "Sets readwrite"
@@ -3977,10 +3983,13 @@ msgid ""
 "used to detect a stalled requests, and this option configures the maximum "
 "time between activity on a connection."
 msgstr ""
+"Эта опция изменяет тайм-аут чтения и записи по умолчанию. Тайм-ауты чтения-"
+"записи используются для обнаружения зависших запросов, и этот параметр "
+"настраивает максимальное время между активностью в соединении."
 
 #: Library/Modules/Builtin/Strings.cs:38
 msgid "Sets HTTP buffering"
-msgstr ""
+msgstr "Устанавливает HTTP-буферизацию"
 
 #: Library/Modules/Builtin/Strings.cs:39
 #, csharp-format
@@ -3988,6 +3997,9 @@ msgid ""
 "This option sets the HTTP buffering. Setting this to \"{0}\" can cause "
 "memory leaks, but can also improve performance in some cases."
 msgstr ""
+"Эта опция устанавливает буферизацию HTTP. Установка этого параметра на «{0}»"
+" может привести к утечке памяти, но, в некоторых случаях, может повысить "
+"производительность."
 
 #: Library/Modules/Builtin/Strings.cs:42
 msgid ""

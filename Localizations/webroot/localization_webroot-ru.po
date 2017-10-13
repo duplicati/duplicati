@@ -1192,7 +1192,7 @@ msgstr "Установка не удалась:"
 
 #: scripts/services/EditUriBuiltins.js:771
 msgid "Invalid characters in path"
-msgstr ""
+msgstr "Недопустимые символы в пути"
 
 #: scripts/controllers/EditBackupController.js:250
 #: scripts/controllers/EditBackupController.js:257
@@ -1348,11 +1348,11 @@ msgstr "Баз данных Microsoft SQL"
 
 #: templates/backends/sia.html:14
 msgid "Minimum redundancy"
-msgstr ""
+msgstr "Минимальная избыточность"
 
 #: scripts/services/EditUriBuiltins.js:775
 msgid "Minimum redundancy is 1.0"
-msgstr ""
+msgstr "Минимальная избыточность - 1.0"
 
 #: scripts/services/AppUtils.js:88 scripts/services/AppUtils.js:98
 #: templates/settings.html:32
@@ -1879,7 +1879,7 @@ msgstr "Сервер в настоящее время приостановлен
 
 #: templates/backends/sia.html:10
 msgid "Server password"
-msgstr ""
+msgstr "Пароль сервера"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server paused"
@@ -1921,7 +1921,7 @@ msgstr "Древовидное отображение"
 
 #: templates/backends/sia.html:11
 msgid "Sia server password"
-msgstr ""
+msgstr "Пароль сервера Sia"
 
 #: templates/backends/openstack.html:33
 msgid ""
@@ -2052,7 +2052,7 @@ msgstr "ТБайт/s"
 
 #: templates/backends/sia.html:7
 msgid "Target path, ie /backup"
-msgstr ""
+msgstr "Целевой путь, т.е. /backup"
 
 #: templates/waitarea.html:5
 msgid "Task is running"
