@@ -173,7 +173,8 @@ namespace Duplicati.Library.Backend
         private T HandleListExceptions<T>(Func<T> func, System.Net.FtpWebRequest req)
         {
             T ret = default(T);
-            HandleListExceptions(() => ret = func(), req);
+            Action action = () => ret = func();
+            HandleListExceptions(action, req);
             return ret;
         }
 
