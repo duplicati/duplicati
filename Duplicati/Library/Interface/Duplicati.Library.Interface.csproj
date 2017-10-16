@@ -9,7 +9,6 @@
     <RootNamespace>Duplicati.Library.Interface</RootNamespace>
     <AssemblyName>Duplicati.Library.Interface</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
