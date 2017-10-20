@@ -1,3 +1,10 @@
+2017-10-20 - 2.0.2.12_canary_2017-10-20
+==========
+* Fixed not reporting "Finished" until the backup is actually finished, thanks @warwickmm
+* Fixed stack overflow in FTP backend, thanks @tygill
+* Fixed a number of incorrect exception messages, thanks @warwickmm
+* Removed assembly signing for now, thanks @warwickmm
+
 2017-10-20 - 2.0.2.11_canary_2017-10-20
 ==========
 * Changed the way the auto-updater works. It now spawns a new version of the executable instead of attempting to run it in an AppDomain
