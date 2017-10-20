@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.Operation
             var datalen = data.Length;
 
             if (datalen > Int32.MaxValue)
-                throw new ArgumentOutOfRangeException("Metadata is larger than int32");
+                throw new ArgumentOutOfRangeException(nameof(datalen), "Metadata is larger than int32");
 
             var pathbytes = System.Text.Encoding.UTF8.GetBytes(path);
             var pathlen = BitConverter.GetBytes(pathbytes.LongLength);
@@ -97,7 +97,7 @@ namespace Duplicati.Library.Main.Operation
                         CheckedRead(bf, 0, bf.Length);
                         var datalen = BitConverter.ToInt64(bf, 0);
                         if (datalen > Int32.MaxValue)
-                            throw new ArgumentOutOfRangeException("Metadata is larger than int32");
+                            throw new ArgumentOutOfRangeException(nameof(datalen), "Metadata is larger than int32");
 
                         var databuf = datalen > buf.Length ? new byte[datalen] : buf;
                         CheckedRead(databuf, 0, (int)datalen);

@@ -857,13 +857,13 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                         
-                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         m_database.WriteResults();                    
                         m_database.PurgeLogData(m_options.LogRetention);
                         if (m_options.AutoVacuum)
                         {
                             m_database.Vacuum();
                         }
+                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         return;
                     }
                 }

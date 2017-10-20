@@ -9,7 +9,6 @@
     <RootNamespace>Duplicati.License</RootNamespace>
     <AssemblyName>Duplicati.License</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
