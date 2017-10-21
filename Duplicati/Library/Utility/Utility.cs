@@ -977,13 +977,13 @@ namespace Duplicati.Library.Utility
         public static readonly string HOME_PATH = Environment.GetFolderPath(IsClientLinux ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
 
         /// <summary>
-        /// Expands environment variables, including the tilde character
+        /// Expands environment variables.
         /// </summary>
         /// <returns>The expanded string.</returns>
         /// <param name="str">The string to expand.</param>
         public static string ExpandEnvironmentVariables(string str)
         {
-            return Environment.ExpandEnvironmentVariables(str.Replace("~", HOME_PATH));
+            return Environment.ExpandEnvironmentVariables(str);
         }
 
         /// <summary>
@@ -997,7 +997,7 @@ namespace Duplicati.Library.Utility
         private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_LINUX = new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})");
 
         /// <summary>
-        /// Expands environment variables, including the tilde character, in a RegExp safe format
+        /// Expands environment variables in a RegExp safe format
         /// </summary>
         /// <returns>The expanded string.</returns>
         /// <param name="str">The string to expand.</param>
@@ -1012,9 +1012,7 @@ namespace Duplicati.Library.Utility
                 // TODO: Should we switch to using the native format, instead of following the Windows scheme?
                 //IsClientLinux ? ENVIRONMENT_VARIABLE_MATCHER_LINUX : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
 
-                ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
-                    .Replace(str.Replace("~", Regex.Escape(HOME_PATH)), (m) => 
-                        Regex.Escape(lookup(m.Groups["name"].Value)));
+                ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, (m) => Regex.Escape(lookup(m.Groups["name"].Value)));
         }
 
         /// <summary>
