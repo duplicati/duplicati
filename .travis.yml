@@ -4,7 +4,7 @@ install:
   - nuget restore Duplicati.sln
   - nuget install NUnit.Runners -Version 3.5.0 -OutputDirectory testrunner
   - sudo pip install selenium
-  - if [ ! -d ~/build/duplicati/duplicati/packages/sharpcompress.0.18.2 ]; ln -s ~/build/duplicati/duplicati/packages/sharpcompress.0.18.2 ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2; fi
+  - if [ ! -d ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2 ]; then ln -s ~/build/duplicati/duplicati/packages/sharpcompress.0.18.2 ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2; fi
 addons:
   sauce_connect:
     username: $SAUCE_USERNAME
@@ -46,8 +46,9 @@ before_install:
 
 script:
 # build duplicati
+  - ls -la ~/build/duplicati/duplicati/packages/
   - echo "travis_fold:start:build_duplicati"
-  - xbuild /p:Configuration=Release Duplicati.sln
+  - msbuild /p:Configuration=Release Duplicati.sln
   - echo "travis_fold:end:build_duplicati"
   - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 # download and extract testdata
