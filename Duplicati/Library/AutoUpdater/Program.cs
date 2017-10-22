@@ -25,12 +25,16 @@ namespace Duplicati.Library.AutoUpdater
     {
         public static int Main(string[] args)
         {
+            // Ignore webroot during startup verification
             Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, AutoUpdateStrategy.Never);
         }
 
         public static int RealMain(string[] _args)
         {
+            // Enable webroot checks for the verifier
+            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = false;
+
             var args = new List<string>(_args);
             Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
