@@ -185,6 +185,147 @@ namespace Duplicati.Library.Main
                 m_messageSink = new MultiMessageSink(m_messageSink, sink);
         }
 
+        /// <summary>
+        /// Helper method that expands the users chosen source input paths,
+        /// and removes duplicate paths
+        /// </summary>
+        /// <returns>The expanded and filtered sources.</returns>
+        /// <param name="inputsources">The paths to use.</param>
+        public string[] ExpandInputSources(string[] inputsources, IFilter filter, ILogWriter log)
+        {
+            if (inputsources == null || inputsources.Length == 0)
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError);
+
+            var sources = new List<string>(inputsources.Length);
+
+            System.IO.DriveInfo[] drives = null;
+
+            //Make sure they all have the same format and exist
+            for (int i = 0; i < inputsources.Length; i++)
+            {
+                List<string> expandedSources = new List<string>();
+
+                if (Library.Utility.Utility.IsClientWindows && (inputsources[i].StartsWith("*:") || inputsources[i].StartsWith("?:")))
+                {
+                    // *: drive paths are only supported on Windows clients
+                    // Lazily load the drive info
+                    drives = drives ?? System.IO.DriveInfo.GetDrives();
+
+                    // Replace the drive letter with each available drive
+                    string sourcePath = inputsources[i].Substring(1);
+                    foreach (System.IO.DriveInfo drive in drives)
+                    {
+                        string expandedSource = drive.Name[0] + sourcePath;
+                        log.AddVerboseMessage(@"Adding source path ""{0}"" due to wildcard source path ""{1}""", expandedSource, inputsources[i]);
+                        expandedSources.Add(expandedSource);
+                    }
+                }
+                else if (Library.Utility.Utility.IsClientWindows && inputsources[i].StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
+                {
+                    // In order to specify a drive by it's volume name, adopt the volume guid path syntax:
+                    //   \\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
+                    // The volume guid can be found using the 'mountvol' commandline tool.
+                    // However, instead of using this path with Windows APIs directory, it is adapted here to a standard path.
+                    Guid volumeGuid;
+                    if (Guid.TryParse(inputsources[i].Substring(@"\\?\Volume{".Length, @"XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".Length), out volumeGuid))
+                    {
+                        string driveLetter = Library.Utility.Utility.GetDriveLetterFromVolumeGuid(volumeGuid);
+                        if (!string.IsNullOrEmpty(driveLetter))
+                        {
+                            string expandedSource = driveLetter + inputsources[i].Substring(@"\\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}".Length);
+                            log.AddVerboseMessage(@"Adding source path ""{0}"" in place of volume guid source path ""{1}""", expandedSource, inputsources[i]);
+                            expandedSources.Add(expandedSource);
+                        }
+                        else
+                        {
+                            // If we aren't allow to have missing sources, throw an exception indicating we couldn't find a drive where this volume is mounted
+                            if (!m_options.AllowMissingSource)
+                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameNotFoundError(inputsources[i], volumeGuid));
+                        }
+                    }
+                    else
+                    {
+                        // If we aren't allow to have missing sources, throw an exception indicating we couldn't find this volume
+                        if (!m_options.AllowMissingSource)
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameInvalidError(inputsources[i]));
+                    }
+                }
+                else
+                {
+                    expandedSources.Add(inputsources[i]);
+                }
+
+                bool foundAnyPaths = false;
+                foreach (string expandedSource in expandedSources)
+                {
+                    string source;
+                    try
+                    {
+                        source = System.IO.Path.GetFullPath(expandedSource);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Note that we use the original source (with the *) in the error
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(expandedSource, ex.Message), ex);
+                    }
+
+                    var fi = new System.IO.FileInfo(source);
+                    var di = new System.IO.DirectoryInfo(source);
+                    if (fi.Exists || di.Exists)
+                    {
+                        foundAnyPaths = true;
+
+                        if (!fi.Exists)
+                            source = Library.Utility.Utility.AppendDirSeparator(source);
+
+                        sources.Add(source);
+                    }
+                }
+
+                // If no paths were found, and we aren't allowed to have missing sources, throw an error
+                if (!foundAnyPaths && !m_options.AllowMissingSource)
+                    throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(inputsources[i]));
+            }
+
+            //Sanity check for duplicate files/folders
+            ISet<string> pathDuplicates;
+            sources = Library.Utility.Utility.GetUniqueItems(sources, Library.Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).OrderBy(a => a).ToList();
+
+            foreach (var pathDuplicate in pathDuplicates)
+                log.AddVerboseMessage(string.Format("Removing duplicate source: {0}", pathDuplicate));
+
+            //Sanity check for multiple inclusions of the same folder
+            for (int i = 0; i < sources.Count; i++)
+                for (int j = 0; j < sources.Count; j++)
+                    if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparision) && sources[i].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), Library.Utility.Utility.ClientFilenameStringComparision))
+                    {
+                        if (filter != null)
+                        {
+                            bool includes;
+                            bool excludes;
+
+                            FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+
+                            // If there are no excludes, there is no need to keep the folder as a filter
+                            if (excludes)
+                            {
+                                log.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
+                                filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                            }
+                            else
+                                log.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+                        }
+                        else
+                            log.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+
+                        sources.RemoveAt(i);
+                        i--;
+                        break;
+                    }
+
+            return sources.ToArray();
+        }
+
         public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
         {
             Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
@@ -193,138 +334,8 @@ namespace Duplicati.Library.Main
             
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
-                if (inputsources == null || inputsources.Length == 0)
-                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError);
-
-                var sources = new List<string>(inputsources.Length);
-
-                System.IO.DriveInfo[] drives = null;
-
-                //Make sure they all have the same format and exist
-                for (int i = 0; i < inputsources.Length; i++)
-                {
-                    List<string> expandedSources = new List<string>();
-
-                    if (Library.Utility.Utility.IsClientWindows && (inputsources[i].StartsWith("*:") || inputsources[i].StartsWith("?:")))
-                    {
-                        // *: drive paths are only supported on Windows clients
-                        // Lazily load the drive info
-                        drives = drives ?? System.IO.DriveInfo.GetDrives();
-
-                        // Replace the drive letter with each available drive
-                        string sourcePath = inputsources[i].Substring(1);
-                        foreach (System.IO.DriveInfo drive in drives)
-                        {
-                            string expandedSource = drive.Name[0] + sourcePath;
-                            result.AddVerboseMessage(@"Adding source path ""{0}"" due to wildcard source path ""{1}""", expandedSource, inputsources[i]);
-                            expandedSources.Add(expandedSource);
-                        }
-                    }
-                    else if (Library.Utility.Utility.IsClientWindows && inputsources[i].StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // In order to specify a drive by it's volume name, adopt the volume guid path syntax:
-                        //   \\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
-                        // The volume guid can be found using the 'mountvol' commandline tool.
-                        // However, instead of using this path with Windows APIs directory, it is adapted here to a standard path.
-                        Guid volumeGuid;
-                        if (Guid.TryParse(inputsources[i].Substring(@"\\?\Volume{".Length, @"XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".Length), out volumeGuid))
-                        {
-                            string driveLetter = Library.Utility.Utility.GetDriveLetterFromVolumeGuid(volumeGuid);
-                            if (!string.IsNullOrEmpty(driveLetter))
-                            {
-                                string expandedSource = driveLetter + inputsources[i].Substring(@"\\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}".Length);
-                                result.AddVerboseMessage(@"Adding source path ""{0}"" in place of volume guid source path ""{1}""", expandedSource, inputsources[i]);
-                                expandedSources.Add(expandedSource);
-                            }
-                            else
-                            {
-                                // If we aren't allow to have missing sources, throw an exception indicating we couldn't find a drive where this volume is mounted
-                                if (!m_options.AllowMissingSource)
-                                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameNotFoundError(inputsources[i], volumeGuid));
-                            }
-                        }
-                        else
-                        {
-                            // If we aren't allow to have missing sources, throw an exception indicating we couldn't find this volume
-                            if (!m_options.AllowMissingSource)
-                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameInvalidError(inputsources[i]));
-                        }
-                    }
-                    else
-                    {
-                        expandedSources.Add(inputsources[i]);
-                    }
-
-                    bool foundAnyPaths = false;
-                    foreach (string expandedSource in expandedSources)
-                    {
-                        string source;
-                        try
-                        {
-                            source = System.IO.Path.GetFullPath(expandedSource);
-                        }
-                        catch (Exception ex)
-                        {
-                            // Note that we use the original source (with the *) in the error
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(expandedSource, ex.Message), ex);
-                        }
-
-                        var fi = new System.IO.FileInfo(source);
-                        var di = new System.IO.DirectoryInfo(source);
-                        if (fi.Exists || di.Exists)
-                        {
-                            foundAnyPaths = true;
-
-                            if (!fi.Exists)
-                                source = Library.Utility.Utility.AppendDirSeparator(source);
-
-                            sources.Add(source);
-                        }
-                    }
-
-                    // If no paths were found, and we aren't allowed to have missing sources, throw an error
-                    if (!foundAnyPaths && !m_options.AllowMissingSource)
-                        throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(inputsources[i]));
-                }
-
-                //Sanity check for duplicate files/folders
-                ISet<string> pathDuplicates;
-                sources = Library.Utility.Utility.GetUniqueItems(sources, Library.Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).OrderBy(a => a).ToList();
-
-                foreach (var pathDuplicate in pathDuplicates)
-                    result.AddVerboseMessage(string.Format("Removing duplicate source: {0}", pathDuplicate));
-
-                //Sanity check for multiple inclusions of the same folder
-                for (int i = 0; i < sources.Count; i++)
-                    for (int j = 0; j < sources.Count; j++)
-                        if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparision))
-                        {
-                            if (filter != null)
-                            {
-                                bool includes;
-                                bool excludes;
-
-                                FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
-
-                                // If there are no excludes, there is no need to keep the folder as a filter
-                                if (excludes)
-                                {
-                                    result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
-                                    filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
-                                }
-                                else
-                                    result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
-                            }
-                            else
-                                result.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
-
-                            sources.RemoveAt(i);
-                            i--;
-                            break;
-                        }
-
                 using (var h = new Operation.BackupHandler(m_backend, m_options, result))
-                    h.Run(sources.ToArray(), filter);
+                    h.Run(ExpandInputSources(inputsources, filter, result), filter);
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
                 Library.UsageReporter.Reporter.Report("BACKUP_FILESIZE", result.SizeOfExaminedFiles);
@@ -505,7 +516,7 @@ namespace Duplicati.Library.Main
             m_options.RawOptions["dbpath"] = "INVALID!";
 
             return RunAction(new TestFilterResults(), ref paths, ref filter, (result) => {
-                new Operation.TestFilterHandler(m_options, result).Run(paths, filter);
+                new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter, result), filter);
             });
         }
 
