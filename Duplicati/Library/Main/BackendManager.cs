@@ -403,6 +403,10 @@ namespace Duplicati.Library.Main
         private System.Threading.Thread m_thread;
         private BasicResults m_taskControl;
         private readonly DatabaseCollector m_db;
+
+        // Cache these
+        private readonly int m_numberofretries;
+        private readonly TimeSpan m_retrydelay;
                 
         public string BackendUrl { get { return m_backendurl; } }
         
@@ -415,6 +419,9 @@ namespace Duplicati.Library.Main
             m_backendurl = backendurl;
             m_statwriter = statwriter;
             m_taskControl = statwriter as BasicResults;
+            m_numberofretries = options.NumberOfRetries;
+            m_retrydelay = options.RetryDelay;
+
             m_db = new DatabaseCollector(database, statwriter);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
@@ -544,13 +551,13 @@ namespace Duplicati.Library.Main
                                 }
 
                             lastException = null;
-                            retries = m_options.NumberOfRetries;
+                            retries = m_numberofretries;
                         }
                         catch (Exception ex)
                         {
                             retries++;
                             lastException = ex;
-                            m_statwriter.AddRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
+                            m_statwriter.AddRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_numberofretries, ex.Message), ex);
                             
                             // If the thread is aborted, we exit here
                             if (ex is System.Threading.ThreadAbortException)
@@ -561,7 +568,7 @@ namespace Duplicati.Library.Main
                                 throw;
                             }
                             
-                            m_statwriter.SendEvent(item.BackendActionType, retries < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
+                            m_statwriter.SendEvent(item.BackendActionType, retries < m_numberofretries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
                             bool recovered = false;
                             if (!uploadSuccess && ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
@@ -579,7 +586,7 @@ namespace Duplicati.Library.Main
                             }
                             
                             // To work around the Apache WEBDAV issue, we rename the file here
-                            if (item.Operation == OperationType.Put && retries < m_options.NumberOfRetries && !item.NotTrackedInDb)
+                            if (item.Operation == OperationType.Put && retries < m_numberofretries && !item.NotTrackedInDb)
                                 RenameFileAfterError(item);
                             
                             if (!recovered)
@@ -589,9 +596,9 @@ namespace Duplicati.Library.Main
     
                                 m_backend = null;
 
-                                if (retries < m_options.NumberOfRetries && m_options.RetryDelay.Ticks != 0)
+                                if (retries < m_numberofretries && m_retrydelay.Ticks != 0)
                                 {
-                                    var target = DateTime.Now.AddTicks(m_options.RetryDelay.Ticks);
+                                    var target = DateTime.Now.AddTicks(m_retrydelay.Ticks);
                                     while (target > DateTime.Now)
                                     {
                                         if (m_taskControl != null && m_taskControl.IsAbortRequested())
@@ -604,7 +611,7 @@ namespace Duplicati.Library.Main
                         }
                         
 
-                    } while (retries < m_options.NumberOfRetries);
+                    } while (retries < m_numberofretries);
 
                     if (lastException != null && !(lastException is Duplicati.Library.Interface.FileMissingException) && item.Operation == OperationType.Delete)
                     {
