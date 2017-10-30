@@ -613,7 +613,7 @@ namespace Duplicati.Library.AutoUpdater
                     if (string.IsNullOrWhiteSpace(relpath))
                         continue;
 
-                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot"))
+                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
                         continue;
 
                     FileEntry fe;
@@ -621,7 +621,7 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         var ignore = false;
                         foreach(var c in ignores)
-                            if (ignore = relpath.StartsWith(c))
+                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparision))
                                 break;
 
                         if (ignore)
@@ -632,7 +632,7 @@ namespace Duplicati.Library.AutoUpdater
 
                     paths.Remove(relpath);
 
-                    if (fe.Path.EndsWith("/"))
+                    if (fe.Path.EndsWith("/", StringComparison.Ordinal))
                         continue;
 
                     sha256.Initialize();
@@ -649,10 +649,11 @@ namespace Duplicati.Library.AutoUpdater
                     }
                 }
 
-                var filteredpaths = (from p in paths
-                        where !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/")
-                        select p.Key).ToList();
-
+                var filteredpaths = paths
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal))
+                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    .Select(p => p.Key)
+                    .ToList();
 
                 if (filteredpaths.Count == 1)
                     throw new Exception(string.Format("Folder {0} is missing: {1}", folder, filteredpaths.First()));
