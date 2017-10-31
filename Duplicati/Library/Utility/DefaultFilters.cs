@@ -20,6 +20,7 @@ using System.Linq;
 
 namespace Duplicati.Library.Utility
 {
+    [Flags]
     public enum DefaultFilterSet
     {
         None = 0,
