@@ -1215,7 +1215,10 @@ namespace Duplicati.Library.Utility
 
             if (IsPrimitiveTypeForSerialization(item.GetType()))
             {
-                writer.Write(item);
+                if (item is DateTime)
+                    writer.Write(((DateTime)item).ToLocalTime());
+                else
+                    writer.Write(item);
                 return true;
             }
 
