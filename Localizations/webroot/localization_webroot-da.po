@@ -2548,7 +2548,7 @@ msgstr "Du har valgt at gendanne til en ny placering, men ikke angivet en"
 #: scripts/controllers/EditBackupController.js:308
 msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
-"of the passphrase, as the data cannot be recovered if you loose the "
+"of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
 msgstr ""
 "Du har dannet et stærk kodesætning. Du skal sikre dig at du har en kopi af "
