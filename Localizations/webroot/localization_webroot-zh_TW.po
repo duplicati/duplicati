@@ -2499,7 +2499,7 @@ msgstr "You have chosen to restore to a new location, but not entered one"
 #: scripts/controllers/EditBackupController.js:308
 msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
-"of the passphrase, as the data cannot be recovered if you loose the "
+"of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
 msgstr "您有產生高強度的密碼，請確認您已經另外保存好這個密碼，若遺失這個密碼，您的資料將無法恢復。"
 
