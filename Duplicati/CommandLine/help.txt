@@ -269,7 +269,7 @@ Usage: test-filters <source-path> [<options>]
 
 Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
-  Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
+  Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted. Notes that this command requires a local database to be present, if the database is not found automatically, you can set --dbpath to point to the database to use.
 
 # =============================================================================
 > duplicati.commandline.exe help vacuum
