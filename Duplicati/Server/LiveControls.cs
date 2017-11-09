@@ -185,9 +185,24 @@ namespace Duplicati.Server
 
             m_priority = settings.ThreadPriorityOverride;
             if (!string.IsNullOrEmpty(settings.DownloadSpeedLimit))
-                m_downloadLimit = Library.Utility.Sizeparser.ParseSize(settings.DownloadSpeedLimit, "kb");
+                try
+                {
+                    m_downloadLimit = Library.Utility.Sizeparser.ParseSize(settings.DownloadSpeedLimit, "kb");
+                }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteMessage(string.Format("Failed to parse download limit: {0}", settings.DownloadSpeedLimit), Library.Logging.LogMessageType.Error, ex);
+                }
+
             if (!string.IsNullOrEmpty(settings.UploadSpeedLimit))
-                m_uploadLimit = Library.Utility.Sizeparser.ParseSize(settings.UploadSpeedLimit, "kb");
+                try
+                {
+                    m_uploadLimit = Library.Utility.Sizeparser.ParseSize(settings.UploadSpeedLimit, "kb");
+                }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteMessage(string.Format("Failed to parse upload limit: {0}", settings.UploadSpeedLimit), Library.Logging.LogMessageType.Error, ex);
+                }
 
             try
             {
