@@ -171,7 +171,7 @@ namespace Duplicati.Library.Main
         
             if (needsUpdate)
             {
-                // Make sure we do not loose values
+                // Make sure we do not lose values
                 foreach(var k in opts)
                     if (!newDict.ContainsKey(k.Key))
                         newDict[k.Key] = k.Value;
