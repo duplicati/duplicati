@@ -47,6 +47,10 @@ if [ "z${MONO_BIN}" == "z" ]; then
 		elif [ -f "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono" ]; then
 			MONO_BIN="/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono"
 
+		# Check if there is a MacPorts version of Mono
+		elif [ -f "/opt/local/bin/mono" ]; then
+			MONO_BIN="/opt/local/bin/mono"
+
 		# Set up some default that will likely fail
 		else
 			MONO_BIN="mono"

@@ -22,3 +22,5 @@ packages
 changelog-news.txt
 binfiles.wxs
 .idea/
+.vs/
+

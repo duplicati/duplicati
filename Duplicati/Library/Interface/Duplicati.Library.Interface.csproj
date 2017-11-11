@@ -9,7 +9,6 @@
     <RootNamespace>Duplicati.Library.Interface</RootNamespace>
     <AssemblyName>Duplicati.Library.Interface</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -42,6 +41,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BackendExtensions.cs" />
     <Compile Include="CommandLineArgument.cs" />
     <Compile Include="CommonStrings.cs" />
     <Compile Include="CustomExceptions.cs" />
@@ -54,9 +54,11 @@
     <Compile Include="IGenericSourceModule.cs" />
     <Compile Include="IGenericModule.cs" />
     <Compile Include="IQuotaEnabledBackend.cs" />
+    <Compile Include="IQuotaInfo.cs" />
     <Compile Include="IStreamingBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IGenericCallbackModule.cs" />
+    <Compile Include="QuotaInfo.cs" />
     <Compile Include="ResultInterfaces.cs" />
     <Compile Include="IWebModule.cs" />
     <Compile Include="IConnectionModule.cs" />

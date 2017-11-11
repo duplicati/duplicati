@@ -9,9 +9,15 @@ using System.Threading.Tasks;
 
 namespace Duplicati.WindowsService
 {
-    class Program
+    public class Program
     {
-        public static void Main(string[] args)
+        [STAThread]
+        public static int Main(string[] args)
+        {
+            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
+        }
+
+        public static void RealMain(string[] args)
         {
             var install = args != null && args.Where(x => string.Equals("install", x, StringComparison.OrdinalIgnoreCase)).Any();
             var uninstall = args != null && args.Where(x => string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase)).Any();

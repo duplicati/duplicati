@@ -32,7 +32,11 @@ namespace Duplicati.Library.Backend.Strings {
         public static string DescriptionSshkeyfileShort { get { return LC.L(@"Uses a SSH private key to authenticate"); } }
         public static string DescriptionSshkeyLong(string urlprefix) { return LC.L(@"An url-encoded SSH private key. The private key must be prefixed with {0}. If the file is encrypted, the password supplied is used to decrypt the keyfile.  If this option is supplied, the password is not used to authenticate. This option only works when using the managed SSH client.", urlprefix); }
         public static string DescriptionSshkeyShort { get { return LC.L(@"Uses a SSH private key to authenticate"); } }
-        public static string DisplayName { get { return LC.L(@"SFTP (SSH)"); } }
+        public static string DescriptionSshtimeoutLong { get { return LC.L(@"Use this option to manage the internal timeout for SSH operations. If this options is set to zero, the operations will not time out"); } }
+		public static string DescriptionSshtimeoutShort { get { return LC.L(@"Sets the operation timeout value"); } }
+		public static string DescriptionSshkeepaliveLong { get { return LC.L(@"This option can be used to enable the keep-alive interval for the SSH connection. If the connection is idle, aggressive firewalls might close the connection. Using keep-alive will keep the connection open in this scenario. If this value is set to zero, the keep-alive is disabled."); } }
+		public static string DescriptionSshkeepaliveShort { get { return LC.L(@"Sets a keepalive value"); } }
+		public static string DisplayName { get { return LC.L(@"SFTP (SSH)"); } }
         public static string FolderNotFoundManagedError(string foldername, string message) { return LC.L(@"Unable to set folder to {0}, error message: {1}", foldername, message); }
         public static string FingerprintNotMatchManagedError(string fingerprint) { return LC.L(@"Validation of server fingerprint failed. Server returned fingerprint ""{0}"". Cause of this message is either not correct configuration or Man-in-the-middle attack!", fingerprint); }
         public static string FingerprintNotSpecifiedManagedError(string fingerprint, string hostkeyoption, string allkeysoptions) { return LC.L(@"Please add --{1}=""{0}"" to trust this host. Optionally you can use --{2} (NOT SECURE) for testing!", fingerprint, hostkeyoption, allkeysoptions); }   

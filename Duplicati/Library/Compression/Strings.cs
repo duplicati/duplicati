@@ -6,7 +6,9 @@ namespace Duplicati.Library.Compression.Strings {
         public static string CompressionlevelShort { get { return LC.L(@"Sets the Zip compression level"); } }
         public static string CompressionmethodLong(string optionname) { return LC.L(@"This option can be used to set an alternative compressor method, such as LZMA. Note that using another value than Deflate will cause the {0} option to be ignored.", optionname); }
         public static string CompressionmethodShort { get { return LC.L(@"Sets the Zip compression method"); } }
-        public static string Description { get { return LC.L(@"This module provides the industry standard Zip compression. Files created with this module can be read by any standard-compliant zip application."); } }
+		public static string Compressionzip64Short { get { return LC.L(@"Toggles Zip64 support"); } }
+		public static string Compressionzip64Long { get { return LC.L(@"The zip64 format is required for files larger than 4GiB, use this flag to toggle it"); } }
+		public static string Description { get { return LC.L(@"This module provides the industry standard Zip compression. Files created with this module can be read by any standard-compliant zip application."); } }
         public static string DisplayName { get { return LC.L(@"Zip compression"); } }
         public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
     }

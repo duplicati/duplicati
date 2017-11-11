@@ -1,4 +1,6 @@
 #!/bin/sh
+mkdir -p /usr/local/bin
+
 echo "mono ${SYNOPKG_PKGDEST}/Duplicati.CommandLine.exe $@" > "/usr/local/bin/duplicati-cli" 
 chmod +x "/usr/local/bin/duplicati-cli"
 

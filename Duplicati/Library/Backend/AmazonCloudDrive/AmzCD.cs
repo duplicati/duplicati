@@ -336,7 +336,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         #endregion
 
         #region IBackend implementation
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             EnforceConsistencyDelay(RemoteOperation.List);
 
@@ -354,9 +354,9 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                     foreach(var n in lst.Data)
                     {
 
-                        if (string.Equals(CONTENT_KIND_FOLDER, n.Kind, StringComparison.InvariantCultureIgnoreCase))
+                        if (string.Equals(CONTENT_KIND_FOLDER, n.Kind, StringComparison.OrdinalIgnoreCase))
                             res.Add(new FileEntry(n.Name) { IsFolder = true });
-                        else if (string.Equals(CONTENT_KIND_FILE, n.Kind, StringComparison.InvariantCultureIgnoreCase))
+                        else if (string.Equals(CONTENT_KIND_FILE, n.Kind, StringComparison.OrdinalIgnoreCase))
                         {
                             cache[n.Name] = n.ID;
 
@@ -416,7 +416,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         }
         public void Test()
         {
-            List();
+            this.TestList();
         }
         public void CreateFolder()
         {

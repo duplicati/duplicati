@@ -21,6 +21,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
         private const string READCONFIGFROMDB_OPTION = "read-config-from-db";
 
+        private const string DETACHED_PROCESS = "detached-process";
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
         private const string DEFAULT_HOSTURL = "http://localhost:8200";
@@ -45,7 +46,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             else
 #endif
-			{
+            {
                 //Windows users expect a WinForms element
                 return TOOLKIT_WINDOWS_FORMS;
             }
@@ -63,18 +64,18 @@ namespace Duplicati.GUI.TrayIcon
         
         public static void RealMain(string[] _args)
         {
-            if (Duplicati.Library.Utility.Utility.IsClientWindows)
-                Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
-
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
+            if (Duplicati.Library.Utility.Utility.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
+                Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+            
             foreach (string s in args)
                 if (
-                    s.Equals("help", StringComparison.InvariantCultureIgnoreCase) ||
-                    s.Equals("/help", StringComparison.InvariantCultureIgnoreCase) ||
-                    s.Equals("usage", StringComparison.InvariantCultureIgnoreCase) ||
-                    s.Equals("/usage", StringComparison.InvariantCultureIgnoreCase))
+                    s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("usage", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
                     options["help"] = "";
 
             if (options.ContainsKey("help"))
@@ -85,9 +86,9 @@ namespace Duplicati.GUI.TrayIcon
                 foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
                 {
                     Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
-					if (arg.Name == TOOLKIT_OPTION)
+                    if (arg.Name == TOOLKIT_OPTION)
                         Console.WriteLine("    Supported toolkits: {0}{1}", string.Join(", ", arg.ValidValues), Environment.NewLine);                    
-				}
+                }
 
                 Console.WriteLine("Additionally, these server options are also supported:");
                 Console.WriteLine();
@@ -104,24 +105,24 @@ namespace Duplicati.GUI.TrayIcon
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
             {
 #if !(__MonoCS__ || __WindowsGTK__ || ENABLE_GTK)
-				if (Library.Utility.Utility.IsClientLinux && !Library.Utility.Utility.IsClientOSX)
-					Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
+                if (Library.Utility.Utility.IsClientLinux && !Library.Utility.Utility.IsClientOSX)
+                    Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
 #endif
-				toolkit = GetDefaultToolKit(true);
+                toolkit = GetDefaultToolKit(true);
             }
             else 
             {
-                if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+                if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_WINDOWS_FORMS;
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
-                else if (TOOLKIT_GTK.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+                else if (TOOLKIT_GTK.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_GTK;
-                else if (TOOLKIT_GTK_APP_INDICATOR.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+                else if (TOOLKIT_GTK_APP_INDICATOR.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_GTK_APP_INDICATOR;
 #endif
-				else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+                else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_COCOA;
-                else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.InvariantCultureIgnoreCase))
+                else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_RUMPS;
                 else
                     toolkit = GetDefaultToolKit(true);
@@ -168,9 +169,21 @@ namespace Duplicati.GUI.TrayIcon
                 password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                 saltedpassword = false;
             }
-            
+
             if (databaseConnection != null)
-                serverURL = (new UriBuilder(serverURL) {Port = databaseConnection.ApplicationSettings.LastWebserverPort}).Uri;
+            {
+                var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
+                var scheme = "http";
+
+                if (cert != null && cert.HasPrivateKey)
+                    scheme = "https";
+
+                serverURL = (new UriBuilder(serverURL)
+                    {
+                        Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
+                        Scheme = scheme
+                    }).Uri;
+            }
 
             string url;
 
@@ -262,7 +275,7 @@ namespace Duplicati.GUI.TrayIcon
             else if (toolkit == TOOLKIT_GTK_APP_INDICATOR)
                 return GetAppIndicatorInstance();
 #endif
-			else if (toolkit == TOOLKIT_COCOA)
+            else if (toolkit == TOOLKIT_COCOA)
                 return GetCocoaRunnerInstance();
             else if (toolkit == TOOLKIT_RUMPS)
                 return GetRumpsRunnerInstance();
@@ -285,7 +298,7 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
 #endif
-		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
 
         private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
@@ -302,7 +315,7 @@ namespace Duplicati.GUI.TrayIcon
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
             return typeof(Gtk.StatusIcon) != null && typeof(Gdk.Image) != null;
 #else
-			return false;
+            return false;
 #endif
         }
 
@@ -318,7 +331,7 @@ namespace Duplicati.GUI.TrayIcon
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
             return typeof(AppIndicator.ApplicationIndicator) != null;
 #else
-			return false;
+            return false;
 #endif
         }
         
@@ -403,14 +416,21 @@ namespace Duplicati.GUI.TrayIcon
                 if (SupportsRumps)
                     toolkits.Add(TOOLKIT_RUMPS);
                 
-                return new Duplicati.Library.Interface.ICommandLineArgument[]
+                var args = new List<Duplicati.Library.Interface.ICommandLineArgument>()
                 {
                     new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(false), null, toolkits.ToArray()),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                     new Duplicati.Library.Interface.CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),               
-                    new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser comand", "Set this option to override the default browser detection"),
+                    new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
                 };
+
+                if (Duplicati.Library.Utility.Utility.IsClientWindows)
+                {
+                    args.Add(new Duplicati.Library.Interface.CommandLineArgument(DETACHED_PROCESS, CommandLineArgument.ArgumentType.String, "Runs the tray-icon detached", "This option runs the tray-icon in detached mode, meaning that the process will exit immediately and not send output to the console of the caller"));
+                }
+
+                return args.ToArray();
             }
         }
     }

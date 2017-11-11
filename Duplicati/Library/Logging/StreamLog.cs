@@ -59,7 +59,7 @@ namespace Duplicati.Library.Logging
         /// <param name="exception">An exception, may be null</param>
         public virtual void WriteMessage(string message, LogMessageType type, Exception exception)
         {
-            m_stream.WriteLine("{0:u} - {1}: {2}", DateTime.Now, type, message);
+            m_stream.WriteLine("{0:u} - {1}: {2}", DateTime.UtcNow.ToString("u"), type, message);
             if (exception != null)
             {
                 m_stream.WriteLine(exception.ToString());

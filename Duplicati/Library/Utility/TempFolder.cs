@@ -80,20 +80,18 @@ namespace Duplicati.Library.Utility
 
         #endregion
 
-        private static string m_system_temp_dir = null;
-
         /// <summary>
         /// Gets or sets the global temporary path used to store temporary files.
         /// Set to null to use the system default.
         /// </summary>
         public static string SystemTempPath
         {
-            get { return m_system_temp_dir == null ? System.IO.Path.GetTempPath() : m_system_temp_dir; }
+            get { return SystemContextSettings.Tempdir; }
             set 
             {
                 if (!System.IO.Directory.Exists(value))
                     throw new Exception(Strings.TempFolder.TempFolderDoesNotExistError(value));
-                m_system_temp_dir = value; 
+                SystemContextSettings.Tempdir = value; 
             }
         }
 

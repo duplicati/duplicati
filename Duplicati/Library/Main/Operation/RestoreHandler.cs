@@ -124,8 +124,8 @@ namespace Duplicati.Library.Main.Operation
                                     //Figure out what files are to be patched, and what blocks are needed
                                     PrepareBlockAndFileList(database, m_options, filter, m_result);
 
-                                    blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                                    filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+                                    blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
+                                    filehasher = Library.Utility.HashAlgorithmHelper.Create(m_options.FileHashAlgorithm);
                                     if (blockhasher == null)
                                         throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                                     if (!blockhasher.CanReuseTransform)
@@ -194,7 +194,7 @@ namespace Duplicati.Library.Main.Operation
             var blocksize = options.Blocksize;
             var updateCounter = 0L;
             var fullblockverification = options.FullBlockVerification;
-            var blockhasher = fullblockverification ? System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm) : null;
+            var blockhasher = fullblockverification ? Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm) : null;
 
             using (var blockmarker = database.CreateBlockMarker())
             using(var volumekeeper = database.GetMissingBlockData(blocks, options.Blocksize))
@@ -345,8 +345,8 @@ namespace Duplicati.Library.Main.Operation
                 Utility.VerifyParameters(database, m_options);
                 m_blockbuffer = new byte[m_options.Blocksize];
                 
-                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                var filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+                var blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
+                var filehasher = Library.Utility.HashAlgorithmHelper.Create(m_options.FileHashAlgorithm);
                 if (blockhasher == null)
                     throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
                 if (!blockhasher.CanReuseTransform)

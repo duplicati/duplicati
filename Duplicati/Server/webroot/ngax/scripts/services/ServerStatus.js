@@ -194,7 +194,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         return false;
     }
 
-    var longpoll = function() {
+    var longpoll = function(fastcall) {
         if (longPollRetryTimer != null) {
             window.clearInterval(longPollRetryTimer);
             longPollRetryTimer = null;
@@ -205,7 +205,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             $rootScope.$broadcast('serverstatechanged');
         }
 
-        var url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (state.lastEventId > 0 ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
+        var url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (((!fastcall) && (state.lastEventId > 0)) ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
         AppService.get(url, {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
             function (response) {
                 var oldEventId = state.lastEventId;                
@@ -259,7 +259,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
                     startUpdateProgressPoll();
 
 
-                longpoll();
+                longpoll(false);
             },
 
             function(response) {
@@ -272,17 +272,17 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
                 if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
 
                     // Try again
-                    longpoll();
+                    longpoll(true);
                 } else {
 
                     state.connectionState = 'disconnected';
 
                     //If we got a new XSRF token this time, quickly retry
                     if (state.xsfrerror && !oldxsfrstate) {
-                        longpoll();    
+                        longpoll(true);    
                     } else {
                         // Otherwise, start countdown to next try
-                        countdownForForReLongPoll(longpoll);
+                        countdownForForReLongPoll(function() { longpoll(true); });
                     }
                 }
 
@@ -293,7 +293,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         );
     };
 
-    this.reconnect = longpoll;
+    this.reconnect = function() { longpoll(true); };
 
-    longpoll();
+    longpoll(true);
 });

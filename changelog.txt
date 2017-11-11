@@ -1,3 +1,137 @@
+2017-10-20 - 2.0.2.12_canary_2017-10-20
+==========
+* Fixed not reporting "Finished" until the backup is actually finished, thanks @warwickmm
+* Fixed stack overflow in FTP backend, thanks @tygill
+* Fixed a number of incorrect exception messages, thanks @warwickmm
+* Removed assembly signing for now, thanks @warwickmm
+
+2017-10-20 - 2.0.2.11_canary_2017-10-20
+==========
+* Changed the way the auto-updater works. It now spawns a new version of the executable instead of attempting to run it in an AppDomain
+  It is possible to revert to the old version by setting the environment variable `AUTOUPDATER_USE_APPDOMAIN=true`
+* Updated Synology script to be better at locating Mono
+* Service description now requests auto-restart
+* Added the Czech (cs) translations
+* Updated FasterHashing, so it automatically picks up openssl 1.0 and 1.1 on all platforms
+
+2017-10-11 - 2.0.2.10_canary_2017-10-11
+==========
+* Fixed an issue with the compare command not working with filters
+* Fixed showing the full version number on the app on MacOS
+* Code quality cleanup, thanks @warwickmm
+* Added code to detect the power supply source, thanks @warwickmm
+* Fixed an issuw with quota detection for non-drive roots on Windows, thanks @t$
+* Implemented retention policy as a commandline switch, thanks @tekkiwulf
+* Improved default filters, thanks @tygill
+* Updated FasterHashing to fix problems on MacOS and with OpenSSL 1.1
+* Fixed the remote-file delete function to only delete Duplicati-related files
+* Added option to run the tray-icon detached from the console
+
+2017-10-01 - 2.0.2.9_canary_2017-10-01
+==========
+* Updated libraries: NewtonSoft.Json, AzureBlob, AWS, SSH, SharpCompress, Meg, NGetText, MimeKit, MailKit, AlphaFS, CoCoL
+* Fixed the default-filters warning, thanks @tygill
+* Added quota reporting to OneDrive, thanks @tygill
+* Added a number of performance improvementes, thanks @warwickmm
+* Switched hashing to use FasterHashing which loads OpenSSL or Apple CC libraries for much faster hashing performance
+* Changed the `--zip-compression-method` option to report only the supported methods
+* Fixed error on Compact that was caused by backend re-use
+
+2017-09-20 - 2.0.2.8_canary_2017-09-20
+==========
+* Fixed passwordless SSH setup, thanks @Pectojin
+* More fixes to the SSL certificate override issue
+* Changed hash provider to use the native CNG version if available
+
+2017-09-19 - 2.0.2.7_canary_2017-09-19
+==========
+* Fixed an issue with S3 IAM not working if the destination had subfolders
+* Fixed an issue where the backup would error out reporting an extra file that was just deleted
+* Fixed an issue with AmzCD not honoring the consistency delay in all cases
+* Added support for GUID based source folders on Windows, thanks @tygill
+* Fixed not being able to set "no delay" for startup settings, thanks @Pectojin
+* Added nice-level to Duplicati-server on Linux-based installs, thanks @z0rc
+* Re-introduced the machine name in the WebUI page title, thanks @Pectojin
+* Reduced size of PNG images, thanks @PeterDaveHello
+* Added default filters to exclude temp folders and similar, thanks @tygill
+* Fixed all string compares to use ordinal compare, thanks @tygill
+* Fixed a case where temporary files were not removed after verification
+
+2017-09-16 - 2.0.2.6_canary_2017-09-16
+==========
+* Added an experiemental --use-block-cache flag to test performance potential
+
+2017-09-14 - 2.0.2.5_canary_2017-09-14
+==========
+* Added support for wildcards in source paths on Windows, thanks @tygill
+* Improved default values for Sia backend, thanks @fuffenz
+
+2017-09-09 - 2.0.2.4_canary_2017-09-09
+==========
+* Fixed an issue that cause Duplicati GUI to fail on startup
+
+2017-09-08 - 2.0.2.3_canary_2017-09-08
+==========
+* Added Italian and Chinese (Taiwan) to languages
+* Fixed periodically loosing http certificate overrides
+* Added status variables to mail/jabber/script/http reporters
+* Added a Sia backend (thanks @fuffenz)
+* Fixed issue with using Azure backend
+
+2017-08-30 - 2.0.2.2_canary_2017-08-30
+==========
+* Fixed not performing vacuum all the time, thanks @danstahr
+* Added Selectel as an OpenStack prodvider, thanks @febalist
+* Added a fix for hanging "Connecting ..." dialogs on some machines
+* Fixed an issue with the HTTP report module not using a custom message
+* Updated translations, added Danish to the list, thanks to all translators!
+* Improved error messages on passphrase change
+* Fixed a crash that happened in the scheduler if the clock was changed with more than 3 months
+* Fixed TrayIcon connecting over HTTPS if possible, thanks @mnaiman
+* Added options to SSH library that allows configuring the timeout values
+* Updated the Mega and SSH libraries
+* Added support for detecting MacPorts versions of Mono
+* Added a tooltip to the Windows trayicon
+* Changed the logic in S3 to auto-set `--s3-ext-forcepathstyle` if the destination is not a known Amazon server
+* Improved error message for WebDAV if the server returns 405
+* Added a startup dialog that asks users to password protect the UI
+* Added Wasabi as an S3 provider
+
+2017-08-01 - 2.0.2.1_beta_2017-08-01
+==========
+This is the first Beta release of Duplicati 2.0.
+
+It is a rebuild of version 2.0.1.73, intended for users who prefer a stable version instead of "bleeding edge" updates.
+
+Thanks to everyone who has used Duplicati, reported bugs and contributed fixes!
+
+2017-07-15 - 2.0.1.73_experimental_2017-07-15
+==========
+This version is the same as 2.0.1.72_canary.
+Som of the changes from 2.0.1.61_experimental:
+
+* Added a "dark" theme
+* Updated thirdparty libraries
+* Added JottaCloud backend
+* Improved database rebuild speed
+* Added throttle controls to the WebUI
+* Switched to %LOCALAPPDATA% for storing data on Windows
+* And more ...
+
+2017-07-05 - 2.0.1.72_canary_2017-07-05
+==========
+* Fix duplicate `zip-compression-level` warning
+
+2017-07-04 - 2.0.1.71_canary_2017-07-04
+==========
+* Fixed a problem with the Synology package allowing access without being authenticated with DSM
+
+2017-07-04 - 2.0.1.70_canary_2017-07-04
+==========
+* Added support for enabling zip64
+* Rewrote the Synology package to use nginx proxy features instead of CGI
+* Added code signature to Synology package
+
 2017-06-29 - 2.0.1.69_canary_2017-06-29
 ==========
 * Added support for attaching the console to the service on Windows, thanks @mnaiman

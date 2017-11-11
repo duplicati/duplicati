@@ -33,14 +33,33 @@ namespace Duplicati.Library.Modules.Builtin
         private const string OPTION_OAUTH_URL = "oauth-url";
         private const string OPTION_SSL_VERSIONS = "allowed-ssl-versions";
 
-        private IDisposable m_certificateValidator;
+        private const string OPTION_BUFFER_REQUESTS = "http-enable-buffering";
+		private const string OPTION_OPERATION_TIMEOUT = "http-operation-timeout";
+		private const string OPTION_READWRITE_TIMEOUT = "http-readwrite-timeout";
+
+
         private bool m_useNagle;
         private bool m_useExpect;
-        private bool m_dispose;
         private System.Net.SecurityProtocolType m_securityProtocol;
 
-        // Copied from system reference
-        [Flags]
+		private bool m_dispose;
+
+        private bool m_resetNagle;
+        private bool m_resetExpect;
+        private bool m_resetSecurity;
+
+		/// <summary>
+		/// The handle to the call-context http settings
+		/// </summary>
+		private IDisposable m_httpsettings;
+
+        /// <summary>
+        /// The handle to the call-contet oauth setttings
+        /// </summary>
+		private IDisposable m_oauthsettings;
+
+		// Copied from system reference
+		[Flags]
         private enum CopySecurityProtocolType
         {
             Ssl3 = 48,
@@ -110,6 +129,10 @@ namespace Duplicati.Library.Modules.Builtin
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DescriptionAcceptAnyCertificateShort, Strings.HttpOptions.DescriptionAcceptAnyCertificateLong),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_OAUTH_URL, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.OauthurlShort, Strings.HttpOptions.OauthurlLong, OAuthHelper.DUPLICATI_OAUTH_SERVICE),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_SSL_VERSIONS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Flags, Strings.HttpOptions.SslversionsShort, Strings.HttpOptions.SslversionsLong, defaultssl, null, sslnames),
+
+                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_OPERATION_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.OperationtimeoutShort, Strings.HttpOptions.OperationtimeoutLong),
+                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_READWRITE_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.ReadwritetimeoutShort, Strings.HttpOptions.ReadwritetimeoutLong),
+                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_BUFFER_REQUESTS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.BufferrequestsShort, Strings.HttpOptions.BufferrequestsLong, "false"),
                 }); 
             }
         }
@@ -117,33 +140,60 @@ namespace Duplicati.Library.Modules.Builtin
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
             m_dispose = true;
+            TimeSpan operationTimeout = new TimeSpan(0);
+            TimeSpan readwriteTimeout = new TimeSpan(0);
 
-            bool accepAllCertificates = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_ACCEPT_ANY_CERTIFICATE);
+            string timetmp;
+            commandlineOptions.TryGetValue(OPTION_OPERATION_TIMEOUT, out timetmp);
+            if (!string.IsNullOrWhiteSpace(timetmp))
+                operationTimeout = Utility.Timeparser.ParseTimeSpan(timetmp);
 
-            string certHash;
-            commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
+            commandlineOptions.TryGetValue(OPTION_READWRITE_TIMEOUT, out timetmp);
+			if (!string.IsNullOrWhiteSpace(timetmp))
+                readwriteTimeout = Utility.Timeparser.ParseTimeSpan(timetmp);
 
-            m_certificateValidator = new Library.Utility.SslCertificateValidator(accepAllCertificates, certHash == null ? null : certHash.Split(new string[] {",", ";"}, StringSplitOptions.RemoveEmptyEntries));
-            
+			bool accepAllCertificates = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_ACCEPT_ANY_CERTIFICATE);
+
+			string certHash;
+			commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
+
+            m_httpsettings = Duplicati.Library.Utility.HttpContextSettings.StartSession(
+                operationTimeout,
+                readwriteTimeout,
+                Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_BUFFER_REQUESTS),
+                accepAllCertificates,
+                certHash == null ? null : certHash.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries)
+            );
+
             bool disableNagle = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_DISABLE_NAGLING);
             bool disableExpect100 = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_DISABLE_EXPECT100);
+
+            // TODO: This is done to avoid conflicting settings,
+            // but ideally, we should run each operation in a seperate
+            // app-domain to ensure that multiple invocations of this module
+            // does not interfere, as the options are shared in the app-domain
+            m_resetNagle = commandlineOptions.ContainsKey(OPTION_DISABLE_NAGLING);
+            m_resetExpect = commandlineOptions.ContainsKey(OPTION_DISABLE_EXPECT100);
+            m_resetSecurity = commandlineOptions.ContainsKey(OPTION_SSL_VERSIONS);
 
             m_useNagle = System.Net.ServicePointManager.UseNagleAlgorithm;
             m_useExpect = System.Net.ServicePointManager.Expect100Continue;
             m_securityProtocol = System.Net.ServicePointManager.SecurityProtocol;
 
-            System.Net.ServicePointManager.UseNagleAlgorithm = !disableNagle;
-            System.Net.ServicePointManager.Expect100Continue = !disableExpect100;
+            if (m_resetNagle)
+                System.Net.ServicePointManager.UseNagleAlgorithm = !disableNagle;
+            if (m_resetExpect)
+                System.Net.ServicePointManager.Expect100Continue = !disableExpect100;
 
             string sslprotocol;
             commandlineOptions.TryGetValue(OPTION_SSL_VERSIONS, out sslprotocol);
-            if (!string.IsNullOrWhiteSpace(sslprotocol))
+            if (!string.IsNullOrWhiteSpace(sslprotocol) && m_resetSecurity)
                 System.Net.ServicePointManager.SecurityProtocol = ParseSSLProtocols(sslprotocol);
 
             string url;
             commandlineOptions.TryGetValue(OPTION_OAUTH_URL, out url);
-            OAuthHelper.OAUTH_SERVER = url;
-
+            if (!string.IsNullOrWhiteSpace(url))
+                m_oauthsettings = OAuthContextSettings.StartSession(url);
         }
 
         #endregion
@@ -155,13 +205,24 @@ namespace Duplicati.Library.Modules.Builtin
             if (m_dispose)
             {
                 m_dispose = false;
-                System.Net.ServicePointManager.UseNagleAlgorithm = m_useNagle;
-                System.Net.ServicePointManager.Expect100Continue = m_useExpect;
-                System.Net.ServicePointManager.SecurityProtocol = m_securityProtocol;
-                if (m_certificateValidator != null)
-                    m_certificateValidator.Dispose();
-                m_certificateValidator = null;
-                OAuthHelper.OAUTH_SERVER = null;
+                if (m_resetNagle)
+                    System.Net.ServicePointManager.UseNagleAlgorithm = m_useNagle;
+                if (m_resetExpect)
+                    System.Net.ServicePointManager.Expect100Continue = m_useExpect;
+                if (m_resetSecurity)
+                    System.Net.ServicePointManager.SecurityProtocol = m_securityProtocol;
+            }
+
+            if (m_httpsettings != null)
+            {
+                m_httpsettings.Dispose();
+                m_httpsettings = null;
+            }
+
+            if (m_oauthsettings != null)
+            {
+                m_oauthsettings.Dispose();
+                m_oauthsettings = null;
             }
         }
 

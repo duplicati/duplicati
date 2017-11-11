@@ -88,11 +88,11 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Drawing" />
-    <Reference Include="CoCoL">
-      <HintPath>..\..\..\packages\CoCoL.1.5.0\lib\net45\CoCoL.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="CoCoL">
+      <HintPath>..\..\..\packages\CoCoL.1.5.1\lib\net45\CoCoL.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -138,11 +138,11 @@
     </EmbeddedResource>
     <Compile Include="WinFormsRunner.cs" />
     <Compile Include="RumpsRunner.cs" />
-    <None Include="packages.config" />
     <EmbeddedResource Include="Resources\context_menu_open.ico" />
     <EmbeddedResource Include="Resources\context_menu_pause.ico" />
     <EmbeddedResource Include="Resources\context_menu_play.ico" />
     <EmbeddedResource Include="Resources\context_menu_quit.ico" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
@@ -313,6 +313,10 @@
       <Project>{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}</Project>
       <Name>Duplicati.Library.Backend.AlternativeFTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
+      <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
+      <Name>Duplicati.Library.Backend.Sia</Name>
+    </ProjectReference>   
     <ProjectReference Include="..\..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
       <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
       <Name>Duplicati.Library.Backend.Dropbox</Name>

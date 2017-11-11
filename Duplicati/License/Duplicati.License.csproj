@@ -9,7 +9,6 @@
     <RootNamespace>Duplicati.License</RootNamespace>
     <AssemblyName>Duplicati.License</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -379,6 +378,18 @@
     </Content>
     <Content Include="..\..\thirdparty\TlsTest\licensedata.json">
       <Link>licenses\TlsTest\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\FasterHashing\download.txt">
+      <Link>licenses\FasterHashing\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\FasterHashing\license.txt">
+      <Link>licenses\FasterHashing\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\FasterHashing\licensedata.json">
+      <Link>licenses\FasterHashing\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

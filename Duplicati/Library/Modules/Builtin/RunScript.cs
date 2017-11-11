@@ -21,6 +21,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -87,10 +88,10 @@ namespace Duplicati.Library.Modules.Builtin
 
 
             if (!string.IsNullOrEmpty(m_requiredScript))
-                Execute(m_requiredScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, true, m_options, null);
+                Execute(m_requiredScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, true, m_options, null, null);
 
             if (!string.IsNullOrEmpty(m_startScript))
-                Execute(m_startScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, null);
+                Execute(m_startScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, null, null);
         }
 
         public void OnFinish (object result)
@@ -98,10 +99,19 @@ namespace Duplicati.Library.Modules.Builtin
             if (string.IsNullOrEmpty(m_finishScript))
                 return;
 
+
+            ParsedResultType level;
+            if (result is Exception)
+                level = ParsedResultType.Fatal;
+            else if (result != null && result is Library.Interface.IBasicResults)
+                level = ((IBasicResults)result).ParsedResult;
+            else
+                level = ParsedResultType.Error;
+
             using (TempFile tmpfile = new TempFile())
             {
                 SerializeResult(tmpfile, result);
-                Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile);
+                Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile, level);
             }
         }
         #endregion
@@ -171,7 +181,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
         }
 
-        private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, IDictionary<string, string> options, string datafile)
+        private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, IDictionary<string, string> options, string datafile, ParsedResultType? level)
         {
             try
             {
@@ -191,6 +201,9 @@ namespace Duplicati.Library.Modules.Builtin
                 psi.EnvironmentVariables["DUPLICATI__EVENTNAME"] = eventname;
                 psi.EnvironmentVariables["DUPLICATI__OPERATIONNAME"] = operationname;
                 psi.EnvironmentVariables["DUPLICATI__REMOTEURL"] = remoteurl;
+                if (level != null)
+                    psi.EnvironmentVariables["DUPLICATI__PARSED_RESULT"] = level.Value.ToString();
+                
                 if (localpath != null)
                     psi.EnvironmentVariables["DUPLICATI__LOCALPATH"] = string.Join(System.IO.Path.PathSeparator.ToString(), localpath);
 
@@ -264,18 +277,18 @@ namespace Duplicati.Library.Modules.Builtin
                                 value = value.Substring(1, value.Length - 2);
                         }
 
-                        if (string.Equals(key, "remoteurl", StringComparison.InvariantCultureIgnoreCase))
+                        if (string.Equals(key, "remoteurl", StringComparison.OrdinalIgnoreCase))
                         {
                             remoteurl = value;
                         }
-                        else if (string.Equals(key, "localpath", StringComparison.InvariantCultureIgnoreCase))
+                        else if (string.Equals(key, "localpath", StringComparison.OrdinalIgnoreCase))
                         {
                             localpath = value.Split(System.IO.Path.PathSeparator);
                         }
                         else if (
-                            string.Equals(key, "eventname", StringComparison.InvariantCultureIgnoreCase) || 
-                            string.Equals(key, "operationname", StringComparison.InvariantCultureIgnoreCase) ||
-                            string.Equals(key, "main-action", StringComparison.InvariantCultureIgnoreCase) ||
+                            string.Equals(key, "eventname", StringComparison.OrdinalIgnoreCase) || 
+                            string.Equals(key, "operationname", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(key, "main-action", StringComparison.OrdinalIgnoreCase) ||
                             key == ""
                         )
                         {

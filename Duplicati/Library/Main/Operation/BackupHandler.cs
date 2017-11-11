@@ -378,7 +378,7 @@ namespace Duplicati.Library.Main.Operation
         {
             if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
             {
-                var blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                var blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
                 var hashsize = blockhasher.HashSize / 8;
 
                 foreach (var blockfile in m_database.GetMissingIndexFiles())
@@ -422,12 +422,12 @@ namespace Duplicati.Library.Main.Operation
             {
                 try
                 {
-					if (m_options.NoBackendverification)
-					{
-						FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
-						UpdateStorageStatsFromDatabase();
-					}
-					else
+                    if (m_options.NoBackendverification)
+                    {
+                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
+                        UpdateStorageStatsFromDatabase();
+                    }
+                    else
                         FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
                 }
                 catch (Exception ex)
@@ -601,12 +601,12 @@ namespace Duplicati.Library.Main.Operation
         {
             var currentIsSmall = lastVolumeSize != -1 && lastVolumeSize <= m_options.SmallFileSize;
 
-            if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0)
+            if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0 || m_options.RetentionPolicy.Count > 0)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);
                 using(var db = new LocalDeleteDatabase(m_database))
-                    new DeleteHandler(backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, ref m_transaction, true, currentIsSmall);
+                    new DeleteHandler(backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, ref m_transaction, true, currentIsSmall, backend);
 
             }
             else if (currentIsSmall && !m_options.NoAutoCompact)
@@ -614,7 +614,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
                 m_result.CompactResults = new CompactResults(m_result);
                 using(var db = new LocalDeleteDatabase(m_database))
-                    new CompactHandler(backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref m_transaction);
+                    new CompactHandler(backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref m_transaction, backend);
             }
         }
 
@@ -640,33 +640,39 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-		/// <summary>
-		/// Handler for computing backend statistics, without relying on a remote folder listing
-		/// </summary>
-		private void UpdateStorageStatsFromDatabase()
-		{
-			if (m_result.BackendWriter != null)
-			{
-				m_result.BackendWriter.KnownFileCount = m_database.GetRemoteVolumes().Count();
-				m_result.BackendWriter.KnownFileSize = m_database.GetRemoteVolumes().Select(x => Math.Max(0, x.Size)).Sum();
+        /// <summary>
+        /// Handler for computing backend statistics, without relying on a remote folder listing
+        /// </summary>
+        private void UpdateStorageStatsFromDatabase()
+        {
+            if (m_result.BackendWriter != null)
+            {
+                m_result.BackendWriter.KnownFileCount = m_database.GetRemoteVolumes().Count();
+                m_result.BackendWriter.KnownFileSize = m_database.GetRemoteVolumes().Select(x => Math.Max(0, x.Size)).Sum();
 
-				m_result.BackendWriter.UnknownFileCount = 0;
-				m_result.BackendWriter.UnknownFileSize = 0;
+                m_result.BackendWriter.UnknownFileCount = 0;
+                m_result.BackendWriter.UnknownFileSize = 0;
 
-				m_result.BackendWriter.BackupListCount = m_database.FilesetTimes.Count();
-				m_result.BackendWriter.LastBackupDate = m_database.FilesetTimes.FirstOrDefault().Value.ToLocalTime();
+                m_result.BackendWriter.BackupListCount = m_database.FilesetTimes.Count();
+                m_result.BackendWriter.LastBackupDate = m_database.FilesetTimes.FirstOrDefault().Value.ToLocalTime();
 
-				// TODO: If we have a BackendManager, we should query through that
-				using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
-					if (backend is Library.Interface.IQuotaEnabledBackend)
-					{
-						m_result.BackendWriter.TotalQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).TotalQuotaSpace;
-						m_result.BackendWriter.FreeQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)backend).FreeQuotaSpace;
-				}
-			}
+                // TODO: If we have a BackendManager, we should query through that
+                using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
+                {
+                    if (backend is Library.Interface.IQuotaEnabledBackend)
+                    {
+                        Library.Interface.IQuotaInfo quota = ((Library.Interface.IQuotaEnabledBackend)backend).Quota;
+                        if (quota != null)
+                        {
+                            m_result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
+                            m_result.BackendWriter.FreeQuotaSpace = quota.FreeQuotaSpace;
+                        }
+                    }
+                }
+            }
 
-			m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
-		}
+            m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
+        }
 
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
@@ -696,8 +702,8 @@ namespace Duplicati.Library.Main.Operation
                 m_blockbuffer = new byte[m_options.Blocksize * Math.Max(1, m_options.FileReadBufferSize / m_options.Blocksize)];
                 m_blocklistbuffer = new byte[m_options.Blocksize];
 
-                m_blockhasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                m_filehasher = System.Security.Cryptography.HashAlgorithm.Create(m_options.FileHashAlgorithm);
+                m_blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
+                m_filehasher = Library.Utility.HashAlgorithmHelper.Create(m_options.FileHashAlgorithm);
 
                 if (m_blockhasher == null)
                     throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
@@ -816,12 +822,15 @@ namespace Duplicati.Library.Main.Operation
                                         
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
                         using(new Logging.Timer("Async backend wait"))
-                            backend.WaitForComplete(m_database, m_transaction);
+                            backend.WaitForEmpty(m_database, m_transaction);
                             
                         if (m_result.TaskControlRendevouz() != TaskControlState.Stop) 
                             CompactIfRequired(backend, lastVolumeSize);
-                        
-                        if (m_options.UploadVerificationFile)
+
+						using (new Logging.Timer("Async backend wait"))
+                            backend.WaitForComplete(m_database, m_transaction);
+
+						if (m_options.UploadVerificationFile)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
                             FilelistProcessor.UploadVerificationFile(backend.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
@@ -839,18 +848,22 @@ namespace Duplicati.Library.Main.Operation
                                 
                             m_transaction = null;
 
-							if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
-							{
-								if (m_options.NoBackendverification)
-									UpdateStorageStatsFromDatabase();
-								else
-									PostBackupVerification();
-							}
+                            if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
+                            {
+                                if (m_options.NoBackendverification)
+                                    UpdateStorageStatsFromDatabase();
+                                else
+                                    PostBackupVerification();
+                            }
                         }
                         
-                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         m_database.WriteResults();                    
                         m_database.PurgeLogData(m_options.LogRetention);
+                        if (m_options.AutoVacuum)
+                        {
+                            m_database.Vacuum();
+                        }
+                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         return;
                     }
                 }

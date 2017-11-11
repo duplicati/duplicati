@@ -10,7 +10,7 @@ else
 	RELEASE_TYPE=$1
 fi
 
-RELEASE_VERSION="2.0.1.${RELEASE_INC_VERSION}"
+RELEASE_VERSION="2.0.2.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
 
 RELEASE_CHANGELOG_FILE="changelog.txt"
@@ -159,6 +159,13 @@ cp -R Duplicati/Server/webroot "${UPDATE_SOURCE}"
 mkdir "${UPDATE_SOURCE}/alphavss"
 for FN in Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll; do
 	cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
+done
+
+# Fix for some support libraries not being picked up
+for BACKEND in Duplicati/Library/Backend/*; do
+	if [ -d "${BACKEND}/bin/Release/" ]; then
+		cp "${BACKEND}/bin/Release/"*.dll "${UPDATE_SOURCE}"
+	fi
 done
 
 # Install the assembly redirects for all Duplicati .exe files

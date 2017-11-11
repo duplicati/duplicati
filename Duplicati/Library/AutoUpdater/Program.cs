@@ -25,12 +25,16 @@ namespace Duplicati.Library.AutoUpdater
     {
         public static int Main(string[] args)
         {
+            // Ignore webroot during startup verification
             Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, AutoUpdateStrategy.Never);
         }
 
         public static int RealMain(string[] _args)
         {
+            // Enable webroot checks for the verifier
+            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = false;
+
             var args = new List<string>(_args);
             Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
@@ -45,6 +49,8 @@ namespace Duplicati.Library.AutoUpdater
                 return 100;
             }
 
+            UpdaterManager.OnError += (ex) => Console.WriteLine("Error detected: {0}", ex);
+
             var cmd = args[0].ToLowerInvariant().Trim();
             switch (cmd)
             {
@@ -58,6 +64,17 @@ namespace Duplicati.Library.AutoUpdater
                         if (string.Equals(Library.Utility.Utility.AppendDirSeparator(selfdir), Library.Utility.Utility.AppendDirSeparator(UpdaterManager.InstalledBaseDir)))
                             versions = versions.Union(new KeyValuePair<string, UpdateInfo>[] { new KeyValuePair<string, UpdateInfo>(selfdir, UpdaterManager.SelfVersion) });
                         Console.WriteLine(string.Join(Environment.NewLine, versions.Select(x => string.Format(" {0} {1} ({2})", (x.Value.Version == UpdaterManager.SelfVersion.Version ? "*" : "-"), x.Value.Displayname, x.Value.Version))));
+                        return 0;
+                    }
+
+                case "verify":
+                    {
+                        var versions = UpdaterManager.FindInstalledVersions();
+                        var selfdir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                        if (string.Equals(Library.Utility.Utility.AppendDirSeparator(selfdir), Library.Utility.Utility.AppendDirSeparator(UpdaterManager.InstalledBaseDir)))
+                            versions = versions.Union(new KeyValuePair<string, UpdateInfo>[] { new KeyValuePair<string, UpdateInfo>(selfdir, UpdaterManager.SelfVersion) });
+
+                        Console.WriteLine(string.Join(Environment.NewLine, versions.Select(x => string.Format(" {0} {1} ({2}): {3}", (x.Value.Version == UpdaterManager.SelfVersion.Version ? "*" : "-"), x.Value.Displayname, x.Value.Version, UpdaterManager.VerifyUnpackedFolder(x.Key, x.Value) ? "Valid" : "*** Modified ***"))));
                         return 0;
                     }
                 case "check":
@@ -105,7 +122,7 @@ namespace Duplicati.Library.AutoUpdater
 
         private static void WriteUsage()
         {
-            Console.WriteLine("Usage:{0}\t{1}{2} [LIST|CHECK|INSTALL|HELP]", Environment.NewLine, Duplicati.Library.Utility.Utility.IsMono ? "mono " : "", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+            Console.WriteLine("Usage:{0}\t{1}{2} [LIST|VERIFY|CHECK|INSTALL|HELP]", Environment.NewLine, Duplicati.Library.Utility.Utility.IsMono ? "mono " : "", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
             Console.WriteLine();
             Console.WriteLine("Environment variables:");
             Console.WriteLine();

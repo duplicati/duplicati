@@ -32,7 +32,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Size of buffers for copying stream
         /// </summary>
-        public static long DEFAULT_BUFFER_SIZE = 64 * 1024;
+        public static long DEFAULT_BUFFER_SIZE => SystemContextSettings.Buffersize;
 
         /// <summary>
         /// A value indicating if the current process is running in 64bit mode
@@ -551,7 +551,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(System.IO.Stream stream)
         {
-            return Convert.ToBase64String(System.Security.Cryptography.HashAlgorithm.Create(HashAlgorithm).ComputeHash(stream));
+            return Convert.ToBase64String(HashAlgorithmHelper.Create(HashAlgorithm).ComputeHash(stream));
         }
 
         /// <summary>
@@ -825,7 +825,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-				var str = Environment.GetEnvironmentVariable("FILESYSTEM_CASE_SENSITIVE");
+                var str = Environment.GetEnvironmentVariable("FILESYSTEM_CASE_SENSITIVE");
 
                 if (!string.IsNullOrWhiteSpace(str))
                 {
@@ -836,9 +836,9 @@ namespace Duplicati.Library.Utility
                         return false;
                 }
 
-				//TODO: This should probably be determined by filesystem rather than OS,
-				// OSX can actually have the disks formated as Case Sensitive, but insensitive is default
-				return IsClientLinux && !IsClientOSX;
+                //TODO: This should probably be determined by filesystem rather than OS,
+                // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
+                return IsClientLinux && !IsClientOSX;
             }
         }
 
@@ -1075,6 +1075,38 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Gets the unique items from a collection.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in <paramref name="collection"/>.</typeparam>
+        /// <param name="collection">The collection to remove duplicate items from.</param>
+        /// <param name="duplicateItems">The duplicate items in <paramref name="collection"/>.</param>
+        /// <returns>The unique items from <paramref name="collection"/>.</returns>
+        public static ISet<T> GetUniqueItems<T>(IEnumerable<T> collection, out ISet<T> duplicateItems)
+        {
+            return Utility.GetUniqueItems(collection, EqualityComparer<T>.Default, out duplicateItems);
+        }
+
+        /// <summary>
+        /// Gets the unique items from a collection.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in <paramref name="collection"/>.</typeparam>
+        /// <param name="collection">The collection to remove duplicate items from.</param>
+        /// <param name="comparer">The <see cref="System.Collections.Generic.IEqualityComparer{T}"/> implementation to use when comparing values in the collection.</param>
+        /// <param name="duplicateItems">The duplicate items in <paramref name="collection"/>.</param>
+        /// <returns>The unique items from <paramref name="collection"/>.</returns>
+        public static ISet<T> GetUniqueItems<T>(IEnumerable<T> collection, IEqualityComparer<T> comparer, out ISet<T> duplicateItems)
+        {
+            HashSet<T> uniqueItems = new HashSet<T>(comparer);
+            duplicateItems = new HashSet<T>(comparer);
+
+            foreach (T item in collection)
+                if (!uniqueItems.Add(item))
+                    duplicateItems.Add(item);
+
+            return uniqueItems;
+        }
+
+        /// <summary>
         /// Helper method that replaces one file with another
         /// </summary>
         /// <param name="target">The file to replace</param>
@@ -1158,6 +1190,30 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Converts a DateTime instance to a Unix timestamp
+        /// </summary>
+        /// <returns>The Unix timestamp.</returns>
+        /// <param name="input">The DateTime instance to convert.</param>
+        public static long ToUnixTimestamp(DateTime input)
+        {
+            var ticks = input.ToUniversalTime().Ticks;
+            ticks -= ticks % TimeSpan.TicksPerSecond;
+            input = new DateTime(ticks, DateTimeKind.Utc);
+
+            return (long)Math.Floor((input - EPOCH).TotalSeconds);
+        }
+
+        /// <summary>
+        /// Converts a Unix timestamp to a DateTime instance
+        /// </summary>
+        /// <returns>The DateTime instance represented by the timestamp.</returns>
+        /// <param name="input">The Unix timestamp to use.</param>
+        public static DateTime ToUnixTimestamp(long input)
+        {
+            return EPOCH.AddSeconds(input);
+        }
+
+        /// <summary>
         /// Returns a value indicating if the given type should be treated as a primitive
         /// </summary>
         /// <returns><c>true</c>, if type is primitive for serialization, <c>false</c> otherwise.</returns>
@@ -1183,7 +1239,15 @@ namespace Duplicati.Library.Utility
 
             if (IsPrimitiveTypeForSerialization(item.GetType()))
             {
-                writer.Write(item);
+                if (item is DateTime)
+                {
+                    writer.Write(((DateTime)item).ToLocalTime());
+                    writer.Write(" (");
+                    writer.Write(ToUnixTimestamp((DateTime)item));
+                    writer.Write(")");
+                }
+                else
+                    writer.Write(item);
                 return true;
             }
 
@@ -1370,6 +1434,68 @@ namespace Duplicati.Library.Utility
                 }
                 
                 return buf;
+            }
+        }
+
+        /// <summary>
+        /// Gets the drive letter from the given volume guid.
+        /// This method cannot be inlined since the System.Management types are not implemented in Mono
+        /// </summary>
+        /// <param name="volumeGuid">Volume guid</param>
+        /// <returns>Drive letter, as a single character, or null if the volume wasn't found</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static string GetDriveLetterFromVolumeGuid(Guid volumeGuid)
+        {
+            // Based on this answer:
+            // https://stackoverflow.com/questions/10186277/how-to-get-drive-information-by-volume-id
+            using (System.Management.ManagementObjectSearcher searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
+            {
+                string targetId = string.Format(@"\\?\Volume{{{0}}}\", volumeGuid);
+                foreach (System.Management.ManagementObject obj in searcher.Get())
+                {
+                    if (string.Equals(obj["DeviceID"].ToString(), targetId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        object driveLetter = obj["DriveLetter"];
+                        if (driveLetter != null)
+                        {
+                            return obj["DriveLetter"].ToString();
+                        }
+                        else
+                        {
+                            // The volume was found, but doesn't have a drive letter associated with it.
+                            break;
+                        }
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets all volume guids and their associated drive letters.
+        /// This method cannot be inlined since the System.Management types are not implemented in Mono
+        /// </summary>
+        /// <returns>Pairs of drive letter to volume guids</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static IEnumerable<KeyValuePair<string, string>> GetVolumeGuidsAndDriveLetters()
+        {
+            using (System.Management.ManagementObjectSearcher searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
+            {
+                foreach (System.Management.ManagementObject obj in searcher.Get())
+                {
+                    object deviceIdObj = obj["DeviceID"];
+                    object driveLetterObj = obj["DriveLetter"];
+                    if (deviceIdObj != null && driveLetterObj != null)
+                    {
+                        string deviceId = deviceIdObj.ToString();
+                        string driveLetter = driveLetterObj.ToString();
+                        if (!string.IsNullOrEmpty(deviceId) && !string.IsNullOrEmpty(driveLetter))
+                        {
+                            yield return new KeyValuePair<string, string>(driveLetter + @"\", deviceId);
+                        }
+                    }
+                }
             }
         }
     }

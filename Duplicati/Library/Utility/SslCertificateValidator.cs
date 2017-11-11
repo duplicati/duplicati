@@ -25,7 +25,7 @@ using System.Net.Security;
 
 namespace Duplicati.Library.Utility
 {
-    public class SslCertificateValidator : IDisposable
+    public class SslCertificateValidator
     {
         [Serializable]
         public class InvalidCertificateException : Exception
@@ -48,35 +48,13 @@ namespace Duplicati.Library.Utility
         {
             m_acceptAll = acceptAll;
             m_validHashes = validHashes;
-            m_oldCallback = System.Net.ServicePointManager.ServerCertificateValidationCallback;
-
-            System.Net.ServicePointManager.ServerCertificateValidationCallback = new RemoteCertificateValidationCallback(ValidateServerCertficate);
-            m_isAttached = true;
         }
 
         private bool m_acceptAll = false;
         private string[] m_validHashes = null;
-        private bool m_isAttached = false;
         private Exception m_uncastException = null;
-        private RemoteCertificateValidationCallback m_oldCallback = null;
 
-        private void Deactivate()
-        {
-            if (!m_isAttached)
-                throw new InvalidOperationException(Strings.SslCertificateValidator.InvalidCallSequence);
-            System.Net.ServicePointManager.ServerCertificateValidationCallback = m_oldCallback;
-            m_oldCallback = null;
-            m_isAttached = false;
-
-            if (m_uncastException != null)
-            {
-                Exception tmp = m_uncastException;
-                m_uncastException = null;
-                throw tmp;
-            }
-        }
-        
-        private bool ValidateServerCertficate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        public bool ValidateServerCertficate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None)
                 return true;
@@ -92,7 +70,7 @@ namespace Duplicati.Library.Utility
                 if (certHash != null && m_validHashes != null) 
                     foreach(var hash in m_validHashes)
                     {
-                        if (!string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.InvariantCultureIgnoreCase))
+                        if (!string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase))
                         return true;
                     }
             }
@@ -104,16 +82,5 @@ namespace Duplicati.Library.Utility
             m_uncastException = new InvalidCertificateException(certHash, sslPolicyErrors);
             return false;
         }
-
-
-        #region IDisposable Members
-
-        public void Dispose()
-        {
-            if (m_isAttached)
-                Deactivate();
-        }
-
-        #endregion
     }
 }

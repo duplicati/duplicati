@@ -15,6 +15,7 @@ namespace Duplicati.Server.Serialization.Interface
         long BackendFileSize { get; }
         long BackendFileProgress { get; }
         long BackendSpeed { get; }
+        bool BackendIsBlocking { get; }
         
         string CurrentFilename { get; }
         long CurrentFilesize { get; }

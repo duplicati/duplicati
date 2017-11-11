@@ -4,11 +4,24 @@ install:
   - nuget restore Duplicati.sln
   - nuget install NUnit.Runners -Version 3.5.0 -OutputDirectory testrunner
   - sudo pip install selenium
+  - if [ ! -d ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2 ]; then ln -s ~/build/duplicati/duplicati/packages/sharpcompress.0.18.2 ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2; fi
 addons:
   sauce_connect:
     username: $SAUCE_USERNAME
     access_key: $SAUCE_ACCESS_KEY
+  coverity_scan:
+    project:
+      name: "duplicati/duplicati"
+      description: "Duplicati Build submitted via Travis CI"
+    notification_email: kenneth@duplicati.com
+    build_command_prepend: "msbuild /t:Clean"
+    build_command:   "msbuild /t:Rebuild"
+    branch_pattern: coverity_scan
 env:
+  global:
+    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+    #   via the "travis encrypt" command using the project repo's public key
+    - secure: "ijaQDcVcMo/utuP514FiDZVGR5LJbATWmYDmgRIIaI0YG2Rk6uuJp9XXDXr8sx66JWttPGgs7Htqfy50VKHdr7nsfyCQCRNGmqF+OJeUgAQMj5spxn9A7PZY9+GVhnXoJ06wvYjCv5MPeLBMDK/KpIM5Ny5IG+TKzQy4U7Dyg0riMUT61aqzxSjTGfHZPmaqBICJTzsRmeGHglemFUz/1B4NAN+IeAtXoH9YIfA2LjJfYmMLckPgFQLKN/tQRaGPWXh77y0qVgA++K8UVu5W3yGo3JXBPDdabGgKs9BPlfN5/Ixnkcy6ekAubDA/Aspur9x7/szj4/AnGMY6frNB33nQcnJQZ/51GYKr6CXCmjoJQuWc8ZKdEMqDn3w/kyEzvluSjAsJNRVboeWPE4VfpAeUBsjQ+TuEQi8WXhN8VJgZV7yCkVlZTVbhtOxMPsBiFb74lpWC2iQuWLJv9ED6vyXZVzZhNtfjXNXNZzIwYxbcd7I0ZQ8fmDstFnvBJveJby2ZRpECXTbc03eIUq1SAaVJJY2r47RD1PwVqM3xvUTljIqtKdyIz915mEOjqG1BnCDaiGHYJ4byuDDeIUZO9X70s60Gh4hupZA2Ruup0v7SfYgkto6aNcStd0NYd716Vd7hqXNTp6nu01L5YYJDY4h5sHyBXVXbxCKlUb01kUw="
   general:
     - USAGEREPORTER_Duplicati_LEVEL=none
     - AUTOUPDATER_Duplicati_SKIP_UPDATE=1
@@ -28,10 +41,14 @@ cache:
   directories:
     - $HOME/download
 
+before_install:
+      - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
 script:
 # build duplicati
+  - ls -la ~/build/duplicati/duplicati/packages/
   - echo "travis_fold:start:build_duplicati"
-  - xbuild /p:Configuration=Release Duplicati.sln
+  - msbuild /p:Configuration=Release Duplicati.sln
   - echo "travis_fold:end:build_duplicati"
   - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 # download and extract testdata

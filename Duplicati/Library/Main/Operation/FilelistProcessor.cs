@@ -101,19 +101,12 @@ namespace Duplicati.Library.Main.Operation
                 throw new Duplicati.Library.Interface.UserInformationException(s);
             }
 
-            var lookup = new Dictionary<string, string>();
-            var doubles = new Dictionary<string, string>();
-            foreach(var v in tp.ParsedVolumes)
-            {
-                if (lookup.ContainsKey(v.File.Name))
-                    doubles[v.File.Name] = null;
-                else
-                    lookup[v.File.Name] = null;
-            }
+            ISet<string> doubles;
+            Library.Utility.Utility.GetUniqueItems(tp.ParsedVolumes.Select(x => x.File.Name), out doubles);
 
             if (doubles.Count > 0)
             {
-                var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles.Keys));
+                var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles));
                 log.AddError(s, null);
                 throw new Duplicati.Library.Interface.UserInformationException(s);
             }
@@ -216,20 +209,24 @@ namespace Duplicati.Library.Main.Operation
                                      where n.FileType == RemoteVolumeType.Files orderby n.Time descending
                                      select n).ToList();
 
-            log.KnownFileCount = remotelist.Count();
+            log.KnownFileCount = remotelist.Count;
             log.KnownFileSize = remotelist.Select(x => Math.Max(0, x.File.Size)).Sum();
-            log.UnknownFileCount = unknownlist.Count();
+            log.UnknownFileCount = unknownlist.Count;
             log.UnknownFileSize = unknownlist.Select(x => Math.Max(0, x.Size)).Sum();
             log.BackupListCount = filesets.Count;
             log.LastBackupDate = filesets.Count == 0 ? new DateTime(0) : filesets[0].Time.ToLocalTime();
 
-			// TODO: We should query through the backendmanager
-			using (var bk = DynamicLoader.BackendLoader.GetBackend(backend.BackendUrl, options.RawOptions))
-				if (bk is Library.Interface.IQuotaEnabledBackend)
-	            {
-	                log.TotalQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)bk).TotalQuotaSpace;
-	                log.FreeQuotaSpace = ((Library.Interface.IQuotaEnabledBackend)bk).FreeQuotaSpace;
-	            }
+            // TODO: We should query through the backendmanager
+            using (var bk = DynamicLoader.BackendLoader.GetBackend(backend.BackendUrl, options.RawOptions))
+                if (bk is Library.Interface.IQuotaEnabledBackend)
+                {
+                    Library.Interface.IQuotaInfo quota = ((Library.Interface.IQuotaEnabledBackend)bk).Quota;
+                    if (quota != null)
+                    {
+                        log.TotalQuotaSpace = quota.TotalQuotaSpace;
+                        log.FreeQuotaSpace = quota.FreeQuotaSpace;
+                    }
+                }
 
             log.AssignedQuotaSpace = options.QuotaSize;
             

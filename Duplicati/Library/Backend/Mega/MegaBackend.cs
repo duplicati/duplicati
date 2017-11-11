@@ -112,12 +112,12 @@ namespace Duplicati.Library.Backend.Mega
         private INode GetFileNode(string name)
         {
             if (m_filecache != null && m_filecache.ContainsKey(name))
-                return m_filecache[name].OrderByDescending(x => x.LastModificationDate).First();
+                return m_filecache[name].OrderByDescending(x => x.ModificationDate).First();
 
             ResetFileCache();
 
             if (m_filecache != null && m_filecache.ContainsKey(name))
-                return m_filecache[name].OrderByDescending(x => x.LastModificationDate).First();
+                return m_filecache[name].OrderByDescending(x => x.ModificationDate).First();
             
             throw new FileMissingException();
         }
@@ -170,16 +170,15 @@ namespace Duplicati.Library.Backend.Mega
 
         #region IBackend implementation
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             if (m_filecache == null)
                 ResetFileCache();
             
-            return (
+            return
                 from n in m_filecache.Values
-                let item = n.OrderByDescending(x => x.LastModificationDate).First()
-                select (IFileEntry)new FileEntry(item.Name, item.Size, item.LastModificationDate, item.LastModificationDate)
-            ).ToList();
+                let item = n.OrderByDescending(x => x.ModificationDate).First()
+                select new FileEntry(item.Name, item.Size, item.ModificationDate ?? new DateTime(0), item.ModificationDate ?? new DateTime(0));
         }
 
         public void Put(string remotename, string filename)
@@ -218,7 +217,7 @@ namespace Duplicati.Library.Backend.Mega
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

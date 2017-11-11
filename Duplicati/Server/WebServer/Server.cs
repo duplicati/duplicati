@@ -107,7 +107,7 @@ namespace Duplicati.Server.WebServer
             if (string.IsNullOrWhiteSpace(interfacestring))
                 interfacestring = DEFAULT_OPTION_INTERFACE;
 
-            if (interfacestring.Trim() == "*" || interfacestring.Trim().Equals("any", StringComparison.InvariantCultureIgnoreCase))
+            if (interfacestring.Trim() == "*" || interfacestring.Trim().Equals("any", StringComparison.OrdinalIgnoreCase) || interfacestring.Trim().Equals("all", StringComparison.OrdinalIgnoreCase))
                 listenInterface = System.Net.IPAddress.Any;
             else if (interfacestring.Trim() == "loopback")
                 listenInterface = System.Net.IPAddress.Loopback;
@@ -211,6 +211,9 @@ namespace Duplicati.Server.WebServer
         private static HttpServer.HttpServer CreateServer(IDictionary<string, string> options)
         {
             HttpServer.HttpServer server = new HttpServer.HttpServer();
+
+            if (string.Equals(Environment.GetEnvironmentVariable("SYNO_DSM_AUTH") ?? string.Empty, "1"))
+                server.Add(new SynologyAuthenticationHandler());
 
             server.Add(new AuthenticationHandler());
 

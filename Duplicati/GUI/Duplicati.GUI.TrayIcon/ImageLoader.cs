@@ -56,7 +56,7 @@ namespace Duplicati.GUI.TrayIcon
             if (ICONS.TryGetValue(cachename, out ico))
                 return ico;
 
-            if (!filename.EndsWith(".ico", StringComparison.InvariantCultureIgnoreCase))
+            if (!filename.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
                 using(var ms = new System.IO.MemoryStream())
                 {
                     Icon ic;

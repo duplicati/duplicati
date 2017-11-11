@@ -1,5 +1,5 @@
 backupApp.service('AppService', function($http, $cookies, $q, $cookies, DialogService, appConfig) {
-    this.apiurl = '/api/v1';
+    this.apiurl = '../api/v1';
     this.proxy_url = null;
 
     var self = this;

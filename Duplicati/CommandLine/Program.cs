@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using Duplicati.Library.Localization.Short;
+using Duplicati.Library.Utility;
 using System.IO;
 
 namespace Duplicati.CommandLine
@@ -72,7 +73,7 @@ namespace Duplicati.CommandLine
         {
             get
             {
-                var knownCommands = new Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.InvariantCultureIgnoreCase);
+                var knownCommands = new Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.OrdinalIgnoreCase);
                 knownCommands["help"] = Commands.Help;
                 knownCommands["example"] = Commands.Examples;
                 knownCommands["examples"] = Commands.Examples;
@@ -97,6 +98,7 @@ namespace Duplicati.CommandLine
                 knownCommands["test-filters"] = Commands.TestFilters;
                 knownCommands["test-filter"] = Commands.TestFilters;
                 knownCommands["affected"] = Commands.Affected;
+                knownCommands["vacuum"] = Commands.Vacuum;
 
                 knownCommands["system-info"] = Commands.SystemInfo;
                 knownCommands["systeminfo"] = Commands.SystemInfo;
@@ -125,7 +127,7 @@ namespace Duplicati.CommandLine
                 verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
                 verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose");
 
-                if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.InvariantCultureIgnoreCase))
+                if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.OrdinalIgnoreCase))
                 {
                     var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
                     outwriter.WriteLine(System.IO.File.ReadAllText(path));
@@ -140,7 +142,7 @@ namespace Duplicati.CommandLine
                     }
 
                 // Probe for "help" to avoid extra processing
-                bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.InvariantCultureIgnoreCase));
+                bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase));
                 if (!isHelp && ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile"))))
                 {
                     string filename;
@@ -174,7 +176,7 @@ namespace Duplicati.CommandLine
                     command = "help";
 
                 // Update probe for help
-                isHelp = string.Equals(command, "help", StringComparison.InvariantCultureIgnoreCase);
+                isHelp = string.Equals(command, "help", StringComparison.OrdinalIgnoreCase);
 
                 // Skip the env read if the command is help, otherwise we may report weirdness
                 if (!isHelp)
@@ -374,7 +376,7 @@ namespace Duplicati.CommandLine
                            cargs[1] = newtarget;
                    }
 
-                if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.InvariantCultureIgnoreCase))
+                if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
                        cargs.AddRange(newsource);
                 else if (newsource.Count > 0 && Library.Utility.Utility.ParseBoolOption(options, "verbose"))
                     outwriter.WriteLine(Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);

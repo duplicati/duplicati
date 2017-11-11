@@ -78,7 +78,7 @@ namespace Duplicati.Library.UsageReporter
         /// </summary>
         public static void Initialize()
         {
-            if (_eventChannel == null || _eventChannel.IsRetired)
+            if (_eventChannel == null || _eventChannel.IsRetiredAsync.Result)
             {
                 if (IsDisabled)
                     return;
@@ -115,7 +115,7 @@ namespace Duplicati.Library.UsageReporter
         /// </summary>
         public static void ShutDown()
         {
-            if (_eventChannel != null && !_eventChannel.IsRetired)
+            if (_eventChannel != null && !_eventChannel.IsRetiredAsync.Result)
                 _eventChannel.Retire();
 
             if (ShutdownTask != null)
@@ -208,7 +208,7 @@ namespace Duplicati.Library.UsageReporter
                 if (string.IsNullOrWhiteSpace(str))
                     str = "none";
 #endif
-                return string.Equals(str, "none", StringComparison.InvariantCultureIgnoreCase) || Utility.Utility.ParseBool(str, false);
+                return string.Equals(str, "none", StringComparison.OrdinalIgnoreCase) || Utility.Utility.ParseBool(str, false);
             }
         }
 

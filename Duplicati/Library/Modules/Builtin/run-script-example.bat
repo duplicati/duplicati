@@ -100,6 +100,9 @@ REM is empty operations  other than backup or restore. The local path can
 REM contain : to separate multiple folders. This value can be changed by echoing
 REM --localpath = "new value".
 
+REM DUPLICATI__PARSED_RESULT
+REM This is a value indicating how well the operation was performed.
+REM It can take the values: Unknown, Success, Warning, Error, Fatal.
 
 
 REM ###############################################################################
@@ -154,7 +157,7 @@ GOTO end
 
 IF "%OPERATIONNAME%" == "Backup" GOTO ON_AFTER_BACKUP
 REM This will be ignored
-echo "Got operation "%OPERATIONNAME%", ignoring	
+echo "Got operation "%OPERATIONNAME%", ignoring	"
 GOTO end
 
 :ON_AFTER_BACKUP

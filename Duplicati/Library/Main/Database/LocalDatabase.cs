@@ -121,8 +121,8 @@ namespace Duplicati.Library.Main.Database
             m_selectremotevolumeCommand.CommandText = @"SELECT ""Type"", ""Size"", ""Hash"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
             m_selectremotevolumeCommand.AddParameter();
 
-            m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ?";
-            m_removeremotevolumeCommand.AddParameter();
+            m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ? AND (""DeleteGraceTime"" < ? OR ""State"" != ?)";
+            m_removeremotevolumeCommand.AddParameters(3);
 
             m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
 
@@ -436,10 +436,12 @@ namespace Duplicati.Library.Main.Database
                 }
                 catch { /* Ignore, will be deleted on close anyway. */ }
 
-                foreach (var name in names)
+				m_removeremotevolumeCommand.Transaction = tr.Parent;
+                m_removeremotevolumeCommand.SetParameterValue(1, DateTime.UtcNow.Ticks);
+				m_removeremotevolumeCommand.SetParameterValue(2, RemoteVolumeState.Deleted.ToString());
+				foreach (var name in names)
                 {
                     m_removeremotevolumeCommand.SetParameterValue(0, name);
-                    m_removeremotevolumeCommand.Transaction = tr.Parent;
                     m_removeremotevolumeCommand.ExecuteNonQuery();
                 }
                 tr.Commit();
@@ -1315,8 +1317,6 @@ ORDER BY
 
                 tr.Commit();
             }
-
-            Vacuum();
         }
         
         public virtual void Dispose()

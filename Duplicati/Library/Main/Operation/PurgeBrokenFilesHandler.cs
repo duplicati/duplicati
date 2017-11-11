@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Operation
                             opts.RawOptions["no-auto-compact"] = "true";
 
                             new DeleteHandler(m_backendurl, opts, (DeleteResults)m_result.DeleteResults)
-                                .DoRun(rmdb, ref deltr, true, false);
+                                .DoRun(rmdb, ref deltr, true, false, null);
 
                             if (!m_options.Dryrun)
                             {

@@ -39,14 +39,25 @@ namespace Duplicati.Library.Utility
         private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
         {
             return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) => {
-                if (key.Equals("include", StringComparison.InvariantCultureIgnoreCase))
+                if (key.Equals("include", StringComparison.OrdinalIgnoreCase))
                 {
-                    m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), true));
-                    return false;
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), true));
+                        return false;
+                    }
                 }
-                else if (key.Equals("exclude", StringComparison.InvariantCultureIgnoreCase))
+                else if (key.Equals("exclude", StringComparison.OrdinalIgnoreCase))
                 {
-                    m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), false));
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), false));
+                        return false;
+                    }
+                }
+                else if (key.Equals("default-filters", StringComparison.OrdinalIgnoreCase) || key.Equals("default-filter", StringComparison.OrdinalIgnoreCase))
+                {
+                    m_filters.AddRange(DefaultFilters.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(value ?? string.Empty)));
                     return false;
                 }
 
@@ -56,12 +67,12 @@ namespace Duplicati.Library.Utility
                 return true;
             });
         }
-
+        
         public static Tuple<Dictionary<string, string>, Library.Utility.IFilter> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
         {
             var fc = new FilterCollector();
             var opts = fc.DoExtractOptions(args, callbackHandler);
             return new Tuple<Dictionary<string, string>, Library.Utility.IFilter>(opts, fc.Filter);
         }
-    }}
-
+    }
+}

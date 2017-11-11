@@ -52,8 +52,8 @@ namespace Duplicati.Library.Backend
                 ""s3:DeleteObject""
             ],
             ""Resource"": [
-                ""arn:aws:s3:::bucket-name-and-path"",
-                ""arn:aws:s3:::bucket-name-and-path/*""
+                ""arn:aws:s3:::bucket-name"",
+                ""arn:aws:s3:::bucket-name/*""
             ]
         }
     ]
@@ -145,7 +145,9 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Invalid value for path");
 
-            return POLICY_DOCUMENT_TEMPLATE.Replace("bucket-name-and-path", path).Trim();
+            var bucketname = path.Split('/').First();
+
+            return POLICY_DOCUMENT_TEMPLATE.Replace("bucket-name", bucketname).Trim();
         }
 
         private Dictionary<string, string> CanCreateUser(string awsid, string awskey)

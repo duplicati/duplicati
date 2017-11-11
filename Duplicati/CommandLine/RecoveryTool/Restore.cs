@@ -90,8 +90,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                 return 100;
             }
 
-            var blockhasher = string.IsNullOrWhiteSpace(blockhash_str) ? null : System.Security.Cryptography.HashAlgorithm.Create(blockhash_str);
-            var filehasher = string.IsNullOrWhiteSpace(filehash_str) ? null : System.Security.Cryptography.HashAlgorithm.Create(filehash_str);
+            var blockhasher = string.IsNullOrWhiteSpace(blockhash_str) ? null : Library.Utility.HashAlgorithmHelper.Create(blockhash_str);
+            var filehasher = string.IsNullOrWhiteSpace(filehash_str) ? null : Library.Utility.HashAlgorithmHelper.Create(filehash_str);
 
             if (blockhasher == null)
                 throw new Duplicati.Library.Interface.UserInformationException(string.Format("Block hash algorithm not valid: {0}", blockhash_str));

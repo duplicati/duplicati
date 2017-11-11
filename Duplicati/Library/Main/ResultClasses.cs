@@ -1170,5 +1170,10 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.SendMail; } }
         public IEnumerable<string> Lines { get; set; }
     }
+
+    internal class VacuumResult : BasicResults, IVacuumResults
+    {
+        public override OperationMode MainOperation { get { return OperationMode.Vacuum; } }
+    }
 }
 

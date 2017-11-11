@@ -158,7 +158,8 @@ namespace Duplicati.Library.Main
         /// <param name="size">The current size</param>
         /// <param name="progress">The current number of transferred bytes</param>
         /// <param name="bytes_pr_second">Transfer speed in bytes pr second, -1 for unknown</param>
-        void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second);
+        /// <param name="isBlocking">A value indicating if the backend is blocking operation progress</param>
+        void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second, out bool isBlocking);
     }
     
     /// <summary>
@@ -178,6 +179,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="progress">he current number of transferred bytes</param>
         void UpdateProgress(long progress);
+        /// <summary>
+        /// Sets a flag indicating if the backend operation is blocking progress
+        /// </summary>
+        /// <param name="isBlocking">If set to <c>true</c> the backend is blocking.</param>
+        void SetBlocking(bool isBlocking);
     }
     
     /// <summary>
@@ -216,6 +222,10 @@ namespace Duplicati.Library.Main
         /// The time the last action started
         /// </summary>
         private DateTime m_actionStart;
+        /// <summary>
+        /// A value indicating when the last blocking was done
+        /// </summary>
+        private DateTime m_blockingSince;
         
         /// <summary>
         /// Register the start of a new action
@@ -253,7 +263,8 @@ namespace Duplicati.Library.Main
         /// <param name="size">The current size</param>
         /// <param name="progress">The current number of transferred bytes</param>
         /// <param name="bytes_pr_second">Transfer speed in bytes pr second, -1 for unknown</param>
-        public void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second)
+        /// <param name="isBlocking">A value indicating if the backend is blocking operation progress</param>
+        public void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second, out bool isBlocking)
         {
             lock(m_lock)
             {
@@ -261,7 +272,8 @@ namespace Duplicati.Library.Main
                 path = m_path;
                 size = m_size;
                 progress = m_progress;
-                
+                isBlocking = m_blockingSince.Ticks > 0 && (DateTime.Now - m_blockingSince).TotalSeconds > 1;
+                    
                 //TODO: The speed should be more dynamic,
                 // so we need a sample window instead of always 
                 // calculating from the beginning
@@ -271,7 +283,16 @@ namespace Duplicati.Library.Main
                     bytes_pr_second = (long)(m_progress / (DateTime.Now - m_actionStart).TotalSeconds);
             }
         }
-        
+
+		/// <summary>
+		/// Sets a flag indicating if the backend operation is blocking progress
+		/// </summary>
+		/// <param name="isBlocking">If set to <c>true</c> the backend is blocking.</param>
+		public void SetBlocking(bool isBlocking)
+        {
+            lock (m_lock)
+                m_blockingSince = isBlocking ? DateTime.Now : new DateTime(0);
+        }
     }
     
     public delegate void PhaseChangedDelegate(OperationPhase phase, OperationPhase previousPhase);

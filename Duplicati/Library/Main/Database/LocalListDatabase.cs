@@ -223,7 +223,7 @@ namespace Duplicati.Library.Main.Database
                     if (filter == null || filter.Empty)
                         pathprefix = "";
                     else if (filter as Library.Utility.FilterExpression == null || ((Library.Utility.FilterExpression)filter).Type != Duplicati.Library.Utility.FilterType.Simple || ((Library.Utility.FilterExpression)filter).GetSimpleList().Length != 1)
-                        throw new ArgumentException("Filter for list-folder-contents must be a path prefix with no wildcards", "filter");
+                        throw new ArgumentException("Filter for list-folder-contents must be a path prefix with no wildcards", nameof(filter));
                     else
                         pathprefix = ((Library.Utility.FilterExpression)filter).GetSimpleList().First();
 
@@ -349,7 +349,7 @@ namespace Duplicati.Library.Main.Database
                         dict[m_filesets[i].Key] = i;
 
                     using(var cmd = m_connection.CreateCommand())
-                    using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC ", m_tablename)))
+                    using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
                         while (rd.Read())
                         {
                             var id = rd.GetInt64(0);

@@ -51,14 +51,14 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Security" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="MimeKit">
-      <HintPath>..\..\..\..\packages\MimeKit.1.16.1\lib\net45\MimeKit.dll</HintPath>
+      <HintPath>..\..\..\..\packages\MimeKit.1.18.1\lib\net45\MimeKit.dll</HintPath>
     </Reference>
     <Reference Include="MailKit">
-      <HintPath>..\..\..\..\packages\MailKit.1.16.1\lib\net45\MailKit.dll</HintPath>
+      <HintPath>..\..\..\..\packages\MailKit.1.18.1.1\lib\net45\MailKit.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

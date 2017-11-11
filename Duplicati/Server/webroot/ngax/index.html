@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:ng="http://angularjs.org" ng-app="backupApp">
+<html xmlns:ng="http://angularjs.org" ng-app="backupApp" ng-controller="AppController">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Duplicati</title>
+    <title ng-bind-template="{{systemInfo.MachineName}} - {{brandingService.appName}}"></title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -121,7 +121,7 @@
     <script type="text/javascript" src="../customized/customized.js"></script>
 
 </head>
-<body ng-controller="AppController" class="theme-{{active_theme}}">
+<body class="theme-{{active_theme}}">
      
     <div class="container">
         <div class="header">
@@ -248,7 +248,7 @@
                 {{'Visit us on' | translate}}
                 <ul>
                     <li>
-                        <a href="https://groups.google.com/forum/#!forum/duplicati" target="_blank"><img src="img/social/ggroups.png" alt="Google Groups" title="Google Groups" width="28" /></a>
+                        <a href="https://forum.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="{{'Duplicati forum' | translate}}" title="{{'Duplicati forum' | translate}}" width="28" /></a>
                     </li>
                     <li>
                         <a href="https://github.com/duplicati" target="_blank"><img src="img/social/github.png" alt="Github" title="Github" /></a>
@@ -259,9 +259,9 @@
                     <li>
                         <a href="https://plus.google.com/105271984558189185842" target="_blank"><img src="img/social/google.png" alt="Google Plus" title="Google Plus" /></a>
                     </li>
-                    <li>
+                    <!-- <li>
                         <a href="http://www.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="{{'Duplicati Website' | translate}}" title="{{'Duplicati Website' | translate}}" /></a>
-                    </li>
+                    </li> -->
                 </ul>
             </div>
             
@@ -269,7 +269,7 @@
                 <span translate>Donate</span>
                 <ul>
                     <li>
-                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | translate}}" title="{{'Donate with Bitcoins' | translate}}" /></a>
+                        <a href="bitcoin:1NVFTyj9NRA4pbrEPa5VkNqjviqVoKhBMt" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | translate}}" title="{{'Donate with Bitcoins' | translate}}" /></a>
                     </li>
                     <li>
                         <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | translate}}" title="{{'Donate with PayPal' | translate}}" /></a>

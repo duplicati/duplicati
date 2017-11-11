@@ -97,7 +97,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private IDictionary<string, string> m_options;
         /// <summary>
-        /// The parsed result level if the operation is a backup, empty otherwise
+        /// The parsed result level
         /// </summary>
         private string m_parsedresultlevel = string.Empty;
 
@@ -261,21 +261,21 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             //If we do not report this action, then skip
-            if (!m_sendAll && !string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
+            if (!m_sendAll && !string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
                 return;
 
-            if (string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
-            {
-                ParsedResultType level;
-                if (result is Exception)
-                    level = ParsedResultType.Fatal;
-                else if (result != null && result is Library.Interface.IBasicResults)
-                    level = ((IBasicResults)result).ParsedResult;
-                else
-                    level = ParsedResultType.Error;
-                
-                m_parsedresultlevel = level.ToString();
+            ParsedResultType level;
+            if (result is Exception)
+                level = ParsedResultType.Fatal;
+            else if (result != null && result is Library.Interface.IBasicResults)
+                level = ((IBasicResults)result).ParsedResult;
+            else
+                level = ParsedResultType.Error;
 
+            m_parsedresultlevel = level.ToString();
+
+            if (string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
+            {
                 if (!m_levels.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase)))
                 {
                     //Check if this level should send mail
@@ -363,7 +363,7 @@ namespace Duplicati.Library.Modules.Builtin
                 else 
                 {
                     servers = (from n in m_server.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
-                               let srv = (n == null || n.IndexOf("://", StringComparison.InvariantCultureIgnoreCase) > 0) ? n : "smtp://" + n
+                               let srv = (n == null || n.IndexOf("://", StringComparison.OrdinalIgnoreCase) > 0) ? n : "smtp://" + n
                                where !string.IsNullOrEmpty(srv)
                                select srv).Distinct().ToList();
                 }
@@ -452,7 +452,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
             else
             {
-                if (input.IndexOf("%RESULT%", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
                     using(TempFile tf = new TempFile())
                     {
                         RunScript.SerializeResult(tf, result);

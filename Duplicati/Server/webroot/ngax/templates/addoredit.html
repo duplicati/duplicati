@@ -196,6 +196,20 @@
                             </ul>
                             <a href ng-click="Backup.Filters.push('-*')" translate>Add filter</a>
                         </div>
+
+                        <div class="input checkbox multiple">
+                            <strong translate>Default Filters</strong>
+                            
+                            <div ng-repeat="filterSet in defaultFilterSets">
+                                <input id="filterSet_{{filterSet.value}}"
+                                       type="checkbox"
+                                       name="filterSet_{{filterSet.value}}"
+                                       value="{{filterSet.value}}"
+                                       ng-checked="isDefaultFilterSetEnabled(filterSet.value)"
+                                       ng-click="toggleDefaultFilters(filterSet.value)" />
+                                <label for="filterSet_{{filterSet.value}}">{{filterSet.name}}</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="box exclude">

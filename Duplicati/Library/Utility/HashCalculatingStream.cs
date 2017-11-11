@@ -49,7 +49,7 @@ namespace Duplicati.Library.Utility
         private int m_hashbufferLength = 0;
 
         public HashCalculatingStream(System.IO.Stream basestream, string hashalgorithm)
-            : this(basestream, System.Security.Cryptography.HashAlgorithm.Create(hashalgorithm))
+            : this(basestream, HashAlgorithmHelper.Create(hashalgorithm))
         {
         }
 

@@ -24,17 +24,15 @@ using System.Text;
 namespace Duplicati.Library.Interface
 {
     /// <summary>
-    /// An interface a backend may implement if it supports streaming operations.
-    /// Backends that implement this interface can be throttled and correctly shows 
-    /// the progressbar when transfering data.
+    /// An interface a backend may implement if it supports rename operations.
     /// </summary>
     public interface IRenameEnabledBackend : IBackend
     {
         /// <summary>
-        /// Puts the content of the file to the url passed
+        /// Renames the file
         /// </summary>
-        /// <param name="remotename">The remote filename, relative to the URL</param>
-        /// <param name="stream">The stream to read from</param>
+        /// <param name="oldname">The old filename, relative to the root</param>
+        /// <param name="newname">The new filename, relative to the root</param>
         void Rename(string oldname, string newname);
     }
 }

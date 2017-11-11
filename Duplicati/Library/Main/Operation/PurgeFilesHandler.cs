@@ -224,7 +224,7 @@ namespace Duplicati.Library.Main.Operation
                             var tr = cdb.BeginTransaction();
                             try
                             {
-                                new CompactHandler(backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(cdb, true, ref tr);
+                                new CompactHandler(backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(cdb, true, ref tr, backend);
                             }
                             catch
                             {

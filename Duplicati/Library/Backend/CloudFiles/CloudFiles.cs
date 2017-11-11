@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Net;
 using Duplicati.Library.Interface;
@@ -128,9 +129,8 @@ namespace Duplicati.Library.Backend
             get { return "cloudfiles"; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
-            var files = new List<IFileEntry>();
             string extraUrl = "?format=xml&limit=" + ITEM_LIST_LIMIT.ToString();
             string markerUrl = "";
 
@@ -182,7 +182,7 @@ namespace Duplicati.Library.Backend
                         mod = new DateTime();
 
                     lastItemName = name;
-                    files.Add(new FileEntry(name, size, mod, mod));
+                    yield return new FileEntry(name, size, mod, mod);
                 }
 
                 repeat = lst.Count == ITEM_LIST_LIMIT;
@@ -191,8 +191,6 @@ namespace Duplicati.Library.Backend
                     markerUrl = "&marker=" + Library.Utility.Uri.UrlEncode(lastItemName);
 
             } while (repeat);
-
-            return files;
         }
 
         public void Put(string remotename, string filename)
@@ -263,7 +261,7 @@ namespace Duplicati.Library.Backend
         public void Test()
         {
             //The "Folder not found" is not detectable :(
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

@@ -75,7 +75,7 @@ namespace Duplicati.Library.Modules.Builtin {
         /// </summary>
         private IDictionary<string, string> m_options; 
         /// <summary>
-        /// The parsed result level if the operation is a backup, empty otherwise
+        /// The parsed result level
         /// </summary>
         private string m_parsedresultlevel = string.Empty;
 
@@ -188,6 +188,7 @@ namespace Duplicati.Library.Modules.Builtin {
 
             m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_SENDALL);
 
+            commandlineOptions.TryGetValue(OPTION_MESSAGE, out m_body);
             if (string.IsNullOrEmpty(m_body))
                 m_body = DEFAULT_MESSAGE;
         }
@@ -220,21 +221,21 @@ namespace Duplicati.Library.Modules.Builtin {
                 return;
 
             //If we do not report this action, then skip
-            if (!m_sendAll && !string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
+            if (!m_sendAll && !string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
                 return;
 
-            if (string.Equals(m_operationname, "Backup", StringComparison.InvariantCultureIgnoreCase))
+            ParsedResultType level;
+            if (result is Exception)
+                level = ParsedResultType.Fatal;
+            else if (result != null && result is Library.Interface.IBasicResults)
+                level = ((IBasicResults)result).ParsedResult;
+            else
+                level = ParsedResultType.Error;
+
+            m_parsedresultlevel = level.ToString();
+
+            if (string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
             {
-                ParsedResultType level;
-                if (result is Exception)
-                    level = ParsedResultType.Fatal;
-                else if (result != null && result is Library.Interface.IBasicResults)
-                    level = ((IBasicResults)result).ParsedResult;
-                else
-                    level = ParsedResultType.Error;
-
-                m_parsedresultlevel = level.ToString();
-
                 if (!m_levels.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase)))
                 {
                     //Check if this level should send mail
@@ -312,7 +313,7 @@ namespace Duplicati.Library.Modules.Builtin {
             input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            if (input.IndexOf("%RESULT%", StringComparison.InvariantCultureIgnoreCase) >= 0)
+            if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
                 using (TempFile tf = new TempFile())
                 {
                     RunScript.SerializeResult(tf, result);

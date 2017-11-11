@@ -375,17 +375,17 @@ namespace Duplicati.Server.Database
             if (item.Settings != null)
             {
                 foreach (var s in item.Settings)
-                    if (string.Equals(s.Name, "--no-encryption", StringComparison.InvariantCultureIgnoreCase))
+                    if (string.Equals(s.Name, "--no-encryption", StringComparison.OrdinalIgnoreCase))
                         disabled_encryption = string.IsNullOrWhiteSpace(s.Value) ? true : Library.Utility.Utility.ParseBool(s.Value, false);
-                    else if (string.Equals(s.Name, "passphrase", StringComparison.InvariantCultureIgnoreCase))
+                    else if (string.Equals(s.Name, "passphrase", StringComparison.OrdinalIgnoreCase))
                         passphrase = s.Value;
-                    else if (string.Equals(s.Name, "keep-versions", StringComparison.InvariantCultureIgnoreCase))
+                    else if (string.Equals(s.Name, "keep-versions", StringComparison.OrdinalIgnoreCase))
                     {
                         int i;
                         if (!int.TryParse(s.Value, out i) || i <= 0)
                             return "Retention value must be a positive integer";
                     }
-                    else if (string.Equals(s.Name, "keep-time", StringComparison.InvariantCultureIgnoreCase))
+                    else if (string.Equals(s.Name, "keep-time", StringComparison.OrdinalIgnoreCase))
                     {
                         try
                         {
@@ -398,7 +398,7 @@ namespace Duplicati.Server.Database
                             return "Retention value must be a valid timespan";
                         }
                     }
-                    else if (string.Equals(s.Name, "dblock-size", StringComparison.InvariantCultureIgnoreCase))
+                    else if (string.Equals(s.Name, "dblock-size", StringComparison.OrdinalIgnoreCase))
                     {
                         try
                         {
@@ -411,7 +411,7 @@ namespace Duplicati.Server.Database
                             return "DBlock value must be a valid size string";
                         }
                     }
-                    else if (string.Equals(s.Name, "--blocksize", StringComparison.InvariantCultureIgnoreCase))
+                    else if (string.Equals(s.Name, "--blocksize", StringComparison.OrdinalIgnoreCase))
                     {
                         try
                         {
@@ -424,7 +424,7 @@ namespace Duplicati.Server.Database
                             return "The blocksize value must be a valid size string";
                         }
                     }
-                    else if (string.Equals(s.Name, "--prefix", StringComparison.InvariantCultureIgnoreCase))
+                    else if (string.Equals(s.Name, "--prefix", StringComparison.OrdinalIgnoreCase))
                     {
                         if (!string.IsNullOrWhiteSpace(s.Value) && s.Value.Contains("-"))
                             return "The prefix cannot contain hyphens (-)";
@@ -859,26 +859,26 @@ namespace Duplicati.Server.Database
                 }
         }
 
-		public void UpdateUISettings(string scheme, IDictionary<string, string> values, System.Data.IDbTransaction transaction = null)
-		{
-			lock (m_lock)
-				using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
-				{
-					OverwriteAndUpdateDb(
-						tr,
+        public void UpdateUISettings(string scheme, IDictionary<string, string> values, System.Data.IDbTransaction transaction = null)
+        {
+            lock (m_lock)
+                using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
+                {
+                    OverwriteAndUpdateDb(
+                        tr,
                         @"DELETE FROM ""UIStorage"" WHERE ""Scheme"" = ? AND ""Key"" IN (?)", new object[] { scheme, values.Keys },
                         values.Where(x => x.Value != null),
-						@"INSERT INTO ""UIStorage"" (""Scheme"", ""Key"", ""Value"") VALUES (?, ?, ?)",
-						(f) =>
-						{
-							return new object[] { scheme, f.Key ?? "", f.Value ?? "" };
-						}
-					);
+                        @"INSERT INTO ""UIStorage"" (""Scheme"", ""Key"", ""Value"") VALUES (?, ?, ?)",
+                        (f) =>
+                        {
+                            return new object[] { scheme, f.Key ?? "", f.Value ?? "" };
+                        }
+                    );
 
-					if (tr != null)
-						tr.Commit();
-				}
-		}
+                    if (tr != null)
+                        tr.Commit();
+                }
+        }
 
         public TempFile[] GetTempFiles()
         {
@@ -933,13 +933,6 @@ namespace Duplicati.Server.Database
 
                 tr.Commit();
             }
-
-            using(var cmd = m_connection.CreateCommand())
-            {
-                cmd.CommandText = "VACUUM";
-                cmd.ExecuteNonQuery();
-            }
-
         }
         
         private static long NormalizeDateTimeToEpochSeconds(DateTime input)

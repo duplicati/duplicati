@@ -82,11 +82,23 @@ namespace Duplicati.Library.Utility
                 throw new ArgumentNullException("request");
             m_request = request;
             m_timeout = m_request.Timeout;
+            if (m_timeout != System.Threading.Timeout.Infinite)
+            {
+                var tmp = (int)HttpContextSettings.OperationTimeout.TotalMilliseconds;
+                if (tmp <= 0)
+                    m_timeout = System.Threading.Timeout.Infinite;
+                else
+                    m_timeout = Math.Max(m_timeout, tmp);
+            }
+
+            m_activity_timeout = (int)HttpContextSettings.ReadWriteTimeout.TotalMilliseconds;
+            if (m_activity_timeout <= 0)
+                m_activity_timeout = System.Threading.Timeout.Infinite;
 
             //We set this to prevent timeout related stuff from happening outside this module
             m_request.Timeout = System.Threading.Timeout.Infinite;
 
-            //Then we register a custom setting of 30 secs timeout on read/write activity
+            //Then we register custom settings
             if (m_request is HttpWebRequest)
             {
                 if (((HttpWebRequest)m_request).ReadWriteTimeout != System.Threading.Timeout.Infinite)
@@ -95,9 +107,9 @@ namespace Duplicati.Library.Utility
                 ((HttpWebRequest)m_request).ReadWriteTimeout = System.Threading.Timeout.Infinite;
 
                 // Prevent in-memory buffering causing out-of-memory issues
-                ((HttpWebRequest)m_request).AllowReadStreamBuffering = false;                    
+                ((HttpWebRequest)m_request).AllowReadStreamBuffering = HttpContextSettings.BufferRequests;
             }
-        }
+		}
 
         /// <summary>
         /// Gets the request that is wrapped

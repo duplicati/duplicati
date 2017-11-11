@@ -8,7 +8,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Utility</RootNamespace>
     <AssemblyName>Duplicati.Library.Utility</AssemblyName>
-    <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -39,9 +38,15 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="FasterHashing">
+      <HintPath>..\..\..\packages\FasterHashing.1.3.0\lib\net45\FasterHashing.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
+    <Compile Include="DefaultFilters.cs" />
     <Compile Include="KeyGenerator.cs" />
     <Compile Include="OverrideableStream.cs" />
     <Compile Include="ProgressReportingStream.cs" />
@@ -69,10 +74,19 @@
     <Compile Include="HashCalculatingStream.cs" />
     <Compile Include="DirectStreamLink.cs" />
     <Compile Include="HostKeyException.cs" />
+    <Compile Include="CallContextSettings.cs" />
+    <Compile Include="HashAlgorithmHelper.cs" />
+    <Compile Include="Power\PowerSupply.cs" />
+    <Compile Include="Power\IPowerSupplyState.cs" />
+    <Compile Include="Power\DefaultPowerSupplyState.cs" />
+    <Compile Include="Power\LinuxPowerSupplyState.cs" />
+    <Compile Include="Power\WindowsPowerSupplyState.cs" />
+    <Compile Include="Power\MacOSPowerSupplyState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Duplicati.snk" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -87,5 +101,8 @@
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Power\" />
   </ItemGroup>
 </Project>

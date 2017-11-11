@@ -18,6 +18,8 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -34,6 +36,11 @@ namespace Duplicati.Library.AutoUpdater
 
     public static class UpdaterManager
     {
+        /// <summary>
+        /// The magic exit code that signals an update has been installed and that the app should restart
+        /// </summary>
+        public const int MAGIC_EXIT_CODE = 126;
+
         private static readonly System.Security.Cryptography.RSACryptoServiceProvider SIGN_KEY = AutoUpdateSettings.SignKey;
         private static readonly string[] MANIFEST_URLS = AutoUpdateSettings.URLs;
         private static readonly string APPNAME = AutoUpdateSettings.AppName;
@@ -343,7 +350,7 @@ namespace Duplicati.Library.AutoUpdater
                                 return null;
 
                             // Don't install a debug update on a release build and vice versa
-                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.InvariantCultureIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
+                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
                                 return null;
 
                             ReleaseType rt;
@@ -479,7 +486,7 @@ namespace Duplicati.Library.AutoUpdater
                         {
                             foreach(var file in zip.ListFilesWithSize(""))
                             {
-                                if (System.IO.Path.IsPathRooted(file.Key) || file.Key.Trim().StartsWith("..", StringComparison.InvariantCultureIgnoreCase))
+                                if (System.IO.Path.IsPathRooted(file.Key) || file.Key.Trim().StartsWith("..", StringComparison.OrdinalIgnoreCase))
                                     throw new Exception(string.Format("Out-of-place file path detected: {0}", file.Key));
 
                                 var targetpath = System.IO.Path.Combine(tempfolder, file.Key);
@@ -606,7 +613,7 @@ namespace Duplicati.Library.AutoUpdater
                     if (string.IsNullOrWhiteSpace(relpath))
                         continue;
 
-                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot"))
+                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
                         continue;
 
                     FileEntry fe;
@@ -614,7 +621,7 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         var ignore = false;
                         foreach(var c in ignores)
-                            if (ignore = relpath.StartsWith(c))
+                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparision))
                                 break;
 
                         if (ignore)
@@ -625,7 +632,7 @@ namespace Duplicati.Library.AutoUpdater
 
                     paths.Remove(relpath);
 
-                    if (fe.Path.EndsWith("/"))
+                    if (fe.Path.EndsWith("/", StringComparison.Ordinal))
                         continue;
 
                     sha256.Initialize();
@@ -642,10 +649,11 @@ namespace Duplicati.Library.AutoUpdater
                     }
                 }
 
-                var filteredpaths = (from p in paths
-                        where !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/")
-                        select p.Key).ToList();
-
+                var filteredpaths = paths
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal))
+                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    .Select(p => p.Key)
+                    .ToList();
 
                 if (filteredpaths.Count == 1)
                     throw new Exception(string.Format("Folder {0} is missing: {1}", folder, filteredpaths.First()));
@@ -1002,7 +1010,116 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
+        private static KeyValuePair<string, UpdateInfo> GetBestUpdateVersion(bool forcecheck = false)
+        {
+            if (forcecheck)
+                m_hasUpdateInstalled = null;
+
+            // Check if there are updates installed, otherwise use current
+            KeyValuePair<string, UpdateInfo> best = new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, SelfVersion);
+            if (HasUpdateInstalled)
+                best = m_hasUpdateInstalled.Value;
+
+            if (INSTALLDIR != null && System.IO.File.Exists(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE)))
+            {
+                try
+                {
+                    var current = System.IO.File.ReadAllText(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE)).Trim();
+                    if (!string.IsNullOrWhiteSpace(current))
+                    {
+                        var targetfolder = System.IO.Path.Combine(INSTALLDIR, current);
+                        var currentmanifest = ReadInstalledManifest(targetfolder);
+                        if (currentmanifest != null && TryParseVersion(currentmanifest.Version) > TryParseVersion(best.Value.Version) && VerifyUnpackedFolder(targetfolder, currentmanifest))
+                            best = new KeyValuePair<string, UpdateInfo>(targetfolder, currentmanifest);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (OnError != null)
+                        OnError(ex);
+                }
+            }
+
+            return best;
+        }
+
+        public static bool IsRunningInUpdateEnvironment => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
+        {
+            if (Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("AUTOUPDATER_USE_APPDOMAIN"), false))
+                return RunFromMostRecentAppDomain(method, cmdargs, defaultstrategy);
+            else
+                return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
+        }
+
+        public static int RunFromMostRecentSpawn(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
+        {
+            // If the update is disabled, go straight in
+            if (DISABLE_UPDATE_DOMAIN)
+                return RunMethod(method, cmdargs);
+
+            // If we are not the primary entry, just execute
+            if (IsRunningInUpdateEnvironment)
+            {
+                int r = 0;
+                WrapWithUpdater(defaultstrategy, () => {
+                    r = RunMethod(method, cmdargs);
+                });
+
+                return r;
+            }
+
+            var args = Environment.CommandLine;
+            var app = Environment.GetCommandLineArgs().First();
+            args = args.Substring(app.Length);
+
+            if (!Path.IsPathRooted(app))
+                app = Path.Combine(InstalledBaseDir, app);
+
+            var executable = Path.GetFileName(app);
+
+            while (true)
+            {
+                var best = GetBestUpdateVersion(true);
+                var folder = best.Key;
+
+                var pi = new System.Diagnostics.ProcessStartInfo(Path.Combine(folder, executable), args)
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardError = true,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    ErrorDialog = false,                    
+                };
+                pi.EnvironmentVariables.Clear();
+
+                var cur = Environment.GetEnvironmentVariables();
+                foreach (var e in cur.Keys)
+                    if (e is string)
+                        pi.EnvironmentVariables[(string)e] = cur[(string)e] as string;
+
+                pi.EnvironmentVariables[string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)] = InstalledBaseDir;
+                pi.EnvironmentVariables["LOCALIZATION_FOLDER"] = InstalledBaseDir;
+
+                var proc = System.Diagnostics.Process.Start(pi);
+                var tasks = Task.WhenAll(
+                    Console.OpenStandardInput().CopyToAsync(proc.StandardInput.BaseStream),
+                    proc.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput()),
+                    proc.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError())
+                );
+
+                proc.WaitForExit();
+                tasks.Wait(1000);
+
+                if (proc.ExitCode != MAGIC_EXIT_CODE)
+                    return proc.ExitCode;
+            }
+
+        }
+
+        public static int RunFromMostRecentAppDomain(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
             // If the update is disabled, go straight in
             if (DISABLE_UPDATE_DOMAIN)

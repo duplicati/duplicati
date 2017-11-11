@@ -62,6 +62,7 @@
 .avi #Audio Video Interleave File
 .bsf #Blu-ray AVC Video File
 .divx #DivX-Encoded Movie File
+.dv #DV Video
 .f4v #Flash MP4 Video File
 .flv #Flash Video File
 .hdmov #QuickTime HD Movie File
