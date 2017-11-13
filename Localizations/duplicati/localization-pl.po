@@ -20,7 +20,7 @@ msgstr ""
 
 #: CommandLine/Program.cs:301
 msgid "Toggle automatic updates"
-msgstr "Włącznik automatycznych aktualizacji"
+msgstr "Przełącz automatyczne aktualizacje"
 
 #: CommandLine/Program.cs:301
 msgid ""
@@ -108,6 +108,10 @@ msgid ""
 "specify filters inside the parameter file. Each filter must be prefixed with"
 " either a + or a -, and multiple filters must be joined with {3}"
 msgstr ""
+"Nie można ustawić filtrów w wierszu poleceń, jeśli są one także obecne w "
+"pliku parametrów. Użyj specjalnych opcji --{0}, --{1}, lub --{2} aby ustawić"
+" filtry wewnątrz pliku parametrów. Każdy filtr musi być poprzedzony przez + "
+"lub -, a wiele filtrów musi być połączone za pomocą {3}"
 
 #: CommandLine/Strings.cs:20
 #, csharp-format
@@ -115,6 +119,8 @@ msgid ""
 "The option --{0} was supplied, but it is reserved for internal use and may "
 "not be set on the commandline"
 msgstr ""
+"Użyto opcji --{0}, ale jest ona zarezerwowana do użytku wewnętrznego i nie "
+"może być ustawiona w wierszu poleceń"
 
 #: CommandLine/Strings.cs:21
 #, csharp-format
@@ -223,7 +229,7 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:10 Library/Backend/SharePoint/Strings.cs:9
 #: Library/Backend/SSHv2/Strings.cs:24 Library/Backend/WEBDAV/Strings.cs:8
 msgid "Supplies the password used to connect to the server"
-msgstr ""
+msgstr "Klucz dostępu używany do połączenia się z serwerem"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:12
 #: Library/Backend/AzureBlob/Strings.cs:15
@@ -247,7 +253,7 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:12 Library/Backend/SharePoint/Strings.cs:11
 #: Library/Backend/SSHv2/Strings.cs:26 Library/Backend/WEBDAV/Strings.cs:10
 msgid "Supplies the username used to connect to the server"
-msgstr ""
+msgstr "Nazwa użytkownika używana do połączenia się z serwerem"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:14
 msgid "Alternative FTP"
@@ -1259,7 +1265,7 @@ msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:11
 msgid "Target path, ie /backup"
-msgstr ""
+msgstr "Ścieżka docelowa, np. /backup"
 
 #: Library/Backend/Sia/Strings.cs:12 Library/Backend/Sia/Strings.cs:13
 msgid "Sia password"
@@ -1409,7 +1415,7 @@ msgstr "SFTP (SSH) "
 #: Library/Backend/SSHv2/Strings.cs:40
 #, csharp-format
 msgid "Unable to set folder to {0}, error message: {1}"
-msgstr ""
+msgstr "Nie da się ustawić folderu na {0}, wiadomość błędu: {1}"
 
 #: Library/Backend/SSHv2/Strings.cs:41
 #, csharp-format
@@ -1477,6 +1483,8 @@ msgid ""
 "The server returned the error code {0} ({1}), indicating that the server "
 "does not support WebDAV connections"
 msgstr ""
+"Serwer zwrócił kod błędu {0} ({1}), oznaczający, że serwer nie wspiera "
+"połączeń WebDAV"
 
 #: Library/Backend/WEBDAV/Strings.cs:16
 #, csharp-format
@@ -1623,7 +1631,7 @@ msgstr "Wbudowane szyfrowanie AES-256"
 
 #: Library/Encryption/Strings.cs:6
 msgid "Empty passphrase not allowed"
-msgstr ""
+msgstr "Nie można użyć pustego hasła szyfrowania"
 
 #: Library/Encryption/Strings.cs:7
 msgid ""
@@ -2167,7 +2175,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:51
 msgid "Passphrase used to encrypt backups"
-msgstr ""
+msgstr "Hasło używane do zaszyfrowania kopii zapasowych"
 
 #: Library/Main/Strings.cs:52
 msgid ""
@@ -2611,7 +2619,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:129
 msgid "Name of the backup"
-msgstr "Nazwa backupu"
+msgstr "Nazwa kopii zapasowej"
 
 #: Library/Main/Strings.cs:130
 #, csharp-format
@@ -2955,13 +2963,15 @@ msgstr ""
 
 #: Library/Main/Strings.cs:195
 msgid "Allow the passphrase to change"
-msgstr ""
+msgstr "Pozwól na zmianę hasła szyfrowania"
 
 #: Library/Main/Strings.cs:196
 msgid ""
 "Use this option to allow the passphrase to change, note that this option is "
 "not permitted for a backup or repair operation"
 msgstr ""
+"Użyj tej opcji, aby pozwolić na zmianę hasła szyfrowania. Uwaga! Opcja "
+"niedozwolona dla kopii zapasowej, lub naprawy"
 
 #: Library/Main/Strings.cs:197
 msgid "List only filesets"
@@ -3079,7 +3089,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:220
 msgid "Perform backup of Hyper-V machines (Windows only)"
-msgstr "Wykonaj backup maszyn wirtualnych Hyper-V (tylko Windows)"
+msgstr "Wykonaj kopię maszyn wirtualnych Hyper-V (tylko Windows)"
 
 #: Library/Main/Strings.cs:221
 msgid ""
@@ -3163,6 +3173,7 @@ msgstr ""
 #: Library/Main/Strings.cs:238
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
+"Hasło szyfrowania nie może być zmienione dla istniejącej kopii zapasowej"
 
 #: Library/Main/Strings.cs:239
 #, csharp-format
@@ -3171,7 +3182,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:7
 msgid "Confirm encryption passphrase"
-msgstr ""
+msgstr "Potwierdź hasło szyfrowania"
 
 #: Library/Modules/Builtin/Strings.cs:8
 msgid ""
@@ -3185,7 +3196,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:10
 msgid "Empty passphrases are not allowed"
-msgstr ""
+msgstr "Nie można użyć pustych haseł szyfrowania"
 
 #: Library/Modules/Builtin/Strings.cs:11
 msgid "Enter encryption passphrase"
@@ -3193,7 +3204,7 @@ msgstr "Podaj hasło szyfrowania"
 
 #: Library/Modules/Builtin/Strings.cs:12
 msgid "The passphrases do not match"
-msgstr ""
+msgstr "Hasła szyfrowania nie zgadzają się"
 
 #: Library/Modules/Builtin/Strings.cs:15
 msgid ""

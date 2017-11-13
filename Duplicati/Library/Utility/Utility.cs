@@ -1190,6 +1190,30 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Converts a DateTime instance to a Unix timestamp
+        /// </summary>
+        /// <returns>The Unix timestamp.</returns>
+        /// <param name="input">The DateTime instance to convert.</param>
+        public static long ToUnixTimestamp(DateTime input)
+        {
+            var ticks = input.ToUniversalTime().Ticks;
+            ticks -= ticks % TimeSpan.TicksPerSecond;
+            input = new DateTime(ticks, DateTimeKind.Utc);
+
+            return (long)Math.Floor((input - EPOCH).TotalSeconds);
+        }
+
+        /// <summary>
+        /// Converts a Unix timestamp to a DateTime instance
+        /// </summary>
+        /// <returns>The DateTime instance represented by the timestamp.</returns>
+        /// <param name="input">The Unix timestamp to use.</param>
+        public static DateTime ToUnixTimestamp(long input)
+        {
+            return EPOCH.AddSeconds(input);
+        }
+
+        /// <summary>
         /// Returns a value indicating if the given type should be treated as a primitive
         /// </summary>
         /// <returns><c>true</c>, if type is primitive for serialization, <c>false</c> otherwise.</returns>
@@ -1216,7 +1240,12 @@ namespace Duplicati.Library.Utility
             if (IsPrimitiveTypeForSerialization(item.GetType()))
             {
                 if (item is DateTime)
+                {
                     writer.Write(((DateTime)item).ToLocalTime());
+                    writer.Write(" (");
+                    writer.Write(ToUnixTimestamp((DateTime)item));
+                    writer.Write(")");
+                }
                 else
                     writer.Write(item);
                 return true;
