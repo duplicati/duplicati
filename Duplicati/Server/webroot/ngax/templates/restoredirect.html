@@ -92,7 +92,7 @@
         <div ng-show="connecting == true &amp;&amp; taskid == null">
             {{ConnectionProgress}}
             <div ng-show="serverstate.programState == 'Paused'">
-                {{'Server is currently paused,' | translate}} <a ng-click="ServerStatus.resume()" translate>resume now</a>
+                {{'Server is currently paused,' | translate}} <a style="cursor: pointer" ng-click="ServerStatus.resume()" translate>resume now</a>
             </div>
         </div>
     </form>
