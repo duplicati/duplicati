@@ -2550,7 +2550,7 @@ msgstr ""
 #: scripts/controllers/EditBackupController.js:308
 msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
-"of the passphrase, as the data cannot be recovered if you loose the "
+"of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
 msgstr ""
 "Wygenerowano silne hasło. Upewnij się, że masz bezpieczną kopię tego hasła, "
