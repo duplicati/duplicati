@@ -2561,7 +2561,7 @@ msgstr "Você escolheu restaurar para um novo local, mas não inseriu um"
 #: scripts/controllers/EditBackupController.js:308
 msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
-"of the passphrase, as the data cannot be recovered if you loose the "
+"of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
 msgstr ""
 "Você gerou uma senha segura. Certifique-se de ter salvo a senha com "
