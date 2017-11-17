@@ -2492,7 +2492,7 @@ msgstr "你选择了恢复到新位置，却没有指定具体位置"
 #: scripts/controllers/EditBackupController.js:308
 msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
-"of the passphrase, as the data cannot be recovered if you loose the "
+"of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
 msgstr "你已经生成了一个强密码，确保你安全记录下了此密码，否则万一你丢失密码，数据将不能恢复。"
 
