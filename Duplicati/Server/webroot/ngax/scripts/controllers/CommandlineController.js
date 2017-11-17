@@ -138,7 +138,7 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
         for (var i = resp.data.length - 1; i >= 0; i--)
             cmds.push(resp.data[i]);
 
-        $scope.SupportedCommands = cmds;
+        $scope.SupportedCommands = cmds.sort();
         $scope.Command = 'help';
 
     }, function() {

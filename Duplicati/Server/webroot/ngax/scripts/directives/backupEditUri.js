@@ -128,7 +128,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                     if ((folder || "") == "")
                         folder = '';
 
-                    DialogService.dialog(gettextCatalog.getString('Create folder?'), gettextCatalog.getString('The folder {{folder}} does not exist\nCreate it now?', { folder: folder }), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
+                    DialogService.dialog(gettextCatalog.getString('Create folder?'), gettextCatalog.getString('The folder {{folder}} does not exist.\nCreate it now?', { folder: folder }), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                         if (ix == 1)
                             createFolder();
                     });

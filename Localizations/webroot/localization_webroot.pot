@@ -2147,7 +2147,7 @@ msgstr ""
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
-"The folder {{folder}} does not exist\n"
+"The folder {{folder}} does not exist.\n"
 "Create it now?"
 msgstr ""
 
