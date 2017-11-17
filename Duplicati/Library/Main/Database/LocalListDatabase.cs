@@ -266,8 +266,8 @@ namespace Duplicati.Library.Main.Database
                         //Then we select the matching results
                         var filesets = string.Format(@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC", m_tablename);
                         var cartesianPathFileset = string.Format(@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{0}"" A, (" + filesets + @") B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC", tbname, m_tablename);
-                                                
-                        var filesWithSizes = @"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" ";
+
+                        var filesWithSizes = string.Format(@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{0}"") ", m_tablename);
                         var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
                         
                         cmd.AddParameter(pathprefix, "1");                    
@@ -318,7 +318,7 @@ namespace Duplicati.Library.Main.Database
                     //Then we select the matching results
                     var filesets = string.Format(@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC", m_tablename);
                     var cartesianPathFileset = string.Format(@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{0}"" A, (" + filesets + @") B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC", tmpnames.Tablename, m_tablename);
-                    var filesWithSizes = @"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" ";
+                    var filesWithSizes = string.Format(@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID""  AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{0}"") ", m_tablename);
                     var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
                     using(var rd = cmd.ExecuteReader(query))
                         if(rd.Read())
@@ -368,7 +368,7 @@ namespace Duplicati.Library.Main.Database
                     for(var i = 0; i < m_filesets.Length; i++)
                         dict[m_filesets[i].Key] = i;
                     
-                    var summation = @"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" GROUP BY ""A"".""FilesetID"" ";
+                    var summation = string.Format(@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{0}"") GROUP BY ""A"".""FilesetID"" ",m_tablename);
                     
                     using(var cmd = m_connection.CreateCommand())
                     using (var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""A"".""FilesetID"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{0}"" A LEFT OUTER JOIN ( " + summation + @" ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC ", m_tablename)))
