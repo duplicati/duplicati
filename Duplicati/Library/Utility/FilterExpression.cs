@@ -49,10 +49,22 @@ namespace Duplicati.Library.Utility
     /// </summary>    
     public class FilterExpression : IFilter
     {
+        /// <summary>
+        /// Implementation of a filter entry
+        /// </summary>
         private struct FilterEntry
         {
+            /// <summary>
+            /// The type of the filter
+            /// </summary>
             public readonly FilterType Type;
+            /// <summary>
+            /// The filter string
+            /// </summary>
             public readonly string Filter;
+            /// <summary>
+            /// The regular expression version of the filter
+            /// </summary>
             public readonly System.Text.RegularExpressions.Regex Regexp;
             
             /// <summary>
@@ -64,12 +76,18 @@ namespace Duplicati.Library.Utility
             /// </summary>
             private const char MULTIPLE_WILDCARD = '*';
             
-            
+            /// <summary>
+            /// The regular expression flags
+            /// </summary>
             private static readonly System.Text.RegularExpressions.RegexOptions REGEXP_OPTIONS =
                 System.Text.RegularExpressions.RegexOptions.Compiled |
                 System.Text.RegularExpressions.RegexOptions.ExplicitCapture |
                 (Library.Utility.Utility.IsFSCaseSensitive ? System.Text.RegularExpressions.RegexOptions.None : System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.FilterExpression.FilterEntry"/> struct.
+            /// </summary>
+            /// <param name="filter">The filter string to use.</param>
             public FilterEntry(string filter)
             {
                 if (string.IsNullOrEmpty(filter))
@@ -78,7 +96,7 @@ namespace Duplicati.Library.Utility
                     this.Filter = null;
                     this.Regexp = null;
                 }
-                if (filter.StartsWith("[") && filter.EndsWith("]"))
+                else if (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal))
                 {
                     this.Type = FilterType.Regexp;
                     this.Filter = filter.Substring(1, filter.Length - 2);
