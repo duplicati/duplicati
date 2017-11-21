@@ -327,28 +327,35 @@ namespace Duplicati.Library.Backend
 
         public static Renci.SshNet.PrivateKeyFile ValidateKeyFile(string filename, string password)
         {
-            if (filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                using (var ms = new System.IO.MemoryStream())
-                using (var sr = new System.IO.StreamWriter(ms))
+                if (filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
                 {
-                    sr.Write(Duplicati.Library.Utility.Uri.UrlDecode(filename.Substring(KEYFILE_URI.Length)));
-                    sr.Flush();
+                    using (var ms = new System.IO.MemoryStream())
+                    using (var sr = new System.IO.StreamWriter(ms))
+                    {
+                        sr.Write(Duplicati.Library.Utility.Uri.UrlDecode(filename.Substring(KEYFILE_URI.Length)));
+                        sr.Flush();
 
-                    ms.Position = 0;
+                        ms.Position = 0;
 
+                        if (String.IsNullOrEmpty(password))
+                            return new Renci.SshNet.PrivateKeyFile(ms);
+                        else
+                            return new Renci.SshNet.PrivateKeyFile(ms, password);
+                    }
+                }
+                else
+                {
                     if (String.IsNullOrEmpty(password))
-                        return new Renci.SshNet.PrivateKeyFile(ms);
+                        return new Renci.SshNet.PrivateKeyFile(filename);
                     else
-                        return new Renci.SshNet.PrivateKeyFile(ms, password);
+                        return new Renci.SshNet.PrivateKeyFile(filename, password);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                if (String.IsNullOrEmpty(password))
-                    return new Renci.SshNet.PrivateKeyFile(filename);
-                else
-                    return new Renci.SshNet.PrivateKeyFile(filename, password);
+                throw new UserInformationException(string.Format("Failed to parse the keyfile, check the key format and passphrase. Error message was {0}", ex.Message), ex);
             }
         }
 
