@@ -1540,6 +1540,8 @@ namespace Duplicati.Library.Utility
                 // Windows needs only needs " replaced with "",
                 // but is prone to %var% expansion when used in 
                 // immediate mode (i.e. from command prompt)
+                // Fortunately it does not expand when processes
+                // are started from within .Net
 
                 // TODO: I have not found a way to avoid escaping %varname%,
                 // and sadly it expands only if the variable exists

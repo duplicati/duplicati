@@ -1070,9 +1070,8 @@ namespace Duplicati.Library.AutoUpdater
                 return r;
             }
 
-            var args = Environment.CommandLine;
             var app = Environment.GetCommandLineArgs().First();
-            args = args.Substring(app.Length);
+            var args = Library.Utility.Utility.WrapAsCommandLine(Environment.GetCommandLineArgs().Skip(1), false);
 
             if (!Path.IsPathRooted(app))
                 app = Path.Combine(InstalledBaseDir, app);
@@ -1216,9 +1215,8 @@ namespace Duplicati.Library.AutoUpdater
 
                         try
                         {
-                            var args = Environment.CommandLine;
                             var app = Environment.GetCommandLineArgs().First();
-                            args = args.Substring(app.Length);
+                            var args = Library.Utility.Utility.WrapAsCommandLine(Environment.GetCommandLineArgs().Skip(1), false);
 
                             if (!System.IO.Path.IsPathRooted(app))
                                 app = System.IO.Path.Combine(InstalledBaseDir, app);
