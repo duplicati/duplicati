@@ -29,7 +29,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         protected static readonly string BASEFOLDER =
             string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
-            ? Library.Utility.Utility.ExpandEnvironmentVariables(Path.Combine("~", "testdata"))
+            ? Path.Combine(Library.Utility.Utility.HOME_PATH, "testdata")
             : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER");
 
         /// <summary>
