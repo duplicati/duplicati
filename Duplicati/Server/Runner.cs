@@ -361,8 +361,6 @@ namespace Duplicati.Server
                     where !string.IsNullOrWhiteSpace(p)
                     select p).ToArray();
             
-            var cmd = new System.Text.StringBuilder();
-
             var exe = 
                 System.IO.Path.Combine(
                     Library.AutoUpdater.UpdaterManager.InstalledBaseDir,
@@ -371,42 +369,26 @@ namespace Duplicati.Server
                         )
                 );
 
-            Func<string, string> commandLineEscapeValue = x =>
-            {
-                if (string.IsNullOrWhiteSpace(x))
-                    return x;
-
-                if (x.EndsWith("\\", StringComparison.Ordinal))
-                    x += "\\";
-
-                x = x.Replace("\"", Library.Utility.Utility.IsClientWindows ? "\"\"" : "\\\"");
-
-                return "\"" + x + "\"";
-            };
-
-            exe = commandLineEscapeValue(exe);
-
+            var cmd = new System.Text.StringBuilder();
             if (Library.Utility.Utility.IsMono)
-                exe = "mono " + exe;
-            
+                cmd.Append("mono ");
 
-            cmd.Append(exe);
-            cmd.Append(" backup");
-            cmd.Append(" ");
-            cmd.Append(commandLineEscapeValue(backup.TargetURL));
-            cmd.Append(" ");
-            cmd.Append(string.Join(" ", sources.Select(x => commandLineEscapeValue(x))));
+            cmd.Append(Library.Utility.Utility.WrapAsCommandLine(new string[] { exe, "backup", backup.TargetURL }, false));
 
+            cmd.Append(" ");
+            cmd.Append(Library.Utility.Utility.WrapAsCommandLine(sources, true));
+
+            // TODO: We should check each option to see if it is a path, and allow expansion on that
             foreach(var opt in options)
-                cmd.AppendFormat(" --{0}={1}", opt.Key, commandLineEscapeValue(opt.Value));
+                cmd.AppendFormat(" --{0}={1}", opt.Key, Library.Utility.Utility.WrapCommandLineElement(opt.Value, false));
             
             if (cf != null)
                 foreach(var f in cf)
-                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", commandLineEscapeValue(f.Expression));
+                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", Library.Utility.Utility.WrapCommandLineElement(f.Expression, true));
 
             if (bf != null)
                 foreach(var f in bf)
-                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", commandLineEscapeValue(f.Expression));
+                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", Library.Utility.Utility.WrapCommandLineElement(f.Expression, true));
 
             return cmd.ToString();
         }
