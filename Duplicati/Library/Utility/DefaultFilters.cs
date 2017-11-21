@@ -180,7 +180,7 @@ namespace Duplicati.Library.Utility
         {
             var filters = new[]
             {
-                DefaultFilters.CreateWildcardFilter(@"*.rbf"),
+                DefaultFilters.CreateWildcardFilter(@"*/config.msi/*.rbf"), // https://github.com/duplicati/duplicati/issues/2886
                 DefaultFilters.CreateWildcardFilter(@"*.tmp"),
                 DefaultFilters.CreateWildcardFilter(@"*.tmp/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/$RECYCLE.BIN/*"),
