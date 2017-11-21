@@ -1496,5 +1496,74 @@ namespace Duplicati.Library.Utility
                 }
             }
         }
+
+        /// <summary>
+        /// The regular expression matching all know non-quoted commandline characters
+        /// </summary>
+        private static readonly Regex COMMANDLINE_SAFE = new Regex(@"[A-Za-z0-9\-_/:\.]*");
+        /// <summary>
+        /// Special characters that needs to be escaped on Linux
+        /// </summary>
+        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""|$|`|\\|!]");
+
+        /// <summary>
+        /// Wraps a single argument in quotes suitable for the passing on the commandline
+        /// </summary>
+        /// <returns>The wrapped commandline element.</returns>
+        /// <param name="arg">The argument to wrap.</param>
+        /// <param name="allowEnvExpansion">A flag indicating if environment variables are allowed to be expanded</param>
+        public static string WrapCommandLineElement(string arg, bool allowEnvExpansion)
+        {
+            if (string.IsNullOrWhiteSpace(arg))
+                return arg;
+
+            if (!Library.Utility.Utility.IsClientWindows)
+            {
+                // We could consider using single quotes that prevents all expansions
+                //if (!allowEnvExpansion)
+                //    return "'" + arg.Replace("'", "\\'") + "'";
+                
+                // Linux is using backslash to escape, except for !
+                arg = COMMANDLINE_ESCAPED_LINUX.Replace(arg, (match) =>
+                {
+                    if (match.Value == "!")
+                        return "\"'!'\"";
+
+                    if (match.Value == "$" && allowEnvExpansion)
+                        return match.Value;
+                    
+                    return "\\" + match.Value;
+                });
+            }
+            else
+            {
+                // Windows needs only needs " replaced with "",
+                // but is prone to %var% expansion when used in 
+                // immediate mode (i.e. from command prompt)
+
+                // TODO: I have not found a way to avoid escaping %varname%,
+                // and sadly it expands only if the variable exists
+                // making it even rarer and harder to diagnose when
+                // it happens
+                arg = arg.Replace("\"", "\"\"");
+            }
+
+            // Check that all characters are in the safe set
+            if (COMMANDLINE_SAFE.Match(arg).Length != arg.Length)
+                return "\"" + arg + "\"";
+            else
+                return arg;            
+        }
+
+        /// <summary>
+        /// Wrap a set of commandline arguments suitable for the commandline
+        /// </summary>
+        /// <returns>A commandline string.</returns>
+        /// <param name="args">The arguments to create into a commandline.</param>
+        /// <param name="allowEnvExpansion">A flag indicating if environment variables are allowed to be expanded</param>
+        public static string WrapAsCommandLine(IEnumerable<string> args, bool allowEnvExpansion = false)
+        {
+            return string.Join(" ", args.Select(x => WrapCommandLineElement(x, allowEnvExpansion)));
+        }
     }
 }
