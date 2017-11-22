@@ -1,3 +1,24 @@
+2017-11-22 - 2.0.2.13_canary_2017-11-22
+==========
+* Fixed an issue with AutoUpdater semi-ignoring webroot
+* Fixed an issue where source folders would be omitted from the backup if a file with the same leading name was also added
+* Switched to default "keep forever", thanks @ItEndsWithTens
+* Fixed a startup crash caused by invalid throttle values
+* Added a number of new languages, thanks to all translators!
+* Timestamps in the log are now reported in local time and include a UTC timestamp for easy script parsing
+* Added Windows registry exclusion list to the default exclude filters
+* Added .dv files to compression exclusion list, thanks @jesjimher
+* Fixed some spelling in the UI, thanks @davegold24 and @JonMikeIV
+* Fixed logic of the `affected` command to not return empty results if the local database was not found
+* Fixed a case where the "Resume" button did not appear clickable, thanks @JonMikeIV
+* Improved query time for browsing folders during restore, thanks @RobSauro
+* Commands are now sorted alphabetically, thanks @JonMikeIV
+* Improved an error message when the SSH key failed to parse
+* Removed tilde expansion to fix multiple issues caused by unexpected expansio, thanks @warwickmm
+* Fixed .rbf files to only be excluded if they are part of the `config.msi` folder
+* Improved the commandline export to show commandlines that are correctly escaped for the shell
+* Fixed a case where the AutoUpdater would fail to send the correct commandline to the updated process
+
 2017-10-20 - 2.0.2.12_canary_2017-10-20
 ==========
 * Fixed not reporting "Finished" until the backup is actually finished, thanks @warwickmm
