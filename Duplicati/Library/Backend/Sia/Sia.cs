@@ -73,7 +73,7 @@ namespace Duplicati.Library.Backend.Sia
             }
 
             req.KeepAlive = false;
-            req.UserAgent = string.Format("Sia-Agent (Duplicati SIA client {0})", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            req.UserAgent = string.Format("Sia-Agent (Duplicati SIA client {0})", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
             return req;
         }

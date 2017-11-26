@@ -358,7 +358,7 @@ namespace Duplicati.Library.Utility
                             first = false;
                         }
                         
-                        combined += "|(" + f.Regexp.ToString() + ")";
+                        combined += "|(" + f.Regexp + ")";
                     }
                 }
                 

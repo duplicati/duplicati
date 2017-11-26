@@ -322,7 +322,7 @@ namespace Duplicati.Library.Backend
 
             foreach (Renci.SshNet.Sftp.SftpFile ls in m_con.ListDirectory(path))
                 if (ls.Name.ToString() != "." && ls.Name.ToString() != "..")
-                    yield return new FileEntry(ls.Name.ToString(), ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory };
+                    yield return new FileEntry(ls.Name, ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory };
         }
 
         public static Renci.SshNet.PrivateKeyFile ValidateKeyFile(string filename, string password)

@@ -62,7 +62,7 @@ namespace Duplicati.Library.Logging
             m_stream.WriteLine("{0:u} - {1}: {2}", DateTime.UtcNow.ToString("u"), type, message);
             if (exception != null)
             {
-                m_stream.WriteLine(exception.ToString());
+                m_stream.WriteLine(exception);
                 m_stream.WriteLine();
             }
         }

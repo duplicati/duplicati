@@ -266,8 +266,8 @@ namespace Duplicati.Server.Database
                         p.Value = t;
                         cmd.Parameters.Add(p);
                     }
-                
-                    cmd.CommandText = @"SELECT ""ID"" FROM ""Backup"" WHERE " + sb.ToString();
+
+                    cmd.CommandText = @"SELECT ""ID"" FROM ""Backup"" WHERE " + sb;
                     
                     return Read(cmd, (rd) => ConvertToInt64(rd, 0)).ToArray();
                 }
@@ -347,8 +347,8 @@ namespace Duplicati.Server.Database
                         p.Value = t;
                         cmd.Parameters.Add(p);
                     }
-                
-                    cmd.CommandText = @"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb.ToString();
+
+                    cmd.CommandText = @"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb;
                     
                     return Read(cmd, (rd) => ConvertToInt64(rd, 0)).ToArray();
                 }

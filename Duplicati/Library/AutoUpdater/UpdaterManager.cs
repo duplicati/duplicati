@@ -984,7 +984,7 @@ namespace Duplicati.Library.AutoUpdater
             {
                 try
                 {
-                    Console.WriteLine("Crash! {0}{1}", Environment.NewLine, tex.ToString());
+                    Console.WriteLine("Crash! {0}{1}", Environment.NewLine, tex);
                 }
                 catch
                 {

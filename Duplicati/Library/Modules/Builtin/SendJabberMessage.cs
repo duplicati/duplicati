@@ -310,7 +310,7 @@ namespace Duplicati.Library.Modules.Builtin
             };
 
             agsXMPP.XmppElementHandler loginErroHandler = (sender, e) => {
-                ex = new Exception(string.Format("Failed to log in: {0}", e.ToString()));
+                ex = new Exception(string.Format("Failed to log in: {0}", e));
                 waitEvent.Set();
             };
     

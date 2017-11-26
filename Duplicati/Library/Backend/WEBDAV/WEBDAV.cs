@@ -360,7 +360,7 @@ namespace Duplicati.Library.Backend
             }
 
             req.KeepAlive = false;
-            req.UserAgent = "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.UserAgent = "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
 
             return req;
         }

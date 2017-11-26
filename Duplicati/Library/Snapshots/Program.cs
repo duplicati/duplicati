@@ -151,7 +151,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine(string.Format("The file {0} was locked even through snapshot, message: {1}", filename, ex.ToString()));
+                                Console.WriteLine(string.Format("The file {0} was locked even through snapshot, message: {1}", filename, ex));
                                 Console.WriteLine("* Test failed");
                                 return;
                             }
@@ -163,7 +163,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
             }
             catch (Exception ex)
             {
-                Console.WriteLine(string.Format("The snapshot tester failed: {0}", ex.ToString()));
+                Console.WriteLine(string.Format("The snapshot tester failed: {0}", ex));
                 Console.WriteLine("* Test failed");
             }
 

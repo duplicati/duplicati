@@ -21,7 +21,7 @@ namespace Duplicati.Library.Backend
         private const long BITS_FILE_SIZE_LIMIT = 1024 * 1024 * 15;
         private const long BITS_CHUNK_SIZE = 1024 * 1024 * 10;
 
-        private static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
+        private static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
         private string m_rootfolder;
         private string m_prefix;

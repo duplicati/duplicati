@@ -261,7 +261,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(" error: {0}", ex.ToString());
+                        Console.WriteLine(" error: {0}", ex);
                         errors++;
                     }
                 }
