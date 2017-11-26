@@ -47,7 +47,7 @@ namespace Duplicati.Library.Utility
         /// <param name="url">The url to open, must start with http:// or https://</param>
         public static void OpenURL(string url, string browserprogram = null)
         {
-            if (!url.StartsWith("http://") && !url.StartsWith("https://"))
+            if (!url.StartsWith("http://", StringComparison.Ordinal) && !url.StartsWith("https://", StringComparison.Ordinal))
                 throw new Exception("Malformed URL");
 
             if (string.IsNullOrWhiteSpace(browserprogram))
@@ -107,7 +107,7 @@ namespace Duplicati.Library.Utility
 
             try
             {
-                if (!url.StartsWith("http://") && !url.StartsWith("https://"))
+                if (!url.StartsWith("http://", StringComparison.Ordinal) && !url.StartsWith("https://", StringComparison.Ordinal))
                     throw new Exception("Malformed URL");
 
                 if (string.IsNullOrEmpty(browserprogram))

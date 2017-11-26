@@ -73,7 +73,7 @@ namespace Duplicati.GUI.TrayIcon
         public HttpServerConnection(Uri server, string password, bool saltedpassword, bool dbPasswordSourceDatabase, Dictionary<string, string> options)
         {
             m_baseUri = server.ToString();
-            if (!m_baseUri.EndsWith("/"))
+            if (!m_baseUri.EndsWith("/", StringComparison.Ordinal))
                 m_baseUri += "/";
 
             m_apiUri = m_baseUri + "api/v1";

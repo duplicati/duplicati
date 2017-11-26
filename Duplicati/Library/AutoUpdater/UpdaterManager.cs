@@ -148,7 +148,7 @@ namespace Duplicati.Library.AutoUpdater
                 var attempts = new List<string>();
 
                 // We do not want to install anything in the basedir, if the application is installed in "ProgramFiles"
-                if (!string.IsNullOrWhiteSpace(programfiles) && !InstalledBaseDir.StartsWith(Library.Utility.Utility.AppendDirSeparator(programfiles)))
+                if (!string.IsNullOrWhiteSpace(programfiles) && !InstalledBaseDir.StartsWith(Library.Utility.Utility.AppendDirSeparator(programfiles), StringComparison.Ordinal))
                     attempts.Add(System.IO.Path.Combine(InstalledBaseDir, "updates"));
 
                 if (Library.Utility.Utility.IsClientOSX)
@@ -521,7 +521,7 @@ namespace Duplicati.Library.AutoUpdater
                                         continue;
 
                                     var fullpath = System.IO.Path.Combine(targetfolder, relpath);
-                                    if (relpath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                                    if (relpath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
                                         System.IO.Directory.CreateDirectory(fullpath);
                                     else
                                         System.IO.File.Copy(e, fullpath);
@@ -748,7 +748,7 @@ namespace Duplicati.Library.AutoUpdater
                         if (ignoreMap.ContainsKey(relpath))
                             return false;
                     
-                        if (path.EndsWith(dirsep))
+                        if (path.EndsWith(dirsep, StringComparison.Ordinal))
                             return true;
 
                         using (var source = System.IO.File.OpenRead(path))
@@ -771,8 +771,8 @@ namespace Duplicati.Library.AutoUpdater
                                 select new FileEntry() {
                         Path = relpath,
                         LastWriteTime = System.IO.File.GetLastAccessTimeUtc(fse),
-                        MD5 = fse.EndsWith(dirsep) ? null : computeMD5(fse),
-                        SHA256 = fse.EndsWith(dirsep) ? null : computeSHA256(fse)
+                        MD5 = fse.EndsWith(dirsep, StringComparison.Ordinal) ? null : computeMD5(fse),
+                        SHA256 = fse.EndsWith(dirsep, StringComparison.Ordinal) ? null : computeSHA256(fse)
                     })
                 .Union(ignoreFiles).ToArray();
 

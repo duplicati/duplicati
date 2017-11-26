@@ -366,7 +366,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     if (str.Length == 0)
                         continue;
 
-                    var ix = str.IndexOf(", ");
+                    var ix = str.IndexOf(", ", StringComparison.Ordinal);
                     if (ix < 0)
                         Console.WriteLine("Failed to parse line starting at offset {0} in index file, string: {1}", m_indexfile.Position - str.Length - m_newline.Length, str);
                     yield return new KeyValuePair<string, string>(str.Substring(0, ix), str.Substring(ix + 2));

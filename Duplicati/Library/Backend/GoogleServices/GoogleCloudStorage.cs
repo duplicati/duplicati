@@ -79,11 +79,11 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
             m_bucket = uri.Host;
             m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/"))
+            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
                 m_prefix += "/";
 
             // For GCS we do not use a leading slash
-            if (m_prefix.StartsWith("/"))
+            if (m_prefix.StartsWith("/", StringComparison.Ordinal))
                 m_prefix = m_prefix.Substring(1);
 
             string authid;

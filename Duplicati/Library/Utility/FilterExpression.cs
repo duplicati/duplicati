@@ -320,7 +320,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(filter))
                 return null;
             
-            if (filter.Length < 2 || (filter.StartsWith("[") && filter.EndsWith("]")))
+            if (filter.Length < 2 || (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)))
                 return new string[] { filter };
             else
                 return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
@@ -602,9 +602,9 @@ namespace Duplicati.Library.Utility
             foreach(var n in filters) 
             {
                 bool include;
-                if (n.StartsWith("+"))
+                if (n.StartsWith("+", StringComparison.Ordinal))
                     include = true;
-                else if (n.StartsWith("-"))
+                else if (n.StartsWith("-", StringComparison.Ordinal))
                     include = false;
                 else
                     continue;

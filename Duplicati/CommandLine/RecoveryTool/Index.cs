@@ -175,7 +175,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                         while (c1 != null || c2 != null)
                         {
-                            if (c1 != null && c1.StartsWith("a"))
+                            if (c1 != null && c1.StartsWith("a", StringComparison.Ordinal))
                                 Console.Write("");
                             var cmp = StringComparer.Ordinal.Compare(c1, c2);
 

@@ -22,10 +22,10 @@ namespace Duplicati.Library.Backend
             var uri = new Utility.Uri(url);
 
             m_path = Library.Utility.Uri.UrlDecode(uri.HostAndPath);
-            if (m_path.Length != 0 && !m_path.StartsWith("/"))
+            if (m_path.Length != 0 && !m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 
-            if (m_path.EndsWith("/"))
+            if (m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path = m_path.Substring(0, m_path.Length - 1);
 
             if (options.ContainsKey(AUTHID_OPTION))

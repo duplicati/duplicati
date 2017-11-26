@@ -42,7 +42,7 @@ namespace Duplicati.Library.Backend
 
             m_rootfolder = uri.Host;
             m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/"))
+            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
                 m_prefix += "/";
 
             string authid = null;

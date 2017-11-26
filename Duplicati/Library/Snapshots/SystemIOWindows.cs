@@ -33,7 +33,7 @@ namespace Duplicati.Library.Snapshots
 
         public static bool IsPathTooLong(string path)
         {
-            if (path.StartsWith(UNCPREFIX) || path.StartsWith(UNCPREFIX_SERVER) || path.Length > 260)
+            if (path.StartsWith(UNCPREFIX, StringComparison.Ordinal) || path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) || path.Length > 260)
                 return true;
 
             return false;
@@ -41,13 +41,13 @@ namespace Duplicati.Library.Snapshots
 
         public static string PrefixWithUNC(string path)
         {
-            if (path.StartsWith(UNCPREFIX_SERVER))
+            if (path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal))
                 return path;
 
-            if (path.StartsWith(UNCPREFIX))
+            if (path.StartsWith(UNCPREFIX, StringComparison.Ordinal))
                 return path;
 
-            if (path.StartsWith(PATHPREFIX_SERVER))
+            if (path.StartsWith(PATHPREFIX_SERVER, StringComparison.Ordinal))
                 return UNCPREFIX_SERVER + path.Remove(0, PATHPREFIX_SERVER.Length);
             
             return UNCPREFIX + path;
@@ -55,7 +55,7 @@ namespace Duplicati.Library.Snapshots
 
         public static string StripUNCPrefix(string path)
         {
-            if (path.StartsWith(UNCPREFIX))
+            if (path.StartsWith(UNCPREFIX, StringComparison.Ordinal))
                 return path.Substring(UNCPREFIX.Length);
             else
                 return path;
@@ -510,7 +510,7 @@ namespace Duplicati.Library.Snapshots
 
         public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)
         {
-            var isDirTarget = path.EndsWith(DIRSEP);
+            var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
             var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
             var dict = new Dictionary<string, string>();
 
@@ -532,7 +532,7 @@ namespace Duplicati.Library.Snapshots
             
         public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
         {
-            var isDirTarget = path.EndsWith(DIRSEP);
+            var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
             var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
 
             System.Security.AccessControl.FileSystemSecurity rules;

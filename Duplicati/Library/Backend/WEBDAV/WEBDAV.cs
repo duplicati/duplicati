@@ -91,13 +91,13 @@ namespace Duplicati.Library.Backend
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             m_url = u.SetScheme(m_useSSL ? "https" : "http").SetCredentials(null, null).SetQuery(null).ToString();
-            if (!m_url.EndsWith("/"))
+            if (!m_url.EndsWith("/", StringComparison.Ordinal))
                 m_url += "/";
 
             m_path = u.Path;
-            if (!m_path.StartsWith("/"))
+            if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
-            if (!m_path.EndsWith("/"))
+            if (!m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path += "/";
 
             m_path = Library.Utility.Uri.UrlDecode(m_path);
@@ -195,19 +195,19 @@ namespace Duplicati.Library.Backend
 
                 //TODO: This list is getting ridiculous, should change to regexps
 
-                if (name.StartsWith(m_url))
+                if (name.StartsWith(m_url, StringComparison.Ordinal))
                     cmp_path = m_url;
-                else if (name.StartsWith(m_rawurl))
+                else if (name.StartsWith(m_rawurl, StringComparison.Ordinal))
                     cmp_path = m_rawurl;
-                else if (name.StartsWith(m_rawurlPort))
+                else if (name.StartsWith(m_rawurlPort, StringComparison.Ordinal))
                     cmp_path = m_rawurlPort;
-                else if (name.StartsWith(m_path))
+                else if (name.StartsWith(m_path, StringComparison.Ordinal))
                     cmp_path = m_path;
-                else if (name.StartsWith("/" + m_path))
+                else if (name.StartsWith("/" + m_path, StringComparison.Ordinal))
                     cmp_path = "/" + m_path;
-                else if (name.StartsWith(m_sanitizedUrl))
+                else if (name.StartsWith(m_sanitizedUrl, StringComparison.Ordinal))
                     cmp_path = m_sanitizedUrl;
-                else if (name.StartsWith(m_reverseProtocolUrl))
+                else if (name.StartsWith(m_reverseProtocolUrl, StringComparison.Ordinal))
                     cmp_path = m_reverseProtocolUrl;
                 else
                     continue;

@@ -152,11 +152,11 @@ namespace Duplicati.Library.SQLiteHelper
             {
                 //The resource name will be "Duplicati.GUI.Database_schema.1.Sample upgrade.sql"
                 //The number indicates the version that will be upgraded to
-                if (s.StartsWith(prefix) && !s.Equals(prefix + SCHEMA_NAME))
+                if (s.StartsWith(prefix, StringComparison.Ordinal) && !s.Equals(prefix + SCHEMA_NAME))
                 {
                     try
                     {
-                        string version = s.Substring(prefix.Length, s.IndexOf(".", prefix.Length + 1) - prefix.Length);
+                        string version = s.Substring(prefix.Length, s.IndexOf(".", prefix.Length + 1, StringComparison.Ordinal) - prefix.Length);
                         int fileversion = int.Parse(version);
 
                         string prev;
