@@ -382,7 +382,7 @@ namespace Duplicati.Library.Main
                     else if (e is DbRename)
                         db.RenameRemoteFile(((DbRename)e).Oldname, ((DbRename)e).Newname, transaction);
                     else if (e != null)
-                        m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
+                        m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e), null);
 
                 // Finally remove volumes from DB.
                 if (volsRemoved.Count > 0)

@@ -193,7 +193,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                                 }
                                                 catch(Exception ex)
                                                 {
-                                                    Console.WriteLine("Failed to read hash: {0}{1}{2}", h, Environment.NewLine, ex.ToString());
+                                                    Console.WriteLine("Failed to read hash: {0}{1}{2}", h, Environment.NewLine, ex);
                                                 }
 
                                                 bi++;
@@ -201,7 +201,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                         }
                                         catch (Exception ex)
                                         {
-                                            Console.WriteLine("Failed to read Blocklist hash: {0}{1}{2}", blh, Environment.NewLine, ex.ToString());
+                                            Console.WriteLine("Failed to read Blocklist hash: {0}{1}{2}", blh, Environment.NewLine, ex);
                                         }
 
                                         blhi++;
@@ -233,7 +233,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(" error: {0}", ex.ToString());
+                        Console.WriteLine(" error: {0}", ex);
                         errors++;
                     }
                     i++;

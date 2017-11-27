@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     m_fileprogtable = null;
                     m_totalprogtable = null;
-                    Console.WriteLine(ex.ToString());
+                    Console.WriteLine(ex);
                     throw;
                 }
             }

@@ -121,7 +121,7 @@ namespace Duplicati.CommandLine.BackendTester
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unittest failed: " + ex.ToString());
+                Console.WriteLine("Unittest failed: " + ex);
             }
         }
 
@@ -325,7 +325,7 @@ namespace Duplicati.CommandLine.BackendTester
                             }
 
                             if (e != null)
-                                Console.WriteLine("failed\n*** Error: {0}", e.ToString());
+                                Console.WriteLine("failed\n*** Error: {0}", e);
                             else
                                 Console.WriteLine("done");
 
@@ -350,7 +350,7 @@ namespace Duplicati.CommandLine.BackendTester
                         try { backend.Delete(tx.remotefilename); }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex.ToString());
+                            Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);
                         }
 
                     curlist = backend.List();
@@ -397,11 +397,11 @@ namespace Duplicati.CommandLine.BackendTester
 
             if (e != null)
             {
-                Console.WriteLine("Failed to upload file {0}, error message: {1}, remote name: {2}", i, e.ToString(), remotefilename);
+                Console.WriteLine("Failed to upload file {0}, error message: {1}, remote name: {2}", i, e, remotefilename);
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
-                    Console.WriteLine(string.Format("  Inner exception: {0}", e.ToString()));
+                    Console.WriteLine(string.Format("  Inner exception: {0}", e));
                 }
             }
             else

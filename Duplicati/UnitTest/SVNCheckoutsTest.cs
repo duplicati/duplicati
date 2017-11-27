@@ -240,7 +240,7 @@ namespace Duplicati.UnitTest
                         StringBuilder sb = new StringBuilder();
                         sb.AppendLine("Entry count: " + entries.Count.ToString());
                         sb.Append(string.Format("Found {0} filelists but there were {1} source folders", entries.Count, folders.Length));
-                        throw new Exception("Filename parsing problem, or corrupt storage: " + sb.ToString());
+                        throw new Exception("Filename parsing problem, or corrupt storage: " + sb);
                     }
 
                     if (!skipfullrestore || !skippartialrestore)

@@ -97,7 +97,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 if (ex is Duplicati.Library.Interface.UserInformationException)
                     Console.WriteLine(ex.Message);
                 else
-                    Console.WriteLine("Program crashed: {0}{1}", Environment.NewLine, ex.ToString());
+                    Console.WriteLine("Program crashed: {0}{1}", Environment.NewLine, ex);
                 return 200;
             }
         }

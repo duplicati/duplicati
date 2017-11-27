@@ -250,15 +250,15 @@ namespace Duplicati.GUI.TrayIcon
                     }
                     catch (WebException ex)
                     {
-                        System.Diagnostics.Trace.WriteLine("Request error: " + ex.ToString());
-                        Console.WriteLine("Request error: " + ex.ToString());
+                        System.Diagnostics.Trace.WriteLine("Request error: " + ex);
+                        Console.WriteLine("Request error: " + ex);
 
                         reSpawn++;
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Trace.WriteLine("Unexpected error: " + ex.ToString());
-                        Console.WriteLine("Unexpected error: " + ex.ToString());
+                        System.Diagnostics.Trace.WriteLine("Unexpected error: " + ex);
+                        Console.WriteLine("Unexpected error: " + ex);
                         return;
                     }
                 } while (reSpawn < 3);

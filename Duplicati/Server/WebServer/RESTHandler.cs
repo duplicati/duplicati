@@ -188,7 +188,7 @@ namespace Duplicati.Server.WebServer
             catch(Exception ex)
             {
                 Program.DataConnection.LogError("", string.Format("Request for {0} gave error", info.Request.Uri), ex);
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine(ex);
 
                 try
                 {

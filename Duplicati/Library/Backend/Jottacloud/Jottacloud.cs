@@ -300,7 +300,7 @@ namespace Duplicati.Library.Backend
             req.Credentials = m_userInfo;
             req.PreAuthenticate = true; // We need this under Mono for some reason, and it appears some servers require this as well
             req.KeepAlive = false;
-            req.UserAgent = "Duplicati Jottacloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.UserAgent = "Duplicati Jottacloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             req.Headers.Add("x-jftp-version", API_VERSION);
             return req;
         }

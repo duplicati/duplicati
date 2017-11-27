@@ -225,7 +225,7 @@ namespace Duplicati.GUI.TrayIcon
                 var req = (System.Net.HttpWebRequest) System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT);
                 req.Method = "POST";
                 req.UserAgent = "Duplicati TrayIcon Monitor, v" +
-                                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                 req.Headers.Add(TRAYICONPASSWORDSOURCE_HEADER, m_TrayIconHeaderValue);
                 req.ContentType = "application/x-www-form-urlencoded";
 
@@ -252,7 +252,7 @@ namespace Duplicati.GUI.TrayIcon
                     (System.Net.HttpWebRequest) System.Net.WebRequest.Create(m_baseUri + LOGIN_SCRIPT);
                 req.Method = "POST";
                 req.UserAgent = "Duplicati TrayIcon Monitor, v" +
-                                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                 req.Headers.Add(TRAYICONPASSWORDSOURCE_HEADER, m_TrayIconHeaderValue);
                 req.ContentType = "application/x-www-form-urlencoded";
                 if (req.CookieContainer == null)
@@ -313,7 +313,7 @@ namespace Duplicati.GUI.TrayIcon
                     (System.Net.HttpWebRequest) System.Net.WebRequest.Create(m_baseUri + STATUS_WINDOW);
                 req.Method = "GET";
                 req.UserAgent = "Duplicati TrayIcon Monitor, v" +
-                                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                 req.Headers.Add(TRAYICONPASSWORDSOURCE_HEADER, m_TrayIconHeaderValue);
                 if (req.CookieContainer == null)
                     req.CookieContainer = new System.Net.CookieContainer();
@@ -404,7 +404,7 @@ namespace Duplicati.GUI.TrayIcon
                 if (m_xsrftoken != null)
                     req.Headers.Add(XSRF_HEADER, m_xsrftoken);
                 req.UserAgent = "Duplicati TrayIcon Monitor, v" +
-                                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                 req.Headers.Add(TRAYICONPASSWORDSOURCE_HEADER, m_TrayIconHeaderValue);
                 if (req.CookieContainer == null)
                     req.CookieContainer = new System.Net.CookieContainer();
