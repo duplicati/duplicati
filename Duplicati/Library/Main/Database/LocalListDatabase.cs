@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.Database
                     while (rd.Read())
                     {
                         var s = rd.GetString(0);
-                        if (!s.StartsWith(prefix))
+                        if (!s.StartsWith(prefix, StringComparison.Ordinal))
                             continue;
 
                         var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(s);

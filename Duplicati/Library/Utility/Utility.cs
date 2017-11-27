@@ -170,7 +170,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFiles(string basepath, IFilter filter)
         {
-            return EnumerateFileSystemEntries(basepath, filter).Where(x => !x.EndsWith(DirectorySeparatorString));
+            return EnumerateFileSystemEntries(basepath, filter).Where(x => !x.EndsWith(DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full paths</returns>
         public static IEnumerable<string> EnumerateFolders(string basepath, IFilter filter)
         {
-            return EnumerateFileSystemEntries(basepath, filter).Where(x => x.EndsWith(DirectorySeparatorString));
+            return EnumerateFileSystemEntries(basepath, filter).Where(x => x.EndsWith(DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>

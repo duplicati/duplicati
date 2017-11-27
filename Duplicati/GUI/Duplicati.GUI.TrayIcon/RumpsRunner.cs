@@ -243,7 +243,7 @@ namespace Duplicati.GUI.TrayIcon
                             menu.Callback();
                         }
                     }
-                    else if (!line.StartsWith("info") && !string.IsNullOrWhiteSpace(line))
+                    else if (!line.StartsWith("info", StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(line))
                     {
                         Console.WriteLine("Unexpected message: {0}", line);
                     }

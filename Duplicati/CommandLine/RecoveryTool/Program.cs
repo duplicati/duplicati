@@ -125,7 +125,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 cargs.AddRange(
                     from c in fargs
-                    where !string.IsNullOrWhiteSpace(c) && !c.StartsWith("#") && !c.StartsWith("!") && !c.StartsWith("REM ", StringComparison.OrdinalIgnoreCase)
+                    where !string.IsNullOrWhiteSpace(c) && !c.StartsWith("#", StringComparison.Ordinal) && !c.StartsWith("!", StringComparison.Ordinal) && !c.StartsWith("REM ", StringComparison.OrdinalIgnoreCase)
                     select c
                 );
                     

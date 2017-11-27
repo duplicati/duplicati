@@ -84,7 +84,7 @@ namespace Duplicati.Server.Serializable
                 return (
                     from n in Program.Scheduler.Schedule
                                 let backupid = (from t in n.Value.Tags
-                                                where t != null && t.StartsWith("ID=")
+                                                where t != null && t.StartsWith("ID=", StringComparison.Ordinal)
                                                 select t.Substring("ID=".Length)).FirstOrDefault()
                                 where !string.IsNullOrWhiteSpace(backupid)
                                 select new Tuple<string, DateTime>(backupid, n.Key)

@@ -252,7 +252,7 @@ namespace Duplicati.Library.Modules.Builtin
                     foreach(string rawline in stdout.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                     {
                         string line = rawline.Trim();
-                        if (!line.StartsWith("--"))
+                        if (!line.StartsWith("--", StringComparison.Ordinal))
                             continue; //Ingore anything that does not start with --
 
                         line = line.Substring(2);
@@ -273,7 +273,7 @@ namespace Duplicati.Library.Modules.Builtin
                             key = line.Substring(0, lix).Trim();
                             value = line.Substring(lix + 1).Trim();
 
-                            if (value.Length >= 2 && value.StartsWith("\"") && value.EndsWith("\""))
+                            if (value.Length >= 2 && value.StartsWith("\"", StringComparison.Ordinal) && value.EndsWith("\"", StringComparison.Ordinal))
                                 value = value.Substring(1, value.Length - 2);
                         }
 

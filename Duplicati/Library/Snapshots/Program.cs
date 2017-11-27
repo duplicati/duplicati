@@ -31,21 +31,21 @@ namespace Duplicati.Library.Snapshots
 
             for (int i = 0; i < args.Count; i++)
             {
-                if (args[i].StartsWith("--"))
+                if (args[i].StartsWith("--", StringComparison.Ordinal))
                 {
                     string key = null;
                     string value = null;
-                    if (args[i].IndexOf("=") > 0)
+                    if (args[i].IndexOf("=", StringComparison.Ordinal) > 0)
                     {
-                        key = args[i].Substring(0, args[i].IndexOf("="));
-                        value = args[i].Substring(args[i].IndexOf("=") + 1);
+                        key = args[i].Substring(0, args[i].IndexOf("=", StringComparison.Ordinal));
+                        value = args[i].Substring(args[i].IndexOf("=", StringComparison.Ordinal) + 1);
                     }
                     else
                         key = args[i];
 
                     //Skip the leading --
                     key = key.Substring(2).ToLower();
-                    if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("\"") && value.EndsWith("\""))
+                    if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("\"", StringComparison.Ordinal) && value.EndsWith("\"", StringComparison.Ordinal))
                         value = value.Substring(1, value.Length - 2);
 
                     //Last argument overwrites the current

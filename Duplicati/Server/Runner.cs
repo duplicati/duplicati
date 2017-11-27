@@ -833,12 +833,12 @@ namespace Duplicati.Server
             
             // Apply normal options
             foreach(var o in backup.Settings)
-                if (!o.Name.StartsWith("--") && TestIfOptionApplies(backup, mode, o.Filter))
+                if (!o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
                     options[o.Name] = o.Value;
 
             // Apply override options
             foreach(var o in backup.Settings)
-                if (o.Name.StartsWith("--") && TestIfOptionApplies(backup, mode, o.Filter))
+                if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
                     options[o.Name.Substring(2)] = o.Value;
             
             
@@ -855,8 +855,8 @@ namespace Duplicati.Server
             {
                 var nf =
                     (from n in f2
-                    let exp = 
-                        n.Expression.StartsWith("[") && n.Expression.EndsWith("]")
+                    let exp =
+                        n.Expression.StartsWith("[", StringComparison.Ordinal) && n.Expression.EndsWith("]", StringComparison.Ordinal)
                         ? SpecialFolders.ExpandEnvironmentVariablesRegexp(n.Expression)
                         : SpecialFolders.ExpandEnvironmentVariables(n.Expression)
                     orderby n.Order

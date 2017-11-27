@@ -162,9 +162,9 @@ namespace Duplicati.Library.Backend
             m_spWebUrl = null;
 
             m_serverRelPath = u.Path;
-            if (!m_serverRelPath.StartsWith("/"))
+            if (!m_serverRelPath.StartsWith("/", StringComparison.Ordinal))
                 m_serverRelPath = "/" + m_serverRelPath;
-            if (!m_serverRelPath.EndsWith("/"))
+            if (!m_serverRelPath.EndsWith("/", StringComparison.Ordinal))
                 m_serverRelPath += "/";
             // remove marker for SP-Web
             m_serverRelPath = m_serverRelPath.Replace("//", "/");
@@ -290,7 +290,7 @@ namespace Duplicati.Library.Backend
             retCtx = null;
 
             string path = orgUrl.Path;
-            int webIndicatorPos = path.IndexOf("//");
+            int webIndicatorPos = path.IndexOf("//", StringComparison.Ordinal);
 
             // if a hint is supplied, we will of course use this first.
             if (webIndicatorPos >= 0)

@@ -68,7 +68,7 @@ namespace Duplicati.CommandLine.BackendTester
                         var p = Library.Utility.Utility.ExpandEnvironmentVariables(_args[0]);
                         if (System.IO.File.Exists(p))
                             _args = (from x in System.IO.File.ReadLines(p)
-                                where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#")
+                                where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
                                 select x.Trim()
                             ).ToArray();
                     }

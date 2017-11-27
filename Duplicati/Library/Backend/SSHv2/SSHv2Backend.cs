@@ -78,10 +78,10 @@ namespace Duplicati.Library.Backend
 
             m_path = uri.Path;
 
-            if (!string.IsNullOrWhiteSpace(m_path) && !m_path.EndsWith("/"))
+            if (!string.IsNullOrWhiteSpace(m_path) && !m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path += "/";
 
-            if (!m_path.StartsWith("/"))
+            if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 
             m_server = uri.Host;
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Backend
             CreateConnection();
             //Bugfix, some SSH servers do not like a trailing slash
             string p = m_path;
-            if (p.EndsWith("/"))
+            if (p.EndsWith("/", StringComparison.Ordinal))
                 p.Substring(0, p.Length - 1);
             m_con.CreateDirectory(p);
         }
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Backend
 
             string working_dir = m_con.WorkingDirectory;
 
-            if (!working_dir.EndsWith("/"))
+            if (!working_dir.EndsWith("/", StringComparison.Ordinal))
                 working_dir += "/";
 
             if (working_dir == path)

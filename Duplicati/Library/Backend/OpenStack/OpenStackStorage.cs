@@ -188,11 +188,11 @@ namespace Duplicati.Library.Backend.OpenStack
 
             m_container = uri.Host;
             m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/"))
+            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
                 m_prefix += "/";
 
             // For OpenStack we do not use a leading slash
-            if (m_prefix.StartsWith("/"))
+            if (m_prefix.StartsWith("/", StringComparison.Ordinal))
                 m_prefix = m_prefix.Substring(1);
 
             options.TryGetValue(USERNAME_OPTION, out m_username);
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Backend.OpenStack
         private string JoinUrls(string uri, string fragment)
         {
             fragment = fragment ?? "";
-            return uri + (uri.EndsWith("/") ? "" : "/") + (fragment.StartsWith("/") ? fragment.Substring(1) : fragment);
+            return uri + (uri.EndsWith("/", StringComparison.Ordinal) ? "" : "/") + (fragment.StartsWith("/", StringComparison.Ordinal) ? fragment.Substring(1) : fragment);
         }
         private string JoinUrls(string uri, string fragment1, string fragment2)
         {
@@ -338,7 +338,7 @@ namespace Duplicati.Library.Backend.OpenStack
                 foreach (var n in items)
                 {
                     var name = n.name;
-                    if (name.StartsWith(m_prefix))
+                    if (name.StartsWith(m_prefix, StringComparison.Ordinal))
                         name = name.Substring(m_prefix.Length);
 
                     if (n.bytes == null)

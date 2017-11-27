@@ -95,13 +95,13 @@ namespace Duplicati.Library.Backend
             //Strip it down from \\server\share\folder1\folder2\filename.extension to
             // \\server\share
             string minpath = path;
-            if (!minpath.StartsWith("\\\\"))
+            if (!minpath.StartsWith("\\\\", StringComparison.Ordinal))
                 return false;
 
-            int first = minpath.IndexOf("\\", 2);
+            int first = minpath.IndexOf("\\", 2, StringComparison.Ordinal);
             if (first <= 0)
                 return false;
-            int next = minpath.IndexOf("\\", first + 1);
+            int next = minpath.IndexOf("\\", first + 1, StringComparison.Ordinal);
             if (next >= 0)
                 minpath = minpath.Substring(0, next);
 
