@@ -546,7 +546,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Calculates the hash of a given stream, and returns the results as an base64 encoded string
         /// </summary>
-        /// <param name="path">The stream to calculate the hash for</param>
+        /// <param name="stream">The stream to calculate the hash for</param>
         /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(System.IO.Stream stream)
         {

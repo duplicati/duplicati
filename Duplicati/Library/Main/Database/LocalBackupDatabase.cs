@@ -393,7 +393,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Adds a metadata set to the database, and returns a value indicating if the record was new
         /// </summary>
-        /// <param name="hash">The metadata hash</param>
+        /// <param name="filehash">The metadata hash</param>
         /// <param name="metadataid">The id of the metadata set</param>
         /// <returns>True if the set was added to the database, false otherwise</returns>
         public bool AddMetadataset(string filehash, long size, int blocksize, IEnumerable<string> blockhashes, IEnumerable<string> blocklisthashes, out long metadataid, System.Data.IDbTransaction transaction = null)

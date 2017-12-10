@@ -261,7 +261,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Constructs a new snapshot module using LVM
         /// </summary>
-        /// <param name="folders">The list of folders to create snapshots for</param>
+        /// <param name="sources">The list of folders to create snapshots for</param>
         /// <param name="options">A set of commandline options</param>
         public LinuxSnapshot(string[] sources, Dictionary<string, string> options)
         {
@@ -494,7 +494,7 @@ namespace Duplicati.Library.Snapshots
         /// Gets a unique hardlink target ID
         /// </summary>
         /// <returns>The hardlink ID</returns>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="path">The file or folder to examine</param>
         public string HardlinkTargetID(string path)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(path), path);

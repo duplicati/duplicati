@@ -1362,7 +1362,7 @@ namespace Duplicati.Library.Main.Operation
         /// Adds a file to the output, 
         /// </summary>
         /// <param name="filename">The name of the file to record</param>
-        /// <param name="lastModified">The value of the lastModified timestamp</param>
+        /// <param name="lastmodified">The value of the lastModified timestamp</param>
         /// <param name="hashlist">The list of hashes that make up the file</param>
         /// <param name="size">The size of the file</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
