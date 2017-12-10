@@ -222,7 +222,6 @@ namespace Duplicati.Library.Encryption
         /// </summary>
         /// <param name="args">The commandline arguments</param>
         /// <param name="input">The input stream</param>
-        /// <param name="output">The output stream</param>
         private System.IO.Stream Execute(string args, System.IO.Stream input, bool encrypt)
         {
             System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();

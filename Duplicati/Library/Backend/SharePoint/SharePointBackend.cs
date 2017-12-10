@@ -364,7 +364,6 @@ namespace Duplicati.Library.Backend
         /// We have to check for the exceptions thrown to know about file /folder existence.
         /// Why the funny guys at MS provided an .Exists field stays a mystery...
         /// </summary>
-        /// <param name="fileNameInfo"> the filename  </param>
         private void wrappedExecuteQueryOnConext(SP.ClientContext ctx, string serverRelPathInfo, bool isFolder)
         {
             try { ctx.ExecuteQuery(); }

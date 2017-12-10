@@ -132,7 +132,6 @@ namespace Duplicati.Library.Utility
         /// The search is recursive.
         /// </summary>
         /// <param name="basepath">The folder to look in</param>
-        /// <param name="filter">The filter to apply.</param>
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFiles(string basepath)
         {

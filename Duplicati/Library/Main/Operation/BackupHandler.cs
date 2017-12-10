@@ -1339,9 +1339,6 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="filename">The name of the file to record</param>
         /// <param name="lastModified">The value of the lastModified timestamp</param>
-        /// <param name="hashlist">The list of hashes that make up the file</param>
-        /// <param name="size">The size of the file</param>
-        /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
         private void AddFolderToOutput(BackendManager backend, string filename, DateTime lastModified, IMetahash metadata)
         {
@@ -1354,9 +1351,6 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="filename">The name of the file to record</param>
         /// <param name="lastModified">The value of the lastModified timestamp</param>
-        /// <param name="hashlist">The list of hashes that make up the file</param>
-        /// <param name="size">The size of the file</param>
-        /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
         private void AddSymlinkToOutput(BackendManager backend, string filename, DateTime lastModified, IMetahash metadata)
         {
@@ -1371,7 +1365,6 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="lastModified">The value of the lastModified timestamp</param>
         /// <param name="hashlist">The list of hashes that make up the file</param>
         /// <param name="size">The size of the file</param>
-        /// <param name="fragmentoffset">The offset into a fragment block where the last few bytes are stored</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
         private void AddFileToOutput(BackendManager backend, string filename, long size, DateTime lastmodified, IMetahash metadata, IEnumerable<string> hashlist, string filehash, IEnumerable<string> blocklisthashes)
         {

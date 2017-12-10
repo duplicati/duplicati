@@ -163,7 +163,6 @@ namespace Duplicati.Server
         /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
-        /// <param name="initialTimeout">The duration that the backups should be initially suspended</param>
         public LiveControls(Database.ServerSettings settings)
         {
             m_state = LiveControlState.Running;
@@ -216,7 +215,6 @@ namespace Duplicati.Server
         /// Event that occurs when the timeout duration is exceeded
         /// </summary>
         /// <param name="sender">The sender of the event</param>
-        /// <param name="e">An unused event argument</param>
         private void  m_waitTimer_Tick(object sender)
         {
             lock (m_lock)

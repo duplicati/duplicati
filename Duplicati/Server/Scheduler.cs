@@ -73,9 +73,7 @@ namespace Duplicati.Server
         /// <summary>
         /// Constructs a new scheduler
         /// </summary>
-        /// <param name="connection">The database connection</param>
         /// <param name="worker">The worker thread</param>
-        /// <param name="datalock">The database lock object</param>
         public Scheduler(WorkerThread<Server.Runner.IRunnerData> worker)
         {
             m_thread = new Thread(new ThreadStart(Runner));

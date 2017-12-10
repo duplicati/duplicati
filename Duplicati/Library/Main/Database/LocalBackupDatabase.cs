@@ -275,7 +275,6 @@ namespace Duplicati.Library.Main.Database
         /// Adds a block to the local database, returning a value indicating if the value presents a new block
         /// </summary>
         /// <param name="key">The block key</param>
-        /// <param name="archivename">The name of the archive that holds the data</param>
         /// <returns>True if the block should be added to the current output</returns>
         public bool AddBlock (string key, long size, long volumeid, System.Data.IDbTransaction transaction = null)
         {
@@ -319,8 +318,6 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="filehash">The hash of the blockset</param>
         /// <param name="size">The size of the blockset</param>
-        /// <param name="fragmentoffset">The fragmentoffset for the last block</param>
-        /// <param name="fragmenthash">The hash of the fragment</param>
         /// <param name="hashes">The list of hashes</param>
         /// <param name="blocksetid">The id of the blockset, new or old</param>
         /// <returns>True if the blockset was created, false otherwise</returns>
@@ -436,7 +433,6 @@ namespace Duplicati.Library.Main.Database
         /// <param name="blocksetID">The ID of the hashkey for the file</param>
         /// <param name="metadataID">The ID for the metadata</param>
         /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
-        /// <param name="operationId">The operationId to use, or -1 to use the current operation</param>
         public void AddFile(string filename, DateTime lastmodified, long blocksetID, long metadataID, System.Data.IDbTransaction transaction)
         {            
             var fileidobj = -1L;
