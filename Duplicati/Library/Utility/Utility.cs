@@ -132,7 +132,6 @@ namespace Duplicati.Library.Utility
         /// The search is recursive.
         /// </summary>
         /// <param name="basepath">The folder to look in</param>
-        /// <param name="filter">The filter to apply.</param>
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFiles(string basepath)
         {
@@ -547,7 +546,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Calculates the hash of a given stream, and returns the results as an base64 encoded string
         /// </summary>
-        /// <param name="path">The stream to calculate the hash for</param>
+        /// <param name="stream">The stream to calculate the hash for</param>
         /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(System.IO.Stream stream)
         {

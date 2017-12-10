@@ -273,7 +273,6 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Creates a new <see cref="Duplicati.Library.Utility.FilterExpression"/> instance, representing an empty filter.
         /// </summary>
-        /// <param name="filter">The filter string that represents the filter</param>
         public FilterExpression()
             : this((IEnumerable<string>)null, true)
         {

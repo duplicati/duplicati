@@ -40,7 +40,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
-        /// <param name="sourcepaths">The folders that are about to be backed up</param>
+        /// <param name="sources">The folders that are about to be backed up</param>
         public NoSnapshot(string[] sources)
             : this(sources, new Dictionary<string, string>())
         {
@@ -49,7 +49,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
-        /// <param name="folders">The folders that are about to be backed up</param>
+        /// <param name="sources">The folders that are about to be backed up</param>
         /// <param name="options">A set of system options</param>
         public NoSnapshot(string[] sources, Dictionary<string, string> options)
         {
