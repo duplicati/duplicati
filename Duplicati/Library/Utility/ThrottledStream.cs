@@ -215,7 +215,6 @@ namespace Duplicati.Library.Utility
 		/// <summary>
 		/// Calculates the speed, and inserts appropriate delays
 		/// </summary>
-		/// <returns>The number of bytes processed while delaying</returns>
 		private void DelayIfRequired(ref long limit, int count, ref DateTime last_sample, ref long last_count, ref double current_speed)
 		{
 			var now = DateTime.Now;
