@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Logging;
 using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Duplicati.Library.Main
 {
@@ -125,7 +127,7 @@ namespace Duplicati.Library.Main
         public long TotalQuotaSpace { get; set; }
         public long FreeQuotaSpace { get; set; }
         public long AssignedQuotaSpace { get; set; }
-        
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return m_parent.MainOperation; } }
                 
         public void SendEvent(BackendActionType action, BackendEventType type, string path, long size)
@@ -246,6 +248,7 @@ namespace Duplicati.Library.Main
             }
         }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public virtual ParsedResultType ParsedResult
         {
             get
@@ -262,7 +265,8 @@ namespace Duplicati.Library.Main
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
         public TimeSpan Duration { get { return EndTime.Ticks == 0 ? new TimeSpan(0) : EndTime - BeginTime; } }
-        
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public abstract OperationMode MainOperation { get; }
         
         protected Library.Utility.FileBackedStringList m_messages;
@@ -833,6 +837,7 @@ namespace Duplicati.Library.Main
         public bool PartialBackup { get; internal set; }
         public bool Dryrun { get; internal set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.Backup; } }
 
         public ICompactResults CompactResults { get; internal set; }
@@ -840,6 +845,7 @@ namespace Duplicati.Library.Main
         public IRepairResults RepairResults { get; internal set; }
         public ITestResults TestResults { get; internal set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public override ParsedResultType ParsedResult
         {
             get
@@ -864,11 +870,13 @@ namespace Duplicati.Library.Main
         public long FilesDeleted { get; internal set; }
         public long FoldersDeleted { get; internal set; }
         public long SymlinksDeleted { get; internal set; }
-        
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
         
         public IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public override ParsedResultType ParsedResult
         {
             get
@@ -923,7 +931,8 @@ namespace Duplicati.Library.Main
         
         public IEnumerable<Duplicati.Library.Interface.IListResultFileset> Filesets { get { return m_filesets; } }
         public IEnumerable<Duplicati.Library.Interface.IListResultFile> Files { get { return m_files; } }
-        
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.List; } }
     }
 
@@ -947,6 +956,7 @@ namespace Duplicati.Library.Main
         public IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> LogMessages { get { return m_logs; } }
         public IEnumerable<Duplicati.Library.Interface.IListResultRemoteVolume> RemoteVolumes { get { return m_volumes; } }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.ListAffected; } }
     }
 
@@ -961,7 +971,8 @@ namespace Duplicati.Library.Main
             DeletedSets = deletedSets;
             Dryrun = dryrun;
         }
-        
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.Delete; } }
 
         public DeleteResults() : base() { }
@@ -990,6 +1001,7 @@ namespace Duplicati.Library.Main
     
     internal class RecreateDatabaseResults : BasicResults, Library.Interface.IRecreateDatabaseResults
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.Repair; } }
         
         public RecreateDatabaseResults() : base() { }
@@ -998,6 +1010,7 @@ namespace Duplicati.Library.Main
 
     internal class CreateLogDatabaseResults : BasicResults, Library.Interface.ICreateLogDatabaseResults
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.CreateLogDb; } }
         public string TargetPath { get; internal set; }
     }   
@@ -1005,7 +1018,8 @@ namespace Duplicati.Library.Main
     internal class RestoreControlFilesResults : BasicResults, Library.Interface.IRestoreControlFilesResults
     {
         public IEnumerable<string> Files { get; private set; }
-        
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.RestoreControlfiles; } }
         public void SetResult(IEnumerable<string> files) { this.Files = files; }
     }   
@@ -1014,12 +1028,14 @@ namespace Duplicati.Library.Main
     {
         public IEnumerable<IFileEntry> Files { get; private set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.ListRemote; } }
         public void SetResult(IEnumerable<IFileEntry> files) { this.Files = files; }
     }
 
     internal class RepairResults : BasicResults, Library.Interface.IRepairResults
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.Repair; } }
         
         public RepairResults() : base() { }
@@ -1037,6 +1053,7 @@ namespace Duplicati.Library.Main
         public long UploadedFileSize { get; internal set; }
         public bool Dryrun { get; internal set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.Compact; } }
         
         public CompactResults() : base() { }
@@ -1045,6 +1062,7 @@ namespace Duplicati.Library.Main
 
     internal class ListChangesResults : BasicResults, Library.Interface.IListChangesResults
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.ListChanges; } }
         
         public DateTime BaseVersionTimestamp { get; internal set; }
@@ -1112,7 +1130,8 @@ namespace Duplicati.Library.Main
     {
         public TestResults() : base() { }
         public TestResults(BasicResults p) : base(p) { }
-        
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
         private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
@@ -1129,12 +1148,14 @@ namespace Duplicati.Library.Main
     {
         public long FileCount { get; set; }
         public long FileSize { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.TestFilters; } }
 
     }
 
     internal class SystemInfoResults : BasicResults, ISystemInfoResults
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.SystemInfo; } }
         public IEnumerable<string> Lines { get; set; }
     }
@@ -1144,6 +1165,7 @@ namespace Duplicati.Library.Main
         public PurgeFilesResults() : base() { }
         public PurgeFilesResults(BasicResults p) : base(p) { }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.PurgeFiles; } }
         public long RemovedFileCount { get; set; }
         public long RemovedFileSize { get; set; }
@@ -1154,12 +1176,14 @@ namespace Duplicati.Library.Main
 
     internal class ListBrokenFilesResults : BasicResults, IListBrokenFilesResults
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.ListBrokenFiles; } }
         public IEnumerable<Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>> BrokenFiles { get; set; }
     }
 
     internal class PurgeBrokenFilesResults : BasicResults, IPurgeBrokenFilesResults
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.PurgeBrokenFiles; } }
         public IPurgeFilesResults PurgeResults { get; set; }
         public IDeleteResults DeleteResults { get; set; }
@@ -1167,12 +1191,14 @@ namespace Duplicati.Library.Main
 
     internal class SendMailResults : BasicResults, ISendMailResults
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.SendMail; } }
         public IEnumerable<string> Lines { get; set; }
     }
 
     internal class VacuumResult : BasicResults, IVacuumResults
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public override OperationMode MainOperation { get { return OperationMode.Vacuum; } }
     }
 }

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace Duplicati.Library.Modules.Builtin {
     public class SendHttpMessage : Interface.IGenericCallbackModule
@@ -316,8 +317,13 @@ namespace Duplicati.Library.Modules.Builtin {
             if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
                 using (TempFile tf = new TempFile())
                 {
-                    RunScript.SerializeResult(tf, result);
-                    input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    //RunScript.SerializeResult(tf, result);
+                    string json = JsonConvert.SerializeObject(result, Formatting.None,
+                        new JsonSerializerSettings()
+                        {
+                            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                        });
+                    input = Regex.Replace(input, "\\%RESULT\\%", json, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 
             foreach (KeyValuePair<string, string> kv in m_options)
