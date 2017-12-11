@@ -632,7 +632,7 @@ namespace Duplicati.Library.AutoUpdater
 
                     paths.Remove(relpath);
 
-                    if (fe.Path.EndsWith("/", StringComparison.Ordinal))
+                    if (fe.Path.EndsWith("/", StringComparison.Ordinal) || fe.Path.EndsWith("\\", StringComparison.Ordinal))
                         continue;
 
                     sha256.Initialize();
@@ -650,7 +650,7 @@ namespace Duplicati.Library.AutoUpdater
                 }
 
                 var filteredpaths = paths
-                    .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal))
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal) && !p.Key.EndsWith("\\", StringComparison.Ordinal))
                     .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
                     .Select(p => p.Key)
                     .ToList();
@@ -713,7 +713,6 @@ namespace Duplicati.Library.AutoUpdater
             remoteManifest.UncompressedSize = 0;
 
             var localManifest = remoteManifest.Clone();
-            localManifest.RemoteURLS = null;
 
             inputfolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(inputfolder);
             var baselen = inputfolder.Length;
@@ -1047,7 +1046,7 @@ namespace Duplicati.Library.AutoUpdater
 
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
-            if (Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("AUTOUPDATER_USE_APPDOMAIN"), false))
+            if (Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("AUTOUPDATER_USE_APPDOMAIN"), true))
                 return RunFromMostRecentAppDomain(method, cmdargs, defaultstrategy);
             else
                 return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
