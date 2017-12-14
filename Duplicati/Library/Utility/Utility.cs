@@ -23,6 +23,8 @@ using System.Linq;
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Text;
 
 namespace Duplicati.Library.Utility
@@ -1566,5 +1568,46 @@ namespace Duplicati.Library.Utility
         {
             return string.Join(" ", args.Select(x => WrapCommandLineElement(x, allowEnvExpansion)));
         }
+
+        #region Execute command methods
+
+        /// <summary>
+        /// Execute script file in the folder location
+        /// If the file does not exit in the location, do nothing
+        /// </summary>
+        /// <param name="folderLocation"></param>
+        /// <param name="commandFile"></param>
+        public static void ExecuteCommand(string folderLocation, string commandFile)
+        {
+            string commandFilePath = folderLocation + "\\" + commandFile;
+
+            try
+            {
+                if (!File.Exists(commandFilePath))
+                    return;
+
+                var processInfo = new ProcessStartInfo(commandFilePath)
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    WorkingDirectory = folderLocation,
+                };
+
+                var process = Process.Start(processInfo);
+                if (process != null)
+                {
+                    process.WaitForExit();
+                    process.Close();
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
+
+        #endregion
     }
 }

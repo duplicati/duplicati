@@ -84,6 +84,16 @@ namespace Duplicati.Server
         {
             if (Duplicati.Library.AutoUpdater.UpdaterManager.SetRunUpdate())
             {
+                // If we are on Windows
+                if (Library.Utility.Utility.IsClientWindows)
+                {
+                    var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
+                    var runUpdateScriptBat = "run-update-script.bat";
+
+                    // On Windows, execute script file from the Last updates folder location
+                    Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                }
+
                 IsUpdateRequested = true;
                 Program.ApplicationExitEvent.Set();
             }
