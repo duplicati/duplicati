@@ -217,7 +217,6 @@ namespace Duplicati.Library.Main
                 return false;
 
             var file = System.IO.Path.Combine(folder, "dbconfig.json");
-            List<BackendEntry> configs;
             if (!System.IO.File.Exists(file))
                 return false;
 
