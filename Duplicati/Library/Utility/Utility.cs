@@ -637,15 +637,17 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Parses a string into a boolean value
+        /// Parses a string into a boolean value.
         /// </summary>
-        /// <param name="value">The value to parse</param>
-        /// <param name="default">The default value, in case the string is not a valid boolean value</param>
-        /// <returns>The parsed value or the default value</returns>
-        public static bool ParseBool(string value, bool @default)
+        /// <param name="value">The value to parse.</param>
+        /// <param name="defaultFunc">A delegate that returns the default value if <paramref name="value"/> is not a valid boolean value.</param>
+        /// <returns>The parsed value, or the value returned by <paramref name="defaultFunc"/>.</returns>
+        public static bool ParseBool(string value, Func<bool> defaultFunc)
         {
-            if (value == null)
-                value = "";
+            if (String.IsNullOrWhiteSpace(value))
+            {
+                return defaultFunc();
+            }
 
             switch (value.Trim().ToLower())
             {
@@ -660,8 +662,19 @@ namespace Duplicati.Library.Utility
                 case "no":
                     return false;
                 default:
-                    return @default;
+                    return defaultFunc();
             }
+        }
+
+        /// <summary>
+        /// Parses a string into a boolean value.
+        /// </summary>
+        /// <param name="value">The value to parse.</param>
+        /// <param name="default">The default value, in case <paramref name="value"/> is not a valid boolean value.</param>
+        /// <returns>The parsed value, or the default value.</returns>
+        public static bool ParseBool(string value, bool @default)
+        {
+            return Utility.ParseBool(value, () => @default);
         }
 
         /// <summary>
