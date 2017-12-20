@@ -1548,6 +1548,10 @@ namespace Duplicati.Library.Utility
                 // making it even rarer and harder to diagnose when
                 // it happens
                 arg = arg.Replace("\"", "\"\"");
+
+                // Also fix the case where the argument ends with a slash
+                if (arg[arg.Length - 1] == '\\')
+                    arg += "\\";
             }
 
             // Check that all characters are in the safe set
