@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Autoupdate urls: {0}", string.Join(";", Duplicati.Library.AutoUpdater.AutoUpdateSettings.URLs));
             yield return string.Format("Update folder: {0}", Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLDIR);
             yield return string.Format("Base install folder: {0}", Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir);
-            yield return string.Format("Version name: \"{0}\" ({1})", Duplicati.Library.AutoUpdater.UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+            yield return string.Format("Version name: \"{0}\" ({1})", Duplicati.Library.AutoUpdater.UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
             yield return string.Format("Current Version folder {0}", System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
 
             yield return string.Format("OS: {0}", Environment.OSVersion);
