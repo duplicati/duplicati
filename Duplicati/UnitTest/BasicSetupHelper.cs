@@ -60,9 +60,7 @@ namespace Duplicati.UnitTest
         /// this can be used to diagnose errors on a CI build instance by setting
         /// the environment variable DEBUG_OUTPUT=1 and running the job
         /// </summary>
-        public static readonly bool DEBUG_OUTPUT =
-            new[] { "1", "true", "on", "yes" }
-            .Contains(Environment.GetEnvironmentVariable("DEBUG_OUTPUT") ?? "", StringComparer.OrdinalIgnoreCase);
+        public static readonly bool DEBUG_OUTPUT = Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("DEBUG_OUTPUT"), false);
 
         /// <summary>
         /// Writes a message to TestContext.Progress and Console.Out
