@@ -1,3 +1,8 @@
+2017-12-22 - 2.0.2.14_canary_2017-12-22
+==========
+* Multiple code quality fixes, thansk @warwickmm
+* Fixed a case where commandline arguments ending with a backslash were not correctly escaped on Windows
+
 2017-11-22 - 2.0.2.13_canary_2017-11-22
 ==========
 * Fixed an issue with AutoUpdater semi-ignoring webroot
