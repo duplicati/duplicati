@@ -19,10 +19,26 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Duplicati.Library.Interface
 {
+    /// <summary>
+    /// Enumerates the possible modes for compression and decompression
+    /// </summary>
+    public enum ArchiveMode
+    {
+        /// <summary>
+        /// Indicates compression i.e. write archive mode, which means that the stream must be writeable
+        /// </summary>
+        Write,
+        /// <summary>
+        /// Indicates decompression i.e. read archive mode, which means that the stream must be readable
+        /// </summary>
+        Read
+    }
+
     /// <summary>
     /// A value that is given to the compressor as a hint
     /// to how compressible the file is
@@ -43,9 +59,8 @@ namespace Duplicati.Library.Interface
         /// Indicates that the files is incompressible
         /// </summary>
         Noncompressible
-
     }
-    
+
     /// <summary>
     /// An interface for passing additional hints to the compressor
     /// about the expected contents of the volume
@@ -60,18 +75,7 @@ namespace Duplicati.Library.Interface
         bool LowOverheadMode { get; set; }
     }
 
-    /// <summary>
-    /// An interface for accessing files in an archive, such as a folder or compressed file.
-    /// All modules that implements compression must implement this interface.
-    /// The classes that implements this interface MUST also 
-    /// implement a default constructor and a construtor that
-    /// has the signature new(string file, Dictionary&lt;string, string&gt; options).
-    /// The default constructor is used to construct an instance
-    /// so the DisplayName and other values can be read.
-    /// The other constructor is used to do the actual work.
-    /// The input file may not exist or have zero length, in which case it should be created.
-    /// </summary>
-    public interface ICompression : IDisposable
+    public interface IArchiveReader
     {
         /// <summary>
         /// Returns all files in the archive, matching the prefix, if any.
@@ -86,34 +90,13 @@ namespace Duplicati.Library.Interface
         /// <param name="prefix">An optional prefix for limiting the files returned</param>
         /// <returns>All files in the archive, matching the prefix, if any</returns>
         IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix);
-                
+
         /// <summary>
-        /// Returns a stream with data from the given file
+        /// Returns a stream with data from the given file in archive.
         /// </summary>
         /// <param name="file">The file to read the data from</param>
         /// <returns>A stream with data from the given file</returns>
         System.IO.Stream OpenRead(string file);
-
-        /// <summary>
-        /// Creates a file in the archive
-        /// </summary>
-        /// <param name="file">The file to create</param>
-        /// <param name="hint">A hint to the compressor as to how compressible the file data is</param>
-        /// <param name="lastWrite">The time the file was last written</param>
-        /// <returns>A stream with the data to write into the file</returns>
-        System.IO.Stream CreateFile(string file, CompressionHint hint, DateTime lastWrite);
-
-        /// <summary>
-        /// Returns a value indicating if the specified file exists
-        /// </summary>
-        /// <param name="file">The name of the file to examine</param>
-        /// <returns>True if the file exists, false otherwise</returns>
-        bool FileExists(string file);
-
-        /// <summary>
-        /// The total size of the archive
-        /// </summary>
-        long Size { get; }
 
         /// <summary>
         /// Returns the last modification time for the file
@@ -123,9 +106,47 @@ namespace Duplicati.Library.Interface
         DateTime GetLastWriteTime(string file);
 
         /// <summary>
+        /// Returns a value indicating if the specified file exists
+        /// </summary>
+        /// <param name="file">The name of the file to examine</param>
+        /// <returns>True if the file exists, false otherwise</returns>
+        bool FileExists(string file);
+    }
+
+    public interface IArchiveWriter
+    {
+        /// <summary>
+        /// Creates a file in the archive.
+        /// </summary>
+        /// <param name="file">The file to create in the archive</param>
+        /// <param name="hint">A hint to the compressor as to how compressible the file data is</param>
+        /// <param name="lastWrite">The time the file was last written</param>
+        /// <returns>A stream with the data to write into the file</returns>
+        System.IO.Stream CreateFile(string file, CompressionHint hint, DateTime lastWrite);
+
+        /// <summary>
         /// The size in bytes of the buffer that will be written when flushed
         /// </summary>
         long FlushBufferSize { get; }
+    }
+
+    /// <summary>
+    /// An interface for accessing files in an archive, such as a folder or compressed file.
+    /// All modules that implements compression must implement this interface.
+    /// The classes that implements this interface MUST also 
+    /// implement a default constructor and a construtor that
+    /// has the signature new(string file, Dictionary&lt;string, string&gt; options).
+    /// The default constructor is used to construct an instance
+    /// so the DisplayName and other values can be read.
+    /// The other constructor is used to do the actual work.
+    /// The input file may not exist or have zero length, in which case it should be created.
+    /// </summary>
+    public interface ICompression : IDisposable, IArchiveReader, IArchiveWriter
+    {
+        /// <summary>
+        /// The total size of the archive.
+        /// </summary>
+        long Size { get; }
 
         /// <summary>
         /// The extension that the compression implementation adds to the filename

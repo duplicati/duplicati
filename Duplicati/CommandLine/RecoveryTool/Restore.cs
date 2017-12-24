@@ -100,7 +100,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             var hashesprblock = blocksize / (blockhasher.HashSize / 8);
 
-            using(var mru = new CompressedFileMRUCache(options))
+            using (var mru = new CompressedFileMRUCache(options))
             {
                 Console.WriteLine("Building lookup table for file hashes");
                 var lookup = new HashLookupHelper(ixfile, mru, (int)blocksize, blockhasher.HashSize / 8);
@@ -111,8 +111,8 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 if (!string.IsNullOrWhiteSpace(targetpath))
                     Console.WriteLine("Computing restore path");
-                
-                foreach(var f in List.EnumerateFilesInDList(filelist, filter, options))
+
+                foreach (var f in List.EnumerateFilesInDList(filelist, filter, options))
                 {
                     if (largestprefix == null)
                     {
@@ -124,7 +124,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         var parts = f.Path.Split(new char[] { Path.DirectorySeparatorChar });
 
                         var ni = 0;
-                        for(; ni < Math.Min(parts.Length, largestprefixparts.Length); ni++)
+                        for (; ni < Math.Min(parts.Length, largestprefixparts.Length); ni++)
                             if (!Library.Utility.Utility.ClientFilenameStringComparer.Equals(parts[ni], largestprefixparts[ni]))
                                 break;
 
@@ -155,19 +155,19 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 var i = 0L;
                 var errors = 0L;
-                foreach(var f in List.EnumerateFilesInDList(filelist, filter, options))
+                foreach (var f in List.EnumerateFilesInDList(filelist, filter, options))
                 {
                     try
                     {
                         var targetfile = MapToRestorePath(f.Path, largestprefix, targetpath);
                         if (!Directory.Exists(Path.GetDirectoryName(targetfile)))
                             Directory.CreateDirectory(Path.GetDirectoryName(targetfile));
-                            
+
                         Console.Write("{0}: {1} ({2})", i, targetfile, Library.Utility.Utility.FormatSizeString(f.Size));
 
-                        using(var tf = new Library.Utility.TempFile())
+                        using (var tf = new Library.Utility.TempFile())
                         {
-                            using(var sw = File.OpenWrite(tf))
+                            using (var sw = File.OpenWrite(tf))
                             {
                                 if (f.BlocklistHashes == null)
                                 {
@@ -176,7 +176,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                 else
                                 {
                                     var blhi = 0L;
-                                    foreach(var blh in f.BlocklistHashes)
+                                    foreach (var blh in f.BlocklistHashes)
                                     {
                                         Console.Write(" {0}", blhi);
                                         var blockhashoffset = blhi * hashesprblock * blocksize;
@@ -184,14 +184,14 @@ namespace Duplicati.CommandLine.RecoveryTool
                                         try
                                         {
                                             var bi = 0;
-                                            foreach(var h in lookup.ReadBlocklistHashes(blh))
+                                            foreach (var h in lookup.ReadBlocklistHashes(blh))
                                             {
                                                 try
                                                 {
                                                     sw.Position = blockhashoffset + (bi * blocksize);
                                                     lookup.WriteHash(sw, h);
                                                 }
-                                                catch(Exception ex)
+                                                catch (Exception ex)
                                                 {
                                                     Console.WriteLine("Failed to read hash: {0}{1}{2}", h, Environment.NewLine, ex);
                                                 }
@@ -208,9 +208,9 @@ namespace Duplicati.CommandLine.RecoveryTool
                                     }
                                 }
                             }
-                                
+
                             string fh;
-                            using(var fs = File.OpenRead(tf))
+                            using (var fs = File.OpenRead(tf))
                                 fh = Convert.ToBase64String(filehasher.ComputeHash(fs));
 
                             if (fh == f.Hash)
@@ -288,7 +288,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 var hashes = 0L;
                 string prev = null;
                 m_indexfile.Position = 0;
-                foreach(var n in AllFileLines())
+                foreach (var n in AllFileLines())
                 {
                     if (n.Key != prev)
                     {
@@ -308,7 +308,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 var prevoff = 0L;
                 var hc = 0L;
                 m_indexfile.Position = 0;
-                foreach(var n in AllFileLines())
+                foreach (var n in AllFileLines())
                 {
                     if (n.Key != prev)
                     {
@@ -331,9 +331,9 @@ namespace Duplicati.CommandLine.RecoveryTool
                 var max = m_indexfile.Read(m_linebuf, 0, m_linebuf.Length);
                 if (max == 0)
                     return null;
-                
+
                 var lfi = 0;
-                for(int i = 0; i < max; i++)
+                for (int i = 0; i < max; i++)
                     if (m_linebuf[i] == m_newline[lfi])
                     {
                         if (lfi == m_newline.Length - 1)
@@ -352,12 +352,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                         lfi = 0;
                     }
 
-                throw new Exception(string.Format("Unexpected long line starting at offset {0}, read {1} bytes without a newline", p, m_linebuf.Length));                
+                throw new Exception(string.Format("Unexpected long line starting at offset {0}, read {1} bytes without a newline", p, m_linebuf.Length));
             }
 
             private IEnumerable<KeyValuePair<string, string>> AllFileLines()
             {
-                while(true)
+                while (true)
                 {
                     var str = ReadNextLine();
                     if (str == null)
@@ -376,7 +376,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             public IEnumerable<string> ReadBlocklistHashes(string hash)
             {
                 var bytes = ReadHash(hash);
-                for(var i = 0; i < bytes.Length; i += m_hashsize)
+                for (var i = 0; i < bytes.Length; i += m_hashsize)
                     yield return Convert.ToBase64String(bytes, i, m_hashsize);
             }
 
@@ -392,10 +392,10 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 m_indexfile.Position = m_offsets[ix];
 
-                foreach(var v in AllFileLines())
+                foreach (var v in AllFileLines())
                 {
                     if (v.Key == hash)
-                        using(var fs = m_cache.ReadBlock(v.Value, hash))
+                        using (var fs = m_cache.ReadBlock(v.Value, hash))
                         {
                             var buf = new byte[m_blocksize];
                             var l = fs.Read(buf, 0, buf.Length);
@@ -403,8 +403,8 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                             return buf;
                         }
-                    
-                    
+
+
                     if (StringComparer.Ordinal.Compare(hash, v.Key) < 0)
                         break;
                 }
@@ -430,6 +430,7 @@ namespace Duplicati.CommandLine.RecoveryTool
         private class CompressedFileMRUCache : IDisposable
         {
             private Dictionary<string, Library.Interface.ICompression> m_lookup = new Dictionary<string, Duplicati.Library.Interface.ICompression>();
+            private Dictionary<string, Stream> m_streams = new Dictionary<string, Stream>();
             private List<string> m_mru = new List<string>();
             private Dictionary<string, string> m_options;
 
@@ -443,12 +444,13 @@ namespace Duplicati.CommandLine.RecoveryTool
             public Stream ReadBlock(string filename, string hash)
             {
                 Library.Interface.ICompression cf;
-                if (!m_lookup.TryGetValue(filename, out cf))
+                Stream stream;
+                if (!m_lookup.TryGetValue(filename, out cf) || !m_streams.TryGetValue(filename, out stream))
                 {
-                    cf = Library.DynamicLoader.CompressionLoader.GetModule(Path.GetExtension(filename).Trim('.'), filename, m_options);
-                    if (cf == null)
-                        throw new Exception(string.Format("Unable to decompress {0}, no such compression module {1}", filename, Path.GetExtension(filename).Trim('.')));
-                    m_lookup[filename] = cf;
+                    stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+                    cf = Library.DynamicLoader.CompressionLoader.GetModule(Path.GetExtension(filename).Trim('.'), stream, Library.Interface.ArchiveMode.Read, m_options);
+                    m_lookup[filename] = cf ?? throw new Exception(string.Format("Unable to decompress {0}, no such compression module {1}", filename, Path.GetExtension(filename).Trim('.')));
+                    m_streams[filename] = stream;
                 }
 
                 if (m_mru.Count > 0 && m_mru[0] != filename)
@@ -462,6 +464,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                     var f = m_mru.Last();
                     m_lookup[f].Dispose();
                     m_lookup.Remove(f);
+                    m_streams[f].Dispose();
+                    m_streams.Remove(f);
                     m_mru.Remove(f);
                 }
 
@@ -472,11 +476,16 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             public void Dispose()
             {
-                foreach(var v in m_lookup.Values)
+                foreach (var v in m_lookup.Values)
+                    try { v.Dispose(); }
+                    catch { }
+
+                foreach (var v in m_streams.Values)
                     try { v.Dispose(); }
                     catch { }
 
                 m_lookup = null;
+                m_streams = null;
                 m_mru = null;
             }
 

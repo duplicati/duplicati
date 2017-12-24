@@ -37,6 +37,11 @@ namespace Duplicati.Library.Utility
         {
         }
 
+        /// <summary>
+        /// Full name of the temp file.
+        /// </summary>
+        public string Name => m_file?.Name;
+
         public TempFileStream(string file)
             : this(TempFile.WrapExistingFile(file))
         {
@@ -44,7 +49,7 @@ namespace Duplicati.Library.Utility
 
         public TempFileStream(TempFile file)
         {
-            m_file = file;
+            m_file = file ?? throw new ArgumentNullException(nameof(file));
             m_stream = System.IO.File.Open(file, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
         }
 
