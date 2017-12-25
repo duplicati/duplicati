@@ -49,7 +49,9 @@ namespace Duplicati.Library.Utility
 
         public TempFileStream(TempFile file)
         {
-            m_file = file ?? throw new ArgumentNullException(nameof(file));
+            if (file == null)
+                throw new ArgumentNullException(nameof(file));
+            m_file = file;
             m_stream = System.IO.File.Open(file, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
         }
 

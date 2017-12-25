@@ -449,7 +449,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                 {
                     stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
                     cf = Library.DynamicLoader.CompressionLoader.GetModule(Path.GetExtension(filename).Trim('.'), stream, Library.Interface.ArchiveMode.Read, m_options);
-                    m_lookup[filename] = cf ?? throw new Exception(string.Format("Unable to decompress {0}, no such compression module {1}", filename, Path.GetExtension(filename).Trim('.')));
+                    if (cf == null)
+                    {
+                        stream.Dispose();
+                        throw new Exception(string.Format("Unable to decompress {0}, no such compression module {1}", filename, Path.GetExtension(filename).Trim('.')));
+                    }
+                    m_lookup[filename] = cf;
                     m_streams[filename] = stream;
                 }
 

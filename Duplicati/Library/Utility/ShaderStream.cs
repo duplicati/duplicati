@@ -33,7 +33,9 @@ namespace Duplicati.Library.Utility
 
         public ShaderStream(System.IO.Stream baseStream, bool keepBaseOpen)
         {
-            this.m_baseStream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
+            if (baseStream == null)
+                throw new ArgumentNullException(nameof(baseStream));
+            this.m_baseStream = baseStream;
             this.m_keepBaseOpen = keepBaseOpen;
         }
 
