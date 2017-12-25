@@ -724,31 +724,29 @@ namespace Duplicati.Library.AutoUpdater
             var md5 = System.Security.Cryptography.MD5.Create();
             var sha256 = System.Security.Cryptography.SHA256.Create();
 
-            string computeMD5(string path)
-            {
-                using (var fs = System.IO.File.OpenRead(path))
-                    return computeStreamMD5(fs);
-            };
-
-            string computeSHA256(string path)
-            {
-                sha256.Initialize();
-                using (Stream fs = System.IO.File.OpenRead(path))
-                    return computeStreamSHA256(fs);
-            };
-
-            string computeStreamMD5(Stream stream)
+            Func<Stream, string> computeStreamMD5 = (stream) =>
             {
                 md5.Initialize();
                 return Convert.ToBase64String(md5.ComputeHash(stream));
             };
 
-            string computeStreamSHA256(Stream stream)
+            Func<Stream, string> computeStreamSHA256 = (stream) =>
             {
                 sha256.Initialize();
                 return Convert.ToBase64String(sha256.ComputeHash(stream));
             };
 
+            Func<string, string> computeMD5 = (path) =>
+            {
+                using (Stream fs = System.IO.File.OpenRead(path))
+                    return computeStreamMD5(fs);
+            };
+
+            Func<string, string> computeSHA256 = (path) =>
+            {
+                using (Stream fs = System.IO.File.OpenRead(path))
+                    return computeStreamSHA256(fs);
+            };
 
             // Build a zip
             using (var archive_temp_file = new Duplicati.Library.Utility.TempFile())
