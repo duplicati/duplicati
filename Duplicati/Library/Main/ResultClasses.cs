@@ -34,11 +34,11 @@ namespace Duplicati.Library.Main
         void AddDryrunMessage(string message);
         void WriteLogMessageDirect(string message, LogMessageType type, Exception ex);
     }
-    
+
     internal interface IBackendWriter : ILogWriter
     {
         void AddRetryAttempt(string message, Exception ex);
-        
+
         long UnknownFileSize { set; }
         long UnknownFileCount { set; }
         long KnownFileCount { set; }
@@ -57,32 +57,32 @@ namespace Duplicati.Library.Main
         /// <param name="path">Path to the resource</param>
         /// <param name="size">Size of the file or progress</param>
         void SendEvent(BackendActionType action, BackendEventType type, string path, long size);
-        
+
         /// <summary>
         /// Gets the backend progress updater.
         /// </summary>
         /// <value>The backend progress updater.</value>
         IBackendProgressUpdater BackendProgressUpdater { get; }
     }
-    
+
     internal interface ISetCommonOptions : ILogWriter
     {
-        bool VerboseOutput { set; }
+        new bool VerboseOutput { set; }
         bool VerboseErrors { set; }
-        
+
         DateTime EndTime { get; set; }
         DateTime BeginTime { set; }
-        
+
         void SetDatabase(LocalDatabase db);
-        
+
         OperationMode MainOperation { get; }
-        IMessageSink MessageSink { set; }        
+        IMessageSink MessageSink { set; }
     }
-    
+
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics
     {
         public BackendWriter(BasicResults p) : base(p) { }
-        
+
         protected long m_remoteCalls = 0;
         protected long m_bytesUploaded = 0;
         protected long m_bytesDownloaded = 0;
@@ -91,22 +91,22 @@ namespace Duplicati.Library.Main
         protected long m_filesDeleted = 0;
         protected long m_foldersCreated = 0;
         protected long m_retryAttemptCount = 0;
-        
+
         public void AddNumberOfRemoteCalls(long count)
         {
             System.Threading.Interlocked.Add(ref m_remoteCalls, count);
         }
-        
+
         public void AddBytesUploaded(long count)
         {
             System.Threading.Interlocked.Add(ref m_bytesUploaded, count);
         }
-        
+
         public void AddBytesDownloaded(long count)
         {
             System.Threading.Interlocked.Add(ref m_bytesDownloaded, count);
         }
-        
+
         public long RemoteCalls { get { return m_remoteCalls; } }
         public long BytesUploaded { get { return m_bytesUploaded; } }
         public long BytesDownloaded { get { return m_bytesDownloaded; } }
@@ -125,9 +125,9 @@ namespace Duplicati.Library.Main
         public long TotalQuotaSpace { get; set; }
         public long FreeQuotaSpace { get; set; }
         public long AssignedQuotaSpace { get; set; }
-        
+
         public override OperationMode MainOperation { get { return m_parent.MainOperation; } }
-                
+
         public void SendEvent(BackendActionType action, BackendEventType type, string path, long size)
         {
             if (type == BackendEventType.Started)
@@ -160,13 +160,13 @@ namespace Duplicati.Library.Main
                         break;
                 }
             }
-            
+
             base.AddBackendEvent(action, type, path, size);
         }
-        
-        IBackendProgressUpdater IBackendWriter.BackendProgressUpdater { get { return base.BackendProgressUpdater; } }   
+
+        IBackendProgressUpdater IBackendWriter.BackendProgressUpdater { get { return base.BackendProgressUpdater; } }
     }
-    
+
     public interface ITaskControl
     {
         void Pause();
@@ -174,7 +174,7 @@ namespace Duplicati.Library.Main
         void Stop();
         void Abort();
     }
-    
+
     internal enum TaskControlState
     {
         Run,
@@ -182,7 +182,7 @@ namespace Duplicati.Library.Main
         Stop,
         Abort
     }
-    
+
     internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions, ITaskControl, Logging.ILog
     {
         protected class DbMessage
@@ -190,7 +190,7 @@ namespace Duplicati.Library.Main
             public readonly string Type;
             public readonly string Message;
             public readonly Exception Exception;
-            
+
             public DbMessage(string type, string message, Exception ex)
             {
                 this.Type = type;
@@ -198,28 +198,28 @@ namespace Duplicati.Library.Main
                 this.Exception = ex;
             }
         }
-    
+
         protected LocalDatabase m_db;
         protected readonly BasicResults m_parent;
         protected System.Threading.Thread m_callerThread;
         protected readonly object m_lock = new object();
         protected Queue<DbMessage> m_dbqueue;
-                
+
         private TaskControlState m_controlState = TaskControlState.Run;
         private System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
-        
+
         private bool m_verboseOutput;
         private bool m_verboseErrors;
-        
+
         public bool VerboseOutput
-        { 
+        {
             get
-            { 
+            {
                 if (m_parent != null)
                     return m_parent.VerboseOutput;
                 else
                     return m_verboseOutput;
-            } 
+            }
             set
             {
                 if (m_parent != null)
@@ -228,15 +228,16 @@ namespace Duplicati.Library.Main
                     m_verboseOutput = value;
             }
         }
+
         public bool VerboseErrors
-        { 
+        {
             get
-            { 
+            {
                 if (m_parent != null)
                     return m_parent.VerboseErrors;
                 else
                     return m_verboseErrors;
-            } 
+            }
             set
             {
                 if (m_parent != null)
@@ -257,24 +258,24 @@ namespace Duplicati.Library.Main
                 else
                     return ParsedResultType.Success;
             }
-        }        
+        }
 
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
         public TimeSpan Duration { get { return EndTime.Ticks == 0 ? new TimeSpan(0) : EndTime - BeginTime; } }
-        
+
         public abstract OperationMode MainOperation { get; }
-        
+
         protected Library.Utility.FileBackedStringList m_messages;
         protected Library.Utility.FileBackedStringList m_warnings;
         protected Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
-        
+
         protected IMessageSink m_messageSink;
         public IMessageSink MessageSink
         {
             get { return m_messageSink; }
-            set 
+            set
             {
                 m_messageSink = value;
                 if (value != null)
@@ -284,7 +285,7 @@ namespace Duplicati.Library.Main
                 }
             }
         }
-        
+
         protected internal IOperationProgressUpdaterAndReporter m_operationProgressUpdater;
         internal IOperationProgressUpdaterAndReporter OperationProgressUpdater
         {
@@ -296,7 +297,7 @@ namespace Duplicati.Library.Main
                     return m_operationProgressUpdater;
             }
         }
-        
+
         protected internal IBackendProgressUpdaterAndReporter m_backendProgressUpdater;
         internal IBackendProgressUpdaterAndReporter BackendProgressUpdater
         {
@@ -308,7 +309,7 @@ namespace Duplicati.Library.Main
                     return m_backendProgressUpdater;
             }
         }
-        
+
         public void SetDatabase(LocalDatabase db)
         {
             if (m_parent != null)
@@ -317,7 +318,7 @@ namespace Duplicati.Library.Main
             }
             else
             {
-                lock(m_lock)
+                lock (m_lock)
                 {
                     m_db = db;
                     if (m_db != null)
@@ -325,14 +326,14 @@ namespace Duplicati.Library.Main
                 }
             }
         }
-        
+
         public void FlushLog()
         {
             if (m_parent != null)
                 m_parent.FlushLog();
             else
             {
-                lock(m_lock)
+                lock (m_lock)
                 {
                     while (m_dbqueue.Count > 0)
                     {
@@ -342,7 +343,7 @@ namespace Duplicati.Library.Main
                 }
             }
         }
-         
+
         private void LogDbMessage(string type, string message, Exception ex)
         {
             if (System.Threading.Thread.CurrentThread != m_callerThread)
@@ -366,7 +367,7 @@ namespace Duplicati.Library.Main
             }
             else
             {
-                lock(Logging.Log.Lock)
+                lock (Logging.Log.Lock)
                 {
                     if (m_is_reporting)
                         return;
@@ -388,7 +389,7 @@ namespace Duplicati.Library.Main
                     }
                 }
             }
-                
+
         }
 
         public void AddDryrunMessage(string message)
@@ -397,7 +398,7 @@ namespace Duplicati.Library.Main
                 m_parent.AddDryrunMessage(message);
             else
             {
-                lock(Logging.Log.Lock)
+                lock (Logging.Log.Lock)
                 {
                     if (m_is_reporting)
                         return;
@@ -423,7 +424,7 @@ namespace Duplicati.Library.Main
                 m_parent.AddVerboseMessage(message, args);
             else
             {
-                lock(Logging.Log.Lock)
+                lock (Logging.Log.Lock)
                 {
                     if (m_is_reporting)
                         return;
@@ -445,12 +446,12 @@ namespace Duplicati.Library.Main
         }
 
         public void AddMessage(string message)
-        { 
+        {
             if (m_parent != null)
                 m_parent.AddMessage(message);
             else
             {
-                lock(Logging.Log.Lock)
+                lock (Logging.Log.Lock)
                 {
                     if (m_is_reporting)
                         return;
@@ -465,7 +466,7 @@ namespace Duplicati.Library.Main
                         if (MessageSink != null)
                             MessageSink.MessageEvent(message);
 
-                        lock(m_lock)
+                        lock (m_lock)
                             if (m_db != null && !m_db.IsDisposed)
                                 LogDbMessage("Message", message, null);
                     }
@@ -483,7 +484,7 @@ namespace Duplicati.Library.Main
                 m_parent.AddWarning(message, ex);
             else
             {
-                lock(Logging.Log.Lock)
+                lock (Logging.Log.Lock)
                 {
                     if (m_is_reporting)
                         return;
@@ -499,7 +500,7 @@ namespace Duplicati.Library.Main
                         if (MessageSink != null)
                             MessageSink.WarningEvent(message, ex);
 
-                        lock(m_lock)
+                        lock (m_lock)
                             if (m_db != null && !m_db.IsDisposed)
                                 LogDbMessage("Warning", message, ex);
                     }
@@ -517,7 +518,7 @@ namespace Duplicati.Library.Main
                 m_parent.AddRetryAttempt(message, ex);
             else
             {
-                lock(Logging.Log.Lock)
+                lock (Logging.Log.Lock)
                 {
                     if (m_is_reporting)
                         return;
@@ -533,7 +534,7 @@ namespace Duplicati.Library.Main
                         if (MessageSink != null)
                             MessageSink.RetryEvent(message, ex);
 
-                        lock(m_lock)
+                        lock (m_lock)
                             if (m_db != null && !m_db.IsDisposed)
                                 LogDbMessage("Retry", message, ex);
                     }
@@ -551,7 +552,7 @@ namespace Duplicati.Library.Main
                 m_parent.AddError(message, ex);
             else
             {
-                lock(Logging.Log.Lock)
+                lock (Logging.Log.Lock)
                 {
                     if (m_is_reporting)
                         return;
@@ -567,7 +568,7 @@ namespace Duplicati.Library.Main
                         if (MessageSink != null)
                             MessageSink.ErrorEvent(message, ex);
 
-                        lock(m_lock)
+                        lock (m_lock)
                             if (m_db != null && !m_db.IsDisposed)
                                 LogDbMessage("Error", message, ex);
                     }
@@ -578,14 +579,14 @@ namespace Duplicati.Library.Main
                 }
             }
         }
-        
+
         public IEnumerable<string> Messages { get { return m_messages; } }
         public IEnumerable<string> Warnings { get { return m_warnings; } }
         public IEnumerable<string> Errors { get { return m_errors; } }
-        
-        public BasicResults() 
-        { 
-            this.BeginTime = DateTime.UtcNow; 
+
+        public BasicResults()
+        {
+            this.BeginTime = DateTime.UtcNow;
             this.m_parent = null;
             m_messages = new Library.Utility.FileBackedStringList();
             m_warnings = new Library.Utility.FileBackedStringList();
@@ -599,27 +600,27 @@ namespace Duplicati.Library.Main
         }
 
         public BasicResults(BasicResults p)
-        { 
-            this.BeginTime = DateTime.UtcNow; 
+        {
+            this.BeginTime = DateTime.UtcNow;
             this.m_parent = p;
         }
-        
+
         protected IBackendStatstics m_backendStatistics;
         public IBackendStatstics BackendStatistics
-        { 
+        {
             get
             {
                 if (this.m_parent != null)
                     return this.m_parent.BackendStatistics;
-                    
+
                 return m_backendStatistics;
             }
         }
-        
+
         public IBackendWriter BackendWriter { get { return (IBackendWriter)this.BackendStatistics; } }
-        
+
         public event Action<TaskControlState> StateChangedEvent;
-        
+
         /// <summary>
         /// Request that this task pauses.
         /// </summary>
@@ -640,7 +641,7 @@ namespace Duplicati.Library.Main
                     StateChangedEvent(m_controlState);
             }
         }
-        
+
         /// <summary>
         /// Request that this task resumes.
         /// </summary>
@@ -661,11 +662,11 @@ namespace Duplicati.Library.Main
                     StateChangedEvent(m_controlState);
             }
         }
-        
+
         /// <summary>
         /// Request that this task stops.
         /// </summary>
-        public void Stop() 
+        public void Stop()
         {
             if (m_parent != null)
                 m_parent.Stop();
@@ -682,7 +683,7 @@ namespace Duplicati.Library.Main
                     StateChangedEvent(m_controlState);
             }
         }
-        
+
         /// <summary>
         /// Request that this task aborts.
         /// </summary>
@@ -702,7 +703,7 @@ namespace Duplicati.Library.Main
                     StateChangedEvent(m_controlState);
             }
         }
-        
+
         /// <summary>
         /// Helper method that the current running task can call to obtain the current state
         /// </summary>
@@ -746,7 +747,7 @@ namespace Duplicati.Library.Main
         public override string ToString()
         {
             return Library.Utility.Utility.PrintSerializeObject(
-                this, 
+                this,
                 filter: (prop, item) =>
                     !typeof(IBackendProgressUpdater).IsAssignableFrom(prop.PropertyType) &&
                     !typeof(IMessageSink).IsAssignableFrom(prop.PropertyType) &&
@@ -849,11 +850,11 @@ namespace Duplicati.Library.Main
                 else if ((Warnings != null && Warnings.Any()) || PartialBackup)
                     return ParsedResultType.Warning;
                 else
-                    return ParsedResultType.Success;                    
+                    return ParsedResultType.Success;
             }
         }
     }
-    
+
     internal class RestoreResults : BasicResults, Library.Interface.IRestoreResults
     {
         public long FilesRestored { get; internal set; }
@@ -864,9 +865,9 @@ namespace Duplicati.Library.Main
         public long FilesDeleted { get; internal set; }
         public long FoldersDeleted { get; internal set; }
         public long SymlinksDeleted { get; internal set; }
-        
+
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
-        
+
         public IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
 
         public override ParsedResultType ParsedResult
@@ -908,7 +909,7 @@ namespace Duplicati.Library.Main
             this.FileSizes = fileSizes;
         }
     }
-    
+
     internal class ListResults : BasicResults, Duplicati.Library.Interface.IListResults
     {
         private IEnumerable<Duplicati.Library.Interface.IListResultFileset> m_filesets;
@@ -920,10 +921,10 @@ namespace Duplicati.Library.Main
             m_filesets = filesets;
             m_files = files;
         }
-        
+
         public IEnumerable<Duplicati.Library.Interface.IListResultFileset> Filesets { get { return m_filesets; } }
         public IEnumerable<Duplicati.Library.Interface.IListResultFile> Files { get { return m_files; } }
-        
+
         public override OperationMode MainOperation { get { return OperationMode.List; } }
     }
 
@@ -941,7 +942,7 @@ namespace Duplicati.Library.Main
             m_logs = logs;
             m_volumes = volumes;
         }
-        
+
         public IEnumerable<Duplicati.Library.Interface.IListResultFileset> Filesets { get { return m_filesets; } }
         public IEnumerable<Duplicati.Library.Interface.IListResultFile> Files { get { return m_files; } }
         public IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> LogMessages { get { return m_logs; } }
@@ -954,23 +955,23 @@ namespace Duplicati.Library.Main
     {
         public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
         public bool Dryrun { get; private set; }
-        
+
         public void SetResults(IEnumerable<Tuple<long, DateTime>> deletedSets, bool dryrun)
         {
             EndTime = DateTime.UtcNow;
             DeletedSets = deletedSets;
             Dryrun = dryrun;
         }
-        
+
         public override OperationMode MainOperation { get { return OperationMode.Delete; } }
 
         public DeleteResults() : base() { }
         public DeleteResults(BasicResults p) : base(p) { }
-        
+
         private ICompactResults m_compactResults;
 
         public ICompactResults CompactResults
-        { 
+        {
             get
             {
                 if (m_parent != null && m_parent is BackupResults)
@@ -982,33 +983,33 @@ namespace Duplicati.Library.Main
             {
                 if (m_parent != null && m_parent is BackupResults)
                     ((BackupResults)m_parent).CompactResults = value;
-                    
+
                 m_compactResults = value;
             }
         }
-    } 
-    
+    }
+
     internal class RecreateDatabaseResults : BasicResults, Library.Interface.IRecreateDatabaseResults
     {
         public override OperationMode MainOperation { get { return OperationMode.Repair; } }
-        
+
         public RecreateDatabaseResults() : base() { }
         public RecreateDatabaseResults(BasicResults p) : base(p) { }
-    }   
+    }
 
     internal class CreateLogDatabaseResults : BasicResults, Library.Interface.ICreateLogDatabaseResults
     {
         public override OperationMode MainOperation { get { return OperationMode.CreateLogDb; } }
         public string TargetPath { get; internal set; }
-    }   
-    
+    }
+
     internal class RestoreControlFilesResults : BasicResults, Library.Interface.IRestoreControlFilesResults
     {
         public IEnumerable<string> Files { get; private set; }
-        
+
         public override OperationMode MainOperation { get { return OperationMode.RestoreControlfiles; } }
         public void SetResult(IEnumerable<string> files) { this.Files = files; }
-    }   
+    }
 
     internal class ListRemoteResults : BasicResults, Library.Interface.IListRemoteResults
     {
@@ -1021,12 +1022,12 @@ namespace Duplicati.Library.Main
     internal class RepairResults : BasicResults, Library.Interface.IRepairResults
     {
         public override OperationMode MainOperation { get { return OperationMode.Repair; } }
-        
+
         public RepairResults() : base() { }
         public RepairResults(BasicResults p) : base(p) { }
         public Library.Interface.IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
-    }   
-    
+    }
+
     internal class CompactResults : BasicResults, Library.Interface.ICompactResults
     {
         public long DeletedFileCount { get; internal set; }
@@ -1038,22 +1039,22 @@ namespace Duplicati.Library.Main
         public bool Dryrun { get; internal set; }
 
         public override OperationMode MainOperation { get { return OperationMode.Compact; } }
-        
+
         public CompactResults() : base() { }
         public CompactResults(BasicResults p) : base(p) { }
-    }   
+    }
 
     internal class ListChangesResults : BasicResults, Library.Interface.IListChangesResults
     {
         public override OperationMode MainOperation { get { return OperationMode.ListChanges; } }
-        
+
         public DateTime BaseVersionTimestamp { get; internal set; }
         public DateTime CompareVersionTimestamp { get; internal set; }
         public long BaseVersionIndex { get; internal set; }
         public long CompareVersionIndex { get; internal set; }
-        
-        public IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>> ChangeDetails { get; internal set; } 
-        
+
+        public IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>> ChangeDetails { get; internal set; }
+
         public long AddedFolders { get; internal set; }
         public long AddedSymlinks { get; internal set; }
         public long AddedFiles { get; internal set; }
@@ -1065,13 +1066,13 @@ namespace Duplicati.Library.Main
         public long ModifiedFolders { get; internal set; }
         public long ModifiedSymlinks { get; internal set; }
         public long ModifiedFiles { get; internal set; }
-        
+
         public long PreviousSize { get; internal set; }
         public long CurrentSize { get; internal set; }
 
         public long AddedSize { get; internal set; }
         public long DeletedSize { get; internal set; }
-        
+
         public void SetResult(
             DateTime baseVersionTime, long baseVersionIndex, DateTime compareVersionTime, long compareVersionIndex,
             long addedFolders, long addedSymlinks, long addedFiles,
@@ -1085,38 +1086,38 @@ namespace Duplicati.Library.Main
             this.BaseVersionIndex = baseVersionIndex;
             this.CompareVersionTimestamp = compareVersionTime;
             this.CompareVersionIndex = compareVersionIndex;
-        
-            this.AddedFolders = addedFolders;        
+
+            this.AddedFolders = addedFolders;
             this.AddedSymlinks = addedSymlinks;
             this.AddedFiles = addedFiles;
-            
+
             this.DeletedFolders = deletedFolders;
             this.DeletedSymlinks = deletedSymlinks;
             this.DeletedFiles = deletedFiles;
-            
+
             this.ModifiedFolders = modifiedFolders;
             this.ModifiedSymlinks = modifiedSymlinks;
             this.ModifiedFiles = modifiedFiles;
-            
+
             this.AddedSize = addedSize;
             this.DeletedSize = deletedSize;
-            
+
             this.PreviousSize = previousSize;
             this.CurrentSize = currentSize;
-            
+
             this.ChangeDetails = changeDetails;
         }
     }
-    
+
     internal class TestResults : BasicResults, ITestResults
     {
         public TestResults() : base() { }
         public TestResults(BasicResults p) : base(p) { }
-        
+
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
         private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
-        
+
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {
             var res = new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(volume, changes);
@@ -1124,7 +1125,7 @@ namespace Duplicati.Library.Main
             return res;
         }
     }
-    
+
     internal class TestFilterResults : BasicResults, ITestFilterResults
     {
         public long FileCount { get; set; }
