@@ -154,7 +154,6 @@ namespace Duplicati.Library.UsageReporter
                     return RunProgramAndReadOutput("uname", "-srvmpio");
                 }
 
-                return null;
             }
         }    
     }

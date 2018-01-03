@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Duplicati.Library.Interface;
+﻿using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Duplicati.Library.Main.Volumes
@@ -12,18 +11,37 @@ namespace Duplicati.Library.Main.Volumes
     {
         protected bool m_disposeCompression = false;
         protected ICompression m_compression;
+        protected Stream m_stream;
 
-        private static ICompression LoadCompressor(string compressor, string file, Options options)
+        private static ICompression LoadCompressor(string compressor, Stream stream, Options options)
         {
-            var tmp = DynamicLoader.CompressionLoader.GetModule(compressor, file, options.RawOptions);
+            var tmp = DynamicLoader.CompressionLoader.GetModule(compressor, stream, Interface.ArchiveMode.Read, options.RawOptions);
             if (tmp == null)
-                throw new Exception(string.Format("Unable to create {0} decompressor on file {1}", compressor, file));
+            {
+                var name = "[stream]";
+                if (stream is FileStream)
+                    name = ((FileStream)stream).Name;
+                if (stream is TempFileStream)
+                    name = ((TempFileStream)stream).Name;
+
+                throw new Exception(string.Format("Unable to create {0} decompressor on file {1}", compressor, name));
+            }
+
             return tmp;
         }
 
-        public VolumeReaderBase(string compressor, string file, Options options)
-            : this(LoadCompressor(compressor, file, options), options)
+        private static ICompression LoadCompressor(string compressor, string file, Options options, out Stream stream)
         {
+            stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return LoadCompressor(compressor, stream, options);
+        }
+
+        public VolumeReaderBase(string compressor, string file, Options options)
+            : base(options)
+        {
+            m_compression = LoadCompressor(compressor, file, options, out m_stream);
+            ReadManifests(options);
+
             m_disposeCompression = true;
         }
 
@@ -31,13 +49,18 @@ namespace Duplicati.Library.Main.Volumes
             : base(options)
         {
             m_compression = compression;
+            ReadManifests(options);
+        }
+
+        private void ReadManifests(Options options)
+        {
             if (!options.DontReadManifests)
             {
                 using (var s = m_compression.OpenRead(MANIFEST_FILENAME))
                 {
                     if (s == null)
                         throw new InvalidManifestException("No manifest file found in volume");
-    
+
                     using (var fs = new StreamReader(s, ENCODING))
                         ManifestData.VerifyManifest(fs.ReadToEnd(), m_blocksize, options.BlockHashAlgorithm, options.FileHashAlgorithm);
                 }
@@ -46,7 +69,8 @@ namespace Duplicati.Library.Main.Volumes
 
         public static void UpdateOptionsFromManifest(string compressor, string file, Options options)
         {
-            using(var c = LoadCompressor(compressor, file, options))
+            using (var stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var c = LoadCompressor(compressor, stream, options))
             using (var s = c.OpenRead(MANIFEST_FILENAME))
             using (var fs = new StreamReader(s, ENCODING))
             {
@@ -75,17 +99,20 @@ namespace Duplicati.Library.Main.Volumes
             {
                 m_compression.Dispose();
                 m_compression = null;
+
+                m_stream?.Dispose();
+                m_stream = null;
             }
         }
 
         public static IEnumerable<string> ReadBlocklist(ICompression compression, string filename, long hashsize)
         {
             var buffer = new byte[hashsize];
-            using(var fs = compression.OpenRead(filename))
+            using (var fs = compression.OpenRead(filename))
             {
                 int s;
                 while ((s = Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length)) != 0)
-                {                    
+                {
                     if (s != buffer.Length)
                         throw new InvalidDataException("Premature End-of-stream encountered while reading blocklist hashes");
 

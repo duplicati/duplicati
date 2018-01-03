@@ -6,6 +6,7 @@ using Duplicati.Library.Main;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json.Linq;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -130,7 +131,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         {
                             Console.WriteLine(" - cannot detect compression type");
                             continue;
-                        }                        
+                        }
 
                         if ((!reencrypt && File.Exists(localFileTarget)) || (reencrypt && File.Exists(localFileTarget + "." + localFileSourceEncryption)))
                         {
@@ -181,14 +182,15 @@ namespace Duplicati.CommandLine.RecoveryTool
                                 File.Move(localFileSource, localFileSource + ".same");
                                 localFileSource = localFileSource + ".same";
                             }
-
-                            using (var cmOld = Library.DynamicLoader.CompressionLoader.GetModule(remoteFile.CompressionModule, localFileSource, options))
-                            using (var cmNew = Library.DynamicLoader.CompressionLoader.GetModule(target_compr_module, localFileTarget, options))
+                            using (var localFileSourceStream = new System.IO.FileStream(localFileSource, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            using (var cmOld = Library.DynamicLoader.CompressionLoader.GetModule(remoteFile.CompressionModule, localFileSourceStream, ArchiveMode.Read, options))
+                            using (var localFileTargetStream = new FileStream(localFileTarget, FileMode.Create, FileAccess.Write, FileShare.Delete))
+                            using (var cmNew = Library.DynamicLoader.CompressionLoader.GetModule(target_compr_module, localFileTargetStream, ArchiveMode.Write, options))
                                 foreach (var cmfile in cmOld.ListFiles(""))
                                 {
                                     string cmfileNew = cmfile;
                                     var cmFileVolume = VolumeBase.ParseFilename(cmfileNew);
-                                                                            
+
                                     if (remoteFile.FileType == RemoteVolumeType.Index && cmFileVolume != null && cmFileVolume.FileType == RemoteVolumeType.Blocks)
                                     {
                                         // Correct inner filename extension to target compression type
@@ -205,7 +207,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                             JToken token = JObject.Parse(textJSON);
                                             var fileInfoBlocks = new FileInfo(Path.Combine(targetfolder, cmfileNew.Replace("vol/", "")));
                                             var filehasher = HashAlgorithmHelper.Create(m_Options.FileHashAlgorithm);
-                                            
+
                                             using (var fileStream = fileInfoBlocks.Open(FileMode.Open))
                                             {
                                                 fileStream.Position = 0;
@@ -216,7 +218,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                             token["volumesize"] = fileInfoBlocks.Length;
                                             textJSON = token.ToString();
                                         }
-                                            
+
                                         using (var sourceStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(textJSON)))
                                         using (var cs = cmNew.CreateFile(cmfileNew, Library.Interface.CompressionHint.Compressible, cmOld.GetLastWriteTime(cmfile)))
                                             Library.Utility.Utility.CopyStream(sourceStream, cs);
@@ -228,12 +230,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                                             Library.Utility.Utility.CopyStream(sourceStream, cs);
                                     }
                                 }
-                              
+
                             File.Delete(localFileSource);
                             destinationFileInfo = new FileInfo(localFileTarget);
                             destinationFileInfo.LastWriteTime = originLastWriteTime;
                         }
-                        
+
                         if (reencrypt && remoteFile.EncryptionModule != null)
                         {
                             Console.Write(" reencrypting ...");
@@ -247,7 +249,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                             destinationFileInfo = new FileInfo(localFileTarget);
                             destinationFileInfo.LastWriteTime = originLastWriteTime;
                         }
-                        
+
                         if (reupload)
                         {
                             Console.Write(" reuploading ...");
