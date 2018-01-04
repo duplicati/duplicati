@@ -420,10 +420,13 @@ namespace Duplicati.Library.Main
         public void AddVerboseMessage(string message, params object[] args)
         {
             if (m_parent != null)
-                m_parent.AddVerboseMessage(message, args);
+            {
+                if ((args != null) && (args.Length > 0)) m_parent.AddVerboseMessage(message, args);
+                else m_parent.AddMessage(message);
+            }
             else
             {
-                lock(Logging.Log.Lock)
+                lock (Logging.Log.Lock)
                 {
                     if (m_is_reporting)
                         return;
@@ -431,10 +434,13 @@ namespace Duplicati.Library.Main
                     try
                     {
                         m_is_reporting = true;
-                        Logging.Log.WriteMessage(string.Format(message, args), Duplicati.Library.Logging.LogMessageType.Profiling, null);
+                        Logging.Log.WriteMessage((((args != null) || (args.Length > 0)) ? string.Format(message, args) : message), Duplicati.Library.Logging.LogMessageType.Profiling, null);
 
                         if (MessageSink != null)
-                            MessageSink.VerboseEvent(message, args);
+                        {
+                            if ((args != null) && (args.Length > 0)) MessageSink.VerboseEvent(message, args);
+                            else MessageSink.MessageEvent(message);
+                        }
                     }
                     finally
                     {

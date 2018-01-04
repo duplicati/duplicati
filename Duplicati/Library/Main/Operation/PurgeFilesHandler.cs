@@ -173,13 +173,13 @@ namespace Duplicati.Library.Main.Operation
                                             if (m_options.Dryrun)
                                                 m_result.AddDryrunMessage(msg);
                                             else if (m_options.Verbose)
-                                                m_result.AddVerboseMessage(msg);
+                                                m_result.AddMessage(msg);
                                         }
 
                                         if (m_options.Dryrun)
                                             m_result.AddDryrunMessage("Writing files to remote storage");
                                         else if (m_options.Verbose)
-                                            m_result.AddVerboseMessage("Writing files to remote storage");
+                                            m_result.AddMessage("Writing files to remote storage");
                                     }
 
                                     if (m_options.Dryrun)
