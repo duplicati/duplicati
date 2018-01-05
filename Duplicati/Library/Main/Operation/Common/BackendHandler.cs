@@ -237,17 +237,21 @@ namespace Duplicati.Library.Main.Operation.Common
                     if (createIndexFile != null)
                     {
                         var ix = await createIndexFile(fe.RemoteFilename);
-                        var indexFile = new FileEntryItem(BackendActionType.Put, ix.RemoteFilename);
-                        indexFile.SetLocalfilename(ix.LocalFilename);
+                        if (ix != null)
+                        {
+                            var indexFile = new FileEntryItem(BackendActionType.Put, ix.RemoteFilename);
+                            indexFile.SetLocalfilename(ix.LocalFilename);
 
-                        await m_database.UpdateRemoteVolumeAsync(indexFile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                            await m_database.UpdateRemoteVolumeAsync(indexFile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
 
-                        await DoWithRetry(indexFile, async () => {
-                            if (indexFile.IsRetry)
-                                await RenameFileAfterErrorAsync(indexFile);
+                            await DoWithRetry(indexFile, async () =>
+                            {
+                                if (indexFile.IsRetry)
+                                    await RenameFileAfterErrorAsync(indexFile);
 
-                            return await DoPut(indexFile);
-                        });
+                                return await DoPut(indexFile);
+                            });
+                        }
                     }
 
                     tcs.TrySetResult(true);
@@ -696,6 +700,32 @@ namespace Duplicati.Library.Main.Operation.Common
                 {
                 }
             }
+        }
+
+        /// <summary>
+        /// Helper method for ensuring that the queue is empty
+        /// </summary>
+        /// <returns>The async.</returns>
+        public Task ReadyAsync()
+        {
+            return RunOnMain(() => { });
+        }
+            
+
+        /// <summary>
+        /// Grabs the quota information from the backend if it supports it,
+        /// otherwise <c>null</c> is returned.
+        /// </summary>
+        /// <returns>The quota information.</returns>
+        public Task<IQuotaInfo> GetQuotaAsync()
+        {
+            return RunRetryOnMain(null, () => {                
+                var qb = m_backend as IQuotaEnabledBackend;
+                if (qb == null)
+                    return null;
+
+                return Task.FromResult(qb.Quota);
+            });
         }
 
 		private string m_lastThrottleUploadValue = null;

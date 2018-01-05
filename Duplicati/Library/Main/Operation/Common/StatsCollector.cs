@@ -46,6 +46,17 @@ namespace Duplicati.Library.Main.Operation.Common
             if (m_bw.BackendProgressUpdater != null)
                 m_bw.BackendProgressUpdater.SetBlocking(isBlocked);
         }
-    }
+
+        public long UnknownFileSize { set { m_bw.UnknownFileSize = value; } }
+        public long UnknownFileCount { set { m_bw.UnknownFileCount = value; } }
+		public long KnownFileCount { set { m_bw.KnownFileCount = value; } }
+		public long KnownFileSize { set { m_bw.KnownFileSize = value; } }
+		public DateTime LastBackupDate { set { m_bw.LastBackupDate = value; } }
+		public long BackupListCount { set { m_bw.BackupListCount = value; } }
+		public long TotalQuotaSpace { set { m_bw.TotalQuotaSpace = value; } }
+		public long FreeQuotaSpace { set { m_bw.FreeQuotaSpace = value; } }
+		public long AssignedQuotaSpace { set { m_bw.AssignedQuotaSpace = value; } }
+
+	}
 }
 

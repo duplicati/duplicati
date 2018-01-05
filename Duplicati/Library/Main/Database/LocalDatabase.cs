@@ -283,8 +283,9 @@ namespace Duplicati.Library.Main.Database
             return RemoteVolumeEntry.Empty;
         }
 
-        public IEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes()
+        public IEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes(System.Data.IDbTransaction transaction = null)
         {
+            m_selectduplicateRemoteVolumesCommand.Transaction = transaction;
             foreach(var rd in m_selectduplicateRemoteVolumesCommand.ExecuteReaderEnumerable(null))
             {
                 yield return new KeyValuePair<string, RemoteVolumeState>(
@@ -455,9 +456,9 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery("VACUUM");
         }
 
-        public long RegisterRemoteVolume(string name, RemoteVolumeType type, long size, RemoteVolumeState state)
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, long size, RemoteVolumeState state, System.Data.IDbTransaction transaction)
         {
-            return RegisterRemoteVolume(name, type, state, size, new TimeSpan(0), null);
+            return RegisterRemoteVolume(name, type, state, size, new TimeSpan(0), transaction);
         }
 
         public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction)

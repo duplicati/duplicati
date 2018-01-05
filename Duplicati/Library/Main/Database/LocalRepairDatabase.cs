@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Data;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -29,9 +30,9 @@ namespace Duplicati.Library.Main.Database
         
         }
         
-        public long GetFilesetIdFromRemotename(string filelist)
+        public long GetFilesetIdFromRemotename(string filelist, IDbTransaction transaction)
         {
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
             {
                 var filesetid = cmd.ExecuteScalarInt64(@"SELECT ""Fileset"".""ID"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = ?", -1, filelist);
                 if (filesetid == -1)
@@ -112,9 +113,9 @@ namespace Duplicati.Library.Main.Database
             }
         }
         
-        public IEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string name)
+        public IEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string name, IDbTransaction transaction)
         {
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
                 foreach(var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?))", name))
                     yield return new RemoteVolume(rd.GetString(0), rd.ConvertValueToString(1), rd.ConvertValueToInt64(2));
         }
@@ -332,7 +333,7 @@ namespace Duplicati.Library.Main.Database
 
         }
 
-        public void FixMissingBlocklistHashes(string blockhashalgorithm, long blocksize)
+        public bool FixMissingBlocklistHashes(string blockhashalgorithm, long blocksize, IDbTransaction transaction)
         {
             var blockhasher = Library.Utility.HashAlgorithmHelper.Create(blockhashalgorithm);
             var hashsize = blockhasher.HashSize / 8;
@@ -344,18 +345,17 @@ namespace Duplicati.Library.Main.Database
             var sql = string.Format(@"SELECT * FROM (SELECT ""N"".""BlocksetID"", ((""N"".""BlockCount"" + {0} - 1) / {0}) AS ""BlocklistHashCountExpected"", CASE WHEN ""G"".""BlocklistHashCount"" IS NULL THEN 0 ELSE ""G"".""BlocklistHashCount"" END AS ""BlocklistHashCountActual"" FROM (SELECT ""BlocksetID"", COUNT(*) AS ""BlockCount"" FROM ""BlocksetEntry"" GROUP BY ""BlocksetID"") ""N"" LEFT OUTER JOIN (SELECT ""BlocksetID"", COUNT(*) AS ""BlocklistHashCount"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"") ""G"" ON ""N"".""BlocksetID"" = ""G"".""BlocksetID"" WHERE ""N"".""BlockCount"" > 1) WHERE ""BlocklistHashCountExpected"" != ""BlocklistHashCountActual""", blocksize / hashsize);
             var countsql = @"SELECT COUNT(*) FROM (" + sql + @")";
 
-            using(var tr = m_connection.BeginTransaction())
-            using(var cmd = m_connection.CreateCommand(tr))
+            using(var cmd = m_connection.CreateCommand(transaction))
             {
                 var itemswithnoblocklisthash = cmd.ExecuteScalarInt64(countsql, 0);
                 if (itemswithnoblocklisthash != 0)
                 {
                     m_result.AddMessage(string.Format("Found {0} missing blocklisthash entries, repairing", itemswithnoblocklisthash));
-                    using(var c2 = m_connection.CreateCommand(tr))
-                    using(var c3 = m_connection.CreateCommand(tr))
-                    using(var c4 = m_connection.CreateCommand(tr))
-                    using(var c5 = m_connection.CreateCommand(tr))
-                    using(var c6 = m_connection.CreateCommand(tr))
+                    using(var c2 = m_connection.CreateCommand(transaction))
+                    using(var c3 = m_connection.CreateCommand(transaction))
+                    using(var c4 = m_connection.CreateCommand(transaction))
+                    using(var c5 = m_connection.CreateCommand(transaction))
+                    using(var c6 = m_connection.CreateCommand(transaction))
                     {
                         c3.CommandText = @"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (?, ?, ?) ";
                         c4.CommandText = @"SELECT COUNT(*) FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
@@ -432,16 +432,17 @@ namespace Duplicati.Library.Main.Database
                         throw new Duplicati.Library.Interface.UserInformationException(string.Format("Failed to repair, after repair {0} blocklisthashes were missing", itemswithnoblocklisthash));
 
                     m_result.AddMessage("Missing blocklisthashes repaired succesfully");
-                    tr.Commit();
+                    return true;
                 }
             }
 
+            return false;
+
         }
 
-        public void FixDuplicateBlocklistHashes(long blocksize, long hashsize)
+        public bool FixDuplicateBlocklistHashes(long blocksize, long hashsize, IDbTransaction transaction)
         {
-            using(var tr = m_connection.BeginTransaction())
-            using(var cmd = m_connection.CreateCommand(tr))
+            using(var cmd = m_connection.CreateCommand(transaction))
             {
                 var dup_sql = @"SELECT * FROM (SELECT ""BlocksetID"", ""Index"", COUNT(*) AS ""EC"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"", ""Index"") WHERE ""EC"" > 1";
 
@@ -478,7 +479,7 @@ namespace Duplicati.Library.Main.Database
 
                     try
                     {
-                        VerifyConsistency(blocksize, hashsize, true, tr);
+                        VerifyConsistency(blocksize, hashsize, true, transaction);
                     }
                     catch(Exception ex)
                     {
@@ -486,15 +487,16 @@ namespace Duplicati.Library.Main.Database
                     }
 
                     m_result.AddMessage("Duplicate blocklisthashes repaired succesfully");
-                    tr.Commit();
+                    return true;
                 }
             }
+
+            return false;
         }
 
-        public void CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks)
+        public void CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks, IDbTransaction transaction)
         {
-            using(var tr = m_connection.BeginTransaction())
-            using(var cmd = m_connection.CreateCommand(tr))
+            using(var cmd = m_connection.CreateCommand(transaction))
             {
                 var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -519,9 +521,9 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void CheckBlocklistCorrect(string hash, long length, IEnumerable<string> blocklist, long blocksize, long blockhashlength)
+        public void CheckBlocklistCorrect(string hash, long length, IEnumerable<string> blocklist, long blocksize, long blockhashlength, IDbTransaction transaction)
         {
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(transaction))
             {
                 var query = string.Format(@"
 SELECT 

@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -164,7 +165,7 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<string> CompactableVolumes { get; }
             bool ShouldReclaim { get; }
             bool ShouldCompact { get; }
-            void ReportCompactData(ILogWriter log); 
+            Task ReportCompactDataAsync(bool verbose);
         }
         
         private class CompactReport : ICompactReport
@@ -203,28 +204,31 @@ namespace Duplicati.Library.Main.Database
                 m_smallspace = m_smallvolumes.Select(x => x.CompressedSize).Sum();
                 m_smallvolumecount = m_smallvolumes.Count();
             }
-            
-            public void ReportCompactData(ILogWriter log)
-            {
-                var wastepercentage = ((m_wastedspace / (float)m_fullsize) * 100);
-                if (log.VerboseOutput)
+
+			public async Task ReportCompactDataAsync(bool verbose)
+			{
+                using (var log = new Operation.Common.LogWrapper())
                 {
-                    log.AddVerboseMessage(string.Format("Found {0} fully deletable volume(s)", m_deletablevolumes));
-                    log.AddVerboseMessage(string.Format("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace)));
-                    log.AddVerboseMessage(string.Format("Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize)));
+                    var wastepercentage = ((m_wastedspace / (float)m_fullsize) * 100);
+                    if (verbose)
+                    {
+                        await log.WriteVerboseAsync(string.Format("Found {0} fully deletable volume(s)", m_deletablevolumes));
+                        await log.WriteVerboseAsync(string.Format("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace)));
+                        await log.WriteVerboseAsync(string.Format("Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize)));
+                    }
+
+                    if (m_deletablevolumes > 0)
+                        await log.WriteInformationAsync(string.Format("Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes));
+                    else if (wastepercentage >= m_wastethreshold && m_wastevolumes.Count() >= 2)
+                        await log.WriteInformationAsync(string.Format("Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold));
+                    else if (m_smallspace > m_volsize)
+                        await log.WriteInformationAsync(string.Format("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize)));
+                    else if (m_smallvolumecount > m_maxsmallfilecount)
+                        await log.WriteInformationAsync(string.Format("Compacting because there are {0} small volumes and the maximum is {1}", m_smallvolumecount, m_maxsmallfilecount));
+                    else
+                        await log.WriteInformationAsync("Compacting not required");
                 }
-                
-                if (m_deletablevolumes > 0)
-                    log.AddMessage(string.Format("Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes));
-                else if (wastepercentage >= m_wastethreshold && m_wastevolumes.Count() >= 2)
-                    log.AddMessage(string.Format("Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold));
-                else if (m_smallspace > m_volsize)
-                    log.AddMessage(string.Format("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize)));
-                else if (m_smallvolumecount > m_maxsmallfilecount)
-                    log.AddMessage(string.Format("Compacting because there are {0} small volumes and the maximum is {1}", m_smallvolumecount, m_maxsmallfilecount));
-                else
-                    log.AddMessage("Compacting not required");
-            }
+			}
             
             public bool ShouldReclaim
             {
@@ -304,7 +308,8 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Builds a lookup table to enable faster response to block queries
         /// </summary>
-        /// <param name="volumename">The name of the volume to prepare for</param>
+        /// <param name="options">The options passed to the query</param>
+        /// <param name="transaction">The transaction to work within</param>
         public IBlockQuery CreateBlockQueryHelper(Options options, System.Data.IDbTransaction transaction)
         {
             return new BlockQuery(m_connection, options, transaction);

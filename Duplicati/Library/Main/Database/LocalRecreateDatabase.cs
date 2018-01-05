@@ -116,6 +116,11 @@ namespace Duplicati.Library.Main.Database
            ""FullIndex""
 ";
 
+        public LocalRecreateDatabase(string dbpath, Options options)
+            : base(dbpath, options)
+        {
+        }
+
         public LocalRecreateDatabase(LocalDatabase parentdb, Options options)
             : base(parentdb)
         {
@@ -505,9 +510,9 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize)
+        public IEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize, System.Data.IDbTransaction tr = null)
         {
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(tr))
             {
                 var selectCommand = @"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"", ""RemoteVolume"".""ID"" FROM ""RemoteVolume""";
             

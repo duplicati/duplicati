@@ -20,96 +20,88 @@ using Duplicati.Library.Main.Database;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
-    internal class TestHandler
+    internal static class TestHandler
     {
-        private readonly Options m_options;
-        private string m_backendurl;
-        private TestResults m_results;
-        
-        public TestHandler(string backendurl, Options options, TestResults results)
+        public static async Task Run(long samples, string backendurl, Options options, TestResults results)
         {
-            m_options = options;
-            m_backendurl = backendurl;
-            m_results = results;
-        }
-        
-        public void Run(long samples)
-        {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+            if (!System.IO.File.Exists(options.Dbpath))
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", options.Dbpath));
                                 
-            using(var db = new LocalTestDatabase(m_options.Dbpath))
-            using(var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db))
+            using (var coredb = new LocalTestDatabase(options.Dbpath))
+            using (var db = new Test.TestDatabase(coredb, options))
+            using (var backend = new Common.BackendHandler(options, backendurl, db, stats, reader))
             {
-                db.SetResult(m_results);
-                Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyParameters(db, m_options);
-                
-                if (!m_options.NoBackendverification)
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter);
+                db.SetResult(results);
+                await db.UpdateOptionsFromDbAsync(options);
+                await db.VerifyParametersAsync(options);
+
+                if (!options.NoBackendverification)
+                    await FilelistProcessor.VerifyRemoteListAsync(backend, options, db, results.BackendWriter);
                     
-                DoRun(samples, db, backend);
+                await DoRunAsync(samples, options, db, stats, backend, reader);
                 db.WriteResults();
             }
         }
         
-        public void DoRun(long samples, LocalTestDatabase db, BackendManager backend)
+        public static async Task DoRunAsync(long samples, Options options, Test.TestDatabase db, Test.TestStatsCollector stats, Common.BackendHandler backend, Common.ITaskReader taskreader)
         {
-            var files = db.SelectTestTargets(samples, m_options).ToList();
+            var files = (await db.SelectTestTargetsAsync(samples, options)).ToList();
 
-            m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);
-            m_results.OperationProgressUpdater.UpdateProgress(0);
+            stats.UpdatePhase(OperationPhase.Verify_Running);
+            stats.UpdateProgress(0);
             var progress = 0L;
             
-            if (m_options.FullRemoteVerification)
+            if (options.FullRemoteVerification)
             {
-                foreach(var vol in new AsyncDownloader(files, backend))
+                IAsyncDownloadedFile vol;
+                using(var n = new Common.PrefetchDownloader(files, backend))
+                while((vol = await n.GetNextAsync()) != null)
                 {
                     try
                     {
-                        if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
+                        if (!await taskreader.ProgressAsync)
                         {
-                            backend.WaitForComplete(db, null);
-                            m_results.EndTime = DateTime.UtcNow;
+                            await backend.ReadyAsync();
                             return;
-                        }    
+                        }
 
                         progress++;
-                        m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
+                        stats.UpdateProgress((float)progress / files.Count);
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
                         using(var tf = vol.TempFile)
-                            res = TestVolumeInternals(db, vol, tf, m_options, m_results, m_options.FullBlockVerification ? 1.0 : 0.2);
+                            res = await TestVolumeInternalsAsync(db, vol, tf, options, options.FullBlockVerification ? 1.0 : 0.2);
                         m_results.AddResult(res.Key, res.Value);
 
                         if (!string.IsNullOrWhiteSpace(vol.Hash) && vol.Size > 0)
                         {
                             if (res.Value == null || !res.Value.Any())
                             {
-                                var rv = db.GetRemoteVolume(vol.Name, null);
+                                var rv = await db.GetRemoteVolumeAsync(vol.Name);
 
                                 if (rv.ID < 0)
                                 {
                                     if (string.IsNullOrWhiteSpace(rv.Hash) || rv.Size <= 0)
                                     {
-                                        if (m_options.Dryrun)
+                                        if (options.Dryrun)
                                         {
                                             m_results.AddDryrunMessage(string.Format("Sucessfully captured hash and size for {0}, would update database", vol.Name));
                                         }
                                         else
                                         {
                                             m_results.AddMessage(string.Format("Sucessfully captured hash and size for {0}, updating database", vol.Name));
-                                            db.UpdateRemoteVolume(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash);
+                                            await db.UpdateRemoteVolumeAsync(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash);
                                         }
                                     }
                                 }
                             }
                         }
                         
-                        db.UpdateVerificationCount(vol.Name);
+                        await db.UpdateVerificationCountAsync(vol.Name);
                     }
                     catch (Exception ex)
                     {
@@ -117,7 +109,7 @@ namespace Duplicati.Library.Main.Operation
                         m_results.AddError(string.Format("Failed to process file {0}", vol.Name), ex);
                         if (ex is System.Threading.ThreadAbortException)
                         {
-                            m_results.EndTime = DateTime.UtcNow;
+                            await stats.SetEndTimeAsync();
                             throw;
                         }
                     }
@@ -129,14 +121,14 @@ namespace Duplicati.Library.Main.Operation
                 {
                     try
                     {
-                        if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
+                        if (!await taskreader.ProgressAsync)
                         {
-                            m_results.EndTime = DateTime.UtcNow;
+                            await backend.ReadyAsync();
                             return;
                         }
 
                         progress++;
-                        m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
+                        stats.UpdateProgress((float)progress / files.Count);
 
                         if (f.Size <= 0 || string.IsNullOrWhiteSpace(f.Hash))
                         {
@@ -145,30 +137,33 @@ namespace Duplicati.Library.Main.Operation
                             string hash;
                             long size;
 
-                            using (var tf = backend.GetWithInfo(f.Name, out size, out hash))
-                                res = TestVolumeInternals(db, f, tf, m_options, m_results, 1);
+                            var rf = await backend.GetFileWithInfoAsync(f.Name);
+                            using (var tf = rf.Item1)
+                                res = await TestVolumeInternalsAsync(db, f, tf, options, 1);
                             m_results.AddResult(res.Key, res.Value);
 
-                            if (!string.IsNullOrWhiteSpace(hash) && size > 0)
+                            if (!string.IsNullOrWhiteSpace(rf.Item3) && rf.Item2 > 0)
                             {
                                 if (res.Value == null || !res.Value.Any())
                                 {
-                                    if (m_options.Dryrun)
+                                    if (options.Dryrun)
                                     {
                                         m_results.AddDryrunMessage(string.Format("Sucessfully captured hash and size for {0}, would update database", f.Name));
                                     }
                                     else
                                     {
                                         m_results.AddMessage(string.Format("Sucessfully captured hash and size for {0}, updating database", f.Name));
-                                        db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash);
+                                        await db.UpdateRemoteVolumeAsync(f.Name, RemoteVolumeState.Verified, rf.Item2, rf.Item3);
                                     }
                                 }
                             }
                         }
                         else
-                            backend.GetForTesting(f.Name, f.Size, f.Hash);
+                        {
+                            await backend.GetFileForTestingAsync(f.Name, f.Size, f.Hash);
+                        }
                         
-                        db.UpdateVerificationCount(f.Name);
+                        await db.UpdateVerificationCountAsync(f.Name);
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);
                     }
                     catch (Exception ex)
@@ -177,14 +172,14 @@ namespace Duplicati.Library.Main.Operation
                         m_results.AddError(string.Format("Failed to process file {0}", f.Name), ex);
                         if (ex is System.Threading.ThreadAbortException)
                         {
-                            m_results.EndTime = DateTime.UtcNow;
+                            await stats.SetEndTimeAsync();
                             throw;
                         }
                     }
                 }
             }
 
-            m_results.EndTime = DateTime.UtcNow;
+            await stats.SetEndTimeAsync();
         }
 
         /// <summary>
@@ -193,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="vol">The remote volume being examined</param>
         /// <param name="tf">The path to the downloaded copy of the file</param>
         /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file</param>
-        public static KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, ILogWriter log, double sample_percent)
+        public static async Task<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> TestVolumeInternalsAsync(Test.TestDatabase db, IRemoteVolume vol, string tf, Options options, double sample_percent)
         {
             var blockhasher = Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm);
  
@@ -210,7 +205,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 //Compare with db and see if all files are accounted for 
                 // with correct file hashes and blocklist hashes
-                using(var fl = db.CreateFilelist(vol.Name))
+                using(var fl = await db.CreateFilelistAsync(vol.Name))
                 {
                     using(var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, options))
                         foreach(var f in rd.Files)
@@ -229,7 +224,7 @@ namespace Duplicati.Library.Main.Operation
                     foreach(var v in rd.Volumes)
                     {
                         blocklinks.Add(new Tuple<string, string, long>(v.Filename, v.Hash, v.Length));
-                        using(var bl = db.CreateBlocklist(v.Filename))
+                        using(var bl = await db.CreateBlocklistAsync(v.Filename))
                         {
                             foreach(var h in v.Blocks)
                                 bl.AddBlock(h.Key, h.Value);
@@ -238,7 +233,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
                                 
-                using(var il = db.CreateIndexlist(vol.Name))
+                using(var il = await db.CreateIndexlistAsync(vol.Name))
                 {
                     foreach(var t in blocklinks)
                         il.AddBlockLink(t.Item1, t.Item2, t.Item3);
@@ -250,7 +245,7 @@ namespace Duplicati.Library.Main.Operation
             }
             else if (parsedInfo.FileType == RemoteVolumeType.Blocks)
             {
-                using(var bl = db.CreateBlocklist(vol.Name))
+                using(var bl = await db.CreateBlocklistAsync(vol.Name))
                 using(var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options))
                 {                                    
                     //Verify that all blocks are in the file
@@ -284,7 +279,9 @@ namespace Duplicati.Library.Main.Operation
                 }                                
             }
 
-            log.AddWarning(string.Format("Unexpected file type {0} for {1}", parsedInfo.FileType, vol.Name), null);
+            using(var log = new Common.LogWrapper())
+                await log.WriteWarningAsync(string.Format("Unexpected file type {0} for {1}", parsedInfo.FileType, vol.Name), null);
+            
             return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, null);
         }
     }

@@ -20,142 +20,117 @@ using System.Linq;
 using System.Text;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using System.Threading.Tasks;
+using CoCoL;
 
 namespace Duplicati.Library.Main.Operation
 {
-    internal class DeleteHandler
+    internal static class DeleteHandler
     {   
-        private DeleteResults m_result;
-        protected string m_backendurl;
-        protected Options m_options;
-    
-        public DeleteHandler(string backend, Options options, DeleteResults result)
+		public static void Run(DeleteResults results, string backendurl, Options options)
         {
-            m_backendurl = backend;
-            m_options = options;
-            m_result = result;
+            RunAsync(results, backendurl, options).WaitForTaskOrThrow();
         }
 
-        public void Run()
+        public static async Task RunAsync(DeleteResults result, string backendurl, Options options)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+            if (!System.IO.File.Exists(options.Dbpath))
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", options.Dbpath));
 
-            using(var db = new Database.LocalDeleteDatabase(m_options.Dbpath, "Delete"))
+            using (new IsolatedChannelScope())
             {
-                var tr = db.BeginTransaction();
-                try
+				var lh = Common.LogHandler.Run(result);
+				using (var dbcore = new Database.LocalDeleteDatabase(options.Dbpath, "Delete"))
+                using (var db = new Delete.DeleteDatabase(dbcore, options))
+                using (var stats = new Delete.DeleteStatsCollector(result))
+                using (var backend = new Common.BackendHandler(options, backendurl, db, stats, result.TaskReader))
+                // Keep a reference to this channel to avoid shutdown
+                using (var logtarget = ChannelManager.GetChannel(Common.Channels.LogChannel.ForWrite))
                 {
-                    m_result.SetDatabase(db);
-                    Utility.UpdateOptionsFromDb(db, m_options);
-                    Utility.VerifyParameters(db, m_options);
-                    
-                    DoRun(db, ref tr, false, false, null);
-                    
-                    if (!m_options.Dryrun)
-                    {
-                        using(new Logging.Timer("CommitDelete"))
-                            tr.Commit();
+                    result.SetDatabase(dbcore);
+                    Utility.UpdateOptionsFromDb(dbcore, options);
+                    Utility.VerifyParameters(dbcore, options);
 
-                        db.WriteResults();
-                    }
-                    else
-                        tr.Rollback();
+                    await DoRunAsync(db, false, false, backend, options, result, stats);
+                    await db.WriteResultsAsync();
+                    await db.CommitTransactionAsync("Finalize Delete operation", false);
+                }
+				await lh;
+			}
 
-                    tr = null;
-                }
-                finally
-                {
-                    if (tr != null)
-                        try { tr.Rollback(); }
-                        catch { }
-                }
-            }
         }
 
-        public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBacked, bool forceCompact, BackendManager sharedManager)
+        public static async Task DoRunAsync(Delete.DeleteDatabase db, bool hasVerifiedBacked, bool forceCompact, Common.BackendHandler backend, Options options, DeleteResults result, Delete.DeleteStatsCollector stats)
         {
-            // Workaround where we allow a running backendmanager to be used
-            using(var bk = sharedManager == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db) : null)
+            using (var log = new Common.LogWrapper())
             {
-                var backend = bk ?? sharedManager;
+                // Workaround where we allow a running backendmanager to be used
+                if (!hasVerifiedBacked && !options.NoBackendverification)
+                    await FilelistProcessor.VerifyRemoteListAsync(backend, options, db, stats);
 
-                if (!hasVerifiedBacked && !m_options.NoBackendverification)
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
-                
-                var filesetNumbers = db.FilesetTimes.Zip(Enumerable.Range(0, db.FilesetTimes.Count()), (a, b) => new Tuple<long, DateTime>(b, a.Value)).ToList();
-                var sets = db.FilesetTimes.Select(x => x.Value).ToArray();
-                var toDelete = m_options.GetFilesetsToDelete(sets);
+                var filesettimes = (await db.GetFilesetTimesAsync()).ToList();
 
-                if (!m_options.AllowFullRemoval && sets.Length == toDelete.Length)
+                var filesetNumbers = filesettimes.Zip(Enumerable.Range(0, filesettimes.Count), (a, b) => new Tuple<long, DateTime>(b, a.Value)).ToList();
+                var sets = filesettimes.Select(x => x.Value).ToArray();
+                var toDelete = options.GetFilesetsToDelete(sets);
+
+                if (!options.AllowFullRemoval && sets.Length == toDelete.Length)
                 {
-                    m_result.AddMessage(string.Format("Preventing removal of last fileset, use --{0} to allow removal ...", "allow-full-removal"));
+                    await log.WriteInformationAsync(string.Format("Preventing removal of last fileset, use --{0} to allow removal ...", "allow-full-removal"));
                     toDelete = toDelete.Skip(1).ToArray();
                 }
 
                 if (toDelete != null && toDelete.Length > 0)
-                    m_result.AddMessage(string.Format("Deleting {0} remote fileset(s) ...", toDelete.Length));
+                    await log.WriteInformationAsync(string.Format("Deleting {0} remote fileset(s) ...", toDelete.Length));
 
-                var lst = db.DropFilesetsFromTable(toDelete, transaction).ToArray();
-                foreach(var f in lst)
-                    db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, transaction);
+                var lst = (await db.DropFilesetsFromTableAsync(toDelete)).ToArray();
+                foreach (var f in lst)
+                    await db.UpdateRemoteVolumeAsync(f.Key, RemoteVolumeState.Deleting, f.Value, null);
 
-                if (!m_options.Dryrun)
+                await db.CommitTransactionAsync("After fileset dropped");
+
+                foreach (var f in lst)
                 {
-                    transaction.Commit();
-                    transaction = db.BeginTransaction();
-                }
-
-                foreach(var f in lst)
-                {
-                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                    {
-                        backend.WaitForComplete(db, transaction);
+                    if (!await result.TaskReader.ProgressAsync)
                         return;
-                    }
 
-                    if (!m_options.Dryrun)
-                        backend.Delete(f.Key, f.Value);
+                    if (!options.Dryrun)
+                        await backend.DeleteFileAsync(f.Key);
                     else
-                        m_result.AddDryrunMessage(string.Format("Would delete remote fileset: {0}", f.Key));
+                        await log.WriteDryRunAsync(string.Format("Would delete remote fileset: {0}", f.Key));
                 }
 
-                if (sharedManager == null)
-                    backend.WaitForComplete(db, transaction);
-                else
-                    backend.WaitForEmpty(db, transaction);
-                
                 var count = lst.Length;
-                if (!m_options.Dryrun)
+                if (!options.Dryrun)
                 {
                     if (count == 0)
-                        m_result.AddMessage("No remote filesets were deleted");
+                        await log.WriteInformationAsync("No remote filesets were deleted");
                     else
-                        m_result.AddMessage(string.Format("Deleted {0} remote fileset(s)", count));
+                        await log.WriteInformationAsync(string.Format("Deleted {0} remote fileset(s)", count));
                 }
                 else
                 {
-                
                     if (count == 0)
-                        m_result.AddDryrunMessage("No remote filesets would be deleted");
+                        await log.WriteDryRunAsync("No remote filesets would be deleted");
                     else
-                        m_result.AddDryrunMessage(string.Format("{0} remote fileset(s) would be deleted", count));
+                       await log.WriteDryRunAsync(string.Format("{0} remote fileset(s) would be deleted", count));
 
-                    if (count > 0 && m_options.Dryrun)
-                        m_result.AddDryrunMessage("Remove --dry-run to actually delete files");
+                    if (count > 0 && options.Dryrun)
+                        await log.WriteDryRunAsync("Remove --dry-run to actually delete files");
                 }
-                
-                if (!m_options.NoAutoCompact && (forceCompact || (toDelete != null && toDelete.Length > 0)))
+
+                if (!options.NoAutoCompact && (forceCompact || (toDelete != null && toDelete.Length > 0)))
                 {
-                    m_result.CompactResults = new CompactResults(m_result);
-                    new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref transaction, sharedManager);
+                    var cr = new CompactResults(result);
+                    result.CompactResults = cr;
+                    using(var cs = new Compact.CompactStatsCollector(cr))
+                    using(var cdb = new Compact.CompactDatabase(db.BackingDatabase, options))
+                        await CompactHandler.DoCompactAsync(cdb, true, backend, options, cs, result.TaskReader);
                 }
-                
-                m_result.SetResults(
-                    from n in filesetNumbers
-                    where toDelete.Contains(n.Item2)
-                    select n, 
-                    m_options.Dryrun);
+
+                await stats.SetResultAsync(
+                    filesetNumbers.Where(x => toDelete.Contains(x.Item2)),
+                    options.Dryrun);
             }
         }
     }

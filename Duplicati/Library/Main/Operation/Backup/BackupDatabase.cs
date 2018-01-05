@@ -189,16 +189,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.GetIncompleteFilesets(m_transaction).OrderBy(x => x.Value).ToArray());
         }
 
-        public Task<IEnumerable<KeyValuePair<long, DateTime>>> GetFilesetTimesAsync()
-        {
-            return RunOnMain(() => m_database.FilesetTimes);
-        }
-
-        public Task<long> CreateFilesetAsync(long volumeID, DateTime fileTime)
-        {
-            return RunOnMain(() => m_database.CreateFileset(volumeID, fileTime, m_transaction));
-        }
-
         public Task LinkFilesetToVolumeAsync(long filesetid, long volumeid)
         {
             return RunOnMain(() => m_database.LinkFilesetToVolume(filesetid, volumeid, m_transaction));
@@ -217,11 +207,6 @@ namespace Duplicati.Library.Main.Operation.Backup
         public Task UpdateChangeStatisticsAsync(BackupResults result)
         {
             return RunOnMain(() => m_database.UpdateChangeStatistics(result, m_transaction));
-        }
-
-        public Task VerifyConsistencyAsync(int blocksize, int blockhashSize, bool verifyfilelists)
-        {
-            return RunOnMain(() => m_database.VerifyConsistency(blocksize, blockhashSize, verifyfilelists, m_transaction));
         }
 
         public Task RemoveRemoteVolumeAsync(string remoteFilename)

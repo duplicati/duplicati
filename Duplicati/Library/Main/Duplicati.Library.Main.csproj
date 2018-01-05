@@ -146,6 +146,17 @@
     <Compile Include="Operation\ListBrokenFilesHandler.cs" />
     <Compile Include="Operation\PurgeBrokenFilesHandler.cs" />
     <Compile Include="Operation\Backup\RecreateMissingIndexFiles.cs" />
+    <Compile Include="Operation\Delete\DeleteDatabase.cs" />
+    <Compile Include="Operation\Delete\DeleteStatsCollector.cs" />
+    <Compile Include="Operation\Compact\CompactStatsCollector.cs" />
+    <Compile Include="Operation\Compact\CompactDatabase.cs" />
+    <Compile Include="Operation\Common\PrefetchDownloader.cs" />
+    <Compile Include="Operation\Recreate\RecreateDatabase.cs" />
+    <Compile Include="Operation\Recreate\RecreateStatsCollector.cs" />
+    <Compile Include="Operation\Repair\RepairDatabase.cs" />
+    <Compile Include="Operation\Repair\RepairStatsCollector.cs" />
+    <Compile Include="Operation\Test\TestDatabase.cs" />
+    <Compile Include="Operation\Test\TestStatsCollector.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
@@ -216,5 +227,10 @@
   <ItemGroup>
     <Folder Include="Operation\Backup\" />
     <Folder Include="Operation\Common\" />
+    <Folder Include="Operation\Delete\" />
+    <Folder Include="Operation\Compact\" />
+    <Folder Include="Operation\Recreate\" />
+    <Folder Include="Operation\Repair\" />
+    <Folder Include="Operation\Test\" />
   </ItemGroup>
 </Project>

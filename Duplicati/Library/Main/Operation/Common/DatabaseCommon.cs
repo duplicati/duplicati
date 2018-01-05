@@ -46,6 +46,11 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain(() => m_db.RegisterRemoteVolume(name, type, state, m_transaction));
         }
 
+        public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, long size, RemoteVolumeState state)
+        {
+            return RunOnMain(() => m_db.RegisterRemoteVolume(name, type, size, state, m_transaction));
+        }
+
         public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup = false, TimeSpan deleteGraceTime = default(TimeSpan))
         {
             return RunOnMain(() => m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, m_transaction));
@@ -126,8 +131,69 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain(() => m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID, m_transaction));
         }
 
+		public Task<IEnumerable<KeyValuePair<long, DateTime>>> GetFilesetTimesAsync()
+		{
+			return RunOnMain(() => m_db.FilesetTimes);
+		}
 
-        protected override void Dispose(bool isDisposing)
+        public Task UnlinkRemoteVolumeAsync(string name, RemoteVolumeState state)
+        {
+            return RunOnMain(() => m_db.UnlinkRemoteVolume(name, state, m_transaction));
+        }
+
+        public Task<IEnumerable<KeyValuePair<string, RemoteVolumeState>>> DuplicateRemoteVolumesAsync()
+        {
+			// TODO: How does the IEnumerable work with RunOnMain ?
+            return RunOnMain(() => m_db.DuplicateRemoteVolumes(m_transaction));
+        }
+
+        public Task<IEnumerable<RemoteVolumeEntry>> GetRemoteVolumesAsync()
+        {
+            return RunOnMain(() => m_db.GetRemoteVolumes(m_transaction));
+        }
+
+        public Task RemoveRemoteVolumesAsync(IEnumerable<string> names)
+        {
+            return RunOnMain(() => m_db.RemoveRemoteVolumes(names, m_transaction));
+        }
+
+		public Task WriteResultsAsync()
+		{
+			return RunOnMain(() => m_db.WriteResults());
+		}
+
+        public Task VacuumAsync()
+        {
+            return RunOnMain(() => m_db.Vacuum());
+        }
+
+
+        // Shared with Backup
+
+        public Task<long> CreateFilesetAsync(long volumeID, DateTime fileTime)
+        {
+            return RunOnMain(() => m_db.CreateFileset(volumeID, fileTime, m_transaction));
+        }
+
+        public Task VerifyConsistencyAsync(int blocksize, int blockhashSize, bool verifyfilelists)
+        {
+            return RunOnMain(() => m_db.VerifyConsistency(blocksize, blockhashSize, verifyfilelists, m_transaction));
+        }
+
+        // Shared with Recreate/Repair
+
+        public Task UpdateOptionsFromDbAsync(Options options)
+        {
+            return RunOnMain(() => Utility.UpdateOptionsFromDb(m_db, options, m_transaction));
+        }
+
+        public Task VerifyParametersAsync(Options options)
+        {
+            return RunOnMain(() => Utility.VerifyParameters(m_db, options, m_transaction));
+        }
+
+
+		protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
             if (m_transaction != null)
