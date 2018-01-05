@@ -434,7 +434,7 @@ namespace Duplicati.Library.Main
                     try
                     {
                         m_is_reporting = true;
-                        Logging.Log.WriteMessage((((args != null) || (args.Length > 0)) ? string.Format(message, args) : message), Duplicati.Library.Logging.LogMessageType.Profiling, null);
+                        Logging.Log.WriteMessage((((args != null) && (args.Length > 0)) ? string.Format(message, args) : message), Duplicati.Library.Logging.LogMessageType.Profiling, null);
 
                         if (MessageSink != null)
                         {
