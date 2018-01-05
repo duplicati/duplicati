@@ -83,7 +83,7 @@ namespace Duplicati.Library.Backend
                 m_userInfo.Domain = "";
 
             m_url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            if (!m_url.EndsWith("/"))
+            if (!m_url.EndsWith("/", StringComparison.Ordinal))
                 m_url += "/";
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
@@ -278,7 +278,7 @@ namespace Duplicati.Library.Backend
                 {
                     IEnumerable<IFileEntry> files = List(remotename);
                     foreach(IFileEntry fe in files)
-                        if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename) || fe.Name.EndsWith("\\" + remotename)) 
+                        if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename, StringComparison.Ordinal) || fe.Name.EndsWith("\\" + remotename, StringComparison.Ordinal)) 
                         {
                             if (fe.Size < 0 || streamLen < 0 || fe.Size == streamLen)
                                 return;
@@ -390,7 +390,7 @@ namespace Duplicati.Library.Backend
         private System.Net.FtpWebRequest CreateRequest(string remotename, bool createFolder)
         {
             string url = m_url;
-            if (createFolder && url.EndsWith("/"))
+            if (createFolder && url.EndsWith("/", StringComparison.Ordinal))
                 url = url.Substring(0, url.Length - 1);
             
             System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(url + remotename);

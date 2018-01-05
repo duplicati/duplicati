@@ -76,7 +76,7 @@ namespace Duplicati.Library.Backend
                     
                     for (int i = 0; i < paths.Count; i++)
                     {
-                        if (paths[i].StartsWith("*:"))
+                        if (paths[i].StartsWith("*:", StringComparison.Ordinal))
                         {
                             string rpl_path = paths[i].Substring(1);
                             paths.RemoveAt(i);
@@ -304,7 +304,7 @@ namespace Duplicati.Library.Backend
                 //TODO: Can trick this with symlinks, where the symlink is on one mounted volume,
                 // and the actual storage is on another
                 foreach (System.IO.DriveInfo di in System.IO.DriveInfo.GetDrives())
-                    if (path.StartsWith(Utility.Utility.AppendDirSeparator(di.Name)) && di.Name.Length > root.Length)
+                    if (path.StartsWith(Utility.Utility.AppendDirSeparator(di.Name), StringComparison.Ordinal) && di.Name.Length > root.Length)
                         root = di.Name;
             }
             else

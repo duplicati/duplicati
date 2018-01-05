@@ -101,7 +101,7 @@ namespace Duplicati.Library.Snapshots
             /// <returns>The local path</returns>
             public string ConvertToLocalPath(string path)
             {
-                if (!path.StartsWith(m_mountPoint))
+                if (!path.StartsWith(m_mountPoint, StringComparison.Ordinal))
                     throw new InvalidOperationException();
 
                 return m_tmpDir + path.Substring(m_mountPoint.Length);
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Snapshots
             /// <returns>The snapshot path</returns>
             public string ConvertToSnapshotPath(string path)
             {
-                if (!path.StartsWith(m_tmpDir))
+                if (!path.StartsWith(m_tmpDir, StringComparison.Ordinal))
                     throw new InvalidOperationException();
 
                 return m_mountPoint + path.Substring(m_tmpDir.Length);
@@ -261,7 +261,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Constructs a new snapshot module using LVM
         /// </summary>
-        /// <param name="folders">The list of folders to create snapshots for</param>
+        /// <param name="sources">The list of folders to create snapshots for</param>
         /// <param name="options">A set of commandline options</param>
         public LinuxSnapshot(string[] sources, Dictionary<string, string> options)
         {
@@ -342,7 +342,7 @@ namespace Duplicati.Library.Snapshots
             KeyValuePair<string, SnapShot>? best = null;
 
             foreach (KeyValuePair<string, SnapShot> s in m_entries)
-                if (name.StartsWith(s.Key) && (best == null || s.Key.Length > best.Value.Key.Length))
+                if (name.StartsWith(s.Key, StringComparison.Ordinal) && (best == null || s.Key.Length > best.Value.Key.Length))
                     best = s;
 
             if (best == null)
@@ -494,7 +494,7 @@ namespace Duplicati.Library.Snapshots
         /// Gets a unique hardlink target ID
         /// </summary>
         /// <returns>The hardlink ID</returns>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="path">The file or folder to examine</param>
         public string HardlinkTargetID(string path)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(path), path);

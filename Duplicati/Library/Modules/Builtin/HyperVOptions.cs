@@ -101,9 +101,9 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 var filters = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
 
-                filtersInclude = filters.Where(x => x.StartsWith("+") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                filtersInclude = filters.Where(x => x.StartsWith("+", StringComparison.Ordinal) && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
                     .Select(x => Regex.Match(x.Substring(1), m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Groups[1].Value).ToList();
-                filtersExclude = filters.Where(x => x.StartsWith("-") && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                filtersExclude = filters.Where(x => x.StartsWith("-", StringComparison.Ordinal) && Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
                     .Select(x => Regex.Match(x.Substring(1), m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Groups[1].Value).ToList();
 
                 var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
@@ -186,7 +186,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             var pathsForBackup = new List<string>(paths);
             var filterhandler = new Utility.FilterExpression(
-                filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-")).Select(x => x.Substring(1)).ToList());
+                filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-", StringComparison.Ordinal)).Select(x => x.Substring(1)).ToList());
             
             foreach (var guestForBackup in guestsForBackup)
                 foreach (var pathForBackup in guestForBackup.DataPaths)

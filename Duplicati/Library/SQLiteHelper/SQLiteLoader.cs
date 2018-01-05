@@ -110,7 +110,7 @@ namespace Duplicati.Library.SQLiteHelper
                     if (!Duplicati.Library.Utility.Utility.IsMono)
                     {
                         //If we run with MS.Net we can use the mixed mode assemblies
-                        if (Library.Utility.Utility.Is64BitProcess)
+                        if (Environment.Is64BitProcess)
                         {
                             if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
                                 assemblyPath = System.IO.Path.Combine(basePath, "win64");

@@ -40,7 +40,7 @@ namespace Duplicati.Server.WebServer
 
             if (System.IO.Directory.Exists(path) && (System.IO.File.Exists(html) || System.IO.File.Exists(htm)))
             {
-                if (!request.Uri.AbsolutePath.EndsWith("/"))
+                if (!request.Uri.AbsolutePath.EndsWith("/", StringComparison.Ordinal))
                 {
                     response.Redirect(request.Uri.AbsolutePath + "/");
                     return true;
@@ -68,7 +68,7 @@ namespace Duplicati.Server.WebServer
             if (ForbiddenChars.Where(x => uri.AbsolutePath.Contains(x)).Any())
                 throw new BadRequestException("Illegal path");
             var uripath = Uri.UnescapeDataString(uri.AbsolutePath);
-            while(uripath.Length > 0 && (uripath.StartsWith("/") || uripath.StartsWith(DirSep)))
+            while(uripath.Length > 0 && (uripath.StartsWith("/", StringComparison.Ordinal) || uripath.StartsWith(DirSep, StringComparison.Ordinal)))
                 uripath = uripath.Substring(1);
             return System.IO.Path.Combine(m_webroot, uripath.Replace('/', System.IO.Path.DirectorySeparatorChar));
         }

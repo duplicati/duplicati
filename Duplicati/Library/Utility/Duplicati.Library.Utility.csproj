@@ -51,6 +51,7 @@
     <Compile Include="OverrideableStream.cs" />
     <Compile Include="ProgressReportingStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ShaderStream.cs" />
     <Compile Include="Sizeparser.cs" />
     <Compile Include="SslCertificateValidator.cs" />
     <Compile Include="TempFile.cs" />
@@ -102,7 +103,5 @@
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Power\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

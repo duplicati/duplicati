@@ -167,7 +167,7 @@ namespace Duplicati.Library.Snapshots
         /// Gets a unique hardlink target ID
         /// </summary>
         /// <returns>The hardlink ID</returns>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="path">The file or folder to examine</param>
         public override string HardlinkTargetID(string path)
         {
             return null;

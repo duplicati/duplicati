@@ -35,11 +35,6 @@ namespace Duplicati.Library.Utility
         public static long DEFAULT_BUFFER_SIZE => SystemContextSettings.Buffersize;
 
         /// <summary>
-        /// A value indicating if the current process is running in 64bit mode
-        /// </summary>
-        public static readonly bool Is64BitProcess = IntPtr.Size == 8;
-
-        /// <summary>
         /// Gets the hash algorithm used for calculating a hash
         /// </summary>
         public static string HashAlgorithm { get { return "SHA256"; } }
@@ -132,7 +127,6 @@ namespace Duplicati.Library.Utility
         /// The search is recursive.
         /// </summary>
         /// <param name="basepath">The folder to look in</param>
-        /// <param name="filter">The filter to apply.</param>
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFiles(string basepath)
         {
@@ -170,7 +164,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFiles(string basepath, IFilter filter)
         {
-            return EnumerateFileSystemEntries(basepath, filter).Where(x => !x.EndsWith(DirectorySeparatorString));
+            return EnumerateFileSystemEntries(basepath, filter).Where(x => !x.EndsWith(DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -182,7 +176,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full paths</returns>
         public static IEnumerable<string> EnumerateFolders(string basepath, IFilter filter)
         {
-            return EnumerateFileSystemEntries(basepath, filter).Where(x => x.EndsWith(DirectorySeparatorString));
+            return EnumerateFileSystemEntries(basepath, filter).Where(x => x.EndsWith(DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -547,7 +541,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Calculates the hash of a given stream, and returns the results as an base64 encoded string
         /// </summary>
-        /// <param name="path">The stream to calculate the hash for</param>
+        /// <param name="stream">The stream to calculate the hash for</param>
         /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(System.IO.Stream stream)
         {
@@ -638,15 +632,17 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Parses a string into a boolean value
+        /// Parses a string into a boolean value.
         /// </summary>
-        /// <param name="value">The value to parse</param>
-        /// <param name="default">The default value, in case the string is not a valid boolean value</param>
-        /// <returns>The parsed value or the default value</returns>
-        public static bool ParseBool(string value, bool @default)
+        /// <param name="value">The value to parse.</param>
+        /// <param name="defaultFunc">A delegate that returns the default value if <paramref name="value"/> is not a valid boolean value.</param>
+        /// <returns>The parsed value, or the value returned by <paramref name="defaultFunc"/>.</returns>
+        public static bool ParseBool(string value, Func<bool> defaultFunc)
         {
-            if (value == null)
-                value = "";
+            if (String.IsNullOrWhiteSpace(value))
+            {
+                return defaultFunc();
+            }
 
             switch (value.Trim().ToLower())
             {
@@ -661,8 +657,19 @@ namespace Duplicati.Library.Utility
                 case "no":
                     return false;
                 default:
-                    return @default;
+                    return defaultFunc();
             }
+        }
+
+        /// <summary>
+        /// Parses a string into a boolean value.
+        /// </summary>
+        /// <param name="value">The value to parse.</param>
+        /// <param name="default">The default value, in case <paramref name="value"/> is not a valid boolean value.</param>
+        /// <returns>The parsed value, or the default value.</returns>
+        public static bool ParseBool(string value, bool @default)
+        {
+            return Utility.ParseBool(value, () => @default);
         }
 
         /// <summary>
@@ -827,18 +834,11 @@ namespace Duplicati.Library.Utility
             {
                 var str = Environment.GetEnvironmentVariable("FILESYSTEM_CASE_SENSITIVE");
 
-                if (!string.IsNullOrWhiteSpace(str))
-                {
-                    str = str.Trim();
-                    if (new[] { "yes", "1", "on", "true" }.Contains(str, StringComparer.OrdinalIgnoreCase))
-                        return true;
-                    if (new[] { "no", "0", "off", "false" }.Contains(str, StringComparer.OrdinalIgnoreCase))
-                        return false;
-                }
-
-                //TODO: This should probably be determined by filesystem rather than OS,
+                // TODO: This should probably be determined by filesystem rather than OS,
                 // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
-                return IsClientLinux && !IsClientOSX;
+                Func<bool> defaultReply = () => Utility.IsClientLinux && !Utility.IsClientOSX;
+
+                return Utility.ParseBool(str, defaultReply);
             }
         }
 
@@ -974,16 +974,16 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The path to the users home directory
         /// </summary>
-        private static readonly string HOME_PATH = Environment.GetFolderPath(IsClientLinux ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
+        public static readonly string HOME_PATH = Environment.GetFolderPath(IsClientLinux ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
 
         /// <summary>
-        /// Expands environment variables, including the tilde character
+        /// Expands environment variables.
         /// </summary>
         /// <returns>The expanded string.</returns>
         /// <param name="str">The string to expand.</param>
         public static string ExpandEnvironmentVariables(string str)
         {
-            return Environment.ExpandEnvironmentVariables(str.Replace("~", HOME_PATH));
+            return Environment.ExpandEnvironmentVariables(str);
         }
 
         /// <summary>
@@ -997,7 +997,7 @@ namespace Duplicati.Library.Utility
         private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_LINUX = new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})");
 
         /// <summary>
-        /// Expands environment variables, including the tilde character, in a RegExp safe format
+        /// Expands environment variables in a RegExp safe format
         /// </summary>
         /// <returns>The expanded string.</returns>
         /// <param name="str">The string to expand.</param>
@@ -1012,9 +1012,7 @@ namespace Duplicati.Library.Utility
                 // TODO: Should we switch to using the native format, instead of following the Windows scheme?
                 //IsClientLinux ? ENVIRONMENT_VARIABLE_MATCHER_LINUX : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
 
-                ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
-                    .Replace(str.Replace("~", Regex.Escape(HOME_PATH)), (m) => 
-                        Regex.Escape(lookup(m.Groups["name"].Value)));
+                ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, (m) => Regex.Escape(lookup(m.Groups["name"].Value)));
         }
 
         /// <summary>
@@ -1497,6 +1495,81 @@ namespace Duplicati.Library.Utility
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// The regular expression matching all know non-quoted commandline characters
+        /// </summary>
+        private static readonly Regex COMMANDLINE_SAFE = new Regex(@"[A-Za-z0-9\-_/:\.]*");
+        /// <summary>
+        /// Special characters that needs to be escaped on Linux
+        /// </summary>
+        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""|$|`|\\|!]");
+
+        /// <summary>
+        /// Wraps a single argument in quotes suitable for the passing on the commandline
+        /// </summary>
+        /// <returns>The wrapped commandline element.</returns>
+        /// <param name="arg">The argument to wrap.</param>
+        /// <param name="allowEnvExpansion">A flag indicating if environment variables are allowed to be expanded</param>
+        public static string WrapCommandLineElement(string arg, bool allowEnvExpansion)
+        {
+            if (string.IsNullOrWhiteSpace(arg))
+                return arg;
+
+            if (!Library.Utility.Utility.IsClientWindows)
+            {
+                // We could consider using single quotes that prevents all expansions
+                //if (!allowEnvExpansion)
+                //    return "'" + arg.Replace("'", "\\'") + "'";
+                
+                // Linux is using backslash to escape, except for !
+                arg = COMMANDLINE_ESCAPED_LINUX.Replace(arg, (match) =>
+                {
+                    if (match.Value == "!")
+                        return "\"'!'\"";
+
+                    if (match.Value == "$" && allowEnvExpansion)
+                        return match.Value;
+                    
+                    return "\\" + match.Value;
+                });
+            }
+            else
+            {
+                // Windows needs only needs " replaced with "",
+                // but is prone to %var% expansion when used in 
+                // immediate mode (i.e. from command prompt)
+                // Fortunately it does not expand when processes
+                // are started from within .Net
+
+                // TODO: I have not found a way to avoid escaping %varname%,
+                // and sadly it expands only if the variable exists
+                // making it even rarer and harder to diagnose when
+                // it happens
+                arg = arg.Replace("\"", "\"\"");
+
+                // Also fix the case where the argument ends with a slash
+                if (arg[arg.Length - 1] == '\\')
+                    arg += "\\";
+            }
+
+            // Check that all characters are in the safe set
+            if (COMMANDLINE_SAFE.Match(arg).Length != arg.Length)
+                return "\"" + arg + "\"";
+            else
+                return arg;            
+        }
+
+        /// <summary>
+        /// Wrap a set of commandline arguments suitable for the commandline
+        /// </summary>
+        /// <returns>A commandline string.</returns>
+        /// <param name="args">The arguments to create into a commandline.</param>
+        /// <param name="allowEnvExpansion">A flag indicating if environment variables are allowed to be expanded</param>
+        public static string WrapAsCommandLine(IEnumerable<string> args, bool allowEnvExpansion = false)
+        {
+            return string.Join(" ", args.Select(x => WrapCommandLineElement(x, allowEnvExpansion)));
         }
     }
 }

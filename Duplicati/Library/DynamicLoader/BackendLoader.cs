@@ -77,7 +77,7 @@ namespace Duplicati.Library.DynamicLoader
                     {
                         if (m_interfaces.ContainsKey(uri.Scheme))
                             return (IBackend)Activator.CreateInstance(m_interfaces[uri.Scheme].GetType(), url, newOpts);
-                        else if (uri.Scheme.EndsWith("s"))
+                        else if (uri.Scheme.EndsWith("s", StringComparison.Ordinal))
                         {
                             var tmpscheme = uri.Scheme.Substring(0, uri.Scheme.Length - 1);
                             if (m_interfaces.ContainsKey(tmpscheme))
@@ -123,7 +123,7 @@ namespace Duplicati.Library.DynamicLoader
                     IBackend b;
                     if (m_interfaces.TryGetValue(uri.Scheme, out b) && b != null)
                         return b.SupportedCommands;
-                    else if (uri.Scheme.EndsWith("s"))
+                    else if (uri.Scheme.EndsWith("s", StringComparison.Ordinal))
                     {
                         var tmpscheme = uri.Scheme.Substring(0, uri.Scheme.Length - 1);
                         if (m_interfaces.ContainsKey(tmpscheme))

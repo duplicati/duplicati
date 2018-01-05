@@ -177,8 +177,8 @@ namespace Duplicati.GUI.TrayIcon
             m_toRumps = ch.AsWriteOnly();
 
             WriteChannel(m_rumpsProcess.StandardInput, ch.AsReadOnly());
-            ReadChannel(m_rumpsProcess.StandardOutput);
-            ReadChannel(m_rumpsProcess.StandardError);
+            var standardOutputTask = ReadChannel(m_rumpsProcess.StandardOutput);
+            var standardErrorTask = ReadChannel(m_rumpsProcess.StandardError);
 
             m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "background"}));
             //m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "setappicon", Image = GetIcon(m_lastIcon)}));
@@ -243,7 +243,7 @@ namespace Duplicati.GUI.TrayIcon
                             menu.Callback();
                         }
                     }
-                    else if (!line.StartsWith("info") && !string.IsNullOrWhiteSpace(line))
+                    else if (!line.StartsWith("info", StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(line))
                     {
                         Console.WriteLine("Unexpected message: {0}", line);
                     }

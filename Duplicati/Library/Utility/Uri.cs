@@ -165,11 +165,11 @@ namespace Duplicati.Library.Utility
             var h = m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "";
 
             var p = m.Groups["path"].Success ? m.Groups["path"].Value : "";
-            if (m.Groups["hostname"].Success && p.StartsWith("/"))
+            if (m.Groups["hostname"].Success && p.StartsWith("/", StringComparison.Ordinal))
                 p = p.Substring(1);
 
             // file://c:\test support
-            if (h.Length == 1 && p.StartsWith(":"))
+            if (h.Length == 1 && p.StartsWith(":", StringComparison.Ordinal))
             {
                 h = h + p;
                 p = "";
@@ -260,7 +260,7 @@ namespace Duplicati.Library.Utility
             
             if (!string.IsNullOrEmpty(path))
             {
-                if (!string.IsNullOrEmpty(host) && !path.StartsWith("/"))
+                if (!string.IsNullOrEmpty(host) && !path.StartsWith("/", StringComparison.Ordinal))
                     s += "/";
                 s += path;
             }
@@ -444,7 +444,7 @@ namespace Duplicati.Library.Utility
         {
             if (query == null)
                 throw new ArgumentNullException("query");
-            if (query.StartsWith("?"))
+            if (query.StartsWith("?", StringComparison.Ordinal))
                 query = query.Substring(1);
             if (string.IsNullOrEmpty(query))
                 return new NameValueCollection(StringComparer.OrdinalIgnoreCase);

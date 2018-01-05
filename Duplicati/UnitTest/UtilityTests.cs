@@ -57,5 +57,42 @@ namespace Duplicati.UnitTest
             Assert.IsNotNull(actualUniqueItems);
             Assert.IsNotNull(actualDuplicateItems);
         }
+
+        [Test]
+        [Category("Utility")]
+        public void ParseBool()
+        {
+            string[] expectTrue = { "1", "on", "true", "yes" };
+            string[] expectFalse = { "0", "off", "false", "no" };
+            string[] expectDefault = { null, "", "maybe" };
+            Func<bool> returnsTrue = () => true;
+            Func<bool> returnsFalse = () => false;
+
+            foreach (string value in expectTrue)
+            {
+                string message = $"{value} should be parsed to true.";
+
+                Assert.IsTrue(Utility.ParseBool(value, false), message);
+                Assert.IsTrue(Utility.ParseBool(value.ToUpper(), false), message);
+                Assert.IsTrue(Utility.ParseBool($" {value} ", false), message);
+            }
+
+            foreach (string value in expectFalse)
+            {
+                string message = $"{value} should be parsed to false.";
+
+                Assert.IsFalse(Utility.ParseBool(value, true), message);
+                Assert.IsFalse(Utility.ParseBool(value.ToUpper(), true), message);
+                Assert.IsFalse(Utility.ParseBool($" {value} ", true), message);
+            }
+
+            foreach (string value in expectDefault)
+            {
+                Assert.IsTrue(Utility.ParseBool(value, true));
+                Assert.IsTrue(Utility.ParseBool(value, returnsTrue));
+                Assert.IsFalse(Utility.ParseBool(value, false));
+                Assert.IsFalse(Utility.ParseBool(value, returnsFalse));
+            }
+        }
     }
 }

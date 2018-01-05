@@ -32,7 +32,6 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// Called when the operation finishes
         /// </summary>
-        /// <param name="operationname">The full name of the operation</param>
         /// <param name="result">The result object, if this derives from an exception, the operation failed</param>
         void OnFinish(object result);
     }
