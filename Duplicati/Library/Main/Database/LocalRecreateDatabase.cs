@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Database
 ";
 
         public LocalRecreateDatabase(string dbpath, Options options)
-            : base(dbpath, options)
+            : this(new LocalDatabase(dbpath, "Recreate", true), options)
         {
         }
 

@@ -15,6 +15,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Database;
 using static Duplicati.Library.Main.Database.LocalTestDatabase;
@@ -44,6 +45,11 @@ namespace Duplicati.Library.Main.Operation.Test
         public Task<IIndexlist> CreateIndexlistAsync(string name)
         {
             return RunOnMain(() => m_database.CreateIndexlist(name, m_transaction));
+        }
+
+        public Task<IEnumerable<IRemoteVolume>> SelectTestTargetsAsync(long samples, Options options)
+        {
+            return RunOnMain(() => m_database.SelectTestTargets(samples, options, m_transaction));
         }
 
     }
