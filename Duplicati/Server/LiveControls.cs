@@ -163,7 +163,6 @@ namespace Duplicati.Server
         /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
-        /// <param name="initialTimeout">The duration that the backups should be initially suspended</param>
         public LiveControls(Database.ServerSettings settings)
         {
             m_state = LiveControlState.Running;
@@ -185,9 +184,24 @@ namespace Duplicati.Server
 
             m_priority = settings.ThreadPriorityOverride;
             if (!string.IsNullOrEmpty(settings.DownloadSpeedLimit))
-                m_downloadLimit = Library.Utility.Sizeparser.ParseSize(settings.DownloadSpeedLimit, "kb");
+                try
+                {
+                    m_downloadLimit = Library.Utility.Sizeparser.ParseSize(settings.DownloadSpeedLimit, "kb");
+                }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteMessage(string.Format("Failed to parse download limit: {0}", settings.DownloadSpeedLimit), Library.Logging.LogMessageType.Error, ex);
+                }
+
             if (!string.IsNullOrEmpty(settings.UploadSpeedLimit))
-                m_uploadLimit = Library.Utility.Sizeparser.ParseSize(settings.UploadSpeedLimit, "kb");
+                try
+                {
+                    m_uploadLimit = Library.Utility.Sizeparser.ParseSize(settings.UploadSpeedLimit, "kb");
+                }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteMessage(string.Format("Failed to parse upload limit: {0}", settings.UploadSpeedLimit), Library.Logging.LogMessageType.Error, ex);
+                }
 
             try
             {
@@ -201,7 +215,6 @@ namespace Duplicati.Server
         /// Event that occurs when the timeout duration is exceeded
         /// </summary>
         /// <param name="sender">The sender of the event</param>
-        /// <param name="e">An unused event argument</param>
         private void  m_waitTimer_Tick(object sender)
         {
             lock (m_lock)

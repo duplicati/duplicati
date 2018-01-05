@@ -65,7 +65,7 @@ namespace Duplicati.Library.Utility
             else if (this.Second.Empty)
                 return this.First.ToString();
             else
-                return "(" + this.First.ToString() + ") || (" + this.Second.ToString() + ")";
+                return "(" + this.First + ") || (" + this.Second + ")";
         }
     }
 }

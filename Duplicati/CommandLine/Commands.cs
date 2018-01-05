@@ -260,7 +260,7 @@ namespace Duplicati.CommandLine
                             options["version"] = v.ToString();
                         }
                     }
-                    else if (args[0].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[0].StartsWith("["))
+                    else if (args[0].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[0].StartsWith("[", StringComparison.Ordinal))
                     {
                         try
                         {
@@ -277,7 +277,7 @@ namespace Duplicati.CommandLine
                 
                 // Prefix all filenames with "*/" so we search all folders
                 for(var ix = 0; ix < args.Count; ix++) 
-                    if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("["))
+                    if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal))
                         args[ix] = "*" + System.IO.Path.DirectorySeparatorChar.ToString() + args[ix];
                 
                 // Support for not adding the --auth-username if possible
@@ -360,7 +360,7 @@ namespace Duplicati.CommandLine
                         var f = res.Filesets.First();
                         outwriter.WriteLine("Listing contents {0} ({1}):", f.Version, f.Time);
                         foreach(var e in res.Files)
-                            outwriter.WriteLine("{0} {1}", e.Path, e.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) ? "" : "(" + Library.Utility.Utility.FormatSizeString(e.Sizes.First()) + ")");
+                            outwriter.WriteLine("{0} {1}", e.Path, e.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) ? "" : "(" + Library.Utility.Utility.FormatSizeString(e.Sizes.First()) + ")");
                     }
                     else
                     {
@@ -444,12 +444,12 @@ namespace Duplicati.CommandLine
 
             // Prefix all filenames with "*/" so we search all folders
             for (var ix = 0; ix < args.Count; ix++)
-                if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("["))
+                if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal))
                     args[ix] = "*" + System.IO.Path.DirectorySeparatorChar.ToString() + args[ix];
 
             // suffix all folders with "*" so we restore all contents in the folder
             for (var ix = 0; ix < args.Count; ix++)
-                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[") && args[ix].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal) && args[ix].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
                     args[ix] += "*";
             
             var output = new ConsoleOutput(outwriter, options);

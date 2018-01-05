@@ -97,7 +97,7 @@ namespace Duplicati.Library.Snapshots
                 List<char> drives = new List<char>("DEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray());
                 foreach (DriveInfo di in DriveInfo.GetDrives())
                 {
-                    if ((di.RootDirectory.FullName.Length == 2 && di.RootDirectory.FullName[1] == ':') || ((di.RootDirectory.FullName.Length == 3 && di.RootDirectory.FullName.EndsWith(":\\"))))
+                    if ((di.RootDirectory.FullName.Length == 2 && di.RootDirectory.FullName[1] == ':') || ((di.RootDirectory.FullName.Length == 3 && di.RootDirectory.FullName.EndsWith(":\\", StringComparison.Ordinal))))
                     {
                         int i = drives.IndexOf(di.RootDirectory.FullName[0]);
                         if (i >= 0)
@@ -110,10 +110,10 @@ namespace Duplicati.Library.Snapshots
                 drive = drives[0].ToString() + ':';
             }
 
-            while (drive.EndsWith("\\"))
+            while (drive.EndsWith("\\", StringComparison.Ordinal))
                 drive = drive.Substring(0, drive.Length - 1);
 
-            if (!drive.EndsWith(":"))
+            if (!drive.EndsWith(":", StringComparison.Ordinal))
                 throw new ArgumentException("The drive specification must end with a colon.", nameof(drive));
 
             Win32API.DDD_Flags flags = 0;

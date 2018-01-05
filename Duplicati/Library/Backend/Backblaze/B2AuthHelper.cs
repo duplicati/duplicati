@@ -49,7 +49,7 @@ namespace Duplicati.Library.Backend.Backblaze
 
         private string DropTrailingSlashes(string url)
         {
-            while(url.EndsWith("/"))
+            while(url.EndsWith("/", StringComparison.Ordinal))
                 url = url.Substring(0, url.Length - 1);
             return url;
         }

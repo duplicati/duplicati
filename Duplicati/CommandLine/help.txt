@@ -138,6 +138,8 @@ Usage: delete <storage-URL> [<options>]
   
   Marks old data deleted and removes outdated dlist files. A backup is deleted when it is older than <keep-time> or when there are more newer versions than <keep-versions>. Data is considered old, when it is not required from any existing backup anymore.
   
+  --dry-run
+    Performs the operation, but does not write changes to the local database or the remote storage
   --keep-time=<time>
     Marks data outdated that is older than <time>.
   --keep-versions=<int>
@@ -269,7 +271,7 @@ Usage: test-filters <source-path> [<options>]
 
 Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
-  Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted.
+  Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted. Notes that this command requires a local database to be present, if the database is not found automatically, you can set --dbpath to point to the database to use.
 
 # =============================================================================
 > duplicati.commandline.exe help vacuum

@@ -180,7 +180,7 @@ namespace Duplicati.Library.Utility
         {
             var filters = new[]
             {
-                DefaultFilters.CreateWildcardFilter(@"*.rbf"),
+                DefaultFilters.CreateWildcardFilter(@"*/config.msi/*.rbf"), // https://github.com/duplicati/duplicati/issues/2886
                 DefaultFilters.CreateWildcardFilter(@"*.tmp"),
                 DefaultFilters.CreateWildcardFilter(@"*.tmp/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/$RECYCLE.BIN/*"),
@@ -382,15 +382,19 @@ namespace Duplicati.Library.Utility
         /// <returns>The list of paths to exclude.</returns>
         private static string[] GetWindowsRegistryFilters()
         {
-            try
+            if (Utility.IsClientWindows)
             {
-                return GetWindowsRegistryFiltersInternal();
-            }
-            catch
-            {
+                // One Windows, filters may also be stored in the registry
+                try
+                {
+                    return GetWindowsRegistryFiltersInternal();
+                }
+                catch
+                {
+                }
             }
 
-            return new string[0];
+            return null;
         }
 
         /// <summary>

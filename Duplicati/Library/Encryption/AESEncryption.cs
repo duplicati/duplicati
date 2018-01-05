@@ -67,7 +67,6 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// Constructs a new AES encryption/decyption instance
         /// </summary>
-        /// <param name="key">The key used for encryption. The key gets stretched through SHA hashing to fit the key size requirements</param>
         public AESEncryption(string passphrase, Dictionary<string, string> options)
         {
             if(string.IsNullOrEmpty(passphrase))

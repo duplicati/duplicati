@@ -32,7 +32,7 @@ namespace Duplicati.Library.Utility
 
             size = size.ToLower().Trim();
 
-            if (size.EndsWith("tb") || size.EndsWith("gb") || size.EndsWith("mb") || size.EndsWith("kb") || size.EndsWith("b"))
+            if (size.EndsWith("tb", StringComparison.Ordinal) || size.EndsWith("gb", StringComparison.Ordinal) || size.EndsWith("mb", StringComparison.Ordinal) || size.EndsWith("kb", StringComparison.Ordinal) || size.EndsWith("b", StringComparison.Ordinal))
                 return ParseSize(size);
             else
                 return ParseSize(size + " " + defaultSuffix);
@@ -49,27 +49,27 @@ namespace Duplicati.Library.Utility
             
             long factor = 1;
 
-            if (size.EndsWith("tb"))
+            if (size.EndsWith("tb", StringComparison.Ordinal))
             {
                 factor = 1024L * 1024 * 1024 * 1024;
                 size = size.Substring(0, size.Length - 2).Trim();
             }
-            else if (size.EndsWith("gb"))
+            else if (size.EndsWith("gb", StringComparison.Ordinal))
             {
                 factor = 1024 * 1024 * 1024;
                 size = size.Substring(0, size.Length - 2).Trim();
             }
-            else if (size.EndsWith("mb"))
+            else if (size.EndsWith("mb", StringComparison.Ordinal))
             {
                 factor = 1024 * 1024;
                 size = size.Substring(0, size.Length - 2).Trim();
             }
-            else if (size.EndsWith("kb"))
+            else if (size.EndsWith("kb", StringComparison.Ordinal))
             {
                 factor = 1024;
                 size = size.Substring(0, size.Length - 2).Trim();
             }
-            else if (size.EndsWith("b"))
+            else if (size.EndsWith("b", StringComparison.Ordinal))
                 size = size.Substring(0, size.Length - 1).Trim();
 
             long r;

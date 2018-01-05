@@ -63,8 +63,6 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a new database instance and starts a new operation
         /// </summary>
-        /// <param name="path">The path to the database</param>
-        /// <param name="operation">The name of the operation</param>
         public LocalDatabase(LocalDatabase db)
             : this(db.m_connection)
         {
@@ -77,7 +75,6 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a new database instance and starts a new operation
         /// </summary>
-        /// <param name="path">The path to the database</param>
         /// <param name="operation">The name of the operation</param>
         public LocalDatabase(System.Data.IDbConnection connection, string operation)
             : this(connection)
@@ -1198,7 +1195,7 @@ ORDER BY
                     {
                         cmd.Transaction = tr.Parent;
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", Tablename));
-                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb.ToString(), Tablename), args.ToArray());
+                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb, Tablename), args.ToArray());
                         tr.Commit();
                     }
                 }

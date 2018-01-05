@@ -99,13 +99,13 @@ namespace Duplicati.Library.Backend
             var u = new Utility.Uri(url);
             u.RequireHost();
             
-            if (!u.Path.StartsWith("uri/URI:DIR2:") && !u.Path.StartsWith("uri/URI%3ADIR2%3A"))
+            if (!u.Path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !u.Path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
                 throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError);
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             m_url = u.SetScheme(m_useSSL ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
-            if (!m_url.EndsWith("/"))
+            if (!m_url.EndsWith("/", StringComparison.Ordinal))
                 m_url += "/";
         }
 
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Backend
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + (Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20")) + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
 
             req.KeepAlive = false;
-            req.UserAgent = "Duplicati Tahoe-LAFS Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.UserAgent = "Duplicati Tahoe-LAFS Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
 
             return req;
         }

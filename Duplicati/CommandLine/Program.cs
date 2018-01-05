@@ -270,7 +270,7 @@ namespace Duplicati.CommandLine
                 else if (!(ex is Library.Interface.CancelException))
                 {
                     errwriter.WriteLine();
-                    errwriter.WriteLine(ex.ToString());
+                    errwriter.WriteLine(ex);
                 }
                 else
                 {

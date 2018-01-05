@@ -48,7 +48,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             var uri = new Utility.Uri(url);
 
             m_path = uri.HostAndPath;
-            if (!m_path.EndsWith("/"))
+            if (!m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path += "/";
 
             string authid = null;

@@ -86,7 +86,7 @@ If you are looking for an issue to fix, try looking at one of the [minor change]
 
 
 Thank you to all our existing contributors:
-<a href="graphs/contributors"><img src="https://opencollective.com/duplicati/contributors.svg?width=890" /></a>
+<a href="https://github.com/duplicati/duplicati/graphs/contributors"><img src="https://opencollective.com/duplicati/contributors.svg?width=890" /></a>
 
 
 ## Backers

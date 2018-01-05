@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main
             {
                 List<string> expandedSources = new List<string>();
 
-                if (Library.Utility.Utility.IsClientWindows && (inputsources[i].StartsWith("*:") || inputsources[i].StartsWith("?:")))
+                if (Library.Utility.Utility.IsClientWindows && (inputsources[i].StartsWith("*:", StringComparison.Ordinal) || inputsources[i].StartsWith("?:", StringComparison.Ordinal)))
                 {
                     // *: drive paths are only supported on Windows clients
                     // Lazily load the drive info

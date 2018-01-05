@@ -84,10 +84,10 @@ namespace Duplicati.Library.Backend
 
                 if (!string.IsNullOrEmpty(u.UserInfo))
                 {
-                    if (u.UserInfo.IndexOf(":") >= 0)
+                    if (u.UserInfo.IndexOf(":", StringComparison.Ordinal) >= 0)
                     {
-                        m_username = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":"));
-                        m_password = u.UserInfo.Substring(u.UserInfo.IndexOf(":") + 1);
+                        m_username = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":", StringComparison.Ordinal));
+                        m_password = u.UserInfo.Substring(u.UserInfo.IndexOf(":", StringComparison.Ordinal) + 1);
                     }
                     else
                     {
@@ -108,9 +108,9 @@ namespace Duplicati.Library.Backend
                 m_path = uri.HostAndPath;
             }
 
-            if (m_path.EndsWith("/"))
+            if (m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path = m_path.Substring(0, m_path.Length - 1);
-            if (!m_path.StartsWith("/"))
+            if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 
             if (!options.TryGetValue("cloudfiles-authentication-url", out m_authUrl))
@@ -416,7 +416,7 @@ namespace Duplicati.Library.Backend
             HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(m_storageUrl + UrlEncode(m_path + remotename) + query);
             req.Headers.Add("X-Auth-Token", UrlEncode(m_authToken));
 
-            req.UserAgent = "Duplicati CloudFiles Backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.UserAgent = "Duplicati CloudFiles Backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             req.KeepAlive = false;
             req.PreAuthenticate = true;
             req.AllowWriteStreamBuffering = false;

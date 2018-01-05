@@ -526,13 +526,13 @@ namespace Duplicati.Library.Snapshots
         /// Sends the dwIoControlCode to the device specified by hDevice.
         /// </summary>
         /// <param name="hDevice">Safe handle to the device </param>
-        /// <param name="dwIoControlCode">Device IO Control Code to send</param>
-        /// <param name="lpInBuffer">Input buffer if required</param>
+        /// <param name="IoControlCode">Device IO Control Code to send</param>
+        /// <param name="InBuffer">Input buffer if required</param>
         /// <param name="nInBufferSize">Size of input buffer</param>
-        /// <param name="lpOutBuffer">Output buffer if required</param>
+        /// <param name="OutBuffer">Output buffer if required</param>
         /// <param name="nOutBufferSize">Size of output buffer</param>
-        /// <param name="lpBytesReturned">Number of bytes returned in output buffer</param>
-        /// <param name="lpOverlapped">IntPtr to an 'OVERLAPPED' structure</param>
+        /// <param name="pBytesReturned">Number of bytes returned in output buffer</param>
+        /// <param name="overlapped">IntPtr to an 'OVERLAPPED' structure</param>
         /// <returns>'true' if successful, otherwise 'false'</returns>
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool DeviceIoControl(
@@ -550,13 +550,13 @@ namespace Duplicati.Library.Snapshots
         /// Sends the dwIoControlCode to the device specified by hDevice.
         /// </summary>
         /// <param name="hDevice">Safe handle to the device </param>
-        /// <param name="dwIoControlCode">Device IO Control Code to send</param>
-        /// <param name="lpInBuffer">Input buffer if required</param>
+        /// <param name="IoControlCode">Device IO Control Code to send</param>
+        /// <param name="InBuffer">Input buffer if required</param>
         /// <param name="nInBufferSize">Size of input buffer</param>
-        /// <param name="lpOutBuffer">Output buffer if required</param>
+        /// <param name="OutBuffer">Output buffer if required</param>
         /// <param name="nOutBufferSize">Size of output buffer</param>
-        /// <param name="lpBytesReturned">Number of bytes returned in output buffer</param>
-        /// <param name="lpOverlapped">IntPtr to an 'OVERLAPPED' structure</param>
+        /// <param name="pBytesReturned">Number of bytes returned in output buffer</param>
+        /// <param name="overlapped">IntPtr to an 'OVERLAPPED' structure</param>
         /// <returns>'true' if successful, otherwise 'false'</returns>
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool DeviceIoControl(
@@ -574,13 +574,13 @@ namespace Duplicati.Library.Snapshots
         /// Sends the dwIoControlCode to the device specified by hDevice.
         /// </summary>
         /// <param name="hDevice">Safe handle to the device </param>
-        /// <param name="dwIoControlCode">Device IO Control Code to send</param>
-        /// <param name="lpInBuffer">Input buffer if required</param>
+        /// <param name="IoControlCode">Device IO Control Code to send</param>
+        /// <param name="InBuffer">Input buffer if required</param>
         /// <param name="nInBufferSize">Size of input buffer</param>
-        /// <param name="lpOutBuffer">Output buffer if required</param>
+        /// <param name="OutBuffer">Output buffer if required</param>
         /// <param name="nOutBufferSize">Size of output buffer</param>
-        /// <param name="lpBytesReturned">Number of bytes returned in output buffer</param>
-        /// <param name="lpOverlapped">IntPtr to an 'OVERLAPPED' structure</param>
+        /// <param name="pBytesReturned">Number of bytes returned in output buffer</param>
+        /// <param name="overlapped">IntPtr to an 'OVERLAPPED' structure</param>
         /// <returns>'true' if successful, otherwise 'false'</returns>
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool DeviceIoControl(

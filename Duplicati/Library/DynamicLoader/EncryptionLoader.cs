@@ -132,7 +132,7 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// Instanciates a specific encryption module, given the file extension and options
         /// </summary>
-        /// <param name="fileExtension">The file extension to create the instance for</param>
+        /// <param name="fileextension">The file extension to create the instance for</param>
         /// <param name="passphrase">The passphrase used to encrypt contents</param>
         /// <param name="options">The options to pass to the instance constructor</param>
         /// <returns>The instanciated encryption module or null if the file extension is not supported</returns>
