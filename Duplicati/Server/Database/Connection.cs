@@ -432,7 +432,29 @@ namespace Duplicati.Server.Database
             }
 
             if (!disabled_encryption && string.IsNullOrWhiteSpace(passphrase))
-                return "Missing passphrase";
+            {
+                // If passphrase is not provided get global passphrase
+                var globalSettings = (from n in Program.DataConnection.Settings
+                    select n).ToDictionary(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value);
+                var globalPassphrase = globalSettings["passphrase"];
+
+                // If global passphrase is not set, then it's a problem
+                if (string.IsNullOrWhiteSpace(globalPassphrase))
+                    return "Missing passphrase";
+
+                // Set global passphrase into backup settings
+                if (item.Settings != null)
+                {
+                    var itemSettingsList = item.Settings.ToList();
+                    itemSettingsList.Add(new Serialization.Implementations.Setting
+                    {
+                        Filter = "",
+                        Name = "passphrase",
+                        Value = globalPassphrase
+                    });
+                    item.Settings = itemSettingsList.ToArray();
+                }
+            }
 
             if (schedule != null)
             {
