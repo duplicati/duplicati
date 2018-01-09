@@ -27,6 +27,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
+	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
@@ -361,7 +362,22 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
-    EditUriBackendConfig.parsers['sia'] = function (scope, module, server, port, path, options) {
+    EditUriBackendConfig.parsers['rclone'] = function (scope, module, server, port, path, options) {
+        if (options['--rclone-local-repository'])
+            scope.rclone_local_repository = options['--rclone-local-repository'];
+        if (options['--rclone-remote-repository'])
+            scope.rclone_remote_repository = options['--rclone-remote-repository'];
+        if (options['--rclone-remote-path'])
+            scope.rclone_remote_path = options['--rclone-remote-path'];
+        if (options['--rclone-option'])
+            scope.rclone_option = options['--rclone-option'];
+		
+        var nukeopts = ['--rclone-local-repository', '--rclone-remote-repository', '--rclone-remote-path', '--rclone-option''];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    };
+
+	EditUriBackendConfig.parsers['sia'] = function (scope, module, server, port, path, options) {
         if (options['--sia-targetpath'])
             scope.sia_targetpath = options['--sia-targetpath'];
         if (options['--sia-redundancy'])
@@ -373,7 +389,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     };
-
+	
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function(scope) {
         var opts = {
