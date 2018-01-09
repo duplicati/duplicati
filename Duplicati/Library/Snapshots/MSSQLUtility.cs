@@ -94,14 +94,14 @@ namespace Duplicati.Library.Snapshots
             {
                 if (!string.IsNullOrWhiteSpace(installed as string))
                     arrInstalledInstances = new string[] { installed as string };
-            }         
+            }
             else if (installed is string[])
                 arrInstalledInstances = (string[])installed;
             else if (installed != null)
                 try { arrInstalledInstances = (string[])installed; }
                 catch { }
 
-            if(Environment.Is64BitOperatingSystem)
+            if(Environment.Is64BitOperatingSystem && arrInstalledInstances == null)
             {
                 var installed32on64 = Microsoft.Win32.Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Microsoft SQL Server", "InstalledInstances", "");
                 if (installed32on64 is string)
