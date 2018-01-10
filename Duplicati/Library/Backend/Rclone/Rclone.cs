@@ -33,11 +33,13 @@ namespace Duplicati.Library.Backend
         private const string OPTION_REMOTE_REPO = "rclone-remote-repository";
         private const string OPTION_REMOTE_PATH = "rclone-remote-path";
         private const string OPTION_RCLONE = "rclone-option";
+        private const string OPTION_RCLONE_EXECUTABLE = "rclone-executable";
 
         private string local_repo;
         private string remote_repo;
         private string remote_path;
         private string opt_rclone;
+        private string rclone_executable;
 
         public Rclone()
         {
@@ -49,8 +51,9 @@ namespace Duplicati.Library.Backend
 
             local_repo = "local";
             remote_repo = "remote";
-            remote_path = "backup";
+            remote_path = "C:\\temp\\backup";
             opt_rclone = "";
+            rclone_executable = "rclone";
             /*should check here if program is installed */
 
             if (options.ContainsKey(OPTION_LOCAL_REPO))
@@ -65,6 +68,8 @@ namespace Duplicati.Library.Backend
             if (options.ContainsKey(OPTION_RCLONE))
                 opt_rclone = options[OPTION_RCLONE];
 
+            if (options.ContainsKey(OPTION_RCLONE_EXECUTABLE))
+                rclone_executable = options[OPTION_RCLONE_EXECUTABLE];
 
             Console.Error.WriteLine(string.Format("Constructor {0}: {1}:{2} {3}", local_repo, remote_repo, remote_path, opt_rclone));
 
@@ -87,14 +92,12 @@ namespace Duplicati.Library.Backend
             get { return false; }
         }
 
-        public IEnumerable<IFileEntry> List()
+        private string RcloneCommandExecuter(String command, String arguments)
         {
-            //Console.Error.WriteLine(string.Format("Listing contents: rclone lsjson {0}:{1}",remote_repo, remote_path));
-
             System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-            psi.Arguments = String.Format("lsjson {0}:{1}", remote_repo, remote_path);
+            psi.Arguments = arguments;
             psi.CreateNoWindow = true;
-            psi.FileName = "rclone";
+            psi.FileName = command;
             psi.RedirectStandardError = true;
             psi.RedirectStandardInput = true;
             psi.RedirectStandardOutput = true;
@@ -106,27 +109,38 @@ namespace Duplicati.Library.Backend
             psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
 #endif
             System.Diagnostics.Process p = null;
-            Console.Error.WriteLine("before try");
             try
             {
-                Console.Error.WriteLine("process listing starting: {0} {1}", psi.FileName, psi.Arguments);
+#if DEBUG
+                Console.Error.WriteLine(String.Format("command executing: {0} {1}", psi.FileName, psi.Arguments));
+#endif
                 p = System.Diagnostics.Process.Start(psi);
-                // this will give an error if eg. the program does not exist
-                Console.Error.WriteLine("process listing started");
             }
-            
+
             catch (System.ComponentModel.Win32Exception ex)
             {
-                Console.Error.WriteLine("Inside catch");
-                throw new Exception("Program does not exist", ex);
+                throw new Exception(String.Format("Program \"{0}\" does not exist", command), ex);
             }
 
-            String result = p.StandardOutput.ReadToEnd();
-            JArray files = JArray.Parse(result);
-            // this will give an error if the path or config does not exist.
+            string error = p.StandardError.ReadToEnd();
+            p.WaitForExit();
+            if (error.Length > 0) {
+                if (error.Contains("directory not found"))
+                    throw new FolderMissingException(error);
+                if (error.Contains("didn't find section in config file"))
+                    throw new Exception(String.Format("Missing config file? {0}", error));
+            }
+            return p.StandardOutput.ReadToEnd();
+        }
 
-            //if (!System.IO.Directory.Exists(m_path))
-            //  throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
+
+        public IEnumerable<IFileEntry> List()
+        {
+            //Console.Error.WriteLine(string.Format("Listing contents: rclone lsjson {0}:{1}",remote_repo, remote_path));
+
+            JArray files = JArray.Parse(RcloneCommandExecuter(rclone_executable, String.Format("lsjson {0}:{1}", remote_repo, remote_path)));
+            // this will give an error if the executable does not exist.
+
             foreach (JObject item in files)
             {
                 FileEntry fe = new FileEntry(
@@ -137,88 +151,43 @@ namespace Duplicati.Library.Backend
                 );
                 fe.IsFolder = item.GetValue("IsDir").Value<bool>();
                 yield return fe;
-
-
             }
         }
 
         public void Put(string remotename, string filename)
         {
-
-            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-            psi.Arguments = String.Format("copyto {0}:{1} {2}:{3}/{4}", local_repo, filename, remote_repo, remote_path, remotename);
-            psi.CreateNoWindow = true;
-            psi.FileName = "rclone";
-            psi.RedirectStandardError = true;
-            psi.RedirectStandardInput = true;
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-
-#if DEBUG
-            psi.CreateNoWindow = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-#endif
-
-            System.Diagnostics.Process p;
-            p = System.Diagnostics.Process.Start(psi);
-
-            String result_out = p.StandardOutput.ReadToEnd();
-            String result_err = p.StandardError.ReadToEnd();
-            Console.Error.WriteLine(result_out);
-            Console.Error.WriteLine(result_err);
+            try
+            {
+                RcloneCommandExecuter(rclone_executable, String.Format("copyto {0}:{1} {2}:{3}/{4}", local_repo, filename, remote_repo, remote_path, remotename));
+            }
+            catch (FolderMissingException ex)
+            {
+                throw new FileMissingException(ex);
+            }
         }
 
         public void Get(string remotename, string filename)
         {
-            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-            psi.Arguments = String.Format("copyto {2}:{3}/{4} {0}:{1}", local_repo, filename, remote_repo, remote_path, remotename);
-            psi.CreateNoWindow = true;
-            psi.FileName = "rclone";
-            psi.RedirectStandardError = true;
-            psi.RedirectStandardInput = true;
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-
-#if DEBUG
-            psi.CreateNoWindow = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-#endif
-
-            System.Diagnostics.Process p;
-            p = System.Diagnostics.Process.Start(psi);
-
-            String result_out = p.StandardOutput.ReadToEnd();
-            String result_err = p.StandardError.ReadToEnd();
-            Console.Error.WriteLine(result_out);
-            Console.Error.WriteLine(result_err);
+            try
+            {
+                RcloneCommandExecuter(rclone_executable, String.Format("copyto {2}:{3}/{4} {0}:{1}", local_repo, filename, remote_repo, remote_path, remotename));
+            }
+            catch (FolderMissingException ex) {
+                throw new FileMissingException(ex);
+            }
         }
 
         public void Delete(string remotename)
         {
-            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-            psi.Arguments = String.Format("delete {0}:{1}/{2}", remote_repo, remote_path, remotename);
-            psi.CreateNoWindow = true;
-            psi.FileName = "rclone";
-            psi.RedirectStandardError = true;
-            psi.RedirectStandardInput = true;
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-
-#if DEBUG
-            psi.CreateNoWindow = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-#endif
-
-            System.Diagnostics.Process p;
-            p = System.Diagnostics.Process.Start(psi);
-
-            String result_out = p.StandardOutput.ReadToEnd();
-            String result_err = p.StandardError.ReadToEnd();
-            Console.Error.WriteLine(result_out);
-            Console.Error.WriteLine(result_err);
+            //this will actually delete the folder if remotename is a folder... 
+            // Will give a "directory not found" error if the file does not exist, need to change that to a missing file exception
+            try
+            {
+                RcloneCommandExecuter(rclone_executable, String.Format("delete {0}:{1}/{2}", remote_repo, remote_path, remotename));
+            }
+            catch (FolderMissingException ex) {
+                throw new FileMissingException(ex);
+            }
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -250,10 +219,9 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-           /* if (System.IO.Directory.Exists(m_path))
-                throw new FolderAreadyExistedException();
-
-            System.IO.Directory.CreateDirectory(m_path);*/
+            
+                    RcloneCommandExecuter(rclone_executable, String.Format("mkdir {0}:{1}", remote_repo, remote_path));
+              
         }
 
         #endregion
