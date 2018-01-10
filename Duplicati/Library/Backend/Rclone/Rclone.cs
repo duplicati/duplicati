@@ -92,7 +92,7 @@ namespace Duplicati.Library.Backend
             //Console.Error.WriteLine(string.Format("Listing contents: rclone lsjson {0}:{1}",remote_repo, remote_path));
 
             System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-            psi.Arguments = String.Format("lsjson {0}/{1}", remote_repo, remote_path);
+            psi.Arguments = String.Format("lsjson {0}:{1}", remote_repo, remote_path);
             psi.CreateNoWindow = true;
             psi.FileName = "rclone";
             psi.RedirectStandardError = true;
