@@ -372,6 +372,7 @@ namespace Duplicati.Server.Database
             
             var disabled_encryption = false;
             var passphrase = string.Empty;
+            var encryptionModule = string.Empty;
             if (item.Settings != null)
             {
                 foreach (var s in item.Settings)
@@ -379,6 +380,8 @@ namespace Duplicati.Server.Database
                         disabled_encryption = string.IsNullOrWhiteSpace(s.Value) ? true : Library.Utility.Utility.ParseBool(s.Value, false);
                     else if (string.Equals(s.Name, "passphrase", StringComparison.OrdinalIgnoreCase))
                         passphrase = s.Value;
+                    else if (string.Equals(s.Name, "encryption-module", StringComparison.OrdinalIgnoreCase))
+                        encryptionModule = s.Value;
                     else if (string.Equals(s.Name, "keep-versions", StringComparison.OrdinalIgnoreCase))
                     {
                         int i;
@@ -431,28 +434,73 @@ namespace Duplicati.Server.Database
                     }
             }
 
-            if (!disabled_encryption && string.IsNullOrWhiteSpace(passphrase))
+            if (!disabled_encryption)
             {
-                // If passphrase is not provided get global passphrase
                 var globalSettings = (from n in Program.DataConnection.Settings
-                    select n).ToDictionary(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value);
-                var globalPassphrase = globalSettings["passphrase"];
+                                      select n).ToDictionary(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value);
 
-                // If global passphrase is not set, then it's a problem
-                if (string.IsNullOrWhiteSpace(globalPassphrase))
-                    return "Missing passphrase";
-
-                // Set global passphrase into backup settings
-                if (item.Settings != null)
+                // If Encryption module is not provided get global Encryption module
+                if (string.IsNullOrWhiteSpace(encryptionModule))
                 {
-                    var itemSettingsList = item.Settings.ToList();
-                    itemSettingsList.Add(new Serialization.Implementations.Setting
+                    // Extract Encryption module from global settings
+                    string globalEncryptionModule = null;
+                    try
                     {
-                        Filter = "",
-                        Name = "passphrase",
-                        Value = globalPassphrase
-                    });
-                    item.Settings = itemSettingsList.ToArray();
+                        globalEncryptionModule = globalSettings["encryption-module"];
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+
+                    // If global Encryption module is not set, then it's a problem
+                    if (string.IsNullOrWhiteSpace(globalEncryptionModule))
+                        return "Missing Encryption module and --no-encryption was not specified";
+
+                    // Set Encryption module into backup settings
+                    if (item.Settings != null)
+                    {
+                        var itemSettingsList = item.Settings.ToList();
+                        itemSettingsList.Add(new Serialization.Implementations.Setting
+                        {
+                            Filter = "",
+                            Name = "encryption-module",
+                            Value = globalEncryptionModule
+                        });
+                        item.Settings = itemSettingsList.ToArray();
+                    }
+                }
+
+                // If passphrase is not provided get global passphrase
+                if (string.IsNullOrWhiteSpace(passphrase))
+                {
+                    // Extract passphrase from global settings
+                    string globalPassphrase = null;
+                    try
+                    {
+                        globalPassphrase = globalSettings["passphrase"];
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+
+                    // If global passphrase is not set, then it's a problem
+                    if (string.IsNullOrWhiteSpace(globalPassphrase))
+                        return "Missing passphrase";
+
+                    // Set global passphrase into backup settings
+                    if (item.Settings != null)
+                    {
+                        var itemSettingsList = item.Settings.ToList();
+                        itemSettingsList.Add(new Serialization.Implementations.Setting
+                        {
+                            Filter = "",
+                            Name = "passphrase",
+                            Value = globalPassphrase
+                        });
+                        item.Settings = itemSettingsList.ToArray();
+                    }
                 }
             }
 
