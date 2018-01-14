@@ -67,6 +67,7 @@
     <Compile Include="HyperVOptions.cs" />
     <Compile Include="HttpOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResultSerializer.cs" />
     <Compile Include="SendHttpMessage.cs" />
     <Compile Include="SendMail.cs" />
     <Compile Include="RunScript.cs" />
