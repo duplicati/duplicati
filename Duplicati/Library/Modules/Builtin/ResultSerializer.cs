@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
@@ -14,38 +15,44 @@ namespace Duplicati.Library.Modules.Builtin
                 {
                     sw.WriteLine("null?");
                 }
-                else if (result is System.Collections.IEnumerable)
+                else if (result is IEnumerable)
                 {
-                    System.Collections.IEnumerable ie = (System.Collections.IEnumerable)result;
-                    System.Collections.IEnumerator ien = ie.GetEnumerator();
-                    ien.Reset();
+                    IEnumerable resultEnumerable = (IEnumerable)result;
+                    IEnumerator resultEnumerator = resultEnumerable.GetEnumerator();
+                    resultEnumerator.Reset();
 
-                    while (ien.MoveNext())
+                    while (resultEnumerator.MoveNext())
                     {
-                        object c = ien.Current;
-                        if (c == null)
-                            continue;
-
-                        if (c.GetType().IsGenericType && !c.GetType().IsGenericTypeDefinition && c.GetType().GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                        object current = resultEnumerator.Current;
+                        if (current == null)
                         {
-                            object key = c.GetType().GetProperty("Key").GetValue(c, null);
-                            object value = c.GetType().GetProperty("Value").GetValue(c, null);
+                            continue;
+                        }
+
+                        if (current.GetType().IsGenericType && !current.GetType().IsGenericTypeDefinition && current.GetType().GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                        {
+                            object key = current.GetType().GetProperty("Key").GetValue(current, null);
+                            object value = current.GetType().GetProperty("Value").GetValue(current, null);
                             sw.WriteLine("{0}: {1}", key, value);
                         }
                         else
-                            sw.WriteLine(c);
+                        {
+                            sw.WriteLine(current);
+                        }
                     }
                 }
                 else if (result.GetType().IsArray)
                 {
-                    Array a = (Array)result;
+                    Array array = (Array)result;
 
-                    for (int i = a.GetLowerBound(0); i <= a.GetUpperBound(0); i++)
+                    for (int i = array.GetLowerBound(0); i <= array.GetUpperBound(0); i++)
                     {
-                        object c = a.GetValue(i);
+                        object c = array.GetValue(i);
 
                         if (c == null)
+                        {
                             continue;
+                        }
 
                         if (c.GetType().IsGenericType && !c.GetType().IsGenericTypeDefinition && c.GetType().GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
                         {
@@ -54,15 +61,17 @@ namespace Duplicati.Library.Modules.Builtin
                             sw.WriteLine("{0}: {1}", key, value);
                         }
                         else
+                        {
                             sw.WriteLine(c);
+                        }
                     }
                 }
                 else if (result is Exception)
                 {
                     //No localization, must be parseable by script
-                    Exception e = (Exception)result;
-                    sw.WriteLine("Failed: {0}", e.Message);
-                    sw.WriteLine("Details: {0}", e);
+                    Exception exception = (Exception)result;
+                    sw.WriteLine("Failed: {0}", exception.Message);
+                    sw.WriteLine("Details: {0}", exception);
                 }
                 else
                 {
