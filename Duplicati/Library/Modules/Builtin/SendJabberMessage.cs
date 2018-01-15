@@ -357,7 +357,7 @@ namespace Duplicati.Library.Modules.Builtin
             if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
                 using (TempFile tf = new TempFile())
                 {
-                    ResultSerializer.SerializeResult(tf, result);
+                    ResultSerializer.SerializeToFile(tf, result);
                     input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 

@@ -6,9 +6,9 @@ namespace Duplicati.Library.Modules.Builtin
 {
     class ResultSerializer
     {
-        public static void SerializeResult(string file, object result)
+        public static void SerializeToFile(string filename, object result)
         {
-            using (StreamWriter sw = new StreamWriter(file))
+            using (StreamWriter sw = new StreamWriter(filename))
             {
                 if (result == null)
                 {

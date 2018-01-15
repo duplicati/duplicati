@@ -115,7 +115,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             using (TempFile tmpfile = new TempFile())
             {
-                ResultSerializer.SerializeResult(tmpfile, result);
+                ResultSerializer.SerializeToFile(tmpfile, result);
                 Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile, level);
             }
         }
