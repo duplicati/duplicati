@@ -1132,6 +1132,7 @@ namespace Duplicati.Library.Utility
                 }
             } while (i-- > 0);
         }
+
         // <summary>
         // Returns the entry assembly or reasonable approximation if no entry assembly is available.
         // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
@@ -1142,6 +1143,14 @@ namespace Duplicati.Library.Utility
         public static System.Reflection.Assembly getEntryAssembly()
         {
             return System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
+        }
+
+        // <summary>
+        // Returns the Executing.
+        // <returns>Executing assembly</returns>
+        public static System.Reflection.Assembly getExecutingAssembly()
+        {
+            return System.Reflection.Assembly.GetExecutingAssembly();
         }
 
         /// <summary>

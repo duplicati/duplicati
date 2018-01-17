@@ -31,6 +31,7 @@ namespace Duplicati.Library.Main.Operation
         public static IEnumerable<string> GetSystemInfo()
         {
             yield return string.Format("Duplicati: {0} ({1})", Duplicati.Library.Utility.Utility.getEntryAssembly().FullName, System.Reflection.Assembly.GetExecutingAssembly().FullName);
+            yield return string.Format("ServerVersion: {0}", Duplicati.Library.Utility.Utility.getExecutingAssembly().GetName().Version);
 
             yield return string.Format("Autoupdate urls: {0}", string.Join(";", Duplicati.Library.AutoUpdater.AutoUpdateSettings.URLs));
             yield return string.Format("Update folder: {0}", Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLDIR);

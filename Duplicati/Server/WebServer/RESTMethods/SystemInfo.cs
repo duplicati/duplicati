@@ -68,7 +68,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 APIVersion = 1,
                 PasswordPlaceholder = Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER,
-                ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                ServerVersion = Duplicati.Library.Utility.Utility.getExecutingAssembly().GetName().Version.ToString(),
                 ServerVersionName = Duplicati.License.VersionNumbers.Version,
                 ServerVersionType = Duplicati.Library.AutoUpdater.UpdaterManager.SelfVersion.ReleaseType,
                 BaseVersionName = Duplicati.Library.AutoUpdater.UpdaterManager.BaseVersion.Displayname,

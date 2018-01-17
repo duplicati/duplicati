@@ -67,7 +67,7 @@ namespace Duplicati.License
         {
             get
             {
-                return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                return Duplicati.Library.Utility.Utility.getExecutingAssembly().GetName().Version.ToString();
             }
         }
     }

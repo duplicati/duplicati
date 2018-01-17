@@ -409,21 +409,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{de3e5d4c-51ab-4e5e-bee8-e636cebfba65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="licenses\MegaApi\" />
-    <Folder Include="licenses\AngularJS\" />
-    <Folder Include="licenses\jQuery\" />
-    <Folder Include="licenses\CoCoL\" />
-    <Folder Include="licenses\rumps\" />
-    <Folder Include="licenses\System.Net.FtpClient\" />
-    <Folder Include="licenses\MimeKit\" />
-    <Folder Include="licenses\BouncyCastle\" />
-    <Folder Include="licenses\AngularGettext\" />
-    <Folder Include="licenses\mozroots\" />
-    <Folder Include="licenses\TlsTest\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>
