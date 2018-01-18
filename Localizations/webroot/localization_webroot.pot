@@ -238,10 +238,6 @@ msgstr ""
 msgid "Beta"
 msgstr ""
 
-#: templates/restore.html:143
-msgid "Bitcoin: {{bitcoinaddr}}"
-msgstr ""
-
 #: scripts/services/AppUtils.js:67
 msgid "Broken access"
 msgstr ""
@@ -660,14 +656,14 @@ msgstr ""
 msgid "Donate"
 msgstr ""
 
-#: index.html:144
-#: index.html:272
-msgid "Donate with Bitcoins"
-msgstr ""
-
 #: index.html:147
 #: index.html:275
 msgid "Donate with PayPal"
+msgstr ""
+
+#: index.html:144
+#: index.html:272
+msgid "Donate with crypto currency"
 msgstr ""
 
 #: templates/settings.html:58
@@ -1537,7 +1533,7 @@ msgstr ""
 #: scripts/services/DialogService.js:50
 #: scripts/services/DialogService.js:58
 #: scripts/services/EditUriBuiltins.js:121
-#: templates/restore.html:147
+#: templates/restore.html:146
 #: templates/settings.html:147
 msgid "OK"
 msgstr ""
@@ -2345,10 +2341,6 @@ msgstr ""
 msgid "Username"
 msgstr ""
 
-#: templates/restore.html:142
-msgid "VISA, Mastercard, ... via Paypal"
-msgstr ""
-
 #: templates/addoredit.html:151
 msgid "Validating ..."
 msgstr ""
@@ -2415,6 +2407,10 @@ msgstr ""
 
 #: templates/settings.html:109
 msgid "Warnings, errors and crashes"
+msgstr ""
+
+#: templates/restore.html:142
+msgid "We accept donations via different services, such as OpenCollective, PayPal, BountySource and various crypto currencies."
 msgstr ""
 
 #: templates/addoredit.html:50

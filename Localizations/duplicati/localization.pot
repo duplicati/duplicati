@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-11-17 13:00+0100\n"
+"POT-Creation-Date: 2018-01-18 11:11+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2411,12 +2411,13 @@ msgid ""
 "backup files that are locked by other programs. If this is set to \"off\", "
 "Duplicati will not attempt to create a disk snapshot. Setting this to \"auto"
 "\" makes Duplicati attempt to create a snapshot, and fail silently if that "
-"was not allowed or supported. A setting of \"on\" will also make Duplicati "
-"attempt to create a snapshot, but will produce a warning message in the log "
-"if it fails. Setting it to \"required\" will make Duplicati abort the backup "
-"if the snapshot creation fails. On windows this uses the Volume Shadow Copy "
-"Services (VSS) and requires administrative privileges. On Linux this uses "
-"Logical Volume Management (LVM) and requires root privileges."
+"was not allowed or supported (note that the OS may still log system "
+"warnings). A setting of \"on\" will also make Duplicati attempt to create a "
+"snapshot, but will produce a warning message in the log if it fails. Setting "
+"it to \"required\" will make Duplicati abort the backup if the snapshot "
+"creation fails. On windows this uses the Volume Shadow Copy Services (VSS) "
+"and requires administrative privileges. On Linux this uses Logical Volume "
+"Management (LVM) and requires root privileges."
 msgstr ""
 
 #: Library/Main/Strings.cs:91
@@ -3234,32 +3235,32 @@ msgstr ""
 msgid "Failed to create a snapshot: {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:595
+#: Library/Main/BackendManager.cs:546
 #, csharp-format
 msgid "Failed to dispose backend instance: {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:618
+#: Library/Main/BackendManager.cs:569
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:624
+#: Library/Main/BackendManager.cs:575
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:629
+#: Library/Main/BackendManager.cs:580
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1134
+#: Library/Main/BackendManager.cs:1085
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:1147
+#: Library/Main/BackendManager.cs:1098
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr ""
