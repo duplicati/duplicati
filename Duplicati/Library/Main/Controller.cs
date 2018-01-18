@@ -638,10 +638,15 @@ namespace Duplicati.Library.Main
                 {
                     result.EndTime = DateTime.UtcNow;
 
-                    try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                    catch { }
-
-                    OnOperationComplete(ex);
+                    try
+                    {
+                        (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
+                        OnOperationComplete(result);
+                    }
+                    catch
+                    {
+                        OnOperationComplete(ex);
+                    }
 
                     result.WriteLogMessageDirect(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
 
