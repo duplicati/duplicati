@@ -1,5 +1,5 @@
 <ul class="advancedoptions">
-    <li ng-repeat="item in ngModel" class="advancedentry">
+    <li ng-repeat="item in ngModel | orderBy: 'item' as nn track by $index" class="advancedentry">
         <div>
             <label class="shortname">{{getShortName(item)}}</label>
 
