@@ -813,9 +813,12 @@ namespace Duplicati.Library.AutoUpdater
                         }
                     }
 
-                    archive_temp.Position = 0;
                     remoteManifest.CompressedSize = archive_temp.Length;
+
+                    archive_temp.Position = 0;
                     remoteManifest.MD5 = computeStreamMD5(archive_temp);
+
+                    archive_temp.Position = 0;
                     remoteManifest.SHA256 = computeStreamSHA256(archive_temp);
                 }
                 System.IO.File.Move(archive_temp_file, System.IO.Path.Combine(outputfolder, "package.zip"));
