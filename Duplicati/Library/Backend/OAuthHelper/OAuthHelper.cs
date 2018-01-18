@@ -85,6 +85,12 @@ namespace Duplicati.Library
         /// </summary>
         public bool AccessTokenOnly { get; set; }
 
+        /// <summary>
+        /// If You need to provide Oauth2 authentication "in place" without using external services
+        /// </summary>
+        public OAuthHelper()
+        { }
+
         public OAuthHelper(string authid, string servicename, string useragent = null)
             : base(useragent)
         {
