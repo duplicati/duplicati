@@ -21,9 +21,12 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Diagnostics;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
+using System.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -34,6 +37,8 @@ namespace Duplicati.Library.Backend
         private const string OPTION_REMOTE_PATH = "rclone-remote-path";
         private const string OPTION_RCLONE = "rclone-option";
         private const string OPTION_RCLONE_EXECUTABLE = "rclone-executable";
+        private const string RCLONE_ERROR_DIRECTORY_NOT_FOUND = "directory not found";
+        private const string RCLONE_ERROR_CONFIG_NOT_FOUND = "didn't find section in config file";
 
         private string local_repo;
         private string remote_repo;
@@ -48,34 +53,33 @@ namespace Duplicati.Library.Backend
 
         public Rclone(string url, Dictionary<string, string> options)
         {
+            var uri = new Utility.Uri(url);
+
+            remote_repo = uri.Host;
+            remote_path = uri.Path;
+
 
             local_repo = "local";
-            remote_repo = "remote";
-            remote_path = "C:\\temp\\backup";
             opt_rclone = "";
             rclone_executable = "rclone";
             /*should check here if program is installed */
 
             if (options.ContainsKey(OPTION_LOCAL_REPO))
                 local_repo = options[OPTION_LOCAL_REPO];
-
             if (options.ContainsKey(OPTION_REMOTE_REPO))
                 remote_repo = options[OPTION_REMOTE_REPO];
-
             if (options.ContainsKey(OPTION_REMOTE_PATH))
                 remote_path = options[OPTION_REMOTE_PATH];
-
             if (options.ContainsKey(OPTION_RCLONE))
                 opt_rclone = options[OPTION_RCLONE];
-
             if (options.ContainsKey(OPTION_RCLONE_EXECUTABLE))
                 rclone_executable = options[OPTION_RCLONE_EXECUTABLE];
-
-            Console.Error.WriteLine(string.Format("Constructor {0}: {1}:{2} {3}", local_repo, remote_repo, remote_path, opt_rclone));
-
+#if DEBUG
+            Console.WriteLine(string.Format("Constructor {0}: {1}:{2} {3}", local_repo, remote_repo, remote_path, opt_rclone));
+#endif
         }
 
-        #region IBackendInterface Members
+#region IBackendInterface Members
 
         public string DisplayName
         {
@@ -94,63 +98,126 @@ namespace Duplicati.Library.Backend
 
         private string RcloneCommandExecuter(String command, String arguments)
         {
-            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-            psi.Arguments = arguments;
-            psi.CreateNoWindow = true;
-            psi.FileName = command;
-            psi.RedirectStandardError = true;
-            psi.RedirectStandardInput = true;
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            StringBuilder outputBuilder = new StringBuilder();
+            StringBuilder errorBuilder = new StringBuilder();
+            Process process;
+
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                Arguments = arguments,
+                CreateNoWindow = true,
+                FileName = command,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
 
 #if DEBUG
-            psi.CreateNoWindow = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
+            Console.Error.WriteLine(String.Format("command executing: {0} {1}", psi.FileName, psi.Arguments));
 #endif
-            System.Diagnostics.Process p = null;
-            try
+            process = new Process
             {
+                StartInfo = psi,
+                // enable raising events because Process does not raise events by default
+                EnableRaisingEvents = true
+            };
+            // attach the event handler for OutputDataReceived before starting the process
+            process.OutputDataReceived += new System.Diagnostics.DataReceivedEventHandler
+            (
+                delegate (object sender, System.Diagnostics.DataReceivedEventArgs e)
+                {
+                    if (!String.IsNullOrEmpty(e.Data))
+                    {
 #if DEBUG
-                Console.Error.WriteLine(String.Format("command executing: {0} {1}", psi.FileName, psi.Arguments));
+                      //  Console.Error.WriteLine(String.Format("output {0}", e.Data));
 #endif
-                p = System.Diagnostics.Process.Start(psi);
-            }
+                        // append the new data to the data already read-in
+                        outputBuilder.Append(e.Data);
+                    };
+                }
+            );  
 
-            catch (System.ComponentModel.Win32Exception ex)
+            process.ErrorDataReceived += new System.Diagnostics.DataReceivedEventHandler
+            (
+                delegate (object sender, System.Diagnostics.DataReceivedEventArgs e)
+                {
+
+                    if (!String.IsNullOrEmpty(e.Data))
+                    {
+#if DEBUG
+                        Console.Error.WriteLine(String.Format("error {0}", e.Data));
+#endif
+                        errorBuilder.Append(e.Data);
+                    }
+                }
+            );
+
+            // start the process
+            // then begin asynchronously reading the output
+            // then wait for the process to exit
+            // then cancel asynchronously reading the output
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            process.WaitForExit();
+            process.CancelOutputRead();
+            process.CancelErrorRead();
+
+            if (errorBuilder.ToString().Contains(RCLONE_ERROR_DIRECTORY_NOT_FOUND))
             {
-                throw new Exception(String.Format("Program \"{0}\" does not exist", command), ex);
+                throw new FolderMissingException(errorBuilder.ToString());
             }
 
-            string error = p.StandardError.ReadToEnd();
-            p.WaitForExit();
-            if (error.Length > 0) {
-                if (error.Contains("directory not found"))
-                    throw new FolderMissingException(error);
-                if (error.Contains("didn't find section in config file"))
-                    throw new Exception(String.Format("Missing config file? {0}", error));
+            if (errorBuilder.ToString().Contains(RCLONE_ERROR_CONFIG_NOT_FOUND))
+            {
+                throw new Exception(String.Format("Missing config file? {0}", errorBuilder.ToString()));
             }
-            return p.StandardOutput.ReadToEnd();
+            Console.Error.WriteLine(errorBuilder.ToString());
+            return outputBuilder.ToString();
         }
 
 
         public IEnumerable<IFileEntry> List()
         {
-            //Console.Error.WriteLine(string.Format("Listing contents: rclone lsjson {0}:{1}",remote_repo, remote_path));
+            JArray files;
+            String str_result;
 
-            JArray files = JArray.Parse(RcloneCommandExecuter(rclone_executable, String.Format("lsjson {0}:{1}", remote_repo, remote_path)));
-            // this will give an error if the executable does not exist.
-
-            foreach (JObject item in files)
+            try
             {
-                FileEntry fe = new FileEntry(
-                    item.GetValue("Name").Value<string>(),
-                    item.GetValue("Size").Value<long>(),
-                    DateTime.Parse(item.GetValue("ModTime").Value<string>()),
-                    DateTime.Parse(item.GetValue("ModTime").Value<string>())
-                );
-                fe.IsFolder = item.GetValue("IsDir").Value<bool>();
-                yield return fe;
+
+                str_result = RcloneCommandExecuter(rclone_executable, String.Format("lsjson {0}:{1}", remote_repo, remote_path));
+                // this will give an error if the executable does not exist.
+            }
+
+            catch (FolderMissingException ex)
+            {
+                throw new FolderMissingException(ex);
+            }
+
+            using (JsonReader jsonReader = new JsonTextReader(new StringReader(str_result)))
+            {
+                //no date parsing by JArray needed, will be parsed later
+                jsonReader.DateParseHandling = DateParseHandling.None;
+                var array = JArray.Load(jsonReader);
+
+                foreach (JObject item in array)
+                {
+#if DEBUG
+                    Console.Error.WriteLine(item.ToString());
+#endif
+                    FileEntry fe = new FileEntry(
+                        item.GetValue("Name").Value<string>(),
+                        item.GetValue("Size").Value<long>(),
+                        DateTime.Parse(item.GetValue("ModTime").Value<string>()),
+                        DateTime.Parse(item.GetValue("ModTime").Value<string>())
+                    )
+                    {
+                        IsFolder = item.GetValue("IsDir").Value<bool>()
+                    };
+                    yield return fe;
+                }
             }
         }
 
@@ -220,21 +287,19 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            
-                    RcloneCommandExecuter(rclone_executable, String.Format("mkdir {0}:{1}", remote_repo, remote_path));
-              
+            RcloneCommandExecuter(rclone_executable, String.Format("mkdir {0}:{1}", remote_repo, remote_path));     
         }
 
-        #endregion
+#endregion
 
-        #region IDisposable Members
+#region IDisposable Members
 
         public void Dispose()
         {
 
         }
 
-        #endregion
+#endregion
 
 
 
