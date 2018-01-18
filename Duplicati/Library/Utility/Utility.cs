@@ -639,15 +639,17 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Parses a string into a boolean value
+        /// Parses a string into a boolean value.
         /// </summary>
-        /// <param name="value">The value to parse</param>
-        /// <param name="default">The default value, in case the string is not a valid boolean value</param>
-        /// <returns>The parsed value or the default value</returns>
-        public static bool ParseBool(string value, bool @default)
+        /// <param name="value">The value to parse.</param>
+        /// <param name="defaultFunc">A delegate that returns the default value if <paramref name="value"/> is not a valid boolean value.</param>
+        /// <returns>The parsed value, or the value returned by <paramref name="defaultFunc"/>.</returns>
+        public static bool ParseBool(string value, Func<bool> defaultFunc)
         {
-            if (value == null)
-                value = "";
+            if (String.IsNullOrWhiteSpace(value))
+            {
+                return defaultFunc();
+            }
 
             switch (value.Trim().ToLower())
             {
@@ -662,8 +664,19 @@ namespace Duplicati.Library.Utility
                 case "no":
                     return false;
                 default:
-                    return @default;
+                    return defaultFunc();
             }
+        }
+
+        /// <summary>
+        /// Parses a string into a boolean value.
+        /// </summary>
+        /// <param name="value">The value to parse.</param>
+        /// <param name="default">The default value, in case <paramref name="value"/> is not a valid boolean value.</param>
+        /// <returns>The parsed value, or the default value.</returns>
+        public static bool ParseBool(string value, bool @default)
+        {
+            return Utility.ParseBool(value, () => @default);
         }
 
         /// <summary>
@@ -828,18 +841,11 @@ namespace Duplicati.Library.Utility
             {
                 var str = Environment.GetEnvironmentVariable("FILESYSTEM_CASE_SENSITIVE");
 
-                if (!string.IsNullOrWhiteSpace(str))
-                {
-                    str = str.Trim();
-                    if (new[] { "yes", "1", "on", "true" }.Contains(str, StringComparer.OrdinalIgnoreCase))
-                        return true;
-                    if (new[] { "no", "0", "off", "false" }.Contains(str, StringComparer.OrdinalIgnoreCase))
-                        return false;
-                }
-
-                //TODO: This should probably be determined by filesystem rather than OS,
+                // TODO: This should probably be determined by filesystem rather than OS,
                 // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
-                return IsClientLinux && !IsClientOSX;
+                Func<bool> defaultReply = () => Utility.IsClientLinux && !Utility.IsClientOSX;
+
+                return Utility.ParseBool(str, defaultReply);
             }
         }
 
@@ -1558,6 +1564,10 @@ namespace Duplicati.Library.Utility
                 // making it even rarer and harder to diagnose when
                 // it happens
                 arg = arg.Replace("\"", "\"\"");
+
+                // Also fix the case where the argument ends with a slash
+                if (arg[arg.Length - 1] == '\\')
+                    arg += "\\";
             }
 
             // Check that all characters are in the safe set
