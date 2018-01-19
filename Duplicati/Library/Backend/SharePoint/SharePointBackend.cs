@@ -257,7 +257,7 @@ namespace Duplicati.Library.Backend
         {
             int result = -1;
             retCtx = null;
-            SP.ClientContext ctx = new ClientContext(url);
+            var ctx = CreateNewContext(url);
             try
             {
                 ctx.Credentials = userInfo;
@@ -349,7 +349,7 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     // would query: testUrlForWeb(m_spWebUrl, userInfo, true, out m_spContext);
-                    m_spContext = new ClientContext(m_spWebUrl);
+                    m_spContext = CreateNewContext(m_spWebUrl);
                     m_spContext.Credentials = m_userInfo;
                 }
                 if (m_spContext != null && m_useContextTimeoutMs > 0)
@@ -378,6 +378,56 @@ namespace Duplicati.Library.Backend
                     throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(serverRelPathInfo, m_spWebUrl));
                 else
                     throw;
+            }
+        }
+
+        /// <summary>
+        /// Helper method to inject the custom webrequest provider that sets the UserAgent
+        /// </summary>
+        /// <returns>The new context.</returns>
+        /// <param name="url">The url to create the context for.</param>
+        private static SP.ClientContext CreateNewContext(string url)
+        {
+            var ctx = new SP.ClientContext(url);
+            ctx.WebRequestExecutorFactory = new CustomWebRequestExecutorFactory(ctx.WebRequestExecutorFactory);
+            return ctx;
+        }
+
+        /// <summary>
+        /// Simple factory override that creates same executor as the implementation
+        /// but sets the UserAgent header, to work around a problem with OD4B servers
+        /// </summary>
+        internal class CustomWebRequestExecutorFactory : WebRequestExecutorFactory
+        {
+            /// <summary>
+            /// The default factory
+            /// </summary>
+            private readonly WebRequestExecutorFactory m_parent;
+
+            /// <summary>
+            /// Initializes a new instance of the
+            /// <see cref="T:Duplicati.Library.Backend.SharePointBackend.CustomWebRequestExecutorFactory"/> class.
+            /// </summary>
+            /// <param name="parent">The default executor.</param>
+            public CustomWebRequestExecutorFactory(WebRequestExecutorFactory parent)
+            {
+                if (parent == null)
+                    throw new ArgumentNullException("parent");
+                m_parent = parent;
+            }
+
+            /// <summary>
+            /// Creates the web request executor by calling the parent and setting the UserAgent.
+            /// </summary>
+            /// <returns>The web request executor.</returns>
+            /// <param name="context">The context to use.</param>
+            /// <param name="requestUrl">The request URL.</param>
+            public override WebRequestExecutor CreateWebRequestExecutor(ClientRuntimeContext context, string requestUrl)
+            {
+                var req = m_parent.CreateWebRequestExecutor(context, requestUrl);
+                if (string.IsNullOrWhiteSpace(req.WebRequest.UserAgent))
+                    req.WebRequest.UserAgent = "Duplicati OD4B v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                return req;
             }
         }
 

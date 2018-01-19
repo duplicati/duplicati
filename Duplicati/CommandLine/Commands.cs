@@ -513,8 +513,7 @@ namespace Duplicati.CommandLine
                             output.MessageEvent("***********************************************");
                             output.MessageEvent("Did we help save your files? If so, please support Duplicati with a donation. We suggest 10€ for private use and 100€ for commercial use.");
                             output.MessageEvent("");
-                            output.MessageEvent("Paypal: http://goo.gl/P4XJ6S");
-                            output.MessageEvent("Bitcoin: 18Qt6ddwg1g3PfjFgJLthQpXjYDyyrQdX1");
+                            output.MessageEvent("https://www.duplicati.com/donate/");
                             output.MessageEvent("***********************************************");
                         }
 
