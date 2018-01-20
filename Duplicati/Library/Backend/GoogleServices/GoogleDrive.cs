@@ -28,12 +28,14 @@ namespace Duplicati.Library.Backend.GoogleDrive
     public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
+        private const string DISABLE_TEAMDRIVE_OPTION = "googledrive-disable-teamdrive";
 
         private const string FOLDER_MIMETYPE = "application/vnd.google-apps.folder";
         private const string DRIVE_API_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v2";
         private const string DRIVE_API_URL = "https://www.googleapis.com/drive/v2";
 
         private string m_path;
+        private bool m_useTeamDrive = true;
 
         private OAuthHelper m_oauth;
         private string m_currentFolderId;
@@ -54,6 +56,9 @@ namespace Duplicati.Library.Backend.GoogleDrive
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))
                 authid = options[AUTHID_OPTION];
+
+            if (options.ContainsKey(DISABLE_TEAMDRIVE_OPTION))
+                m_useTeamDrive = !Library.Utility.Utility.ParseBoolOption(options, DISABLE_TEAMDRIVE_OPTION);
 
             m_oauth = new OAuthHelper(authid, this.ProtocolKey) { AutoAuthHeader = true };
             m_filecache = new Dictionary<string, GoogleDriveFolderItem[]>();
@@ -178,7 +183,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             var fileid = GetFileEntries(remotename).OrderByDescending(x => x.createdDate).First().id;
 
-            var req = m_oauth.CreateRequest(string.Format("{0}/files/{1}?alt=media", DRIVE_API_URL, fileid));
+            var req = m_oauth.CreateRequest(string.Format("{0}/files/{1}?alt=media{2}", DRIVE_API_URL, fileid, m_useTeamDrive ? "&supportsTeamDrives=true" : string.Empty));
             var areq = new AsyncHttpRequest(req);
             using(var resp = (HttpWebResponse)areq.GetResponse())
             using(var rs = areq.GetResponseStream())
@@ -261,7 +266,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             {
                 foreach(var fileid in from n in GetFileEntries(remotename) select n.id)
                 {
-                    var url = string.Format("{0}/files/{1}", DRIVE_API_URL, Library.Utility.Uri.UrlPathEncode(fileid));
+                    var url = string.Format("{0}/files/{1}{2}", DRIVE_API_URL, Library.Utility.Uri.UrlPathEncode(fileid), m_useTeamDrive ? "?supportsTeamDrives=true" : string.Empty);
 
                     m_oauth.GetJSONData<object>(url, x => {
                         x.Method = "DELETE";
@@ -310,6 +315,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleDrive.AuthidShort, Strings.GoogleDrive.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("googledrive"))),
+                    new CommandLineArgument(DISABLE_TEAMDRIVE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.GoogleDrive.DisableTeamDriveShort, Strings.GoogleDrive.DisableTeamDriveLong),
                 });
             }
         }
@@ -464,7 +470,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 string.Format("'{0}' in parents", EscapeTitleEntries(parentfolder))
             };
 
-            var url = string.Format("{0}/files?q={1}", DRIVE_API_URL, Library.Utility.Uri.UrlEncode(string.Join(" and ", p.Where(x => x != null))));
+            var url = string.Format("{0}/files?q={1}{2}", DRIVE_API_URL, Library.Utility.Uri.UrlEncode(string.Join(" and ", p.Where(x => x != null))), m_useTeamDrive ? "&supportsTeamDrives=true&includeTeamDriveItems=true" : string.Empty);
             var token = string.Empty;
 
             do
@@ -485,7 +491,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         private GoogleDriveFolderItem CreateFolder(string name, string parent)
         {
-            var url = string.Format("{0}/files", DRIVE_API_URL);
+            var url = string.Format("{0}/files{1}", DRIVE_API_URL, m_useTeamDrive ? "?supportsTeamDrives=true" : string.Empty);
             var folder = new GoogleDriveFolderItem() {
                 title = name,
                 description = name,
