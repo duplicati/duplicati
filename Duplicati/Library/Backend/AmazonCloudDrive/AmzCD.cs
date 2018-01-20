@@ -75,7 +75,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             var uri = new Utility.Uri(url);
 
             m_path = uri.HostAndPath;
-            if (!m_path.EndsWith("/"))
+            if (!m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path += "/";
 
             string authid = null;
@@ -152,7 +152,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             {
                 if (m_endPointInfo == null)
                     RefreshMetadataAndContentUrl();
-                while (m_endPointInfo.ContentUrl.EndsWith("/"))
+                while (m_endPointInfo.ContentUrl.EndsWith("/", StringComparison.Ordinal))
                     m_endPointInfo.ContentUrl = m_endPointInfo.ContentUrl.Substring(0, m_endPointInfo.ContentUrl.Length - 1);
                 return m_endPointInfo.ContentUrl;
             }
@@ -164,7 +164,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             {
                 if (m_endPointInfo == null)
                     RefreshMetadataAndContentUrl();
-                while (m_endPointInfo.MetadataUrl.EndsWith("/"))
+                while (m_endPointInfo.MetadataUrl.EndsWith("/", StringComparison.Ordinal))
                     m_endPointInfo.MetadataUrl = m_endPointInfo.MetadataUrl.Substring(0, m_endPointInfo.MetadataUrl.Length - 1);
                 return m_endPointInfo.MetadataUrl;
             }
@@ -336,7 +336,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         #endregion
 
         #region IBackend implementation
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             EnforceConsistencyDelay(RemoteOperation.List);
 
@@ -416,7 +416,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         }
         public void Test()
         {
-            List();
+            this.TestList();
         }
         public void CreateFolder()
         {

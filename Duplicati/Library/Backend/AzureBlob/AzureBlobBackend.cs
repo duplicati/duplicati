@@ -82,7 +82,7 @@ namespace Duplicati.Library.Backend.AzureBlob
             get { return true; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             return _azureBlob.ListContainerEntries();
         }
@@ -161,7 +161,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

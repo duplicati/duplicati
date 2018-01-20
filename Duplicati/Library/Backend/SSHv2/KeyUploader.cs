@@ -99,7 +99,7 @@ namespace Duplicati.Library.Backend
                 }
                 
                 var keys = authorized_keys == null ? new string[0] : authorized_keys.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                var cleaned_keys = keys.Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#"));
+                var cleaned_keys = keys.Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#", StringComparison.Ordinal));
                 
                 // Does the key already exist?
                 if (cleaned_keys.Where(x =>

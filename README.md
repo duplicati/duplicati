@@ -28,7 +28,7 @@ Duplicati is licensed under LGPL and available for Windows, OSX and Linux (.NET 
 Download
 ========
 
-The latest version of Duplicati is an experimental version for the Duplicati 2.0 release. 
+The latest version of Duplicati is a beta version for the Duplicati 2.0 release. 
 
 [Click here to download the latest Duplicati 2.0 beta release.](http://www.duplicati.com/download)
 
@@ -86,7 +86,7 @@ If you are looking for an issue to fix, try looking at one of the [minor change]
 
 
 Thank you to all our existing contributors:
-<a href="graphs/contributors"><img src="https://opencollective.com/duplicati/contributors.svg?width=890" /></a>
+<a href="https://github.com/duplicati/duplicati/graphs/contributors"><img src="https://opencollective.com/duplicati/contributors.svg?width=890" /></a>
 
 
 ## Backers

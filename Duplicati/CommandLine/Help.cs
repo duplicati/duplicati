@@ -22,10 +22,10 @@ namespace Duplicati.CommandLine
                 StringBuilder sb = new StringBuilder();
                 foreach(var line in sr.ReadToEnd().Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
                 {
-                    if (line.Trim().StartsWith("#"))
+                    if (line.Trim().StartsWith("#", StringComparison.Ordinal))
                         continue;
 
-                    if (line.Trim().StartsWith(">"))
+                    if (line.Trim().StartsWith(">", StringComparison.Ordinal))
                     {
                         if (sb.Length > 0)
                         {
@@ -410,13 +410,13 @@ namespace Duplicati.CommandLine
                 string c = s;
 
                 string leadingSpaces = "";
-                while (c.Length > 0 && c.StartsWith(" "))
+                while (c.Length > 0 && c.StartsWith(" ", StringComparison.Ordinal))
                 {
                     leadingSpaces += " ";
                     c = c.Remove(0, 1);
                 }
 
-                bool extraIndent = c.StartsWith("--");
+                bool extraIndent = c.StartsWith("--", StringComparison.Ordinal);
 
                 while (c.Length > 0)
                 {
@@ -424,7 +424,7 @@ namespace Duplicati.CommandLine
                     len -= leadingSpaces.Length;
                     if (len < c.Length)
                     {
-                        int ix = c.LastIndexOf(" ", len);
+                        int ix = c.LastIndexOf(" ", len, StringComparison.Ordinal);
                         if (ix > 0)
                             len = ix;
                     }

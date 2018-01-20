@@ -23,7 +23,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Duplicati</string>
 	<key>CFBundleShortVersionString</key>
-	<string>!SHORT_VERSION!</string>
+	<string>!LONG_VERSION!</string>
 	<key>LSUIElement</key>
 	<true />
 </dict>

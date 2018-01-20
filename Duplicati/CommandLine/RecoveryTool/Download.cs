@@ -17,6 +17,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -48,7 +49,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Listing files on backend: {0} ...", backend.ProtocolKey);
 
-                var lst = backend.List();
+                var lst = backend.List().ToList();
 
                 Console.WriteLine("Found {0} files", lst.Count);
 
@@ -121,7 +122,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     }
                     catch(Exception ex)
                     {
-                        Console.WriteLine(" error: {0}", ex.ToString());
+                        Console.WriteLine(" error: {0}", ex);
                         errors++;
                     }
 

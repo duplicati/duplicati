@@ -188,11 +188,11 @@ namespace Duplicati.Library.Backend.OpenStack
 
             m_container = uri.Host;
             m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/"))
+            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
                 m_prefix += "/";
 
             // For OpenStack we do not use a leading slash
-            if (m_prefix.StartsWith("/"))
+            if (m_prefix.StartsWith("/", StringComparison.Ordinal))
                 m_prefix = m_prefix.Substring(1);
 
             options.TryGetValue(USERNAME_OPTION, out m_username);
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Backend.OpenStack
         private string JoinUrls(string uri, string fragment)
         {
             fragment = fragment ?? "";
-            return uri + (uri.EndsWith("/") ? "" : "/") + (fragment.StartsWith("/") ? fragment.Substring(1) : fragment);
+            return uri + (uri.EndsWith("/", StringComparison.Ordinal) ? "" : "/") + (fragment.StartsWith("/", StringComparison.Ordinal) ? fragment.Substring(1) : fragment);
         }
         private string JoinUrls(string uri, string fragment1, string fragment2)
         {
@@ -305,45 +305,14 @@ namespace Duplicati.Library.Backend.OpenStack
         }
         #endregion
         #region IBackend implementation
-        public List<IFileEntry> List()
+
+        private T HandleListExceptions<T>(Func<T> func)
         {
-            var res = new List<IFileEntry>();
-            var plainurl = JoinUrls(SimpleStorageEndPoint, m_container) + string.Format("?format=json&delimiter=/&limit={0}", PAGE_LIMIT);
-            if (!string.IsNullOrEmpty(m_prefix))
-                plainurl += "&prefix=" + Library.Utility.Uri.UrlEncode(m_prefix);
-
-            var url = plainurl;
-
             try
             {
-                while(true)
-                {
-                    var req = m_helper.CreateRequest(url);
-                    req.Accept = "application/json";
-
-                    var items = m_helper.ReadJSONResponse<OpenStackStorageItem[]>(req);
-                    foreach(var n in items)
-                    {
-                        var name = n.name;
-                        if (name.StartsWith(m_prefix))
-                            name = name.Substring(m_prefix.Length);
-                        
-                        if (n.bytes == null)
-                            res.Add(new FileEntry(name));
-                        else if (n.last_modified == null)
-                            res.Add(new FileEntry(name, n.bytes.Value));
-                        else
-                            res.Add(new FileEntry(name, n.bytes.Value, n.last_modified.Value, n.last_modified.Value));
-                    }
-
-                    if (items.Length != PAGE_LIMIT)
-                        return res;
-
-                    // Prepare next listing entry
-                    url = plainurl + string.Format("&marker={0}", Library.Utility.Uri.UrlEncode(items.Last().name));
-                }
+                return func();
             }
-            catch(WebException wex)
+            catch (WebException wex)
             {
                 if (wex.Response is HttpWebResponse && (((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound))
                     throw new FolderMissingException();
@@ -351,6 +320,43 @@ namespace Duplicati.Library.Backend.OpenStack
                     throw;
             }
         }
+
+        public IEnumerable<IFileEntry> List()
+        {
+            var plainurl = JoinUrls(SimpleStorageEndPoint, m_container) + string.Format("?format=json&delimiter=/&limit={0}", PAGE_LIMIT);
+            if (!string.IsNullOrEmpty(m_prefix))
+                plainurl += "&prefix=" + Library.Utility.Uri.UrlEncode(m_prefix);
+
+            var url = plainurl;
+
+            while (true)
+            {
+                var req = m_helper.CreateRequest(url);
+                req.Accept = "application/json";
+
+                var items = HandleListExceptions(() => m_helper.ReadJSONResponse<OpenStackStorageItem[]>(req));
+                foreach (var n in items)
+                {
+                    var name = n.name;
+                    if (name.StartsWith(m_prefix, StringComparison.Ordinal))
+                        name = name.Substring(m_prefix.Length);
+
+                    if (n.bytes == null)
+                        yield return new FileEntry(name);
+                    else if (n.last_modified == null)
+                        yield return new FileEntry(name, n.bytes.Value);
+                    else
+                        yield return new FileEntry(name, n.bytes.Value, n.last_modified.Value, n.last_modified.Value);
+                }
+
+                if (items.Length != PAGE_LIMIT)
+                    yield break;
+
+                // Prepare next listing entry
+                url = plainurl + string.Format("&marker={0}", Library.Utility.Uri.UrlEncode(items.Last().name));
+            }
+        }
+
         public void Put(string remotename, string filename)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
@@ -369,7 +375,7 @@ namespace Duplicati.Library.Backend.OpenStack
         }
         public void Test()
         {
-            List();
+            this.TestList();
         }
         public void CreateFolder()
         {

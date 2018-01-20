@@ -147,7 +147,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 _userInfo.Domain = "";
 
             _url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            if (!_url.EndsWith("/"))
+            if (!_url.EndsWith("/", StringComparison.Ordinal))
             {
                 _url += "/";
             }
@@ -194,17 +194,17 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             return List("");
         }
 
-        public List<IFileEntry> List(string filename)
+        public IEnumerable<IFileEntry> List(string filename)
         {
             return List(filename, false);
         }
 
-        private List<IFileEntry> List(string filename, bool stripFile)
+        private IEnumerable<IFileEntry> List(string filename, bool stripFile)
         {
             var list = new List<IFileEntry>();
             string remotePath = filename;
@@ -215,7 +215,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                 // Get the remote path
                 var url = new Uri(this._url);
-                remotePath = "/" + (url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath);
+                remotePath = "/" + (url.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath);
 
                 if (!string.IsNullOrEmpty(filename))
                 {
@@ -354,7 +354,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                     foreach (var fileEntry in fileEntries)
                     {
-                        if (fileEntry.Name.Equals(remotename) || fileEntry.Name.EndsWith("/" + remotename) || fileEntry.Name.EndsWith("\\" + remotename))
+                        if (fileEntry.Name.Equals(remotename) || fileEntry.Name.EndsWith("/" + remotename, StringComparison.Ordinal) || fileEntry.Name.EndsWith("\\" + remotename, StringComparison.Ordinal))
                         {
                             if (fileEntry.Size < 0 || streamLen < 0 || fileEntry.Size == streamLen)
                             {
@@ -522,7 +522,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             var url = new Uri(_url);
 
             // Get the remote path
-            var remotePath = url.AbsolutePath.EndsWith("/") ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+            var remotePath = url.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
 
             // Try to create the directory 
             client.CreateDirectory(remotePath, true);
@@ -561,7 +561,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 ftpClient.ValidateCertificate += HandleValidateCertificate;
 
                 // Get the remote path
-                var remotePath = uri.AbsolutePath.EndsWith("/") ? uri.AbsolutePath.Substring(0, uri.AbsolutePath.Length - 1) : uri.AbsolutePath;
+                var remotePath = uri.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? uri.AbsolutePath.Substring(0, uri.AbsolutePath.Length - 1) : uri.AbsolutePath;
                 ftpClient.SetWorkingDirectory(remotePath);
 
                 this.Client = ftpClient;

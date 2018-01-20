@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Net;
 using Duplicati.Library.Interface;
@@ -83,10 +84,10 @@ namespace Duplicati.Library.Backend
 
                 if (!string.IsNullOrEmpty(u.UserInfo))
                 {
-                    if (u.UserInfo.IndexOf(":") >= 0)
+                    if (u.UserInfo.IndexOf(":", StringComparison.Ordinal) >= 0)
                     {
-                        m_username = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":"));
-                        m_password = u.UserInfo.Substring(u.UserInfo.IndexOf(":") + 1);
+                        m_username = u.UserInfo.Substring(0, u.UserInfo.IndexOf(":", StringComparison.Ordinal));
+                        m_password = u.UserInfo.Substring(u.UserInfo.IndexOf(":", StringComparison.Ordinal) + 1);
                     }
                     else
                     {
@@ -107,9 +108,9 @@ namespace Duplicati.Library.Backend
                 m_path = uri.HostAndPath;
             }
 
-            if (m_path.EndsWith("/"))
+            if (m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path = m_path.Substring(0, m_path.Length - 1);
-            if (!m_path.StartsWith("/"))
+            if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 
             if (!options.TryGetValue("cloudfiles-authentication-url", out m_authUrl))
@@ -128,9 +129,8 @@ namespace Duplicati.Library.Backend
             get { return "cloudfiles"; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
-            var files = new List<IFileEntry>();
             string extraUrl = "?format=xml&limit=" + ITEM_LIST_LIMIT.ToString();
             string markerUrl = "";
 
@@ -182,7 +182,7 @@ namespace Duplicati.Library.Backend
                         mod = new DateTime();
 
                     lastItemName = name;
-                    files.Add(new FileEntry(name, size, mod, mod));
+                    yield return new FileEntry(name, size, mod, mod);
                 }
 
                 repeat = lst.Count == ITEM_LIST_LIMIT;
@@ -191,8 +191,6 @@ namespace Duplicati.Library.Backend
                     markerUrl = "&marker=" + Library.Utility.Uri.UrlEncode(lastItemName);
 
             } while (repeat);
-
-            return files;
         }
 
         public void Put(string remotename, string filename)
@@ -263,7 +261,7 @@ namespace Duplicati.Library.Backend
         public void Test()
         {
             //The "Folder not found" is not detectable :(
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -418,7 +416,7 @@ namespace Duplicati.Library.Backend
             HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(m_storageUrl + UrlEncode(m_path + remotename) + query);
             req.Headers.Add("X-Auth-Token", UrlEncode(m_authToken));
 
-            req.UserAgent = "Duplicati CloudFiles Backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.UserAgent = "Duplicati CloudFiles Backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             req.KeepAlive = false;
             req.PreAuthenticate = true;
             req.AllowWriteStreamBuffering = false;

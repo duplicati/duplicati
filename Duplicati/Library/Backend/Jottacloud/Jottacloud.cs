@@ -115,7 +115,7 @@ namespace Duplicati.Library.Backend
             m_path = u.HostAndPath; // Host and path of "jottacloud://folder/subfolder" is "folder/subfolder", so the actual folder path within the mount point.
             if (string.IsNullOrEmpty(m_path)) // Require a folder. Actually it is possible to store files directly on the root level of the mount point, but that does not seem to be a good option.
                 throw new UserInformationException(Strings.Jottacloud.NoPathError);
-            if (!m_path.EndsWith("/"))
+            if (!m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path += "/";
             if (!string.IsNullOrEmpty(u.Username))
             {
@@ -159,7 +159,7 @@ namespace Duplicati.Library.Backend
             get { return "jottacloud"; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             var doc = new System.Xml.XmlDocument();
             try
@@ -181,7 +181,6 @@ namespace Duplicati.Library.Backend
             // element must be a "folder", else it could also have been a "mountPoint" (which has a very similar structure).
             // We must check for "deleted" attribute, because files/folders which has it is deleted (attribute contains the timestamp of deletion)
             // so we treat them as non-existant here.
-            List<IFileEntry> files = new List<IFileEntry>();
             var xRoot = doc.DocumentElement;
             if (xRoot.Attributes["deleted"] != null)
             {
@@ -192,7 +191,7 @@ namespace Duplicati.Library.Backend
                 // Subfolders are only listed with name. We can get a timestamp by sending a request for each folder, but that is probably not necessary?
                 FileEntry fe = new FileEntry(xFolder.Attributes["name"].Value);
                 fe.IsFolder = true;
-                files.Add(fe);
+                yield return fe;
             }
             foreach (System.Xml.XmlNode xFile in xRoot.SelectNodes("files/file[not(@deleted)]"))
             {
@@ -216,11 +215,10 @@ namespace Duplicati.Library.Backend
                         if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
                             lastModified = new DateTime();
                         FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
-                        files.Add(fe);
+                        yield return fe;
                     }
                 }
             }
-            return files;
         }
 
         public void Put(string remotename, string filename)
@@ -263,7 +261,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -302,7 +300,7 @@ namespace Duplicati.Library.Backend
             req.Credentials = m_userInfo;
             req.PreAuthenticate = true; // We need this under Mono for some reason, and it appears some servers require this as well
             req.KeepAlive = false;
-            req.UserAgent = "Duplicati Jottacloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.UserAgent = "Duplicati Jottacloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             req.Headers.Add("x-jftp-version", API_VERSION);
             return req;
         }

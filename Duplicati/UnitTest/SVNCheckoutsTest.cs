@@ -99,11 +99,6 @@ namespace Duplicati.UnitTest
                            where !string.IsNullOrWhiteSpace(x)
                            select Library.Utility.Utility.ExpandEnvironmentVariables(x)).ToArray();
 
-                //Expand the tilde to home folder on Linux/OSX
-                if (Utility.IsClientLinux)
-                    folders = (from x in folders
-                               select x.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.Personal))).ToArray();
-
                 foreach (var f in folders)
                     foreach (var n in f.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                         if (!System.IO.Directory.Exists(n))
@@ -245,7 +240,7 @@ namespace Duplicati.UnitTest
                         StringBuilder sb = new StringBuilder();
                         sb.AppendLine("Entry count: " + entries.Count.ToString());
                         sb.Append(string.Format("Found {0} filelists but there were {1} source folders", entries.Count, folders.Length));
-                        throw new Exception("Filename parsing problem, or corrupt storage: " + sb.ToString());
+                        throw new Exception("Filename parsing problem, or corrupt storage: " + sb);
                     }
 
                     if (!skipfullrestore || !skippartialrestore)
@@ -274,7 +269,7 @@ namespace Duplicati.UnitTest
 
                                             //Remove all folders from list
                                             for (int j = 0; j < sourcefiles.Count; j++)
-                                                if (sourcefiles[j].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                                                if (sourcefiles[j].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
                                                 {
                                                     sourcefiles.RemoveAt(j);
                                                     j--;
@@ -366,7 +361,7 @@ namespace Duplicati.UnitTest
                             continue;
                         if (s == logfilename)
                             continue;                        
-                        if (s.StartsWith(Utility.AppendDirSeparator(tf)))
+                        if (s.StartsWith(Utility.AppendDirSeparator(tf), StringComparison.Ordinal))
                             continue;
 
                         Log.WriteMessage(string.Format("Found left-over temp file: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
@@ -380,7 +375,7 @@ namespace Duplicati.UnitTest
                     }
 
                     foreach (string s in Utility.EnumerateFolders(tempdir))
-                        if (!s.StartsWith(Utility.AppendDirSeparator(tf)) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tf) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tempdir))
+                        if (!s.StartsWith(Utility.AppendDirSeparator(tf), StringComparison.Ordinal) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tf) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tempdir))
                         {
                             Log.WriteMessage(string.Format("Found left-over temp folder: {0}", s.Substring(tempdir.Length)), LogMessageType.Warning);
                             BasicSetupHelper.ProgressWriteLine("Found left-over temp folder: {0}", s.Substring(tempdir.Length));

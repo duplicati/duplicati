@@ -24,7 +24,6 @@ using Duplicati.Library.Interface;
 using SharpCompress.Common;
 
 using SharpCompress.Archives;
-using SharpCompress.Archives.Zip;
 using SharpCompress.Writers;
 using SharpCompress.Writers.Zip;
 using SharpCompress.Readers;
@@ -34,10 +33,13 @@ namespace Duplicati.Library.Compression
 {
     /// <summary>
     /// An abstraction of a zip archive as a FileArchive, based on SharpCompress.
-    /// Please note, duplicati does not require both Read & Write access at the same time so this has not been implemented
+    /// Please note, duplicati does not require both Read & Write access at the same time so this has not been implemented.
     /// </summary>
     public class FileArchiveZip : ICompression
     {
+        private const string CannotReadWhileWriting = "Cannot read while writing";
+        private const string CannotWriteWhileReading = "Cannot write while reading";
+
         /// <summary>
         /// The commandline option for toggling the compression level
         /// </summary>
@@ -52,15 +54,15 @@ namespace Duplicati.Library.Compression
         /// The commandline option for toggling the compression method
         /// </summary>
         private const string COMPRESSION_METHOD_OPTION = "zip-compression-method";
-		/// <summary>
-		/// The commandline option for toggling the zip64 support
-		/// </summary>
-		private const string COMPRESSION_ZIP64_OPTION = "zip-compression-zip64";
+        /// <summary>
+        /// The commandline option for toggling the zip64 support
+        /// </summary>
+        private const string COMPRESSION_ZIP64_OPTION = "zip-compression-zip64";
 
-		/// <summary>
-		/// The default compression level
-		/// </summary>
-		private const SharpCompress.Compressors.Deflate.CompressionLevel DEFAULT_COMPRESSION_LEVEL = SharpCompress.Compressors.Deflate.CompressionLevel.Level9;
+        /// <summary>
+        /// The default compression level
+        /// </summary>
+        private const SharpCompress.Compressors.Deflate.CompressionLevel DEFAULT_COMPRESSION_LEVEL = SharpCompress.Compressors.Deflate.CompressionLevel.Level9;
 
         /// <summary>
         /// The default compression method
@@ -83,9 +85,9 @@ namespace Duplicati.Library.Compression
         private const int CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA = 2 + 2 + 8 + 8 + 8 + 4;
 
         /// <summary>
-        /// This property indicates that this current instance should write to a file
+        /// This property indicates reading or writing access mode of the file archive.
         /// </summary>
-        private bool m_isWriting;
+        ArchiveMode m_mode;
 
         /// <summary>
         /// Gets the number of bytes expected to be written after the stream is disposed
@@ -100,12 +102,12 @@ namespace Duplicati.Library.Compression
         /// The stream used to either read or write
         /// </summary>
         private Stream m_stream;
-        
+
         /// <summary>
         /// Lookup table for faster access to entries based on their name.
         /// </summary>
         private Dictionary<string, IEntry> m_entryDict;
-        
+
         /// <summary>
         /// The writer instance used when creating archives
         /// </summary>
@@ -119,17 +121,12 @@ namespace Duplicati.Library.Compression
         /// <summary>
         /// The compression level applied when the hint does not indicate incompressible
         /// </summary>
-        private SharpCompress.Compressors.Deflate.CompressionLevel m_defaultCompressionLevel; 
+        private SharpCompress.Compressors.Deflate.CompressionLevel m_defaultCompressionLevel;
 
-                /// <summary>
+        /// <summary>
         /// The compression level applied when the hint does not indicate incompressible
         /// </summary>
         private CompressionType m_compressionType;
-
-        /// <summary>
-        /// The name of the file being read
-        /// </summary>
-        private string m_filename;
 
         /// <summary>
         /// A flag indicating if zip64 is in use
@@ -141,14 +138,15 @@ namespace Duplicati.Library.Compression
         /// </summary>
         public FileArchiveZip() { }
 
-        public IArchive Archive
+        private IArchive Archive
         {
             get
             {
-                if (m_stream == null)
-                    m_stream = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read);
                 if (m_archive == null)
+                {
+                    m_stream.Position = 0;
                     m_archive = ArchiveFactory.Open(m_stream);
+                }
                 return m_archive;
             }
         }
@@ -168,19 +166,16 @@ namespace Duplicati.Library.Compression
 
         public Stream GetStreamFromReader(IEntry entry)
         {
-            Stream fs = null;
             SharpCompress.Readers.Zip.ZipReader rd = null;
 
             try
             {
-                fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read);
-                rd = SharpCompress.Readers.Zip.ZipReader.Open(fs);
+                rd = SharpCompress.Readers.Zip.ZipReader.Open(m_stream);
 
                 while (rd.MoveToNextEntry())
                     if (entry.Key == rd.Entry.Key)
                         return new StreamWrapper(rd.OpenEntryStream(), stream => {
                             rd.Dispose();
-                            fs.Dispose();
                         });
 
                 throw new Exception(string.Format("Stream not found: {0}", entry.Key));
@@ -189,9 +184,7 @@ namespace Duplicati.Library.Compression
             {
                 if (rd != null)
                     rd.Dispose();
-                if (fs != null)
-                    fs.Dispose();
-                
+
                 throw;
             }
 
@@ -199,22 +192,18 @@ namespace Duplicati.Library.Compression
 
         /// <summary>
         /// Constructs a new zip instance.
-        /// If the file exists and has a non-zero length we read it,
-        /// otherwise we create a new archive.
+        /// Access mode is specified by mode parameter.
+        /// Note that stream would not be disposed by FileArchiveZip instance so
+        /// you may reuse it and have to dispose it yourself.
         /// </summary>
-        /// <param name="filename">The name of the file to read or write</param>
+        /// <param name="stream">The stream to read or write depending access mode</param>
+        /// <param name="mode">The archive acces mode</param>
         /// <param name="options">The options passed on the commandline</param>
-        public FileArchiveZip(string filename, Dictionary<string, string> options)
+        public FileArchiveZip(Stream stream, ArchiveMode mode, IDictionary<string, string> options)
         {
-            if (string.IsNullOrEmpty(filename) && filename.Trim().Length == 0)
-                throw new ArgumentException("Invalid filename.", nameof(filename));
-
-            if (File.Exists(filename) && new FileInfo(filename).Length > 0)
-            {
-                m_isWriting = false;
-                m_filename = filename;
-            }
-            else
+            m_stream = stream;
+            m_mode = mode;
+            if (mode == ArchiveMode.Write)
             {
                 var compression = new ZipWriterOptions(CompressionType.Deflate);
 
@@ -241,8 +230,6 @@ namespace Duplicati.Library.Compression
                 m_defaultCompressionLevel = compression.DeflateCompressionLevel;
                 m_compressionType = compression.CompressionType;
 
-                m_isWriting = true;
-                m_stream = new System.IO.FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read);
                 m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, compression);
 
                 //Size of endheader, taken from SharpCompress ZipWriter
@@ -271,17 +258,17 @@ namespace Duplicati.Library.Compression
         {
             get
             {
-				// This is the cross between these two:
-				// https://github.com/adamhathcock/sharpcompress/blob/master/src/SharpCompress/Common/Zip/ZipCompressionMethod.cs
-				// https://github.com/adamhathcock/sharpcompress/blob/master/src/SharpCompress/Common/CompressionType.cs
+                // This is the cross between these two:
+                // https://github.com/adamhathcock/sharpcompress/blob/master/src/SharpCompress/Common/Zip/ZipCompressionMethod.cs
+                // https://github.com/adamhathcock/sharpcompress/blob/master/src/SharpCompress/Common/CompressionType.cs
 
-				var methods = new[]
+                var methods = new[]
                 {
                     CompressionType.None.ToString(),
-					CompressionType.Deflate.ToString(),
-					CompressionType.BZip2.ToString(),
-					CompressionType.LZMA.ToString(),
-					CompressionType.PPMd.ToString(),
+                    CompressionType.Deflate.ToString(),
+                    CompressionType.BZip2.ToString(),
+                    CompressionType.LZMA.ToString(),
+                    CompressionType.PPMd.ToString(),
                 };
 
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
@@ -289,7 +276,7 @@ namespace Duplicati.Library.Compression
                     new CommandLineArgument(COMPRESSION_LEVEL_OPTION_ALIAS, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, Strings.FileArchiveZip.CompressionlevelDeprecated(COMPRESSION_LEVEL_OPTION)),
                     new CommandLineArgument(COMPRESSION_METHOD_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionmethodShort, Strings.FileArchiveZip.CompressionmethodLong(COMPRESSION_LEVEL_OPTION), DEFAULT_COMPRESSION_METHOD.ToString(), null, methods),
                     new CommandLineArgument(COMPRESSION_ZIP64_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.FileArchiveZip.Compressionzip64Short, Strings.FileArchiveZip.Compressionzip64Long, DEFAULT_ZIP64.ToString())
-				});
+                });
             }
         }
 
@@ -329,8 +316,8 @@ namespace Duplicati.Library.Compression
         /// <returns>A stream with the file contents</returns>
         public Stream OpenRead(string file)
         {
-            if (m_isWriting)
-                throw new InvalidOperationException("Cannot read while writing");
+            if (m_mode != ArchiveMode.Read)
+                throw new InvalidOperationException(CannotReadWhileWriting);
 
             var ze = GetEntry(file);
             if (ze == null)
@@ -373,8 +360,7 @@ namespace Duplicati.Library.Compression
 
                     try
                     {
-                        using (var fs = new System.IO.FileStream(m_filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                        using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(fs, new ReaderOptions() { LookForHeader = false }))
+                        using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(m_stream, new ReaderOptions() { LookForHeader = false }))
                             while (rd.MoveToNextEntry())
                             {
                                 d[rd.Entry.Key] = rd.Entry;
@@ -390,10 +376,10 @@ namespace Duplicati.Library.Compression
                         // If we have zero files, or just a manifest, don't bother
                         if (d.Count < 2)
                             throw;
-                        
+
                         Logging.Log.WriteMessage(string.Format("Zip archive appears to have broken records, returning the {0} records that could be recovered", d.Count), Logging.LogMessageType.Warning, ex2);
                     }
-                    
+
                     m_entryDict = d;
                 }
             }
@@ -406,8 +392,8 @@ namespace Duplicati.Library.Compression
         /// <returns>The ZipEntry for the file or null if no such file was found</returns>
         private IEntry GetEntry(string file)
         {
-            if (m_isWriting)
-                throw new InvalidOperationException("Cannot read while writing");
+            if (m_mode != ArchiveMode.Read)
+                throw new InvalidOperationException(CannotReadWhileWriting);
 
             LoadEntryTable();
 
@@ -429,13 +415,13 @@ namespace Duplicati.Library.Compression
         /// <returns>A writeable stream for the file contents</returns>
         public virtual Stream CreateFile(string file, CompressionHint hint, DateTime lastWrite)
         {
-            if (!m_isWriting)
-                throw new InvalidOperationException("Cannot write while reading");
+            if (m_mode != ArchiveMode.Write)
+                throw new InvalidOperationException(CannotWriteWhileReading);
 
             m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
             if (m_usingZip64)
                 m_flushBufferSize += CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA;
-            
+
             return ((ZipWriter)m_writer).WriteToStream(file, new ZipWriterEntryOptions()
             {
                 DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressors.Deflate.CompressionLevel.None : m_defaultCompressionLevel,
@@ -452,8 +438,8 @@ namespace Duplicati.Library.Compression
         /// <returns>True if the file exists, false otherwise</returns>
         public bool FileExists(string file)
         {
-            if (m_isWriting)
-                throw new InvalidOperationException("Cannot read while writing");
+            if (m_mode != ArchiveMode.Read)
+                throw new InvalidOperationException(CannotReadWhileWriting);
 
             return GetEntry(file) != null;
         }
@@ -465,7 +451,7 @@ namespace Duplicati.Library.Compression
         {
             get
             {
-                return m_isWriting ? m_stream.Length : Archive.TotalSize;
+                return m_mode == ArchiveMode.Write ? m_stream.Length : Archive.TotalSize;
             }
         }
 
@@ -473,11 +459,11 @@ namespace Duplicati.Library.Compression
         /// The size of the current unflushed buffer
         /// </summary>
         public long FlushBufferSize
-        { 
+        {
             get
             {
                 return m_flushBufferSize;
-            } 
+            }
         }
 
 
@@ -514,8 +500,6 @@ namespace Duplicati.Library.Compression
                 m_writer.Dispose();
             m_writer = null;
 
-            if (m_stream != null)
-                m_stream.Dispose();
             m_stream = null;
         }
 

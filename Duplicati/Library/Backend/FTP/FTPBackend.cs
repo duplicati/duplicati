@@ -83,7 +83,7 @@ namespace Duplicati.Library.Backend
                 m_userInfo.Domain = "";
 
             m_url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            if (!m_url.EndsWith("/"))
+            if (!m_url.EndsWith("/", StringComparison.Ordinal))
                 m_url += "/";
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
@@ -170,34 +170,19 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public List<IFileEntry> List()
+        private T HandleListExceptions<T>(Func<T> func, System.Net.FtpWebRequest req)
         {
-            return List("");
+            T ret = default(T);
+            Action action = () => ret = func();
+            HandleListExceptions(action, req);
+            return ret;
         }
-        
-        public List<IFileEntry> List(string filename)
-        {
-            var req = CreateRequest(filename);
-            req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
-            req.UseBinary = false;
 
+        private void HandleListExceptions(Action action, System.Net.FtpWebRequest req)
+        {
             try
             {
-                var lst = new List<IFileEntry>();
-                var areq = new Utility.AsyncHttpRequest(req);
-                using (var resp = areq.GetResponse())
-                using (var rs = areq.GetResponseStream())
-                using (var sr = new System.IO.StreamReader(new StreamReadHelper(rs)))
-                {
-                    string line;
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        FileEntry f = ParseLine(line);
-                        if (f != null)
-                            lst.Add(f);
-                    }
-                }
-                return lst;
+                action();
             }
             catch (System.Net.WebException wex)
             {
@@ -205,6 +190,70 @@ namespace Duplicati.Library.Backend
                     throw new Interface.FolderMissingException(Strings.FTPBackend.MissingFolderError(req.RequestUri.PathAndQuery, wex.Message), wex);
                 else
                     throw;
+            }
+        }
+
+        public IEnumerable<IFileEntry> List()
+        {
+            return List("");
+        }
+
+        public IEnumerable<IFileEntry> List(string filename)
+        {
+            var req = CreateRequest(filename);
+            req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
+            req.UseBinary = false;
+
+            System.Net.WebResponse resp = null;
+            System.IO.Stream rs = null;
+            System.IO.StreamReader sr = null;
+
+            try
+            {
+                HandleListExceptions(
+                    () =>
+                        {
+                            var areq = new Utility.AsyncHttpRequest(req);
+                            resp = areq.GetResponse();
+                            rs = areq.GetResponseStream();
+                            sr = new System.IO.StreamReader(new StreamReadHelper(rs));
+                        },
+                    req);
+                
+                string line;
+                while ((line = HandleListExceptions(() => sr.ReadLine(), req)) != null)
+                {
+                    FileEntry f = ParseLine(line);
+                    if (f != null)
+                        yield return f;
+                }
+            }
+            finally
+            {
+                try
+                {
+                    if (sr != null)
+                    {
+                        sr.Dispose();
+                    }
+                }
+                finally
+                {
+                    try
+                    {
+                        if (rs != null)
+                        {
+                            rs.Dispose();
+                        }
+                    }
+                    finally
+                    {
+                        if (resp != null)
+                        {
+                            resp.Dispose();
+                        }
+                    }
+                }
             }
         }
 
@@ -227,9 +276,9 @@ namespace Duplicati.Library.Backend
                 
                 if (m_listVerify) 
                 {
-                    List<IFileEntry> files = List(remotename);
+                    IEnumerable<IFileEntry> files = List(remotename);
                     foreach(IFileEntry fe in files)
-                        if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename) || fe.Name.EndsWith("\\" + remotename)) 
+                        if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename, StringComparison.Ordinal) || fe.Name.EndsWith("\\" + remotename, StringComparison.Ordinal)) 
                         {
                             if (fe.Size < 0 || streamLen < 0 || fe.Size == streamLen)
                                 return;
@@ -308,7 +357,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -341,7 +390,7 @@ namespace Duplicati.Library.Backend
         private System.Net.FtpWebRequest CreateRequest(string remotename, bool createFolder)
         {
             string url = m_url;
-            if (createFolder && url.EndsWith("/"))
+            if (createFolder && url.EndsWith("/", StringComparison.Ordinal))
                 url = url.Substring(0, url.Length - 1);
             
             System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(url + remotename);

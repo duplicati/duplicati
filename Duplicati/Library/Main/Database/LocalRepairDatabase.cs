@@ -558,17 +558,19 @@ ORDER BY
 "
                 ,blocksize, blockhashlength);
 
-                var en = blocklist.GetEnumerator();
-                foreach(var r in cmd.ExecuteReaderEnumerable(query, hash, length))
+                using (var en = blocklist.GetEnumerator())
                 {
-                    if (!en.MoveNext())
-                        throw new Exception(string.Format("Too few entries in source blocklist with hash {0}", hash));
-                    if (en.Current != r.GetString(0))
-                        throw new Exception(string.Format("Mismatch in blocklist with hash {0}", hash));
-                }
+                    foreach (var r in cmd.ExecuteReaderEnumerable(query, hash, length))
+                    {
+                        if (!en.MoveNext())
+                            throw new Exception(string.Format("Too few entries in source blocklist with hash {0}", hash));
+                        if (en.Current != r.GetString(0))
+                            throw new Exception(string.Format("Mismatch in blocklist with hash {0}", hash));
+                    }
 
-                if (en.MoveNext())
-                    throw new Exception(string.Format("Too many source blocklist entries in {0}", hash));
+                    if (en.MoveNext())
+                        throw new Exception(string.Format("Too many source blocklist entries in {0}", hash));
+                }
             }
         }
     }

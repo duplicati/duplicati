@@ -30,7 +30,7 @@ namespace Duplicati.Server
         public static string ExpandEnvironmentVariables(string path)
         {
             foreach(var n in Nodes)
-                if (path.StartsWith(n.id))
+                if (path.StartsWith(n.id, StringComparison.Ordinal))
                     path = path.Replace(n.id, n.resolvedpath);
             return Library.Utility.Utility.ExpandEnvironmentVariables(path);
         }
@@ -162,7 +162,7 @@ namespace Duplicati.Server
                 try
                 {
                     var nx = x;
-                    if (nx.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                    if (nx.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
                         nx = nx.Substring(0, nx.Length - 1);
                     var n = systemIO.PathGetFileName(nx);
                     if (!string.IsNullOrWhiteSpace(n))
@@ -172,8 +172,8 @@ namespace Duplicati.Server
                 {
                 }
 
-                if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()) && x.Length > 1)
-                    return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1).Substring(x.Substring(0, x.Length - 1).LastIndexOf("/") + 1));
+                if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) && x.Length > 1)
+                    return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1).Substring(x.Substring(0, x.Length - 1).LastIndexOf("/", StringComparison.Ordinal) + 1));
                 else
                     return new KeyValuePair<string, string>(x, x);
 

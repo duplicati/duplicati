@@ -27,7 +27,7 @@ namespace Duplicati.Library
 {
     public class JSONWebHelper
     {
-        public static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
+        public static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
         private readonly string m_user_agent;
         public string OAuthLoginUrl { get; protected set; }
         public string UserAgent { get { return m_user_agent; } }

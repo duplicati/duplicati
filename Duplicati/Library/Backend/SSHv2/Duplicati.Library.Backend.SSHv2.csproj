@@ -9,7 +9,6 @@
     <RootNamespace>Duplicati.Library.Backend</RootNamespace>
     <AssemblyName>Duplicati.Library.Backend.SSHv2</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <SignAssembly>false</SignAssembly>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>

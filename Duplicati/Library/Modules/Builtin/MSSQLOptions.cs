@@ -101,9 +101,9 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 var filters = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
 
-                filtersInclude = filters.Where(x => x.StartsWith("+") && Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                filtersInclude = filters.Where(x => x.StartsWith("+", StringComparison.Ordinal) && Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
                     .Select(x => Regex.Match(x.Substring(1), m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Groups[1].Value).ToList();
-                filtersExclude = filters.Where(x => x.StartsWith("-") && Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                filtersExclude = filters.Where(x => x.StartsWith("-", StringComparison.Ordinal) && Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
                     .Select(x => Regex.Match(x.Substring(1), m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Groups[1].Value).ToList();
 
                 var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
@@ -183,7 +183,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             var pathsForBackup = new List<string>(paths);
             var filterhandler = new Utility.FilterExpression(
-                filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-")).Select(x => x.Substring(1)).ToList());
+                filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-", StringComparison.Ordinal)).Select(x => x.Substring(1)).ToList());
             
             foreach (var dbForBackup in dbsForBackup)
                 foreach (var pathForBackup in dbForBackup.DataPaths)
@@ -211,7 +211,7 @@ namespace Duplicati.Library.Modules.Builtin
             if (paths == null || !Utility.Utility.IsClientWindows)
                 return false;
 
-            return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Count() > 0;
+            return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Any();
         }
 
         #endregion

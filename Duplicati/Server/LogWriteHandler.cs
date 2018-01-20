@@ -116,7 +116,7 @@ namespace Duplicati.Server
                 lock(m_lock)
                 {
                     if (m_length == 0)
-                        throw new ArgumentOutOfRangeException("Buffer is empty");
+                        throw new ArgumentOutOfRangeException(nameof(m_length), "Buffer is empty");
                     
                     m_key++;
                     var ix = m_tail;

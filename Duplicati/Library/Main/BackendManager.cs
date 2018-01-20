@@ -13,7 +13,7 @@ namespace Duplicati.Library.Main
     internal class BackendManager : IDisposable
     {
         public const string VOLUME_HASH = "SHA256";
-    
+
         /// <summary>
         /// Class to represent hash failures
         /// </summary>
@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main
             /// <param name="innerException">The exception that caused this exception</param>
             public HashMismatchException(string message, Exception innerException) : base(message, innerException) { }
         }
-    
+
         private enum OperationType
         {
             Get,
@@ -162,20 +162,20 @@ namespace Duplicati.Library.Main
                 this.WaitForComplete();
                 if (Exception != null)
                     throw Exception;
-                    
+
                 return (TempFile)this.Result;
             }
 
             TempFile IDownloadWaitHandle.Wait(out string hash, out long size)
             {
                 this.WaitForComplete();
-                
+
                 if (Exception != null)
                     throw Exception;
-                    
+
                 hash = this.Hash;
                 size = this.Size;
-                
+
                 return (TempFile)this.Result;
             }
 
@@ -192,7 +192,7 @@ namespace Duplicati.Library.Main
                     this.Encrypted = true;
                 }
             }
-               
+
             public bool UpdateHashAndSize(Options options)
             {
                 if (Hash == null || Size < 0)
@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main
 
                 return false;
             }
-            
+
             public void DeleteLocalFile(IBackendWriter stat)
             {
                 if (this.LocalTempfile != null)
@@ -212,9 +212,9 @@ namespace Duplicati.Library.Main
                     catch (Exception ex) { stat.AddWarning(string.Format("Failed to dispose temporary file: {0}", this.LocalTempfile), ex); }
                     finally { this.LocalTempfile = null; }
             }
-            
+
             public BackendActionType BackendActionType
-            { 
+            {
                 get
                 {
                     switch (this.Operation)
@@ -234,56 +234,7 @@ namespace Duplicati.Library.Main
                     }
                 }
             }
-            
-        }
 
-        /// <summary> A small utility stream that allows to keep streams open and counts the bytes sent through. </summary>
-        private class ShaderStream : System.IO.Stream
-        {
-            private readonly System.IO.Stream m_baseStream;
-            private readonly bool m_keepBaseOpen;
-            private long m_read = 0;
-            private long m_written = 0;
-
-            public ShaderStream(System.IO.Stream baseStream, bool keepBaseOpen)
-            {
-                if (baseStream == null) throw new ArgumentNullException("baseStream");
-                this.m_baseStream = baseStream;
-                this.m_keepBaseOpen = keepBaseOpen;
-            }
-
-            public long TotalBytesRead { get { return m_read; } }
-            public long TotalBytesWritten { get { return m_written; } }
-
-            public override bool CanRead { get { return m_baseStream.CanRead; } }
-            public override bool CanSeek { get { return m_baseStream.CanSeek; } }
-            public override bool CanWrite { get { return m_baseStream.CanWrite; } }
-            public override long Length { get { return m_baseStream.Length; } }
-            public override long Position
-            {
-                get { return m_baseStream.Position; }
-                set { m_baseStream.Position = value; }
-            }
-            public override void Flush() { m_baseStream.Flush(); }
-            public override long Seek(long offset, System.IO.SeekOrigin origin) { return m_baseStream.Seek(offset, origin); }
-            public override void SetLength(long value) { m_baseStream.SetLength(value); }
-            public override int Read(byte[] buffer, int offset, int count)
-            {
-                int r = m_baseStream.Read(buffer, offset, count);
-                m_read += r;
-                return r;
-            }
-            public override void Write(byte[] buffer, int offset, int count)
-            {
-                m_baseStream.Write(buffer, offset, count);
-                m_written += count;
-            }
-            protected override void Dispose(bool disposing)
-            {
-                if (disposing && !m_keepBaseOpen)
-                    m_baseStream.Close();
-                base.Dispose(disposing);
-            }
         }
 
         private class DatabaseCollector
@@ -293,16 +244,16 @@ namespace Duplicati.Library.Main
             private System.Threading.Thread m_callerThread;
             private List<IDbEntry> m_dbqueue;
             private IBackendWriter m_stats;
-            
+
             private interface IDbEntry { }
-            
+
             private class DbOperation : IDbEntry
             {
                 public string Action;
                 public string File;
                 public string Result;
             }
-            
+
             private class DbUpdate : IDbEntry
             {
                 public string Remotename;
@@ -310,53 +261,53 @@ namespace Duplicati.Library.Main
                 public long Size;
                 public string Hash;
             }
-            
+
             private class DbRename : IDbEntry
             {
                 public string Oldname;
                 public string Newname;
             }
-            
+
             public DatabaseCollector(LocalDatabase database, IBackendWriter stats)
             {
                 m_database = database;
                 m_stats = stats;
-                m_dbqueue = new List<IDbEntry>();    
+                m_dbqueue = new List<IDbEntry>();
                 if (m_database != null)
                     m_callerThread = System.Threading.Thread.CurrentThread;
             }
 
-    
+
             public void LogDbOperation(string action, string file, string result)
             {
-                lock(m_dbqueuelock)
+                lock (m_dbqueuelock)
                     m_dbqueue.Add(new DbOperation() { Action = action, File = file, Result = result });
             }
-            
+
             public void LogDbUpdate(string remotename, RemoteVolumeState state, long size, string hash)
             {
-                lock(m_dbqueuelock)
+                lock (m_dbqueuelock)
                     m_dbqueue.Add(new DbUpdate() { Remotename = remotename, State = state, Size = size, Hash = hash });
             }
 
             public void LogDbRename(string oldname, string newname)
             {
-                lock(m_dbqueuelock)
+                lock (m_dbqueuelock)
                     m_dbqueue.Add(new DbRename() { Oldname = oldname, Newname = newname });
             }
-            
+
             public bool FlushDbMessages(bool checkThread = false)
             {
                 if (m_database != null && (checkThread == false || m_callerThread == System.Threading.Thread.CurrentThread))
                     return FlushDbMessages(m_database, null);
-                
+
                 return false;
             }
-            
+
             public bool FlushDbMessages(LocalDatabase db, System.Data.IDbTransaction transaction)
             {
                 List<IDbEntry> entries;
-                lock(m_dbqueuelock)
+                lock (m_dbqueuelock)
                     if (m_dbqueue.Count == 0)
                         return false;
                     else
@@ -369,7 +320,7 @@ namespace Duplicati.Library.Main
                 HashSet<string> volsRemoved = new HashSet<string>();
 
                 //As we replace the list, we can now freely access the elements without locking
-                foreach(var e in entries)
+                foreach (var e in entries)
                     if (e is DbOperation)
                         db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
                     else if (e is DbUpdate && ((DbUpdate)e).State == RemoteVolumeState.Deleted)
@@ -382,7 +333,7 @@ namespace Duplicati.Library.Main
                     else if (e is DbRename)
                         db.RenameRemoteFile(((DbRename)e).Oldname, ((DbRename)e).Newname, transaction);
                     else if (e != null)
-                        m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e.ToString()), null);
+                        m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e), null);
 
                 // Finally remove volumes from DB.
                 if (volsRemoved.Count > 0)
@@ -403,9 +354,13 @@ namespace Duplicati.Library.Main
         private System.Threading.Thread m_thread;
         private BasicResults m_taskControl;
         private readonly DatabaseCollector m_db;
-                
+
+        // Cache these
+        private readonly int m_numberofretries;
+        private readonly TimeSpan m_retrydelay;
+
         public string BackendUrl { get { return m_backendurl; } }
-        
+
         public bool HasDied { get { return m_lastException != null; } }
         public Exception LastException { get { return m_lastException; } }
 
@@ -415,6 +370,9 @@ namespace Duplicati.Library.Main
             m_backendurl = backendurl;
             m_statwriter = statwriter;
             m_taskControl = statwriter as BasicResults;
+            m_numberofretries = options.NumberOfRetries;
+            m_retrydelay = options.RetryDelay;
+
             m_db = new DatabaseCollector(database, statwriter);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
@@ -437,7 +395,7 @@ namespace Duplicati.Library.Main
             }
 
             if (m_taskControl != null)
-                m_taskControl.StateChangedEvent += (state) => { 
+                m_taskControl.StateChangedEvent += (state) => {
                     if (state == TaskControlState.Abort)
                         m_thread.Abort();
                 };
@@ -502,7 +460,7 @@ namespace Duplicati.Library.Main
                         {
                             if (m_taskControl != null)
                                 m_taskControl.TaskControlRendevouz();
-                            
+
                             if (m_options.NoConnectionReuse && m_backend != null)
                             {
                                 m_backend.Dispose();
@@ -514,7 +472,7 @@ namespace Duplicati.Library.Main
                             if (m_backend == null)
                                 throw new Exception("Backend failed to re-load");
 
-                            using(new Logging.Timer(string.Format("RemoteOperation{0}", item.Operation)))
+                            using (new Logging.Timer(string.Format("RemoteOperation{0}", item.Operation)))
                                 switch (item.Operation)
                                 {
                                     case OperationType.Put:
@@ -544,14 +502,14 @@ namespace Duplicati.Library.Main
                                 }
 
                             lastException = null;
-                            retries = m_options.NumberOfRetries;
+                            retries = m_numberofretries;
                         }
                         catch (Exception ex)
                         {
                             retries++;
                             lastException = ex;
-                            m_statwriter.AddRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_options.NumberOfRetries, ex.Message), ex);
-                            
+                            m_statwriter.AddRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_numberofretries, ex.Message), ex);
+
                             // If the thread is aborted, we exit here
                             if (ex is System.Threading.ThreadAbortException)
                             {
@@ -560,51 +518,51 @@ namespace Duplicati.Library.Main
                                 item.SignalComplete();
                                 throw;
                             }
-                            
-                            m_statwriter.SendEvent(item.BackendActionType, retries < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
+
+                            m_statwriter.SendEvent(item.BackendActionType, retries < m_numberofretries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
                             bool recovered = false;
                             if (!uploadSuccess && ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
                             {
-                                try 
-                                { 
+                                try
+                                {
                                     // If we successfully create the folder, we can re-use the connection
-                                    m_backend.CreateFolder(); 
+                                    m_backend.CreateFolder();
                                     recovered = true;
                                 }
-                                catch(Exception dex) 
-                                { 
-                                    m_statwriter.AddWarning(string.Format("Failed to create folder: {0}", ex.Message), dex); 
+                                catch (Exception dex)
+                                {
+                                    m_statwriter.AddWarning(string.Format("Failed to create folder: {0}", ex.Message), dex);
                                 }
                             }
-                            
+
                             // To work around the Apache WEBDAV issue, we rename the file here
-                            if (item.Operation == OperationType.Put && retries < m_options.NumberOfRetries && !item.NotTrackedInDb)
+                            if (item.Operation == OperationType.Put && retries < m_numberofretries && !item.NotTrackedInDb)
                                 RenameFileAfterError(item);
-                            
+
                             if (!recovered)
                             {
                                 try { m_backend.Dispose(); }
-                                catch(Exception dex) { m_statwriter.AddWarning(LC.L("Failed to dispose backend instance: {0}", ex.Message), dex); }
-    
+                                catch (Exception dex) { m_statwriter.AddWarning(LC.L("Failed to dispose backend instance: {0}", ex.Message), dex); }
+
                                 m_backend = null;
 
-                                if (retries < m_options.NumberOfRetries && m_options.RetryDelay.Ticks != 0)
+                                if (retries < m_numberofretries && m_retrydelay.Ticks != 0)
                                 {
-                                    var target = DateTime.Now.AddTicks(m_options.RetryDelay.Ticks);
+                                    var target = DateTime.Now.AddTicks(m_retrydelay.Ticks);
                                     while (target > DateTime.Now)
                                     {
                                         if (m_taskControl != null && m_taskControl.IsAbortRequested())
                                             break;
-                                        
+
                                         System.Threading.Thread.Sleep(500);
                                     }
                                 }
                             }
                         }
-                        
 
-                    } while (retries < m_options.NumberOfRetries);
+
+                    } while (retries < m_numberofretries);
 
                     if (lastException != null && !(lastException is Duplicati.Library.Interface.FileMissingException) && item.Operation == OperationType.Delete)
                     {
@@ -617,7 +575,7 @@ namespace Duplicati.Library.Main
                                 m_statwriter.AddMessage(LC.L("Recovered from problem with attempting to delete non-existing file {0}", item.RemoteFilename));
                             }
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             m_statwriter.AddWarning(LC.L("Failed to recover from error deleting file {0}", item.RemoteFilename), ex);
                         }
@@ -628,17 +586,17 @@ namespace Duplicati.Library.Main
                         item.Exception = lastException;
                         if (item.Operation == OperationType.Put)
                             item.DeleteLocalFile(m_statwriter);
-                                                        
+
                         if (item.ExceptionKillsHandler)
                         {
                             m_lastException = lastException;
 
                             //TODO: If there are temp files in the queue, we must delete them
                             m_queue.SetCompleted();
-                           }
-                        
+                        }
+
                     }
-                    
+
                     item.SignalComplete();
                 }
             }
@@ -656,13 +614,13 @@ namespace Duplicati.Library.Main
             var time = p.Time.Ticks == 0 ? p.Time : p.Time.AddSeconds(1);
             var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
             var oldname = item.RemoteFilename;
-            
+
             m_statwriter.SendEvent(item.BackendActionType, BackendEventType.Rename, oldname, item.Size);
             m_statwriter.SendEvent(item.BackendActionType, BackendEventType.Rename, newname, item.Size);
             m_statwriter.AddMessage(string.Format("Renaming \"{0}\" to \"{1}\"", oldname, newname));
             m_db.LogDbRename(oldname, newname);
             item.RemoteFilename = newname;
-            
+
             // If there is an index file attached to the block file, 
             // it references the block filename, so we create a new index file
             // which is a copy of the current, but with the new name
@@ -674,13 +632,13 @@ namespace Duplicati.Library.Main
                     item.Indexfile.Item1.Close();
                     item.IndexfileUpdated = true;
                 }
-            
+
                 IndexVolumeWriter wr = null;
                 try
                 {
                     var hashsize = HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm).HashSize / 8;
                     wr = new IndexVolumeWriter(m_options);
-                    using(var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
+                    using (var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
                         wr.CopyFrom(rd, x => x == oldname ? newname : x);
                     item.Indexfile.Item1.Dispose();
                     item.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(wr, item.Indexfile.Item2);
@@ -694,7 +652,7 @@ namespace Duplicati.Library.Main
                         try { wr.Dispose(); }
                         catch { }
                         finally { wr = null; }
-                        
+
                     throw;
                 }
             }
@@ -732,9 +690,9 @@ namespace Duplicati.Library.Main
         private void DoPut(FileEntryItem item)
         {
             if (m_encryption != null)
-                lock(m_encryptionLock)
+                lock (m_encryptionLock)
                     item.Encrypt(m_encryption, m_statwriter);
-                
+
             if (item.UpdateHashAndSize(m_options) && !item.NotTrackedInDb)
                 m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
@@ -743,7 +701,7 @@ namespace Duplicati.Library.Main
                 item.Indexfile.Item1.FinishVolume(item.Hash, item.Size);
                 item.Indexfile.Item1.Close();
                 item.IndexfileUpdated = true;
-            }            
+            }
 
             m_db.LogDbOperation("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
             m_statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
@@ -765,7 +723,7 @@ namespace Duplicati.Library.Main
 
             if (!item.NotTrackedInDb)
                 m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
-            
+
             m_statwriter.SendEvent(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size);
 
             if (m_options.ListVerifyUploads)
@@ -1072,7 +1030,7 @@ namespace Duplicati.Library.Main
                     item.Result = tmpfile;
                     tmpfile = null;
                 }
-                    
+
             }
             catch
             {
@@ -1087,7 +1045,7 @@ namespace Duplicati.Library.Main
         {
             m_statwriter.SendEvent(BackendActionType.List, BackendEventType.Started, null, -1);
 
-            var r = m_backend.List();
+            var r = m_backend.List().ToList();
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("[");
@@ -1140,7 +1098,7 @@ namespace Duplicati.Library.Main
                         m_statwriter.AddMessage(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
                         return;
                     }
-                    
+
                 }
 
                 result = ex.ToString();
@@ -1150,11 +1108,11 @@ namespace Duplicati.Library.Main
             {
                 m_db.LogDbOperation("delete", item.RemoteFilename, result);
             }
-            
+
             m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Deleted, -1, null);
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size);
         }
-        
+
         private void DoCreateFolder(FileEntryItem item)
         {
             m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Started, null, -1);
@@ -1163,7 +1121,7 @@ namespace Duplicati.Library.Main
             try
             {
                 m_backend.CreateFolder();
-            } 
+            }
             catch (Exception ex)
             {
                 result = ex.ToString();
@@ -1173,15 +1131,15 @@ namespace Duplicati.Library.Main
             {
                 m_db.LogDbOperation("createfolder", item.RemoteFilename, result);
             }
-            
+
             m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Completed, null, -1);
         }
-        
+
         public void PutUnencrypted(string remotename, string localpath)
         {
             if (m_lastException != null)
                 throw m_lastException;
-                
+
             var req = new FileEntryItem(OperationType.Put, remotename, null);
             req.SetLocalfilename(localpath);
             req.Encrypted = true; //Prevent encryption
@@ -1201,7 +1159,7 @@ namespace Duplicati.Library.Main
             {
                 m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
-            
+
             if (m_lastException != null)
                 throw m_lastException;
         }
@@ -1210,23 +1168,23 @@ namespace Duplicati.Library.Main
         {
             if (m_lastException != null)
                 throw m_lastException;
-            
+
             item.Close();
             var req = new FileEntryItem(OperationType.Put, item.RemoteFilename, null);
             req.LocalTempfile = item.TempFile;
-                        
+
             if (m_lastException != null)
                 throw m_lastException;
 
             FileEntryItem req2 = null;
-            
+
             // As the network link is the bottleneck,
             // we encrypt the dblock volume before the
             // upload is enqueued (i.e. on the worker thread)
             if (m_encryption != null)
                 lock (m_encryptionLock)
                     req.Encrypt(m_encryption, m_statwriter);
-                    
+
             req.UpdateHashAndSize(m_options);
             m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploading, req.Size, req.Hash);
 
@@ -1263,7 +1221,7 @@ namespace Duplicati.Library.Main
             {
                 m_statwriter.BackendProgressUpdater.SetBlocking(false);
             }
-            
+
             if (m_lastException != null)
                 throw m_lastException;
         }
@@ -1337,12 +1295,12 @@ namespace Duplicati.Library.Main
             else
                 throw new InvalidOperationException("GetAsync called after backend is shut down");
         }
-        
+
         public void GetForTesting(string remotename, long size, string hash)
         {
             if (m_lastException != null)
                 throw m_lastException;
-            
+
             if (string.IsNullOrWhiteSpace(hash))
                 throw new InvalidOperationException("Cannot test a file without the hash");
 
@@ -1365,7 +1323,7 @@ namespace Duplicati.Library.Main
 
             if (m_lastException != null)
                 throw m_lastException;
-        }        
+        }
 
         public IList<Library.Interface.IFileEntry> List()
         {
@@ -1470,7 +1428,7 @@ namespace Duplicati.Library.Main
         {
             if (m_lastException != null)
                 throw m_lastException;
-                
+
             m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, size, null);
             var req = new FileEntryItem(OperationType.Delete, remotename, size, null);
             try
@@ -1491,12 +1449,12 @@ namespace Duplicati.Library.Main
             if (m_lastException != null)
                 throw m_lastException;
         }
-        
+
         public bool FlushDbMessages(LocalDatabase database, System.Data.IDbTransaction transaction)
         {
             return m_db.FlushDbMessages(database, transaction);
         }
-        
+
         public bool FlushDbMessages()
         {
             return m_db.FlushDbMessages(false);
@@ -1506,7 +1464,7 @@ namespace Duplicati.Library.Main
         {
             if (m_queue != null && !m_queue.Completed)
                 m_queue.SetCompleted();
-            
+
             if (m_thread != null)
             {
                 if (!m_thread.Join(TimeSpan.FromSeconds(10)))
@@ -1517,7 +1475,7 @@ namespace Duplicati.Library.Main
 
                 m_thread = null;
             }
-            
+
             //TODO: We cannot null this, because it will be recreated
             //Should we wait for queue completion or abort immediately?
             if (m_backend != null)
@@ -1525,7 +1483,7 @@ namespace Duplicati.Library.Main
                 m_backend.Dispose();
                 m_backend = null;
             }
-            
+
             try { m_db.FlushDbMessages(true); }
             catch (Exception ex) { m_statwriter.AddError(string.Format("Backend Shutdown error: {0}", ex.Message), ex); }
         }

@@ -196,7 +196,7 @@ namespace Duplicati.Library.Snapshots
 
             var f = NoSnapshot.NormalizePath(file);
 
-            foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:")).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
+            foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
                 UnixSupport.File.SetExtendedAttribute(f, x.Key, x.Value);
 
             if (restorePermissions && data.ContainsKey("unix:uid-gid-perm"))

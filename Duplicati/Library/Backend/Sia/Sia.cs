@@ -46,9 +46,9 @@ namespace Duplicati.Library.Backend.Sia
             }
             while(m_targetpath.Contains("//"))
                 m_targetpath = m_targetpath.Replace("//","/");
-            while (m_targetpath.StartsWith("/"))
+            while (m_targetpath.StartsWith("/", StringComparison.Ordinal))
                 m_targetpath = m_targetpath.Substring(1);
-            while (m_targetpath.EndsWith("/"))
+            while (m_targetpath.EndsWith("/", StringComparison.Ordinal))
                 m_targetpath = m_targetpath.Remove(m_targetpath.Length - 1);
 
             if (m_targetpath.Length == 0)
@@ -73,7 +73,7 @@ namespace Duplicati.Library.Backend.Sia
             }
 
             req.KeepAlive = false;
-            req.UserAgent = string.Format("Sia-Agent (Duplicati SIA client {0})", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            req.UserAgent = string.Format("Sia-Agent (Duplicati SIA client {0})", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
             return req;
         }
@@ -258,7 +258,7 @@ namespace Duplicati.Library.Backend.Sia
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -275,36 +275,34 @@ namespace Duplicati.Library.Backend.Sia
         {
             get { return "sia"; }
         }
-
-         
-        public List<IFileEntry> List()
+        
+        public IEnumerable<IFileEntry> List()
         {
-            var files = new List<IFileEntry>();
+            SiaFileList fl;
             try
             {
-                SiaFileList fl = GetFiles();
-                if (fl.Files == null)
-                    return files;
-
-                foreach (var f in fl.Files)
-                {
-                    // Sia returns a complete file list, but we're only interested in files that are
-                    // in our target path
-                    if (f.Siapath.StartsWith(m_targetpath))
-                    {
-                        FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1));
-                        fe.Size = f.Filesize;
-                        fe.IsFolder = false;
-                        files.Add(fe);
-                    }
-                }
+                fl = GetFiles();
             }
             catch (System.Net.WebException wex)
             {
                 throw new Exception("failed to call /renter/files "+wex.Message);
             }
 
-            return files;
+            if (fl.Files != null)
+            {
+                foreach (var f in fl.Files)
+                {
+                    // Sia returns a complete file list, but we're only interested in files that are
+                    // in our target path
+                    if (f.Siapath.StartsWith(m_targetpath, StringComparison.Ordinal))
+                    {
+                        FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1));
+                        fe.Size = f.Filesize;
+                        fe.IsFolder = false;
+                        yield return fe;
+                    }
+                }
+            }
         }
 
         public void Put(string remotename, string filename)

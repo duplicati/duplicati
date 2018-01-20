@@ -248,7 +248,7 @@ namespace Duplicati.Server.Database
             if (tags == null || tags.Length == 0)
                 return new long[0];
                 
-            if (tags.Length == 1 && tags[0].StartsWith("ID="))
+            if (tags.Length == 1 && tags[0].StartsWith("ID=", StringComparison.Ordinal))
                 return new long[] { long.Parse(tags[0].Substring("ID=".Length)) };
                 
             lock(m_lock)
@@ -266,8 +266,8 @@ namespace Duplicati.Server.Database
                         p.Value = t;
                         cmd.Parameters.Add(p);
                     }
-                
-                    cmd.CommandText = @"SELECT ""ID"" FROM ""Backup"" WHERE " + sb.ToString();
+
+                    cmd.CommandText = @"SELECT ""ID"" FROM ""Backup"" WHERE " + sb;
                     
                     return Read(cmd, (rd) => ConvertToInt64(rd, 0)).ToArray();
                 }
@@ -347,8 +347,8 @@ namespace Duplicati.Server.Database
                         p.Value = t;
                         cmd.Parameters.Add(p);
                     }
-                
-                    cmd.CommandText = @"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb.ToString();
+
+                    cmd.CommandText = @"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb;
                     
                     return Read(cmd, (rd) => ConvertToInt64(rd, 0)).ToArray();
                 }
@@ -510,7 +510,7 @@ namespace Duplicati.Server.Database
                             @"INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (?,?,?,?)",
                         (n) => {
                         
-                            if (n.TargetURL.IndexOf(Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER) >= 0)
+                            if (n.TargetURL.IndexOf(Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER, StringComparison.Ordinal) >= 0)
                                 throw new Exception("Attempted to save a backup with the password placeholder");
                             if (update && long.Parse(n.ID) <= 0)
                                 throw new Exception("Invalid update, cannot update application settings through update method");

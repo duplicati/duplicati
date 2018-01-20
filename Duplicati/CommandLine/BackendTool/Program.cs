@@ -158,7 +158,7 @@ namespace Duplicati.CommandLine.BackendTool
             {
                 Console.WriteLine("Command failed: " + ex.Message);
                 if (debugoutput || !(ex is UserInformationException))
-                    Console.WriteLine(ex.ToString());
+                    Console.WriteLine(ex);
                 return 100;
             }
         }

@@ -20,6 +20,7 @@ using System.Linq;
 
 namespace Duplicati.Library.Utility
 {
+    [Flags]
     public enum DefaultFilterSet
     {
         None = 0,
@@ -163,10 +164,10 @@ namespace Duplicati.Library.Utility
         {
             return new[]
             {
-                DefaultFilters.CreateWildcardFilter(@"*/iPhoto Library/iPod Photo Cache/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Google/Chrome/*cache*"),
-                DefaultFilters.CreateWildcardFilter(@"*/Mozilla/Firefox/*cache*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Google/Chrome/Safe Browsing*"),
+                DefaultFilters.CreateWildcardFilter(@"*/iPhoto Library/iPod Photo Cache/*"),
+                DefaultFilters.CreateWildcardFilter(@"*/Mozilla/Firefox/*cache*"),
                 DefaultFilters.CreateRegexFilter(@".*/(cookies|permissions).sqllite(-.{3})?"),
             };
         }
@@ -177,9 +178,9 @@ namespace Duplicati.Library.Utility
         /// <returns>Windows filters</returns>
         private static string[] CreateWindowsFilters()
         {
-            return new[]
+            var filters = new[]
             {
-                DefaultFilters.CreateWildcardFilter(@"*.rbf"),
+                DefaultFilters.CreateWildcardFilter(@"*/config.msi/*.rbf"), // https://github.com/duplicati/duplicati/issues/2886
                 DefaultFilters.CreateWildcardFilter(@"*.tmp"),
                 DefaultFilters.CreateWildcardFilter(@"*.tmp/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/$RECYCLE.BIN/*"),
@@ -218,20 +219,26 @@ namespace Duplicati.Library.Utility
                 DefaultFilters.CreateWildcardFilter(@"*/Thumbs.db"),
                 DefaultFilters.CreateWildcardFilter(@"*UsrClass.dat"),
                 DefaultFilters.CreateWildcardFilter(@"*UsrClass.dat.LOG"),
-                DefaultFilters.CreateWildcardFilter(@"?/hiberfil.sys"),
-                DefaultFilters.CreateWildcardFilter(@"?/pagefile.sys"),
-                DefaultFilters.CreateWildcardFilter(@"?/Program Files (x86)/*"),
-                DefaultFilters.CreateWildcardFilter(@"?/Program Files/*"),
-                DefaultFilters.CreateWildcardFilter(@"?/swapfile.sys"),
-                DefaultFilters.CreateWildcardFilter(@"?/System Volume Information/*"),
-                DefaultFilters.CreateWildcardFilter(@"?/Windows/Installer*"),
-                DefaultFilters.CreateWildcardFilter(@"?/Windows/Temp*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/autoexec.bat"),
                 DefaultFilters.CreateWildcardFilter(@"?:/Config.Msi*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/hiberfil.sys"),
+                DefaultFilters.CreateWildcardFilter(@"?:/pagefile.sys"),
+                DefaultFilters.CreateWildcardFilter(@"?:/Program Files (x86)/*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/Program Files/*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/ProgramData/*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/swapfile.sys"),
+                DefaultFilters.CreateWildcardFilter(@"?:/System Volume Information/*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/Windows.old/*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/Windows/*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/Windows/Installer*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/Windows/Temp*"),
             };
+
+            var extra = GetWindowsRegistryFilters();
+            if (extra == null || extra.Length == 0)
+                return filters;
+
+            return filters.Union(extra).ToArray();
         }
 
         /// <summary>
@@ -367,5 +374,66 @@ namespace Duplicati.Library.Utility
             string escaped = System.Text.RegularExpressions.Regex.Escape(System.IO.Path.DirectorySeparatorChar.ToString());
             return "[" + filter.Replace(escapedAlt, escaped) + "]";
         }
+
+        /// <summary>
+        /// Wrapper method for getting a list of exclude paths from the Windows registry.
+        /// This method guards the call to <see cref="GetWindowsRegistryFiltersInternal"/> to avoid loader errors.
+        /// </summary>
+        /// <returns>The list of paths to exclude.</returns>
+        private static string[] GetWindowsRegistryFilters()
+        {
+            if (Utility.IsClientWindows)
+            {
+                // One Windows, filters may also be stored in the registry
+                try
+                {
+                    return GetWindowsRegistryFiltersInternal();
+                }
+                catch
+                {
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Helper method that reads the Windows registry and finds paths to exclude.
+        /// This method should not be called directly as that could cause loader errors on Mono.
+        /// </summary>
+        /// <returns>The list of paths to exclude.</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static string[] GetWindowsRegistryFiltersInternal()
+        {
+            var rk = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Default);
+            if (rk == null)
+                return new string[0];
+
+            var sk = rk.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup");
+            if (sk == null)
+                return new string[0];
+
+            // Each value in this key is a potential path
+            return sk.GetValueNames()
+                 .Where(x => x != null)
+                 .SelectMany(x =>
+                 {
+                     var v = sk.GetValue(x);
+                     if (v is string)
+                         return new string[] { (string)v };
+                     else if (v is string[])
+                         return (string[])v;
+                     else
+                         return new string[0];
+                 })
+                 .Where(x => !string.IsNullOrWhiteSpace(x))
+                 .Select(x => Environment.ExpandEnvironmentVariables(x))
+                 .Where(x => !string.IsNullOrWhiteSpace(x))
+                 .Where(x => x.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
+                 .Where(x => System.IO.Path.IsPathRooted(x))
+                 .Select(x => x.EndsWith(" /s", StringComparison.OrdinalIgnoreCase) ? x.Substring(0, x.Length - 3).TrimEnd() : x)
+                 .ToArray();
+        }
+
     }
 }

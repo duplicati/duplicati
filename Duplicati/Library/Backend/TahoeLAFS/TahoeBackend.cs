@@ -99,13 +99,13 @@ namespace Duplicati.Library.Backend
             var u = new Utility.Uri(url);
             u.RequireHost();
             
-            if (!u.Path.StartsWith("uri/URI:DIR2:") && !u.Path.StartsWith("uri/URI%3ADIR2%3A"))
+            if (!u.Path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !u.Path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
                 throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError);
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             m_url = u.SetScheme(m_useSSL ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
-            if (!m_url.EndsWith("/"))
+            if (!m_url.EndsWith("/", StringComparison.Ordinal))
                 m_url += "/";
         }
 
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Backend
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + (Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20")) + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
 
             req.KeepAlive = false;
-            req.UserAgent = "Duplicati Tahoe-LAFS Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.UserAgent = "Duplicati Tahoe-LAFS Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
 
             return req;
         }
@@ -123,7 +123,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -145,7 +145,7 @@ namespace Duplicati.Library.Backend
             get { return "tahoe"; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             TahoeEl data;
 
@@ -184,7 +184,6 @@ namespace Duplicati.Library.Backend
             if (data == null || data.node == null || data.nodetype != "dirnode")
                 throw new Exception("Invalid folder listing response");
                 
-            var files = new List<IFileEntry>();
             foreach (var e in data.node.children)
             {
                 if (e.Value == null || e.Value.node == null)
@@ -205,10 +204,8 @@ namespace Duplicati.Library.Backend
                 if (isFile)
                     fe.Size = e.Value.node.size;                
 
-                files.Add(fe);
+                yield return fe;
             }
-
-            return files;
         }
 
         public void Put(string remotename, string filename)

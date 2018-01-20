@@ -154,7 +154,7 @@ namespace Duplicati.Server.WebServer
                     else
                         throw new Exception("Unable to get XSRF token");
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     response.Status = System.Net.HttpStatusCode.InternalServerError;
                     response.Reason = "The system is incorrectly configured";
@@ -175,7 +175,7 @@ namespace Duplicati.Server.WebServer
                 {
                     username = ShellExec(AUTH_CGI, shell: false, exitcode: 0, env: tmpenv).Result;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     response.Status = System.Net.HttpStatusCode.InternalServerError;
                     response.Reason = "The system is incorrectly configured";

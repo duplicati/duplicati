@@ -633,6 +633,15 @@ body {
                 img:hover {
                     opacity: 1;
                 }
+
+                a {
+                    color: @tColor;
+                }
+
+                a:hover {
+                    color: darken(@tColor, 25%);
+                }
+
             }
         }
 
@@ -1503,13 +1512,21 @@ body {
                 padding-right: 40px;
                 overflow: hidden;
 
+                a {
+                    color: @tColor;
+                }
+
+                a:hover {
+                    color: darken(@tColor, 25%);
+                }
+                
                 ul {
                     overflow: hidden;
                     float: right;
 
                     li {
                         float: left;
-                        margin-left: 20px;
+                        margin-left: 10px;
 
                         a {
                             img {
@@ -1847,7 +1864,6 @@ div.modal-dialog {
     min-height: 25px;
 
     > span {
-        position: absolute;
         vertical-align: middle;
         display: block;
         width: 100%;
@@ -2130,7 +2146,7 @@ div.modal-dialog {
     }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1150px) {
     body {
         .container {
             .header {

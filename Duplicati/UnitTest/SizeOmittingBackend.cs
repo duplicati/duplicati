@@ -51,13 +51,12 @@ namespace Duplicati.UnitTest
         #endregion
 
         #region IBackend implementation
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
-            return (
+            return
                 from n in m_backend.List()
                 where !n.IsFolder
-                select new Library.Interface.FileEntry(n.Name)
-            ).Cast<Library.Interface.IFileEntry>().ToList();
+                select new Library.Interface.FileEntry(n.Name);
         }
         public void Put(string remotename, string filename)
         {

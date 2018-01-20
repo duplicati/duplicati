@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var currentIsSmall = lastVolumeSize != -1 && lastVolumeSize <= m_options.SmallFileSize;
 
-            if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0)
+            if (m_options.KeepTime.Ticks > 0 || m_options.KeepVersions != 0 || m_options.RetentionPolicy.Count > 0)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);
@@ -428,13 +428,13 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                         
-                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         m_database.WriteResults();                    
                         m_database.PurgeLogData(m_options.LogRetention);
                         if (m_options.AutoVacuum)
                         {
                             m_database.Vacuum();
                         }
+                        m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         return;
                     }
                 }

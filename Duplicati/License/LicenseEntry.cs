@@ -57,7 +57,7 @@ namespace Duplicati.License
             if (!string.IsNullOrEmpty(urlfile) && System.IO.File.Exists(urlfile))
                 Url = System.IO.File.ReadAllText(urlfile).Trim();
             License = System.IO.File.ReadAllText(licensefile);
-            if (License.IndexOf("\r\n") < 0)
+            if (License.IndexOf("\r\n", StringComparison.Ordinal) < 0)
                 License = License.Replace("\n", "\r\n").Replace("\r", "\r\n");
             if (Environment.NewLine != "\r\n")
                 License = License.Replace("\r\n", Environment.NewLine);

@@ -21,7 +21,7 @@ namespace Duplicati.Library.Backend
         private const long BITS_FILE_SIZE_LIMIT = 1024 * 1024 * 15;
         private const long BITS_CHUNK_SIZE = 1024 * 1024 * 10;
 
-        private static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
+        private static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
         private string m_rootfolder;
         private string m_prefix;
@@ -42,7 +42,7 @@ namespace Duplicati.Library.Backend
 
             m_rootfolder = uri.Host;
             m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/"))
+            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
                 m_prefix += "/";
 
             string authid = null;
@@ -212,7 +212,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(id))
             {
                 // Refresh the list of files, just in case
-                List();
+                foreach (IFileEntry file in List()) { /* We just need to iterate the whole list */ }
                 m_fileidCache.TryGetValue(name, out id);
 
                 if (string.IsNullOrWhiteSpace(id) && throwIfMissing)
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -250,13 +250,11 @@ namespace Duplicati.Library.Backend
             get { return "onedrive"; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             int offset = 0;
             int count = FILE_LIST_PAGE_SIZE;
-
-            var files = new List<IFileEntry>();
-
+            
             m_fileidCache.Clear();
 
             while(count == FILE_LIST_PAGE_SIZE)
@@ -273,7 +271,7 @@ namespace Duplicati.Library.Backend
 
                         var fe = new FileEntry(r.name, r.size.Value, r.updated_time.Value, r.updated_time.Value);
                         fe.IsFolder = string.Equals(r.type, "folder", StringComparison.OrdinalIgnoreCase);
-                        files.Add(fe);
+                        yield return fe;
                     }
                 }
                 else
@@ -282,10 +280,7 @@ namespace Duplicati.Library.Backend
                 }
 
                 offset += count;
-
             }
-
-            return files;
         }
 
         public void Put(string remotename, string filename)

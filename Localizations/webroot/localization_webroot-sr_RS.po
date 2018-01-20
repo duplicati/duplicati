@@ -1,0 +1,2624 @@
+# Translators:
+# Stefan Kostic <reddevilserbia@gmail.com>, 2017
+# Milan Marinković <xaoc994@gmail.com>, 2017
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Last-Translator: Milan Marinković <xaoc994@gmail.com>, 2017\n"
+"Language-Team: Serbian (Serbia) (https://www.transifex.com/duplicati/teams/67655/sr_RS/)\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: sr_RS\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: templates/advancedoptionseditor.html:48
+msgid "- pick an option -"
+msgstr "- odaberite opciju -"
+
+#: templates/delete.html:7 templates/localdatabase.html:4
+msgid "...loading..."
+msgstr "...učitavanje..."
+
+#: templates/backends/openstack.html:32
+msgid "API Key"
+msgstr "API ključ"
+
+#: scripts/services/EditUriBuiltins.js:691 templates/backends/s3.html:54
+#: templates/backends/s3.html:55
+msgid "AWS Access ID"
+msgstr "AWS Access ID"
+
+#: scripts/services/EditUriBuiltins.js:692 templates/backends/s3.html:58
+#: templates/backends/s3.html:59
+msgid "AWS Access Key"
+msgstr "AWS Access Key"
+
+#: scripts/services/EditUriBuiltins.js:135
+msgid "AWS IAM Policy"
+msgstr "AWS IAM Policy"
+
+#: index.html:226 index.html:242
+msgid "About"
+msgstr "O nama"
+
+#: templates/about.html:2
+msgid "About {{appname}}"
+msgstr "O aplikaciji {{appname}}"
+
+#: scripts/services/EditUriBuiltins.js:656 templates/backends/azure.html:11
+msgid "Access Key"
+msgstr "Pristupni ključ - access key"
+
+#: scripts/services/AppUtils.js:69
+msgid "Access denied"
+msgstr "Pristup odbijen"
+
+#: templates/settings.html:5
+msgid "Access to user interface"
+msgstr "Pristup korisničkom interfejsu"
+
+#: scripts/services/EditUriBuiltins.js:655 templates/backends/azure.html:7
+msgid "Account name"
+msgstr "Korisničko ime"
+
+#: templates/notificationarea.html:27 templates/updatechangelog.html:11
+msgid "Activate"
+msgstr "Aktiviraj"
+
+#: scripts/controllers/AboutController.js:54
+#: scripts/controllers/UpdateChangelogController.js:18
+msgid "Activate failed:"
+msgstr "Aktivacija nije uspešna:"
+
+#: templates/addwizard.html:3
+msgid "Add a new backup"
+msgstr "Dodaj novi bekap"
+
+#: templates/addoredit.html:149
+msgid "Add a path directly"
+msgstr ""
+
+#: templates/advancedoptionseditor.html:46
+msgid "Add advanced option"
+msgstr "Dodaj naprednu opciju"
+
+#: index.html:211
+msgid "Add backup"
+msgstr "Dodaj bekap"
+
+#: templates/addoredit.html:197
+msgid "Add filter"
+msgstr "Dodaj filter"
+
+#: templates/addoredit.html:152
+msgid "Add path"
+msgstr "Dodaj putanju"
+
+#: scripts/services/EditUriBuiltins.js:702
+#: scripts/services/EditUriBuiltins.js:719
+msgid "Adjust bucket name?"
+msgstr "Prilagodi ime kofice?"
+
+#: scripts/services/EditUriBuiltins.js:630
+msgid "Adjust path name?"
+msgstr "Prilagodi ime putanje?"
+
+#: templates/restoredirect.html:66 templates/restoredirect.html:74
+msgid "Advanced Options"
+msgstr "Napredne opcije"
+
+#: templates/addoredit.html:348 templates/edituri.html:28
+msgid "Advanced options"
+msgstr "Napredne opcije"
+
+#: templates/home.html:25
+msgid "Advanced:"
+msgstr "Napredno:"
+
+#: scripts/controllers/EditBackupController.js:22
+msgid "All"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:423
+msgid "All Hyper-V Machines"
+msgstr "Sve Hyper-V mašine"
+
+#: scripts/directives/sourceFolderPicker.js:455
+msgid "All Microsoft SQL Databases"
+msgstr "Sve Microsoft SQL baze podataka"
+
+#: templates/settings.html:116
+msgid ""
+"All usage reports are sent anonymously and do not contain any personal "
+"information. They contain information about hardware and operating system, "
+"the type of backend, backup duration, overall size of source data and "
+"similar data. They do not contain paths, filenames, usernames, passwords or "
+"similar sensitive information."
+msgstr ""
+
+#: templates/settings.html:13
+msgid "Allow remote access (requires restart)"
+msgstr "Dozvoli udaljeni pristup (zahteva restartovanje)"
+
+#: templates/addoredit.html:282
+msgid "Allowed days"
+msgstr "Dozvoljeni dani"
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "An existing file was found at the new location"
+msgstr "Postojeća datoteka je pronađena na novoj lokaciji"
+
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid ""
+"An existing file was found at the new location\n"
+"Are you sure you want the database to point to an existing file?"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:472
+msgid ""
+"An existing local database for the storage has been found.\n"
+"Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
+"\n"
+" Do you wish to use the existing database?"
+msgstr ""
+
+#: templates/settings.html:104
+msgid "Anonymous usage reports"
+msgstr ""
+
+#: templates/export.html:8
+msgid "As Command-line"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:614 templates/backends/gcs.html:8
+#: templates/backends/gcs.html:9 templates/backends/oauth.html:8
+#: templates/backends/oauth.html:9
+msgid "AuthID"
+msgstr "AuthID"
+
+#: templates/backends/generic.html:23 templates/backends/openstack.html:23
+msgid "Authentication password"
+msgstr ""
+
+#: templates/backends/generic.html:19 templates/backends/openstack.html:19
+msgid "Authentication username"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:381
+msgid "Autogenerated passphrase"
+msgstr ""
+
+#: templates/addoredit.html:262
+msgid "Automatically run backups."
+msgstr "Automatski pokreći backupove."
+
+#: templates/backends/b2.html:12
+msgid "B2 Account ID"
+msgstr ""
+
+#: templates/backends/b2.html:16
+msgid "B2 Application Key"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:738 templates/backends/b2.html:13
+msgid "B2 Cloud Storage Account ID"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:739 templates/backends/b2.html:17
+msgid "B2 Cloud Storage Application Key"
+msgstr ""
+
+#: templates/restore.html:132 templates/restore.html:70
+msgid "Back"
+msgstr "Nazad"
+
+#: templates/about.html:66
+msgid "Backend modules:"
+msgstr "Backend moduli:"
+
+#: templates/addoredit.html:88
+msgid "Backup destination"
+msgstr "Backup odredište"
+
+#: templates/restore.html:21 templates/restoredirect.html:21
+#: templates/restoredirect.html:31
+msgid "Backup location"
+msgstr "Backup lokacija"
+
+#: templates/home.html:60
+msgid "Backup:"
+msgstr "Backup:"
+
+#: templates/settings.html:81
+msgid "Beta"
+msgstr "Beta"
+
+#: templates/restore.html:143
+msgid "Bitcoin: {{bitcoinaddr}}"
+msgstr "Bitcoin: {{bitcoinaddr}}"
+
+#: scripts/services/AppUtils.js:67
+msgid "Broken access"
+msgstr ""
+
+#: templates/backends/file.html:8 templates/restore.html:91
+msgid "Browse"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:33
+msgid "Browser default"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:666
+#: scripts/services/EditUriBuiltins.js:690
+#: scripts/services/EditUriBuiltins.js:737
+msgid "Bucket Name"
+msgstr ""
+
+#: templates/backends/gcs.html:15
+msgid "Bucket create location"
+msgstr ""
+
+#: templates/backends/s3.html:26
+msgid "Bucket create region"
+msgstr ""
+
+#: templates/backends/b2.html:2 templates/backends/b2.html:3
+#: templates/backends/gcs.html:2 templates/backends/openstack.html:2
+#: templates/backends/s3.html:19 templates/backends/s3.html:20
+msgid "Bucket name"
+msgstr ""
+
+#: templates/backends/gcs.html:26
+msgid "Bucket storage class"
+msgstr ""
+
+#: scripts/services/ServerStatus.js:48
+msgid "Building list of files to restore ..."
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:361
+msgid "Building partial temporary database ..."
+msgstr ""
+
+#: templates/restore.html:59
+msgid "Busy ..."
+msgstr "Zauzet ..."
+
+#: templates/settings.html:91
+msgid "Canary"
+msgstr "Canary"
+
+#: scripts/controllers/AppController.js:44
+#: scripts/controllers/AppController.js:59
+#: scripts/controllers/EditBackupController.js:366
+#: scripts/controllers/EditBackupController.js:381
+#: scripts/controllers/EditBackupController.js:415
+#: scripts/controllers/EditBackupController.js:424
+#: scripts/controllers/EditBackupController.js:451
+#: scripts/controllers/EditBackupController.js:472
+#: scripts/controllers/EditBackupController.js:82
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/StateController.js:103
+#: scripts/controllers/StateController.js:112
+#: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
+#: scripts/services/EditUriBuiltins.js:47
+#: scripts/services/EditUriBuiltins.js:630
+#: scripts/services/EditUriBuiltins.js:702
+#: scripts/services/EditUriBuiltins.js:719 templates/delete.html:54
+#: templates/export.html:26 templates/settings.html:146
+#: templates/waitarea.html:19
+msgid "Cancel"
+msgstr "Otkaži"
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "Cannot move to existing file"
+msgstr "Nemoguće premestiti u postojeću datoteku"
+
+#: templates/about.html:5
+msgid "Changelog"
+msgstr ""
+
+#: templates/updatechangelog.html:2
+msgid "Changelog for {{appname}} {{version}}"
+msgstr ""
+
+#: scripts/controllers/UpdateChangelogController.js:24
+msgid "Check failed:"
+msgstr ""
+
+#: templates/about.html:35
+msgid "Check for updates now"
+msgstr "Proveri ažuriranja odmah"
+
+#: templates/captcha.html:10
+msgid "Checking ..."
+msgstr "Proveravanje ..."
+
+#: templates/about.html:36
+msgid "Checking for updates ..."
+msgstr "Proveravanje ažuriranja ..."
+
+#: templates/edituri.html:16
+msgid "Chose a storage type to get started"
+msgstr ""
+
+#: templates/backends/gcs.html:11 templates/backends/oauth.html:11
+msgid "Click the AuthID link to create an AuthID"
+msgstr ""
+
+#: index.html:156 index.html:199
+msgid "Click to set throttle options"
+msgstr ""
+
+#: templates/home.html:30
+msgid "Commandline ..."
+msgstr ""
+
+#: templates/home.html:29
+msgid "Compact now"
+msgstr ""
+
+#: scripts/services/ServerStatus.js:41 scripts/services/ServerStatus.js:64
+msgid "Compacting remote data ..."
+msgstr ""
+
+#: scripts/services/ServerStatus.js:38
+msgid "Completing backup ..."
+msgstr ""
+
+#: scripts/services/ServerStatus.js:36
+msgid "Completing previous backup ..."
+msgstr ""
+
+#: templates/about.html:67
+msgid "Compression modules:"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:381
+msgid "Computer"
+msgstr "Računar"
+
+#: templates/import.html:9
+msgid "Configuration file:"
+msgstr "Datoteka sa podešavanjima:"
+
+#: templates/home.html:17
+msgid "Configuration:"
+msgstr "Podešavanja:"
+
+#: templates/addwizard.html:9
+msgid "Configure a new backup"
+msgstr ""
+
+#: scripts/controllers/DeleteController.js:65
+#: scripts/controllers/DeleteController.js:77
+#: scripts/controllers/LocalDatabaseController.js:28
+msgid "Confirm delete"
+msgstr "Potvrdi brisanje"
+
+#: scripts/services/EditUriBackendConfig.js:66
+msgid "Confirmation required"
+msgstr "Neophodna potvrda"
+
+#: templates/restoredirect.html:80
+msgid "Connect"
+msgstr "Poveži"
+
+#: index.html:319
+msgid "Connect now"
+msgstr "Poveži odmah"
+
+#: index.html:315
+msgid "Connecting to server ..."
+msgstr ""
+
+#: templates/commandline.html:51
+msgid "Connecting to task ...."
+msgstr "Povezivanje na zadatak ...."
+
+#: index.html:320
+msgid "Connecting..."
+msgstr "Povezivanje..."
+
+#: index.html:311
+msgid "Connection lost"
+msgstr "Veza izgubljena"
+
+#: scripts/directives/backupEditUri.js:51
+#: scripts/directives/backupEditUri.js:54
+msgid "Connection worked!"
+msgstr "Veza je radila!"
+
+#: scripts/services/EditUriBuiltins.js:657 templates/backends/azure.html:2
+msgid "Container name"
+msgstr ""
+
+#: templates/backends/openstack.html:37
+msgid "Container region"
+msgstr ""
+
+#: templates/restore.html:69
+msgid "Continue"
+msgstr "Nastavi"
+
+#: scripts/controllers/EditBackupController.js:451
+msgid "Continue without encryption"
+msgstr "Nastavi bez šifrovanja"
+
+#: scripts/controllers/DialogController.js:16
+msgid "Copied!"
+msgstr "Prekopirano!"
+
+#: templates/addoredit.html:99 templates/restoredirect.html:42
+msgid "Copy Destination URL to Clipboard"
+msgstr "Kopiraj odredišni URL u privremenu memoriju"
+
+#: scripts/controllers/DialogController.js:20
+msgid "Copy failed. Please manually copy the URL"
+msgstr "Kopiranje nije uspelo. Molimo ručno kopiraj URL"
+
+#: scripts/services/AppUtils.js:603
+msgid "Core options"
+msgstr ""
+
+#: scripts/controllers/StateController.js:34
+msgid "Counting ({{files}} files found, {{size}})"
+msgstr ""
+
+#: templates/settings.html:111
+msgid "Crashes only"
+msgstr ""
+
+#: templates/home.html:36
+msgid "Create bug report ..."
+msgstr ""
+
+#: scripts/directives/backupEditUri.js:131
+msgid "Create folder?"
+msgstr "Napraviti fasciklu?"
+
+#: scripts/services/EditUriBuiltins.js:121
+msgid "Created new limited user"
+msgstr "Napravljen novi ograničeni korisnik"
+
+#: scripts/services/ServerStatus.js:59
+msgid "Creating bug report ..."
+msgstr "Pravljenje izveštaja o grešci ..."
+
+#: scripts/services/EditUriBuiltins.js:112
+msgid "Creating new user with limited access ..."
+msgstr "Pravljenje novog korisnika sa ograničenim pristupom ..."
+
+#: scripts/services/ServerStatus.js:49
+msgid "Creating target folders ..."
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:356
+msgid "Creating temporary backup ..."
+msgstr "Pravljenje privremenog backupa ..."
+
+#: scripts/services/EditUriBuiltins.js:112
+msgid "Creating user..."
+msgstr "Pravljenje korisnika..."
+
+#: templates/updatechangelog.html:4
+msgid "Current version is {{versionname}} ({{versionnumber}})"
+msgstr "Trenutna verzija je {{versionname}} ({{versionnumber}})"
+
+#: templates/backends/s3.html:14
+msgid "Custom S3 endpoint"
+msgstr ""
+
+#: templates/backends/openstack.html:13
+msgid "Custom authentication url"
+msgstr ""
+
+#: templates/backends/gcs.html:18
+msgid "Custom location ({{server}})"
+msgstr ""
+
+#: templates/backends/s3.html:32
+msgid "Custom region for creating buckets"
+msgstr ""
+
+#: templates/backends/s3.html:29
+msgid "Custom region value ({{region}})"
+msgstr ""
+
+#: templates/backends/openstack.html:10 templates/backends/s3.html:11
+msgid "Custom server url ({{server}})"
+msgstr ""
+
+#: templates/backends/gcs.html:29 templates/backends/s3.html:41
+msgid "Custom storage class ({{class}})"
+msgstr ""
+
+#: templates/home.html:27
+msgid "Database ..."
+msgstr ""
+
+#: scripts/services/AppUtils.js:90 templates/addoredit.html:328
+msgid "Days"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:34
+msgid "Default"
+msgstr "Podrazumevano"
+
+#: templates/settings.html:68
+msgid "Default ({{channelname}})"
+msgstr ""
+
+#: templates/addoredit.html:201
+msgid "Default Filters"
+msgstr ""
+
+#: templates/settings.html:131
+msgid "Default options"
+msgstr ""
+
+#: templates/localdatabase.html:19
+msgid "Delete"
+msgstr "Obriši"
+
+#: templates/home.html:21
+msgid "Delete ..."
+msgstr "Brisanje ..."
+
+#: templates/delete.html:5 templates/delete.html:53
+msgid "Delete backup"
+msgstr "Obriši backup"
+
+#: templates/delete.html:13
+msgid "Delete local database"
+msgstr "Obriši lokalnu bazu podataka"
+
+#: templates/delete.html:38 templates/delete.html:47
+msgid "Delete remote files"
+msgstr "Obriši udaljene datoteke"
+
+#: templates/delete.html:26
+msgid "Delete the local database"
+msgstr "Obriši lokalnu bazu podataka"
+
+#: templates/delete.html:41
+msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
+msgstr ""
+"Obrisati {{filecount}} datoteka ({{filesize}}) iz udaljenog skladišta?"
+
+#: scripts/services/ServerStatus.js:61
+msgid "Deleting remote files ..."
+msgstr "Brisanje udaljenih datoteka ..."
+
+#: scripts/services/ServerStatus.js:40
+msgid "Deleting unwanted files ..."
+msgstr "Brisanje nepoželjnih datoteka ..."
+
+#: scripts/services/AppUtils.js:59
+msgid "Desktop"
+msgstr "Radna površina"
+
+#: templates/addoredit.html:25
+msgid "Destination"
+msgstr "Odredište"
+
+#: templates/restore.html:141
+msgid ""
+"Did we help save your files? If so, please consider supporting Duplicati "
+"with a donation. We suggest {{smallamount}} for private use and "
+"{{largeamount}} for commercial use."
+msgstr ""
+
+#: templates/restorewizard.html:9
+msgid "Direct restore from backup files ..."
+msgstr ""
+
+#: templates/log.html:31
+msgid "Disabled"
+msgstr "Onemogućeno"
+
+#: templates/notificationarea.html:10 templates/notificationarea.html:25
+msgid "Dismiss"
+msgstr "Odbaci"
+
+#: templates/settings.html:50
+msgid "Display and color theme"
+msgstr ""
+
+#: scripts/controllers/DeleteController.js:77
+msgid "Do you really want to delete the backup: \"{{name}}\" ?"
+msgstr "Da li zaista želiš da obrišeš backup: \"{{name}}\" ?"
+
+#: scripts/controllers/LocalDatabaseController.js:28
+msgid "Do you really want to delete the local database for: {{name}}"
+msgstr "Da li zaista želiš da obrišeš lokalnu bazu podataka za: {{name}}"
+
+#: index.html:141 index.html:269
+msgid "Donate"
+msgstr "Doniraj"
+
+#: index.html:144 index.html:272
+msgid "Donate with Bitcoins"
+msgstr "Doniraj Bitcoine"
+
+#: index.html:147 index.html:275
+msgid "Donate with PayPal"
+msgstr "Doniraj preko PayPal-a"
+
+#: templates/settings.html:58 templates/settings.html:60
+msgid "Donation messages"
+msgstr ""
+
+#: templates/settings.html:62
+msgid "Donation messages are hidden, click to show"
+msgstr ""
+
+#: templates/settings.html:61
+msgid "Donation messages are visible, click to hide"
+msgstr ""
+
+#: templates/export.html:45
+msgid "Done"
+msgstr "Završi"
+
+#: templates/notificationarea.html:14
+msgid "Download"
+msgstr "Preuzmi"
+
+#: templates/notificationarea.html:28
+msgid "Downloading ..."
+msgstr "Preuzimanje ..."
+
+#: scripts/services/ServerStatus.js:53
+msgid "Downloading files ..."
+msgstr "Preuzimanje datoteka ..."
+
+#: templates/notificationarea.html:22
+msgid "Downloading update..."
+msgstr "Preuzimanje ažuriranja..."
+
+#: scripts/services/AppUtils.js:265
+msgid "Duplicate option {{opt}}"
+msgstr ""
+
+#: index.html:263
+msgid "Duplicati Website"
+msgstr ""
+
+#: index.html:251
+msgid "Duplicati forum"
+msgstr ""
+
+#: templates/delete.html:15
+msgid ""
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"            If you are using the local database for backups from the commandline, you should keep the database."
+msgstr ""
+
+#: templates/localdatabase.html:8
+msgid ""
+"Each backup has a local database associated with it, which stores "
+"information about the remote backup on the local machine.\\nThis makes it "
+"faster to perform many operations, and reduces the amount of data that needs"
+" to be downloaded for each operation."
+msgstr ""
+
+#: templates/home.html:19
+msgid "Edit ..."
+msgstr ""
+
+#: templates/addoredit.html:170 templates/addoredit.html:359
+#: templates/edituri.html:39 templates/settings.html:135
+msgid "Edit as list"
+msgstr "Izmeni kao listu"
+
+#: templates/addoredit.html:173 templates/addoredit.html:362
+#: templates/edituri.html:42 templates/settings.html:141
+msgid "Edit as text"
+msgstr "Izmeni kao tekst"
+
+#: templates/export.html:18
+msgid "Encrypt file"
+msgstr "Šifruj datoteku"
+
+#: templates/addoredit.html:43 templates/restore.html:22
+#: templates/restoredirect.html:22 templates/restoredirect.html:58
+msgid "Encryption"
+msgstr "Šifrovanje"
+
+#: scripts/controllers/EditBackupController.js:424
+msgid "Encryption changed"
+msgstr "Šifrovanje promenjeno"
+
+#: templates/about.html:68
+msgid "Encryption modules:"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:82
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter URL"
+msgstr "Unesi URL"
+
+#: templates/backends/azure.html:12
+msgid "Enter access key"
+msgstr ""
+
+#: templates/backends/azure.html:8
+msgid "Enter account name"
+msgstr ""
+
+#: templates/restoredirect.html:61
+msgid "Enter backup passphrase, if any"
+msgstr ""
+
+#: templates/addwizard.html:10
+msgid "Enter configuration details"
+msgstr ""
+
+#: templates/backends/azure.html:3
+msgid "Enter container name"
+msgstr ""
+
+#: templates/export.html:22 templates/import.html:15
+msgid "Enter encryption passphrase"
+msgstr "Unesite lozinku šifrovanja"
+
+#: templates/addoredit.html:191
+msgid "Enter expression here"
+msgstr ""
+
+#: templates/backends/jottacloud.html:3 templates/backends/mega.html:3
+msgid "Enter folder path name"
+msgstr ""
+
+#: scripts/services/AppUtils.js:121
+msgid "Enter one option per line in command-line format, eg. {0}"
+msgstr ""
+
+#: templates/backends/file.html:7 templates/backends/generic.html:14
+#: templates/backends/oauth.html:3 templates/restore.html:90
+msgid "Enter the destination path"
+msgstr ""
+
+#: scripts/controllers/CommandlineController.js:170
+#: scripts/controllers/CommandlineController.js:74
+#: scripts/controllers/ExportController.js:28
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:291
+#: scripts/controllers/RestoreController.js:331
+#: scripts/controllers/RestoreController.js:378
+#: scripts/controllers/RestoreController.js:411
+#: scripts/controllers/RestoreController.js:421
+#: scripts/controllers/RestoreController.js:88
+#: scripts/controllers/RestoreDirectController.js:110
+#: scripts/controllers/RestoreDirectController.js:74
+#: scripts/directives/backupEditUri.js:143
+#: scripts/directives/backupEditUri.js:170
+#: scripts/directives/backupEditUri.js:205
+#: scripts/directives/backupEditUri.js:239 scripts/services/AppUtils.js:265
+#: scripts/services/AppUtils.js:311 scripts/services/AppUtils.js:313
+#: scripts/services/AppUtils.js:321 scripts/services/AppUtils.js:323
+msgid "Error"
+msgstr "Greška"
+
+#: scripts/services/ServerStatus.js:66
+msgid "Error!"
+msgstr "Greška!"
+
+#: templates/settings.html:110
+msgid "Errors and crashes"
+msgstr ""
+
+#: templates/addoredit.html:218
+msgid "Exclude"
+msgstr ""
+
+#: scripts/services/AppUtils.js:124
+msgid "Exclude directories whose names contain"
+msgstr ""
+
+#: scripts/services/AppUtils.js:167
+msgid "Exclude expression"
+msgstr ""
+
+#: scripts/services/AppUtils.js:142
+msgid "Exclude file"
+msgstr ""
+
+#: scripts/services/AppUtils.js:148
+msgid "Exclude file extension"
+msgstr ""
+
+#: scripts/services/AppUtils.js:130
+msgid "Exclude files whose names contain"
+msgstr ""
+
+#: scripts/services/AppUtils.js:136
+msgid "Exclude folder"
+msgstr ""
+
+#: scripts/services/AppUtils.js:153
+msgid "Exclude regular expression"
+msgstr ""
+
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid "Existing file found"
+msgstr ""
+
+#: templates/settings.html:86
+msgid "Experimental"
+msgstr ""
+
+#: templates/export.html:27
+msgid "Export"
+msgstr "Izvezi"
+
+#: templates/home.html:20
+msgid "Export ..."
+msgstr "Izvoz ..."
+
+#: templates/export.html:2
+msgid "Export backup configuration"
+msgstr "Izvezi podešavanja backupa"
+
+#: templates/delete.html:31 templates/delete.html:34
+msgid "Export configuration"
+msgstr "Izvezi podešavanja"
+
+#: templates/export.html:31
+msgid "Exporting ..."
+msgstr ""
+
+#: scripts/services/SystemInfo.js:52
+msgid "FTP (Alternative)"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:378
+msgid "Failed to build temporary database: {{message}}"
+msgstr ""
+
+#: scripts/directives/backupEditUri.js:143
+#: scripts/directives/backupEditUri.js:205
+#: scripts/directives/backupEditUri.js:239
+msgid "Failed to connect:"
+msgstr ""
+
+#: scripts/controllers/CommandlineController.js:170
+#: scripts/controllers/CommandlineController.js:74
+#: scripts/controllers/ExportController.js:28
+#: scripts/controllers/LogController.js:77
+#: scripts/controllers/RestoreController.js:291
+#: scripts/controllers/RestoreController.js:331
+#: scripts/controllers/RestoreController.js:421
+#: scripts/controllers/RestoreController.js:88
+#: scripts/controllers/RestoreDirectController.js:110
+#: scripts/controllers/RestoreDirectController.js:74
+msgid "Failed to connect: {{message}}"
+msgstr ""
+
+#: scripts/controllers/LocalDatabaseController.js:38
+msgid "Failed to delete:"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+msgid "Failed to fetch path information: {{message}}"
+msgstr ""
+
+#: scripts/directives/backupEditUri.js:170
+msgid "Failed to import:"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:737
+msgid "Failed to read backup defaults:"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:411
+msgid "Failed to restore files: {{message}}"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:110
+msgid "Failed to save:"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
+msgid "Fetching path information ..."
+msgstr ""
+
+#: scripts/services/AppUtils.js:73
+msgid "File"
+msgstr "Datoteka"
+
+#: templates/addoredit.html:241
+msgid "Files larger than:"
+msgstr "Datoteke veće od:"
+
+#: templates/addoredit.html:159
+msgid "Filters"
+msgstr ""
+
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:65 templates/commandline.html:60
+msgid "Finished!"
+msgstr "Završeno!"
+
+#: scripts/controllers/AppController.js:170
+msgid "First run setup"
+msgstr ""
+
+#: scripts/services/AppUtils.js:50
+msgid "Folder"
+msgstr "Fascikla"
+
+#: templates/backends/b2.html:7 templates/backends/file.html:22
+#: templates/backends/file.html:6 templates/backends/jottacloud.html:2
+#: templates/backends/mega.html:2 templates/backends/s3.html:49
+#: templates/backends/sia.html:6 templates/restore.html:105
+#: templates/restore.html:89
+msgid "Folder path"
+msgstr ""
+
+#: scripts/services/AppUtils.js:107
+msgid "Fri"
+msgstr "Pet"
+
+#: scripts/services/AppUtils.js:83
+msgid "GByte"
+msgstr "GBajt"
+
+#: scripts/services/AppUtils.js:116
+msgid "GByte/s"
+msgstr "GBajt/s"
+
+#: templates/backends/gcs.html:38
+msgid "GCS Project ID"
+msgstr ""
+
+#: templates/about.html:4 templates/addoredit.html:24 templates/log.html:9
+msgid "General"
+msgstr ""
+
+#: templates/addoredit.html:36
+msgid "General backup settings"
+msgstr ""
+
+#: templates/addoredit.html:309
+msgid "General options"
+msgstr ""
+
+#: templates/addoredit.html:69
+msgid "Generate"
+msgstr ""
+
+#: templates/backends/s3.html:63
+msgid "Generate IAM access policy"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:66
+msgid "Getting file versions ..."
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:26
+msgid "Hidden files"
+msgstr "Skrivene datoteke"
+
+#: templates/addoredit.html:64
+msgid "Hide"
+msgstr "Sakrij"
+
+#: templates/backends/file.html:15 templates/restore.html:98
+msgid "Hide hidden folders"
+msgstr "Sakrij skrivene fascikle"
+
+#: index.html:208 scripts/services/AppUtils.js:61
+msgid "Home"
+msgstr "Glavna"
+
+#: scripts/services/AppUtils.js:89 scripts/services/AppUtils.js:99
+#: templates/settings.html:34
+msgid "Hours"
+msgstr "Sati"
+
+#: templates/restore.html:111
+msgid "How do you want to handle existing files?"
+msgstr ""
+
+#: scripts/services/AppUtils.js:63
+msgid "Hyper-V Machine"
+msgstr "Hyper-V mašina"
+
+#: scripts/directives/sourceFolderPicker.js:438
+msgid "Hyper-V Machine:"
+msgstr "Hyper-V mašina:"
+
+#: scripts/directives/sourceFolderPicker.js:417
+#: scripts/services/AppUtils.js:65
+msgid "Hyper-V Machines"
+msgstr "Hyper-V mašine"
+
+#: scripts/directives/sourceFolderPicker.js:56
+#: scripts/directives/sourceFolderPicker.js:62
+msgid "ID:"
+msgstr "ID:"
+
+#: templates/addoredit.html:265
+msgid "If a date was missed, the job will run as soon as possible."
+msgstr ""
+
+#: templates/localdatabase.html:13
+msgid ""
+"If the backup and the remote storage is out of sync, Duplicati will require "
+"that you perform a repair operation to synchronize the database.\\nIf the "
+"repair is unsuccesful, you can delete the local database and re-generate."
+msgstr ""
+
+#: templates/export.html:41
+msgid ""
+"If the backup file was not downloaded automatically, <a "
+"href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
+" as ...&quot;</a>"
+msgstr ""
+
+#: templates/notificationarea.html:7
+msgid ""
+"If the backup file was not downloaded automatically, <a "
+"href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
+"&quot;Save as ...&quot;</a>"
+msgstr ""
+
+#: scripts/services/EditUriBackendConfig.js:99
+msgid ""
+"If you do not enter a path, all files will be stored in the login folder.\n"
+"Are you sure this is what you want?"
+msgstr ""
+
+#: templates/backends/openstack.html:28
+msgid "If you do not enter an API Key, the tenant name is required"
+msgstr ""
+
+#: templates/delete.html:32
+msgid ""
+"If you want to use the backup later, you can export the configuration before"
+" deleting it"
+msgstr ""
+
+#: scripts/controllers/AppController.js:171
+msgid ""
+"If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
+"Do you want to set a password now?"
+msgstr ""
+
+#: templates/import.html:26
+msgid "Import"
+msgstr ""
+
+#: templates/addoredit.html:96 templates/restoredirect.html:39
+msgid "Import Destination URL"
+msgstr ""
+
+#: templates/import.html:3
+msgid "Import backup configuration"
+msgstr ""
+
+#: scripts/directives/backupEditUri.js:159
+msgid "Import completed, but no certificates were found after the import"
+msgstr ""
+
+#: scripts/directives/backupEditUri.js:159
+msgid "Import failed"
+msgstr ""
+
+#: templates/addwizard.html:15
+msgid "Import from a file"
+msgstr ""
+
+#: templates/import.html:30
+msgid "Importing ..."
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:150
+msgid "Include a file?"
+msgstr ""
+
+#: scripts/services/AppUtils.js:163
+msgid "Include expression"
+msgstr ""
+
+#: scripts/services/AppUtils.js:158
+msgid "Include regular expression"
+msgstr ""
+
+#: templates/captcha.html:11
+msgid "Incorrect answer, try again"
+msgstr "Netačan odgovor, pokušajte ponovo"
+
+#: templates/settings.html:92
+msgid "Individual builds for developers only."
+msgstr ""
+
+#: scripts/services/DialogService.js:27
+msgid "Information"
+msgstr ""
+
+#: templates/notificationarea.html:26 templates/updatechangelog.html:10
+msgid "Install"
+msgstr "Instalacija"
+
+#: scripts/controllers/UpdateChangelogController.js:14
+msgid "Install failed:"
+msgstr "Instalacija nije uspela:"
+
+#: scripts/services/EditUriBuiltins.js:771
+msgid "Invalid characters in path"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:323
+#: scripts/controllers/EditBackupController.js:330
+msgid "Invalid retention time"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:590
+msgid ""
+"It is possible to connect to some FTP without a password.\n"
+"Are you sure your FTP server supports password-less logins?"
+msgstr ""
+
+#: scripts/services/AppUtils.js:81
+msgid "KByte"
+msgstr "KBajt"
+
+#: scripts/services/AppUtils.js:114
+msgid "KByte/s"
+msgstr "KBajt/s"
+
+#: templates/addoredit.html:317
+msgid "Keep this number of backups"
+msgstr ""
+
+#: templates/settings.html:40
+msgid "Language in user interface"
+msgstr "Jezik u korisničkom interfejsu"
+
+#: scripts/controllers/RestoreController.js:37
+msgid "Last month"
+msgstr "Prošlog meseca"
+
+#: templates/home.html:41
+msgid "Last successful run:"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:56
+msgid "Latest"
+msgstr ""
+
+#: templates/about.html:6
+msgid "Libraries"
+msgstr "Biblioteke"
+
+#: scripts/controllers/EditBackupController.js:21
+msgid "Linux"
+msgstr ""
+
+#: scripts/controllers/RestoreDirectController.js:64
+msgid "Listing backup dates ..."
+msgstr ""
+
+#: scripts/services/ServerStatus.js:60 scripts/services/ServerStatus.js:62
+msgid "Listing remote files ..."
+msgstr ""
+
+#: templates/log.html:8
+msgid "Live"
+msgstr ""
+
+#: templates/addwizard.html:16
+msgid "Load a configuration from an exported job or a storage provider"
+msgstr ""
+
+#: templates/restorewizard.html:16
+msgid "Load destination from an exported job or a storage provider"
+msgstr ""
+
+#: templates/log.html:23 templates/log.html:54 templates/log.html:68
+msgid "Load older data"
+msgstr "Učitaj starije podatke"
+
+#: templates/about.html:44 templates/about.html:49 templates/about.html:55
+#: templates/captcha.html:14 templates/log.html:15 templates/log.html:22
+#: templates/log.html:45 templates/log.html:53 templates/log.html:60
+#: templates/log.html:67 templates/updatechangelog.html:7
+msgid "Loading ..."
+msgstr "Učitavanje ..."
+
+#: templates/delete.html:40
+msgid "Loading remote storage usage ..."
+msgstr ""
+
+#: templates/localdatabase.html:2
+msgid "Local database for"
+msgstr "Lokalna baza podataka za"
+
+#: templates/localdatabase.html:26
+msgid "Local database path:"
+msgstr "Putanja lokalne baze podataka:"
+
+#: scripts/services/SystemInfo.js:77
+msgid "Local storage"
+msgstr "Lokalno skladište"
+
+#: templates/localdatabase.html:23
+msgid "Location"
+msgstr "Lokacija"
+
+#: templates/backends/gcs.html:21
+msgid "Location where buckets are created"
+msgstr ""
+
+#: templates/log.html:4
+msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
+msgstr ""
+
+#: templates/log.html:3
+msgid "Log data from the server"
+msgstr ""
+
+#: index.html:229
+msgid "Log out"
+msgstr "Odjavi se"
+
+#: scripts/services/AppUtils.js:82
+msgid "MByte"
+msgstr "MBajt"
+
+#: scripts/services/AppUtils.js:115
+msgid "MByte/s"
+msgstr "MBajt/s"
+
+#: templates/localdatabase.html:11
+msgid "Maintenance"
+msgstr "Održavanje"
+
+#: templates/backends/file.html:19 templates/restore.html:102
+msgid "Manually type path"
+msgstr "Ručno unesite putanju"
+
+#: templates/throttle.html:15
+msgid "Max download speed"
+msgstr ""
+
+#: templates/throttle.html:5
+msgid "Max upload speed"
+msgstr ""
+
+#: index.html:152 templates/addoredit.html:123 templates/addoredit.html:165
+#: templates/addoredit.html:354 templates/addoredit.html:91
+#: templates/edituri.html:34 templates/restoredirect.html:34
+msgid "Menu"
+msgstr "Meni"
+
+#: scripts/directives/sourceFolderPicker.js:471
+msgid "Microsoft SQL Database:"
+msgstr "Microsoft SQL baza podataka:"
+
+#: scripts/directives/sourceFolderPicker.js:449
+msgid "Microsoft SQL Databases"
+msgstr "Microsoft SQL baze podataka"
+
+#: templates/backends/sia.html:14
+msgid "Minimum redundancy"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:775
+msgid "Minimum redundancy is 1.0"
+msgstr ""
+
+#: scripts/services/AppUtils.js:88 scripts/services/AppUtils.js:98
+#: templates/settings.html:33
+msgid "Minutes"
+msgstr "Minute"
+
+#: scripts/controllers/EditBackupController.js:290
+msgid "Missing name"
+msgstr "Nedostaje naziv"
+
+#: scripts/controllers/EditBackupController.js:298
+msgid "Missing passphrase"
+msgstr "Nedostaje lozinka"
+
+#: scripts/controllers/EditBackupController.js:311
+msgid "Missing sources"
+msgstr ""
+
+#: scripts/services/AppUtils.js:103
+msgid "Mon"
+msgstr "Pon"
+
+#: scripts/services/AppUtils.js:92 templates/addoredit.html:330
+msgid "Months"
+msgstr "Meseci"
+
+#: templates/localdatabase.html:34
+msgid "Move existing database"
+msgstr ""
+
+#: scripts/controllers/LocalDatabaseController.js:66
+msgid "Move failed:"
+msgstr ""
+
+#: scripts/services/AppUtils.js:53
+msgid "My Documents"
+msgstr "Moji dokumenti"
+
+#: scripts/services/AppUtils.js:55
+msgid "My Music"
+msgstr "Moja muzika"
+
+#: templates/addoredit.html:40
+msgid "My Photos"
+msgstr "Moje fotografije"
+
+#: scripts/services/AppUtils.js:57
+msgid "My Pictures"
+msgstr "Moje slike"
+
+#: templates/addoredit.html:39
+msgid "Name"
+msgstr "Naziv"
+
+#: templates/home.html:47
+msgid "Never"
+msgstr "Nikad"
+
+#: templates/notificationarea.html:20
+msgid "New update found: {{message}}"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:121
+msgid ""
+"New user name is {{user}}.\n"
+"Updated credentials to use the new limited user"
+msgstr ""
+
+#: templates/addoredit.html:109 templates/addoredit.html:250
+#: templates/addoredit.html:300 templates/addoredit.html:78
+#: templates/addwizard.html:28 templates/restoredirect.html:52
+#: templates/restorewizard.html:30
+msgid "Next"
+msgstr "Sledeće"
+
+#: templates/home.html:51
+msgid "Next scheduled run:"
+msgstr "Sledeće zakazano pokretanje:"
+
+#: index.html:183
+msgid "Next scheduled task:"
+msgstr "Sledeći zakazan zadatak:"
+
+#: index.html:180
+msgid "Next task:"
+msgstr "Sledeći zadatak:"
+
+#: templates/addoredit.html:268
+msgid "Next time"
+msgstr "Sledeći put"
+
+#: scripts/controllers/DeleteController.js:77
+#: scripts/controllers/EditBackupController.js:140
+#: scripts/controllers/EditBackupController.js:150
+#: scripts/controllers/EditBackupController.js:472
+#: scripts/controllers/HomeController.js:7
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:214
+#: scripts/directives/backupEditUri.js:87
+#: scripts/services/EditUriBackendConfig.js:66
+#: scripts/services/EditUriBuiltins.js:47
+#: scripts/services/EditUriBuiltins.js:630
+#: scripts/services/EditUriBuiltins.js:702
+#: scripts/services/EditUriBuiltins.js:719
+msgid "No"
+msgstr "Ne"
+
+#: scripts/directives/backupEditUri.js:210
+msgid ""
+"No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n"
+"\n"
+"Do you want to approve the reported host key?"
+msgstr ""
+
+#: templates/edituri.html:12
+msgid "No editor found for the &quot;{{backend}}&quot; storage type"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:451 templates/addoredit.html:45
+msgid "No encryption"
+msgstr "Bez šifrovanja"
+
+#: scripts/controllers/RestoreController.js:192
+msgid "No items selected"
+msgstr "Nema izabranih stavki"
+
+#: scripts/controllers/RestoreController.js:192
+msgid "No items to restore, please select one or more items"
+msgstr ""
+
+#: scripts/controllers/ExportController.js:10
+msgid "No passphrase entered"
+msgstr "Lozinka nije uneta"
+
+#: index.html:185
+msgid "No scheduled tasks"
+msgstr "Nema zakazanih zadataka"
+
+#: scripts/controllers/AppController.js:172
+msgid "No, my machine has only a single account"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:304
+msgid "Non-matching passphrase"
+msgstr ""
+
+#: templates/settings.html:112
+msgid "None / disabled"
+msgstr ""
+
+#: scripts/controllers/AppController.js:44
+#: scripts/controllers/AppController.js:59
+#: scripts/controllers/EditBackupController.js:82
+#: scripts/controllers/EditBackupController.js:90
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/RestoreDirectController.js:33
+#: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
+#: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
+#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:147
+#: templates/settings.html:147
+msgid "OK"
+msgstr "U redu"
+
+#: scripts/controllers/EditBackupController.js:20
+msgid "OSX"
+msgstr ""
+
+#: templates/backends/openstack.html:7
+msgid "OpenStack AuthURI"
+msgstr ""
+
+#: scripts/services/SystemInfo.js:50
+msgid "OpenStack Object Storage / Swift"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:121
+#: scripts/controllers/SystemSettingsController.js:132
+msgid "Operation failed:"
+msgstr "Operacija neuspešna:"
+
+#: templates/home.html:11
+msgid "Operations:"
+msgstr "Operacije:"
+
+#: templates/backends/file.html:34
+msgid "Optional authentication password"
+msgstr ""
+
+#: templates/backends/file.html:30
+msgid "Optional authentication username"
+msgstr ""
+
+#: templates/addoredit.html:28 templates/edituri.html:51
+#: templates/settings.html:134 templates/settings.html:140
+msgid "Options"
+msgstr "Opcije"
+
+#: templates/settings.html:132
+msgid ""
+"Options added here are applied to all backups, but can be overridden in each"
+" individual backup"
+msgstr ""
+
+#: templates/restore.html:81
+msgid "Original location"
+msgstr ""
+
+#: scripts/services/SystemInfo.js:80
+msgid "Others"
+msgstr "Ostalo"
+
+#: templates/restore.html:114
+msgid "Overwrite"
+msgstr "Prepiši"
+
+#: templates/addoredit.html:54 templates/export.html:21
+#: templates/restoredirect.html:60
+msgid "Passphrase"
+msgstr "Lozinka"
+
+#: templates/import.html:14
+msgid "Passphrase (if encrypted)"
+msgstr "Lozinka (ako je šifrovano)"
+
+#: scripts/controllers/EditBackupController.js:415
+msgid "Passphrase changed"
+msgstr "Lozinka promenjena"
+
+#: scripts/controllers/EditBackupController.js:304
+msgid "Passphrases are not matching"
+msgstr "Lozinke se ne poklapaju"
+
+#: scripts/services/EditUriBuiltins.js:749
+#: scripts/services/EditUriBuiltins.js:759 templates/backends/file.html:33
+#: templates/backends/generic.html:22 templates/backends/jottacloud.html:11
+#: templates/backends/jottacloud.html:12 templates/backends/mega.html:11
+#: templates/backends/mega.html:12 templates/backends/openstack.html:22
+#: templates/settings.html:8
+msgid "Password"
+msgstr "Lozinka"
+
+#: scripts/controllers/EditBackupController.js:36
+msgid "Passwords do not match"
+msgstr "Lozinke se ne poklapaju"
+
+#: scripts/services/ServerStatus.js:52
+msgid "Patching files with local blocks ..."
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:140
+msgid "Path not found"
+msgstr "Putanja nije pronađena"
+
+#: templates/backends/generic.html:13 templates/backends/oauth.html:2
+msgid "Path on server"
+msgstr "Putanja na serveru"
+
+#: templates/backends/b2.html:8 templates/backends/s3.html:50
+msgid "Path or subfolder in the bucket"
+msgstr ""
+
+#: templates/settings.html:18
+msgid "Pause"
+msgstr "Pauza"
+
+#: templates/settings.html:16
+msgid "Pause after startup or hibernation"
+msgstr "Pauziraj nakon pokretanja ili hibernacije"
+
+#: scripts/controllers/AppController.js:42
+msgid "Pause options"
+msgstr ""
+
+#: templates/restore.html:123
+msgid "Permissions"
+msgstr "Dozvole"
+
+#: templates/restore.html:85
+msgid "Pick location"
+msgstr ""
+
+#: templates/restorewizard.html:10
+msgid "Point to your backup files and restore from there"
+msgstr ""
+
+#: templates/backends/generic.html:9
+msgid "Port"
+msgstr "Port"
+
+#: templates/addoredit.html:110 templates/addoredit.html:251
+#: templates/addoredit.html:301 templates/addoredit.html:381
+#: templates/restoredirect.html:81
+msgid "Previous"
+msgstr "Prethodno"
+
+#: templates/backends/gcs.html:39
+msgid "ProjectID is optional if the bucket exist"
+msgstr ""
+
+#: scripts/services/SystemInfo.js:79
+msgid "Proprietary"
+msgstr ""
+
+#: scripts/services/ServerStatus.js:63
+msgid "Purging files ..."
+msgstr ""
+
+#: scripts/services/ServerStatus.js:46
+msgid "Rebuilding local database ..."
+msgstr ""
+
+#: templates/localdatabase.html:20
+msgid "Recreate (delete and repair)"
+msgstr ""
+
+#: scripts/services/ServerStatus.js:56
+msgid "Recreating database ..."
+msgstr ""
+
+#: scripts/controllers/RestoreDirectController.js:40
+msgid "Registering temporary backup ..."
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:125
+msgid "Relative paths not allowed"
+msgstr "Relativne putanje nisu dozvoljene"
+
+#: templates/captcha.html:7
+msgid "Reload"
+msgstr "Učitaj ponovo"
+
+#: templates/log.html:10
+msgid "Remote"
+msgstr "Udaljeno"
+
+#: templates/addoredit.html:193
+msgid "Remove"
+msgstr "Ukloni"
+
+#: templates/advancedoptionseditor.html:40
+msgid "Remove option"
+msgstr "Ukloni opciju"
+
+#: templates/localdatabase.html:18
+msgid "Repair"
+msgstr "Popravi"
+
+#: scripts/services/ServerStatus.js:57
+msgid "Reparing ..."
+msgstr "Popravka ..."
+
+#: templates/addoredit.html:58
+msgid "Repeat Passphrase"
+msgstr "Ponovite lozinku"
+
+#: templates/home.html:33
+msgid "Reporting:"
+msgstr ""
+
+#: templates/localdatabase.html:31
+msgid "Reset"
+msgstr "Resetovanje"
+
+#: index.html:214 templates/restore.html:131
+msgid "Restore"
+msgstr "Vrati"
+
+#: templates/restore.html:45
+msgid "Restore files"
+msgstr "Vrati datoteke"
+
+#: templates/home.html:14
+msgid "Restore files ..."
+msgstr "Vraćanje datoteka ..."
+
+#: templates/restore.html:46
+msgid "Restore files from {{backupname}}"
+msgstr "Povrati datoteke iz {{backupname}}"
+
+#: templates/restore.html:48
+msgid "Restore from"
+msgstr "Vrati iz"
+
+#: templates/import.html:4
+msgid "Restore from backup configuration"
+msgstr "Vrati iz podešavanja backupa"
+
+#: templates/restorewizard.html:15
+msgid "Restore from configuration ..."
+msgstr "Vraćanje iz podešavanja ..."
+
+#: templates/restore.html:24 templates/restore.html:39
+#: templates/restore.html:76 templates/restoredirect.html:24
+msgid "Restore options"
+msgstr "Vrati opcije"
+
+#: templates/restore.html:126
+msgid "Restore read/write permissions"
+msgstr "Vrati dozvole za čitanje i upis"
+
+#: scripts/controllers/RestoreController.js:371
+#: scripts/controllers/RestoreController.js:393
+msgid "Restoring files ..."
+msgstr "Vraćanje datoteka ..."
+
+#: index.html:217
+msgid "Resume"
+msgstr "Nastavi"
+
+#: templates/addoredit.html:273
+msgid "Run again every"
+msgstr "Pokreni ponovo svaki"
+
+#: templates/home.html:13 templates/home.html:47
+msgid "Run now"
+msgstr "Pokreni sad"
+
+#: scripts/controllers/StateController.js:25
+msgid "Running ..."
+msgstr "Izvršavanje ..."
+
+#: templates/commandline.html:58
+msgid "Running ...."
+msgstr "Izvršavanje ...."
+
+#: templates/commandline.html:47
+msgid "Running commandline entry"
+msgstr "Izvrši unos komandne linije"
+
+#: index.html:172
+msgid "Running task:"
+msgstr "Izvršavanje zadatka:"
+
+#: scripts/services/SystemInfo.js:51
+msgid "S3 Compatible"
+msgstr ""
+
+#: templates/settings.html:69
+msgid "Same as the base install version: {{channelname}}"
+msgstr ""
+
+#: scripts/services/AppUtils.js:108
+msgid "Sat"
+msgstr "Sub"
+
+#: templates/addoredit.html:380 templates/localdatabase.html:32
+msgid "Save"
+msgstr "Sačuvaj"
+
+#: templates/localdatabase.html:33
+msgid "Save and repair"
+msgstr "Snimi i popravi"
+
+#: templates/restore.html:118
+msgid "Save different versions with timestamp in file name"
+msgstr "Snimi drugu verziju sa vremenom u nazivu datoteke"
+
+#: templates/import.html:19
+msgid "Save immediately"
+msgstr "Snimi odmah"
+
+#: scripts/services/ServerStatus.js:50
+msgid "Scanning existing files ..."
+msgstr "Pretraga postojećih datoteka ..."
+
+#: scripts/services/ServerStatus.js:51
+msgid "Scanning for local blocks ..."
+msgstr "Pretraga lokalnih blokova ..."
+
+#: templates/addoredit.html:259 templates/addoredit.html:27
+msgid "Schedule"
+msgstr "Raspored"
+
+#: templates/restore.html:60
+msgid "Search"
+msgstr "Pretraga"
+
+#: templates/restore.html:56
+msgid "Search for files"
+msgstr "Pretraga datoteka"
+
+#: scripts/services/AppUtils.js:97 templates/settings.html:32
+msgid "Seconds"
+msgstr "Sekunde"
+
+#: templates/log.html:29
+msgid "Select a log level and see messages as they happen:"
+msgstr ""
+
+#: templates/restore.html:23 templates/restore.html:38
+#: templates/restoredirect.html:23
+msgid "Select files"
+msgstr "Izaberite datoteke"
+
+#: scripts/services/EditUriBuiltins.js:767 templates/backends/s3.html:8
+#: templates/backends/sia.html:2
+msgid "Server"
+msgstr "Server"
+
+#: templates/backends/generic.html:7
+msgid "Server and port"
+msgstr "Server i port"
+
+#: templates/backends/generic.html:8
+msgid "Server hostname or IP"
+msgstr "Ime servera ili IP adresa"
+
+#: templates/commandline.html:49 templates/restoredirect.html:95
+#: templates/waitarea.html:15
+msgid "Server is currently paused,"
+msgstr "Server je trenutno pauziran,"
+
+#: scripts/controllers/HomeController.js:7
+msgid "Server is currently paused, do you want to resume now?"
+msgstr "Server je trenutno pauziran, da li želite da nastavite odmah?"
+
+#: templates/backends/sia.html:10
+msgid "Server password"
+msgstr ""
+
+#: scripts/controllers/HomeController.js:7
+msgid "Server paused"
+msgstr "Server je pauziran"
+
+#: templates/about.html:71
+msgid "Server state properties"
+msgstr "Opcije stanja servera"
+
+#: index.html:220 templates/settings.html:2
+msgid "Settings"
+msgstr "Podešavanja"
+
+#: templates/addoredit.html:65 templates/notificationarea.html:12
+#: templates/notificationarea.html:30
+msgid "Show"
+msgstr "Prikaži"
+
+#: templates/addoredit.html:128
+msgid "Show advanced editor"
+msgstr "Prikaži napredni editor"
+
+#: templates/addoredit.html:139 templates/backends/file.html:16
+#: templates/restore.html:99
+msgid "Show hidden folders"
+msgstr "Prikaži skrivene fascikle"
+
+#: index.html:223
+msgid "Show log"
+msgstr "Prikaži dnevnik"
+
+#: templates/home.html:35
+msgid "Show log ..."
+msgstr "Prikaži dnevnik ..."
+
+#: templates/addoredit.html:131
+msgid "Show treeview"
+msgstr ""
+
+#: templates/backends/sia.html:11
+msgid "Sia server password"
+msgstr ""
+
+#: templates/backends/openstack.html:33
+msgid ""
+"Some OpenStack providers allow an API key instead of a password and tenant "
+"name"
+msgstr ""
+
+#: templates/addoredit.html:26
+msgid "Source Data"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:120
+msgid "Source data"
+msgstr ""
+
+#: templates/addoredit.html:145
+msgid "Source folders"
+msgstr ""
+
+#: templates/home.html:56
+msgid "Source:"
+msgstr ""
+
+#: templates/settings.html:87
+msgid "Specific builds for developers only."
+msgstr ""
+
+#: scripts/services/SystemInfo.js:78
+msgid "Standard protocols"
+msgstr ""
+
+#: scripts/services/ServerStatus.js:33 scripts/services/ServerStatus.js:45
+msgid "Starting ..."
+msgstr "Pokretanje ..."
+
+#: scripts/controllers/RestoreController.js:367
+#: scripts/controllers/RestoreController.js:391
+msgid "Starting the restore process ..."
+msgstr "Pokretanje procesa vraćanja ..."
+
+#: scripts/controllers/StateController.js:112
+msgid "Stop after the current file"
+msgstr "Zaustavi nakon trenutne datoteke"
+
+#: scripts/controllers/StateController.js:103
+msgid "Stop after upload"
+msgstr ""
+
+#: scripts/controllers/StateController.js:103
+#: scripts/controllers/StateController.js:112
+msgid "Stop now"
+msgstr "Zaustavi odmah"
+
+#: scripts/controllers/StateController.js:101
+msgid "Stop running backup"
+msgstr "Zaustavi pokrenuti backup"
+
+#: scripts/controllers/StateController.js:110
+msgid "Stop running task"
+msgstr "Zaustavi pokrenuti zadatak"
+
+#: index.html:168
+msgid "Stopping after upload:"
+msgstr ""
+
+#: index.html:173
+msgid "Stopping task:"
+msgstr "Zaustavljanje zadatka:"
+
+#: templates/edituri.html:3
+msgid "Storage Type"
+msgstr "Tip skladišta"
+
+#: templates/backends/s3.html:38
+msgid "Storage class"
+msgstr "Klasa skladišta"
+
+#: templates/backends/gcs.html:32
+msgid "Storage class for creating a bucket"
+msgstr ""
+
+#: templates/log.html:7
+msgid "Stored"
+msgstr "Uskladišteno"
+
+#: scripts/controllers/EditBackupController.js:40
+msgid "Strong"
+msgstr "Jaka"
+
+#: scripts/directives/backupEditUri.js:51
+#: scripts/directives/backupEditUri.js:54
+msgid "Success"
+msgstr "Uspešno"
+
+#: scripts/services/AppUtils.js:109
+msgid "Sun"
+msgstr "Ned"
+
+#: scripts/services/AppUtils.js:71
+msgid "Symbolic link"
+msgstr "Simbolička veza"
+
+#: templates/settings.html:107
+msgid "System default ({{levelname}})"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:27
+msgid "System files"
+msgstr "Sistemske datoteke"
+
+#: templates/about.html:7
+msgid "System info"
+msgstr "Sistemski podaci"
+
+#: templates/about.html:63
+msgid "System properties"
+msgstr "Sistemske opcije"
+
+#: scripts/services/AppUtils.js:84
+msgid "TByte"
+msgstr "TBajt"
+
+#: scripts/services/AppUtils.js:117
+msgid "TByte/s"
+msgstr "TBajt/s"
+
+#: templates/backends/sia.html:7
+msgid "Target path, ie /backup"
+msgstr ""
+
+#: templates/waitarea.html:5
+msgid "Task is running"
+msgstr "Zadatak se izvršava"
+
+#: scripts/controllers/EditBackupController.js:28
+msgid "Temporary files"
+msgstr "Privremene datoteke"
+
+#: templates/backends/openstack.html:27
+msgid "Tenant Name"
+msgstr ""
+
+#: templates/edituri.html:21
+msgid "Test connection"
+msgstr "Probaj vezu"
+
+#: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
+msgid "Testing ..."
+msgstr "Proveravanje ..."
+
+#: scripts/directives/backupEditUri.js:44
+msgid "Testing connection ..."
+msgstr "Proveravanje veze ..."
+
+#: scripts/services/EditUriBuiltins.js:42
+msgid "Testing permissions ..."
+msgstr "Proveravanje dozvola ..."
+
+#: scripts/services/EditUriBuiltins.js:42
+msgid "Testing permissions..."
+msgstr "Proveravanje dozvola..."
+
+#: scripts/services/EditUriBuiltins.js:719
+msgid "The bucket name should be all lower-case, convert automatically?"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:702
+msgid ""
+"The bucket name should start with your username, prepend automatically?"
+msgstr ""
+
+#: index.html:312
+msgid "The connection to the server is lost, attempting again in {{time}} ..."
+msgstr "Veza sa serverom je prekinuta, pokušavanje ponovo za {{time}} ..."
+
+#: templates/settings.html:54
+msgid "The dark theme (by Michal)"
+msgstr "Tamna tema (napravio Michal)"
+
+#: templates/settings.html:53
+msgid "The default blue on white theme (by Alex)"
+msgstr "Podrazumevana plavo na belom tema (napravio Alex)"
+
+#: scripts/directives/backupEditUri.js:131
+msgid ""
+"The folder {{folder}} does not exist\n"
+"Create it now?"
+msgstr ""
+"Fascikla {{folder}} ne postoji\n"
+"Napraviti je odmah?"
+
+#: scripts/directives/backupEditUri.js:212
+msgid ""
+"The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
+"\n"
+"Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:140
+msgid "The path does not appear to exist, do you want to add it anyway?"
+msgstr "Putanja izgleda ne postoji, da li svejedno želite da je dodate?"
+
+#: scripts/controllers/EditBackupController.js:150
+msgid ""
+"The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n"
+"\n"
+"Do you want to include the specified file?"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:125
+msgid ""
+"The path must be an absolute path, i.e. it must start with a forward slash "
+"'/'"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:630
+msgid ""
+"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
+"\n"
+"Do you want to add the prefix to the path automatically?"
+msgstr ""
+
+#: templates/backends/s3.html:28
+msgid "The region parameter is only applied when creating a new bucket"
+msgstr ""
+
+#: templates/backends/openstack.html:38
+msgid "The region parameter is only used when creating a bucket"
+msgstr ""
+
+#: scripts/directives/backupEditUri.js:87
+msgid ""
+"The server certificate could not be validated.\n"
+"Do you want to approve the SSL certificate with the hash: {{hash}}?"
+msgstr ""
+"Sertifikat servera nije mogao biti proveren.\n"
+"Da li želite da odobrite SSL sertifikat sa hešom: {{hash}}?"
+
+#: templates/backends/s3.html:40
+msgid "The storage class affects the availability and price for a stored file"
+msgstr "Klasa skladišta utiče na dostupnost i cenu za uskladištenu datoteku"
+
+#: scripts/controllers/RestoreDirectController.js:106
+msgid ""
+"The target folder contains encrypted files, please supply the passphrase"
+msgstr "Ciljana fasckla sadrži šifrovane datoteke, molimo unesite lozinku"
+
+#: scripts/services/EditUriBuiltins.js:47
+msgid ""
+"The user has too many permissions. Do you want to create a new limited user,"
+" with only permissions to the selected path?"
+msgstr ""
+"Korisnik ima previše dozvola, Da li želite da napravite novog ograničenog "
+"korisnika, sa samo dozvolama za izabranu putanju?"
+
+#: scripts/controllers/RestoreController.js:305
+msgid ""
+"This backup was created on another operating system. Restoring files without"
+" specifying a destination folder can cause files to be restored in "
+"unexpected places. Are you sure you want to continue without choosing a "
+"destination folder?"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:36
+msgid "This month"
+msgstr "Ovog meseca"
+
+#: scripts/controllers/RestoreController.js:35
+msgid "This week"
+msgstr "Ove sedmice"
+
+#: scripts/controllers/AppController.js:57
+msgid "Throttle settings"
+msgstr ""
+
+#: scripts/services/AppUtils.js:106
+msgid "Thu"
+msgstr "Čet"
+
+#: templates/export.html:14
+msgid "To File"
+msgstr "U datoteku"
+
+#: scripts/controllers/DeleteController.js:66
+msgid ""
+"To confirm you want to delete all remote files for \"{{name}}\", please "
+"enter the word you see below"
+msgstr ""
+"Da potvrdite da želite obrisati sve udaljene datoteke sa imenom "
+"\"{{name}}\", molimo unesite reč koju vidite ispod"
+
+#: scripts/controllers/ExportController.js:10
+msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
+msgstr "Za izvoz bez lozinke, polje \"Šifruj datoteku\" ne treba da bude označeno"
+
+#: scripts/controllers/RestoreController.js:33
+msgid "Today"
+msgstr "Danas"
+
+#: scripts/directives/backupEditUri.js:214
+msgid "Trust host certificate?"
+msgstr ""
+
+#: scripts/directives/backupEditUri.js:87
+msgid "Trust server certificate?"
+msgstr "Veruj sertifikatu servera?"
+
+#: templates/settings.html:82
+msgid ""
+"Try out the new features we are working on. Don't use with important data."
+msgstr ""
+"Isprobajte nove mogućnosti na kojima radimo. Ne koristite sa važnim "
+"podacima."
+
+#: scripts/services/AppUtils.js:104
+msgid "Tue"
+msgstr "Uto"
+
+#: templates/restore.html:57
+msgid "Type to highlight files"
+msgstr ""
+
+#: templates/restorewizard.html:25
+msgid "Unknown backup size and versions"
+msgstr ""
+
+#: templates/pause.html:31
+msgid "Until resumed"
+msgstr ""
+
+#: templates/settings.html:65
+msgid "Update channel"
+msgstr ""
+
+#: scripts/controllers/LocalDatabaseController.js:66
+msgid "Update failed:"
+msgstr "Ažuriranje nije uspelo:"
+
+#: scripts/controllers/LocalDatabaseController.js:88
+msgid "Updating with existing database"
+msgstr "Ažuriranje sa postojećom bazom podataka"
+
+#: templates/addoredit.html:311
+msgid "Upload volume size"
+msgstr ""
+
+#: scripts/services/ServerStatus.js:42
+msgid "Uploading verification file ..."
+msgstr ""
+
+#: templates/settings.html:114
+msgid ""
+"Usage reports help us improve the user experience and evaluate impact of new"
+" features. We use them to generate <a href=\"{{link}}\" "
+"target=\"_blank\">public usage statistics</a>"
+msgstr ""
+
+#: templates/settings.html:102
+msgid "Usage statistics"
+msgstr "Statistika upotrebe"
+
+#: templates/settings.html:108
+msgid "Usage statistics, warnings, errors, and crashes"
+msgstr ""
+
+#: templates/backends/generic.html:2 templates/backends/s3.html:2
+msgid "Use SSL"
+msgstr "Koristi SSL"
+
+#: scripts/controllers/EditBackupController.js:472
+msgid "Use existing database?"
+msgstr "Koristi postojeću bazu podataka?"
+
+#: scripts/controllers/EditBackupController.js:366
+msgid "Use weak passphrase"
+msgstr "Koristi slabu lozinku"
+
+#: scripts/controllers/EditBackupController.js:37
+msgid "Useless"
+msgstr "Beskorisno"
+
+#: scripts/directives/sourceFolderPicker.js:374
+msgid "User data"
+msgstr "Podaci o korisniku"
+
+#: scripts/services/EditUriBuiltins.js:47
+msgid "User has too many permissions"
+msgstr "Korisnik ima previše dozvola"
+
+#: templates/settings.html:38
+msgid "User interface settings"
+msgstr "Podešavanja korisničkog interfejsa"
+
+#: scripts/services/EditUriBuiltins.js:585
+#: scripts/services/EditUriBuiltins.js:665
+#: scripts/services/EditUriBuiltins.js:748
+#: scripts/services/EditUriBuiltins.js:758 templates/backends/file.html:29
+#: templates/backends/generic.html:18 templates/backends/jottacloud.html:7
+#: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
+#: templates/backends/mega.html:8 templates/backends/openstack.html:18
+msgid "Username"
+msgstr "Korisničko ime"
+
+#: templates/restore.html:142
+msgid "VISA, Mastercard, ... via Paypal"
+msgstr "VISA, Mastercard, ... putem Paypal-a"
+
+#: templates/addoredit.html:151
+msgid "Validating ..."
+msgstr "Proveravanje ..."
+
+#: templates/home.html:28
+msgid "Verify files"
+msgstr "Proveri datoteke"
+
+#: scripts/services/CaptchaService.js:32 scripts/services/ServerStatus.js:58
+#: templates/notificationarea.html:29
+msgid "Verifying ..."
+msgstr "Proveravanje ..."
+
+#: scripts/services/CaptchaService.js:32
+msgid "Verifying answer"
+msgstr "Proveravanje odgovora"
+
+#: scripts/services/ServerStatus.js:34 scripts/services/ServerStatus.js:43
+msgid "Verifying backend data ..."
+msgstr ""
+
+#: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
+msgid "Verifying remote data ..."
+msgstr ""
+
+#: scripts/services/ServerStatus.js:54
+msgid "Verifying restored files ..."
+msgstr "Proveravanje vraćenih datoteka .."
+
+#: scripts/controllers/EditBackupController.js:41
+msgid "Very strong"
+msgstr "Veoma jaka"
+
+#: scripts/controllers/EditBackupController.js:38
+msgid "Very weak"
+msgstr "Veoma slaba"
+
+#: index.html:248
+msgid "Visit us on"
+msgstr "Posetite nas na"
+
+#: templates/delete.html:21
+msgid ""
+"WARNING: The remote database is found to be in use by the commandline "
+"library"
+msgstr ""
+
+#: templates/delete.html:44
+msgid "WARNING: This will prevent you from restoring the data in the future."
+msgstr ""
+
+#: templates/waitarea.html:2
+msgid "Waiting for task to begin"
+msgstr "Čekanje na početak zadatka"
+
+#: templates/commandline.html:54
+msgid "Waiting for task to start ...."
+msgstr "Čekanje na pokretanje zadatka ...."
+
+#: scripts/services/ServerStatus.js:39
+msgid "Waiting for upload ..."
+msgstr ""
+
+#: templates/settings.html:109
+msgid "Warnings, errors and crashes"
+msgstr ""
+
+#: templates/addoredit.html:50
+msgid "We recommend that you encrypt all backups stored outside your system"
+msgstr ""
+"Preporučujemo da šifrujete sve backup-ove uskladištene van Vašeg sistema"
+
+#: scripts/controllers/EditBackupController.js:39
+msgid "Weak"
+msgstr "Slaba"
+
+#: scripts/controllers/EditBackupController.js:366
+msgid "Weak passphrase"
+msgstr "Slaba lozinka"
+
+#: scripts/services/AppUtils.js:105
+msgid "Wed"
+msgstr "Sre"
+
+#: scripts/services/AppUtils.js:91 templates/addoredit.html:329
+msgid "Weeks"
+msgstr "Sedmica"
+
+#: templates/restorewizard.html:3
+msgid "Where do you want to restore from?"
+msgstr "Odakle želite da vratite?"
+
+#: templates/restore.html:78
+msgid "Where do you want to restore the files to?"
+msgstr "Gde želite da vratite datoteke?"
+
+#: scripts/controllers/EditBackupController.js:19
+msgid "Windows"
+msgstr ""
+
+#: scripts/services/AppUtils.js:93 templates/addoredit.html:331
+msgid "Years"
+msgstr "Godina"
+
+#: scripts/controllers/AppController.js:172
+#: scripts/controllers/DeleteController.js:77
+#: scripts/controllers/EditBackupController.js:140
+#: scripts/controllers/EditBackupController.js:150
+#: scripts/controllers/EditBackupController.js:472
+#: scripts/controllers/HomeController.js:7
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:214
+#: scripts/directives/backupEditUri.js:87
+#: scripts/services/EditUriBackendConfig.js:66
+#: scripts/services/EditUriBuiltins.js:47
+#: scripts/services/EditUriBuiltins.js:630
+#: scripts/services/EditUriBuiltins.js:702
+#: scripts/services/EditUriBuiltins.js:719
+msgid "Yes"
+msgstr "Da"
+
+#: scripts/controllers/EditBackupController.js:381
+msgid "Yes, I have stored the passphrase safely"
+msgstr "Da, uskladištio sam lozinku bezbedno"
+
+#: scripts/controllers/EditBackupController.js:424
+msgid "Yes, I'm brave!"
+msgstr "Da, hrabar sam!"
+
+#: scripts/controllers/EditBackupController.js:415
+msgid "Yes, please break my backup!"
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:34
+msgid "Yesterday"
+msgstr "Juče"
+
+#: scripts/directives/backupEditUri.js:153
+msgid ""
+"You appear to be running Mono with no SSL certificates loaded.\n"
+"Do you want to import the list of trusted certificates from Mozilla?"
+msgstr ""
+"Izgleda da koristite Mono bez učitanih SSL sertifikata.\n"
+"Da li želite da uvezete listu poverljivih sertifikata od Mozille?"
+
+#: scripts/controllers/LocalDatabaseController.js:88
+msgid ""
+"You are changing the database path away from an existing database.\n"
+"Are you sure this is what you want?"
+msgstr ""
+
+#: templates/about.html:26
+msgid "You are currently running {{appname}} {{version}}"
+msgstr "Trenutno koristite {{appname}} {{version}}"
+
+#: scripts/controllers/StateController.js:102
+msgid ""
+"You can stop the backup immediately, or stop after the current file has been"
+" uploaded."
+msgstr ""
+
+#: scripts/controllers/StateController.js:111
+msgid ""
+"You can stop the task immediately, or allow the process to continue its "
+"current file and the stop."
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:424
+msgid ""
+"You have changed the encryption mode. This may break stuff. You are "
+"encouraged to create a new backup instead"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:415
+msgid ""
+"You have changed the passphrase, which is not supported. You are encouraged "
+"to create a new backup instead."
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:451
+msgid ""
+"You have chosen not to encrypt the backup. Encryption is recommended for all"
+" data stored on a remote server."
+msgstr ""
+
+#: scripts/controllers/RestoreController.js:299
+msgid "You have chosen to restore to a new location, but not entered one"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:381
+msgid ""
+"You have generated a strong passphrase. Make sure you have made a safe copy "
+"of the passphrase, as the data cannot be recovered if you lose the "
+"passphrase."
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:311
+msgid "You must choose at least one source folder"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:290
+msgid "You must enter a name for the backup"
+msgstr "Morate uneti naziv za backup"
+
+#: scripts/controllers/EditBackupController.js:298
+msgid "You must enter a passphrase or disable encryption"
+msgstr "Morate uneti lozinku ili isključiti šifrovanje"
+
+#: scripts/controllers/EditBackupController.js:330
+msgid "You must enter a positive number of backups to keep"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:677
+msgid "You must enter a tenant name if you do not provide an API Key"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:323
+msgid "You must enter a valid duration for the time to keep backups"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:674
+msgid "You must enter either a password or an API Key"
+msgstr "Morate uneti ili lozinku ili API ključ"
+
+#: scripts/services/EditUriBuiltins.js:681
+msgid "You must enter either a password or an API Key, not both"
+msgstr "Morate uneti ili lozinku ili API ključ, ne oboje"
+
+#: scripts/services/EditUriBackendConfig.js:108
+msgid "You must fill in the password"
+msgstr "Morate uneti lozinku"
+
+#: scripts/services/EditUriBackendConfig.js:85
+msgid "You must fill in the server name or address"
+msgstr "Morate uneti naziv servera ili adresu"
+
+#: scripts/services/EditUriBackendConfig.js:106
+#: scripts/services/EditUriBackendConfig.js:115
+msgid "You must fill in the username"
+msgstr "Morate uneti korisničko ime"
+
+#: scripts/services/EditUriBackendConfig.js:78
+msgid "You must fill in {{field}}"
+msgstr "Morate uneti {{field}}"
+
+#: scripts/services/EditUriBuiltins.js:669
+msgid "You must select or fill in the AuthURI"
+msgstr "Morate izabrati ili uneti AuthURI"
+
+#: scripts/services/EditUriBuiltins.js:695
+msgid "You must select or fill in the server"
+msgstr "Morate izabrati ili uneti server"
+
+#: scripts/services/EditUriBackendConfig.js:92
+msgid "You must specify a path"
+msgstr "Morate navesti putanju"
+
+#: templates/restore.html:139
+msgid "Your files and folders have been restored successfully."
+msgstr "Vaše datoteke i fascikle su uspešno vraćene."
+
+#: scripts/controllers/EditBackupController.js:366
+msgid "Your passphrase is easy to guess. Consider changing passphrase."
+msgstr "Vaša lozinka je laka za pogađanje. Razmislite o promeni lozinke."
+
+#: templates/addoredit.html:321
+msgid "a specific number"
+msgstr ""
+
+#: templates/backends/gcs.html:3 templates/backends/openstack.html:3
+msgid "bucket/folder/subfolder"
+msgstr ""
+
+#: scripts/services/AppUtils.js:80
+msgid "byte"
+msgstr "bajt"
+
+#: scripts/services/AppUtils.js:113
+msgid "byte/s"
+msgstr "bajt/s"
+
+#: templates/addoredit.html:276 templates/addoredit.html:332
+#: templates/advancedoptionseditor.html:28
+#: templates/advancedoptionseditor.html:35
+msgid "custom"
+msgstr ""
+
+#: templates/commandline.html:49 templates/restoredirect.html:95
+#: templates/waitarea.html:15
+msgid "resume now"
+msgstr "nastavi odmah"
+
+#: templates/addoredit.html:319
+msgid "unlimited"
+msgstr ""
+
+#: templates/addoredit.html:320
+msgid "until they are older than"
+msgstr ""
+
+#: templates/about.html:11
+msgid ""
+"{{appname}} was primarily developed by <a href=\"{{mail1}}\">{{dev1}}</a> "
+"and <a href=\"{{mail2}}\">{{dev2}}</a>. {{appname}} can be downloaded from "
+"<a href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is licensed "
+"under the <a href=\"{{licenselink}}\">{{licensename}}</a>."
+msgstr ""
+
+#: scripts/controllers/StateController.js:50
+msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
+msgstr ""
+
+#: templates/home.html:61 templates/restorewizard.html:23
+msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
+msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: templates/pause.html:26
+msgid "{{number}} Hour"
+msgstr "{{number}} sati"
+
+#: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
+#: templates/pause.html:6
+msgid "{{number}} Minutes"
+msgstr "{{number}} minuta"
+
+#: templates/home.html:42
+msgid "{{time}} (took {{duration}})"
+msgstr ""

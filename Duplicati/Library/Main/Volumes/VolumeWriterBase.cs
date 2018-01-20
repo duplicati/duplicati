@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using System;
 using System.IO;
-using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -11,6 +9,7 @@ namespace Duplicati.Library.Main.Volumes
     {
         protected ICompression m_compression;
         protected Library.Utility.TempFile m_localfile;
+        protected Stream m_localFileStream;
         protected string m_volumename;
         public string LocalFilename { get { return m_localfile; } }
         public string RemoteFilename { get { return m_volumename; } }
@@ -19,7 +18,7 @@ namespace Duplicati.Library.Main.Volumes
         public abstract RemoteVolumeType FileType { get; }
 
         public long VolumeID { get; set; }
-        
+
         public void SetRemoteFilename(string name)
         {
             m_volumename = name;
@@ -29,15 +28,15 @@ namespace Duplicati.Library.Main.Volumes
             : this(options, DateTime.UtcNow)
         {
         }
-        
+
         public static string GenerateGuid(Options options)
         {
             var s = Guid.NewGuid().ToString("N");
-            
+
             //We can choose shorter GUIDs here
-            
+
             return s;
-            
+
         }
 
         public void ResetRemoteFilename(Options options, DateTime timestamp)
@@ -57,14 +56,16 @@ namespace Duplicati.Library.Main.Volumes
             m_localfile.Protected = true;
 
             ResetRemoteFilename(options, timestamp);
-            m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localfile, options.RawOptions);
-            
-            if(m_compression == null)
+
+            m_localFileStream = new System.IO.FileStream(m_localfile, FileMode.Create, FileAccess.Write, FileShare.Read);
+            m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localFileStream, ArchiveMode.Write, options.RawOptions);
+
+            if (m_compression == null)
                 throw new UserInformationException(string.Format("Unsupported compression module: {0}", options.CompressionModule));
-            
+
             if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && m_compression is Library.Interface.ICompressionHinting)
                 ((Library.Interface.ICompressionHinting)m_compression).LowOverheadMode = true;
-                
+
             AddManifestfile();
         }
 
@@ -81,6 +82,9 @@ namespace Duplicati.Library.Main.Volumes
                 finally { m_compression = null; }
 
             m_localfile.Protected = false;
+            if (m_localFileStream != null)
+                try { m_localFileStream.Dispose(); }
+                finally { m_localFileStream = null; }
 
             if (m_localfile != null)
                 try { m_localfile.Dispose(); }
@@ -94,16 +98,13 @@ namespace Duplicati.Library.Main.Volumes
             if (m_compression != null)
                 try { m_compression.Dispose(); }
                 finally { m_compression = null; }
+
+            if (m_localFileStream != null)
+                try { m_localFileStream.Dispose(); }
+                finally { m_localFileStream = null; }
         }
 
         public long Filesize { get { return m_compression.Size + m_compression.FlushBufferSize; } }
 
-        public void SetTempFile(Library.Utility.TempFile tmpfile)
-        {
-            if (m_localfile != null)
-                m_localfile.Dispose();
-
-            m_localfile = tmpfile;
-        }
     }
 }

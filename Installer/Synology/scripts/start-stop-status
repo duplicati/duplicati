@@ -1,6 +1,16 @@
 #!/bin/sh
 source /root/.profile  # Get Environment Variables from Root Profile
 
+if ! type mono 2>/dev/null; then
+    for d in /volume*/@appstore/mono; do
+        if [ -x "$d/bin/mono" ]; then
+            PATH="$PATH:$d/bin"
+            export PATH
+            break
+        fi
+    done
+fi
+
 # Package Varables
 PACKAGE_NAME_SIMPLE="$(echo "$SYNOPKG_PKGNAME" | awk '{print tolower($0)}' | sed -e 's/ /_/g')"
 PACKAGE_DIR="${SYNOPKG_PKGDEST}"

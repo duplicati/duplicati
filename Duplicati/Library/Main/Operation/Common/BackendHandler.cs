@@ -477,7 +477,7 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             await m_stats.SendEventAsync(BackendActionType.List, BackendEventType.Started, null, -1);
 
-            var r = m_backend.List();
+            var r = m_backend.List().ToList();
 
             var sb = new StringBuilder();
             sb.AppendLine("[");

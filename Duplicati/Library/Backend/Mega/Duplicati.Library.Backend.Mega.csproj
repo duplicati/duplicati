@@ -7,7 +7,6 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Backend.Mega</RootNamespace>
     <AssemblyName>Duplicati.Library.Backend.Mega</AssemblyName>
-    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <UseMSBuildEngine>false</UseMSBuildEngine>

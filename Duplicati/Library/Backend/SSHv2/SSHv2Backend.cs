@@ -78,10 +78,10 @@ namespace Duplicati.Library.Backend
 
             m_path = uri.Path;
 
-            if (!string.IsNullOrWhiteSpace(m_path) && !m_path.EndsWith("/"))
+            if (!string.IsNullOrWhiteSpace(m_path) && !m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path += "/";
 
-            if (!m_path.StartsWith("/"))
+            if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 
             m_server = uri.Host;
@@ -106,7 +106,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Backend
             CreateConnection();
             //Bugfix, some SSH servers do not like a trailing slash
             string p = m_path;
-            if (p.EndsWith("/"))
+            if (p.EndsWith("/", StringComparison.Ordinal))
                 p.Substring(0, p.Length - 1);
             m_con.CreateDirectory(p);
         }
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Backend
 
             string working_dir = m_con.WorkingDirectory;
 
-            if (!working_dir.EndsWith("/"))
+            if (!working_dir.EndsWith("/", StringComparison.Ordinal))
                 working_dir += "/";
 
             if (working_dir == path)
@@ -313,10 +313,8 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
-            var files = new List<IFileEntry>();
-
             string path = ".";
 
             CreateConnection();
@@ -324,35 +322,40 @@ namespace Duplicati.Library.Backend
 
             foreach (Renci.SshNet.Sftp.SftpFile ls in m_con.ListDirectory(path))
                 if (ls.Name.ToString() != "." && ls.Name.ToString() != "..")
-                    files.Add(new FileEntry(ls.Name.ToString(), ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory });
-
-            return files;
+                    yield return new FileEntry(ls.Name, ls.Length, ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory };
         }
 
         public static Renci.SshNet.PrivateKeyFile ValidateKeyFile(string filename, string password)
         {
-            if (filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                using (var ms = new System.IO.MemoryStream())
-                using (var sr = new System.IO.StreamWriter(ms))
+                if (filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
                 {
-                    sr.Write(Duplicati.Library.Utility.Uri.UrlDecode(filename.Substring(KEYFILE_URI.Length)));
-                    sr.Flush();
+                    using (var ms = new System.IO.MemoryStream())
+                    using (var sr = new System.IO.StreamWriter(ms))
+                    {
+                        sr.Write(Duplicati.Library.Utility.Uri.UrlDecode(filename.Substring(KEYFILE_URI.Length)));
+                        sr.Flush();
 
-                    ms.Position = 0;
+                        ms.Position = 0;
 
+                        if (String.IsNullOrEmpty(password))
+                            return new Renci.SshNet.PrivateKeyFile(ms);
+                        else
+                            return new Renci.SshNet.PrivateKeyFile(ms, password);
+                    }
+                }
+                else
+                {
                     if (String.IsNullOrEmpty(password))
-                        return new Renci.SshNet.PrivateKeyFile(ms);
+                        return new Renci.SshNet.PrivateKeyFile(filename);
                     else
-                        return new Renci.SshNet.PrivateKeyFile(ms, password);
+                        return new Renci.SshNet.PrivateKeyFile(filename, password);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                if (String.IsNullOrEmpty(password))
-                    return new Renci.SshNet.PrivateKeyFile(filename);
-                else
-                    return new Renci.SshNet.PrivateKeyFile(filename, password);
+                throw new UserInformationException(string.Format("Failed to parse the keyfile, check the key format and passphrase. Error message was {0}", ex.Message), ex);
             }
         }
 

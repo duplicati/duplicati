@@ -22,10 +22,10 @@ namespace Duplicati.Library.Backend
             var uri = new Utility.Uri(url);
 
             m_path = Library.Utility.Uri.UrlDecode(uri.HostAndPath);
-            if (m_path.Length != 0 && !m_path.StartsWith("/"))
+            if (m_path.Length != 0 && !m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 
-            if (m_path.EndsWith("/"))
+            if (m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path = m_path.Substring(0, m_path.Length - 1);
 
             if (options.ContainsKey(AUTHID_OPTION))
@@ -68,31 +68,33 @@ namespace Duplicati.Library.Backend
             return ife;
         }
 
-        public List<IFileEntry> List()
+        private T HandleListExceptions<T>(Func<T> func)
         {
             try
             {
-                var list = new List<IFileEntry>();
-                var lfr = dbx.ListFiles(m_path);
-              
-                foreach (var md in lfr.entries)
-                    list.Add(ParseEntry(md));
-
-                while (lfr.has_more)
-                {
-                    lfr = dbx.ListFilesContinue(lfr.cursor);
-                    foreach (var md in lfr.entries)
-                        list.Add(ParseEntry(md));
-                }
-
-                return list;
+                return func();
             }
             catch (DropboxException de)
             {
                 if (de.errorJSON["error"][".tag"].ToString() == "path" && de.errorJSON["error"]["path"][".tag"].ToString() == "not_found")
                     throw new FolderMissingException();
-                
+
                 throw;
+            }
+        }
+
+        public IEnumerable<IFileEntry> List()
+        {
+            var lfr = HandleListExceptions(() => dbx.ListFiles(m_path));
+              
+            foreach (var md in lfr.entries)
+                yield return ParseEntry(md);
+
+            while (lfr.has_more)
+            {
+                lfr = HandleListExceptions(() => dbx.ListFilesContinue(lfr.cursor));
+                foreach (var md in lfr.entries)
+                    yield return ParseEntry(md);
             }
         }
 
@@ -115,7 +117,7 @@ namespace Duplicati.Library.Backend
                 string path = String.Format("{0}/{1}", m_path, remotename);
                 dbx.Delete(path);
             }
-            catch (DropboxException de)
+            catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;
@@ -136,7 +138,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
@@ -161,7 +163,7 @@ namespace Duplicati.Library.Backend
                 string path = string.Format("{0}/{1}", m_path, remotename);
                 dbx.UploadFile(path, stream);
             }
-            catch (DropboxException de)
+            catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;
@@ -175,7 +177,7 @@ namespace Duplicati.Library.Backend
                 string path = string.Format("{0}/{1}", m_path, remotename);
                 dbx.DownloadFile(path, stream);
             }
-            catch (DropboxException de)
+            catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;

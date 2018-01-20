@@ -529,7 +529,7 @@ namespace Duplicati.Library.Main.Operation
                 if (dryrun)
                     return;
 
-                var isDirTarget = path.EndsWith(DIRSEP);
+                var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
                 var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
 
                 // Make the symlink first, otherwise we cannot apply metadata to it
@@ -1000,7 +1000,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         //Select a new filename
                         var ext = m_systemIO.PathGetExtension(targetpath) ?? "";
-                        if (!string.IsNullOrEmpty(ext) && !ext.StartsWith("."))
+                        if (!string.IsNullOrEmpty(ext) && !ext.StartsWith(".", StringComparison.Ordinal))
                             ext = "." + ext;
                         
                         // First we try with a simple date append, assuming that there are not many conflicts there

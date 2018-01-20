@@ -162,9 +162,9 @@ namespace Duplicati.Library.Backend
             m_spWebUrl = null;
 
             m_serverRelPath = u.Path;
-            if (!m_serverRelPath.StartsWith("/"))
+            if (!m_serverRelPath.StartsWith("/", StringComparison.Ordinal))
                 m_serverRelPath = "/" + m_serverRelPath;
-            if (!m_serverRelPath.EndsWith("/"))
+            if (!m_serverRelPath.EndsWith("/", StringComparison.Ordinal))
                 m_serverRelPath += "/";
             // remove marker for SP-Web
             m_serverRelPath = m_serverRelPath.Replace("//", "/");
@@ -257,7 +257,7 @@ namespace Duplicati.Library.Backend
         {
             int result = -1;
             retCtx = null;
-            SP.ClientContext ctx = new ClientContext(url);
+            var ctx = CreateNewContext(url);
             try
             {
                 ctx.Credentials = userInfo;
@@ -290,7 +290,7 @@ namespace Duplicati.Library.Backend
             retCtx = null;
 
             string path = orgUrl.Path;
-            int webIndicatorPos = path.IndexOf("//");
+            int webIndicatorPos = path.IndexOf("//", StringComparison.Ordinal);
 
             // if a hint is supplied, we will of course use this first.
             if (webIndicatorPos >= 0)
@@ -349,7 +349,7 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     // would query: testUrlForWeb(m_spWebUrl, userInfo, true, out m_spContext);
-                    m_spContext = new ClientContext(m_spWebUrl);
+                    m_spContext = CreateNewContext(m_spWebUrl);
                     m_spContext.Credentials = m_userInfo;
                 }
                 if (m_spContext != null && m_useContextTimeoutMs > 0)
@@ -364,7 +364,6 @@ namespace Duplicati.Library.Backend
         /// We have to check for the exceptions thrown to know about file /folder existence.
         /// Why the funny guys at MS provided an .Exists field stays a mystery...
         /// </summary>
-        /// <param name="fileNameInfo"> the filename  </param>
         private void wrappedExecuteQueryOnConext(SP.ClientContext ctx, string serverRelPathInfo, bool isFolder)
         {
             try { ctx.ExecuteQuery(); }
@@ -382,6 +381,56 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <summary>
+        /// Helper method to inject the custom webrequest provider that sets the UserAgent
+        /// </summary>
+        /// <returns>The new context.</returns>
+        /// <param name="url">The url to create the context for.</param>
+        private static SP.ClientContext CreateNewContext(string url)
+        {
+            var ctx = new SP.ClientContext(url);
+            ctx.WebRequestExecutorFactory = new CustomWebRequestExecutorFactory(ctx.WebRequestExecutorFactory);
+            return ctx;
+        }
+
+        /// <summary>
+        /// Simple factory override that creates same executor as the implementation
+        /// but sets the UserAgent header, to work around a problem with OD4B servers
+        /// </summary>
+        internal class CustomWebRequestExecutorFactory : WebRequestExecutorFactory
+        {
+            /// <summary>
+            /// The default factory
+            /// </summary>
+            private readonly WebRequestExecutorFactory m_parent;
+
+            /// <summary>
+            /// Initializes a new instance of the
+            /// <see cref="T:Duplicati.Library.Backend.SharePointBackend.CustomWebRequestExecutorFactory"/> class.
+            /// </summary>
+            /// <param name="parent">The default executor.</param>
+            public CustomWebRequestExecutorFactory(WebRequestExecutorFactory parent)
+            {
+                if (parent == null)
+                    throw new ArgumentNullException("parent");
+                m_parent = parent;
+            }
+
+            /// <summary>
+            /// Creates the web request executor by calling the parent and setting the UserAgent.
+            /// </summary>
+            /// <returns>The web request executor.</returns>
+            /// <param name="context">The context to use.</param>
+            /// <param name="requestUrl">The request URL.</param>
+            public override WebRequestExecutor CreateWebRequestExecutor(ClientRuntimeContext context, string requestUrl)
+            {
+                var req = m_parent.CreateWebRequestExecutor(context, requestUrl);
+                if (string.IsNullOrWhiteSpace(req.WebRequest.UserAgent))
+                    req.WebRequest.UserAgent = "Duplicati OD4B v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                return req;
+            }
+        }
+
         #endregion
 
 
@@ -392,41 +441,51 @@ namespace Duplicati.Library.Backend
             SP.ClientContext ctx = getSpClientContext(true);
             testContextForWeb(ctx, true);
         }
-
-        public List<IFileEntry> List() { return doList(false); }
-        private List<IFileEntry> doList(bool useNewContext)
+        
+        public IEnumerable<IFileEntry> List() { return doList(false); }
+        private IEnumerable<IFileEntry> doList(bool useNewContext)
         {
             SP.ClientContext ctx = getSpClientContext(useNewContext);
+            SP.Folder remoteFolder = null;
+            bool retry = false;
             try
             {
-                SP.Folder remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
+                remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
                 ctx.Load(remoteFolder, f => f.Exists);
                 ctx.Load(remoteFolder, f => f.Files, f => f.Folders);
 
                 wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
                 if (!remoteFolder.Exists)
                     throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
+            }
+            catch (ServerException) { throw; /* rethrow if Server answered */ }
+            catch (Interface.FileMissingException) { throw; }
+            catch (Interface.FolderMissingException) { throw; }
+            catch { if (!useNewContext) /* retry */ retry = true; else throw; }
 
-                List<IFileEntry> files = new List<IFileEntry>(remoteFolder.Folders.Count + remoteFolder.Files.Count);
+            if (retry)
+            {
+                // An exception was caught, and List() should be retried.
+                foreach (IFileEntry file in doList(true))
+                {
+                    yield return file;
+                }
+            }
+            else
+            {
                 foreach (var f in remoteFolder.Folders.Where(ff => ff.Exists))
                 {
                     FileEntry fe = new FileEntry(f.Name, -1, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
                     fe.IsFolder = true;
-                    files.Add(fe);
+                    yield return fe;
                 }
                 foreach (var f in remoteFolder.Files.Where(ff => ff.Exists))
                 {
                     FileEntry fe = new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified); // f.TimeCreated
                     fe.IsFolder = false;
-                    files.Add(fe);
+                    yield return fe;
                 }
-                return files;
             }
-            catch (ServerException) { throw; /* rethrow if Server answered */ }
-            catch (Interface.FileMissingException) { throw; }
-            catch (Interface.FolderMissingException) { throw; }
-            catch { if (!useNewContext) /* retry */ return doList(true); else throw; }
-            finally { }
         }
 
         public void Get(string remotename, string filename)

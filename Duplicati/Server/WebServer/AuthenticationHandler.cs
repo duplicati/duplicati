@@ -250,7 +250,7 @@ namespace Duplicati.Server.WebServer
                         var expires = DateTime.UtcNow.AddHours(1);
                         m_prng.GetBytes(buf);
                         var token = Duplicati.Library.Utility.Utility.Base64UrlEncode(buf);
-                        while (token.Length > 0 && token.EndsWith("="))
+                        while (token.Length > 0 && token.EndsWith("=", StringComparison.Ordinal))
                             token = token.Substring(0, token.Length - 1);
 
                         m_activeTokens.AddOrUpdate(token, key => expires, (key, existingValue) =>

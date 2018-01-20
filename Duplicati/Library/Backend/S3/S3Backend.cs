@@ -218,25 +218,25 @@ namespace Duplicati.Library.Backend
                 {
                     m_bucket = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
 
-                    if (m_bucket.StartsWith("/"))
+                    if (m_bucket.StartsWith("/", StringComparison.Ordinal))
                         m_bucket = m_bucket.Substring(1);
 
                     if (m_bucket.Contains("/"))
                     {
-                        m_prefix = m_bucket.Substring(m_bucket.IndexOf("/") + 1);
-                        m_bucket = m_bucket.Substring(0, m_bucket.IndexOf("/"));
+                        m_prefix = m_bucket.Substring(m_bucket.IndexOf("/", StringComparison.Ordinal) + 1);
+                        m_bucket = m_bucket.Substring(0, m_bucket.IndexOf("/", StringComparison.Ordinal));
                     }
                 }
                 else
                 {
                     //Subdomain type lookup
-                    if (host.ToLower().EndsWith("." + s3host))
+                    if (host.ToLower().EndsWith("." + s3host, StringComparison.Ordinal))
                     {
                         m_bucket = host.Substring(0, host.Length - ("." + s3host).Length);
                         host = s3host;
                         m_prefix = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
 
-                        if (m_prefix.StartsWith("/"))
+                        if (m_prefix.StartsWith("/", StringComparison.Ordinal))
                             m_prefix = m_prefix.Substring(1);
                     }
                     else
@@ -255,7 +255,7 @@ namespace Duplicati.Library.Backend
 
             m_options = options;
             m_prefix = m_prefix.Trim();
-            if (m_prefix.Length != 0 && !m_prefix.EndsWith("/"))
+            if (m_prefix.Length != 0 && !m_prefix.EndsWith("/", StringComparison.Ordinal))
                 m_prefix += "/";
 
             // Auto-disable dns lookup for non AWS configurations
@@ -291,20 +291,11 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             try
             {
-                List<IFileEntry> lst = Connection.ListBucket(m_bucket, m_prefix);
-                for (int i = 0; i < lst.Count; i++)
-                {
-                    ((FileEntry)lst[i]).Name = lst[i].Name.Substring(m_prefix.Length);
-
-                    //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
-                    if (lst[i].Name.StartsWith("/") && !m_prefix.StartsWith("/"))
-                        ((FileEntry)lst[i]).Name = lst[i].Name.Substring(1);
-                }
-                return lst;
+                return ListWithouExceptionCatch();
             }
             catch (Exception ex)
             {
@@ -314,6 +305,20 @@ namespace Duplicati.Library.Backend
                     throw new Interface.FolderMissingException(ex);
 
                 throw;
+            }
+        }
+
+        private IEnumerable<IFileEntry> ListWithouExceptionCatch()
+        {
+            foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
+            {
+                ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
+
+                //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
+                if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
+                    ((FileEntry)file).Name = file.Name.Substring(1);
+
+                yield return file;
             }
         }
 
@@ -357,7 +362,7 @@ namespace Duplicati.Library.Backend
                 //This is a fix for the S3 backend prior to beta 3, where the filenames had a slash prefixed
                 try
                 {
-                    if (!remotename.StartsWith("/"))
+                    if (!remotename.StartsWith("/", StringComparison.Ordinal))
                         Connection.GetFileStream(m_bucket, GetFullKey("/" + remotename), output);
                     return;
                 }
@@ -429,7 +434,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()

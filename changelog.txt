@@ -1,3 +1,97 @@
+2018-01-18 - 2.0.2.16_canary_2018-01-18
+==========
+* Reworked some internal compression code, thanks @vnau
+* Updated commandline documentation, thanks @mr-flibble
+* Improved 64bit OS detection, thanks @warwickmm
+* Fixed a problem with the progress bar hiding under the top bar, thanks @pectojin
+* Fixed a problem displaying more than 10 advanced options, thanks @pectojin
+* Improved detection of 32bit MSSQL on 64bit Windows, thanks @inat3k
+* Changed load order of modules to allow `run-script` to change setup, thanks @BrianLakstins
+* Added a `UserAgent` header to OD4B requests
+
+2018-01-03 - 2.0.2.15_experimental_2018-01-03
+==========
+This is the same as build 2.0.2.14 canary
+
+Overview of major and breaking changes since 2.0.1.73 experimental:
+* Fixed not running the slow VACUUM command after each operation
+* Improved S3 to work better with non AWS hosts
+* Updated backend support libraries to the latest versions: Azure, AWS, SSH, SharpCompress, Mega, AlphaFS
+* Fixed a problem with SSL certificates periodically failing
+* Added a Sia backend
+* Added a number of default excludes
+* Updated the hashing library to use faster native libraries where available
+* Added a new retention policy which allows backup versions to decrease over time
+* Updated the auto-updater, such that new installs will spawn an extra process instead of using the AppDomain method as previously done.
+* Faster browsing of files to restore
+* Removed automatic tilde expansions as it created numerous problems
+* Multiple new languages added to the UI
+
+2017-12-22 - 2.0.2.14_canary_2017-12-22
+==========
+* Multiple code quality fixes, thansk @warwickmm
+* Fixed a case where commandline arguments ending with a backslash were not correctly escaped on Windows
+
+2017-11-22 - 2.0.2.13_canary_2017-11-22
+==========
+* Fixed an issue with AutoUpdater semi-ignoring webroot
+* Fixed an issue where source folders would be omitted from the backup if a file with the same leading name was also added
+* Switched to default "keep forever", thanks @ItEndsWithTens
+* Fixed a startup crash caused by invalid throttle values
+* Added a number of new languages, thanks to all translators!
+* Timestamps in the log are now reported in local time and include a UTC timestamp for easy script parsing
+* Added Windows registry exclusion list to the default exclude filters
+* Added .dv files to compression exclusion list, thanks @jesjimher
+* Fixed some spelling in the UI, thanks @davegold24 and @JonMikeIV
+* Fixed logic of the `affected` command to not return empty results if the local database was not found
+* Fixed a case where the "Resume" button did not appear clickable, thanks @JonMikeIV
+* Improved query time for browsing folders during restore, thanks @RobSauro
+* Commands are now sorted alphabetically, thanks @JonMikeIV
+* Improved an error message when the SSH key failed to parse
+* Removed tilde expansion to fix multiple issues caused by unexpected expansio, thanks @warwickmm
+* Fixed .rbf files to only be excluded if they are part of the `config.msi` folder
+* Improved the commandline export to show commandlines that are correctly escaped for the shell
+* Fixed a case where the AutoUpdater would fail to send the correct commandline to the updated process
+
+2017-10-20 - 2.0.2.12_canary_2017-10-20
+==========
+* Fixed not reporting "Finished" until the backup is actually finished, thanks @warwickmm
+* Fixed stack overflow in FTP backend, thanks @tygill
+* Fixed a number of incorrect exception messages, thanks @warwickmm
+* Removed assembly signing for now, thanks @warwickmm
+
+2017-10-20 - 2.0.2.11_canary_2017-10-20
+==========
+* Changed the way the auto-updater works. It now spawns a new version of the executable instead of attempting to run it in an AppDomain
+  It is possible to revert to the old version by setting the environment variable `AUTOUPDATER_USE_APPDOMAIN=true`
+* Updated Synology script to be better at locating Mono
+* Service description now requests auto-restart
+* Added the Czech (cs) translations
+* Updated FasterHashing, so it automatically picks up openssl 1.0 and 1.1 on all platforms
+
+2017-10-11 - 2.0.2.10_canary_2017-10-11
+==========
+* Fixed an issue with the compare command not working with filters
+* Fixed showing the full version number on the app on MacOS
+* Code quality cleanup, thanks @warwickmm
+* Added code to detect the power supply source, thanks @warwickmm
+* Fixed an issuw with quota detection for non-drive roots on Windows, thanks @t$
+* Implemented retention policy as a commandline switch, thanks @tekkiwulf
+* Improved default filters, thanks @tygill
+* Updated FasterHashing to fix problems on MacOS and with OpenSSL 1.1
+* Fixed the remote-file delete function to only delete Duplicati-related files
+* Added option to run the tray-icon detached from the console
+
+2017-10-01 - 2.0.2.9_canary_2017-10-01
+==========
+* Updated libraries: NewtonSoft.Json, AzureBlob, AWS, SSH, SharpCompress, Meg, NGetText, MimeKit, MailKit, AlphaFS, CoCoL
+* Fixed the default-filters warning, thanks @tygill
+* Added quota reporting to OneDrive, thanks @tygill
+* Added a number of performance improvementes, thanks @warwickmm
+* Switched hashing to use FasterHashing which loads OpenSSL or Apple CC libraries for much faster hashing performance
+* Changed the `--zip-compression-method` option to report only the supported methods
+* Fixed error on Compact that was caused by backend re-use
+
 2017-09-20 - 2.0.2.8_canary_2017-09-20
 ==========
 * Fixed passwordless SSH setup, thanks @Pectojin

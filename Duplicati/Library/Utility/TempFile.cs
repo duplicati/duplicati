@@ -78,6 +78,10 @@ namespace Duplicati.Library.Utility
             return APPLICATION_PREFIX + Guid.NewGuid().ToString();
         }
 #endif
+        /// <summary>
+        /// The name of the temp file
+        /// </summary>
+        public string Name => m_path;
 
         /// <summary>
         /// Gets all temporary files found in the current tempdir, that matches the application prefix

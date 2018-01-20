@@ -35,6 +35,8 @@ namespace Duplicati.Server
         private AutoResetEvent m_waitSignal;
         private double m_downloadProgress;
 
+        public bool IsUpdateRequested { get; private set; } = false;
+
         public UpdatePollerStates ThreadState { get; private set; }
         public double DownloadProgess
         {
@@ -81,7 +83,10 @@ namespace Duplicati.Server
         public void ActivateUpdate()
         {
             if (Duplicati.Library.AutoUpdater.UpdaterManager.SetRunUpdate())
+            {
+                IsUpdateRequested = true;
                 Program.ApplicationExitEvent.Set();
+            }
         }
 
         public void Terminate()

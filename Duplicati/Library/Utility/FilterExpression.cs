@@ -49,10 +49,22 @@ namespace Duplicati.Library.Utility
     /// </summary>    
     public class FilterExpression : IFilter
     {
+        /// <summary>
+        /// Implementation of a filter entry
+        /// </summary>
         private struct FilterEntry
         {
+            /// <summary>
+            /// The type of the filter
+            /// </summary>
             public readonly FilterType Type;
+            /// <summary>
+            /// The filter string
+            /// </summary>
             public readonly string Filter;
+            /// <summary>
+            /// The regular expression version of the filter
+            /// </summary>
             public readonly System.Text.RegularExpressions.Regex Regexp;
             
             /// <summary>
@@ -64,12 +76,18 @@ namespace Duplicati.Library.Utility
             /// </summary>
             private const char MULTIPLE_WILDCARD = '*';
             
-            
+            /// <summary>
+            /// The regular expression flags
+            /// </summary>
             private static readonly System.Text.RegularExpressions.RegexOptions REGEXP_OPTIONS =
                 System.Text.RegularExpressions.RegexOptions.Compiled |
                 System.Text.RegularExpressions.RegexOptions.ExplicitCapture |
                 (Library.Utility.Utility.IsFSCaseSensitive ? System.Text.RegularExpressions.RegexOptions.None : System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.FilterExpression.FilterEntry"/> struct.
+            /// </summary>
+            /// <param name="filter">The filter string to use.</param>
             public FilterEntry(string filter)
             {
                 if (string.IsNullOrEmpty(filter))
@@ -78,7 +96,7 @@ namespace Duplicati.Library.Utility
                     this.Filter = null;
                     this.Regexp = null;
                 }
-                if (filter.StartsWith("[") && filter.EndsWith("]"))
+                else if (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal))
                 {
                     this.Type = FilterType.Regexp;
                     this.Filter = filter.Substring(1, filter.Length - 2);
@@ -255,7 +273,6 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Creates a new <see cref="Duplicati.Library.Utility.FilterExpression"/> instance, representing an empty filter.
         /// </summary>
-        /// <param name="filter">The filter string that represents the filter</param>
         public FilterExpression()
             : this((IEnumerable<string>)null, true)
         {
@@ -302,7 +319,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(filter))
                 return null;
             
-            if (filter.Length < 2 || (filter.StartsWith("[") && filter.EndsWith("]")))
+            if (filter.Length < 2 || (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)))
                 return new string[] { filter };
             else
                 return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
@@ -340,7 +357,7 @@ namespace Duplicati.Library.Utility
                             first = false;
                         }
                         
-                        combined += "|(" + f.Regexp.ToString() + ")";
+                        combined += "|(" + f.Regexp + ")";
                     }
                 }
                 
@@ -584,9 +601,9 @@ namespace Duplicati.Library.Utility
             foreach(var n in filters) 
             {
                 bool include;
-                if (n.StartsWith("+"))
+                if (n.StartsWith("+", StringComparison.Ordinal))
                     include = true;
-                else if (n.StartsWith("-"))
+                else if (n.StartsWith("-", StringComparison.Ordinal))
                     include = false;
                 else
                     continue;

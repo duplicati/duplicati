@@ -57,11 +57,11 @@ namespace Duplicati.Library.Backend.Backblaze
 
             m_bucketname = uri.Host;
             m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/"))
+            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
                 m_prefix += "/";
 
             // For B2 we do not use a leading slash
-            while(m_prefix.StartsWith("/"))
+            while(m_prefix.StartsWith("/", StringComparison.Ordinal))
                 m_prefix = m_prefix.Substring(1);
 
             m_urlencodedprefix = string.Join("/", m_prefix.Split(new [] { '/' }).Select(x => Library.Utility.Uri.UrlPathEncode(x)));
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        public List<IFileEntry> List()
+        public IEnumerable<IFileEntry> List()
         {
             m_filecache = null;
             var cache = new Dictionary<string, List<FileEntity>>();
@@ -323,7 +323,7 @@ namespace Duplicati.Library.Backend.Backblaze
 
                 foreach(var f in resp.Files)
                 {
-                    if (!f.FileName.StartsWith(m_prefix))
+                    if (!f.FileName.StartsWith(m_prefix, StringComparison.Ordinal))
                         continue;
 
                     var name = f.FileName.Substring(m_prefix.Length);
@@ -392,7 +392,7 @@ namespace Duplicati.Library.Backend.Backblaze
 
         public void Test()
         {
-            List();
+            this.TestList();
         }
 
         public void CreateFolder()
