@@ -246,9 +246,11 @@ namespace Duplicati.Library.Backend
 
                 FileEntry fe = new FileEntry(name, size, lastAccess, lastModified);
                 fe.IsFolder = isCollection;
+                files.Add(fe);
                 m_filenamelist.Add(name);
-                yield return fe;
             }
+            
+            return files;
         }
 
         public void Put(string remotename, string filename)
@@ -311,7 +313,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            this.TestList();
+            this.List();
         }
 
         public void CreateFolder()
