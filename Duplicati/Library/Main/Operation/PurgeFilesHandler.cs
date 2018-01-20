@@ -57,7 +57,7 @@ namespace Duplicati.Library.Main.Operation
 
             var doCompactStep = !m_options.NoAutoCompact && filtercommand == null;
 
-            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
+            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result))
             {
                 if (db.PartiallyRecreated)
                     throw new UserInformationException("The purge command does not work on partially recreated databases");
@@ -80,10 +80,11 @@ namespace Duplicati.Library.Main.Operation
                 {
                     db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false, null);
 
+                    System.Data.IDbTransaction dummytr = null;
                     if (m_options.NoBackendverification)
-                        FilelistProcessor.VerifyLocalList(backend, m_options, db, m_result.BackendWriter);
+                        FilelistProcessor.VerifyLocalList(backend, m_options, db, m_result.BackendWriter, ref dummytr);
                     else
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, null);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, ref dummytr, null);
                 }
 
                 var filesets = db.FilesetTimes.ToArray();
@@ -194,9 +195,21 @@ namespace Duplicati.Library.Main.Operation
                                             db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, tr);
 
                                         tr.Commit();
-                                        backend.Put(vol, synchronous: true);
-                                        backend.Delete(prevfilename, -1, true);
-                                        backend.FlushDbMessages();
+
+                                        var nt = db.BeginTransaction();
+                                        try
+                                        {
+                                            backend.Put(ref nt, vol, synchronous: true);
+                                            backend.Delete(prevfilename, -1, ref nt, synchronous: true);
+                                            backend.FlushDbMessages(ref nt);
+                                            nt.Commit();
+                                            nt = null;
+                                        }
+                                        finally
+                                        {
+                                            if (nt != null)
+                                                nt.Dispose();
+                                        }
                                     }
                                 }
                             }
@@ -243,7 +256,9 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Complete);
                 }
 
-                backend.WaitForComplete(db, null);
+                // Use a dummy transaction until this class is rewritten to use proper transactions
+                System.Data.IDbTransaction transaction = null;
+                backend.WaitForComplete(ref transaction);
             }
         }
     }

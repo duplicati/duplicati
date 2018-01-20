@@ -145,6 +145,9 @@
     <Compile Include="Operation\ListBrokenFilesHandler.cs" />
     <Compile Include="Operation\PurgeBrokenFilesHandler.cs" />
     <Compile Include="Operation\Backup\RecreateMissingIndexFiles.cs" />
+    <Compile Include="Operation\Common\IBackendHandlerDatabase.cs" />
+    <Compile Include="Operation\Common\HashMismatchException.cs" />
+    <Compile Include="Operation\Common\BackendHandlerDatabaseGuard.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

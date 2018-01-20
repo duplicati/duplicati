@@ -28,7 +28,7 @@ using System.Text;
 using System.IO;
 
 namespace Duplicati.Library.Main.Operation.Common
-{
+{    
     /// <summary>
     /// This class encapsulates access to the backend and ensures at most one connection is active at a time
     /// </summary>
@@ -154,7 +154,7 @@ namespace Duplicati.Library.Main.Operation.Common
         private IWriteChannel<LogMessage> m_logchannel = Channels.LogChannel.ForWrite;
         private LogWrapper m_log;
 
-        private DatabaseCommon m_database;
+        private IBackendHandlerDatabase m_database;
         private IBackend m_backend;
         private Options m_options;
         private string m_backendurl;
@@ -162,7 +162,7 @@ namespace Duplicati.Library.Main.Operation.Common
         private StatsCollector m_stats;
         private ITaskReader m_taskreader;
 
-        public BackendHandler(Options options, string backendUrl, DatabaseCommon database, StatsCollector stats, ITaskReader taskreader)
+        public BackendHandler(Options options, string backendUrl, IBackendHandlerDatabase database, StatsCollector stats, ITaskReader taskreader)
             : base()
         {
             m_backendurl = backendUrl;
@@ -618,7 +618,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (filehash != item.Hash)
-                            throw new Duplicati.Library.Main.BackendManager.HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, filehash));
+                            throw new Duplicati.Library.Main.Operation.Common.HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, filehash));
                     }
                     else
                         item.Hash = filehash;
@@ -701,7 +701,7 @@ namespace Duplicati.Library.Main.Operation.Common
 		private string m_lastThrottleUploadValue = null;
 		private string m_lastThrottleDownloadValue = null;
 
-		private void HandleProgress(ThrottledStream ts, long pg)
+		private void HandleProgress(ThrottledStream ts, long pg)    
 		{
             if (!m_taskreader.TransferProgressAsync.WaitForTask().Result)
                 throw new OperationCanceledException();

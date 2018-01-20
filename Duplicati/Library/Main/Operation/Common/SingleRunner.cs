@@ -40,15 +40,22 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
         private async Task Start()
-        {            
-            var ct = m_workerSource.Token;
-            while(!ct.IsCancellationRequested)
+        {
+            try
             {
-                // Grab next task
-                var nextTask = await m_channel.ReadAsync();
+                var ct = m_workerSource.Token;
+                while (!ct.IsCancellationRequested)
+                {
+                    // Grab next task
+                    var nextTask = await m_channel.ReadAsync();
 
-                // Execute it
-                await nextTask();
+                    // Execute it
+                    await nextTask();
+                }
+            }
+            catch(Exception ex)
+            {
+                this.Dispose();
             }
         }
 

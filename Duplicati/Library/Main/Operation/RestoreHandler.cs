@@ -337,9 +337,12 @@ namespace Duplicati.Library.Main.Operation
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
             using(var database = new LocalRestoreDatabase(dbparent))
-            using(var backend = new BackendManager(m_backendurl, m_options, result.BackendWriter, database))
+            using(var backend = new BackendManager(m_backendurl, m_options, result.BackendWriter, database, m_result))
             using(var metadatastorage = new RestoreHandlerMetadataStorage())
             {
+                // Use a dummy transaction until this class is rewritten to use proper transactions
+                System.Data.IDbTransaction transaction = null;
+
                 database.SetResult(m_result);
                 Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyParameters(database, m_options);
@@ -360,7 +363,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoBackendverification)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);                
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter);
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter, ref transaction);
                 }
 
                 //Figure out what files are to be patched, and what blocks are needed
@@ -388,7 +391,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                 {
-                    backend.WaitForComplete(database, null);
+                    backend.WaitForComplete(ref transaction);
                     return;
                 }
 
@@ -402,7 +405,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                 {
-                    backend.WaitForComplete(database, null);
+                    backend.WaitForComplete(ref transaction);
                     return;
                 }
                 
@@ -418,17 +421,20 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 var brokenFiles = new List<string>();
-                foreach(var blockvolume in new AsyncDownloader(volumes, backend))
+                var dl = new AsyncDownloader(volumes, backend);
+                while(dl.MoveNext(ref transaction))
+                {
+                    var blockvolume = dl.Current;
                     try
                     {
                         if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                         {
-                            backend.WaitForComplete(database, null);
+                            backend.WaitForComplete(ref transaction);
                             return;
                         }
-                    
-                        using(var tmpfile = blockvolume.TempFile)
-                        using(var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Name), tmpfile, m_options))
+
+                        using (var tmpfile = blockvolume.TempFile)
+                        using (var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Name), tmpfile, m_options))
                             PatchWithBlocklist(database, blocks, m_options, result, m_blockbuffer, metadatastorage);
                     }
                     catch (Exception ex)
@@ -438,6 +444,7 @@ namespace Duplicati.Library.Main.Operation
                         if (ex is System.Threading.ThreadAbortException)
                             throw;
                     }
+                }
 
                 // Restore empty files. They might not have any blocks so don't appear in any volume.
                 foreach (var file in database.GetFilesToRestore(true).Where(item => item.Length == 0)) {
@@ -472,7 +479,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                 {
-                                    backend.WaitForComplete(database, null);
+                                backend.WaitForComplete(ref transaction);
                                     return;
                                 }
                             
@@ -508,7 +515,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Drop the temp tables
                 database.DropRestoreTable();
-                backend.WaitForComplete(database, null);
+                backend.WaitForComplete(ref transaction);
             }
             
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);

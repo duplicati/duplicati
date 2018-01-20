@@ -57,9 +57,9 @@ namespace Duplicati.Library.Main.Operation
 
                 result.AddMessage("No broken filesets found in database, checking for missing remote files");
 
-                using (var backend = new BackendManager(backendurl, options, result.BackendWriter, db))
+                using (var backend = new BackendManager(backendurl, options, result.BackendWriter, db, result))
                 {
-                    var remotestate = FilelistProcessor.RemoteListAnalysis(backend, options, db, result.BackendWriter, null);
+                    var remotestate = FilelistProcessor.RemoteListAnalysis(backend, options, db, result.BackendWriter, null, ref transaction);
                     if (!remotestate.ParsedVolumes.Any())
                         throw new UserInformationException("No remote volumes were found, refusing purge");
 

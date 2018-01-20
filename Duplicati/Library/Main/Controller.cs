@@ -401,12 +401,15 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.IListRemoteResults ListRemote()
         {
+            // Use a dummy transaction until this class is rewritten to use proper transactions
+            System.Data.IDbTransaction transaction = null;
+
             return RunAction(new ListRemoteResults(), (result) =>
             {
                 using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
                 using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
-                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
-                    result.SetResult(bk.List());
+                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null, result))
+                    result.SetResult(bk.List(ref transaction));
             });
         }
 
@@ -414,13 +417,16 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new ListRemoteResults(), (result) =>
             {
+                // Use a dummy transaction until this class is rewritten to use proper transactions
+                System.Data.IDbTransaction transaction = null;
+
                 result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
                 using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
                 using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
-                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
+                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null, result))
                 {
                     // Only delete files that match the expected pattern and prefix
-                    var list = bk.List()
+                    var list = bk.List(ref transaction)
                         .Select(x => Volumes.VolumeBase.ParseFilename(x))
                         .Where(x => x != null)
                         .Where(x => x.Prefix == m_options.Prefix)
@@ -432,7 +438,7 @@ namespace Duplicati.Library.Main
                     {
                         try
                         {
-                            bk.Delete(list[i].File.Name, list[i].File.Size, true);
+                            bk.Delete(list[i].File.Name, list[i].File.Size, ref transaction, true);
                         }
                         catch (Exception ex)
                         {

@@ -170,13 +170,16 @@ namespace Duplicati.Library.Main.Operation
 
                 if (missing != null && missing.Count > 0)
                 {
-                    using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
+                    // Use a dummy transaction until this class is rewritten to use proper transactions
+                    System.Data.IDbTransaction transaction = null;
+
+                    using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result))
                     {
                         foreach (var f in missing)
                             if (m_options.Dryrun)
                                 m_result.AddDryrunMessage(string.Format("Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));
                             else
-                                backend.Delete(f.Name, f.Size);
+                                backend.Delete(f.Name, f.Size, ref transaction);
                     }
                 }
 

@@ -68,10 +68,13 @@ namespace Duplicati.Library.Main.Operation
             
             DateTime baseVersionTime = new DateTime(0);
             DateTime compareVersionTime = new DateTime(0);
-            
+
+            // Use a dummy transaction until this class is rewritten to use proper transactions
+            System.Data.IDbTransaction transaction = null;
+
             using(var tmpdb = useLocalDb ? null : new Library.Utility.TempFile())
             using(var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb))
-            using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
+            using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result))
             using(var storageKeeper = db.CreateStorageHelper())
             {
                 m_result.SetDatabase(db);
@@ -97,7 +100,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     m_result.AddMessage("No local database, accessing remote store");
                     
-                    var parsedlist = (from n in backend.List()
+                    var parsedlist = (from n in backend.List(ref transaction)
                                 let p = Volumes.VolumeBase.ParseFilename(n)
                                 where p != null && p.FileType == RemoteVolumeType.Files
                                 orderby p.Time descending
@@ -131,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                         return;
                         
-                    using(var tmpfile = backend.Get(baseFile.File.Name, baseFile.File.Size, null))
+                    using(var tmpfile = backend.Get(baseFile.File.Name, baseFile.File.Size, null, ref transaction))
                     using(var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
                         foreach(var f in rd.Files)
                             if (Library.Utility.FilterExpression.Matches(filter, f.Path))
@@ -140,7 +143,7 @@ namespace Duplicati.Library.Main.Operation
                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                         return;
                     
-                    using(var tmpfile = backend.Get(compareFile.File.Name, compareFile.File.Size, null))
+                    using(var tmpfile = backend.Get(compareFile.File.Name, compareFile.File.Size, null, ref transaction))
                     using(var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
                         foreach(var f in rd.Files)
                             if (Library.Utility.FilterExpression.Matches(filter, f.Path))

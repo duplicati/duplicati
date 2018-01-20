@@ -76,12 +76,12 @@ namespace Duplicati.Library.Main.Operation
         public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBacked, bool forceCompact, BackendManager sharedManager)
         {
             // Workaround where we allow a running backendmanager to be used
-            using(var bk = sharedManager == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db) : null)
+            using(var bk = sharedManager == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result) : null)
             {
                 var backend = bk ?? sharedManager;
 
                 if (!hasVerifiedBacked && !m_options.NoBackendverification)
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, ref transaction); 
                 
                 var filesetNumbers = db.FilesetTimes.Zip(Enumerable.Range(0, db.FilesetTimes.Count()), (a, b) => new Tuple<long, DateTime>(b, a.Value)).ToList();
                 var sets = db.FilesetTimes.Select(x => x.Value).ToArray();
@@ -110,20 +110,20 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                     {
-                        backend.WaitForComplete(db, transaction);
+                        backend.WaitForComplete(ref transaction);
                         return;
                     }
 
                     if (!m_options.Dryrun)
-                        backend.Delete(f.Key, f.Value);
+                        backend.Delete(f.Key, f.Value, ref transaction);
                     else
                         m_result.AddDryrunMessage(string.Format("Would delete remote fileset: {0}", f.Key));
                 }
 
                 if (sharedManager == null)
-                    backend.WaitForComplete(db, transaction);
+                    backend.WaitForComplete(ref transaction);
                 else
-                    backend.WaitForEmpty(db, transaction);
+                    backend.WaitForEmpty(ref transaction);
                 
                 var count = lst.Length;
                 if (!m_options.Dryrun)
