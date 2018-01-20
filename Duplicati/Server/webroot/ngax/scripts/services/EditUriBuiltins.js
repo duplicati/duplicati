@@ -27,7 +27,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
-
+	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -361,6 +361,20 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
+    EditUriBackendConfig.parsers['rclone'] = function (scope, module, server, port, path, options) {
+        if (options['--rclone-local-repository'])
+            scope.rclone_local_repository = options['--rclone-local-repository'];
+        if (options['--rclone-remote-repository'])
+            scope.rclone_remote_repository = options['--rclone-remote-repository'];
+        if (options['--rclone-remote-path'])
+            scope.rclone_remote_path = options['--rclone-remote-path'];
+
+		var nukeopts = ['--rclone-option', '--rclone-executable', '--rclone-local-repository'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    }
+	
+	
     EditUriBackendConfig.parsers['sia'] = function (scope, module, server, port, path, options) {
         if (options['--sia-targetpath'])
             scope.sia_targetpath = options['--sia-targetpath'];
@@ -372,8 +386,9 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         var nukeopts = ['--sia-targetpath', '--sia-redundancy', '--sia-password'];
         for (var x in nukeopts)
             delete options[nukeopts[x]];
-    };
-
+    }
+	
+	
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function(scope) {
         var opts = {
@@ -555,6 +570,34 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         );
 
         return url;
+    }
+	
+	EditUriBackendConfig.builders['rclone'] = function (scope) {
+		
+        var opts = {
+            'rclone-local-repository': scope.rclone_local_repository,
+			'rclone-option': scope.rclone_option,
+			'rclone-executable': scope.rclone_executable
+        };
+
+		if ((opts['rclone-executable'] || '') == '')
+            delete opts['rclone-executable'];
+        if ((opts['rclone-option'] || '') == '')
+            delete opts['rclone-option'];
+		
+	
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://{1}/{2}{3}',
+            scope.Backend.Key,
+			scope.Server,
+			scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+		
+		
     }
 
     EditUriBackendConfig.builders['jottacloud'] = function (scope) {
@@ -778,5 +821,14 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
             continuation();
     };
 
-
+    EditUriBackendConfig.validaters['rclone'] = function (scope, continuation) {
+        var res =
+			EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Remote Repository')) &&
+			EditUriBackendConfig.require_field(scope, 'rclone_local_repository', gettextCatalog.getString('Local Repository')) &&
+			EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Remote Path'));
+			
+        if (res)
+            continuation();
+    };
+	
 });
