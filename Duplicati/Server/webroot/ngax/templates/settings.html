@@ -111,7 +111,7 @@
                 <option value="crash" translate>Crashes only</option>
                 <option value="none" translate>None / disabled</option>
             </select>
-            <div class="sublabel"><p translate translate-params-link="'https://usage-reporter.duplicati.com/'">Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <a href="{{link}}" target="_blank">public usage statistics</a></p>
+            <div class="sublabel"><p translate translate-params-link="'https://usage-reporter.duplicati.com/'">Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <external-link link="link">public usage statistics</external-link></p>
             
             <p translate>All usage reports are sent anonymously and do not contain any personal information. They contain information about hardware and operating system, the type of backend, backup duration, overall size of source data and similar data. They do not contain paths, filenames, usernames, passwords or similar sensitive information.</p></div>
         </div>
@@ -119,7 +119,7 @@
         <div ng-repeat="module in ServerModules">
             <h2>{{module.DisplayName}}</h2>
             
-            <p ng-show="(module.ServiceLink || '').length > 0"><a href="{{module.ServiceLink}}" target="_blank">{{module.Description}}</a></p>
+            <p ng-show="(module.ServiceLink || '').length > 0"><external-link link="module.ServiceLink">{{module.Description}}</external-link></p>
             <p ng-show="(module.ServiceLink || '').length == 0">{{module.Description}}</p>
 
             <div class="input" ng-repeat="opt in module.SupportedGlobalCommands">

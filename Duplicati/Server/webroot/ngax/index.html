@@ -115,6 +115,7 @@
     <script type="text/javascript" src="scripts/directives/progressBar.js"></script>
     <script type="text/javascript" src="scripts/directives/advancedOptionsEditor.js"></script>
     <script type="text/javascript" src="scripts/directives/timeFormatFixer.js"></script>
+    <script type="text/javascript" src="scripts/directives/externalLink.js"></script>
 
     <script type="text/javascript" src="../package/ngax/package.js"></script>
     <script type="text/javascript" src="../oem/ngax/scripts/oem.js"></script>
@@ -138,15 +139,7 @@
             </div>
 
             <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
-                <a translate href="https://www.duplicati.com/donate/" target="blank">Donate</a>
-                <ul>
-                    <li>
-                        <a href="https://www.duplicati.com/donate/#crypto" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with crypto currency' | translate}}" title="{{'Donate with crypto currency' | translate}}" /></a>
-                    </li>
-                    <li>
-                        <a href="https://www.duplicati.com/donate/#opencollective" target="_blank"><img src="img/donate/opencollective.png" alt="{{'Donate with OpenCollective' | translate}}" title="{{'Donate with OpenCollective' | translate}}" /></a>
-                    </li>
-                </ul>
+                <external-link link="'https://www.duplicati.com/donate'">{{'Donate' | translate }}</external-link>
             </div>
             
 
@@ -221,9 +214,6 @@
                         <a href="#/settings" class="settings"  ng-class="{active: current_page == 'settings'}" translate>Settings</a>
                     </li>
                     <li>
-                        <a href="#/log" class="log" ng-class="{active: current_page == 'log'}" translate>Show log</a>
-                    </li>
-                    <li>
                         <a href="#/about" class="about" ng-class="{active: current_page == 'about'}" translate>About</a>
                     </li>
                     <li ng-show="isLoggedIn">
@@ -244,45 +234,34 @@
                     </li>
                 </ul>
             </div>
-            
+
+            <div class="donate">
+                <ul>
+                    <li ng-hide="systemInfo.SuppressDonationMessages">
+                        <external-link link="'https://www.duplicati.com/donate'">{{'Donate' | translate}}</external-link>
+                    </li>
+                </ul>
+            </div>            
             <div class="social">
-                {{'Visit us on' | translate}}
+                {{'Visit us on' | translate}}<div class="external-link-image"></div>
                 <ul>
                     <li>
-                        <a href="https://forum.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="{{'Duplicati forum' | translate}}" title="{{'Duplicati forum' | translate}}" width="28" /></a>
+                        <a href="https://forum.duplicati.com" target="_blank" rel="external"><img src="img/social/duplicati.png" alt="{{'Duplicati forum' | translate}}" title="{{'Duplicati forum' | translate}}" width="28" /></a>
                     </li>
                     <li>
-                        <a href="https://github.com/duplicati" target="_blank"><img src="img/social/github.png" alt="Github" title="Github" /></a>
+                        <a href="https://github.com/duplicati" target="_blank" rel="external"><img src="img/social/github.png" alt="Github" title="Github" /></a>
                     </li>
                     <li>
-                        <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank"><img src="img/social/facebook.png" alt="Facebook" title="Facebook" /></a>
+                        <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank" rel="external"><img src="img/social/facebook.png" alt="Facebook" title="Facebook" /></a>
                     </li>
                     <li>
-                        <a href="https://plus.google.com/105271984558189185842" target="_blank"><img src="img/social/google.png" alt="Google Plus" title="Google Plus" /></a>
+                        <a href="https://plus.google.com/105271984558189185842" target="_blank" rel="external"><img src="img/social/google.png" alt="Google Plus" title="Google Plus" /></a>
                     </li>
                     <!-- <li>
-                        <a href="http://www.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="{{'Duplicati Website' | translate}}" title="{{'Duplicati Website' | translate}}" /></a>
+                        <a href="http://www.duplicati.com" target="_blank" rel="external"><img src="img/social/duplicati.png" alt="{{'Duplicati Website' | translate}}" title="{{'Duplicati Website' | translate}}" /></a>
                     </li> -->
                 </ul>
             </div>
-            
-            <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
-                <a translate href="https://www.duplicati.com/donate/" target="blank">Donate</a>
-                <ul>
-                    <li>
-                        <a href="https://www.duplicati.com/donate/#opencollective" target="_blank"><img src="img/donate/opencollective.png" alt="{{'Donate with OpenCollective' | translate}}" title="{{'Donate with OpenCollective' | translate}}" /></a>
-                    </li>
-                    <li>
-                        <a href="https://www.duplicati.com/donate/#paypal" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | translate}}" title="{{'Donate with PayPal' | translate}}" /></a>
-                    </li>
-                    <li>
-                        <a href="https://www.duplicati.com/donate/#crypto" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with crypto currency' | translate}}" title="{{'Donate with crypto currency' | translate}}" /></a>
-                    </li>
-                    <li>
-                        <a href="https://www.duplicati.com/donate/#bountysource" target="_blank"><img src="img/donate/bountysource.png" alt="{{'Donate with BountySource' | translate}}" title="{{'Donate with BountySource' | translate}}" /></a>
-                    </li>
-                </ul>
-            </div>    
         </div>
     </div>
 
