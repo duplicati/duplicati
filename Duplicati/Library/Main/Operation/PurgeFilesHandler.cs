@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
-            
+
             using (var db = new Database.LocalPurgeDatabase(m_options.Dbpath))
                 DoRun(db, filter, null, 0, 1);
         }
@@ -173,13 +173,13 @@ namespace Duplicati.Library.Main.Operation
                                             if (m_options.Dryrun)
                                                 m_result.AddDryrunMessage(msg);
                                             else if (m_options.Verbose)
-                                                m_result.AddMessage(msg);
+                                                m_result.AddVerboseMessage(msg);
                                         }
 
                                         if (m_options.Dryrun)
                                             m_result.AddDryrunMessage("Writing files to remote storage");
                                         else if (m_options.Verbose)
-                                            m_result.AddMessage("Writing files to remote storage");
+                                            m_result.AddVerboseMessage("Writing files to remote storage");
                                     }
 
                                     if (m_options.Dryrun)
