@@ -69,7 +69,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'mssp': null,
                 'dropbox': null,
                 'sia': null,
-                'jottacloud': null
+                'jottacloud': null,
+				'rclone': null
             }
         };
 

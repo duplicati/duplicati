@@ -1,3 +1,14 @@
+2018-01-18 - 2.0.2.16_canary_2018-01-18
+==========
+* Reworked some internal compression code, thanks @vnau
+* Updated commandline documentation, thanks @mr-flibble
+* Improved 64bit OS detection, thanks @warwickmm
+* Fixed a problem with the progress bar hiding under the top bar, thanks @pectojin
+* Fixed a problem displaying more than 10 advanced options, thanks @pectojin
+* Improved detection of 32bit MSSQL on 64bit Windows, thanks @inat3k
+* Changed load order of modules to allow `run-script` to change setup, thanks @BrianLakstins
+* Added a `UserAgent` header to OD4B requests
+
 2018-01-03 - 2.0.2.15_experimental_2018-01-03
 ==========
 This is the same as build 2.0.2.14 canary

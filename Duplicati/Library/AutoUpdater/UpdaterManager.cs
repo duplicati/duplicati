@@ -441,113 +441,116 @@ namespace Duplicati.Library.AutoUpdater
                 }
             }
 
-            using (var tempfile = new Library.Utility.TempFileStream())
+            using (var tempfilename = new Library.Utility.TempFile())
             {
                 foreach (var url in updates)
                 {
                     try
                     {
-                        Action<long> cb = null;
-                        if (progress != null)
-                            cb = (s) => { progress(Math.Min(1.0, Math.Max(0.0, (double)s / version.CompressedSize))); };
-
-                        var wreq = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
-                        wreq.UserAgent = string.Format("{0} v{1}", APPNAME, SelfVersion.Version);
-                        wreq.Headers.Add("X-Install-ID", InstallID);
-
-                        var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
-                        using (var resp = areq.GetResponse())
-                        using (var rss = areq.GetResponseStream())
-                        using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
+                        using (var tempfile = System.IO.File.Open(tempfilename, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
                         {
-                            Duplicati.Library.Utility.Utility.CopyStream(pgs, tempfile);
-                        }
+                            Action<long> cb = null;
+                            if (progress != null)
+                                cb = (s) => { progress(Math.Min(1.0, Math.Max(0.0, (double)s / version.CompressedSize))); };
 
-                        var sha256 = System.Security.Cryptography.SHA256.Create();
-                        var md5 = System.Security.Cryptography.MD5.Create();
+                            var wreq = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
+                            wreq.UserAgent = string.Format("{0} v{1}", APPNAME, SelfVersion.Version);
+                            wreq.Headers.Add("X-Install-ID", InstallID);
 
-                        if (tempfile.Length != version.CompressedSize)
-                            throw new Exception(string.Format("Invalid file size {0}, expected {1} for {2}", tempfile.Length, version.CompressedSize, url));
-
-                        tempfile.Position = 0;
-                        var sha256hash = Convert.ToBase64String(sha256.ComputeHash(tempfile));
-                        if (sha256hash != version.SHA256)
-                            throw new Exception(string.Format("Damaged or corrupted file, sha256 mismatch for {0}", url));
-
-
-                        tempfile.Position = 0;
-                        var md5hash = Convert.ToBase64String(md5.ComputeHash(tempfile));
-                        if (md5hash != version.MD5)
-                            throw new Exception(string.Format("Damaged or corrupted file, md5 mismatch for {0}", url));
-
-                        tempfile.Position = 0;
-                        using (var tempfolder = new Duplicati.Library.Utility.TempFolder())
-                        using (ICompression zip = new Duplicati.Library.Compression.FileArchiveZip(tempfile, ArchiveMode.Read, new Dictionary<string, string>()))
-                        {
-                            foreach (var file in zip.ListFilesWithSize(""))
+                            var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
+                            using (var resp = areq.GetResponse())
+                            using (var rss = areq.GetResponseStream())
+                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
                             {
-                                if (System.IO.Path.IsPathRooted(file.Key) || file.Key.Trim().StartsWith("..", StringComparison.OrdinalIgnoreCase))
-                                    throw new Exception(string.Format("Out-of-place file path detected: {0}", file.Key));
-
-                                var targetpath = System.IO.Path.Combine(tempfolder, file.Key);
-                                var targetfolder = System.IO.Path.GetDirectoryName(targetpath);
-                                if (!System.IO.Directory.Exists(targetfolder))
-                                    System.IO.Directory.CreateDirectory(targetfolder);
-
-                                using (var zs = zip.OpenRead(file.Key))
-                                using (var fs = System.IO.File.Create(targetpath))
-                                    zs.CopyTo(fs);
+                                Duplicati.Library.Utility.Utility.CopyStream(pgs, tempfile);
                             }
 
-                            if (VerifyUnpackedFolder(tempfolder, version))
+                            var sha256 = System.Security.Cryptography.SHA256.Create();
+                            var md5 = System.Security.Cryptography.MD5.Create();
+
+                            if (tempfile.Length != version.CompressedSize)
+                                throw new Exception(string.Format("Invalid file size {0}, expected {1} for {2}", tempfile.Length, version.CompressedSize, url));
+
+                            tempfile.Position = 0;
+                            var sha256hash = Convert.ToBase64String(sha256.ComputeHash(tempfile));
+                            if (sha256hash != version.SHA256)
+                                throw new Exception(string.Format("Damaged or corrupted file, sha256 mismatch for {0}", url));
+
+
+                            tempfile.Position = 0;
+                            var md5hash = Convert.ToBase64String(md5.ComputeHash(tempfile));
+                            if (md5hash != version.MD5)
+                                throw new Exception(string.Format("Damaged or corrupted file, md5 mismatch for {0}", url));
+
+                            tempfile.Position = 0;
+                            using (var tempfolder = new Duplicati.Library.Utility.TempFolder())
+                            using (ICompression zip = new Duplicati.Library.Compression.FileArchiveZip(tempfile, ArchiveMode.Read, new Dictionary<string, string>()))
                             {
-                                var versionstring = TryParseVersion(version.Version).ToString();
-                                var targetfolder = System.IO.Path.Combine(INSTALLDIR, versionstring);
-                                if (System.IO.Directory.Exists(targetfolder))
-                                    System.IO.Directory.Delete(targetfolder, true);
-
-                                System.IO.Directory.CreateDirectory(targetfolder);
-
-                                var tempfolderpath = Duplicati.Library.Utility.Utility.AppendDirSeparator(tempfolder);
-                                var tempfolderlength = tempfolderpath.Length;
-
-                                // Would be nice, but does not work :(
-                                //System.IO.Directory.Move(tempfolder, targetfolder);
-
-                                foreach (var e in Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(tempfolder))
+                                foreach (var file in zip.ListFilesWithSize(""))
                                 {
-                                    var relpath = e.Substring(tempfolderlength);
-                                    if (string.IsNullOrWhiteSpace(relpath))
-                                        continue;
+                                    if (System.IO.Path.IsPathRooted(file.Key) || file.Key.Trim().StartsWith("..", StringComparison.OrdinalIgnoreCase))
+                                        throw new Exception(string.Format("Out-of-place file path detected: {0}", file.Key));
 
-                                    var fullpath = System.IO.Path.Combine(targetfolder, relpath);
-                                    if (relpath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
-                                        System.IO.Directory.CreateDirectory(fullpath);
-                                    else
-                                        System.IO.File.Copy(e, fullpath);
+                                    var targetpath = System.IO.Path.Combine(tempfolder, file.Key);
+                                    var targetfolder = System.IO.Path.GetDirectoryName(targetpath);
+                                    if (!System.IO.Directory.Exists(targetfolder))
+                                        System.IO.Directory.CreateDirectory(targetfolder);
+
+                                    using (var zs = zip.OpenRead(file.Key))
+                                    using (var fs = System.IO.File.Create(targetpath))
+                                        zs.CopyTo(fs);
                                 }
 
-                                // Verification will kick in when we list the installed updates
-                                //VerifyUnpackedFolder(targetfolder, version);
-                                System.IO.File.WriteAllText(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE), versionstring);
+                                if (VerifyUnpackedFolder(tempfolder, version))
+                                {
+                                    var versionstring = TryParseVersion(version.Version).ToString();
+                                    var targetfolder = System.IO.Path.Combine(INSTALLDIR, versionstring);
+                                    if (System.IO.Directory.Exists(targetfolder))
+                                        System.IO.Directory.Delete(targetfolder, true);
 
-                                m_hasUpdateInstalled = null;
+                                    System.IO.Directory.CreateDirectory(targetfolder);
 
-                                var obsolete = (from n in FindInstalledVersions()
-                                                where n.Value.Version != version.Version && n.Value.Version != SelfVersion.Version
-                                                let x = TryParseVersion(n.Value.Version)
-                                                orderby x descending
-                                                select n).Skip(1).ToArray();
+                                    var tempfolderpath = Duplicati.Library.Utility.Utility.AppendDirSeparator(tempfolder);
+                                    var tempfolderlength = tempfolderpath.Length;
 
-                                foreach (var f in obsolete)
-                                    try { System.IO.Directory.Delete(f.Key, true); }
-                                    catch { }
+                                    // Would be nice, but does not work :(
+                                    //System.IO.Directory.Move(tempfolder, targetfolder);
 
-                                return true;
-                            }
-                            else
-                            {
-                                throw new Exception(string.Format("Unable to verify unpacked folder for url: {0}", url));
+                                    foreach (var e in Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(tempfolder))
+                                    {
+                                        var relpath = e.Substring(tempfolderlength);
+                                        if (string.IsNullOrWhiteSpace(relpath))
+                                            continue;
+
+                                        var fullpath = System.IO.Path.Combine(targetfolder, relpath);
+                                        if (relpath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                                            System.IO.Directory.CreateDirectory(fullpath);
+                                        else
+                                            System.IO.File.Copy(e, fullpath);
+                                    }
+
+                                    // Verification will kick in when we list the installed updates
+                                    //VerifyUnpackedFolder(targetfolder, version);
+                                    System.IO.File.WriteAllText(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE), versionstring);
+
+                                    m_hasUpdateInstalled = null;
+
+                                    var obsolete = (from n in FindInstalledVersions()
+                                                    where n.Value.Version != version.Version && n.Value.Version != SelfVersion.Version
+                                                    let x = TryParseVersion(n.Value.Version)
+                                                    orderby x descending
+                                                    select n).Skip(1).ToArray();
+
+                                    foreach (var f in obsolete)
+                                        try { System.IO.Directory.Delete(f.Key, true); }
+                                        catch { }
+
+                                    return true;
+                                }
+                                else
+                                {
+                                    throw new Exception(string.Format("Unable to verify unpacked folder for url: {0}", url));
+                                }
                             }
                         }
                     }
@@ -751,7 +754,7 @@ namespace Duplicati.Library.AutoUpdater
             // Build a zip
             using (var archive_temp_file = new Duplicati.Library.Utility.TempFile())
             {
-                using (var archive_temp = new Duplicati.Library.Utility.TempFileStream(archive_temp_file))
+                using (var archive_temp = System.IO.File.Open(archive_temp_file, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
                 {
                     using (ICompression zipfile = new Duplicati.Library.Compression.FileArchiveZip(archive_temp, ArchiveMode.Write, new Dictionary<string, string>()))
                     {
@@ -810,9 +813,12 @@ namespace Duplicati.Library.AutoUpdater
                         }
                     }
 
-                    archive_temp.Position = 0;
                     remoteManifest.CompressedSize = archive_temp.Length;
+
+                    archive_temp.Position = 0;
                     remoteManifest.MD5 = computeStreamMD5(archive_temp);
+
+                    archive_temp.Position = 0;
                     remoteManifest.SHA256 = computeStreamSHA256(archive_temp);
                 }
                 System.IO.File.Move(archive_temp_file, System.IO.Path.Combine(outputfolder, "package.zip"));

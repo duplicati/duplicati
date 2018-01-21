@@ -5,6 +5,7 @@
         <li ng-class="{active: Page=='changelog'}"><a href ng-click="Page='changelog'" translate>Changelog</a></li>
         <li ng-class="{active: Page=='licenses'}"><a href ng-click="Page='licenses'" translate>Libraries</a></li>
         <li ng-class="{active: Page=='sysinfo'}"><a href ng-click="Page='sysinfo'" translate>System info</a></li>
+        <li ng-class="{active: Page=='logdata'}"><a href="#/log" translate>Show log</a></li>
     </ul>
 
     <div ng-show="Page == 'general'">
@@ -54,7 +55,7 @@
         <ul>
             <li ng-show="Licenses == null" translate>Loading ...</li>
             <li ng-repeat="item in Licenses" class="licenseentry">
-                <a target="_blank" href="{{item.link}}" class="itemlink">{{item.name}}</a>: {{item.description}}. <a class="licenselink" target="_blank" href="{{item.licenselink}}">{{item.license}} licensed</a>
+                <external-link class="itemlink" link="item.link">{{item.name}}</external-link>: {{item.description}}. <external-link class="licenselink" link="item.licenselink">{{item.license}} licensed</external-link>
             </li>
         </ul>
     </div>
