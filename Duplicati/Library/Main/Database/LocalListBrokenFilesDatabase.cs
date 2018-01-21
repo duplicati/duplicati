@@ -55,7 +55,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
             ShouldCloseConnection = false;
         }
 
-        public IEnumerable<Tuple<DateTime, long, long>> GetBrokenFilesets(DateTime time, long[] versions, System.Data.IDbTransaction transaction)
+        public IEnumerable<Tuple<DateTime, long, long>> GetBrokenFilesets(DateTime time, long[] versions)
         {
             var query = string.Format(BROKEN_FILE_SETS, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
             var clause = GetFilelistWhereClause(time, versions);
@@ -64,33 +64,33 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
 
             query += @" GROUP BY ""A"".""FilesetID""";
 
-            using (var cmd = Connection.CreateCommand(transaction))
+            using (var cmd = Connection.CreateCommand(Transaction))
                  foreach (var rd in cmd.ExecuteReaderEnumerable(query, clause.Item2))
                     if (!rd.IsDBNull(0))
                         yield return new Tuple<DateTime, long, long>(ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)), rd.ConvertValueToInt64(1, -1), rd.ConvertValueToInt64(2, 0));
         }
 
-        public IEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid, System.Data.IDbTransaction transaction)
+        public IEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid)
         {
-            using (var cmd = Connection.CreateCommand(transaction))
+            using (var cmd = Connection.CreateCommand(Transaction))
                 foreach (var rd in cmd.ExecuteReaderEnumerable(string.Format(BROKEN_FILE_NAMES, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID), filesetid))
                     if (!rd.IsDBNull(0))
                         yield return new Tuple<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
         }
 
-        public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, System.Data.IDbTransaction transaction)
+        public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname)
         {
-            using (var cmd = Connection.CreateCommand(transaction))
+            using (var cmd = Connection.CreateCommand(Transaction))
                 cmd.ExecuteNonQuery(string.Format(INSERT_BROKEN_IDS, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, tablename, IDfieldname), filesetid);
         }
 
-        public void RemoveMissingBlocks(IEnumerable<string> names, System.Data.IDbTransaction transaction)
+        public void RemoveMissingBlocks(IEnumerable<string> names)
         {
             if (names == null || !names.Any()) return;
-            if (transaction == null)
+            if (Transaction == null)
                 throw new Exception("This function cannot be called when not in a transaction, as it leaves the database in an inconsistent state");
 
-            using (var deletecmd = m_connection.CreateCommand(transaction))
+            using (var deletecmd = m_connection.CreateCommand(Transaction))
             {
                 string temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var volidstable = "DelVolSetIds-" + temptransguid;
@@ -102,7 +102,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
                 deletecmd.AddParameters(1);
                 foreach (var name in names)
                 {
-                    var volumeid = GetRemoteVolumeID(name, transaction);
+                    var volumeid = GetRemoteVolumeID(name);
                     deletecmd.SetParameterValue(0, volumeid);
                     deletecmd.ExecuteNonQuery();
                 }
@@ -125,9 +125,9 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
             }
         }
 
-        public long GetFilesetFileCount(long filesetid, System.Data.IDbTransaction transaction)
+        public long GetFilesetFileCount(long filesetid)
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_connection.CreateCommand(Transaction))
                 return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?", 0, filesetid);
         }
     }

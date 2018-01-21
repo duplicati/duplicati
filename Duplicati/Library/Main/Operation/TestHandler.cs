@@ -44,15 +44,12 @@ namespace Duplicati.Library.Main.Operation
             using(var db = new LocalTestDatabase(m_options.Dbpath))
             using(var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db, m_results))
             {
-                // Use a dummy transaction until this class is rewritten to use proper transactions
-                System.Data.IDbTransaction transaction = null;
-
                 db.SetResult(m_results);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
                 
                 if (!m_options.NoBackendverification)
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter, ref transaction);
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter);
                     
                 DoRun(samples, db, backend);
                 db.WriteResults();
@@ -63,9 +60,6 @@ namespace Duplicati.Library.Main.Operation
         {
             var files = db.SelectTestTargets(samples, m_options).ToList();
 
-            // Use a dummy transaction until this class is rewritten to use proper transactions
-            System.Data.IDbTransaction transaction = null;
-
             m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);
             m_results.OperationProgressUpdater.UpdateProgress(0);
             var progress = 0L;
@@ -73,14 +67,14 @@ namespace Duplicati.Library.Main.Operation
             if (m_options.FullRemoteVerification)
             {
                 var dl = new AsyncDownloader(files, backend);
-                while(dl.MoveNext(ref transaction))
+                while(dl.MoveNext())
                 {
                     var vol = dl.Current;
                     try
                     {
                         if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
                         {
-                            backend.WaitForComplete(ref transaction);
+                            backend.WaitForComplete();
                             m_results.EndTime = DateTime.UtcNow;
                             return;
                         }    
@@ -97,7 +91,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (res.Value == null || !res.Value.Any())
                             {
-                                var rv = db.GetRemoteVolume(vol.Name, null);
+                                var rv = db.GetRemoteVolume(vol.Name);
 
                                 if (rv.ID < 0)
                                 {
@@ -153,7 +147,7 @@ namespace Duplicati.Library.Main.Operation
                             string hash;
                             long size;
 
-                            using (var tf = backend.GetWithInfo(f.Name, out size, out hash, ref transaction))
+                            using (var tf = backend.GetWithInfo(f.Name, out size, out hash))
                                 res = TestVolumeInternals(db, f, tf, m_options, m_results, 1);
                             m_results.AddResult(res.Key, res.Value);
 
@@ -174,7 +168,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                         else
-                            backend.GetForTesting(f.Name, f.Size, f.Hash, ref transaction);
+                            backend.GetForTesting(f.Name, f.Size, f.Hash);
                         
                         db.UpdateVerificationCount(f.Name);
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);

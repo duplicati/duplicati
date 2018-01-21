@@ -69,7 +69,7 @@ namespace Duplicati.Library.Main.Operation
                 if (versions.Length <= 0)
                     throw new UserInformationException("No filesets matched the supplied time or versions");
 
-                var orphans = db.CountOrphanFiles(null);
+                var orphans = db.CountOrphanFiles();
                 if (orphans != 0)
                     throw new UserInformationException(string.Format("Unable to start the purge process as there are {0} orphan file(s)", orphans));
 
@@ -78,13 +78,12 @@ namespace Duplicati.Library.Main.Operation
 
                 if (filtercommand == null)
                 {
-                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false, null);
+                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false);
 
-                    System.Data.IDbTransaction dummytr = null;
                     if (m_options.NoBackendverification)
-                        FilelistProcessor.VerifyLocalList(backend, m_options, db, m_result.BackendWriter, ref dummytr);
+                        FilelistProcessor.VerifyLocalList(backend, m_options, db, m_result.BackendWriter);
                     else
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, ref dummytr, null);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, null);
                 }
 
                 var filesets = db.FilesetTimes.ToArray();
@@ -98,119 +97,110 @@ namespace Duplicati.Library.Main.Operation
                 // Reverse makes sure we re-write the old versions first
                 foreach (var versionid in versions.Reverse())
                 {
-                    using (var tr = db.BeginTransaction())
-                    {
-                        var ix = -1;
-                        for (var i = 0; i < filesets.Length; i++)
-                            if (filesets[i].Key == versionid)
-                            {
-                                ix = i;
-                                break;
-                            }
+                    if (m_options.Dryrun)
+                        db.RollbackTransaction();
+                    else
+                        db.CommitTransaction("StartNewVersionRemoval");
 
-                        if (ix < 0)
-                            throw new InvalidProgramException(string.Format("Fileset was reported with id {0}, but could not be found?", versionid));
-
-                        var secs = 0;
-                        while (secs < 60)
+                    var ix = -1;
+                    for (var i = 0; i < filesets.Length; i++)
+                        if (filesets[i].Key == versionid)
                         {
-                            secs++;
-                            var tfn = Volumes.VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, filesets[ix].Value.AddSeconds(secs));
-                            if (db.GetRemoteVolumeID(tfn, tr) < 0)
-                                break;
+                            ix = i;
+                            break;
                         }
 
-                        var ts = filesets[ix].Value.AddSeconds(secs);
-                        var prevfilename = db.GetRemoteVolumeNameForFileset(filesets[ix].Key, tr);
+                    if (ix < 0)
+                        throw new InvalidProgramException(string.Format("Fileset was reported with id {0}, but could not be found?", versionid));
 
-                        if (secs >= 60)
-                            throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is more than 60 seconds away", prevfilename, ts));
+                    var secs = 0;
+                    while (secs < 60)
+                    {
+                        secs++;
+                        var tfn = Volumes.VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, filesets[ix].Value.AddSeconds(secs));
+                        if (db.GetRemoteVolumeID(tfn) < 0)
+                            break;
+                    }
 
-                        if (ix != 0 && filesets[ix - 1].Value <= ts)
-                            throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is larger than the next timestamp {2}", prevfilename, ts, filesets[ix - 1].Value));
+                    var ts = filesets[ix].Value.AddSeconds(secs);
+                    var prevfilename = db.GetRemoteVolumeNameForFileset(filesets[ix].Key);
 
-                        using (var tempset = db.CreateTemporaryFileset(versionid, tr))
+                    if (secs >= 60)
+                        throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is more than 60 seconds away", prevfilename, ts));
+
+                    if (ix != 0 && filesets[ix - 1].Value <= ts)
+                        throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is larger than the next timestamp {2}", prevfilename, ts, filesets[ix - 1].Value));
+
+                    using (var tempset = db.CreateTemporaryFileset(versionid))
+                    {
+                        if (filtercommand == null)
+                            tempset.ApplyFilter(filter);
+                        else
+                            tempset.ApplyFilter(filtercommand);
+
+                        if (tempset.RemovedFileCount == 0)
                         {
-                            if (filtercommand == null)
-                                tempset.ApplyFilter(filter);
-                            else
-                                tempset.ApplyFilter(filtercommand);
+                            m_result.AddMessage(string.Format("Not writing a new fileset for {0} as it was not changed", prevfilename));
+                            currentprogress += versionprogress;
+                            db.RollbackTransaction();
+                            continue;
+                        }
+                        else
+                        {
+                            using (var tf = new Library.Utility.TempFile())
+                            using (var vol = new Volumes.FilesetVolumeWriter(m_options, ts))
+                            {
+                                var newids = tempset.ConvertToPermanentFileset(vol.RemoteFilename, ts);
+                                vol.VolumeID = newids.Item1;
 
-                            if (tempset.RemovedFileCount == 0)
-                            {
-                                m_result.AddMessage(string.Format("Not writing a new fileset for {0} as it was not changed", prevfilename));
-                                currentprogress += versionprogress;
-                                tr.Rollback();
-                                continue;
-                            }
-                            else
-                            {
-                                using (var tf = new Library.Utility.TempFile())
-                                using (var vol = new Volumes.FilesetVolumeWriter(m_options, ts))
+                                m_result.AddMessage(string.Format("Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize)));
+
+                                db.WriteFileset(vol, newids.Item2);
+
+                                m_result.RemovedFileSize += tempset.RemovedFileSize;
+                                m_result.RemovedFileCount += tempset.RemovedFileCount;
+                                m_result.RewrittenFileLists++;
+
+                                currentprogress += (versionprogress / 2);
+                                m_result.OperationProgressUpdater.UpdateProgress(currentprogress);
+
+                                if (m_options.Dryrun || m_options.Verbose || Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
                                 {
-                                    var newids = tempset.ConvertToPermanentFileset(vol.RemoteFilename, ts);
-                                    vol.VolumeID = newids.Item1;
-
-                                    m_result.AddMessage(string.Format("Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize)));
-
-                                    db.WriteFileset(vol, newids.Item2, tr);
-
-                                    m_result.RemovedFileSize += tempset.RemovedFileSize;
-                                    m_result.RemovedFileCount += tempset.RemovedFileCount;
-                                    m_result.RewrittenFileLists++;
-
-                                    currentprogress += (versionprogress / 2);
-                                    m_result.OperationProgressUpdater.UpdateProgress(currentprogress);
-
-                                    if (m_options.Dryrun || m_options.Verbose || Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
+                                    foreach (var fe in tempset.ListAllDeletedFiles())
                                     {
-                                        foreach (var fe in tempset.ListAllDeletedFiles())
-                                        {
-                                            var msg = string.Format("  Purging file {0} ({1})", fe.Key, Library.Utility.Utility.FormatSizeString(fe.Value));
+                                        var msg = string.Format("  Purging file {0} ({1})", fe.Key, Library.Utility.Utility.FormatSizeString(fe.Value));
 
-                                            if (Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
-                                                Logging.Log.WriteMessage(msg, Logging.LogMessageType.Profiling);
-
-                                            if (m_options.Dryrun)
-                                                m_result.AddDryrunMessage(msg);
-                                            else if (m_options.Verbose)
-                                                m_result.AddVerboseMessage(msg);
-                                        }
+                                        if (Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
+                                            Logging.Log.WriteMessage(msg, Logging.LogMessageType.Profiling);
 
                                         if (m_options.Dryrun)
-                                            m_result.AddDryrunMessage("Writing files to remote storage");
+                                            m_result.AddDryrunMessage(msg);
                                         else if (m_options.Verbose)
-                                            m_result.AddVerboseMessage("Writing files to remote storage");
+                                            m_result.AddVerboseMessage(msg);
                                     }
 
                                     if (m_options.Dryrun)
-                                    {
-                                        m_result.AddDryrunMessage(string.Format("Would upload file {0} ({1}) and delete file {2}, removing {3} files", vol.RemoteFilename, Library.Utility.Utility.FormatSizeString(vol.Filesize), prevfilename, tempset.RemovedFileCount));
-                                        tr.Rollback();
-                                    }
-                                    else
-                                    {
-                                        var lst = db.DropFilesetsFromTable(new[] { filesets[ix].Value }, tr).ToArray();
-                                        foreach (var f in lst)
-                                            db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, tr);
+                                        m_result.AddDryrunMessage("Writing files to remote storage");
+                                    else if (m_options.Verbose)
+                                        m_result.AddVerboseMessage("Writing files to remote storage");
+                                }
 
-                                        tr.Commit();
+                                if (m_options.Dryrun)
+                                {
+                                    m_result.AddDryrunMessage(string.Format("Would upload file {0} ({1}) and delete file {2}, removing {3} files", vol.RemoteFilename, Library.Utility.Utility.FormatSizeString(vol.Filesize), prevfilename, tempset.RemovedFileCount));
+                                    db.RollbackTransaction();
+                                }
+                                else
+                                {
+                                    var lst = db.DropFilesetsFromTable(new[] { filesets[ix].Value }).ToArray();
+                                    foreach (var f in lst)
+                                        db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null);
 
-                                        var nt = db.BeginTransaction();
-                                        try
-                                        {
-                                            backend.Put(ref nt, vol, synchronous: true);
-                                            backend.Delete(prevfilename, -1, ref nt, synchronous: true);
-                                            backend.FlushDbMessages(ref nt);
-                                            nt.Commit();
-                                            nt = null;
-                                        }
-                                        finally
-                                        {
-                                            if (nt != null)
-                                                nt.Dispose();
-                                        }
-                                    }
+                                    db.CommitTransaction("BeforeFileRemoval");
+                                    backend.Put(vol, synchronous: true);
+                                    backend.Delete(prevfilename, -1, synchronous: true);
+                                    backend.FlushDbMessages();
+                                    db.CommitTransaction("AfterFileRemoval");
                                 }
                             }
                         }
@@ -234,21 +224,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.CompactResults = new CompactResults(m_result);
                         using (var cdb = new Database.LocalDeleteDatabase(db))
                         {
-                            var tr = cdb.BeginTransaction();
-                            try
-                            {
-                                new CompactHandler(backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(cdb, true, ref tr, backend);
-                            }
-                            catch
-                            {
-                                try { tr.Rollback(); }
-                                catch { }
-                            }
-                            finally
-                            {
-                                try { tr.Commit(); }
-                                catch { }
-                            }
+                            new CompactHandler(backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(cdb, true, backend);
                         }
                     }
 
@@ -256,9 +232,7 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Complete);
                 }
 
-                // Use a dummy transaction until this class is rewritten to use proper transactions
-                System.Data.IDbTransaction transaction = null;
-                backend.WaitForComplete(ref transaction);
+                backend.WaitForComplete();
             }
         }
     }

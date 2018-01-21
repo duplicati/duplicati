@@ -50,11 +50,6 @@ namespace Duplicati.Library.Main.Operation.Common
         private readonly System.Threading.Thread m_mainthread;
 
         /// <summary>
-        /// The currently active transaction, if any
-        /// </summary>
-        private System.Data.IDbTransaction m_transaction;
-
-        /// <summary>
         /// Initializes a new instance of the
         /// <see cref="T:Duplicati.Library.Main.Operation.Common.BackendHandlerDatabaseGuard"/> class.
         /// </summary>
@@ -95,23 +90,10 @@ namespace Duplicati.Library.Main.Operation.Common
                 if (m_dryrun)
                 {
                     if (!restart)
-                    {
-                        if (m_transaction != null)
-                            m_transaction.Rollback();
-                        m_transaction = null;
-                    }
+                        m_db.RollbackTransaction();
                     return;                    
                 }
-
-                if (m_transaction != null)
-                {
-                    using (new Logging.Timer(message))
-                        m_transaction.Commit();
-                    if (restart)
-                        m_transaction = m_db.BeginTransaction();
-                    else
-                        m_transaction = null;
-                }
+                m_db.CommitTransaction(message, restart);
             });
         }
 
@@ -124,7 +106,7 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="data">Any data reported by the operation.</param>
         public Task LogRemoteOperationAsync(string operation, string path, string data)
         {
-            return AddToQueue(() => { m_db.LogRemoteOperation(operation, path, data, m_transaction); });
+            return AddToQueue(() => { m_db.LogRemoteOperation(operation, path, data); });
         }
 
         /// <summary>
@@ -135,7 +117,7 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="newname">The new filename.</param>
         public Task RenameRemoteFileAsync(string oldname, string newname)
         {
-            return AddToQueue(() => { m_db.RenameRemoteFile(oldname, newname, m_transaction); });
+            return AddToQueue(() => { m_db.RenameRemoteFile(oldname, newname); });
         }
 
         /// <summary>
@@ -150,14 +132,14 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="deleteGraceTime">The new delete grace time.</param>
         public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup = false, TimeSpan deleteGraceTime = default(TimeSpan))
         {
-            return AddToQueue(() => { m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, m_transaction); });
+            return AddToQueue(() => { m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime); });
         }
 
         /// <summary>
         /// Processes all pending operations into the database.
         /// </summary>
         /// <param name="transaction">The transaction instance</param>
-        public void ProcessAllPendingOperations(ref System.Data.IDbTransaction transaction)
+        public void ProcessAllPendingOperations()
         {
             //if (m_mainthread != System.Threading.Thread.CurrentThread)
             //    throw new InvalidOperationException("Attempted to flush database work queue from another thread");
@@ -174,8 +156,6 @@ namespace Duplicati.Library.Main.Operation.Common
             // on a log message, and emits a new one immediately after having one handled
             while (prevqueue.Count != 0)
             {
-                m_transaction = transaction;
-
                 foreach (var op in prevqueue)
                 {
                     try
@@ -197,13 +177,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 prevqueue = m_workQueue;
                 lock (m_lock)
                     m_workQueue = new List<Tuple<Action, TaskCompletionSource<bool>>>();
-
-                if (m_transaction != transaction)
-                    transaction = m_transaction;
             }
-
-            // Make sure we do not have a valid reference while we are not running
-            m_transaction = null;
         }
 
         /// <summary>

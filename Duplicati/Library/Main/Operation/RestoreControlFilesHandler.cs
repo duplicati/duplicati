@@ -29,16 +29,13 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true))
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result))
             {
-                // Use a dummy transaction until this class is rewritten to use proper transactions
-                System.Data.IDbTransaction transaction = null;
-
                 m_result.SetDatabase(db);
                 
                 var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
                 
                 try
                 {
-                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(backend.List(ref transaction), m_options);
+                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(backend.List(), m_options);
                     if (filteredList.Count == 0)
                         throw new Exception("No filesets found on remote target");
     
@@ -49,7 +46,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                             {
-                                backend.WaitForComplete(ref transaction);
+                                backend.WaitForComplete();
                                 return;
                             }    
                         
@@ -57,7 +54,7 @@ namespace Duplicati.Library.Main.Operation
                             var entry = db.GetRemoteVolume(file.Name);
 
                             var res = new List<string>();
-                            using (var tmpfile = backend.Get(file.Name, entry.Size < 0 ? file.Size : entry.Size, entry.Hash, ref transaction))
+                            using (var tmpfile = backend.Get(file.Name, entry.Size < 0 ? file.Size : entry.Size, entry.Hash))
 	                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
 	                            foreach (var cf in tmp.ControlFiles)
                                     if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
@@ -85,7 +82,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backend.WaitForComplete(ref transaction);
+                    backend.WaitForComplete();
                 }
 
                 db.WriteResults();

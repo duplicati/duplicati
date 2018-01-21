@@ -80,12 +80,9 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new Database.LocalDatabase(tmpdb, "List", true))
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result))
             {
-                // Use a dummy transaction until this class is rewritten to use proper transactions
-                System.Data.IDbTransaction transaction = null;
-
                 m_result.SetDatabase(db);
                 
-                var filteredList = ParseAndFilterFilesets(backend.List(ref transaction), m_options);
+                var filteredList = ParseAndFilterFilesets(backend.List(), m_options);
                 if (filteredList.Count == 0)
                     throw new UserInformationException("No filesets found on remote target");
 
@@ -104,7 +101,7 @@ namespace Duplicati.Library.Main.Operation
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                     return;
                 
-                using (var tmpfile = backend.Get(firstEntry.File.Name, firstEntry.File.Size, null, ref transaction))
+                using (var tmpfile = backend.Get(firstEntry.File.Name, firstEntry.File.Size, null))
                 using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
                     if (simpleList)
                     {
@@ -137,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
                     
                 long flindex = 1;
                 foreach(var flentry in filteredList)
-                    using(var tmpfile = backend.Get(flentry.Value.File.Name, flentry.Value.File == null ? -1 : flentry.Value.File.Size, null, ref transaction))
+                    using(var tmpfile = backend.Get(flentry.Value.File.Name, flentry.Value.File == null ? -1 : flentry.Value.File.Size, null))
                     using (var rd = new Volumes.FilesetVolumeReader(flentry.Value.CompressionModule, tmpfile, m_options))
                     {
                         if (m_result.TaskControlRendevouz() == TaskControlState.Stop)

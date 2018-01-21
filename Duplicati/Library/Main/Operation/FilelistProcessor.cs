@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
         /// <param name="log">The log instance to use</param>
-        public static void VerifyLocalList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, ref System.Data.IDbTransaction transaction)
+        public static void VerifyLocalList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log)
         {
             var locallist = database.GetRemoteVolumes();
             foreach(var i in locallist)
@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Operation
                         log.AddMessage(string.Format("removing remote file listed as {0}: {1}", i.State, i.Name));
                         try
                         {
-                            backend.Delete(i.Name, i.Size, ref transaction, true);
+                            backend.Delete(i.Name, i.Size, true);
                         }
                         catch (Exception ex)
                         {
@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Operation
                         break;
                 }
 
-                backend.FlushDbMessages(ref transaction);
+                backend.FlushDbMessages();
             }
         }
 
@@ -76,9 +76,9 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="database">The database to compare with</param>
         /// <param name="log">The log instance to use</param>
         /// <param name="protectedfile">A filename that should be excempted for deletion</param>
-        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, ref System.Data.IDbTransaction transaction, string protectedfile = null)
+        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, string protectedfile = null)
         {
-            var tp = RemoteListAnalysis(backend, options, database, log, protectedfile, ref transaction);
+            var tp = RemoteListAnalysis(backend, options, database, log, protectedfile);
             long extraCount = 0;
             long missingCount = 0;
             
@@ -154,8 +154,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="options">The options to use</param>
         /// <param name="result">The result writer</param>
         /// <param name="db">The attached database</param>
-        /// <param name="transaction">An optional transaction object</param>
-        public static void UploadVerificationFile(BackendManager backend, Options options, IBackendWriter result, LocalDatabase db, ref System.Data.IDbTransaction transaction)
+        public static void UploadVerificationFile(BackendManager backend, Options options, IBackendWriter result, LocalDatabase db)
         {
             using(var tempfile = new Library.Utility.TempFile())
             {
@@ -169,8 +168,8 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    backend.PutUnencrypted(remotename, tempfile, ref transaction);
-                    backend.WaitForEmpty(ref transaction);
+                    backend.PutUnencrypted(remotename, tempfile);
+                    backend.WaitForEmpty();
                 }
             }
         }
@@ -183,9 +182,9 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
         /// <param name="protectedfile">A filename that should be excempted for deletion</param>
-        public static RemoteAnalysisResult RemoteListAnalysis(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, string protectedfile, ref System.Data.IDbTransaction transaction)
+        public static RemoteAnalysisResult RemoteListAnalysis(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, string protectedfile)
         {
-            var rawlist = backend.List(ref transaction);
+            var rawlist = backend.List();
             var lookup = new Dictionary<string, Volumes.IParsedVolume>();
             protectedfile = protectedfile ?? string.Empty;
 
@@ -266,7 +265,7 @@ namespace Duplicati.Library.Main.Operation
                         if (remoteFound)
                         {
                             log.AddMessage(string.Format("removing remote file listed as {0}: {1}", i.State, i.Name));
-                            backend.Delete(i.Name, i.Size, ref transaction, true);
+                            backend.Delete(i.Name, i.Size, true);
                         }
                         else
                         {
@@ -300,13 +299,13 @@ namespace Duplicati.Library.Main.Operation
                             if (string.Equals(i.Name, protectedfile))
                             {
                                 log.AddMessage(string.Format("keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name));
-                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), null);
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0));
                             }
                             else
                             {
                                 log.AddMessage(string.Format("scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name));
                                 cleanupRemovedRemoteVolumes.Add(i.Name);
-                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2));
                             }
                         }
                         else
@@ -318,7 +317,7 @@ namespace Duplicati.Library.Main.Operation
                             else
                             {
                                 log.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", i.State, i.Name));
-                                backend.Delete(i.Name, i.Size, ref transaction, true);
+                                backend.Delete(i.Name, i.Size, true);
                             }
                         }
                         break;
@@ -346,11 +345,11 @@ namespace Duplicati.Library.Main.Operation
                         break;
                 }
 
-                backend.FlushDbMessages(ref transaction);
+                backend.FlushDbMessages();
             }
 
             // cleanup deleted volumes in DB en block
-            database.RemoveRemoteVolumes(cleanupRemovedRemoteVolumes, null);
+            database.RemoveRemoteVolumes(cleanupRemovedRemoteVolumes);
 
             foreach(var i in missingHash)
                 log.AddWarning(string.Format("remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.Item2.State, i.Item2.Name, i.Item1, i.Item2.Size, i.Item2.Hash), null);

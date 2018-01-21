@@ -111,16 +111,16 @@ namespace Duplicati.Library.Main
             m_options = options;
         }
 
-        private Task WaitForTaskIfRequired(bool forcesync, ref System.Data.IDbTransaction transaction, Func<Task> cb)
+        private Task WaitForTaskIfRequired(bool forcesync, Func<Task> cb)
         {
             if (m_lastException != null)
                 throw m_lastException;
 
-            m_db.ProcessAllPendingOperations(ref transaction);
+            m_db.ProcessAllPendingOperations();
 
             var task = cb();
 
-            m_db.ProcessAllPendingOperations(ref transaction);
+            m_db.ProcessAllPendingOperations();
 
             if (forcesync || m_options.SynchronousUpload)
             {
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main
                     do
                     {
                         task.Wait(500);
-                        m_db.ProcessAllPendingOperations(ref transaction);
+                        m_db.ProcessAllPendingOperations();
                     }
                     while (!task.IsCompleted);                        
                     task.WaitForTaskOrThrow();
@@ -145,7 +145,7 @@ namespace Duplicati.Library.Main
                     m_stats.SetBlocking(false); 
                 }
 
-                m_db.ProcessAllPendingOperations(ref transaction);
+                m_db.ProcessAllPendingOperations();
             }
             else
             {
@@ -170,66 +170,66 @@ namespace Duplicati.Library.Main
             return task;
         }
 
-        public void PutUnencrypted(string remotename, string localpath, ref System.Data.IDbTransaction transaction)
+        public void PutUnencrypted(string remotename, string localpath)
         {
-            WaitForTaskIfRequired(false, ref transaction, () => m_backend.PutUnencryptedAsync(remotename, localpath));
+            WaitForTaskIfRequired(false, () => m_backend.PutUnencryptedAsync(remotename, localpath));
         }
 
-        public void Put(ref System.Data.IDbTransaction transaction, VolumeWriterBase item, IndexVolumeWriter indexfile = null, bool synchronous = false)
+        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, bool synchronous = false)
         {
-            WaitForTaskIfRequired(synchronous, ref transaction, () => m_backend.UploadFileAsync(item, async (remotename) => {
+            WaitForTaskIfRequired(synchronous, () => m_backend.UploadFileAsync(item, async (remotename) => {
                 return indexfile; 
             }));
         }
 
-        public Library.Utility.TempFile GetWithInfo(string remotename, out long size, out string hash, ref System.Data.IDbTransaction transaction)
+        public Library.Utility.TempFile GetWithInfo(string remotename, out long size, out string hash)
         {
             return 
                 new WaitHandleWrapper(
-                    (Task<Tuple<Library.Utility.TempFile, long, string>>)WaitForTaskIfRequired(true, ref transaction, () => m_backend.GetFileWithInfoAsync(remotename))
+                    (Task<Tuple<Library.Utility.TempFile, long, string>>)WaitForTaskIfRequired(true, () => m_backend.GetFileWithInfoAsync(remotename))
                 ).Wait(out hash, out size);
         }
 
-        public Library.Utility.TempFile Get(string remotename, long size, string hash, ref System.Data.IDbTransaction transaction)
+        public Library.Utility.TempFile Get(string remotename, long size, string hash)
         {
-            var t = (Task<Library.Utility.TempFile>)WaitForTaskIfRequired(true, ref transaction, () => m_backend.GetFileAsync(remotename, size, hash));
+            var t = (Task<Library.Utility.TempFile>)WaitForTaskIfRequired(true, () => m_backend.GetFileAsync(remotename, size, hash));
             return t.Result;
         }
 
-        public IDownloadWaitHandle GetAsync(string remotename, long size, string hash, ref System.Data.IDbTransaction transaction)
+        public IDownloadWaitHandle GetAsync(string remotename, long size, string hash)
         {
             return 
                 new WaitHandleWrapper(
-                    (Task<Tuple<Library.Utility.TempFile, long, string>>)WaitForTaskIfRequired(false, ref transaction, () => m_backend.GetFileWithInfoAsync(remotename))
+                    (Task<Tuple<Library.Utility.TempFile, long, string>>)WaitForTaskIfRequired(false, () => m_backend.GetFileWithInfoAsync(remotename))
                 );
         }
 
-        public void GetForTesting(string remotename, long size, string hash, ref System.Data.IDbTransaction transaction)
+        public void GetForTesting(string remotename, long size, string hash)
         {
-            WaitForTaskIfRequired(true, ref transaction, async () =>
+            WaitForTaskIfRequired(true, async () =>
             {
                 using (await m_backend.GetFileForTestingAsync(remotename, size, hash))
                 { }
             });
         }
 
-        public IList<Library.Interface.IFileEntry> List(ref System.Data.IDbTransaction transaction)
+        public IList<Library.Interface.IFileEntry> List()
         {
             return
                 ((Task<IList<Interface.IFileEntry>>)
-                 WaitForTaskIfRequired(true, ref transaction, () => m_backend.ListFilesAsync()))
+                 WaitForTaskIfRequired(true, () => m_backend.ListFilesAsync()))
                 .Result;
         }
 
-        public void WaitForComplete(ref System.Data.IDbTransaction transaction)
+        public void WaitForComplete()
         {
-            WaitForEmpty(ref transaction);
+            WaitForEmpty();
             m_backend.Dispose();
         }
 
-        public void WaitForEmpty(ref System.Data.IDbTransaction transaction)
+        public void WaitForEmpty()
         {
-            WaitForTaskIfRequired(true, ref transaction, () => {
+            WaitForTaskIfRequired(true, () => {
                 lock (m_lock)
                 {
                     while (m_pendingTasks.Count > 0)
@@ -239,19 +239,19 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public void CreateFolder(string remotename, ref System.Data.IDbTransaction transaction)
+        public void CreateFolder(string remotename)
         {
-            WaitForTaskIfRequired(true, ref transaction, () => m_backend.CreateFolder(remotename));
+            WaitForTaskIfRequired(true, () => m_backend.CreateFolder(remotename));
         }
 
-        public void Delete(string remotename, long size, ref System.Data.IDbTransaction transaction, bool synchronous = false)
+        public void Delete(string remotename, long size, bool synchronous = false)
         {
-            WaitForTaskIfRequired(synchronous, ref transaction, () => m_backend.DeleteFileAsync(remotename));
+            WaitForTaskIfRequired(synchronous, () => m_backend.DeleteFileAsync(remotename));
         }
 
-        public void FlushDbMessages(ref System.Data.IDbTransaction transaction)
+        public void FlushDbMessages()
         {
-            m_db.ProcessAllPendingOperations(ref transaction);
+            m_db.ProcessAllPendingOperations();
         }
 
         public void Dispose()

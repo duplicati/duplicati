@@ -338,7 +338,7 @@ namespace Duplicati.Library.Main
                     while (m_dbqueue.Count > 0)
                     {
                         var el = m_dbqueue.Dequeue();
-                        m_db.LogMessage(el.Type, el.Message, el.Exception, null);
+                        m_db.LogMessage(el.Type, el.Message, el.Exception);
                     }
                 }
             }
@@ -353,7 +353,7 @@ namespace Duplicati.Library.Main
             else
             {
                 FlushLog();
-                m_db.LogMessage("Message", message, ex, null);
+                m_db.LogMessage("Message", message, ex);
             }
         }
 

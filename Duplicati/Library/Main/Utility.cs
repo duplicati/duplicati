@@ -96,10 +96,10 @@ namespace Duplicati.Library.Main
             return new Metahash(values, options);
         }
 
-        internal static void UpdateOptionsFromDb(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        internal static void UpdateOptionsFromDb(LocalDatabase db, Options options)
         {
             string n = null;
-            var opts = db.GetDbOptions(transaction);
+            var opts = db.GetDbOptions();
             if(opts.ContainsKey("blocksize") && (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n)))
                 options.RawOptions["blocksize"] = opts["blocksize"] + "b";
 
@@ -109,13 +109,13 @@ namespace Duplicati.Library.Main
                 options.RawOptions["file-hash-algorithm"] = opts["filehash"];
         }
 
-        internal static void VerifyParameters(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        internal static void VerifyParameters(LocalDatabase db, Options options)
         {
             var newDict = new Dictionary<string, string>();
             newDict.Add("blocksize", options.Blocksize.ToString());
             newDict.Add("blockhash", options.BlockHashAlgorithm);
             newDict.Add("filehash", options.FileHashAlgorithm);
-            var opts = db.GetDbOptions(transaction);
+            var opts = db.GetDbOptions();
             
             if (options.NoEncryption)
             {
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Main
                     if (!newDict.ContainsKey(k.Key))
                         newDict[k.Key] = k.Value;
                 
-                db.SetDbOptions(newDict, transaction);               
+                db.SetDbOptions(newDict);               
             }
         }
 

@@ -180,7 +180,7 @@ namespace Duplicati.Library.Main.Database
             m_tempfiletable = "Fileset-" + guid;
             m_tempblocktable = "Blocks-" + guid;
 
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(Transaction))
             {
                 var filesetIds = GetFilesetIDs(NormalizeDateTime(restoretime), versions).ToList();
                 while(filesetIds.Count > 0)
@@ -220,46 +220,40 @@ namespace Duplicati.Library.Main.Database
                         // If we get a list of filenames, the lookup table is faster
                         // unfortunately we cannot do this if the filesystem is case sensitive as
                         // SQLite only supports ASCII compares
-                        using(var tr = m_connection.BeginTransaction())
+                        var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
+                        var m_filenamestable = "Filenames-" + guid;
+                        cmd.Transaction = Transaction;
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));
+                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", m_filenamestable);
+                        cmd.AddParameter();
+                        
+                        foreach(var s in p)
                         {
-                            var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
-                            var m_filenamestable = "Filenames-" + guid;
-                            cmd.Transaction = tr;
-                            cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));
-                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", m_filenamestable);
-                            cmd.AddParameter();
-                            
-                            foreach(var s in p)
-                            {
-                                cmd.SetParameterValue(0, s);
-                                cmd.ExecuteNonQuery();
-                            }
-
-                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
-                            cmd.SetParameterValue(0, filesetId);
-                            var c = cmd.ExecuteNonQuery();
-                            
-                            cmd.Parameters.Clear();
-                            
-                            if (c != p.Length && c != 0)
-                            {
-                                var sb = new StringBuilder();
-                                sb.AppendLine();
-                                
-                                using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""Path"" FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{1}"")", m_filenamestable, m_tempfiletable)))
-                                    while (rd.Read())
-                                        sb.AppendLine(rd.GetValue(0).ToString());
-    
-                                var actualrestoretime = ParseFromEpochSeconds(cmd.ExecuteScalarInt64(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", 0, filesetId));
-                                log.AddWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
-                                cmd.Parameters.Clear();
-                            }
-                            
-                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_filenamestable));
-                            
-                            using(new Logging.Timer("CommitPrepareFileset"))
-                                tr.Commit();
+                            cmd.SetParameterValue(0, s);
+                            cmd.ExecuteNonQuery();
                         }
+
+                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
+                        cmd.SetParameterValue(0, filesetId);
+                        var c = cmd.ExecuteNonQuery();
+                        
+                        cmd.Parameters.Clear();
+                        
+                        if (c != p.Length && c != 0)
+                        {
+                            var sb = new StringBuilder();
+                            sb.AppendLine();
+                            
+                            using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""Path"" FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{1}"")", m_filenamestable, m_tempfiletable)))
+                                while (rd.Read())
+                                    sb.AppendLine(rd.GetValue(0).ToString());
+
+                            var actualrestoretime = ParseFromEpochSeconds(cmd.ExecuteScalarInt64(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", 0, filesetId));
+                            log.AddWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
+                            cmd.Parameters.Clear();
+                        }
+                        
+                        cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_filenamestable));
                     }
                     else
                     {
@@ -998,7 +992,6 @@ namespace Duplicati.Library.Main.Database
             void SetFileDataVerified(long targetfileid);
             void Commit(ILogWriter log);
             void UpdateProcessed(IOperationProgressUpdater writer);
-            System.Data.IDbTransaction Transaction { get; }
         }
 
         /// <summary>
@@ -1013,26 +1006,27 @@ namespace Duplicati.Library.Main.Database
             private System.Data.IDbCommand m_updateAsRestoredCommand;
             private System.Data.IDbCommand m_updateFileAsDataVerifiedCommand;
             private System.Data.IDbCommand m_statUpdateCommand;
+            private LocalDatabase m_parent;
             private bool m_hasUpdates = false;
 
             private string m_blocktablename;
             private string m_filetablename;
 
-            public System.Data.IDbTransaction Transaction { get { return m_insertblockCommand.Transaction; } }
-
-            public DirectBlockMarker(System.Data.IDbConnection connection, string blocktablename, string filetablename, string statstablename)
+            public DirectBlockMarker(System.Data.IDbConnection connection, string blocktablename, string filetablename, string statstablename, LocalDatabase parent)
             {
+                m_parent = parent;
                 m_insertblockCommand = connection.CreateCommand();
+
                 m_resetfileCommand = connection.CreateCommand();
                 m_updateAsRestoredCommand = connection.CreateCommand();
                 m_updateFileAsDataVerifiedCommand = connection.CreateCommand();
                 m_statUpdateCommand = connection.CreateCommand();
 
-                m_insertblockCommand.Transaction = connection.BeginTransaction();
-                m_resetfileCommand.Transaction = m_insertblockCommand.Transaction;
-                m_updateAsRestoredCommand.Transaction = m_insertblockCommand.Transaction;
-                m_updateFileAsDataVerifiedCommand.Transaction = m_insertblockCommand.Transaction;
-                m_statUpdateCommand.Transaction = m_insertblockCommand.Transaction;
+                m_insertblockCommand.Transaction = m_parent.Transaction;
+                m_resetfileCommand.Transaction = m_parent.Transaction;
+                m_updateAsRestoredCommand.Transaction = m_parent.Transaction;
+                m_updateFileAsDataVerifiedCommand.Transaction = m_parent.Transaction;
+                m_statUpdateCommand.Transaction = m_parent.Transaction;
 
                 m_blocktablename = blocktablename;
                 m_filetablename = filetablename;
@@ -1173,7 +1167,7 @@ namespace Duplicati.Library.Main.Database
 
         public IBlockMarker CreateBlockMarker()
         {
-            return new DirectBlockMarker(m_connection, m_tempblocktable, m_tempfiletable, m_totalprogtable);
+            return new DirectBlockMarker(m_connection, m_tempblocktable, m_tempfiletable, m_totalprogtable, this);
         }
 
         public override void Dispose()

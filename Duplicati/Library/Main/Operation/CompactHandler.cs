@@ -45,48 +45,38 @@ namespace Duplicati.Library.Main.Operation
             using(var db = new LocalDeleteDatabase(m_options.Dbpath, "Compact"))
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result))
             {
-                var tr = db.BeginTransaction();
-                try
+                m_result.SetDatabase(db);
+                Utility.UpdateOptionsFromDb(db, m_options);
+                Utility.VerifyParameters(db, m_options);
+                
+                var changed = DoCompact(db, false, null);
+                
+                if (changed && m_options.UploadVerificationFile)
+                    FilelistProcessor.UploadVerificationFile(backend, m_options, m_result.BackendWriter, db);
+                
+                if (!m_options.Dryrun)
                 {
-                    m_result.SetDatabase(db);
-                    Utility.UpdateOptionsFromDb(db, m_options);
-                    Utility.VerifyParameters(db, m_options);
-                    
-                    var changed = DoCompact(db, false, ref tr, null);
-                    
-                    if (changed && m_options.UploadVerificationFile)
-                        FilelistProcessor.UploadVerificationFile(backend, m_options, m_result.BackendWriter, db, ref tr);
-                    
-                    if (!m_options.Dryrun)
+                    if (changed)
                     {
-                        using(new Logging.Timer("CommitCompact"))
-                            tr.Commit();
-                        if (changed)
+                        db.WriteResults();
+                        db.CommitTransaction("CommitCompact", false);
+                        if (m_options.AutoVacuum)
                         {
-                            db.WriteResults();
-                            if (m_options.AutoVacuum)
-                            {
-                                db.Vacuum();
-                            }
+                            db.Vacuum();
                         }
                     }
                     else
-                        tr.Rollback();
-                    
-                    tr = null;
+                        db.CommitTransaction("CommitCompact", false);
+
                 }
-                finally
-                {
-                    if (tr != null)
-                        try { tr.Rollback(); }
-                        catch { }
-                }
+                else
+                    db.RollbackTransaction(false);
             }
         }
         
-        internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, ref System.Data.IDbTransaction transaction, BackendManager sharedBackend)
+        internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, BackendManager sharedBackend)
         {
-            var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
+            var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount);
             report.ReportCompactData(m_result);
             
             if (report.ShouldReclaim || report.ShouldCompact)
@@ -96,17 +86,17 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var backend = bk ?? sharedBackend;
                     if (!hasVerifiedBackend && !m_options.NoBackendverification)
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, ref transaction);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter);
         
                     BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
-                    newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
+                    newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
     
                     IndexVolumeWriter newvolindex = null;
                     if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
                     {
                         newvolindex = new IndexVolumeWriter(m_options);
-                        newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
-                        db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
+                        newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+                        db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID);
                         newvolindex.StartVolume(newvol.RemoteFilename);
                     }
                     
@@ -125,7 +115,7 @@ namespace Duplicati.Library.Main.Operation
                     var fullyDeleteable = (from v in remoteList
                                            where report.DeleteableVolumes.Contains(v.Name)
                                            select (IRemoteVolume)v).ToList();                    
-                    deletedVolumes.AddRange(DoDelete(db, backend, fullyDeleteable, ref transaction));
+                    deletedVolumes.AddRange(DoDelete(db, backend, fullyDeleteable));
 
                     // This list is used to pick up unused volumes,
                     // so they can be deleted once the upload of the
@@ -139,16 +129,16 @@ namespace Duplicati.Library.Main.Operation
                                                  select (IRemoteVolume)v).ToList();
 
                         var dl = new AsyncDownloader(volumesToDownload, backend);
-                        using (var q = db.CreateBlockQueryHelper(m_options, transaction))
+                        using (var q = db.CreateBlockQueryHelper(m_options))
                         {
-                            while(dl.MoveNext(ref transaction))
+                            while(dl.MoveNext())
                             {
                                 var entry = dl.Current;
                                 using (var tmpfile = entry.TempFile)
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
-                                        backend.WaitForComplete(ref transaction);
+                                        backend.WaitForComplete();
                                         return false;
                                     }
 
@@ -158,7 +148,7 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         foreach (var e in f.Blocks)
                                         {
-                                            if (q.UseBlock(e.Key, e.Value, transaction))
+                                            if (q.UseBlock(e.Key, e.Value))
                                             {
                                                 //TODO: How do we get the compression hint? Reverse query for filename in db?
                                                 var s = f.ReadBlock(e.Key, buffer);
@@ -169,7 +159,7 @@ namespace Duplicati.Library.Main.Operation
                                                 if (newvolindex != null)
                                                     newvolindex.AddBlock(e.Key, e.Value);
 
-                                                db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID, transaction);
+                                                db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID);
                                                 blocksInVolume++;
 
                                                 if (newvol.Filesize > m_options.VolumeSize)
@@ -179,26 +169,26 @@ namespace Duplicati.Library.Main.Operation
                                                         uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
 
                                                     if (!m_options.Dryrun)
-                                                        backend.Put(ref transaction, newvol, newvolindex);
+                                                        backend.Put(newvol, newvolindex);
                                                     else
                                                         m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize)));
 
 
                                                     newvol = new BlockVolumeWriter(m_options);
-                                                    newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
+                                                    newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
 
                                                     if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
                                                     {
                                                         newvolindex = new IndexVolumeWriter(m_options);
-                                                        newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
-                                                        db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
+                                                        newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+                                                        db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID);
                                                         newvolindex.StartVolume(newvol.RemoteFilename);
                                                     }
 
                                                     blocksInVolume = 0;
 
                                                     //After we upload this volume, we can delete all previous encountered volumes
-                                                    deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
+                                                    deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes));
                                                     deleteableVolumes = new List<IRemoteVolume>();
                                                 }
                                             }
@@ -220,23 +210,23 @@ namespace Duplicati.Library.Main.Operation
                                 if (newvolindex != null)
                                     uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
                                 if (!m_options.Dryrun)
-                                    backend.Put(ref transaction, newvol, newvolindex);
+                                    backend.Put(newvol, newvolindex);
                                 else
                                     m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize)));
                             }
                             else
                             {
-                                db.RemoveRemoteVolume(newvol.RemoteFilename, transaction);
+                                db.RemoveRemoteVolume(newvol.RemoteFilename);
                                 if (newvolindex != null)
                                 {
-                                    db.RemoveRemoteVolume(newvolindex.RemoteFilename, transaction);
+                                    db.RemoveRemoteVolume(newvolindex.RemoteFilename);
                                     newvolindex.FinishVolume(null, 0);
                                 }
                             }
                         }
                     }
                     
-                    deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
+                    deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes));
                                         
                     var downloadSize = downloadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
                     var deletedSize = deletedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
@@ -280,7 +270,7 @@ namespace Duplicati.Library.Main.Operation
                                                               Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
                     }
                             
-                    backend.WaitForComplete(ref transaction);
+                    backend.WaitForComplete();
                 }
 
                 m_result.EndTime = DateTime.UtcNow;
@@ -293,32 +283,29 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private IEnumerable<KeyValuePair<string, long>> DoDelete(LocalDeleteDatabase db, BackendManager backend, IEnumerable<IRemoteVolume> deleteableVolumes, ref System.Data.IDbTransaction transaction)
+        private IEnumerable<KeyValuePair<string, long>> DoDelete(LocalDeleteDatabase db, BackendManager backend, IEnumerable<IRemoteVolume> deleteableVolumes)
         {
             // Mark all volumes as disposable
             foreach(var f in deleteableVolumes)
-                db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, transaction);
+                db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash);
 
             // Before we commit the current state, make sure the backend has caught up
-            backend.WaitForEmpty(ref transaction);
+            backend.WaitForEmpty();
 
             if (!m_options.Dryrun)
-            {
-                transaction.Commit();
-                transaction = db.BeginTransaction();
-            }
+                db.CommitTransaction("AfterDeleteRemotes");
 
-            return PerformDelete(backend, db.GetDeletableVolumes(deleteableVolumes, transaction), ref transaction);
+            return PerformDelete(backend, db.GetDeletableVolumes(deleteableVolumes));
         }
             
         
-        private IEnumerable<KeyValuePair<string, long>> PerformDelete(BackendManager backend, IEnumerable<IRemoteVolume> list, ref System.Data.IDbTransaction transaction)
+        private IEnumerable<KeyValuePair<string, long>> PerformDelete(BackendManager backend, IEnumerable<IRemoteVolume> list)
         {
             var res = new List<KeyValuePair<string, long>>();
             foreach(var f in list)
             {
                 if (!m_options.Dryrun)
-                    backend.Delete(f.Name, f.Size, ref transaction);
+                    backend.Delete(f.Name, f.Size);
                 else
                     m_result.AddDryrunMessage(string.Format("Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));
 

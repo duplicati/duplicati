@@ -24,7 +24,6 @@ namespace Duplicati.Library.Main.Operation
         private string m_backendurl;
 
         private LocalBackupDatabase m_database;
-        private System.Data.IDbTransaction m_transaction;
 
         private Library.Utility.IFilter m_filter;
         private Library.Utility.IFilter m_sourceFilter;
@@ -71,11 +70,11 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (m_options.NoBackendverification)
                     {
-                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter, ref m_transaction);
+                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
                         UpdateStorageStatsFromDatabase();
                     }
                     else
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, ref m_transaction, protectedfile);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
                 }
                 catch (Exception ex)
                 {
@@ -86,7 +85,7 @@ namespace Duplicati.Library.Main.Operation
                         new RepairHandler(backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
 
                         m_result.AddMessage("Backend cleanup finished, retrying verification");
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, ref m_transaction);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
                     }
                     else
                         throw;
@@ -148,7 +147,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);
                 using(var db = new LocalDeleteDatabase(m_database))
-                    new DeleteHandler(backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, ref m_transaction, true, currentIsSmall, backend);
+                    new DeleteHandler(backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, true, currentIsSmall, backend);
 
             }
             else if (currentIsSmall && !m_options.NoAutoCompact)
@@ -156,7 +155,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
                 m_result.CompactResults = new CompactResults(m_result);
                 using(var db = new LocalDeleteDatabase(m_database))
-                    new CompactHandler(backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref m_transaction, backend);
+                    new CompactHandler(backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, backend);
             }
         }
 
@@ -164,8 +163,8 @@ namespace Duplicati.Library.Main.Operation
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
                 using(new Logging.Timer("AfterBackupVerify"))
-            FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, ref m_transaction);
-            backend.WaitForEmpty(ref m_transaction);
+            FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+            backend.WaitForEmpty();
 
             if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Count() > 0)
             {
@@ -391,31 +390,24 @@ namespace Duplicati.Library.Main.Operation
 
                         // Make sure we have the database up-to-date
                         await db.CommitTransactionAsync("CommitAfterUpload", false);
-
-                        // TODO: Remove this later
-                        m_transaction = m_database.BeginTransaction();
-    		                                        
+                            		                                        
                         if (await m_result.TaskReader.ProgressAsync)
                             CompactIfRequired(backend, lastVolumeSize);
 
                         if (m_options.UploadVerificationFile && await m_result.TaskReader.ProgressAsync)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
-                            FilelistProcessor.UploadVerificationFile(backend, m_options, m_result.BackendWriter, m_database, ref m_transaction);
+                            FilelistProcessor.UploadVerificationFile(backend, m_options, m_result.BackendWriter, m_database);
                         }
 
                         if (m_options.Dryrun)
                         {
-                            m_transaction.Rollback();
-                            m_transaction = null;
+                            m_database.RollbackTransaction(true);
                         }
                         else
                         {
-                            using(new Logging.Timer("CommitFinalizingBackup"))
-                                m_transaction.Commit();
+                            m_database.CommitTransaction("CommitFinalizingBackup", true);
                                 
-                            m_transaction = null;
-
                             if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
                             {
                                 if (m_options.NoBackendverification)
@@ -427,6 +419,8 @@ namespace Duplicati.Library.Main.Operation
                         
                         m_database.WriteResults();                    
                         m_database.PurgeLogData(m_options.LogRetention);
+                        m_database.CommitTransaction("AllDone", true);
+
                         if (m_options.AutoVacuum)
                         {
                             m_database.Vacuum();
@@ -448,11 +442,6 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (parallelScanner != null && !parallelScanner.IsCompleted)
                         parallelScanner.Wait(500);
-
-                    // TODO: We want to commit? always?
-                    if (m_transaction != null)
-                        try { m_transaction.Rollback(); }
-                        catch (Exception ex) { m_result.AddError(string.Format("Rollback error: {0}", ex.Message), ex); }
 
                     lh.Wait(500);
                 }

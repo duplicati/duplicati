@@ -90,37 +90,36 @@ namespace Duplicati.Library.Main.Database
         private class StorageHelper : IStorageHelper
         {
             private System.Data.IDbConnection m_connection;
-            private System.Data.IDbTransaction m_transaction;
+            private LocalDatabase m_parent;
             
             private System.Data.IDbCommand m_insertPreviousElementCommand;
             private System.Data.IDbCommand m_insertCurrentElementCommand;
             
             private string m_previousTable;
             private string m_currentTable;
-            
-            public StorageHelper(System.Data.IDbConnection con)
+
+            public StorageHelper(System.Data.IDbConnection con, LocalDatabase parent)
             {
                 m_connection = con;
+                m_parent = parent;
                 m_previousTable = "Previous-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 m_currentTable = "Current-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                
-                m_transaction = m_connection.BeginTransaction();
-                
+
                 using(var cmd = m_connection.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
+                    cmd.Transaction = m_parent.Transaction;
                     
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) ", m_previousTable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) ", m_currentTable));
                 }
                 
                 m_insertPreviousElementCommand = m_connection.CreateCommand();
-                m_insertPreviousElementCommand.Transaction = m_transaction;
+                m_insertPreviousElementCommand.Transaction = m_parent.Transaction;
                 m_insertPreviousElementCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)", m_previousTable);
                 m_insertPreviousElementCommand.AddParameters(5);
                 
                 m_insertCurrentElementCommand = m_connection.CreateCommand();
-                m_insertCurrentElementCommand.Transaction = m_transaction;
+                m_insertCurrentElementCommand.Transaction = m_parent.Transaction;
                 m_insertCurrentElementCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)", m_currentTable);
                 m_insertCurrentElementCommand.AddParameters(5);
             }
@@ -137,7 +136,7 @@ namespace Duplicati.Library.Main.Database
                 
                 using(var cmd = m_connection.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
+                    cmd.Transaction = m_parent.Transaction;
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, select everything
@@ -171,7 +170,7 @@ namespace Duplicati.Library.Main.Database
                         {
                             cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)", tablename);
                             cmd2.AddParameters(5);
-                            cmd2.Transaction = m_transaction;
+                            cmd2.Transaction = m_parent.Transaction;
     
                             using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Path"", ""A"".""FileHash"", ""A"".""MetaHash"", ""A"".""Size"", ""A"".""Type"" FROM {0} A WHERE ""A"".""FilesetID"" = ?", combined), filesetId))
                                 while (rd.Read())
@@ -234,7 +233,7 @@ namespace Duplicati.Library.Main.Database
                 
                 using(var cmd = m_connection.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
+                    cmd.Transaction = m_parent.Transaction;
                     
                     var result = new ChangeSizeReport();
                     
@@ -257,7 +256,7 @@ namespace Duplicati.Library.Main.Database
                 
                 using(var cmd = m_connection.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
+                    cmd.Transaction = m_parent.Transaction;
                     
                     var result = new ChangeCountReport();
                     result.AddedFolders = cmd.ExecuteScalarInt64(added, 0, (int)Library.Interface.ListChangesElementType.Folder);
@@ -285,7 +284,7 @@ namespace Duplicati.Library.Main.Database
                 
                 using(var cmd = m_connection.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
+                    cmd.Transaction = m_parent.Transaction;
                     foreach(var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Library.Interface.ListChangesElementType.Folder)))
                         yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Added, Library.Interface.ListChangesElementType.Folder, s);                        
                     foreach(var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Library.Interface.ListChangesElementType.Symlink)))
@@ -324,24 +323,12 @@ namespace Duplicati.Library.Main.Database
                     catch {}
                     finally { m_insertCurrentElementCommand = null; }
                 }
-                
-                if (m_transaction != null)
-                {
-                    try { m_transaction.Rollback(); }
-                    catch {}
-                    finally
-                    {
-                        m_previousTable = null;
-                        m_currentTable= null;
-                        m_transaction = null;
-                    }
-                }
             }
         }
         
         public IStorageHelper CreateStorageHelper()
         {
-            return new StorageHelper(m_connection);
+            return new StorageHelper(m_connection, this);
         }
     }
 }

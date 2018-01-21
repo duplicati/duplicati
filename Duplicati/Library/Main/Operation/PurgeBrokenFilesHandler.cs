@@ -45,12 +45,11 @@ namespace Duplicati.Library.Main.Operation
             List<Database.RemoteVolumeEntry> missing = null;
             
             using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath))
-            using (var tr = db.BeginTransaction())
             {
                 if (db.PartiallyRecreated)
                     throw new UserInformationException("The command does not work on partially recreated databases");
 
-                var sets = ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(m_backendurl, m_result, db, tr, m_options, out missing);
+                var sets = ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(m_backendurl, m_result, db, m_options, out missing);
                 if (sets == null)
                     return;
                 
@@ -77,7 +76,7 @@ namespace Duplicati.Library.Main.Operation
                     Timestamp = x.Item1,
                     RemoveCount = x.Item3,
                     Version = filesets.FindIndex(y => y.Key == x.Item2),
-                    SetCount = db.GetFilesetFileCount(x.Item2, tr)
+                    SetCount = db.GetFilesetFileCount(x.Item2)
                 }).ToArray();
 
                 var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
@@ -93,34 +92,21 @@ namespace Duplicati.Library.Main.Operation
                     m_result.DeleteResults = new DeleteResults(m_result);
                     using (var rmdb = new Database.LocalDeleteDatabase(db))
                     {
-                        var deltr = rmdb.BeginTransaction();
-                        try
+                        var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
+                        opts.RawOptions["version"] = string.Join(",", fully_emptied.Select(x => x.Version.ToString()));
+                        opts.RawOptions.Remove("time");
+                        opts.RawOptions["no-auto-compact"] = "true";
+
+                        new DeleteHandler(m_backendurl, opts, (DeleteResults)m_result.DeleteResults)
+                            .DoRun(rmdb, true, false, null);
+
+                        if (!m_options.Dryrun)
                         {
-                            var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
-                            opts.RawOptions["version"] = string.Join(",", fully_emptied.Select(x => x.Version.ToString()));
-                            opts.RawOptions.Remove("time");
-                            opts.RawOptions["no-auto-compact"] = "true";
-
-                            new DeleteHandler(m_backendurl, opts, (DeleteResults)m_result.DeleteResults)
-                                .DoRun(rmdb, ref deltr, true, false, null);
-
-                            if (!m_options.Dryrun)
-                            {
-                                using (new Logging.Timer("CommitDelete"))
-                                    deltr.Commit();
-
-                                rmdb.WriteResults();
-                            }
-                            else
-                                deltr.Rollback();
+                            rmdb.CommitTransaction("CommitDelete");
+                            rmdb.WriteResults();
                         }
-                        finally
-                        {
-                            if (deltr != null)
-                                try { deltr.Rollback(); }
-                                catch { }
-                        }
-
+                        else
+                            rmdb.RollbackTransaction();
                     }
 
                     pgoffset += (pgspan * fully_emptied.Length);
@@ -152,7 +138,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (filesetid != bs.FilesetID)
                                     throw new Exception(string.Format("Unexpected filesetid: {0}, expected {1}", filesetid, bs.FilesetID));
-                                db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID", cmd.Transaction);
+                                db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID");
                             });
                         }
 
@@ -162,31 +148,28 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 if (m_options.Dryrun)
-                    tr.Rollback();
+                    db.RollbackTransaction();
                 else
-                    tr.Commit();
+                    db.CommitTransaction("AfterCompact");
 
                 m_result.OperationProgressUpdater.UpdateProgress(0.95f);
 
                 if (missing != null && missing.Count > 0)
                 {
-                    // Use a dummy transaction until this class is rewritten to use proper transactions
-                    System.Data.IDbTransaction transaction = null;
-
                     using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result))
                     {
                         foreach (var f in missing)
                             if (m_options.Dryrun)
                                 m_result.AddDryrunMessage(string.Format("Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));
                             else
-                                backend.Delete(f.Name, f.Size, ref transaction);
+                                backend.Delete(f.Name, f.Size);
                     }
                 }
 
                 if (!m_options.Dryrun && db.RepairInProgress)
                 {                    
                     m_result.AddMessage("Database was previously marked as in-progress, checking if it is valid after purging files");
-                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true);
                     m_result.AddMessage("Purge completed, and consistency checks completed, marking database as complete");
                     db.RepairInProgress = false;
                 }

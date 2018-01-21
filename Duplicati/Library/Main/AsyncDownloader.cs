@@ -78,7 +78,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public bool MoveNext(ref System.Data.IDbTransaction transaction)
+        public bool MoveNext()
         {
             if (m_current != null)
             {
@@ -90,7 +90,7 @@ namespace Duplicati.Library.Main
                 return false;
 
             if (m_handle == null)
-                m_handle = m_backend.GetAsync(m_volumes[m_index].Name, m_volumes[m_index].Size, m_volumes[m_index].Hash, ref transaction);
+                m_handle = m_backend.GetAsync(m_volumes[m_index].Name, m_volumes[m_index].Size, m_volumes[m_index].Hash);
 
             string hash = null;
             long size = -1;
@@ -111,7 +111,7 @@ namespace Duplicati.Library.Main
 
             m_index++;
             if (m_index < m_volumes.Count)
-                m_handle = m_backend.GetAsync(m_volumes[m_index].Name, m_volumes[m_index].Size, m_volumes[m_index].Hash, ref transaction);
+                m_handle = m_backend.GetAsync(m_volumes[m_index].Name, m_volumes[m_index].Size, m_volumes[m_index].Hash);
 
             return true;
         }

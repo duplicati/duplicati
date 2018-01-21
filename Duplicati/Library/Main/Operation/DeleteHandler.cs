@@ -43,37 +43,24 @@ namespace Duplicati.Library.Main.Operation
 
             using(var db = new Database.LocalDeleteDatabase(m_options.Dbpath, "Delete"))
             {
-                var tr = db.BeginTransaction();
-                try
+                m_result.SetDatabase(db);
+                Utility.UpdateOptionsFromDb(db, m_options);
+                Utility.VerifyParameters(db, m_options);
+                
+                DoRun(db, false, false, null);
+                
+                if (!m_options.Dryrun)
                 {
-                    m_result.SetDatabase(db);
-                    Utility.UpdateOptionsFromDb(db, m_options);
-                    Utility.VerifyParameters(db, m_options);
-                    
-                    DoRun(db, ref tr, false, false, null);
-                    
-                    if (!m_options.Dryrun)
-                    {
-                        using(new Logging.Timer("CommitDelete"))
-                            tr.Commit();
-
-                        db.WriteResults();
-                    }
-                    else
-                        tr.Rollback();
-
-                    tr = null;
+                    db.WriteResults();
+                    using (new Logging.Timer("CommitDelete"))
+                        db.CommitTransaction("After delete operation", false);
                 }
-                finally
-                {
-                    if (tr != null)
-                        try { tr.Rollback(); }
-                        catch { }
-                }
+                else
+                    db.RollbackTransaction(false);
             }
         }
 
-        public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBacked, bool forceCompact, BackendManager sharedManager)
+        public void DoRun(Database.LocalDeleteDatabase db, bool hasVerifiedBacked, bool forceCompact, BackendManager sharedManager)
         {
             // Workaround where we allow a running backendmanager to be used
             using(var bk = sharedManager == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result) : null)
@@ -81,7 +68,7 @@ namespace Duplicati.Library.Main.Operation
                 var backend = bk ?? sharedManager;
 
                 if (!hasVerifiedBacked && !m_options.NoBackendverification)
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, ref transaction); 
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
                 
                 var filesetNumbers = db.FilesetTimes.Zip(Enumerable.Range(0, db.FilesetTimes.Count()), (a, b) => new Tuple<long, DateTime>(b, a.Value)).ToList();
                 var sets = db.FilesetTimes.Select(x => x.Value).ToArray();
@@ -96,34 +83,31 @@ namespace Duplicati.Library.Main.Operation
                 if (toDelete != null && toDelete.Length > 0)
                     m_result.AddMessage(string.Format("Deleting {0} remote fileset(s) ...", toDelete.Length));
 
-                var lst = db.DropFilesetsFromTable(toDelete, transaction).ToArray();
+                var lst = db.DropFilesetsFromTable(toDelete).ToArray();
                 foreach(var f in lst)
-                    db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, transaction);
+                    db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null);
 
                 if (!m_options.Dryrun)
-                {
-                    transaction.Commit();
-                    transaction = db.BeginTransaction();
-                }
+                    db.CommitTransaction("Removed filelists");
 
                 foreach(var f in lst)
                 {
                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                     {
-                        backend.WaitForComplete(ref transaction);
+                        backend.WaitForComplete();
                         return;
                     }
 
                     if (!m_options.Dryrun)
-                        backend.Delete(f.Key, f.Value, ref transaction);
+                        backend.Delete(f.Key, f.Value);
                     else
                         m_result.AddDryrunMessage(string.Format("Would delete remote fileset: {0}", f.Key));
                 }
 
                 if (sharedManager == null)
-                    backend.WaitForComplete(ref transaction);
+                    backend.WaitForComplete();
                 else
-                    backend.WaitForEmpty(ref transaction);
+                    backend.WaitForEmpty();
                 
                 var count = lst.Length;
                 if (!m_options.Dryrun)
@@ -148,7 +132,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoAutoCompact && (forceCompact || (toDelete != null && toDelete.Length > 0)))
                 {
                     m_result.CompactResults = new CompactResults(m_result);
-                    new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref transaction, sharedManager);
+                    new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, sharedManager);
                 }
                 
                 m_result.SetResults(

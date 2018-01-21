@@ -29,16 +29,12 @@ namespace Duplicati.Library.Main.Database
 
         public void Fix()
         {
-            using(var tr = m_connection.BeginTransaction())
-            using(var cmd = m_connection.CreateCommand())
+            using(var cmd = m_connection.CreateCommand(Transaction))
             {
-                cmd.Transaction = tr;
                 var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 
-                using(var upcmd = m_connection.CreateCommand())
+                using(var upcmd = m_connection.CreateCommand(Transaction))
                 {
-                
-                    upcmd.Transaction = tr;
                     upcmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""RealPath"" TEXT NOT NULL, ""Obfuscated"" TEXT NULL)", tablename));
                     upcmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" ", tablename));
                     upcmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Obfuscated"" = ? || length(""RealPath"") || ? || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = ? THEN ? ELSE ? END) ", tablename), Library.Utility.Utility.IsClientLinux ? "/" : "X:\\", Library.Utility.Utility.DirectorySeparatorString, Library.Utility.Utility.DirectorySeparatorString, Library.Utility.Utility.DirectorySeparatorString, ".bin");
@@ -58,11 +54,8 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery(string.Format(@"UPDATE ""File"" SET ""Path"" = (SELECT ""Obfuscated"" FROM ""{0}"" WHERE ""Path"" = ""RealPath"") ", tablename));
                 
                 cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tablename));
-                
-                using(new Logging.Timer("CommitUpdateBugReport"))
-                    tr.Commit();
-                
-                cmd.Transaction = null;
+
+                CommitTransaction("CommitUpdateBugReport", false);
             }
         }
     }

@@ -197,12 +197,10 @@ namespace Duplicati.Library.Main.Database
                 m_filesetLookup = new PathLookupHelper<PathEntryKeeper>();
         }
 
-        public void FindMissingBlocklistHashes(long hashsize, long blocksize, System.Data.IDbTransaction transaction)
+        public void FindMissingBlocklistHashes(long hashsize, long blocksize)
         {
-            using(var cmd = m_connection.CreateCommand())
-            {
-                cmd.Transaction = transaction;
-                
+            using(var cmd = m_connection.CreateCommand(Transaction))
+            {                
                 //Update all small blocklists and matching blocks
 
                 var selectSmallBlocks = string.Format(@"SELECT ""BlockHash"", ""BlockSize"" FROM ""{0}""", m_tempsmalllist);
@@ -287,22 +285,22 @@ namespace Duplicati.Library.Main.Database
             }
         }
         
-        public void AddDirectoryEntry(long filesetid, string path, DateTime time, long metadataid, System.Data.IDbTransaction transaction)
+        public void AddDirectoryEntry(long filesetid, string path, DateTime time, long metadataid)
         {
-            AddEntry(FilelistEntryType.Folder, filesetid, path, time, FOLDER_BLOCKSET_ID, metadataid, transaction);
+            AddEntry(FilelistEntryType.Folder, filesetid, path, time, FOLDER_BLOCKSET_ID, metadataid);
         }
 
-        public void AddSymlinkEntry(long filesetid, string path, DateTime time, long metadataid, System.Data.IDbTransaction transaction)
+        public void AddSymlinkEntry(long filesetid, string path, DateTime time, long metadataid)
         {
-            AddEntry(FilelistEntryType.Symlink, filesetid, path, time, SYMLINK_BLOCKSET_ID, metadataid, transaction);
+            AddEntry(FilelistEntryType.Symlink, filesetid, path, time, SYMLINK_BLOCKSET_ID, metadataid);
         }
         
-        public void AddFileEntry(long filesetid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
+        public void AddFileEntry(long filesetid, string path, DateTime time, long blocksetid, long metadataid)
         {
-            AddEntry(FilelistEntryType.File , filesetid, path, time, blocksetid, metadataid, transaction);
+            AddEntry(FilelistEntryType.File , filesetid, path, time, blocksetid, metadataid);
         }
         
-        private void AddEntry(FilelistEntryType type, long filesetid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
+        private void AddEntry(FilelistEntryType type, long filesetid, string path, DateTime time, long blocksetid, long metadataid)
         {
             var fileid = -1L;
                         
@@ -314,7 +312,7 @@ namespace Duplicati.Library.Main.Database
             }
             else
             {
-                m_findFilesetCommand.Transaction = transaction;
+                m_findFilesetCommand.Transaction = Transaction;
                 m_findFilesetCommand.SetParameterValue(0, path);
                 m_findFilesetCommand.SetParameterValue(1, blocksetid);
                 m_findFilesetCommand.SetParameterValue(2, metadataid);
@@ -323,7 +321,7 @@ namespace Duplicati.Library.Main.Database
             
             if (fileid < 0)
             {
-                m_insertFileCommand.Transaction = transaction;
+                m_insertFileCommand.Transaction = Transaction;
                 m_insertFileCommand.SetParameterValue(0, path);
                 m_insertFileCommand.SetParameterValue(1, blocksetid);
                 m_insertFileCommand.SetParameterValue(2, metadataid);
@@ -342,45 +340,45 @@ namespace Duplicati.Library.Main.Database
                 }
             }
             
-            m_insertFilesetEntryCommand.Transaction = transaction;
+            m_insertFilesetEntryCommand.Transaction = Transaction;
             m_insertFilesetEntryCommand.SetParameterValue(0, filesetid);
             m_insertFilesetEntryCommand.SetParameterValue(1, fileid);
             m_insertFilesetEntryCommand.SetParameterValue(2, time.ToUniversalTime().Ticks);
             m_insertFilesetEntryCommand.ExecuteNonQuery();
         }
         
-        public long AddMetadataset(string metahash, long metahashsize, IEnumerable<string> metablocklisthashes, long expectedmetablocklisthashes, System.Data.IDbTransaction transaction)
+        public long AddMetadataset(string metahash, long metahashsize, IEnumerable<string> metablocklisthashes, long expectedmetablocklisthashes)
         {
             var metadataid = -1L;
             if (metahash == null)
                 return metadataid;
                                 
-            m_findMetadatasetCommand.Transaction = transaction;
+            m_findMetadatasetCommand.Transaction = Transaction;
             m_findMetadatasetCommand.SetParameterValue(0, metahash);
             m_findMetadatasetCommand.SetParameterValue(1, metahashsize);
             metadataid = m_findMetadatasetCommand.ExecuteScalarInt64(-1);
             if (metadataid != -1)
                 return metadataid;
 
-            var blocksetid = AddBlockset(metahash, metahashsize, metablocklisthashes, expectedmetablocklisthashes, transaction);
+            var blocksetid = AddBlockset(metahash, metahashsize, metablocklisthashes, expectedmetablocklisthashes);
             
-            m_insertMetadatasetCommand.Transaction = transaction;
+            m_insertMetadatasetCommand.Transaction = Transaction;
             m_insertMetadatasetCommand.SetParameterValue(0, blocksetid);
             metadataid = m_insertMetadatasetCommand.ExecuteScalarInt64(-1);
                             
             return metadataid;
         }
         
-        public long AddBlockset(string fullhash, long size, IEnumerable<string> blocklisthashes, long expectedblocklisthashes, System.Data.IDbTransaction transaction)
+        public long AddBlockset(string fullhash, long size, IEnumerable<string> blocklisthashes, long expectedblocklisthashes)
         {
-            m_findBlocksetCommand.Transaction = transaction;
+            m_findBlocksetCommand.Transaction = Transaction;
             m_findBlocksetCommand.SetParameterValue(0, size);
             m_findBlocksetCommand.SetParameterValue(1, fullhash);
             var blocksetid = m_findBlocksetCommand.ExecuteScalarInt64(-1);
             if (blocksetid != -1)
                 return blocksetid;                        
             
-            m_insertBlocksetCommand.Transaction = transaction;
+            m_insertBlocksetCommand.Transaction = Transaction;
             m_insertBlocksetCommand.SetParameterValue(0, size);
             m_insertBlocksetCommand.SetParameterValue(1, fullhash);
             blocksetid = m_insertBlocksetCommand.ExecuteScalarInt64(-1);
@@ -389,7 +387,7 @@ namespace Duplicati.Library.Main.Database
             if (blocklisthashes != null)
             {
                 var index = 0L;
-                m_insertBlocklistHashCommand.Transaction = transaction;
+                m_insertBlocklistHashCommand.Transaction = Transaction;
                 m_insertBlocklistHashCommand.SetParameterValue(0, blocksetid);
 
                 foreach(var hash in blocklisthashes)
@@ -413,9 +411,9 @@ namespace Duplicati.Library.Main.Database
             return blocksetid;
         }
 
-        public bool UpdateBlock(string hash, long size, long volumeID, System.Data.IDbTransaction transaction)
+        public bool UpdateBlock(string hash, long size, long volumeID)
         {
-            m_findHashBlockCommand.Transaction = transaction;
+            m_findHashBlockCommand.Transaction = Transaction;
             m_findHashBlockCommand.SetParameterValue(0, hash);
             m_findHashBlockCommand.SetParameterValue(1, size);
             var currentVolumeId = m_findHashBlockCommand.ExecuteScalarInt64(-2);
@@ -426,7 +424,7 @@ namespace Duplicati.Library.Main.Database
             if (currentVolumeId == -2)
             {
                 //Insert
-                m_insertBlockCommand.Transaction = transaction;
+                m_insertBlockCommand.Transaction = Transaction;
                 m_insertBlockCommand.SetParameterValue(0, hash);
                 m_insertBlockCommand.SetParameterValue(1, size);
                 m_insertBlockCommand.SetParameterValue(2, volumeID);
@@ -437,7 +435,7 @@ namespace Duplicati.Library.Main.Database
             else if (currentVolumeId == -1)
             {
                 //Update
-                m_updateBlockVolumeCommand.Transaction = transaction;
+                m_updateBlockVolumeCommand.Transaction = Transaction;
                 m_updateBlockVolumeCommand.SetParameterValue(0, volumeID);
                 m_updateBlockVolumeCommand.SetParameterValue(1, hash);
                 m_updateBlockVolumeCommand.SetParameterValue(2, size);
@@ -449,7 +447,7 @@ namespace Duplicati.Library.Main.Database
             }
             else
             {
-                m_insertDuplicateBlockCommand.Transaction = transaction;
+                m_insertDuplicateBlockCommand.Transaction = Transaction;
                 m_insertDuplicateBlockCommand.SetParameterValue(0, hash);
                 m_insertDuplicateBlockCommand.SetParameterValue(1, size);
                 m_insertDuplicateBlockCommand.SetParameterValue(2, volumeID);
@@ -459,24 +457,24 @@ namespace Duplicati.Library.Main.Database
             }            
         }
 
-        public void AddSmallBlocksetLink(string filehash, string blockhash, long blocksize, System.Data.IDbTransaction transaction)
+        public void AddSmallBlocksetLink(string filehash, string blockhash, long blocksize)
         {
-            m_insertSmallBlockset.Transaction = transaction;
+            m_insertSmallBlockset.Transaction = Transaction;
             m_insertSmallBlockset.SetParameterValue(0, filehash);
             m_insertSmallBlockset.SetParameterValue(1, blockhash);
             m_insertSmallBlockset.SetParameterValue(2, blocksize);
             m_insertSmallBlockset.ExecuteNonQuery();
         }
         
-        public bool UpdateBlockset(string hash, IEnumerable<string> blocklisthashes, System.Data.IDbTransaction transaction)
+        public bool UpdateBlockset(string hash, IEnumerable<string> blocklisthashes)
         {
-            m_findblocklisthashCommand.Transaction = transaction;
+            m_findblocklisthashCommand.Transaction = Transaction;
             m_findblocklisthashCommand.SetParameterValue(0, hash);
             var r = m_findblocklisthashCommand.ExecuteScalar();
             if (r != null && r != DBNull.Value)
                 return false;
         
-            m_insertBlockset.Transaction = transaction;                
+            m_insertBlockset.Transaction = Transaction;                
             m_insertBlockset.SetParameterValue(0, hash);
             
             var index = 0L;

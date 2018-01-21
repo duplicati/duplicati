@@ -101,9 +101,6 @@ namespace Duplicati.Library.Main.Operation
             using(var db = new LocalRepairDatabase(m_options.Dbpath))
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db, m_result))
             {
-                // Use a dummy transaction until this class is rewritten to use proper transactions
-                System.Data.IDbTransaction transaction = null;
-
                 m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
@@ -114,7 +111,7 @@ namespace Duplicati.Library.Main.Operation
                 if (db.RepairInProgress)
                     throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
 
-                var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter, null, ref transaction);
+                var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter, null);
                 var buffer = new byte[m_options.Blocksize];
                 var blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
                 var hashsize = blockhasher.HashSize / 8;
@@ -153,7 +150,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
-                                        backend.WaitForComplete(ref transaction);
+                                        backend.WaitForComplete();
                                         return;
                                     }
 
@@ -164,7 +161,7 @@ namespace Duplicati.Library.Main.Operation
                                     string hash;
                                     KeyValuePair<string, IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>>> res;
                                    
-                                using (var tf = backend.GetWithInfo(n.Name, out size, out hash, ref transaction))
+                                using (var tf = backend.GetWithInfo(n.Name, out size, out hash))
                                         res = TestHandler.TestVolumeInternals(testdb, n, tf, m_options, m_result, 1);
 
                                     if (res.Value.Any())
@@ -192,7 +189,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                             {
-                                backend.WaitForComplete(ref transaction);
+                                backend.WaitForComplete();
                                 return;
                             }
 
@@ -207,7 +204,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     string hash;
                                     long size;
-                                    using(var tf = backend.GetWithInfo(n.File.Name, out size, out hash, ref transaction))
+                                    using(var tf = backend.GetWithInfo(n.File.Name, out size, out hash))
                                     using(var ifr = new IndexVolumeReader(n.CompressionModule, tf, m_options, m_options.BlockhashSize))
                                     {
                                         foreach(var rv in ifr.Volumes)
@@ -231,7 +228,7 @@ namespace Duplicati.Library.Main.Operation
 
                                         var selfid = db.GetRemoteVolumeID(n.File.Name);
                                         foreach(var rv in ifr.Volumes)
-                                            db.AddIndexBlockLink(selfid, db.GetRemoteVolumeID(rv.Filename), null);
+                                            db.AddIndexBlockLink(selfid, db.GetRemoteVolumeID(rv.Filename));
                                     }
                                     
                                     // All checks fine, we accept the new index file
@@ -249,7 +246,7 @@ namespace Duplicati.Library.Main.Operation
                             if (!m_options.Dryrun)
                             {
                                 db.RegisterRemoteVolume(n.File.Name, n.FileType, n.File.Size, RemoteVolumeState.Deleting);
-                                backend.Delete(n.File.Name, n.File.Size, ref transaction);
+                                backend.Delete(n.File.Name, n.File.Size);
                             }
                             else
                                 m_result.AddDryrunMessage(string.Format("would delete file {0}", n.File.Name));
@@ -269,7 +266,7 @@ namespace Duplicati.Library.Main.Operation
                         {  
                             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                             {
-                                backend.WaitForComplete(ref transaction);
+                                backend.WaitForComplete();
                                 return;
                             }    
 
@@ -283,15 +280,15 @@ namespace Duplicati.Library.Main.Operation
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
 
-                                db.WriteFileset(w, filesetId, null);
+                                db.WriteFileset(w, filesetId);
 	
                                 w.Close();
                                 if (m_options.Dryrun)
                                     m_result.AddDryrunMessage(string.Format("would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
                                 else
                                 {
-                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    backend.Put(ref transaction, w);
+                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                                    backend.Put(w);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Index)
@@ -329,8 +326,8 @@ namespace Duplicati.Library.Main.Operation
                                     m_result.AddDryrunMessage(string.Format("would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
                                 else
                                 {
-                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    backend.Put(ref transaction, w);
+                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                                    backend.Put(w);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Blocks)
@@ -379,7 +376,7 @@ namespace Duplicati.Library.Main.Operation
 
                                     //Then we grab all remote volumes that have the missing blocks
                                     var dl = new AsyncDownloader(mbl.GetMissingBlockSources().ToList(), backend);
-                                    while(dl.MoveNext(ref transaction))
+                                    while(dl.MoveNext())
                                     {
                                         var vol = dl.Current;
                                         try
@@ -424,8 +421,8 @@ namespace Duplicati.Library.Main.Operation
                                             m_result.AddDryrunMessage(string.Format("would re-upload block file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
                                         else
                                         {
-                                            db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                            backend.Put(ref transaction, w);
+                                            db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                                            backend.Put(w);
                                         }
                                     }
                                 }
@@ -451,7 +448,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);                
-                backend.WaitForComplete(ref transaction);
+                backend.WaitForComplete();
                 db.WriteResults();
             }
         }

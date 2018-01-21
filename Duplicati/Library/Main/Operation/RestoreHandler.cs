@@ -340,9 +340,6 @@ namespace Duplicati.Library.Main.Operation
             using(var backend = new BackendManager(m_backendurl, m_options, result.BackendWriter, database, m_result))
             using(var metadatastorage = new RestoreHandlerMetadataStorage())
             {
-                // Use a dummy transaction until this class is rewritten to use proper transactions
-                System.Data.IDbTransaction transaction = null;
-
                 database.SetResult(m_result);
                 Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyParameters(database, m_options);
@@ -363,7 +360,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoBackendverification)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);                
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter, ref transaction);
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter);
                 }
 
                 //Figure out what files are to be patched, and what blocks are needed
@@ -391,7 +388,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                 {
-                    backend.WaitForComplete(ref transaction);
+                    backend.WaitForComplete();
                     return;
                 }
 
@@ -405,7 +402,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                 {
-                    backend.WaitForComplete(ref transaction);
+                    backend.WaitForComplete();
                     return;
                 }
                 
@@ -422,14 +419,14 @@ namespace Duplicati.Library.Main.Operation
 
                 var brokenFiles = new List<string>();
                 var dl = new AsyncDownloader(volumes, backend);
-                while(dl.MoveNext(ref transaction))
+                while(dl.MoveNext())
                 {
                     var blockvolume = dl.Current;
                     try
                     {
                         if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                         {
-                            backend.WaitForComplete(ref transaction);
+                            backend.WaitForComplete();
                             return;
                         }
 
@@ -479,7 +476,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                 {
-                                backend.WaitForComplete(ref transaction);
+                                backend.WaitForComplete();
                                     return;
                                 }
                             
@@ -515,7 +512,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Drop the temp tables
                 database.DropRestoreTable();
-                backend.WaitForComplete(ref transaction);
+                backend.WaitForComplete();
             }
             
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
