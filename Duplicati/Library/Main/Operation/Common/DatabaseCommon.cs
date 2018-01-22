@@ -109,7 +109,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task<IEnumerable<LocalDatabase.IBlock>> GetBlocksAsync(long volumeid)
         {
-            // TODO: How does the IEnumerable work with RunOnMain ?
+            // TODO: Consider AsyncEnumerable
             return RunOnMain(() => m_db.GetBlocks(volumeid).ToArray().AsEnumerable());
         }
 
@@ -120,8 +120,8 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task<IEnumerable<Tuple<string, byte[], int>>> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
         {
-            // TODO: How does the IEnumerable work with RunOnMain ?
-            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize));
+            // TODO: Consider AsyncEnumerable
+            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize).ToArray().AsEnumerable());
         }
 
         public Task<long> GetRemoteVolumeIDAsync(string remotename)

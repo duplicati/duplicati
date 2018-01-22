@@ -1251,12 +1251,14 @@ ORDER BY
                             yield return new Tuple<string, byte[], int>(curHash, buffer, index);
                             curHash = null;
                             index = 0;
+                            buffer = new byte[blocksize];
                         }
 
                         var hash = Convert.FromBase64String(rd.GetValue(1).ToString());
                         Array.Copy(hash, 0, buffer, index, hashsize);
                         curHash = blockhash;
                         index += hashsize;
+
                     }
 
                 if (curHash != null)
