@@ -386,7 +386,7 @@ namespace Duplicati.Library.Main.Operation
                         var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploader);
 
                         // Make sure we have the database up-to-date
-                        await db.CommitTransactionAsync("CommitAfterUpload", false);
+                        await db.CommitTransactionAsync("CommitAfterUpload");
                             		                                        
                         if (await m_result.TaskReader.ProgressAsync)
                             CompactIfRequired(backend, lastVolumeSize);
@@ -403,7 +403,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            m_database.CommitTransaction("CommitFinalizingBackup", true);
+                            m_database.CommitTransaction("CommitFinalizingBackup");
                                 
                             if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
                             {
@@ -416,7 +416,7 @@ namespace Duplicati.Library.Main.Operation
                         
                         m_database.WriteResults();                    
                         m_database.PurgeLogData(m_options.LogRetention);
-                        m_database.CommitTransaction("AllDone", true);
+                        m_database.CommitTransaction("AllDone");
 
                         if (m_options.AutoVacuum)
                         {

@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Operation.Common
             return AutomationExtensions.RunTask(
                 new
                 {
-                    LogChannel = ChannelMarker.ForRead<LogMessage>("LogChannel"),
+                    LogChannel = ChannelManager.GetChannel(Channels.LogChannel.ForRead)
                 },
 
                 async self =>
