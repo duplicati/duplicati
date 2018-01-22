@@ -476,7 +476,6 @@ namespace Duplicati.Library.Main.Database
                 m_insertfileCommand.SetParameterValue(1, blocksetID);
                 m_insertfileCommand.SetParameterValue(2, metadataID);
                 fileidobj = m_insertfileCommand.ExecuteScalarInt64();
-                CommitTransaction("Insert file");                    
 
                 // We do not need to update this, because we will not ask for the same file twice
                 if (m_pathLookup != null)
