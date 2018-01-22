@@ -261,12 +261,9 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
             
             // New isolated scope for each operation
-            using(new IsolatedChannelScope())
+            using(new IsolatedChannelScope(Operation.Common.Channels.LogChannel))
             using(m_database = new LocalBackupDatabase(m_options.Dbpath, m_options))
             {
-                // Start the log handler
-                var lh = Common.LogHandler.Run(m_result);
-
                 m_result.SetDatabase(m_database);
                 m_result.Dryrun = m_options.Dryrun;
 
@@ -442,8 +439,6 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (parallelScanner != null && !parallelScanner.IsCompleted)
                         parallelScanner.Wait(500);
-
-                    lh.Wait(500);
                 }
             }
         }

@@ -621,24 +621,34 @@ namespace Duplicati.Library.Main
                     using(new CoCoL.IsolatedChannelScope())
                     using(m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
                     {
-                        m_currentTask = result;
-                        m_currentTaskThread = System.Threading.Thread.CurrentThread;
-                        SetupCommonOptions(result, ref paths, ref filter);
+                        // Start the log handler
+                        var lh = Operation.Common.LogHandler.Run(result);
 
-                        result.WriteLogMessageDirect(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
+                        try
+                        {
+                            m_currentTask = result;
+                            m_currentTaskThread = System.Threading.Thread.CurrentThread;
+                            SetupCommonOptions(result, ref paths, ref filter);
 
-                        using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
-                            method(result);
+                            result.WriteLogMessageDirect(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
 
-                        if (result.EndTime.Ticks == 0)
-                            result.EndTime = DateTime.UtcNow;
-                        result.SetDatabase(null);
+                            using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                                method(result);
 
-                        OnOperationComplete(result);
+                            if (result.EndTime.Ticks == 0)
+                                result.EndTime = DateTime.UtcNow;
+                            result.SetDatabase(null);
 
-                        result.WriteLogMessageDirect(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
+                            OnOperationComplete(result);
 
-                        return result;
+                            result.WriteLogMessageDirect(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
+
+                            return result;
+                        }
+                        finally
+                        {
+                            lh.Wait(500);
+                        }
                     }
                 }
                 catch (Exception ex)
