@@ -150,7 +150,13 @@ namespace Duplicati.Library.Main.Operation.Common
 
             var prevqueue = m_workQueue;
             lock (m_lock)
+            {
+                // No need to fiddle if nothing has happened
+                if (prevqueue.Count == 0)
+                    return;
+
                 m_workQueue = new List<Tuple<Action, TaskCompletionSource<bool>>>();
+            }
 
             // We repeat here to allow quicker progress in case the backend is blocked
             // on a log message, and emits a new one immediately after having one handled
