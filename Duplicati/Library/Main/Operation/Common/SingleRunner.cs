@@ -56,6 +56,8 @@ namespace Duplicati.Library.Main.Operation.Common
             catch(Exception ex)
             {
                 this.Dispose();
+                if (!ex.IsRetiredException())
+                    Logging.Log.WriteMessage($"Unepected shutdown of worker {this.GetType().FullName}", Logging.LogMessageType.Warning, ex);
             }
         }
 
@@ -84,7 +86,9 @@ namespace Duplicati.Library.Main.Operation.Common
                         try
                         {
                             var r = await method().ConfigureAwait(false);
-                            res.SetResult(r);
+
+                            // We cannot await this, as it can cause deadlocks
+                            Task.Run(() => res.SetResult(r)).FireAndForget(); 
                         }
                         catch (Exception ex)
                         {
