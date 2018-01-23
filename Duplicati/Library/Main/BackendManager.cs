@@ -42,14 +42,22 @@ namespace Duplicati.Library.Main
             /// The task to wrap
             /// </summary>
             private readonly Task<Tuple<Library.Utility.TempFile, long, string>> m_task;
+
+            /// <summary>
+            /// The parent instance
+            /// </summary>
+            private readonly BackendManager m_parent;
+
             /// <summary>
             /// Initializes a new instance of the
             /// <see cref="T:Duplicati.Library.Main.BackendManager.WaitHandleWrapper"/> class.
             /// </summary>
             /// <param name="task">The task to wrap.</param>
-            public WaitHandleWrapper(Task<Tuple<Library.Utility.TempFile, long, string>> task)
+            /// <param name="parent">The parent instance</param>
+            public WaitHandleWrapper(Task<Tuple<Library.Utility.TempFile, long, string>> task, BackendManager parent)
             {
                 m_task = task;
+                m_parent = parent;
             }
 
             /// <summary>
@@ -71,6 +79,13 @@ namespace Duplicati.Library.Main
             /// <param name="size">The downloaded file size.</param>
             public TempFile Wait(out string hash, out long size)
             {
+                do
+                {
+                    m_task.Wait(500);
+                    m_parent.m_db.ProcessAllPendingOperations();
+                }
+                while (!m_task.IsCompleted);
+
                 m_task.WaitForTaskOrThrow();
                 size = m_task.Result.Item2;
                 hash = m_task.Result.Item3;
@@ -186,7 +201,8 @@ namespace Duplicati.Library.Main
         {
             return 
                 new WaitHandleWrapper(
-                    (Task<Tuple<Library.Utility.TempFile, long, string>>)WaitForTaskIfRequired(true, () => m_backend.GetFileWithInfoAsync(remotename))
+                    (Task<Tuple<Library.Utility.TempFile, long, string>>)WaitForTaskIfRequired(true, () => m_backend.GetFileWithInfoAsync(remotename)),
+                    this
                 ).Wait(out hash, out size);
         }
 
@@ -200,7 +216,8 @@ namespace Duplicati.Library.Main
         {
             return 
                 new WaitHandleWrapper(
-                    (Task<Tuple<Library.Utility.TempFile, long, string>>)WaitForTaskIfRequired(false, () => m_backend.GetFileWithInfoAsync(remotename))
+                    (Task<Tuple<Library.Utility.TempFile, long, string>>)WaitForTaskIfRequired(false, () => m_backend.GetFileWithInfoAsync(remotename)),
+                    this
                 );
         }
 
