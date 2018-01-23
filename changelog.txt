@@ -1,3 +1,13 @@
+2018-01-23 - 2.0.2.17_canary_2018-01-23
+==========
+- Fixed a bug with the update packages having an invalid hash
+- Updated external links in the UI to be clearly marked
+- Experimental support for Google Team Drives
+- Fixed WEBDAV Test function, thanks @inat3k
+- Added an rclone backend, thanks @wjansenw
+- Fixed some broken error messages, thanks @JonMikeIV
+- Added a simple UI for exposing the `--retention-policy` option
+
 2018-01-18 - 2.0.2.16_canary_2018-01-18
 ==========
 * Reworked some internal compression code, thanks @vnau
