@@ -3,35 +3,35 @@
         <div>
             <label class="shortname">{{getShortName(item)}}</label>
 
-            <select ng-if="getInputType(item) == 'enum'" ng-options="n for n in getEnumerations(item)" ng-model="$parent.ngModel[$index]" parse-advanced-option="getEnumerations(item)"></select>
-            <select ng-if="getInputType(item) == 'flags'" ng-options="n for n in getEnumerations(item)" ng-model="$parent.ngModel[$index]" parse-advanced-option-flags="getEnumerations(item)" multiple="multiple"></select>
-            <input ng-if="getInputType(item) == 'bool'" type="checkbox" ng-model="$parent.ngModel[$index]" parse-advanced-option-bool ></input>
-            <input ng-if="getInputType(item) == 'password'" type="password" ng-model="$parent.ngModel[$index]" parse-advanced-option ></input>
-            <input ng-if="getInputType(item) == 'text'" type="text" ng-model="$parent.ngModel[$index]" parse-advanced-option ></input>
-            <input ng-if="getInputType(item) == 'int'" type="number" ng-model="$parent.ngModel[$index]" parse-advanced-option-integer ></input>
+            <select ng-if="getInputType(item) == 'enum'" ng-options="n for n in getEnumerations(item)" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option="getEnumerations(item)"></select>
+            <select ng-if="getInputType(item) == 'flags'" ng-options="n for n in getEnumerations(item)" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option-flags="getEnumerations(item)" multiple="multiple"></select>
+            <input ng-if="getInputType(item) == 'bool'" type="checkbox" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option-bool ></input>
+            <input ng-if="getInputType(item) == 'password'" type="password" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option ></input>
+            <input ng-if="getInputType(item) == 'text'" type="text" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option ></input>
+            <input ng-if="getInputType(item) == 'int'" type="number" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option-integer ></input>
 
             <div ng-if="getInputType(item) == 'size'" class="input type multiple">
-                <input type="number" parse-advanced-option-size-number="uppercase" ng-model="$parent.ngModel[$index]" />
-                <select parse-advanced-option-size-multiplier="uppercase" ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in fileSizeMultipliers">
+                <input type="number" parse-advanced-option-size-number="uppercase" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" />
+                <select parse-advanced-option-size-multiplier="uppercase" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" ng-options="item.value as item.name for item in fileSizeMultipliers">
                 </select>
             </div>
 
             <div ng-if="getInputType(item) == 'speed'" class="input type multiple">
-                <input type="number" parse-advanced-option-size-number="uppercase" ng-model="$parent.ngModel[$index]" />
-                <select parse-advanced-option-size-multiplier="uppercase" ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in speedMultipliers">
+                <input type="number" parse-advanced-option-size-number="uppercase" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" />
+                <select parse-advanced-option-size-multiplier="uppercase" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" ng-options="item.value as item.name for item in speedMultipliers">
                 </select>
             </div>
 
             <div ng-if="getInputType(item) == 'timespan'" class="input type multiple">
-                <input parse-advanced-option-size-number type="number" ng-model="$parent.ngModel[$index]" />
-                <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in timerangeMultipliers">
+                <input parse-advanced-option-size-number type="number" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" />
+                <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" ng-options="item.value as item.name for item in timerangeMultipliers">
                     <option value="" translate>custom</option>
                 </select>
             </div>
 
             <div ng-if="getInputType(item) == 'shorttimespan'" class="input type multiple">
-                <input parse-advanced-option-size-number type="number" ng-model="$parent.ngModel[$index]" />
-                <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$index]" ng-options="item.value as item.name for item in shorttimerangeMultipliers">
+                <input parse-advanced-option-size-number type="number" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" />
+                <select parse-advanced-option-size-multiplier ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" ng-options="item.value as item.name for item in shorttimerangeMultipliers">
                     <option value="" translate>custom</option>
                 </select>
             </div>
