@@ -1367,6 +1367,8 @@ ORDER BY
                     null
               );
             }
+
+            CommitTransaction("WriteMessage");
         }
     }
 }
