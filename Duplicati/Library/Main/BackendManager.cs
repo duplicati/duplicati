@@ -250,7 +250,8 @@ namespace Duplicati.Library.Main
                 lock (m_lock)
                 {
                     while (m_pendingTasks.Count > 0)
-                        m_pendingTasks.Peek().Wait(500);
+                        if (m_pendingTasks.Peek().Wait(1000))
+                            m_pendingTasks.Dequeue();
                 }
                 return Task.FromResult(true);
             });
