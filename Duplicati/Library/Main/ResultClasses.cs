@@ -585,7 +585,16 @@ namespace Duplicati.Library.Main
         public IEnumerable<string> Errors { get { return m_errors; } }
 
         protected Operation.Common.TaskControl m_taskController;
-        public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
+        public Operation.Common.ITaskReader TaskReader 
+        { 
+            get 
+            {
+                if (m_parent != null)
+                    return m_parent.TaskReader;
+
+                return m_taskController;
+            } 
+        }
 
         public BasicResults() 
         { 
