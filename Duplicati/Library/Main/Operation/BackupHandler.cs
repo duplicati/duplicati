@@ -416,7 +416,7 @@ namespace Duplicati.Library.Main.Operation
                         
                         m_database.WriteResults();                    
                         m_database.PurgeLogData(m_options.LogRetention);
-                        m_database.CommitTransaction("AllDone");
+                        m_database.CommitTransaction("AllDone", false);
 
                         if (m_options.AutoVacuum)
                         {
