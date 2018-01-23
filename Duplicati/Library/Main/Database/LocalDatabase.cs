@@ -185,7 +185,7 @@ namespace Duplicati.Library.Main.Database
             if (deleteGraceTime.Ticks > 0)
                 using(var cmd = m_connection.CreateCommand(transaction))
                     if ((c = cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""DeleteGraceTime"" = ? WHERE ""Name"" = ? ", (DateTime.UtcNow + deleteGraceTime).Ticks, name)) != 1)
-                        throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
+                        throw new Exception(string.Format("Unexpected number of updates when recording remote volume updates: {0}!", c));
 
 
             if (!suppressCleanup && state == RemoteVolumeState.Deleted)

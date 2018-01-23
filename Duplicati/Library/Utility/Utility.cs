@@ -190,7 +190,7 @@ namespace Duplicati.Library.Utility
         {
             IFilter match;
             filter = filter ?? new FilterExpression();
-            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => { 
+            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => {
                 bool result;
                 if (!filter.Matches(path, out result, out match))
                     result = true;
@@ -261,7 +261,7 @@ namespace Duplicati.Library.Utility
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader, ReportAccessError errorCallback = null)
         {
             Stack<string> lst = new Stack<string>();
-        
+
             var isFolder = false;
             try
             {
@@ -271,15 +271,15 @@ namespace Duplicati.Library.Utility
                     isFolder = (attributeReader(rootpath) & System.IO.FileAttributes.Directory) == System.IO.FileAttributes.Directory;
             }
             catch
-            {                
+            {
             }
-        
+
             if (isFolder)
             {
                 rootpath = AppendDirSeparator(rootpath);
                 try
                 {
-                    
+
                     System.IO.FileAttributes attr = attributeReader == null ? System.IO.FileAttributes.Directory : attributeReader(rootpath);
                     if (callback(rootpath, rootpath, attr))
                         lst.Push(rootpath);
@@ -298,12 +298,12 @@ namespace Duplicati.Library.Utility
                 while (lst.Count > 0)
                 {
                     string f = AppendDirSeparator(lst.Pop());
-            
+
                     yield return f;
-                                
+
                     try
                     {
-                        foreach(string s in folderList(f))
+                        foreach (string s in folderList(f))
                         {
                             var sf = AppendDirSeparator(s);
                             try
@@ -351,9 +351,9 @@ namespace Duplicati.Library.Utility
                                 errorCallback(rootpath, f, ex);
                             callback(rootpath, f, System.IO.FileAttributes.Directory | ATTRIBUTE_ERROR);
                         }
-        
+
                     if (files != null)
-                        foreach(var s in files)
+                        foreach (var s in files)
                         {
                             try
                             {
@@ -395,7 +395,7 @@ namespace Duplicati.Library.Utility
                     callback(rootpath, rootpath, ATTRIBUTE_ERROR);
                     yield break;
                 }
-                
+
                 yield return rootpath;
             }
         }
@@ -508,13 +508,13 @@ namespace Duplicati.Library.Utility
             while ((a1 = ForceStreamRead(stream1, buf1, buf1.Length)) == (a2 = ForceStreamRead(stream2, buf2, buf2.Length)))
             {
                 int ix = 0;
-                for(int i = 0; i < a1 / longSize; i++)
+                for (int i = 0; i < a1 / longSize; i++)
                     if (BitConverter.ToUInt64(buf1, ix) != BitConverter.ToUInt64(buf2, ix))
                         return false;
                     else
                         ix += longSize;
 
-                for(int i = 0; i < a1 % longSize; i++)
+                for (int i = 0; i < a1 % longSize; i++)
                     if (buf1[ix] != buf2[ix])
                         return false;
                     else
@@ -534,7 +534,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(string path)
         {
-            using(System.IO.FileStream fs = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            using (System.IO.FileStream fs = System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 return CalculateHash(fs);
         }
 
@@ -559,14 +559,14 @@ namespace Duplicati.Library.Utility
             // we need to detect the encoding (at least that it's not UTF8).
             // So we read the first 4096 bytes and try to decode them as UTF8. 
             byte[] buffer = new byte[4096];
-            using(System.IO.FileStream file = new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            using (System.IO.FileStream file = new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 file.Read(buffer, 0, 4096);
 
             Encoding enc = Encoding.UTF8;
             try
             {
                 // this will throw an error if not really UTF8
-                new UTF8Encoding(false, true).GetString(buffer); 
+                new UTF8Encoding(false, true).GetString(buffer);
             }
             catch (Exception)
             {
@@ -574,7 +574,7 @@ namespace Duplicati.Library.Utility
             }
 
             // This will load the text using the BOM, or the detected encoding if no BOM.
-            using(System.IO.StreamReader reader = new System.IO.StreamReader(filename, enc, true))
+            using (System.IO.StreamReader reader = new System.IO.StreamReader(filename, enc, true))
             {
                 // Remove all \r from the file and split on \n, then pass directly to ExtractOptions
                 return reader.ReadToEnd();
@@ -582,19 +582,20 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot;.
+        /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot; or -2283 becomes &qout;-2.23 KB%quot.
         /// </summary>
         /// <param name="size">The size to format</param>
         /// <returns>A human readable string representing the size</returns>
         public static string FormatSizeString(long size)
         {
-            if (size >= 1024 * 1024 * 1024 * 1024L)
+            long sizeAbs = Math.Abs(size);  // Allow formatting of negative sizes
+            if (sizeAbs >= 1024 * 1024 * 1024 * 1024L)
                 return Strings.Utility.FormatStringTB((double)size / (1024 * 1024 * 1024 * 1024L));
-            else if (size >= 1024 * 1024 * 1024)
+            else if (sizeAbs >= 1024 * 1024 * 1024)
                 return Strings.Utility.FormatStringGB((double)size / (1024 * 1024 * 1024));
-            else if (size >= 1024 * 1024)
+            else if (sizeAbs >= 1024 * 1024)
                 return Strings.Utility.FormatStringMB((double)size / (1024 * 1024));
-            else if (size >= 1024)
+            else if (sizeAbs >= 1024)
                 return Strings.Utility.FormatStringKB((double)size / 1024);
             else
                 return Strings.Utility.FormatStringB(size);
@@ -712,18 +713,18 @@ namespace Duplicati.Library.Utility
             return data;
         }
 
-        
+
         public static bool Which(string appname)
         {
             if (!IsClientLinux)
                 return false;
-    
+
             try
             {
                 var psi = new System.Diagnostics.ProcessStartInfo("which", appname);
                 psi.RedirectStandardOutput = true;
                 psi.UseShellExecute = false;
-        
+
                 var pi = System.Diagnostics.Process.Start(psi);
                 pi.WaitForExit(5000);
                 if (pi.HasExited)
@@ -734,7 +735,7 @@ namespace Duplicati.Library.Utility
             catch
             {
             }
-            
+
             return false;
         }
 
@@ -752,7 +753,7 @@ namespace Duplicati.Library.Utility
 
                 if (!IsClientLinux)
                     return false;
-        
+
                 try
                 {
                     if (UNAME == null)
@@ -760,7 +761,7 @@ namespace Duplicati.Library.Utility
                         var psi = new System.Diagnostics.ProcessStartInfo("uname");
                         psi.RedirectStandardOutput = true;
                         psi.UseShellExecute = false;
-                
+
                         var pi = System.Diagnostics.Process.Start(psi);
                         pi.WaitForExit(5000);
                         if (pi.HasExited)
@@ -770,9 +771,9 @@ namespace Duplicati.Library.Utility
                 catch
                 {
                 }
-        
+
                 return "Darwin".Equals(UNAME);
-            
+
             }
         }
         /// <value>
@@ -784,13 +785,13 @@ namespace Duplicati.Library.Utility
             {
                 if (!IsClientLinux)
                     return null;
-        
+
                 try
                 {
                     var psi = new System.Diagnostics.ProcessStartInfo("uname", "-a");
                     psi.RedirectStandardOutput = true;
                     psi.UseShellExecute = false;
-            
+
                     var pi = System.Diagnostics.Process.Start(psi);
                     pi.WaitForExit(5000);
                     if (pi.HasExited)
@@ -799,8 +800,8 @@ namespace Duplicati.Library.Utility
                 catch
                 {
                 }
-        
-                return null;            
+
+                return null;
             }
         }
         /// <value>
@@ -869,7 +870,7 @@ namespace Duplicati.Library.Utility
                         var match = regex.Match(v);
                         if (match.Success)
                             return new Version(match.Value);
-                    }   
+                    }
                 }
                 catch
                 {
@@ -878,13 +879,13 @@ namespace Duplicati.Library.Utility
                 return new Version();
             }
         }
-        
+
         /// <summary>
         /// Gets the Mono display version, or null if not running Mono
         /// </summary>
         public static string MonoDisplayVersion
         {
-            get 
+            get
             {
                 try
                 {
@@ -900,7 +901,7 @@ namespace Duplicati.Library.Utility
                 {
                 }
 
-                return null;            
+                return null;
             }
         }
 
@@ -953,11 +954,11 @@ namespace Duplicati.Library.Utility
                 string homedir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + System.IO.Path.PathSeparator.ToString();
 
                 //Look in application base folder and all system path folders
-                foreach(string s in (homedir + Environment.GetEnvironmentVariable("PATH")).Split(System.IO.Path.PathSeparator))
+                foreach (string s in (homedir + Environment.GetEnvironmentVariable("PATH")).Split(System.IO.Path.PathSeparator))
                     if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
                         try
                         {
-                            foreach(string sx in System.IO.Directory.GetFiles(ExpandEnvironmentVariables(s), filename))
+                            foreach (string sx in System.IO.Directory.GetFiles(ExpandEnvironmentVariables(s), filename))
                                 return sx;
                         }
                         catch
@@ -1264,7 +1265,7 @@ namespace Duplicati.Library.Utility
         /// <param name="visited">A lookup table with visited objects, used to avoid inifinite recursion</param>
         /// <param name="collectionlimit">The maximum number of items to report from an IEnumerable instance</param>
         public static void PrintSerializeObject(object item, System.IO.TextWriter writer, Func<System.Reflection.PropertyInfo, object, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 0, Dictionary<object, object> visited = null)
-        {            
+        {
             visited = visited ?? new Dictionary<object, object>();
             var indentstring = new string(' ', indentation);
 
@@ -1382,7 +1383,7 @@ namespace Duplicati.Library.Utility
         public static StringBuilder PrintSerializeObject(object item, StringBuilder sb = null, Func<System.Reflection.PropertyInfo, object, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 10)
         {
             sb = sb ?? new StringBuilder();
-            using(var sw = new System.IO.StringWriter(sb))
+            using (var sw = new System.IO.StringWriter(sb))
                 PrintSerializeObject(item, sw, filter, recurseobjects, indentation, collectionlimit);
             return sb;
         }
@@ -1403,7 +1404,7 @@ namespace Duplicati.Library.Utility
                 System.Text.Encoding.UTF8.GetBytes(salt ?? ""),
                 repeats);
         }
-    
+
         /// <summary>
         /// Repeatedly hash a value with a salt.
         /// This effectively masks the original value,
@@ -1416,21 +1417,21 @@ namespace Duplicati.Library.Utility
         {
             // We avoid storing the passphrase directly, 
             // instead we salt and rehash repeatedly
-            using(var h = System.Security.Cryptography.SHA256.Create())
+            using (var h = System.Security.Cryptography.SHA256.Create())
             {
                 h.Initialize();
                 h.TransformBlock(salt, 0, salt.Length, salt, 0);
                 h.TransformFinalBlock(data, 0, data.Length);
                 var buf = h.Hash;
-            
-                for(var i = 0; i < repeats; i++)
+
+                for (var i = 0; i < repeats; i++)
                 {
                     h.Initialize();
                     h.TransformBlock(salt, 0, salt.Length, salt, 0);
                     h.TransformFinalBlock(buf, 0, buf.Length);
                     buf = h.Hash;
                 }
-                
+
                 return buf;
             }
         }
@@ -1522,7 +1523,7 @@ namespace Duplicati.Library.Utility
                 // We could consider using single quotes that prevents all expansions
                 //if (!allowEnvExpansion)
                 //    return "'" + arg.Replace("'", "\\'") + "'";
-                
+
                 // Linux is using backslash to escape, except for !
                 arg = COMMANDLINE_ESCAPED_LINUX.Replace(arg, (match) =>
                 {
@@ -1531,7 +1532,7 @@ namespace Duplicati.Library.Utility
 
                     if (match.Value == "$" && allowEnvExpansion)
                         return match.Value;
-                    
+
                     return "\\" + match.Value;
                 });
             }
@@ -1558,7 +1559,7 @@ namespace Duplicati.Library.Utility
             if (COMMANDLINE_SAFE.Match(arg).Length != arg.Length)
                 return "\"" + arg + "\"";
             else
-                return arg;            
+                return arg;
         }
 
         /// <summary>
