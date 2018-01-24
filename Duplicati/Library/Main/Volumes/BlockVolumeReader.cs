@@ -9,16 +9,16 @@ namespace Duplicati.Library.Main.Volumes
 {
     public class BlockVolumeReader : VolumeReaderBase
     {
-        public BlockVolumeReader(ICompression compression, Options options)
+        public BlockVolumeReader(IArchiveReader compression, Options options)
             : base(compression, options)
         {
         }
-
+        
         public BlockVolumeReader(string compressor, string file, Options options)
             : base(compressor, file, options)
         {
         }
-
+        
         public int ReadBlock(string hash, byte[] blockbuffer)
         {
             using (var fs = m_compression.OpenRead(Library.Utility.Utility.Base64PlainToBase64Url(hash)))

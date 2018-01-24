@@ -183,9 +183,9 @@ namespace Duplicati.CommandLine.RecoveryTool
                                 localFileSource = localFileSource + ".same";
                             }
                             using (var localFileSourceStream = new System.IO.FileStream(localFileSource, FileMode.Open, FileAccess.Read, FileShare.Read))
-                            using (var cmOld = Library.DynamicLoader.CompressionLoader.GetModule(remoteFile.CompressionModule, localFileSourceStream, ArchiveMode.Read, options))
+                            using (var cmOld = Library.DynamicLoader.CompressionLoader.GetArchiveReader(remoteFile.CompressionModule, localFileSourceStream, options))
                             using (var localFileTargetStream = new FileStream(localFileTarget, FileMode.Create, FileAccess.Write, FileShare.Delete))
-                            using (var cmNew = Library.DynamicLoader.CompressionLoader.GetModule(target_compr_module, localFileTargetStream, ArchiveMode.Write, options))
+                            using (var cmNew = Library.DynamicLoader.CompressionLoader.GetArchiveWriter(target_compr_module, localFileTargetStream, options))
                                 foreach (var cmfile in cmOld.ListFiles(""))
                                 {
                                     string cmfileNew = cmfile;

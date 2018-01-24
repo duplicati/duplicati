@@ -10,12 +10,12 @@ namespace Duplicati.Library.Main.Volumes
     public abstract class VolumeReaderBase : VolumeBase, IDisposable
     {
         protected bool m_disposeCompression = false;
-        protected ICompression m_compression;
+        protected IArchiveReader m_compression;
         protected Stream m_stream;
 
-        private static ICompression LoadCompressor(string compressor, Stream stream, Options options)
+        private static IArchiveReader LoadCompressor(string compressor, Stream stream, Options options)
         {
-            var tmp = DynamicLoader.CompressionLoader.GetModule(compressor, stream, Interface.ArchiveMode.Read, options.RawOptions);
+            var tmp = DynamicLoader.CompressionLoader.GetArchiveReader(compressor, stream, options.RawOptions);
             if (tmp == null)
             {
                 var name = "[stream]";
@@ -28,7 +28,7 @@ namespace Duplicati.Library.Main.Volumes
             return tmp;
         }
 
-        private static ICompression LoadCompressor(string compressor, string file, Options options, out Stream stream)
+        private static IArchiveReader LoadCompressor(string compressor, string file, Options options, out Stream stream)
         {
             stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
             return LoadCompressor(compressor, stream, options);
@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Volumes
             m_disposeCompression = true;
         }
 
-        public VolumeReaderBase(ICompression compression, Options options)
+        public VolumeReaderBase(IArchiveReader compression, Options options)
             : base(options)
         {
             m_compression = compression;
@@ -103,7 +103,7 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
-        public static IEnumerable<string> ReadBlocklist(ICompression compression, string filename, long hashsize)
+        public static IEnumerable<string> ReadBlocklist(IArchiveReader compression, string filename, long hashsize)
         {
             var buffer = new byte[hashsize];
             using (var fs = compression.OpenRead(filename))

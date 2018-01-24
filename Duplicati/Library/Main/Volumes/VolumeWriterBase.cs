@@ -7,7 +7,7 @@ namespace Duplicati.Library.Main.Volumes
 {
     public abstract class VolumeWriterBase : VolumeBase, IDisposable
     {
-        protected ICompression m_compression;
+        protected IArchiveWriter m_compression;
         protected Library.Utility.TempFile m_localfile;
         protected Stream m_localFileStream;
         protected string m_volumename;
@@ -55,7 +55,7 @@ namespace Duplicati.Library.Main.Volumes
             ResetRemoteFilename(options, timestamp);
 
             m_localFileStream = new System.IO.FileStream(m_localfile, FileMode.Create, FileAccess.Write, FileShare.Read);
-            m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localFileStream, ArchiveMode.Write, options.RawOptions);
+            m_compression = DynamicLoader.CompressionLoader.GetArchiveWriter(options.CompressionModule, m_localFileStream, options.RawOptions);
 
             if (m_compression == null)
                 throw new UserInformationException(string.Format("Unsupported compression module: {0}", options.CompressionModule));

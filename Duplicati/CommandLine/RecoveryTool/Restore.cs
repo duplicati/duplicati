@@ -429,7 +429,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
         private class CompressedFileMRUCache : IDisposable
         {
-            private Dictionary<string, Library.Interface.ICompression> m_lookup = new Dictionary<string, Duplicati.Library.Interface.ICompression>();
+            private Dictionary<string, Library.Interface.IArchiveReader> m_lookup = new Dictionary<string, Duplicati.Library.Interface.IArchiveReader>();
             private Dictionary<string, Stream> m_streams = new Dictionary<string, Stream>();
             private List<string> m_mru = new List<string>();
             private Dictionary<string, string> m_options;
@@ -443,12 +443,12 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             public Stream ReadBlock(string filename, string hash)
             {
-                Library.Interface.ICompression cf;
+                Library.Interface.IArchiveReader cf;
                 Stream stream;
                 if (!m_lookup.TryGetValue(filename, out cf) || !m_streams.TryGetValue(filename, out stream))
                 {
                     stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
-                    cf = Library.DynamicLoader.CompressionLoader.GetModule(Path.GetExtension(filename).Trim('.'), stream, Library.Interface.ArchiveMode.Read, m_options);
+                    cf = Library.DynamicLoader.CompressionLoader.GetArchiveReader(Path.GetExtension(filename).Trim('.'), stream, m_options);
                     if (cf == null)
                     {
                         stream.Dispose();

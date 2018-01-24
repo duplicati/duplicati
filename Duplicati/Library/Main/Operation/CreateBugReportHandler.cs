@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 using (var stream = new System.IO.FileStream(m_targetpath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (ICompression cm = DynamicLoader.CompressionLoader.GetModule(module, stream, Interface.ArchiveMode.Write, m_options.RawOptions))
+                using (var cm = DynamicLoader.CompressionLoader.GetArchiveWriter(module, stream, m_options.RawOptions))
                 {
                     using (var cs = cm.CreateFile("log-database.sqlite", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.UtcNow))
                     using (var fs = System.IO.File.Open(tmp, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))

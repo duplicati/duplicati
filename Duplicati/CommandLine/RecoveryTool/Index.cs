@@ -96,7 +96,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                     var blocks = 0;
                     using (var stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    using (var cp = Library.DynamicLoader.CompressionLoader.GetModule(p.CompressionModule, stream, Library.Interface.ArchiveMode.Read, options))
+                    using (var cp = Library.DynamicLoader.CompressionLoader.GetArchiveReader(p.CompressionModule, stream, options))
                     using (var tf = new Library.Utility.TempFile())
                     {
                         using (var sw = new StreamWriter(tf))

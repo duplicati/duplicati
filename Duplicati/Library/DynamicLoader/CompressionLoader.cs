@@ -33,14 +33,14 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// Implementation overrides specific to compression
         /// </summary>
-        private class CompressionLoaderSub : DynamicLoader<ICompression>
+        private class CompressionLoaderSub : DynamicLoader<ICompressionInfo>
         {
             /// <summary>
             /// Returns the filename extension, which is also the key
             /// </summary>
             /// <param name="item">The item to load the key for</param>
             /// <returns>The file extension used by the module</returns>
-            protected override string GetInterfaceKey(ICompression item)
+            protected override string GetInterfaceKey(ICompressionInfo item)
             {
                 return item.FilenameExtension;
             }
@@ -90,7 +90,7 @@ namespace Duplicati.Library.DynamicLoader
 
                 lock (m_lock)
                 {
-                    ICompression b;
+                    ICompressionInfo b;
                     if (m_interfaces.TryGetValue(key, out b) && b != null)
                         return b.SupportedCommands;
                     else
@@ -109,7 +109,7 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// Gets a list of loaded compression modules, the instances can be used to extract interface information, not used to interact with the module.
         /// </summary>
-        public static ICompression[] Modules { get { return _compressionLoader.Interfaces; } }
+        public static ICompressionInfo[] Modules { get { return _compressionLoader.Interfaces; } }
 
         /// <summary>
         /// Gets a list of keys supported
@@ -127,17 +127,29 @@ namespace Duplicati.Library.DynamicLoader
         }
 
         /// <summary>
-        /// Instanciates a specific compression module, given the file extension and options
+        /// Instanciates a specific compression module for writing, given the file extension and options
         /// </summary>
         /// <param name="fileextension">The file extension to create the instance for</param>
         /// <param name="stream">The stream of the file used to compress/decompress contents</param>
-        /// <param name="writing">True is the file opened for writing</param>
         /// <param name="options">The options to pass to the instance constructor</param>
-        /// <returns>The instanciated compression module or null if the file extension is not supported</returns>
-        public static ICompression GetModule(string fileextension, Stream stream, ArchiveMode mode, Dictionary<string, string> options)
+        /// <returns>The instanciated compression module writer or null if the file extension is not supported</returns>
+        public static IArchiveWriter GetArchiveWriter(string fileextension, Stream stream, Dictionary<string, string> options)
         {
-            return _compressionLoader.GetModule(fileextension, stream, mode, options);
+            return _compressionLoader.GetModule(fileextension, stream, ArchiveMode.Write, options);
         }
+
+        /// <summary>
+        /// Instanciates a specific compression module for reading, given the file extension and options
+        /// </summary>
+        /// <param name="fileextension">The file extension to create the instance for</param>
+        /// <param name="stream">The stream of the file used to compress/decompress contents</param>
+        /// <param name="options">The options to pass to the instance constructor</param>
+        /// <returns>The instanciated compression module reader or null if the file extension is not supported</returns>
+        public static IArchiveReader GetArchiveReader(string fileextension, Stream stream, Dictionary<string, string> options)
+        {
+            return _compressionLoader.GetModule(fileextension, stream, ArchiveMode.Read, options);
+        }
+
         #endregion
 
     }

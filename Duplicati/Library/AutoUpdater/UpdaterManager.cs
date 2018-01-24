@@ -756,7 +756,7 @@ namespace Duplicati.Library.AutoUpdater
             {
                 using (var archive_temp = System.IO.File.Open(archive_temp_file, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
                 {
-                    using (ICompression zipfile = new Duplicati.Library.Compression.FileArchiveZip(archive_temp, ArchiveMode.Write, new Dictionary<string, string>()))
+                    using (IArchiveWriter zipfile = new Duplicati.Library.Compression.FileArchiveZip(archive_temp, ArchiveMode.Write, new Dictionary<string, string>()))
                     {
                         Func<string, string, bool> addToArchive = (path, relpath) =>
                         {

@@ -66,7 +66,7 @@ namespace Duplicati.CommandLine.RecoveryTool
         {
             var p = Library.Main.Volumes.VolumeBase.ParseFilename(file);
             using (var fs = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var cm = Library.DynamicLoader.CompressionLoader.GetModule(p.CompressionModule, fs, Library.Interface.ArchiveMode.Read, options))
+            using (var cm = Library.DynamicLoader.CompressionLoader.GetArchiveReader(p.CompressionModule, fs, options))
             using (var filesetreader = new Library.Main.Volumes.FilesetVolumeReader(cm, new Duplicati.Library.Main.Options(options)))
                 foreach (var f in filesetreader.Files)
                 {
