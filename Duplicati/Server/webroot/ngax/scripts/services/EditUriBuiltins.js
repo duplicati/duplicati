@@ -201,25 +201,16 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         if (scope.openstack_providers == null) {
             AppService.post('/webmodule/openstack-getconfig', {'openstack-config': 'Providers'}).then(function(data) {
                 scope.openstack_providers = data.data.Result;
-                if (scope.openstack_providers != null && scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
-                    var first = null;
-                    var rs = null;
-
-                    for (var k in scope.openstack_providers) {
-                        if (first == null)
-                            first = scope.openstack_providers[k];
-                        if (scope.openstack_providers[k] != null && scope.openstack_providers[k].indexOf('https://identity.api.rackspacecloud.com/') == 0)
-                            rs = scope.openstack_providers[k];
-                    }
-
-                    if (rs != null)
-                        scope.openstack_server = rs;
-                    else if (first != null)
-                        scope.openstack_server = first;
+                if (scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
+                    scope.openstack_server = 'https://identity.api.rackspacecloud.com/';
 
             }, AppUtils.connectionError);
+        } else {
+            if (scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
+                scope.openstack_server = 'https://identity.api.rackspacecloud.com/';
         }
     };
+
 
     EditUriBackendConfig.loaders['gcs'] = function(scope) {
         if (scope.gcs_locations == null) {
