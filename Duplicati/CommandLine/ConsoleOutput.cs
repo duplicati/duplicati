@@ -78,7 +78,7 @@ namespace Duplicati.CommandLine
                             Output.WriteLine("  Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size));
                             break;
                         case BackendActionType.Get:
-                            Output.WriteLine("  Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
+                            Output.WriteLine("  Downloading file ({0}) ...", size < 0 ? "unknown size" : Library.Utility.Utility.FormatSizeString(size));
                             break;
                         case BackendActionType.List:
                             Output.WriteLine("  Listing remote folder ...");
