@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Volumes
             : base(options)
         {
             if (!string.IsNullOrWhiteSpace(options.AsynchronousUploadFolder))
-                m_localfile = Library.Utility.TempFile.CreateInFolder(options.AsynchronousUploadFolder);
+                m_localfile = Library.Utility.TempFile.CreateInFolder(options.AsynchronousUploadFolder, true);
             else
                 m_localfile = new Library.Utility.TempFile();
 
