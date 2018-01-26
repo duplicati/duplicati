@@ -70,11 +70,11 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             if (m_workQueue == null)
                 throw new ObjectDisposedException("This database guard instance has been shut down");
-            
-            
+
+
             var tcs = new TaskCompletionSource<bool>();
-            lock(m_lock)
-                m_workQueue.Add(new Tuple<Action, TaskCompletionSource<bool>>(action, tcs));            
+            lock (m_lock)
+                m_workQueue.Add(new Tuple<Action, TaskCompletionSource<bool>>(action, tcs));
             return tcs.Task;
         }
 
@@ -86,12 +86,13 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="restart">If set to <c>true</c>, a transaction will be started again after this call.</param>
         public Task CommitTransactionAsync(string message, bool restart = true)
         {
-            return AddToQueue(() => {
+            return AddToQueue(() =>
+            {
                 if (m_dryrun)
                 {
                     if (!restart)
                         m_db.RollbackTransaction();
-                    return;                    
+                    return;
                 }
                 m_db.CommitTransaction(message, restart);
             });
@@ -134,6 +135,19 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             return AddToQueue(() => { m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime); });
         }
+
+        /// <summary>
+        /// Gets the volume information for a remote file, given the name.
+        /// </summary>
+        /// <returns>The remote volume information.</returns>
+        /// <param name="remotename">The name of the remote file to query.</param>
+        public async Task<Database.RemoteVolumeEntry> GetVolumeInfoAsync(string remotename)
+        {
+            var res = default(Database.RemoteVolumeEntry);
+            await AddToQueue(() => res = m_db.GetRemoteVolume(remotename));
+            return res;
+        }
+
 
         /// <summary>
         /// Processes all pending operations into the database.

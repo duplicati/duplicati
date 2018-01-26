@@ -580,7 +580,16 @@ namespace Duplicati.Library.Main.Operation.Common
         private async Task<Library.Utility.TempFile> DoGet(FileEntryItem item)
         {
             Library.Utility.TempFile tmpfile = null;
-            await m_stats.SendEventAsync(BackendActionType.Get, BackendEventType.Started, item.RemoteFilename, item.Size);
+
+            // Grab size from the database if we do not know it,
+            // as this makes the output prettier
+            // Don't care if we fail to read it for whatever reason
+            var size = item.Size;
+            if (size < 0)
+                try { size = (await m_database.GetVolumeInfoAsync(item.RemoteFilename)).Size; }
+                catch { }
+
+            await m_stats.SendEventAsync(BackendActionType.Get, BackendEventType.Started, item.RemoteFilename, size);
 
             try
             {
@@ -599,21 +608,21 @@ namespace Duplicati.Library.Main.Operation.Common
 
                 var duration = DateTime.Now - begin;
                 var filehash = FileEntryItem.CalculateFileHash(tmpfile);
-                await m_log.WriteProfilingAsync(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), null);
+                var filesize = new FileInfo(tmpfile).Length;
 
-                await m_database.LogRemoteOperationAsync("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = new System.IO.FileInfo(tmpfile).Length, Hash = filehash }));
-                await m_stats.SendEventAsync(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, new System.IO.FileInfo(tmpfile).Length);
+                await m_log.WriteProfilingAsync(string.Format("Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(filesize), duration, Library.Utility.Utility.FormatSizeString((long)(filesize / duration.TotalSeconds))), null);
+                await m_database.LogRemoteOperationAsync("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = filesize, Hash = filehash }));
+                await m_stats.SendEventAsync(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, filesize);
 
                 if (!m_options.SkipFileHashChecks)
                 {
-                    var nl = new System.IO.FileInfo(tmpfile).Length;
                     if (item.Size >= 0)
                     {
-                        if (nl != item.Size)
-                            throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, nl, item.Size));
+                        if (filesize != item.Size)
+                            throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, filesize, item.Size));
                     }
                     else
-                        item.Size = nl;
+                        item.Size = filesize;
 
                     if (!string.IsNullOrEmpty(item.Hash))
                     {

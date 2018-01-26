@@ -57,5 +57,12 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="message">The message to use for logging the time spent in this operation.</param>
         /// <param name="restart">If set to <c>true</c>, a transaction will be started again after this call.</param>
         Task CommitTransactionAsync(string message, bool restart = true);
+
+        /// <summary>
+        /// Gets the volume information for a remote file, given the name.
+        /// </summary>
+        /// <returns>The remote volume information.</returns>
+        /// <param name="remotename">The name of the remote file to query.</param>
+        Task<Database.RemoteVolumeEntry> GetVolumeInfoAsync(string remotename);
     }
 }
