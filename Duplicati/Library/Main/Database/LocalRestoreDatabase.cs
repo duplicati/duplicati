@@ -1128,12 +1128,7 @@ namespace Duplicati.Library.Main.Database
 
             public void Commit(ILogWriter log)
             {
-                var tr = m_insertblockCommand.Transaction;
-                m_insertblockCommand.Dispose();
-                m_insertblockCommand = null;
-                using (new Logging.Timer("CommitBlockMarker"))
-                    tr.Commit();
-                tr.Dispose();
+                m_parent.CommitTransaction("CommitBlockMarker");
             }
 
             public void Dispose()
