@@ -33,14 +33,14 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// Implementation overrides specific to compression
         /// </summary>
-        private class CompressionLoaderSub : DynamicLoader<ICompressionInfo>
+        private class CompressionLoaderSub : DynamicLoader<ICompression>
         {
             /// <summary>
             /// Returns the filename extension, which is also the key
             /// </summary>
             /// <param name="item">The item to load the key for</param>
             /// <returns>The file extension used by the module</returns>
-            protected override string GetInterfaceKey(ICompressionInfo item)
+            protected override string GetInterfaceKey(ICompression item)
             {
                 return item.FilenameExtension;
             }
@@ -90,7 +90,7 @@ namespace Duplicati.Library.DynamicLoader
 
                 lock (m_lock)
                 {
-                    ICompressionInfo b;
+                    ICompression b;
                     if (m_interfaces.TryGetValue(key, out b) && b != null)
                         return b.SupportedCommands;
                     else
