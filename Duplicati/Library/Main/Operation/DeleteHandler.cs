@@ -174,21 +174,27 @@ namespace Duplicati.Library.Main.Operation
 
             List<DateTime> res = new List<DateTime>();
 
+            // Remove backups explicitely specified via option
             var versions = m_options.Version;
             if (versions != null && versions.Length > 0)
                 foreach (var ix in versions.Distinct())
                     if (ix >= 0 && ix < backups.Length)
                         res.Add(backups[ix]);
 
-            var keepVersions = m_options.KeepVersions;
-            if (keepVersions > 0 && keepVersions < backups.Length)
-                res.AddRange(backups.Skip(keepVersions));
-
+            // Remove backups that are older than date specified via option
             var keepTime = m_options.KeepTime;
             if (keepTime.Ticks > 0)
                 res.AddRange(backups.SkipWhile(x => x >= keepTime));
 
+            // Remove backups via rentention policy option
             res.AddRange(ApplyRetentionPolicy(backups));
+
+            // Check how many backups will be remaining after the previous steps
+            // and remove oldest backups while there are still more backups than should be kept as specified via option
+            var backupsRemaining = backups.Except(res).ToList();
+            var keepVersions = m_options.KeepVersions;
+            if (keepVersions > 0 && keepVersions < backupsRemaining.Count())
+                res.AddRange(backupsRemaining.Skip(keepVersions));
 
             var filtered = res.Distinct().OrderByDescending(x => x).AsEnumerable();
 
