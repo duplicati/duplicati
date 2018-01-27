@@ -163,46 +163,46 @@ namespace Duplicati.Library.Main.Operation
         /// Gets the filesets selected for deletion
         /// </summary>
         /// <returns>The filesets to delete</returns>
-        /// <param name="backups">The list of backups that can be deleted</param>
-        private DateTime[] GetFilesetsToDelete(DateTime[] backups)
+        /// <param name="allBackups">The list of backups that can be deleted</param>
+        private DateTime[] GetFilesetsToDelete(DateTime[] allBackups)
         {
-            if (backups.Length == 0)
-                return backups;
+            if (allBackups.Length == 0)
+                return allBackups;
 
-            if (backups.Distinct().Count() != backups.Length)
-                throw new Exception(string.Format("List of backup timestamps contains duplicates: {0}", string.Join(", ", backups.Select(x => x.ToString()))));
+            if (allBackups.Distinct().Count() != allBackups.Length)
+                throw new Exception(string.Format("List of backup timestamps contains duplicates: {0}", string.Join(", ", allBackups.Select(x => x.ToString()))));
 
-            List<DateTime> res = new List<DateTime>();
+            List<DateTime> toDelete = new List<DateTime>();
 
             // Remove backups explicitely specified via option
             var versions = m_options.Version;
             if (versions != null && versions.Length > 0)
                 foreach (var ix in versions.Distinct())
-                    if (ix >= 0 && ix < backups.Length)
-                        res.Add(backups[ix]);
+                    if (ix >= 0 && ix < allBackups.Length)
+                        toDelete.Add(allBackups[ix]);
 
             // Remove backups that are older than date specified via option
             var keepTime = m_options.KeepTime;
             if (keepTime.Ticks > 0)
-                res.AddRange(backups.SkipWhile(x => x >= keepTime));
+                toDelete.AddRange(allBackups.SkipWhile(x => x >= keepTime));
 
             // Remove backups via rentention policy option
-            res.AddRange(ApplyRetentionPolicy(backups));
+            toDelete.AddRange(ApplyRetentionPolicy(allBackups));
 
             // Check how many backups will be remaining after the previous steps
             // and remove oldest backups while there are still more backups than should be kept as specified via option
-            var backupsRemaining = backups.Except(res).ToList();
+            var backupsRemaining = allBackups.Except(toDelete).ToList();
             var keepVersions = m_options.KeepVersions;
             if (keepVersions > 0 && keepVersions < backupsRemaining.Count())
-                res.AddRange(backupsRemaining.Skip(keepVersions));
+                toDelete.AddRange(backupsRemaining.Skip(keepVersions));
 
-            var filtered = res.Distinct().OrderByDescending(x => x).AsEnumerable();
+            var toDeleteDistinct = toDelete.Distinct().OrderByDescending(x => x).AsEnumerable();
 
-            var removeCount = filtered.Count();
-            if (removeCount > backups.Length)
-                throw new Exception(string.Format("Too many entries {0} vs {1}, lists: {2} vs {3}", removeCount, backups.Length, string.Join(", ", filtered.Select(x => x.ToString())), string.Join(", ", backups.Select(x => x.ToString()))));
+            var removeCount = toDeleteDistinct.Count();
+            if (removeCount > allBackups.Length)
+                throw new Exception(string.Format("Too many entries {0} vs {1}, lists: {2} vs {3}", removeCount, allBackups.Length, string.Join(", ", toDeleteDistinct.Select(x => x.ToString())), string.Join(", ", allBackups.Select(x => x.ToString()))));
 
-            return filtered.ToArray();
+            return toDeleteDistinct.ToArray();
         }
 
         /// <summary>
