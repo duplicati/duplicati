@@ -119,6 +119,14 @@ backupApp.directive('advancedOptionsEditor', function() {
                 return item.LongDescription;
             };
 
+            $scope.getDefaultValue = function(item) {
+                var item = $scope.getEntry(item);
+                if (item == null)
+                    return null;
+
+                return item.DefaultValue;
+            };
+
             $scope.getEnumerations = function(item) {
                 var item = $scope.getEntry(item);
                 if (item == null)
