@@ -57,7 +57,9 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="dryrun">A flag indicating if this is a dry-run</param>
         public BackendHandlerDatabaseGuard(Database.LocalDatabase db, bool dryrun)
         {
-            m_db = db ?? throw new ArgumentNullException(nameof(db));
+            if (db == null)
+                throw new ArgumentNullException(nameof(db));
+            m_db = db; 
             m_mainthread = System.Threading.Thread.CurrentThread;
             m_dryrun = dryrun;
         }
