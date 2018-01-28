@@ -148,6 +148,7 @@
     <Compile Include="Operation\Common\IBackendHandlerDatabase.cs" />
     <Compile Include="Operation\Common\HashMismatchException.cs" />
     <Compile Include="Operation\Common\BackendHandlerDatabaseGuard.cs" />
+    <Compile Include="Operation\Common\IIndexVolumeCreatorDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

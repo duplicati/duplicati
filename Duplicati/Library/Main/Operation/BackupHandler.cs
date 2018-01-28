@@ -71,7 +71,7 @@ namespace Duplicati.Library.Main.Operation
                     if (m_options.NoBackendverification)
                     {
                         FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
-                        UpdateStorageStatsFromDatabase();
+                        UpdateStorageStatsFromDatabase(backend.QuotaInfo);
                     }
                     else
                         FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
@@ -180,7 +180,8 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Handler for computing backend statistics, without relying on a remote folder listing
         /// </summary>
-        private void UpdateStorageStatsFromDatabase()
+        /// <param name="quota">The backend quota information</param>
+        private void UpdateStorageStatsFromDatabase(IQuotaInfo quota)
         {
             if (m_result.BackendWriter != null)
             {
@@ -193,18 +194,10 @@ namespace Duplicati.Library.Main.Operation
                 m_result.BackendWriter.BackupListCount = m_database.FilesetTimes.Count();
                 m_result.BackendWriter.LastBackupDate = m_database.FilesetTimes.FirstOrDefault().Value.ToLocalTime();
 
-                // TODO: If we have a BackendManager, we should query through that
-                using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
+                if (quota != null)
                 {
-                    if (backend is Library.Interface.IQuotaEnabledBackend)
-                    {
-                        Library.Interface.IQuotaInfo quota = ((Library.Interface.IQuotaEnabledBackend)backend).Quota;
-                        if (quota != null)
-                        {
-                            m_result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
-                            m_result.BackendWriter.FreeQuotaSpace = quota.FreeQuotaSpace;
-                        }
-                    }
+                    m_result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
+                    m_result.BackendWriter.FreeQuotaSpace = quota.FreeQuotaSpace;
                 }
             }
 
@@ -408,7 +401,7 @@ namespace Duplicati.Library.Main.Operation
                             if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
                             {
                                 if (m_options.NoBackendverification)
-                                    UpdateStorageStatsFromDatabase();
+                                    UpdateStorageStatsFromDatabase(bk.QuotaInfo);
                                 else
                                     PostBackupVerification(backend);
                             }

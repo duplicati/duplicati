@@ -70,6 +70,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             blockvolume = new BlockVolumeWriter(options);
                             blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
+                            Console.WriteLine("Created volume: {0}", blockvolume.RemoteFilename);
                         }
 
                         var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);
@@ -77,23 +78,41 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         if (newBlock)
                         {
-                            blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
-
-                            // If the volume is full, send to upload
-                            if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
+                            // At this point we have registered the block as belonging to the current
+                            // volume, but it is possible that there is not enough space to put it in
+                            if (blockvolume.Filesize + b.Size > options.VolumeSize)
                             {
-                                //When uploading a new volume, we register the volumes and then flush the transaction
-                                // this ensures that the local database and remote storage are as closely related as possible
-                                await database.UpdateRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                            
-                                blockvolume.Close();
+                                BlockVolumeWriter tmpvolume = null;
+                                try
+                                {
+                                    // Start a new volume 
+                                    tmpvolume = new BlockVolumeWriter(options);
+                                    tmpvolume.VolumeID = await database.RegisterRemoteVolumeAsync(tmpvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
 
-                                await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
+                                    // Move the current block to the new volume
+                                    await database.MoveBlockToVolumeAsync(b.HashKey, b.Size, blockvolume.VolumeID, tmpvolume.VolumeID);
 
-                                await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, true));
-                                blockvolume = null;
+                                    // Close this volume, and send it to upload
+                                    blockvolume.Close();
+                                    await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
+                                    await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, true));
+
+                                    // Continue with the freshly created volume
+                                    blockvolume = tmpvolume;
+                                }
+                                catch
+                                {
+                                    // If something goes wrong, we need to clear the temp volume
+                                    if (tmpvolume != null && tmpvolume != blockvolume)
+                                        try { tmpvolume.Dispose(); }
+                                        catch { } // Ignore this and report the original error
+
+                                    throw;
+                                }
                             }
 
+                            // Now add the block to the current volume, as we know there is space for it
+                            blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
                         }
 
                         // We ignore the stop signal, but not the pause and terminate

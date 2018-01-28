@@ -107,6 +107,7 @@ namespace Duplicati.Library.Main
         public string BackendUrl { get { return m_backendurl; } }
         public bool HasDied { get { return m_lastException != null; } }
         public Exception LastException { get { return m_lastException; } }
+        public Operation.Common.BackendHandlerDatabaseGuard Database { get { return m_db; } }
 
         public BackendManager(string backendurl, Options options, IBackendWriter statwriter, LocalDatabase database, Operation.Common.BackendHandler backend)
         {
@@ -190,11 +191,9 @@ namespace Duplicati.Library.Main
             WaitForTaskIfRequired(false, () => m_backend.PutUnencryptedAsync(remotename, localpath));
         }
 
-        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, bool synchronous = false)
+        public void Put(VolumeWriterBase item, Func<string, Task<IndexVolumeWriter>> indexcreator, bool synchronous = false)
         {
-            WaitForTaskIfRequired(synchronous, () => m_backend.UploadFileAsync(item, async (remotename) => {
-                return indexfile; 
-            }));
+            WaitForTaskIfRequired(synchronous, () => m_backend.UploadFileAsync(item, indexcreator));
         }
 
         public Library.Utility.TempFile GetWithInfo(string remotename, out long size, out string hash)
@@ -238,6 +237,8 @@ namespace Duplicati.Library.Main
                 .Result;
         }
 
+        public Interface.IQuotaInfo QuotaInfo { get { return m_backend.QuotaInfo; } }
+
         public void WaitForComplete()
         {
             WaitForEmpty();
@@ -246,14 +247,17 @@ namespace Duplicati.Library.Main
 
         public void WaitForEmpty()
         {
-            WaitForTaskIfRequired(true, () => {
-                lock (m_lock)
+            WaitForTaskIfRequired(true, async () => {
+                while (m_pendingTasks.Count > 0)
                 {
-                    while (m_pendingTasks.Count > 0)
-                        if (m_pendingTasks.Peek().Wait(1000))
-                            m_pendingTasks.Dequeue();
+                    var top = m_pendingTasks.Peek();
+                    if (await Task.WhenAny(top, Task.Delay(1000)) == top)
+                    {
+                        lock (m_lock)
+                            top = m_pendingTasks.Dequeue();
+                        await top;
+                    }
                 }
-                return Task.FromResult(true);
             });
         }
 

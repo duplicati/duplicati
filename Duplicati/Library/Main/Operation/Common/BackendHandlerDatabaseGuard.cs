@@ -26,7 +26,7 @@ namespace Duplicati.Library.Main.Operation.Common
     /// the <see cref="BackendHandler"/> without needing to rewrite all the
     /// code that does not handle concurrent access.
     /// </summary>
-    internal class BackendHandlerDatabaseGuard : IDisposable, IBackendHandlerDatabase
+    internal class BackendHandlerDatabaseGuard : IDisposable, IBackendHandlerDatabase, IIndexVolumeCreatorDatabase
     {
         /// <summary>
         /// The database we are wrapping
@@ -59,6 +59,7 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             m_db = db ?? throw new ArgumentNullException(nameof(db));
             m_mainthread = System.Threading.Thread.CurrentThread;
+            m_dryrun = dryrun;
         }
 
         /// <summary>
@@ -148,6 +149,57 @@ namespace Duplicati.Library.Main.Operation.Common
             return res;
         }
 
+
+        /// <summary>
+        /// Creates and registers a remote volume
+        /// </summary>
+        /// <returns>The newly created volume ID.</returns>
+        /// <param name="name">The name of the remote file.</param>
+        /// <param name="type">The type of the remote file.</param>
+        /// <param name="state">The state of the remote file.</param>
+        public async Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state)
+        {
+            var res = default(long);
+            await AddToQueue(() => res = m_db.RegisterRemoteVolume(name, type, state));
+            return res;
+        }
+
+        /// <summary>
+        /// Gets a list of all blocks associated with a given volume
+        /// </summary>
+        /// <returns>The blocks found in the volume.</returns>
+        /// <param name="volumeid">The ID of the volume to examine.</param>
+        public async Task<IEnumerable<Database.LocalDatabase.IBlock>> GetBlocksAsync(long volumeid)
+        {
+            var res = default(IEnumerable<Database.LocalDatabase.IBlock>);
+            await AddToQueue(() => res = m_db.GetBlocks(volumeid));
+            return res;
+        }
+
+        /// <summary>
+        /// Gets the blocklists contained in a remote volume
+        /// </summary>
+        /// <returns>The blocklists.</returns>
+        /// <param name="volumeid">The ID of the volume to get the blocklists for.</param>
+        /// <param name="blocksize">The blocksize setting.</param>
+        /// <param name="hashsize">The size of the hash in bytes.</param>
+        public async Task<IEnumerable<Tuple<string, byte[], int>>> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
+        {
+            var res = default(IEnumerable<Tuple<string, byte[], int>>);
+            await AddToQueue(() => res = m_db.GetBlocklists(volumeid, blocksize, hashsize));
+            return res;
+        }
+
+        /// <summary>
+        /// Adds a link between a block volume and an index volume
+        /// </summary>
+        /// <returns>An awaitable task.</returns>
+        /// <param name="indexVolumeID">The index volume ID.</param>
+        /// <param name="blockVolumeID">The block volume ID.</param>
+        public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID)
+        {
+            return AddToQueue(() => m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID));
+        }
 
         /// <summary>
         /// Processes all pending operations into the database.

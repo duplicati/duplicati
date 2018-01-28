@@ -476,7 +476,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                 {
-                                backend.WaitForComplete();
+                                    backend.WaitForComplete();
                                     return;
                                 }
                             
@@ -512,7 +512,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Drop the temp tables
                 database.DropRestoreTable();
-                backend.WaitForComplete();
+                backend.WaitForEmpty();
             }
             
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);

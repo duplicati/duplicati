@@ -288,7 +288,7 @@ namespace Duplicati.Library.Main.Operation
                                 else
                                 {
                                     db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                                    backend.Put(w);
+                                    backend.Put(w, null);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Index)
@@ -296,6 +296,8 @@ namespace Duplicati.Library.Main.Operation
                                 var w = new IndexVolumeWriter(m_options);
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
+
+                                // TODO: Most of this is actually replicated in IndexVolumeCreator
 
                                 var h = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
                                 
@@ -327,7 +329,7 @@ namespace Duplicati.Library.Main.Operation
                                 else
                                 {
                                     db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                                    backend.Put(w);
+                                    backend.Put(w, null);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Blocks)
@@ -422,7 +424,7 @@ namespace Duplicati.Library.Main.Operation
                                         else
                                         {
                                             db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                                            backend.Put(w);
+                                            backend.Put(w, null);
                                         }
                                     }
                                 }
@@ -448,7 +450,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);                
-                backend.WaitForComplete();
+                backend.WaitForEmpty();
                 db.WriteResults();
             }
         }

@@ -197,7 +197,7 @@ namespace Duplicati.Library.Main.Operation
                                         db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null);
 
                                     db.CommitTransaction("BeforeFileRemoval");
-                                    backend.Put(vol, synchronous: true);
+                                    backend.Put(vol, null, synchronous: true);
                                     backend.Delete(prevfilename, -1, synchronous: true);
                                     backend.FlushDbMessages();
                                     db.CommitTransaction("AfterFileRemoval");
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Complete);
                 }
 
-                backend.WaitForComplete();
+                backend.WaitForEmpty();
             }
         }
     }

@@ -27,7 +27,7 @@ namespace Duplicati.Library.Main.Operation.Common
     /// Asynchronous interface that ensures all requests
     /// to the database are performed in a sequential manner
     /// </summary>
-    internal class DatabaseCommon : SingleRunner, IBackendHandlerDatabase, IDisposable
+    internal class DatabaseCommon : SingleRunner, IBackendHandlerDatabase, IIndexVolumeCreatorDatabase, IDisposable
     {
         protected LocalDatabase m_db;
         protected Options m_options;
@@ -39,6 +39,13 @@ namespace Duplicati.Library.Main.Operation.Common
             m_options = options;
         }
 
+        /// <summary>
+        /// Creates and registers a remote volume
+        /// </summary>
+        /// <returns>The newly created volume ID.</returns>
+        /// <param name="name">The name of the remote file.</param>
+        /// <param name="type">The type of the remote file.</param>
+        /// <param name="state">The state of the remote file.</param>
         public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state)
         {
             return RunOnMain(() => m_db.RegisterRemoteVolume(name, type, state));
@@ -107,17 +114,34 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain(() => m_db.LogRemoteOperation(operation, path, data));
         }
 
+        /// <summary>
+        /// Gets a list of all blocks associated with a given volume
+        /// </summary>
+        /// <returns>The blocks found in the volume.</returns>
+        /// <param name="volumeid">The ID of the volume to examine.</param>
         public Task<IEnumerable<LocalDatabase.IBlock>> GetBlocksAsync(long volumeid)
         {
             // TODO: Consider AsyncEnumerable
             return RunOnMain(() => m_db.GetBlocks(volumeid).ToArray().AsEnumerable());
         }
 
+        /// <summary>
+        /// Gets the volume information for a remote file, given the name.
+        /// </summary>
+        /// <returns>The remote volume information.</returns>
+        /// <param name="remotename">The name of the remote file to query.</param>
         public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename)
         {
             return RunOnMain(() => m_db.GetRemoteVolume(remotename));
         }
 
+        /// <summary>
+        /// Gets the blocklists contained in a remote volume
+        /// </summary>
+        /// <returns>The blocklists.</returns>
+        /// <param name="volumeid">The ID of the volume to get the blocklists for.</param>
+        /// <param name="blocksize">The blocksize setting.</param>
+        /// <param name="hashsize">The size of the hash in bytes.</param>
         public Task<IEnumerable<Tuple<string, byte[], int>>> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
         {
             // TODO: Consider AsyncEnumerable
@@ -129,6 +153,12 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain(() => m_db.GetRemoteVolumeID(remotename));
         }
 
+        /// <summary>
+        /// Adds a link between a block volume and an index volume
+        /// </summary>
+        /// <returns>An awaitable task.</returns>
+        /// <param name="indexVolumeID">The index volume ID.</param>
+        /// <param name="blockVolumeID">The block volume ID.</param>
         public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID)
         {
             return RunOnMain(() => m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID));

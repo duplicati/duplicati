@@ -109,7 +109,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 if (!this.Encrypted && !options.NoEncryption)
                 {
                     var tempfile = new Library.Utility.TempFile();
-                    using(var enc = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions))
+                    using (var enc = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions))
                         enc.Encrypt(this.LocalFilename, tempfile);
 
                     await this.DeleteLocalFile(log);
@@ -190,6 +190,8 @@ namespace Duplicati.Library.Main.Operation.Common
                 DoWithRetry<T>(fe, method)
             );
         }
+
+        public IQuotaInfo QuotaInfo { get { return (m_backend as IQuotaEnabledBackend)?.Quota; } }
 
         public Task PutUnencryptedAsync(string remotename, string localpath)
         {

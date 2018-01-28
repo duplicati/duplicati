@@ -483,7 +483,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                backend.WaitForComplete();
+                backend.WaitForEmpty();
 
                 if (m_options.RepairOnlyPaths)
                 {

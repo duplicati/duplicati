@@ -82,7 +82,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backend.WaitForComplete();
+                    backend.WaitForEmpty();
                 }
 
                 db.WriteResults();

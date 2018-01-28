@@ -19,7 +19,10 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
-    public interface IBackendHandlerDatabase
+    /// <summary>
+    /// Interface for just the operations needed by the backendhandler
+    /// </summary>
+    internal interface IBackendHandlerDatabase
     {
         /// <summary>
         /// Updates the remote volume information.

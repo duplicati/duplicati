@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -91,15 +92,6 @@ namespace Duplicati.Library.Main.Operation
                     BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
                     newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
     
-                    IndexVolumeWriter newvolindex = null;
-                    if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
-                    {
-                        newvolindex = new IndexVolumeWriter(m_options);
-                        newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
-                        db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID);
-                        newvolindex.StartVolume(newvol.RemoteFilename);
-                    }
-                    
                     long blocksInVolume = 0;
                     long discardedBlocks = 0;
                     long discardedSize = 0;
@@ -108,6 +100,7 @@ namespace Duplicati.Library.Main.Operation
                     
                     //These are for bookkeeping
                     var uploadedVolumes = new List<KeyValuePair<string, long>>();
+                    var uploadedIndexVolumes = new Dictionary<string, KeyValuePair<string, long>>();
                     var deletedVolumes = new List<KeyValuePair<string, long>>();
                     var downloadedVolumes = new List<KeyValuePair<string, long>>();
                     
@@ -124,6 +117,18 @@ namespace Duplicati.Library.Main.Operation
 
                     if (report.ShouldCompact)
                     {
+                        Func<string, Task<IndexVolumeWriter>> indexCreator = null;
+                        if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                        {
+                            indexCreator = async (name) => {
+                                var tmp = await Common.IndexVolumeCreator.CreateIndexVolume(name, m_options, backend.Database);
+                                // We assign to a dictionary, to prevent counting multiple items if the upload fails
+                                // and the index file is recreated
+                                uploadedIndexVolumes[name] = new KeyValuePair<string, long>(tmp.RemoteFilename, new System.IO.FileInfo(tmp.LocalFilename).Length);
+                                return tmp;
+                            };
+                        }
+
                         var volumesToDownload = (from v in remoteList
                                                  where report.CompactableVolumes.Contains(v.Name)
                                                  select (IRemoteVolume)v).ToList();
@@ -156,8 +161,6 @@ namespace Duplicati.Library.Main.Operation
                                                     throw new Exception(string.Format("Size mismatch problem for block {0}, {1} vs {2}", e.Key, s, e.Value));
 
                                                 newvol.AddBlock(e.Key, buffer, 0, s, Duplicati.Library.Interface.CompressionHint.Compressible);
-                                                if (newvolindex != null)
-                                                    newvolindex.AddBlock(e.Key, e.Value);
 
                                                 db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID);
                                                 blocksInVolume++;
@@ -165,25 +168,16 @@ namespace Duplicati.Library.Main.Operation
                                                 if (newvol.Filesize > m_options.VolumeSize)
                                                 {
                                                     uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
-                                                    if (newvolindex != null)
-                                                        uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
 
+                                                    newvol.Close();
                                                     if (!m_options.Dryrun)
-                                                        backend.Put(newvol, newvolindex);
+                                                        backend.Put(newvol, indexCreator);
                                                     else
                                                         m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize)));
 
 
                                                     newvol = new BlockVolumeWriter(m_options);
                                                     newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
-
-                                                    if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
-                                                    {
-                                                        newvolindex = new IndexVolumeWriter(m_options);
-                                                        newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
-                                                        db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID);
-                                                        newvolindex.StartVolume(newvol.RemoteFilename);
-                                                    }
 
                                                     blocksInVolume = 0;
 
@@ -207,26 +201,23 @@ namespace Duplicati.Library.Main.Operation
                             if (blocksInVolume > 0)
                             {
                                 uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
-                                if (newvolindex != null)
-                                    uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
+                                newvol.Close();
                                 if (!m_options.Dryrun)
-                                    backend.Put(newvol, newvolindex);
+                                    backend.Put(newvol, indexCreator);
                                 else
                                     m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize)));
                             }
                             else
                             {
                                 db.RemoveRemoteVolume(newvol.RemoteFilename);
-                                if (newvolindex != null)
-                                {
-                                    db.RemoveRemoteVolume(newvolindex.RemoteFilename);
-                                    newvolindex.FinishVolume(null, 0);
-                                }
                             }
                         }
                     }
                     
                     deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes));
+                    backend.WaitForEmpty();
+
+                    uploadedVolumes.AddRange(uploadedIndexVolumes.Values);
                                         
                     var downloadSize = downloadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
                     var deletedSize = deletedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
@@ -270,7 +261,7 @@ namespace Duplicati.Library.Main.Operation
                                                               Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
                     }
                             
-                    backend.WaitForComplete();
+                    backend.WaitForEmpty();
                 }
 
                 m_result.EndTime = DateTime.UtcNow;
