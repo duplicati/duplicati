@@ -55,6 +55,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 var input = info.Request.Form;
                 var cmdline = Library.Utility.Utility.ParseBool(input["cmdline"].Value, false);
+                var import_metadata = Library.Utility.Utility.ParseBool(input["import_metadata"].Value, false);
                 var direct = Library.Utility.Utility.ParseBool(input["direct"].Value, false);
                 output_template = output_template.Replace("CBM", input["callback"].Value);
                 if (cmdline)
@@ -89,6 +90,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             using(var sr = new System.IO.StreamReader(fs))
                                 ipx = Serializer.Deserialize<Serializable.ImportExportStructure>(sr);
                         }
+                    }
+                    if (!import_metadata) {
+                        ipx.Backup.Metadata.Clear();
                     }
 
                     ipx.Backup.ID = null;
