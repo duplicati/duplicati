@@ -89,6 +89,10 @@ namespace Duplicati.UnitTest
                 Console.WriteLine("Failed to clean tempdir: {0}", ex);
             }
 
+            // Don't spam the console
+            if (Log.CurrentLog != null)
+                Log.LogLevel = LogMessageType.Error;
+
             using (var log = new LogHelper(logfilename))
             using (Log.StartScope(log))
             {
