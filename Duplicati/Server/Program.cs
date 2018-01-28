@@ -182,6 +182,43 @@ namespace Duplicati.Server
                     s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
                     commandlineOptions["help"] = "";
 
+            // I'm not sure if there's a better way to get the filter variable, this is how it's done in Duplicati.Commandline.Program.cs
+            List<string> cargs = new List<string>(args);
+            var filter = Library.Utility.FilterCollector.ExtractOptions(cargs).Item2;
+
+            // Check if a parameters-file was provided. Skip if help was already specified
+            if (!commandlineOptions.ContainsKey("help"))
+            {
+                string filename;
+                bool param_file = false;
+                if (commandlineOptions.ContainsKey("parameters-file") && !string.IsNullOrEmpty(commandlineOptions["parameters-file"]))
+                {
+                    filename = commandlineOptions["parameters-file"];
+                    param_file = true;
+                }
+                else if (commandlineOptions.ContainsKey("parameter-file") && !string.IsNullOrEmpty(commandlineOptions["parameter-file"]))
+                {
+                    filename = commandlineOptions["parameter-file"];
+                    param_file = true;
+                }
+                else
+                {
+                    filename = commandlineOptions["parameterfile"];
+                    param_file = true;
+                }
+
+                // Clean up the commandlineOptions array
+                commandlineOptions.Remove("parameters-file");
+                commandlineOptions.Remove("parameter-file");
+                commandlineOptions.Remove("parameterfile");
+
+                if (param_file)
+                {
+                    // Check the parameters-file and add provided arguments (overriding commandline arguments)
+                    ReadOptionsFromFile(filename, ref filter, cargs, commandlineOptions);
+                }
+            }
+
             //If the commandline issues --help, just stop here
             if (commandlineOptions.ContainsKey("help"))
             {
@@ -759,6 +796,7 @@ namespace Duplicati.Server
             {
                 var lst = new List<Duplicati.Library.Interface.ICommandLineArgument> (new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
                     new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
@@ -778,6 +816,91 @@ namespace Duplicati.Server
                     lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42"));
 
                 return lst.ToArray();
+            }
+        }
+
+        private static bool ReadOptionsFromFile(string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)
+        {
+            try
+            {
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
+                var newsource = new List<string>();
+                string newtarget = null;
+                string prependfilter = null;
+                string appendfilter = null;
+                string replacefilter = null;
+
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
+                    if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
+                    {
+                        newsource.Add(value);
+                        return false;
+                    }
+                    else if (key.Equals("target", StringComparison.OrdinalIgnoreCase))
+                    {
+                        newtarget = value;
+                        return false;
+                    }
+                    else if (key.Equals("append-filter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        appendfilter = value;
+                        return false;
+                    }
+                    else if (key.Equals("prepend-filter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        prependfilter = value;
+                        return false;
+                    }
+                    else if (key.Equals("replace-filter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        replacefilter = value;
+                        return false;
+                    }
+
+                    return true;
+                });
+
+                var opt = tmpparsed.Item1;
+                var newfilter = tmpparsed.Item2;
+
+                // If the user specifies parameters-file, all filters must be in the file.
+                // Allowing to specify some filters on the command line could result in wrong filter ordering
+                if (!filter.Empty && !newfilter.Empty)
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Program.FiltersCannotBeUsedWithFileError2);
+
+                if (!newfilter.Empty)
+                    filter = newfilter;
+
+                if (!string.IsNullOrWhiteSpace(prependfilter))
+                    filter = Library.Utility.FilterExpression.Combine(Library.Utility.FilterExpression.Deserialize(prependfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)), filter);
+
+                if (!string.IsNullOrWhiteSpace(appendfilter))
+                    filter = Library.Utility.FilterExpression.Combine(filter, Library.Utility.FilterExpression.Deserialize(appendfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)));
+
+                if (!string.IsNullOrWhiteSpace(replacefilter))
+                    filter = Library.Utility.FilterExpression.Deserialize(replacefilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
+
+                foreach (KeyValuePair<String, String> keyvalue in opt)
+                    options[keyvalue.Key] = keyvalue.Value;
+
+                if (!string.IsNullOrEmpty(newtarget))
+                {
+                    if (cargs.Count <= 1)
+                        cargs.Add(newtarget);
+                    else
+                        cargs[1] = newtarget;
+                }
+
+                if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
+                    cargs.AddRange(newsource);
+                else if (newsource.Count > 0 && Library.Utility.Utility.ParseBoolOption(options, "verbose"))
+                    Console.WriteLine(Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(Strings.Program.FailedToParseParametersFileError(filename, e.Message));
             }
         }
     }
