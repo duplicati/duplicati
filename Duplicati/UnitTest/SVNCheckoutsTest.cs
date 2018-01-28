@@ -74,6 +74,10 @@ namespace Duplicati.UnitTest
         /// <param name="target">The target destination for the backups</param>
         public static void RunTest(string[] folders, Dictionary<string, string> options, string target)
         {
+            // Don't spam the console
+            if (Log.CurrentLog != null)
+                Log.LogLevel = LogMessageType.Error;
+            
             string tempdir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tempdir");
             string logfilename = System.IO.Path.Combine(tempdir, string.Format("unittest-{0}.log", Library.Utility.Utility.SerializeDateTime(DateTime.Now)));
 
@@ -88,10 +92,6 @@ namespace Duplicati.UnitTest
             {
                 Console.WriteLine("Failed to clean tempdir: {0}", ex);
             }
-
-            // Don't spam the console
-            if (Log.CurrentLog != null)
-                Log.LogLevel = LogMessageType.Error;
 
             using (var log = new LogHelper(logfilename))
             using (Log.StartScope(log))

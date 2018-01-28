@@ -90,6 +90,10 @@ namespace Duplicati.UnitTest
                 File.Delete(DBFILE);
             if (Directory.Exists(TARGETFOLDER))
                 Directory.Delete(TARGETFOLDER, true);
+
+            // Don't spam the console
+            if (Library.Logging.Log.CurrentLog != null)
+                Library.Logging.Log.LogLevel = Library.Logging.LogMessageType.Error;
         }
 
 
