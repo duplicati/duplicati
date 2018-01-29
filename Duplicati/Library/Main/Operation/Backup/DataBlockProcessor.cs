@@ -70,7 +70,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             blockvolume = new BlockVolumeWriter(options);
                             blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
-                            Console.WriteLine("Created volume: {0}", blockvolume.RemoteFilename);
                         }
 
                         var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);

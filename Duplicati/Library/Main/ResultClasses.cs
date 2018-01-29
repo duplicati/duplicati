@@ -418,12 +418,13 @@ namespace Duplicati.Library.Main
             }
         }
 
+        private static readonly object[] NOARGS = new object[0];
+
         public void AddVerboseMessage(string message, params object[] args)
         {
             if (m_parent != null)
             {
-                if ((args != null) && (args.Length > 0)) m_parent.AddVerboseMessage(message, args);
-                else m_parent.AddMessage(message);
+                m_parent.AddVerboseMessage(message, args ?? NOARGS);
             }
             else
             {
@@ -439,8 +440,7 @@ namespace Duplicati.Library.Main
 
                         if (MessageSink != null)
                         {
-                            if ((args != null) && (args.Length > 0)) MessageSink.VerboseEvent(message, args);
-                            else MessageSink.MessageEvent(message);
+                            MessageSink.VerboseEvent(message, args ?? NOARGS);
                         }
                     }
                     finally
