@@ -632,7 +632,14 @@ namespace Duplicati.Server.Database
                     var existing = GetScheduleIDsFromTags(new string[] { "ID=" + ID.ToString() });
                     if (existing.Any())
                         DeleteFromDb("Schedule", existing.First(), tr);
-                    
+
+                    DeleteFromDb("ErrorLog", ID, "BackupID", tr);
+                    DeleteFromDb("Filter", ID, "BackupID", tr);
+                    DeleteFromDb("Log", ID, "BackupID", tr);
+                    DeleteFromDb("Metadata", ID, "BackupID", tr);
+                    DeleteFromDb("Option", ID, "BackupID", tr);
+                    DeleteFromDb("Source", ID, "BackupID", tr);
+
                     DeleteFromDb("Backup", ID, tr);
                     
                     tr.Commit();
