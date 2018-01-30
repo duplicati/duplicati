@@ -171,11 +171,12 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         /// <returns>The blocks found in the volume.</returns>
         /// <param name="volumeid">The ID of the volume to examine.</param>
-        public async Task<IEnumerable<Database.LocalDatabase.IBlock>> GetBlocksAsync(long volumeid)
+        public async Task GetBlocksAsync(long volumeid, Action<Database.LocalDatabase.IBlock> callback)
         {
-            var res = default(IEnumerable<Database.LocalDatabase.IBlock>);
-            await AddToQueue(() => res = m_db.GetBlocks(volumeid));
-            return res;
+            await AddToQueue(() => {
+                foreach (var n in m_db.GetBlocks(volumeid))
+                    callback(n);
+                });
         }
 
         /// <summary>
@@ -185,11 +186,13 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="volumeid">The ID of the volume to get the blocklists for.</param>
         /// <param name="blocksize">The blocksize setting.</param>
         /// <param name="hashsize">The size of the hash in bytes.</param>
-        public async Task<IEnumerable<Tuple<string, byte[], int>>> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
+        /// <param name="callback">The callback method called for each result</param>
+        public Task GetBlocklistsAsync(long volumeid, int blocksize, int hashsize, Action<Tuple<string, byte[], int>> callback)
         {
-            var res = default(IEnumerable<Tuple<string, byte[], int>>);
-            await AddToQueue(() => res = m_db.GetBlocklists(volumeid, blocksize, hashsize));
-            return res;
+            return AddToQueue(() => {
+                foreach (var e in m_db.GetBlocklists(volumeid, blocksize, hashsize))
+                    callback(e);
+            });
         }
 
         /// <summary>
@@ -206,7 +209,6 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Processes all pending operations into the database.
         /// </summary>
-        /// <param name="transaction">The transaction instance</param>
         public void ProcessAllPendingOperations()
         {
             //if (m_mainthread != System.Threading.Thread.CurrentThread)

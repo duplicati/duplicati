@@ -119,10 +119,13 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         /// <returns>The blocks found in the volume.</returns>
         /// <param name="volumeid">The ID of the volume to examine.</param>
-        public Task<IEnumerable<LocalDatabase.IBlock>> GetBlocksAsync(long volumeid)
+        /// <param name="callback">The method called for each item</param>
+        public Task GetBlocksAsync(long volumeid, Action<LocalDatabase.IBlock> callback)
         {
-            // TODO: Consider AsyncEnumerable
-            return RunOnMain(() => m_db.GetBlocks(volumeid).ToArray().AsEnumerable());
+            return RunOnMain(() => {
+                foreach (var n in m_db.GetBlocks(volumeid))
+                    callback(n);
+            });
         }
 
         /// <summary>
@@ -142,12 +145,21 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="volumeid">The ID of the volume to get the blocklists for.</param>
         /// <param name="blocksize">The blocksize setting.</param>
         /// <param name="hashsize">The size of the hash in bytes.</param>
-        public Task<IEnumerable<Tuple<string, byte[], int>>> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
+        /// <param name="callback">The callback method called for each result</param>
+        public Task GetBlocklistsAsync(long volumeid, int blocksize, int hashsize, Action<Tuple<string, byte[], int>> callback)
         {
-            // TODO: Consider AsyncEnumerable
-            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize).ToArray().AsEnumerable());
+            return RunOnMain(() =>
+            {
+                foreach (var n in m_db.GetBlocklists(volumeid, blocksize, hashsize))
+                    callback(n);
+            });
         }
 
+        /// <summary>
+        /// Gets the ID for a remote volume.
+        /// </summary>
+        /// <returns>The remote volume ID.</returns>
+        /// <param name="remotename">The remote file name.</param>
         public Task<long> GetRemoteVolumeIDAsync(string remotename)
         {
             return RunOnMain(() => m_db.GetRemoteVolumeID(remotename));

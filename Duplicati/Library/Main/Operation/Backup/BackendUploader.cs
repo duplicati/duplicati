@@ -60,13 +60,36 @@ namespace Duplicati.Library.Main.Operation.Backup
 
     internal class VolumeUploadRequest : IUploadRequest
     {
-        public BlockVolumeWriter BlockVolume { get; private set; }
-        public bool CreateIndexVolume { get; private set; }
+        public readonly BlockVolumeWriter BlockVolume;
+        public readonly bool CreateIndexVolume;
+        public readonly IEnumerable<string> BlocklistData;
 
-        public VolumeUploadRequest(BlockVolumeWriter blockvolume, bool createindexvolume)
+        public VolumeUploadRequest(BlockVolumeWriter blockvolume, bool createindexvolume, IEnumerable<string> blocklistdata)
         {
             BlockVolume = blockvolume;
             CreateIndexVolume = createindexvolume;
+            BlocklistData = blocklistdata;
+        }
+
+        public static string EncodeBlockListEntry(string hash, long size, byte[] data)
+        {
+            return hash + ":" + size + ":" + Convert.ToBase64String(data);
+        }
+
+        public static string DecodeBlockListEntryHash(string entry)
+        {
+            var ix = entry.IndexOf(':');
+            return entry.Substring(0, ix);
+        }
+
+        public static Tuple<string, long, byte[]> DecodeBlockListEntry(string entry)
+        {
+            var els = entry.Split(new char[] { ':' }, 3);
+            return new Tuple<string, long, byte[]>(
+                els[0],
+                long.Parse(els[1]),
+                Convert.FromBase64String(els[2])
+            );
         }
     }
    
@@ -108,7 +131,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (noIndexFiles || !((VolumeUploadRequest)req).CreateIndexVolume)
                                 task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, null));
                             else
-                                task = new KeyValuePair<int, Task>(2, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, name => IndexVolumeCreator.CreateIndexVolume(name, options, database)));
+                                task = new KeyValuePair<int, Task>(2, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, name => IndexVolumeCreator.CreateIndexVolume(name, options, database, ((VolumeUploadRequest)req).BlocklistData)));
                         }
                         else if (req is FilesetUploadRequest)
                             task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((FilesetUploadRequest)req).Fileset));

@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 				            return;
 
 				        await log.WriteInformationAsync(string.Format("Re-creating missing index file for {0}", blockfile));
-				        var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database);
+				        var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database, null);
 
 				        if (!await taskreader.ProgressAsync)
 				            return;

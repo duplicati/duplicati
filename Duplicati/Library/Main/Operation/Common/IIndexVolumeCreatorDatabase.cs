@@ -39,7 +39,8 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         /// <returns>The blocks found in the volume.</returns>
         /// <param name="volumeid">The ID of the volume to examine.</param>
-        Task<IEnumerable<Database.LocalDatabase.IBlock>> GetBlocksAsync(long volumeid);
+        /// <param name="callback">The callback method called for each result</param>
+        Task GetBlocksAsync(long volumeid, Action<Database.LocalDatabase.IBlock> callback);
 
         /// <summary>
         /// Gets the blocklists contained in a remote volume
@@ -48,7 +49,8 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="volumeid">The ID of the volume to get the blocklists for.</param>
         /// <param name="blocksize">The blocksize setting.</param>
         /// <param name="hashsize">The size of the hash in bytes.</param>
-        Task<IEnumerable<Tuple<string, byte[], int>>> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize);
+        /// <param name="callback">The callback method called for each result</param>
+        Task GetBlocklistsAsync(long volumeid, int blocksize, int hashsize, Action<Tuple<string, byte[], int>> callback);
 
         /// <summary>
         /// Adds a link between a block volume and an index volume

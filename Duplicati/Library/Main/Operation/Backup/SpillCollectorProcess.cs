@@ -44,6 +44,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self => 
             {
+                var useindex = options.IndexfilePolicy == Options.IndexFileStrategy.Full;
                 var lst = new List<VolumeUploadRequest>();
 
                 while(!await self.Input.IsRetiredAsync)
@@ -64,28 +65,41 @@ namespace Duplicati.Library.Main.Operation.Backup
                     // We ignore the stop signal, but not the pause and terminate
                     await taskreader.ProgressAsync;
 
-                    VolumeUploadRequest target = null;
+                    // The top-level item is the output target
+                    var target = lst[0];
+                    lst.RemoveAt(0);
+
+                    // The next item is copied into the target
                     var source = lst[0];
-
-                    // Finalize the current work
                     source.BlockVolume.Close();
-
-                    // Remove it from the list of active operations
                     lst.RemoveAt(0);
 
                     var buffer = new byte[options.Blocksize];
+                    var indexblocks = useindex ? new HashSet<string>() : null;
 
                     using(var rd = new BlockVolumeReader(options.CompressionModule, source.BlockVolume.LocalFilename, options))
                     {
                         foreach(var file in rd.Blocks)
                         {
-                            // Grab a target
-                            if (target == null)
+                            var len = rd.ReadBlock(file.Key, buffer);
+
+                            // If we do not have enough space, finish this one
+                            if (target.BlockVolume.Filesize + len > options.VolumeSize)
                             {
+                                if (indexblocks != null && target.BlocklistData != null && source.BlocklistData != null)
+                                {
+                                    foreach(var s in source.BlocklistData.Where(x => indexblocks.Contains(VolumeUploadRequest.DecodeBlockListEntryHash(x))))
+                                        ((Library.Utility.FileBackedStringList)target.BlocklistData).Add(s);
+                                    indexblocks = new HashSet<string>();
+                                }
+
+                                target.BlockVolume.Close();
+                                await self.Output.WriteAsync(target);
+
                                 if (lst.Count == 0)
                                 {
                                     // No more targets, make one
-                                    target = new VolumeUploadRequest(new BlockVolumeWriter(options), true);
+                                    target = new VolumeUploadRequest(new BlockVolumeWriter(options), true, useindex ? new Library.Utility.FileBackedStringList() : null);
                                     target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
                                 }
                                 else
@@ -96,17 +110,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 }
                             }
 
-
-                            var len = rd.ReadBlock(file.Key, buffer);
                             target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);
                             await database.MoveBlockToVolumeAsync(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID);
-
-                            if (target.BlockVolume.Filesize > options.VolumeSize - options.Blocksize)
-                            {
-                                target.BlockVolume.Close();
-                                await self.Output.WriteAsync(target);
-                                target = null;
-                            }
+                            if (indexblocks != null)
+                                indexblocks.Add(file.Key);
                         }
                     }
 
@@ -114,10 +121,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                     System.IO.File.Delete(source.BlockVolume.LocalFilename);
                     await database.SafeDeleteRemoteVolumeAsync(source.BlockVolume.RemoteFilename);
 
-                    // Re-inject the target if it has content
-                    if (target != null)
-                        lst.Insert(lst.Count == 0 ? 0 : 1, target);
+                    if (indexblocks != null && target.BlocklistData != null && source.BlocklistData != null)
+                    {
+                        foreach(var s in source.BlocklistData.Where(x => indexblocks.Contains(VolumeUploadRequest.DecodeBlockListEntryHash(x))))
+                            ((Library.Utility.FileBackedStringList)target.BlocklistData).Add(s);
+                    }
 
+                    // Re-inject the target
+                    lst.Insert(0, target);
                 }
 
                 foreach(var n in lst)

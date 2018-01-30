@@ -121,7 +121,7 @@ namespace Duplicati.Library.Main.Operation
                         if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
                         {
                             indexCreator = async (name) => {
-                                var tmp = await Common.IndexVolumeCreator.CreateIndexVolume(name, m_options, backend.Database);
+                                var tmp = await Common.IndexVolumeCreator.CreateIndexVolume(name, m_options, backend.Database, null);
                                 // We assign to a dictionary, to prevent counting multiple items if the upload fails
                                 // and the index file is recreated
                                 uploadedIndexVolumes[name] = new KeyValuePair<string, long>(tmp.RemoteFilename, new System.IO.FileInfo(tmp.LocalFilename).Length);

@@ -15,6 +15,8 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Volumes;
 
@@ -32,7 +34,8 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="blockname">The name of the remote volume to build the index for.</param>
         /// <param name="options">The job options.</param>
         /// <param name="database">The database to use.</param>
-        public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.IIndexVolumeCreatorDatabase database)
+        /// <param name="blocklist">An optional pre-collected list of blocklist hashes</param>
+        public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.IIndexVolumeCreatorDatabase database, IEnumerable<string> blocklist)
         {
             using(var h = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm))
             {
@@ -41,19 +44,34 @@ namespace Duplicati.Library.Main.Operation.Common
 
                 var blockvolume = await database.GetVolumeInfoAsync(blockname);
 
+                var st = DateTime.Now;
                 w.StartVolume(blockname);
-                foreach(var b in await database.GetBlocksAsync(blockvolume.ID))
-                    w.AddBlock(b.Hash, b.Size);
-
+                await database.GetBlocksAsync(blockvolume.ID, b => w.AddBlock(b.Hash, b.Size));
                 w.FinishVolume(blockvolume.Hash, blockvolume.Size);
 
                 if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                    foreach(var b in await database.GetBlocklistsAsync(blockvolume.ID, options.Blocksize, options.BlockhashSize))
+                    using (new Library.Logging.Timer("Create index file"))
                     {
-                        var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
-                        if (bh != b.Item1)
-                            throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
-                        w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+                        if (blocklist != null)
+                        {
+                            foreach (var b in blocklist.Select(x => Backup.VolumeUploadRequest.DecodeBlockListEntry(x)))
+                            {
+                                var bh = Convert.ToBase64String(h.ComputeHash(b.Item3, 0, (int)b.Item2));
+                                if (bh != b.Item1)
+                                    throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
+                                w.WriteBlocklist(b.Item1, b.Item3, 0, (int)b.Item2);
+                            }
+                        }
+                        else
+                        {
+                            await database.GetBlocklistsAsync(blockvolume.ID, options.Blocksize, options.BlockhashSize, b =>
+                            {
+                                var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
+                                if (bh != b.Item1)
+                                    throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
+                                w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+                            });
+                        }
                     }
 
                 w.Close();

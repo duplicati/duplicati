@@ -22,6 +22,7 @@ using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Main.Operation.Common;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -46,7 +47,8 @@ namespace Duplicati.Library.Main.Operation.Backup
             async self =>
             {
                 BlockVolumeWriter blockvolume = null;
-                var log = new LogWrapper(self.LogChannel);
+                var useindex = options.IndexfilePolicy == Options.IndexFileStrategy.Full;
+                var indexdata = useindex ? new Library.Utility.FileBackedStringList() : null;
 
                 try
                 {
@@ -94,10 +96,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     // Close this volume, and send it to upload
                                     blockvolume.Close();
                                     await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
-                                    await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, true));
+                                    await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, true, indexdata));
 
                                     // Continue with the freshly created volume
                                     blockvolume = tmpvolume;
+                                    if (useindex)
+                                        indexdata = new Library.Utility.FileBackedStringList();
                                 }
                                 catch
                                 {
@@ -112,6 +116,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             // Now add the block to the current volume, as we know there is space for it
                             blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
+                            if (b.IsBlocklistHashes && useindex)
+                                indexdata.Add(VolumeUploadRequest.EncodeBlockListEntry(b.HashKey, b.Size, b.Data));
+                                
                         }
 
                         // We ignore the stop signal, but not the pause and terminate
@@ -125,7 +132,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         // If we have collected data, merge all pending volumes into a single volume
                         if (blockvolume != null && blockvolume.SourceSize > 0)
                         {
-                            await self.SpillPickup.WriteAsync(new VolumeUploadRequest(blockvolume, true));
+                            await self.SpillPickup.WriteAsync(new VolumeUploadRequest(blockvolume, true, indexdata));
                         }
                     }
 
