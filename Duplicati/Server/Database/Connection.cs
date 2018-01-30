@@ -1024,8 +1024,15 @@ namespace Duplicati.Server.Database
 
             return @default;
         }
-                        
-        private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction transaction = null)                        
+
+        // Overloaded function for legacy functionality
+        private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction transaction = null)
+        {
+            return DeleteFromDb(tablename, id, "ID", transaction);
+        }
+
+        // New function that allows to delete rows from tables with arbitrary identifier values (e.g. ID or BackupID)
+        private bool DeleteFromDb(string tablename, long id, string identifier, System.Data.IDbTransaction transaction = null)
         {
             if (transaction == null) 
             {
@@ -1041,13 +1048,14 @@ namespace Duplicati.Server.Database
                 using(var cmd = m_connection.CreateCommand())
                 {
                     cmd.Transaction = transaction;
-                    cmd.CommandText = string.Format(@"DELETE FROM ""{0}"" WHERE ID=?", tablename);
+                    cmd.CommandText = string.Format(@"DELETE FROM ""{0}"" WHERE ""{1}""=?", tablename, identifier);
                     var p = cmd.CreateParameter();
                     p.Value = id;
                     cmd.Parameters.Add(p);
                     
                     var r = cmd.ExecuteNonQuery();
-                    if (r > 1)
+                    // Roll back the transaction if more than 1 ID was deleted. Multiple "BackupID" rows being deleted isn't a problem.
+                    if (identifier == "ID" && r > 1)
                         throw new Exception(string.Format("Too many records attempted deleted from table {0} for id {1}: {2}", tablename, id, r));
                     return r == 1;
                 }
