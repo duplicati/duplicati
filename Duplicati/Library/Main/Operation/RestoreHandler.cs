@@ -1000,7 +1000,7 @@ namespace Duplicati.Library.Main.Operation
                             ext = "." + ext;
                         
                         // First we try with a simple date append, assuming that there are not many conflicts there
-                        var newname = m_systemIO.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                        var newname = m_systemIO.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd-HH-mm-ss-tt", System.Globalization.CultureInfo.InvariantCulture);
                         var tr = newname + ext;
                         var c = 0;
                         while (m_systemIO.FileExists(tr) && c < 1000)
