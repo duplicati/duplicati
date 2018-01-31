@@ -33,6 +33,19 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class DataBlockProcessor
     {
+        /// <summary>
+        /// The number of bytes to reserve for the file header
+        /// in the compressed volume
+        /// </summary>
+        public const int BlockCompressionOverhead = 1024;
+
+        /// <summary>
+        /// A multiplier for protecting against block data
+        /// expanding during compression
+        /// </summary>
+        public const float NonCompressibleExpansionFactor = 1.02f;
+
+
         public static Task Run(BackupDatabase database, Options options, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
@@ -49,6 +62,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                 BlockVolumeWriter blockvolume = null;
                 var useindex = options.IndexfilePolicy == Options.IndexFileStrategy.Full;
                 var indexdata = useindex ? new Library.Utility.FileBackedStringList() : null;
+
+                // The limit for a single volume size
+                var maxvolumesize = options.VolumeSize - BlockCompressionOverhead;
 
                 try
                 {
@@ -81,7 +97,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             // At this point we have registered the block as belonging to the current
                             // volume, but it is possible that there is not enough space to put it in
-                            if (blockvolume.Filesize + b.Size > options.VolumeSize)
+                            if (blockvolume.Filesize + (b.Size * NonCompressibleExpansionFactor) > maxvolumesize)
                             {
                                 BlockVolumeWriter tmpvolume = null;
                                 try
@@ -114,11 +130,22 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 }
                             }
 
+#if DEBUG
+                            var presize = blockvolume.Filesize;
+#endif
+
                             // Now add the block to the current volume, as we know there is space for it
                             blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
                             if (b.IsBlocklistHashes && useindex)
                                 indexdata.Add(VolumeUploadRequest.EncodeBlockListEntry(b.HashKey, b.Size, b.Data));
                                 
+#if DEBUG
+                            var volumesizeincrease = blockvolume.Filesize - presize;
+                            var expectedincrease = (b.Size * NonCompressibleExpansionFactor) + BlockCompressionOverhead;
+
+                            if (volumesizeincrease > expectedincrease)
+                                Logging.Log.WriteMessage(string.Format("Size increased {0} bytes more than expected when adding {1} to volume", volumesizeincrease - expectedincrease, b.HashKey), Logging.LogMessageType.Warning);
+#endif
                         }
 
                         // We ignore the stop signal, but not the pause and terminate

@@ -132,6 +132,18 @@ namespace Duplicati.UnitTest
                     Duplicati.CommandLine.Program.RealMain(backupargs);                
             }
 
+            ProgressWriteLine("Checking remote file sizes ...");
+            string maxsizestr;
+            TestOptions.TryGetValue("dblock-size", out maxsizestr);
+            if (string.IsNullOrWhiteSpace(maxsizestr))
+                maxsizestr = "50mb";
+
+            var maxsizeval = Library.Utility.Sizeparser.ParseSize(maxsizestr, "mb");
+            foreach (var n in System.IO.Directory.EnumerateFiles(TARGETFOLDER))
+                if (new FileInfo(n).Length > maxsizeval)
+                    Library.Logging.Log.WriteMessage(string.Format("File {0} is {1} larger than allowed volume size", n, Library.Utility.Utility.FormatSizeString(new FileInfo(n).Length - maxsizeval)), Library.Logging.LogMessageType.Warning);
+
+
             ProgressWriteLine("Compacting data ...");
             using(new Library.Logging.Timer("Compacting"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "compact", target, "--small-file-max-count=2" }.Union(opts)).ToArray());

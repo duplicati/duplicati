@@ -44,6 +44,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self => 
             {
+                // The limit for a single volume size
+                var maxvolumesize = options.VolumeSize - DataBlockProcessor.BlockCompressionOverhead;
+
                 var useindex = options.IndexfilePolicy == Options.IndexFileStrategy.Full;
                 var lst = new List<VolumeUploadRequest>();
 
@@ -84,7 +87,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             var len = rd.ReadBlock(file.Key, buffer);
 
                             // If we do not have enough space, finish this one
-                            if (target.BlockVolume.Filesize + len > options.VolumeSize)
+                            if (target.BlockVolume.Filesize + (len * DataBlockProcessor.NonCompressibleExpansionFactor) > maxvolumesize)
                             {
                                 if (indexblocks != null && target.BlocklistData != null && source.BlocklistData != null)
                                 {

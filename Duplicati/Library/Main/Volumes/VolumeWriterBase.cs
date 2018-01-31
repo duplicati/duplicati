@@ -95,6 +95,10 @@ namespace Duplicati.Library.Main.Volumes
 
         public virtual void Close()
         {
+#if DEBUG            
+            var expectedsize = m_compression == null ? -1 : Filesize;
+#endif
+
             if (m_compression != null)
                 try { m_compression.Dispose(); }
                 finally { m_compression = null; }
@@ -102,6 +106,16 @@ namespace Duplicati.Library.Main.Volumes
             if (m_localFileStream != null)
                 try { m_localFileStream.Dispose(); }
                 finally { m_localFileStream = null; }
+
+#if DEBUG
+            if (expectedsize != -1)
+            {
+                var inf = new FileInfo(m_localfile);
+                if (inf.Exists && inf.Length != expectedsize)
+                    Console.WriteLine("Got diff in file size: {}", Library.Utility.Utility.FormatSizeString(inf.Length - expectedsize));
+
+            }
+#endif
         }
 
         public long Filesize { get { return m_compression.Size + m_compression.FlushBufferSize; } }
