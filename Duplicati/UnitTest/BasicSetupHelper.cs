@@ -72,6 +72,7 @@ namespace Duplicati.UnitTest
             if (!DEBUG_OUTPUT)
                 TestContext.Progress.WriteLine(msg, args);
             Console.WriteLine(msg, args);
+            Library.Logging.Log.WriteMessage(string.Format(msg, args), Library.Logging.LogMessageType.Information);
         }
 
         [OneTimeSetUp]
@@ -91,9 +92,11 @@ namespace Duplicati.UnitTest
             if (Directory.Exists(TARGETFOLDER))
                 Directory.Delete(TARGETFOLDER, true);
 
-            // Don't spam the console
-            if (Library.Logging.Log.CurrentLog != null)
-                Library.Logging.Log.LogLevel = Library.Logging.LogMessageType.Error;
+            if (Library.Logging.Log.CurrentLog == null)
+            {
+                Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(LOGFILE);
+                Library.Logging.Log.LogLevel = Library.Logging.LogMessageType.Information;
+            }
         }
 
 
@@ -109,8 +112,6 @@ namespace Duplicati.UnitTest
 
                 opts["passphrase"] = "123456";
                 opts["debug-output"] = "";
-                opts["log-level"] = "error";
-                opts["log-file"] = LOGFILE;
                 opts["dblock-size"] = "10mb";
                 opts["dbpath"] = DBFILE;
                 opts["blocksize"] = "10kb";
