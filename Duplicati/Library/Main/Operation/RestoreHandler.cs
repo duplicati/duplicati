@@ -543,14 +543,6 @@ namespace Duplicati.Library.Main.Operation
                 else if (isDirTarget && !m_systemIO.DirectoryExists(targetpath))
                     m_systemIO.DirectoryCreate(targetpath);
 
-                if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
-                {
-                    if (isDirTarget)
-                        m_systemIO.DirectorySetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
-                    else
-                        m_systemIO.FileSetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
-                }
-
                 if (metadata.TryGetValue("CoreCreatetime", out k) && long.TryParse(k, out t))
                 {
                     if (isDirTarget)
@@ -562,7 +554,25 @@ namespace Duplicati.Library.Main.Operation
                 if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse(k, true, out fa))
                     m_systemIO.SetFileAttributes(targetpath, fa);
 
-                m_systemIO.SetMetadata(path, metadata, restorePermissions);
+                try
+                {
+                    // Set metadata if possible
+                    m_systemIO.SetMetadata(path, metadata, restorePermissions);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteMessage(string.Format("Failed to restore metadata on {0}: {1}", path, ex.Message), Logging.LogMessageType.Warning, ex);
+                }
+
+                // Final step is to reset the LastWriteTime as the other operations
+                // may cause the filesystem to reset the timestamp
+                if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
+                {
+                    if (isDirTarget)
+                        m_systemIO.DirectorySetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                    else
+                        m_systemIO.FileSetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                }
             }
         }
 
