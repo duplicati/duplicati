@@ -270,7 +270,6 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <see cref="T:Duplicati.Library.Main.Operation.Common.BackendHandlerDatabaseGuard"/> was occupying.</remarks>
         public void Dispose()
         {
-            m_db.Dispose();
             lock (m_lock)
             {
                 if (m_workQueue != null)
