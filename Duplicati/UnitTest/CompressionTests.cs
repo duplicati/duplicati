@@ -22,7 +22,6 @@ using NUnit.Framework;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture]
     [Category("Compression")]
     public class CompressionTests
     {
