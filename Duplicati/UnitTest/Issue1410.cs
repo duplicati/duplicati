@@ -22,7 +22,6 @@ using System.Collections.Generic;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture]
     public class Issue1410 : BasicSetupHelper
     {
         [OneTimeSetUp]

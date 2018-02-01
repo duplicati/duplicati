@@ -100,7 +100,7 @@ git checkout INFO
 echo "version=\"${VERSION}\"" >> "INFO"
 MD5=`md5 "package.tgz" | awk -F ' ' '{print $NF}'` 
 echo "checksum=\"${MD5}\"" >> "INFO"
-echo "extractsize=\"${DIRSIZE}\"" >> "INFO"
+echo "extractsize=\"${DIRSIZE_KB}\"" >> "INFO"
 echo "package_icon=\"${ICON_72}\"" >> "INFO"
 echo "package_icon_256=\"${ICON_256}\"" >> "INFO"
 

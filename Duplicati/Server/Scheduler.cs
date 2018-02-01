@@ -245,6 +245,12 @@ namespace Duplicati.Server
                         
                         try
                         {
+                            // Recover from timedrift issues by overriding the dates if the last run date is in the future.
+                            if (last > DateTime.UtcNow)
+                            {
+                                start = DateTime.UtcNow;
+                                last = DateTime.UtcNow;
+                            }
                             start = GetNextValidTime(start, last, sc.Repeat, sc.AllowedDays);
                         }
                         catch (Exception ex)

@@ -161,8 +161,11 @@ namespace Duplicati.Library.Utility
             return new TempFile(path);
         }
 
-        public static TempFile CreateInFolder(string path)
+        public static TempFile CreateInFolder(string path, bool autocreatefolder)
         {
+            if (autocreatefolder && !System.IO.Directory.Exists(path))
+                System.IO.Directory.CreateDirectory(path);
+
             return new TempFile(System.IO.Path.Combine(path, GenerateUniqueName()));
         }
 

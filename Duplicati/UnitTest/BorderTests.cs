@@ -22,7 +22,6 @@ using System.Collections.Generic;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture]
     public class BorderTests : BasicSetupHelper
     {
         public override void PrepareSourceData()
