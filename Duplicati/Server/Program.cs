@@ -153,7 +153,7 @@ namespace Duplicati.Server
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
 
-        public static int RealMain(string[] args)
+        public static int RealMain(string[] _args)
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
@@ -170,11 +170,14 @@ namespace Duplicati.Server
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
             var writeConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
-            
-            //Find commandline options here for handling special startup cases
-            var commandlineOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args));
 
-            foreach(var s in args)
+            //Find commandline options here for handling special startup cases
+            var args = new List<string>(_args);
+            var argtuple = Library.Utility.FilterCollector.ExtractOptions(new List<string>(args));
+            var commandlineOptions = argtuple.Item1;
+            var filter = argtuple.Item2;
+
+            foreach(var s in _args)
                 if (
                     s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
                     s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
@@ -182,40 +185,30 @@ namespace Duplicati.Server
                     s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
                     commandlineOptions["help"] = "";
 
-            // I'm not sure if there's a better way to get the filter variable, this is how it's done in Duplicati.Commandline.Program.cs
-            List<string> cargs = new List<string>(args);
-            var filter = Library.Utility.FilterCollector.ExtractOptions(cargs).Item2;
-
             // Check if a parameters-file was provided. Skip if help was already specified
             if (!commandlineOptions.ContainsKey("help"))
             {
-                string filename;
-                bool param_file = false;
-                if (commandlineOptions.ContainsKey("parameters-file") && !string.IsNullOrEmpty(commandlineOptions["parameters-file"]))
+                string filename = null;
+                if (commandlineOptions.ContainsKey("parameters-file"))
                 {
                     filename = commandlineOptions["parameters-file"];
-                    param_file = true;
+                    commandlineOptions.Remove("parameters-file");
                 }
-                else if (commandlineOptions.ContainsKey("parameter-file") && !string.IsNullOrEmpty(commandlineOptions["parameter-file"]))
+                else if (commandlineOptions.ContainsKey("parameter-file"))
                 {
                     filename = commandlineOptions["parameter-file"];
-                    param_file = true;
+                    commandlineOptions.Remove("parameter-file");
                 }
-                else
+                else if (commandlineOptions.ContainsKey("parameterfile"))
                 {
                     filename = commandlineOptions["parameterfile"];
-                    param_file = true;
+                    commandlineOptions.Remove("parameterfile");
                 }
 
-                // Clean up the commandlineOptions array
-                commandlineOptions.Remove("parameters-file");
-                commandlineOptions.Remove("parameter-file");
-                commandlineOptions.Remove("parameterfile");
-
-                if (param_file)
+                if (!string.IsNullOrEmpty(filename))
                 {
                     // Check the parameters-file and add provided arguments (overriding commandline arguments)
-                    ReadOptionsFromFile(filename, ref filter, cargs, commandlineOptions);
+                    ReadOptionsFromFile(filename, ref filter, args, commandlineOptions);
                 }
             }
 
