@@ -58,12 +58,11 @@ function Verify-Hashes
 	(
 		[Parameter(Mandatory=$true)]
 		[ValidateNotNullOrEmpty()]
-		[string]$filename
+		[System.IO.FileInfo]$filename
 	)
 	
     [int]$errorCount = 0
     [int]$checked = 0
-    [string]$folder = Split-Path -Path $filename
     $remoteVolumes = $((Get-Content $filename) -Join "`n" | ConvertFrom-Json) | Sort-Object Name
 
     $statsState = @{}
@@ -73,7 +72,7 @@ function Verify-Hashes
     
     foreach ($remoteVolume in $remoteVolumes) {
         [string]$volFileName = $remoteVolume.Name
-        [string]$volFilePath = Join-Path -Path $folder -ChildPath $volFileName
+        [string]$volFilePath = Join-Path -Path $filename.DirectoryName -ChildPath $volFileName
 
         if(-not $(Test-Path $volFilePath)) {
             if($remoteVolume.State -eq $([RemoteVolumeState]::Deleted -as [int])) {
@@ -104,8 +103,8 @@ function Verify-Hashes
         }
     }
 
-    [string]$prefix = $(Split-Path -Path $filename -Leaf) -replace "-verification.json", ""
-    [array]$filesInStorage = Get-ChildItem $folder -Include "$prefix*" -Exclude $(Split-Path -Path $filename -Leaf) | `
+    [string]$prefix = $filename.Name -replace "-verification.json", ""
+    [array]$filesInStorage = Get-ChildItem $(Join-Path $filename.DirectoryName "$prefix*") -Exclude $filename.Name -File | `
         Select-Object -ExpandProperty Name | Sort-Object
     [array]$filesInVerification = $remoteVolumes | Select-Object -ExpandProperty Name | Sort-Object
     
@@ -146,7 +145,7 @@ if(Test-Path $FileOrDir -PathType Leaf) {
     exit $(Verify-Hashes -filename $FileOrDir)
 }
 
-$verFiles = @(Get-ChildItem $FileOrDir -Filter "*-verification.json")
+$verFiles = @(Get-ChildItem $FileOrDir -Filter "*-verification.json" -File)
 
 if ($verFiles.Count -eq 0) { 
     Write-Host "No verification files in folder: $FileOrDir"
@@ -155,9 +154,9 @@ if ($verFiles.Count -eq 0) {
 
 [int]$errorCount = 0
 
-$verFiles | % {
-    Write-Host "Verifying file: $($_.Name)"
-    $errorCount += $(Verify-Hashes -filename $_.FullName)
+foreach ($verFile in $verFiles) {
+    Write-Host "Verifying file: $($verFile.Name)"
+    $errorCount += $(Verify-Hashes -filename $verFile.FullName)
 }
         
 exit $errorCount
