@@ -64,7 +64,7 @@ function Verify-Hashes
     [int]$errorCount = 0
     [int]$checked = 0
     [string]$folder = Split-Path -Path $filename
-    $remoteVolumes = (Get-Content $filename) -Join "`n" | ConvertFrom-Json | Sort-Object Name
+    $remoteVolumes = $((Get-Content $filename) -Join "`n" | ConvertFrom-Json) | Sort-Object Name
 
     $statsState = @{}
     foreach ($n in 0..5) { $statsState.Add($n, $(New-Object PSObject -Property @{SumSize=0;SumCount=0})) }
