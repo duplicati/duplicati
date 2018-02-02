@@ -92,8 +92,6 @@ namespace Duplicati.Library.Utility
 		/// Creates a throttle around a stream.
 		/// </summary>
 		/// <param name="basestream">The stream to throttle</param>
-		/// <param name="readspeed">The maximum number of bytes pr. second to read. Specify a number less than 1 to allow unlimited speed.</param>
-		/// <param name="writespeed">The maximum number of bytes pr. second to write. Specify a number less than 1 to allow unlimited speed.</param>
         public ThrottledStream(Stream basestream, Action<ThrottledStream> updateLimits)
 			: base(basestream)
 		{
@@ -217,11 +215,6 @@ namespace Duplicati.Library.Utility
 		/// <summary>
 		/// Calculates the speed, and inserts appropriate delays
 		/// </summary>
-		/// <param name="read">True if the operation is read, false otherwise</param>
-		/// <param name="buffer">The data buffer</param>
-		/// <param name="offset">The offset into the buffer</param>
-		/// <param name="count">The number of bytes to read or write</param>
-		/// <returns>The number of bytes processed while delaying</returns>
 		private void DelayIfRequired(ref long limit, int count, ref DateTime last_sample, ref long last_count, ref double current_speed)
 		{
 			var now = DateTime.Now;

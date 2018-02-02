@@ -72,13 +72,17 @@ namespace Duplicati.Library.Utility
                 m_fileTrace.Add(s, st);
             return s;            
         }
-        
+
 #else
         private static string GenerateUniqueName()
         {
             return APPLICATION_PREFIX + Guid.NewGuid().ToString();
         }
 #endif
+        /// <summary>
+        /// The name of the temp file
+        /// </summary>
+        public string Name => m_path;
 
         /// <summary>
         /// Gets all temporary files found in the current tempdir, that matches the application prefix
@@ -158,8 +162,11 @@ namespace Duplicati.Library.Utility
             return new TempFile(path);
         }
 
-        public static TempFile CreateInFolder(string path)
+        public static TempFile CreateInFolder(string path, bool autocreatefolder)
         {
+            if (autocreatefolder && !System.IO.Directory.Exists(path))
+                System.IO.Directory.CreateDirectory(path);
+
             return new TempFile(System.IO.Path.Combine(path, GenerateUniqueName()));
         }
 

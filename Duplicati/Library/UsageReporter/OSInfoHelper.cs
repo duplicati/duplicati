@@ -78,9 +78,9 @@ namespace Duplicati.Library.UsageReporter
                     if (m != null)
                     {
                         var lines = m.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-                        var product = lines.Where(x => x.Trim().StartsWith("ProductName:")).Select(x => x.Trim().Substring("ProductName:".Length).Trim()).FirstOrDefault();
-                        var version = lines.Where(x => x.Trim().StartsWith("ProductVersion:")).Select(x => x.Trim().Substring("ProductVersion:".Length).Trim()).FirstOrDefault();
-                        var build = lines.Where(x => x.Trim().StartsWith("BuildVersion:")).Select(x => x.Trim().Substring("BuildVersion:".Length).Trim()).FirstOrDefault();
+                        var product = lines.Where(x => x.Trim().StartsWith("ProductName:", StringComparison.Ordinal)).Select(x => x.Trim().Substring("ProductName:".Length).Trim()).FirstOrDefault();
+                        var version = lines.Where(x => x.Trim().StartsWith("ProductVersion:", StringComparison.Ordinal)).Select(x => x.Trim().Substring("ProductVersion:".Length).Trim()).FirstOrDefault();
+                        var build = lines.Where(x => x.Trim().StartsWith("BuildVersion:", StringComparison.Ordinal)).Select(x => x.Trim().Substring("BuildVersion:".Length).Trim()).FirstOrDefault();
                         if (!string.IsNullOrWhiteSpace(product))
                             return string.Format("{0} {1} {2}", product, version, build);
                     }
@@ -145,7 +145,7 @@ namespace Duplicati.Library.UsageReporter
                     if (m != null)
                     {
                         var lines = m.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-                        var line = lines.Where(x => x.Trim().StartsWith("Description:")).Select(x => x.Trim().Substring("Description:".Length).Trim()).FirstOrDefault();
+                        var line = lines.Where(x => x.Trim().StartsWith("Description:", StringComparison.Ordinal)).Select(x => x.Trim().Substring("Description:".Length).Trim()).FirstOrDefault();
                         if (!string.IsNullOrWhiteSpace(line))
                             return line;
                     }
@@ -154,7 +154,6 @@ namespace Duplicati.Library.UsageReporter
                     return RunProgramAndReadOutput("uname", "-srvmpio");
                 }
 
-                return null;
             }
         }    
     }

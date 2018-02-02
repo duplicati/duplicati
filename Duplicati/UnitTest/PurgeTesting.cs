@@ -22,7 +22,6 @@ using NUnit.Framework;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture]
     public class PurgeTesting : BasicSetupHelper
     {
         public override void PrepareSourceData()

@@ -97,7 +97,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 if (ex is Duplicati.Library.Interface.UserInformationException)
                     Console.WriteLine(ex.Message);
                 else
-                    Console.WriteLine("Program crashed: {0}{1}", Environment.NewLine, ex.ToString());
+                    Console.WriteLine("Program crashed: {0}{1}", Environment.NewLine, ex);
                 return 200;
             }
         }
@@ -125,7 +125,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 cargs.AddRange(
                     from c in fargs
-                    where !string.IsNullOrWhiteSpace(c) && !c.StartsWith("#") && !c.StartsWith("!") && !c.StartsWith("REM ", StringComparison.OrdinalIgnoreCase)
+                    where !string.IsNullOrWhiteSpace(c) && !c.StartsWith("#", StringComparison.Ordinal) && !c.StartsWith("!", StringComparison.Ordinal) && !c.StartsWith("REM ", StringComparison.OrdinalIgnoreCase)
                     select c
                 );
                     

@@ -19,6 +19,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -66,6 +67,10 @@
     <ProjectReference Include="..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
       <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
       <Name>Duplicati.Library.Backend.Jottacloud</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj">
+      <Project>{851a1cb8-3ceb-41b4-956f-34d760d2a8e5}</Project>
+      <Name>Duplicati.Library.Backend.Rclone</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
       <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>

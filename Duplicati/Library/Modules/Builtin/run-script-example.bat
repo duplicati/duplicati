@@ -52,7 +52,7 @@ REM All Duplicati options can be changed by the script by writing options to
 REM stdout (with echo or similar). Anything not starting with a double dash (--)
 REM will be ignored:
 REM echo "Hello! -- test, this line is ignored"
-REM echo "--new-option=""This will be a setting"""
+REM echo --new-option=This will be a setting
 
 REM Filters are supplied in the DUPLICAT__FILTER variable.
 REM The variable contains all filters supplied with --include and --exclude,

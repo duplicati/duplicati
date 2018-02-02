@@ -27,7 +27,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
-
+	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -201,25 +201,16 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         if (scope.openstack_providers == null) {
             AppService.post('/webmodule/openstack-getconfig', {'openstack-config': 'Providers'}).then(function(data) {
                 scope.openstack_providers = data.data.Result;
-                if (scope.openstack_providers != null && scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
-                    var first = null;
-                    var rs = null;
-
-                    for (var k in scope.openstack_providers) {
-                        if (first == null)
-                            first = scope.openstack_providers[k];
-                        if (scope.openstack_providers[k] != null && scope.openstack_providers[k].indexOf('https://identity.api.rackspacecloud.com/') == 0)
-                            rs = scope.openstack_providers[k];
-                    }
-
-                    if (rs != null)
-                        scope.openstack_server = rs;
-                    else if (first != null)
-                        scope.openstack_server = first;
+                if (scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
+                    scope.openstack_server = 'https://identity.api.rackspacecloud.com/';
 
             }, AppUtils.connectionError);
+        } else {
+            if (scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
+                scope.openstack_server = 'https://identity.api.rackspacecloud.com/';
         }
     };
+
 
     EditUriBackendConfig.loaders['gcs'] = function(scope) {
         if (scope.gcs_locations == null) {
@@ -361,6 +352,20 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
+    EditUriBackendConfig.parsers['rclone'] = function (scope, module, server, port, path, options) {
+        if (options['--rclone-local-repository'])
+            scope.rclone_local_repository = options['--rclone-local-repository'];
+        if (options['--rclone-remote-repository'])
+            scope.rclone_remote_repository = options['--rclone-remote-repository'];
+        if (options['--rclone-remote-path'])
+            scope.rclone_remote_path = options['--rclone-remote-path'];
+
+		var nukeopts = ['--rclone-option', '--rclone-executable', '--rclone-local-repository'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    }
+	
+	
     EditUriBackendConfig.parsers['sia'] = function (scope, module, server, port, path, options) {
         if (options['--sia-targetpath'])
             scope.sia_targetpath = options['--sia-targetpath'];
@@ -372,8 +377,9 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         var nukeopts = ['--sia-targetpath', '--sia-redundancy', '--sia-password'];
         for (var x in nukeopts)
             delete options[nukeopts[x]];
-    };
-
+    }
+	
+	
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function(scope) {
         var opts = {
@@ -555,6 +561,34 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         );
 
         return url;
+    }
+	
+	EditUriBackendConfig.builders['rclone'] = function (scope) {
+		
+        var opts = {
+            'rclone-local-repository': scope.rclone_local_repository,
+			'rclone-option': scope.rclone_option,
+			'rclone-executable': scope.rclone_executable
+        };
+
+		if ((opts['rclone-executable'] || '') == '')
+            delete opts['rclone-executable'];
+        if ((opts['rclone-option'] || '') == '')
+            delete opts['rclone-option'];
+		
+	
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://{1}/{2}{3}',
+            scope.Backend.Key,
+			scope.Server,
+			scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+		
+		
     }
 
     EditUriBackendConfig.builders['jottacloud'] = function (scope) {
@@ -778,5 +812,14 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
             continuation();
     };
 
-
+    EditUriBackendConfig.validaters['rclone'] = function (scope, continuation) {
+        var res =
+			EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Remote Repository')) &&
+			EditUriBackendConfig.require_field(scope, 'rclone_local_repository', gettextCatalog.getString('Local Repository')) &&
+			EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Remote Path'));
+			
+        if (res)
+            continuation();
+    };
+	
 });

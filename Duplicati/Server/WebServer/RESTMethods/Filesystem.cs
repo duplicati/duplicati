@@ -48,9 +48,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
             string specialpath = null;
             string specialtoken = null;
 
-            if (path.StartsWith("%"))
+            if (path.StartsWith("%", StringComparison.Ordinal))
             {
-                var ix = path.IndexOf("%", 1);
+                var ix = path.IndexOf("%", 1, StringComparison.Ordinal);
                 if (ix > 0)
                 {
                     var tk = path.Substring(0, ix + 1);
@@ -65,7 +65,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             path = SpecialFolders.ExpandEnvironmentVariables(path);
 
-            if (Duplicati.Library.Utility.Utility.IsClientLinux && !path.StartsWith("/"))
+            if (Duplicati.Library.Utility.Utility.IsClientLinux && !path.StartsWith("/", StringComparison.Ordinal))
             {
                 info.ReportClientError("The path parameter must start with a forward-slash");
                 return;

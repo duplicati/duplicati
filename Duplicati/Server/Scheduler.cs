@@ -73,9 +73,7 @@ namespace Duplicati.Server
         /// <summary>
         /// Constructs a new scheduler
         /// </summary>
-        /// <param name="connection">The database connection</param>
         /// <param name="worker">The worker thread</param>
-        /// <param name="datalock">The database lock object</param>
         public Scheduler(WorkerThread<Server.Runner.IRunnerData> worker)
         {
             m_thread = new Thread(new ThreadStart(Runner));
@@ -247,6 +245,12 @@ namespace Duplicati.Server
                         
                         try
                         {
+                            // Recover from timedrift issues by overriding the dates if the last run date is in the future.
+                            if (last > DateTime.UtcNow)
+                            {
+                                start = DateTime.UtcNow;
+                                last = DateTime.UtcNow;
+                            }
                             start = GetNextValidTime(start, last, sc.Repeat, sc.AllowedDays);
                         }
                         catch (Exception ex)

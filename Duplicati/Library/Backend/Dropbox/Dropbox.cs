@@ -22,10 +22,10 @@ namespace Duplicati.Library.Backend
             var uri = new Utility.Uri(url);
 
             m_path = Library.Utility.Uri.UrlDecode(uri.HostAndPath);
-            if (m_path.Length != 0 && !m_path.StartsWith("/"))
+            if (m_path.Length != 0 && !m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 
-            if (m_path.EndsWith("/"))
+            if (m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path = m_path.Substring(0, m_path.Length - 1);
 
             if (options.ContainsKey(AUTHID_OPTION))
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Backend
                 string path = String.Format("{0}/{1}", m_path, remotename);
                 dbx.Delete(path);
             }
-            catch (DropboxException de)
+            catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;
@@ -163,7 +163,7 @@ namespace Duplicati.Library.Backend
                 string path = string.Format("{0}/{1}", m_path, remotename);
                 dbx.UploadFile(path, stream);
             }
-            catch (DropboxException de)
+            catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;
@@ -177,7 +177,7 @@ namespace Duplicati.Library.Backend
                 string path = string.Format("{0}/{1}", m_path, remotename);
                 dbx.DownloadFile(path, stream);
             }
-            catch (DropboxException de)
+            catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;

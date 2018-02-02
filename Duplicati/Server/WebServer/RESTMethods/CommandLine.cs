@@ -62,7 +62,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                     if (m_sb.Length != 0)
                     {
-                        m_target.Log.Add(m_sb.ToString() + value);
+                        m_target.Log.Add(m_sb + value);
                         m_sb.Length = 0;
                         m_newlinechars = 0;
                     }

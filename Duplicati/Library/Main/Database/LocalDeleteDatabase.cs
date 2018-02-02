@@ -304,7 +304,6 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Builds a lookup table to enable faster response to block queries
         /// </summary>
-        /// <param name="volumename">The name of the volume to prepare for</param>
         public IBlockQuery CreateBlockQueryHelper(Options options, System.Data.IDbTransaction transaction)
         {
             return new BlockQuery(m_connection, options, transaction);

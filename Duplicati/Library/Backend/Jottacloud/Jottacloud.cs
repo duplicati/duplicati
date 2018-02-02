@@ -115,7 +115,7 @@ namespace Duplicati.Library.Backend
             m_path = u.HostAndPath; // Host and path of "jottacloud://folder/subfolder" is "folder/subfolder", so the actual folder path within the mount point.
             if (string.IsNullOrEmpty(m_path)) // Require a folder. Actually it is possible to store files directly on the root level of the mount point, but that does not seem to be a good option.
                 throw new UserInformationException(Strings.Jottacloud.NoPathError);
-            if (!m_path.EndsWith("/"))
+            if (!m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path += "/";
             if (!string.IsNullOrEmpty(u.Username))
             {
@@ -300,7 +300,7 @@ namespace Duplicati.Library.Backend
             req.Credentials = m_userInfo;
             req.PreAuthenticate = true; // We need this under Mono for some reason, and it appears some servers require this as well
             req.KeepAlive = false;
-            req.UserAgent = "Duplicati Jottacloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            req.UserAgent = "Duplicati Jottacloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             req.Headers.Add("x-jftp-version", API_VERSION);
             return req;
         }

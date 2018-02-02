@@ -281,7 +281,7 @@ namespace Duplicati.Library.Snapshots
 
             localPath = localPath.Replace(root, String.Empty);
 
-            if (!volumePath.EndsWith(SLASH) && !localPath.StartsWith(SLASH))
+            if (!volumePath.EndsWith(SLASH, StringComparison.Ordinal) && !localPath.StartsWith(SLASH, StringComparison.Ordinal))
                 localPath = localPath.Insert(0, SLASH);
             localPath = localPath.Insert(0, volumePath);
 

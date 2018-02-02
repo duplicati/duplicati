@@ -63,8 +63,6 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a new database instance and starts a new operation
         /// </summary>
-        /// <param name="path">The path to the database</param>
-        /// <param name="operation">The name of the operation</param>
         public LocalDatabase(LocalDatabase db)
             : this(db.m_connection)
         {
@@ -77,7 +75,6 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a new database instance and starts a new operation
         /// </summary>
-        /// <param name="path">The path to the database</param>
         /// <param name="operation">The name of the operation</param>
         public LocalDatabase(System.Data.IDbConnection connection, string operation)
             : this(connection)
@@ -188,7 +185,7 @@ namespace Duplicati.Library.Main.Database
             if (deleteGraceTime.Ticks > 0)
                 using(var cmd = m_connection.CreateCommand(transaction))
                     if ((c = cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""DeleteGraceTime"" = ? WHERE ""Name"" = ? ", (DateTime.UtcNow + deleteGraceTime).Ticks, name)) != 1)
-                        throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
+                        throw new Exception(string.Format("Unexpected number of updates when recording remote volume updates: {0}!", c));
 
 
             if (!suppressCleanup && state == RemoteVolumeState.Deleted)
@@ -1198,7 +1195,7 @@ ORDER BY
                     {
                         cmd.Transaction = tr.Parent;
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", Tablename));
-                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb.ToString(), Tablename), args.ToArray());
+                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb, Tablename), args.ToArray());
                         tr.Commit();
                     }
                 }

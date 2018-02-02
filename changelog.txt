@@ -1,3 +1,68 @@
+2018-01-23 - 2.0.2.17_canary_2018-01-23
+==========
+- Fixed a bug with the update packages having an invalid hash
+- Updated external links in the UI to be clearly marked
+- Experimental support for Google Team Drives
+- Fixed WEBDAV Test function, thanks @inat3k
+- Added an rclone backend, thanks @wjansenw
+- Fixed some broken error messages, thanks @JonMikeIV
+- Added a simple UI for exposing the `--retention-policy` option
+
+2018-01-18 - 2.0.2.16_canary_2018-01-18
+==========
+* Reworked some internal compression code, thanks @vnau
+* Updated commandline documentation, thanks @mr-flibble
+* Improved 64bit OS detection, thanks @warwickmm
+* Fixed a problem with the progress bar hiding under the top bar, thanks @pectojin
+* Fixed a problem displaying more than 10 advanced options, thanks @pectojin
+* Improved detection of 32bit MSSQL on 64bit Windows, thanks @inat3k
+* Changed load order of modules to allow `run-script` to change setup, thanks @BrianLakstins
+* Added a `UserAgent` header to OD4B requests
+
+2018-01-03 - 2.0.2.15_experimental_2018-01-03
+==========
+This is the same as build 2.0.2.14 canary
+
+Overview of major and breaking changes since 2.0.1.73 experimental:
+* Fixed not running the slow VACUUM command after each operation
+* Improved S3 to work better with non AWS hosts
+* Updated backend support libraries to the latest versions: Azure, AWS, SSH, SharpCompress, Mega, AlphaFS
+* Fixed a problem with SSL certificates periodically failing
+* Added a Sia backend
+* Added a number of default excludes
+* Updated the hashing library to use faster native libraries where available
+* Added a new retention policy which allows backup versions to decrease over time
+* Updated the auto-updater, such that new installs will spawn an extra process instead of using the AppDomain method as previously done.
+* Faster browsing of files to restore
+* Removed automatic tilde expansions as it created numerous problems
+* Multiple new languages added to the UI
+
+2017-12-22 - 2.0.2.14_canary_2017-12-22
+==========
+* Multiple code quality fixes, thansk @warwickmm
+* Fixed a case where commandline arguments ending with a backslash were not correctly escaped on Windows
+
+2017-11-22 - 2.0.2.13_canary_2017-11-22
+==========
+* Fixed an issue with AutoUpdater semi-ignoring webroot
+* Fixed an issue where source folders would be omitted from the backup if a file with the same leading name was also added
+* Switched to default "keep forever", thanks @ItEndsWithTens
+* Fixed a startup crash caused by invalid throttle values
+* Added a number of new languages, thanks to all translators!
+* Timestamps in the log are now reported in local time and include a UTC timestamp for easy script parsing
+* Added Windows registry exclusion list to the default exclude filters
+* Added .dv files to compression exclusion list, thanks @jesjimher
+* Fixed some spelling in the UI, thanks @davegold24 and @JonMikeIV
+* Fixed logic of the `affected` command to not return empty results if the local database was not found
+* Fixed a case where the "Resume" button did not appear clickable, thanks @JonMikeIV
+* Improved query time for browsing folders during restore, thanks @RobSauro
+* Commands are now sorted alphabetically, thanks @JonMikeIV
+* Improved an error message when the SSH key failed to parse
+* Removed tilde expansion to fix multiple issues caused by unexpected expansio, thanks @warwickmm
+* Fixed .rbf files to only be excluded if they are part of the `config.msi` folder
+* Improved the commandline export to show commandlines that are correctly escaped for the shell
+* Fixed a case where the AutoUpdater would fail to send the correct commandline to the updated process
+
 2017-10-20 - 2.0.2.12_canary_2017-10-20
 ==========
 * Fixed not reporting "Finished" until the backup is actually finished, thanks @warwickmm

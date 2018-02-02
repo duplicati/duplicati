@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main
             {
                 List<string> expandedSources = new List<string>();
 
-                if (Library.Utility.Utility.IsClientWindows && (inputsources[i].StartsWith("*:") || inputsources[i].StartsWith("?:")))
+                if (Library.Utility.Utility.IsClientWindows && (inputsources[i].StartsWith("*:", StringComparison.Ordinal) || inputsources[i].StartsWith("?:", StringComparison.Ordinal)))
                 {
                     // *: drive paths are only supported on Windows clients
                     // Lazily load the drive info
@@ -771,7 +771,19 @@ namespace Duplicati.Library.Main
             foreach (var k in qp.Keys)
                 conopts[(string)k] = qp[(string)k];
 
+            //// Since Configure in RunScript can alter the RawOptions, make sure it is first in the list for Configure
+            var LoadedModules = new List<KeyValuePair<bool, Interface.IGenericModule>>();
             foreach (var mx in m_options.LoadedModules)
+                if (mx.Value.ToString().ToLower().Contains("runscript"))
+                {
+                    LoadedModules.Insert(0, mx);
+                }
+                else
+                {
+                    LoadedModules.Add(mx);
+                }
+
+            foreach (var mx in LoadedModules)
                 if (mx.Key)
                 {
                     if (mx.Value is Library.Interface.IConnectionModule)

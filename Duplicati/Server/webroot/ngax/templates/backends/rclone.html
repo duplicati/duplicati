@@ -1,0 +1,13 @@
+<div class="input text">
+    <label for="rclone_local_repository" translate>Local repository</label>
+    <input type="text" name="rclone_local_repository" id="rclone_local_repository" ng-model="$parent.rclone_local_repository" placeholder="{{'local repository, eg local'}}" />
+</div>
+<div class="input text">
+    <label for="rclone_remote_repository" translate>Remote repository</label>
+    <input type="text" name="rclone_remote_repository" id="rclone_remote-repository" ng-model="$parent.Server" placeholder="{{'remote repository, eg. remote'}}" />
+</div>
+<div class="input text">
+    <label for="rclone_remote_path" translate>Remote path</label>
+    <input type="text" name="rclone_remote_path" id="rclone_remote_path" ng-model="$parent.Path" placeholder="{{'remote path, eg backup'}}" />
+</div>
+<div>Make sure that rclone is in your path, or add the location to rclone via the advanced options.</div>

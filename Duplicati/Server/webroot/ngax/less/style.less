@@ -65,6 +65,32 @@ textarea {
     max-width: 94%;
 }
 
+.external-link-image {
+    display: inline-block;
+    margin-left: 8px;
+    margin-right: 8px;
+    height: 16px;
+    width: 16px;
+    background: url('../img/external-link-hover.png');
+    background-size: 16px;
+}
+
+a {
+    .external-link-image {
+        background: url('../img/external-link.png');
+        background-size: 16px;
+    }
+}
+
+.header {
+    a:hover {
+        .external-link-image {
+            background: url('../img/external-link-hover.png');
+            background-size: 16px;
+        }
+    }
+}
+
 .button {
     display: block;
     background: @lColor;
@@ -186,7 +212,6 @@ ul.tabs {
     .entries.livedata {
         li {
             height: 1.2em;
-            overflow: hidden;
         }
 
         li.expanded {
@@ -633,6 +658,7 @@ body {
                 img:hover {
                     opacity: 1;
                 }
+
             }
         }
 
@@ -1153,6 +1179,19 @@ body {
                                 width: 60px;
                             }
 
+                            .hint, .retention-options {
+                                clear: both;
+                                margin-left: 190px;
+                                margin-top: 50px;
+                                font-style: italic;
+                            }
+
+                            .retention-options {
+                                input {
+                                    margin-bottom: 10px;                                    
+                                }
+                            }
+
                             .advancedoptions {
                                 padding-top: 15px;
                                 clear: both;
@@ -1452,7 +1491,7 @@ body {
 
                     ul.entries {
                         li {
-                            padding-top: 15px;
+                            padding-top: 30px;
                         }
                     }
                 }
@@ -1481,6 +1520,7 @@ body {
                 float: left;
                 overflow: hidden;
                 padding-right: 20px;
+                display: none;
 
                 span {
                     display: block;
@@ -1499,6 +1539,7 @@ body {
             }
 
             .donate {
+                display: none;
                 float: right;
                 padding-right: 40px;
                 overflow: hidden;
@@ -1509,7 +1550,7 @@ body {
 
                     li {
                         float: left;
-                        margin-left: 20px;
+                        margin-left: 10px;
 
                         a {
                             img {
@@ -1778,6 +1819,15 @@ div.modal-dialog {
     }
 }
 
+.importpage {
+    form.styled {
+        input {
+            margin-top: 11px;
+            margin-bottom: 11px;
+        }
+    }
+}
+
 .restorewizard,
 .addwizard {
     form.styled {
@@ -1847,7 +1897,6 @@ div.modal-dialog {
     min-height: 25px;
 
     > span {
-        position: absolute;
         vertical-align: middle;
         display: block;
         width: 100%;
@@ -2123,14 +2172,13 @@ div.modal-dialog {
         .container {
             .header {
                 .donate {
-                    display: none;
                 }
             }
         }
     }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1150px) {
     body {
         .container {
             .header {
@@ -2179,6 +2227,10 @@ div.modal-dialog {
                     background-image: url('../img/menu_active.png');
                     color: @lColor;
                 }
+
+                .donate {
+                    display: none;
+                }                
             }
 
             .body {
@@ -2216,12 +2268,6 @@ div.modal-dialog {
                     .state {
                         width: auto;
                     }
-                }
-            }
-
-            .footer {
-                .donate {
-                    display: block;
                 }
             }
 
@@ -2469,6 +2515,7 @@ div.modal-dialog {
 
                 .about-footer {
                     padding-right: 0;
+                    display: block;
 
                     span {
                         padding-left: 0;
@@ -2517,6 +2564,7 @@ div.modal-dialog {
                 }
 
                 .donate {
+                    display: block;
                     ul {
                         li {
                             display: inline-block;

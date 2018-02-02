@@ -92,7 +92,7 @@ namespace Duplicati.Server.Database
         /// <summary>
         /// Gets a value indicating if this instance is not persisted to the database
         /// </summary>        
-        public bool IsTemporary { get { return ID == null ? false : ID.IndexOf("-") > 0; } }
+        public bool IsTemporary { get { return ID == null ? false : ID.IndexOf("-", StringComparison.Ordinal) > 0; } }
 
     }
 }
