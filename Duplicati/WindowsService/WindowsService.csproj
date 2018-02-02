@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <Prefer32Bit>False</Prefer32Bit>    
+    <Prefer32Bit>False</Prefer32Bit>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.WindowsService</RootNamespace>
     <AssemblyName>Duplicati.WindowsService</AssemblyName>
@@ -78,6 +78,10 @@
     <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{de3e5d4c-51ab-4e5e-bee8-e636cebfba65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

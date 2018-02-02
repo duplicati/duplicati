@@ -1548,11 +1548,8 @@ namespace Duplicati.Library.Utility
                 // and sadly it expands only if the variable exists
                 // making it even rarer and harder to diagnose when
                 // it happens
-                arg = arg.Replace("\"", "\"\"");
 
-                // Also fix the case where the argument ends with a slash
-                if (arg[arg.Length - 1] == '\\')
-                    arg += "\\";
+                return arg;
             }
 
             // Check that all characters are in the safe set
@@ -1571,6 +1568,33 @@ namespace Duplicati.Library.Utility
         public static string WrapAsCommandLine(IEnumerable<string> args, bool allowEnvExpansion = false)
         {
             return string.Join(" ", args.Select(x => WrapCommandLineElement(x, allowEnvExpansion)));
+        }
+
+        /// <summary>
+        /// Properly parses commandline args from Environment.CommandLine, keeps all double quotes inplace
+        /// </summary>
+        /// <returns>Array of commandline args.</returns>
+        /// <param name="commandLine">The argument to parse. Environment.CommandLine is ideal.</param>
+        public static IEnumerable<string> ProperParseArgs(string commandLine)
+        {
+            var argsBuilder = new StringBuilder(commandLine);
+            var inQuote = false;
+
+            // Convert the spaces to a newline sign so we can split at newline later on
+            // Only convert spaces which are outside the boundries of quoted text
+            for (var i = 0; i < argsBuilder.Length; i++)
+                switch (argsBuilder[i])
+                {
+                    case '"':
+                        inQuote = !inQuote;
+                        break;
+                    case ' ' when !inQuote:
+                        argsBuilder[i] = '\n';
+                        break;
+                }
+
+            // Split to args array
+            return argsBuilder.ToString().Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Skip(1);
         }
     }
 }
