@@ -1583,14 +1583,11 @@ namespace Duplicati.Library.Utility
             // Convert the spaces to a newline sign so we can split at newline later on
             // Only convert spaces which are outside the boundries of quoted text
             for (var i = 0; i < argsBuilder.Length; i++)
-                switch (argsBuilder[i])
+                if (argsBuilder[i] == '"')
+                    inQuote = !inQuote;
+                else if (argsBuilder[i] == ' ' && !inQuote)
                 {
-                    case '"':
-                        inQuote = !inQuote;
-                        break;
-                    case ' ' when !inQuote:
-                        argsBuilder[i] = '\n';
-                        break;
+                    argsBuilder[i] = '\n';
                 }
 
             // Split to args array
