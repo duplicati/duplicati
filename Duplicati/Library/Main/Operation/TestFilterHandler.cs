@@ -17,6 +17,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.IO;
+using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -44,7 +45,7 @@ namespace Duplicati.Library.Main.Operation
                     try { fa = snapshot.GetAttributes(path); }
                     catch { }
                     
-                    if (storeSymlinks && ((fa & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
+                    if (storeSymlinks && snapshot.IsSymlink(path, fa))
                     {
                         m_result.AddVerboseMessage("Storing symlink: {0}", path);
                     }

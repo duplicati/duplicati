@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.IO;
 
+using AlphaFS = Alphaleonis.Win32.Filesystem;
+
 
 namespace Duplicati.Library.Snapshots
 {
@@ -259,6 +261,32 @@ namespace Duplicati.Library.Snapshots
 
             if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
                 throw new System.IO.IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
+        }
+
+        /// <summary>
+        /// Returns the symlink target if the entry is a symlink, and null otherwise
+        /// </summary>
+        /// <param name="file">The file or folder to examine</param>
+        /// <returns>The symlink target</returns>
+        public string GetSymlinkTarget(string file)
+        {
+            try
+            {
+                try
+                {
+                    return AlphaFS.File.GetLinkTargetInfo(file).PrintName;
+                }
+                catch (PathTooLongException) { }
+
+                return AlphaFS.File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(file)).PrintName;
+            }
+            catch (AlphaFS.NotAReparsePointException) { }
+            catch (AlphaFS.UnrecognizedReparsePointException) { }
+
+            // This path looks like it isn't actually a symlink
+            // (Note that some reparse points aren't actually symlinks -
+            // things like the OneDrive folder in the Windows 10 Fall Creator's Update for example)
+            return null;
         }
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
