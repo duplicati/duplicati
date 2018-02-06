@@ -112,7 +112,7 @@ namespace Duplicati.Library.Main.Volumes
             {
                 var inf = new FileInfo(m_localfile);
                 if (inf.Exists && inf.Length != expectedsize)
-                    Console.WriteLine("Got diff in file size: {}", Library.Utility.Utility.FormatSizeString(inf.Length - expectedsize));
+                    Console.WriteLine("Got diff in file size: {0}", Library.Utility.Utility.FormatSizeString(inf.Length - expectedsize));
 
             }
 #endif
