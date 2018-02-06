@@ -91,12 +91,13 @@ namespace Duplicati.UnitTest
                 File.Delete(DBFILE);
             if (Directory.Exists(TARGETFOLDER))
                 Directory.Delete(TARGETFOLDER, true);
+            
+            var prevlog = Library.Logging.Log.CurrentLog as IDisposable;
+            Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(LOGFILE);
+            Library.Logging.Log.LogLevel = Library.Logging.LogMessageType.Information;
 
-            if (Library.Logging.Log.CurrentLog == null)
-            {
-                Library.Logging.Log.CurrentLog = new Library.Logging.StreamLog(LOGFILE);
-                Library.Logging.Log.LogLevel = Library.Logging.LogMessageType.Information;
-            }
+            if (prevlog != null)
+                prevlog.Dispose();
         }
 
 
