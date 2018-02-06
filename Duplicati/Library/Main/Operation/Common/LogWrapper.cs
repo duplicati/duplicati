@@ -110,8 +110,10 @@ namespace Duplicati.Library.Main.Operation.Common
             if (m_autoLeave && m_channel != null)
             {
                 m_autoLeave = false;
-                if (m_channel is IRetireAbleChannel)
-                    ((IRetireAbleChannel)m_channel).Retire();
+                if (m_channel is IJoinAbleChannel)
+                    ((IJoinAbleChannel)m_channel).Leave(false);
+                else if (m_channel is IJoinAbleChannelEnd)
+                    ((IJoinAbleChannelEnd)m_channel).Leave();
             }
             m_channel = null;
         }

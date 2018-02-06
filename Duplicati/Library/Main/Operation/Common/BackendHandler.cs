@@ -151,7 +151,6 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
 
-        private IWriteChannel<LogMessage> m_logchannel = Channels.LogChannel.ForWrite;
         private LogWrapper m_log;
 
         private IBackendHandlerDatabase m_database;
@@ -171,7 +170,7 @@ namespace Duplicati.Library.Main.Operation.Common
             m_backendurl = backendUrl;
             m_stats = stats;
             m_taskreader = taskreader;
-            m_log = new LogWrapper(m_logchannel);
+            m_log = new LogWrapper();
             m_backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, options.RawOptions);
 			
             var shortname = m_backendurl;
@@ -744,6 +743,9 @@ namespace Duplicati.Library.Main.Operation.Common
                 try { m_backend.Dispose(); }
                 catch {}
                 finally { m_backend = null; }
+
+            if (m_log != null)
+                m_log.Dispose();
         }
     }
 }

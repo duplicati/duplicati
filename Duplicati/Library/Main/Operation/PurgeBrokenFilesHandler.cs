@@ -45,6 +45,7 @@ namespace Duplicati.Library.Main.Operation
             List<Database.RemoteVolumeEntry> missing = null;
             
             using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath))
+            using(var log = new Common.LogWrapper())
             {
                 if (db.PartiallyRecreated)
                     throw new UserInformationException("The command does not work on partially recreated databases");
