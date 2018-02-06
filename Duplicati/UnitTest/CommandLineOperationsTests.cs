@@ -23,7 +23,6 @@ using System.Reflection;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture]
     public class CommandLineOperationsTests : BasicSetupHelper
     {
         /// <summary>
