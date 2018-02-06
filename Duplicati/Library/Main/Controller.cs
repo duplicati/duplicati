@@ -619,6 +619,7 @@ namespace Duplicati.Library.Main
                     m_currentTaskThread = System.Threading.Thread.CurrentThread;
                     using(new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
                     using(new CoCoL.IsolatedChannelScope())
+                    using(new Operation.Common.LogWrapper())                        
                     using(m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
                     {
                         // Start the log handler
