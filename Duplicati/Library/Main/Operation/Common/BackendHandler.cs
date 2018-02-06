@@ -212,6 +212,7 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             var fe = new FileEntryItem(BackendActionType.Put, item.RemoteFilename);
             fe.SetLocalfilename(item.LocalFilename);
+            item.Close();
 
             var tcs = new TaskCompletionSource<bool>();
 
