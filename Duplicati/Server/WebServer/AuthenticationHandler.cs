@@ -51,7 +51,7 @@ namespace Duplicati.Server.WebServer
         {
             string xsrftoken = request.Headers[XSRF_HEADER_NAME] ?? "";
 
-            if (string.IsNullOrWhiteSpace(xsrftoken))
+            if (!string.IsNullOrWhiteSpace(xsrftoken))
                 xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(xsrftoken);
 
             if (string.IsNullOrWhiteSpace(xsrftoken))
@@ -77,7 +77,8 @@ namespace Duplicati.Server.WebServer
             var buf = new byte[32];
             var expires = DateTime.UtcNow.AddMinutes(XSRF_TIMEOUT_MINUTES);
             m_prng.GetBytes(buf);
-            var token = Convert.ToBase64String(buf);
+            // Don't use non-safe chars, as the current webserver has some "trouble" parsing it
+            var token = BitConverter.ToString(buf).Replace("-", string.Empty); //Convert.ToBase64String(buf);
 
             m_activexsrf.AddOrUpdate(token, key => expires, (key, existingExpires) =>
             {
