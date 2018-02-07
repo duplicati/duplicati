@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -215,7 +216,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 try
                 {
                     var attr = systemIO.GetFileAttributes(s);
-                    var isSymlink = (attr & FileAttributes.ReparsePoint) != 0;
+                    var isSymlink = systemIO.IsSymlink(s, attr);
                     var isFolder = (attr & FileAttributes.Directory) != 0;
                     var isFile = !isFolder;
                     var isHidden = (attr & FileAttributes.Hidden) != 0;
