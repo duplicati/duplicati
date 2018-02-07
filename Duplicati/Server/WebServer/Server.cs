@@ -271,26 +271,26 @@ namespace Duplicati.Server.WebServer
 
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "customized")))
             {
-                var customized_files = new FileModule("/customized/", System.IO.Path.Combine(install_webroot, "customized"));
+                var customized_files = new CacheControlFileHandler("/customized/", System.IO.Path.Combine(install_webroot, "customized"));
                 AddMimeTypes(customized_files);
                 server.Add(customized_files);
             }
 
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "oem")))
             {
-                var oem_files = new FileModule("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
+                var oem_files = new CacheControlFileHandler("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
                 AddMimeTypes(oem_files);
                 server.Add(oem_files);
             }
 
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "package")))
             {
-                var proxy_files = new FileModule("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
+                var proxy_files = new CacheControlFileHandler("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
                 AddMimeTypes(proxy_files);
                 server.Add(proxy_files);
             }
 
-            var fh = new FileModule("/", webroot, true);
+            var fh = new CacheControlFileHandler("/", webroot, true);
             AddMimeTypes(fh);
             server.Add(fh);
 
@@ -308,6 +308,24 @@ namespace Duplicati.Server.WebServer
             {
                 System.Diagnostics.Trace.WriteLine(string.Format("Rejecting request for {0}", request.Uri));
                 return false;
+            }
+        }
+
+        private class CacheControlFileHandler : FileModule
+        {
+            public CacheControlFileHandler(string baseUri, string basePath, bool useLastModifiedHeader = false)
+                : base(baseUri, basePath, useLastModifiedHeader)
+            {
+
+            }
+
+            public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
+            {
+                if (!this.CanHandle(request.Uri))
+                    return false;
+
+                response.AddHeader("Cache-Control", "max-age=" + (60 * 60 * 24));
+                return base.Process(request, response, session);
             }
         }
     }

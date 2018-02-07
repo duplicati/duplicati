@@ -38,10 +38,12 @@ namespace Duplicati.Server.WebServer
         }
 
         public BodyWriter(HttpServer.IHttpResponse resp, string jsonp)
-            : base(resp.Body,  resp.Encoding)
+            : base(resp.Body, resp.Encoding)
         {
             m_resp = resp;
             m_jsonp = jsonp;
+            if (!m_resp.HeadersSent)
+                m_resp.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
         }
 
         protected override void Dispose (bool disposing)
