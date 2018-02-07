@@ -49,6 +49,9 @@ namespace Duplicati.Library.Main
         long FreeQuotaSpace { set; }
         long AssignedQuotaSpace { set; }
 
+        bool ReportedQuotaError { get; set; }
+        bool ReportedQuotaWarning { get; set; }
+
         /// <summary>
         /// The backend sends this event when performing an action
         /// </summary>
@@ -125,6 +128,9 @@ namespace Duplicati.Library.Main
         public long TotalQuotaSpace { get; set; }
         public long FreeQuotaSpace { get; set; }
         public long AssignedQuotaSpace { get; set; }
+
+        public bool ReportedQuotaError { get; set; }
+        public bool ReportedQuotaWarning { get; set; }
 
         public override OperationMode MainOperation { get { return m_parent.MainOperation; } }
 
