@@ -588,8 +588,11 @@ namespace Duplicati.Library.Utility
         /// <returns>A human readable string representing the size</returns>
         public static string FormatSizeString(long size)
         {
-            long sizeAbs = Math.Abs(size);  // Allow formatting of negative sizes
-            if (sizeAbs >= 1024 * 1024 * 1024 * 1024L)
+            // Allow formatting of negative sizes, but guard against the min value
+            var sizeAbs = Math.Abs(size == long.MinValue ? size + 1 : size);  
+            if (sizeAbs >= 1024 * 1024 * 1024 * 1024L * 1024L)
+                return Strings.Utility.FormatStringPB((double)size / (1024 * 1024 * 1024 * 1024L * 1024L));
+            else if (sizeAbs >= 1024 * 1024 * 1024 * 1024L)
                 return Strings.Utility.FormatStringTB((double)size / (1024 * 1024 * 1024 * 1024L));
             else if (sizeAbs >= 1024 * 1024 * 1024)
                 return Strings.Utility.FormatStringGB((double)size / (1024 * 1024 * 1024));
@@ -599,6 +602,29 @@ namespace Duplicati.Library.Utility
                 return Strings.Utility.FormatStringKB((double)size / 1024);
             else
                 return Strings.Utility.FormatStringB(size);
+        }
+
+        /// <summary>
+        /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot; or -2283 becomes &qout;-2.23 KB%quot.
+        /// </summary>
+        /// <param name="size">The size to format</param>
+        /// <returns>A human readable string representing the size</returns>
+        public static string FormatSizeString(double size)
+        {
+            // Allow formatting of negative sizes, but guard against the min value
+            var sizeAbs = Math.Abs(size);
+            if (sizeAbs >= 1024.0 * 1024 * 1024 * 1024 * 1024)
+                return Strings.Utility.FormatStringPB(size / (1024.0 * 1024 * 1024 * 1024 * 1024));
+            else if (sizeAbs >= 1024.0 * 1024 * 1024 * 1024)
+                return Strings.Utility.FormatStringTB(size / (1024.0 * 1024 * 1024 * 1024));
+            else if (sizeAbs >= 1024.0 * 1024 * 1024)
+                return Strings.Utility.FormatStringGB(size / (1024.0 * 1024 * 1024));
+            else if (sizeAbs >= 1024.0 * 1024)
+                return Strings.Utility.FormatStringMB(size / (1024.0 * 1024));
+            else if (sizeAbs >= 1024.0)
+                return Strings.Utility.FormatStringKB(size / 1024.0);
+            else
+                return Strings.Utility.FormatStringB((long)Math.Round(size));
         }
 
         public static System.Threading.ThreadPriority ParsePriority(string value)

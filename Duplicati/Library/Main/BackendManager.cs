@@ -719,7 +719,8 @@ namespace Duplicati.Library.Main
                 m_backend.Put(item.RemoteFilename, item.LocalFilename);
 
             var duration = DateTime.Now - begin;
-            Logging.Log.WriteMessage(string.Format("Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
+            var speed = duration.TotalMilliseconds < 100 ? string.Empty : string.Format(", {0}/s", Library.Utility.Utility.FormatSizeString(item.Size / duration.TotalSeconds));
+            Logging.Log.WriteMessage(string.Format("Uploaded {0} in {1}{2}", Library.Utility.Utility.FormatSizeString(item.Size), duration, speed), Duplicati.Library.Logging.LogMessageType.Profiling);
 
             if (!item.NotTrackedInDb)
                 m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
@@ -995,8 +996,12 @@ namespace Duplicati.Library.Main
                     tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
 
                 var duration = DateTime.Now - begin;
-                Logging.Log.WriteMessage(string.Format("Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
-                    duration, Library.Utility.Utility.FormatSizeString((long)(dataSizeDownloaded / duration.TotalSeconds)),
+                var speed = duration.TotalMilliseconds < 100 ? string.Empty : string.Format(", {0}/s", Library.Utility.Utility.FormatSizeString(item.Size / duration.TotalSeconds));
+
+                Logging.Log.WriteMessage(string.Format("Downloaded {3}{0} in {1}{2}", 
+                    Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
+                    duration, 
+                    speed,
                     useDecrypter == null ? "" : "and decrypted "), Duplicati.Library.Logging.LogMessageType.Profiling);
 
                 m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = dataSizeDownloaded, Hash = fileHash }));
