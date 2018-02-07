@@ -67,7 +67,7 @@ namespace Duplicati.Server.Database
         /// <summary>
         /// The path to the local database
         /// </summary>
-        public string DBPath { get; internal set; }
+        public string DBPath { get; set; }
                 
         /// <summary>
         /// The backup source folders and files

@@ -95,8 +95,20 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         ipx.Backup.Metadata.Clear();
                     }
 
+                    string folder = null;
+                    // Check the database path. If it's valid use the same folder for the imported job
+                    if (ipx.Backup.DBPath != null) {
+                        var pattern = @"\/\w*\.sqlite";
+                        var regex = System.Text.RegularExpressions.Regex.Match(ipx.Backup.DBPath, pattern);
+                        if (regex.Success) {
+                            // strip the filename from the database path
+                            folder = ipx.Backup.DBPath.Substring(0, regex.Index+1);
+                        }
+                    }
+
+                    // Reset DBPath and ID for new backup job
                     ipx.Backup.ID = null;
-                    ((Database.Backup)ipx.Backup).DBPath = null;
+                    ipx.Backup.DBPath = null;
 
                     if (ipx.Schedule != null)
                         ipx.Schedule.ID = -1;
@@ -124,7 +136,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                                 return;
                             }
 
-                            Program.DataConnection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
+                            Program.DataConnection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule, folder);
                         }
 
                         info.Response.ContentType = "text/html";

@@ -354,9 +354,9 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        internal void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule schedule)
+        internal void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule schedule, string folder = null)
         {
-            AddOrUpdateBackup(item, true, schedule);
+            AddOrUpdateBackup(item, true, schedule, folder);
         }
 
         internal string ValidateBackup(IBackup item, ISchedule schedule)
@@ -473,14 +473,17 @@ namespace Duplicati.Server.Database
             Program.StatusEventNotifyer.SignalNewEvent();
         }
 
-        private void AddOrUpdateBackup(IBackup item, bool updateSchedule, ISchedule schedule)
+        private void AddOrUpdateBackup(IBackup item, bool updateSchedule, ISchedule schedule, string folder)
         {
             lock(m_lock)
             {
                 bool update = item.ID != null;
                 if (!update && item.DBPath == null)
                 {
-                    var folder = Program.DataFolder;
+                    if (folder == null) {
+                        folder = Program.DataFolder;    
+                    }
+
                     if (!System.IO.Directory.Exists(folder))
                         System.IO.Directory.CreateDirectory(folder);
                     
@@ -493,7 +496,7 @@ namespace Duplicati.Server.Database
                             break;
                         }
                     }
-                    
+
                     if (item.DBPath == null)
                         throw new Exception("Unable to generate a unique database file name");
                 }
