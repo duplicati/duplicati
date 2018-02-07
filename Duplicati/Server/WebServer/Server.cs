@@ -324,7 +324,10 @@ namespace Duplicati.Server.WebServer
                 if (!this.CanHandle(request.Uri))
                     return false;
 
-                response.AddHeader("Cache-Control", "max-age=" + (60 * 60 * 24));
+                if (request.Uri.AbsolutePath.EndsWith("index.html", StringComparison.Ordinal) || request.Uri.AbsolutePath.EndsWith("index.htm", StringComparison.Ordinal))
+                    response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+                else
+                    response.AddHeader("Cache-Control", "max-age=" + (60 * 60 * 24));
                 return base.Process(request, response, session);
             }
         }
