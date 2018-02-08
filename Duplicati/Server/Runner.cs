@@ -747,7 +747,10 @@ namespace Duplicati.Server
                             "Warning" : string.Format("Warning while running {0}", backup.Name),
                             r.FilesWithError > 0 ?
                                 string.Format("Errors affected {0} file(s) ", r.FilesWithError) :
-                                string.Format("Got {0} warning(s) ", r.Warnings.Count())
+                                (r.Errors.Any() ?
+                                 string.Format("Got {0} error(s)", r.Errors.Count()) :
+                                 string.Format("Got {0} warning(s)", r.Warnings.Count())
+                                )
                             ,
                         null,
                         backup.ID,
