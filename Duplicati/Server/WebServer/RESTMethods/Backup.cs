@@ -552,6 +552,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             return;
                         }
 
+                        // Get previous saved metadata if it's not provided in the enpoint call
+                        if (data.Backup.Metadata == null)
+                            data.Backup.Metadata = backup.Metadata;
+
                         //TODO: Merge in real passwords where the placeholder is found
                         Program.DataConnection.AddOrUpdateBackupAndSchedule(data.Backup, data.Schedule);
 
