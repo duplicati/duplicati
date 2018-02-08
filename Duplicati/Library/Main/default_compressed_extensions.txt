@@ -82,6 +82,7 @@
 .webm #WebM Video File
 .wmv #Windows Media Video File
 .wtv #Windows Recorded TV Show
+.m2ts # Blu-ray Disc MPEG-2 Transport Stream
 
 
 # Compressed image files
