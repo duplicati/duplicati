@@ -6,6 +6,7 @@ using System.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -187,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
                         m_logWriter.AddVerboseMessage("Including path due to filter: {0} => {1}", path, match.ToString());
                 }
 
-                var isSymlink = (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint;
+                var isSymlink = m_snapshot.IsSymlink(path, attributes);
                 if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Ignore)
                 {
                     if (m_logWriter != null)
@@ -281,8 +282,8 @@ namespace Duplicati.Library.Main.Operation
                 var fa = FileAttributes.Normal;
                 try { fa = snapshot.GetAttributes(path); }
                 catch { }
-                
-                if (followSymlinks && ((fa & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
+
+                if (followSymlinks && snapshot.IsSymlink(path, fa))
                     continue;
                 else if ((fa & FileAttributes.Directory) == FileAttributes.Directory)
                     continue;
@@ -827,10 +828,10 @@ namespace Duplicati.Library.Main.Operation
                         if (m_result.TaskControlRendevouz() != TaskControlState.Stop) 
                             CompactIfRequired(backend, lastVolumeSize);
 
-						using (new Logging.Timer("Async backend wait"))
+                        using (new Logging.Timer("Async backend wait"))
                             backend.WaitForComplete(m_database, m_transaction);
 
-						if (m_options.UploadVerificationFile)
+                        if (m_options.UploadVerificationFile)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
                             FilelistProcessor.UploadVerificationFile(backend.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
@@ -970,32 +971,39 @@ namespace Duplicati.Library.Main.Operation
                                             
                 if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
                 {
-                    if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
+                    // Not all reparse points are symlinks.
+                    // For example, on Windows 10 Fall Creator's Update, the OneDrive folder (and all subfolders)
+                    // are reparse points, which allows the folder to hook into the OneDrive service and download things on-demand.
+                    // If we can't find a symlink target for the current path, we won't treat it as a symlink.
+                    string symlinkTarget = snapshot.GetSymlinkTarget(path);
+                    if (!string.IsNullOrWhiteSpace(symlinkTarget))
                     {
-                        m_result.AddVerboseMessage("Ignoring symlink {0}", path);
-                        return false;
-                    }
-    
-                    if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
-                    {
-                        Dictionary<string, string> metadata = GenerateMetadata(snapshot, path, attributes);
-    
-                        if (!metadata.ContainsKey("CoreSymlinkTarget"))
+                        if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
                         {
-                            var p = snapshot.GetSymlinkTarget(path);
-
-                            if (string.IsNullOrWhiteSpace(p))
-                                m_result.AddVerboseMessage("Ignoring empty symlink {0}", path);
-                            else
-                                metadata["CoreSymlinkTarget"] = p;
+                            m_result.AddVerboseMessage("Ignoring symlink {0}", path);
+                            return false;
                         }
-    
-                        var metahash = Utility.WrapMetadata(metadata, m_options);
-                        AddSymlinkToOutput(backend, path, DateTime.UtcNow, metahash);
-                        
-                        m_result.AddVerboseMessage("Stored symlink {0}", path);
-                        //Do not recurse symlinks
-                        return false;
+
+                        if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
+                        {
+                            Dictionary<string, string> metadata = GenerateMetadata(snapshot, path, attributes);
+
+                            if (!metadata.ContainsKey("CoreSymlinkTarget"))
+                            {
+                                metadata["CoreSymlinkTarget"] = symlinkTarget;
+                            }
+
+                            var metahash = Utility.WrapMetadata(metadata, m_options);
+                            AddSymlinkToOutput(backend, path, DateTime.UtcNow, metahash);
+
+                            m_result.AddVerboseMessage("Stored symlink {0}", path);
+                            //Do not recurse symlinks
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        m_result.AddVerboseMessage("Treating empty symlink as regular path {0}", path);
                     }
                 }
     

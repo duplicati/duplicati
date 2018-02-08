@@ -50,6 +50,7 @@ namespace Duplicati.Library.Snapshots
         FileAttributes GetFileAttributes(string path);
         void SetFileAttributes(string path, FileAttributes attributes);
         void CreateSymlink(string symlinkfile, string target, bool asDir);
+        string GetSymlinkTarget(string path);
         string PathGetDirectoryName(string path);
         string PathGetFileName(string path);
         string PathGetExtension(string path);

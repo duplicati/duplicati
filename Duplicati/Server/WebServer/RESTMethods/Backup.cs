@@ -293,7 +293,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             else
             {
-                Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup));
+                Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup), true);
                 Program.StatusEventNotifyer.SignalNewEvent();
             }
 

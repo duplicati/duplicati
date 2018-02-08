@@ -119,6 +119,8 @@ namespace Duplicati.Library.Main.Strings
         public static string UploadUnchangedBackupsShort { get { return LC.L(@"Upload empty backup files"); } }
         public static string QuotasizeLong { get { return LC.L(@"This value can be used to set a known upper limit on the amount of space a backend has. If the backend reports the size itself, this value is ignored"); } }
         public static string QuotasizeShort { get { return LC.L(@"A reported maximum storage"); } }
+        public static string QuotaWarningThresholdLong { get { return LC.L(@"Sets a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less that this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored"); } }
+        public static string QuotaWarningThresholdShort { get { return LC.L(@"Threshold for warning about low quota"); } }
         public static string DefaultFiltersLong(string windows, string osx, string linux, string all) { return LC.L(@"Exclude files that match the given filter sets. Which default filter sets should be used. Valid sets are ""{0}"", ""{1}"", ""{2}"", and ""{3}"". If this parameter is set with no value, the set for the current operating system will be used.", windows, osx, linux, all); }
         public static string DefaultFiltersShort { get { return LC.L(@"Default filter sets"); } }
         public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
