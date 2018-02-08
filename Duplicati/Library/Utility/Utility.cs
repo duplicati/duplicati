@@ -586,19 +586,19 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="size">The size to format</param>
         /// <returns>A human readable string representing the size</returns>
-        public static string FormatSizeString(long size)
+        public static string FormatSizeString(double size)
         {
-            long sizeAbs = Math.Abs(size);  // Allow formatting of negative sizes
+            double sizeAbs = Math.Abs(size);  // Allow formatting of negative sizes
             if (sizeAbs >= 1024 * 1024 * 1024 * 1024L)
-                return Strings.Utility.FormatStringTB((double)size / (1024 * 1024 * 1024 * 1024L));
+                return Strings.Utility.FormatStringTB(size / (1024 * 1024 * 1024 * 1024L));
             else if (sizeAbs >= 1024 * 1024 * 1024)
-                return Strings.Utility.FormatStringGB((double)size / (1024 * 1024 * 1024));
+                return Strings.Utility.FormatStringGB(size / (1024 * 1024 * 1024));
             else if (sizeAbs >= 1024 * 1024)
-                return Strings.Utility.FormatStringMB((double)size / (1024 * 1024));
+                return Strings.Utility.FormatStringMB(size / (1024 * 1024));
             else if (sizeAbs >= 1024)
-                return Strings.Utility.FormatStringKB((double)size / 1024);
+                return Strings.Utility.FormatStringKB(size / 1024);
             else
-                return Strings.Utility.FormatStringB(size);
+                return Strings.Utility.FormatStringB((long) size); // safe to cast because lower than 1024 and thus well within range of long
         }
 
         public static System.Threading.ThreadPriority ParsePriority(string value)
