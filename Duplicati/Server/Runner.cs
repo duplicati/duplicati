@@ -512,7 +512,7 @@ namespace Duplicati.Server
                     }
                 }
 
-                using(tempfolder)
+                using (tempfolder)
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
                     try 
@@ -536,7 +536,14 @@ namespace Duplicati.Server
                     {
                         case DuplicatiOperation.Backup:
                             {
-                                var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation));
+                                IEnumerable<Library.Utility.IFilter> defaultFilters = null;
+                                string defaultFiltersValue;
+                                if (options.TryGetValue("default-filters", out defaultFiltersValue) || options.TryGetValue("default-filter", out defaultFiltersValue))
+                                {
+                                    defaultFilters = Library.Utility.DefaultFilters.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(defaultFiltersValue ?? string.Empty));
+                                }
+
+                                var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation), defaultFilters);
                                 var sources = 
                                     (from n in backup.Sources
                                         let p = SpecialFolders.ExpandEnvironmentVariables(n)
@@ -848,7 +855,7 @@ namespace Duplicati.Server
             return options;
         }
 
-        private static Duplicati.Library.Utility.IFilter ApplyFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Duplicati.Library.Utility.IFilter filter)
+        private static Library.Utility.IFilter ApplyFilter(Serialization.Interface.IBackup backup, DuplicatiOperation mode, Library.Utility.IFilter filter, IEnumerable<Library.Utility.IFilter> defaultFilters)
         {
             var f2 = backup.Filters;
             if (f2 != null && f2.Length > 0)
@@ -860,15 +867,20 @@ namespace Duplicati.Server
                         ? SpecialFolders.ExpandEnvironmentVariablesRegexp(n.Expression)
                         : SpecialFolders.ExpandEnvironmentVariables(n.Expression)
                     orderby n.Order
-                    select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
-                    .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
+                    select (Library.Utility.IFilter)(new Library.Utility.FilterExpression(exp, n.Include)))
+                    .Aggregate((a, b) => Library.Utility.FilterExpression.Combine(a, b));
 
-                return Duplicati.Library.Utility.FilterExpression.Combine(filter, nf);
+                filter = Library.Utility.FilterExpression.Combine(filter, nf);
             }
-            else
-                return filter;
+
+            if (defaultFilters != null && defaultFilters.Any())
+            {
+                filter = Library.Utility.FilterExpression.Combine(filter, defaultFilters.Aggregate((a, b) => Library.Utility.FilterExpression.Combine(a, b)));
+            }
+
+            return filter;
         }
-        
+
         private static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
         {
             return 
