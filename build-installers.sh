@@ -138,6 +138,17 @@ echo "Done building rpm package"
 
 echo ""
 echo ""
+echo "Building Docker images ..."
+
+cd Installer/Docker
+bash build-images.sh ../../$1
+cd ../..
+
+echo "Done building Docker images"
+
+
+echo ""
+echo ""
 echo "Building Windows instance in virtual machine"
 
 while true
