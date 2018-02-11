@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ ! -f "$1" ]; then
-	echo "Please provide the filename of an existing zip build as the first argument"
-	exit
+    echo "Please provide the filename of an existing zip build as the first argument"
+    exit
 fi
 
 ARCHITECTURES="amd64 arm32v7"
@@ -16,7 +16,7 @@ CHANNEL=`echo "${ARCHIVE_NAME}" | cut -d "_" -f 2`
 DIRNAME=duplicati
 
 if [ -d "${DIRNAME}" ]; then
-	rm -rf "${DIRNAME}"
+    rm -rf "${DIRNAME}"
 fi
 
 unzip -d "${DIRNAME}" "$1"
@@ -41,31 +41,31 @@ do
 done
 
 for arch in ${ARCHITECTURES}; do
-	tags="linux-${arch}-${VERSION} linux-${arch}-${CHANNEL}"
-	if [ ${CHANNEL} = ${DEFAULT_CHANNEL} ]; then
-		tags="linux-${arch} ${tags}"
-	fi
-	if [ ${arch} = ${DEFAULT_ARCHITECTURE} ]; then
-		tags="${VERSION} ${CHANNEL} ${tags}"
-	fi
-	if [ ${CHANNEL} = ${DEFAULT_CHANNEL} -a ${arch} = ${DEFAULT_ARCHITECTURE} ]; then
-		tags="latest ${tags}"
-	fi
+    tags="linux-${arch}-${VERSION} linux-${arch}-${CHANNEL}"
+    if [ ${CHANNEL} = ${DEFAULT_CHANNEL} ]; then
+        tags="linux-${arch} ${tags}"
+    fi
+    if [ ${arch} = ${DEFAULT_ARCHITECTURE} ]; then
+        tags="${VERSION} ${CHANNEL} ${tags}"
+    fi
+    if [ ${CHANNEL} = ${DEFAULT_CHANNEL} -a ${arch} = ${DEFAULT_ARCHITECTURE} ]; then
+        tags="latest ${tags}"
+    fi
 
-	args=""
-	for tag in ${tags}; do
-		args="-t ${REPOSITORY}:${tag} ${args}"
-	done
+    args=""
+    for tag in ${tags}; do
+        args="-t ${REPOSITORY}:${tag} ${args}"
+    done
 
-	docker build \
-		${args} \
-		--build-arg ARCH=${arch}/ \
-		--build-arg VERSION=${VERSION} \
-		--build-arg CHANNEL=${CHANNEL} \
-		--file context/Dockerfile \
-		.
+    docker build \
+        ${args} \
+        --build-arg ARCH=${arch}/ \
+        --build-arg VERSION=${VERSION} \
+        --build-arg CHANNEL=${CHANNEL} \
+        --file context/Dockerfile \
+        .
 
-	for tag in ${tags}; do
-		docker push ${REPOSITORY}:${tag}
-	done
+    for tag in ${tags}; do
+        docker push ${REPOSITORY}:${tag}
+    done
 done
