@@ -228,8 +228,11 @@ namespace Duplicati.Library.Main.Operation
             // Make sure the backups are in descending order (newest backup in the beginning)
             clonedBackupList = clonedBackupList.OrderByDescending(x => x).ToList();
 
-            // Most current backup should never get deleted in this process, so exclude it
+            // Most recent backup usually should never get deleted in this process, so exclude it for now,
+            // but keep a reference to potentiall delete it when allow-full-removal is set
+            var mostRecentBackup = clonedBackupList.ElementAt(0);
             clonedBackupList.RemoveAt(0);
+            var deleteMostRecentBackup = m_options.AllowFullRemoval;
 
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: Time frames and intervals pairs: {0}",
                 string.Join(", ", retentionPolicyOptionValue.Select(x => x.Key + " / " + x.Value))), Logging.LogMessageType.Information);
@@ -279,12 +282,23 @@ namespace Duplicati.Library.Main.Operation
                         backupsToDelete.Add(backup);
                     }
                 }
+
+                // Check if most recent backup is outside of this time frame (meaning older/smaller)
+                deleteMostRecentBackup &= (mostRecentBackup < timeFrame);
             }
 
             // Delete all remaining backups
             backupsToDelete.AddRange(clonedBackupList);
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups outside of all time frames and thus getting deleted: {0}",
                     string.Join(", ", clonedBackupList)), Logging.LogMessageType.Information);
+
+            // Delete most recent backup if allow-full-removal is set and the most current backup is outside of any time frame
+            if (deleteMostRecentBackup)
+            {
+                backupsToDelete.Add(mostRecentBackup);
+                Logging.Log.WriteMessage(string.Format("[Retention Policy]: Deleting most recent backup: {0}",
+                    mostRecentBackup), Logging.LogMessageType.Information);
+            }
 
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: All backups to delete: {0}",
                 string.Join(", ", backupsToDelete.OrderByDescending(x => x))), Logging.LogMessageType.Information);
