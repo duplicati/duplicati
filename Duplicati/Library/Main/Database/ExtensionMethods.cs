@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteNonQuery: {0}", self.CommandText)))
+            using(new Logging.Timer(string.Format("ExecuteNonQuery: {0}", self.CommandText)))
                 return self.ExecuteNonQuery();
         }
 
@@ -61,7 +61,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteScalar: {0}", self.CommandText)))
+            using(new Logging.Timer(string.Format("ExecuteScalar: {0}", self.CommandText)))
                 return self.ExecuteScalar();
         }
 
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteScalarInt64: {0}", self.CommandText)))
+            using(new Logging.Timer(string.Format("ExecuteScalarInt64: {0}", self.CommandText)))
                 using(var rd = self.ExecuteReader())
                     if (rd.Read())
                         return ConvertValueToInt64(rd, 0, defaultvalue);
@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteReader: {0}", self.CommandText)))
+            using(new Logging.Timer(string.Format("ExecuteReader: {0}", self.CommandText)))
                 return self.ExecuteReader();
         }
 
@@ -197,7 +197,7 @@ namespace Duplicati.Library.Main.Database
                         Console.WriteLine();
                         n++;
                     }
-                    Console.WriteLine(LC.L("{0} records", n));
+                    Console.WriteLine("{0} records", n);
                 }
             }
         }
