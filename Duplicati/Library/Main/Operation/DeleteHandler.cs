@@ -240,8 +240,6 @@ namespace Duplicati.Library.Main.Operation
             // Collect all potential backups in each time frame and thin out according to the specified interval,
             // starting with the oldest backup in that time frame.
             // The order in which the time frames values are checked has to be from the smallest to the largest.
-            // If backups are not within any time frame, they will NOT be deleted here.
-            // The --keep-time and --keep-versions switched should be used to ultimately delete backups that are too old
             List<DateTime> backupsToDelete = new List<DateTime>();
             var now = DateTime.Now;
             foreach (var singleRetentionPolicyOptionValue in retentionPolicyOptionValue.OrderBy(x => x.Key))
@@ -277,16 +275,18 @@ namespace Duplicati.Library.Main.Operation
                     }
                     else
                     {
-                        Logging.Log.WriteMessage(string.Format("[Retention Policy]: Marking backup for deletion: {0}", backup), Logging.LogMessageType.Profiling);
+                        Logging.Log.WriteMessage(string.Format("[Retention Policy]: Deleting backup: {0}", backup), Logging.LogMessageType.Profiling);
                         backupsToDelete.Add(backup);
                     }
                 }
             }
 
-            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups outside of all time frames and thus not checked: {0}",
-                    string.Join(", ", clonedBackupList)), Logging.LogMessageType.Profiling);
+            // Delete all remaining backups
+            backupsToDelete.AddRange(clonedBackupList);
+            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups outside of all time frames and thus getting deleted: {0}",
+                    string.Join(", ", clonedBackupList)), Logging.LogMessageType.Information);
 
-            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups to delete: {0}",
+            Logging.Log.WriteMessage(string.Format("[Retention Policy]: All backups to delete: {0}",
                 string.Join(", ", backupsToDelete.OrderByDescending(x => x))), Logging.LogMessageType.Information);
 
             return backupsToDelete;
