@@ -219,7 +219,8 @@ namespace Duplicati.Library.AutoUpdater
 
             if (selfVersion == null)
             {
-                selfVersion = new UpdateInfo() {
+                selfVersion = new UpdateInfo()
+                {
                     Displayname = string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG) ? "Current" : Duplicati.License.VersionNumbers.TAG,
                     Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
                     ReleaseTime = new DateTime(0),
@@ -590,7 +591,8 @@ namespace Duplicati.Library.AutoUpdater
                     fs.Position = 0;
                     var h2 = Convert.ToBase64String(md5.ComputeHash(fs));
 
-                    manifest = new FileEntry() {
+                    manifest = new FileEntry()
+                    {
                         Path = UPDATE_MANIFEST_FILENAME,
                         Ignore = false,
                         LastWriteTime = update.ReleaseTime,
@@ -1090,7 +1092,7 @@ namespace Duplicati.Library.AutoUpdater
             }
 
             var app = Environment.GetCommandLineArgs().First();
-            var args = Library.Utility.Utility.WrapAsCommandLine(Environment.GetCommandLineArgs().Skip(1), false);
+            var args = Library.Utility.Utility.WrapAsCommandLine(Library.Utility.Utility.ProperParseArgs(Environment.CommandLine), false);
 
             if (!Path.IsPathRooted(app))
                 app = Path.Combine(InstalledBaseDir, app);
@@ -1235,7 +1237,7 @@ namespace Duplicati.Library.AutoUpdater
                         try
                         {
                             var app = Environment.GetCommandLineArgs().First();
-                            var args = Library.Utility.Utility.WrapAsCommandLine(Environment.GetCommandLineArgs().Skip(1), false);
+                            var args = Library.Utility.Utility.WrapAsCommandLine(Library.Utility.Utility.ProperParseArgs(Environment.CommandLine), false);
 
                             if (!System.IO.Path.IsPathRooted(app))
                                 app = System.IO.Path.Combine(InstalledBaseDir, app);
@@ -1265,4 +1267,3 @@ namespace Duplicati.Library.AutoUpdater
 
     }
 }
-
