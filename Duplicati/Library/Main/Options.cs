@@ -256,7 +256,8 @@ namespace Duplicati.Library.Main
                     "exclude-files-attributes",
                     "compression-extension-file",
                     "full-remote-verification",
-                    "disable-synthetic-filelist"
+                    "disable-synthetic-filelist",
+                    "disable-file-scanner"
                 };
             }
         }
@@ -530,6 +531,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
 
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
+                    new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
                 });
 
                 return lst;
@@ -1789,6 +1791,15 @@ namespace Duplicati.Library.Main
         public bool AutoVacuum
         {
             get { return GetBool("auto-vacuum"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the local filescanner should be disabled
+        /// </summary>
+        /// <value><c>true</c> if the filescanner should be disabled; otherwise, <c>false</c>.</value>
+        public bool DisableFileScanner
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-file-scanner"); }
         }
 
         /// <summary>
