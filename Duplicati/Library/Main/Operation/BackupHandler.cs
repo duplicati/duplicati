@@ -732,14 +732,23 @@ namespace Duplicati.Library.Main.Operation
                     {
                         using(var snapshot = GetSnapshot(sources, m_options, m_result))
                         {
-                            // Start parallel scan
+                            // Start parallel scan, or use the database
                             if (m_options.ChangedFilelist == null || m_options.ChangedFilelist.Length < 1)
                             {
-                                parallelScanner = new System.Threading.Thread(CountFilesThread) {
-                                    Name = "Read ahead file counter",
-                                    IsBackground = true
-                                };
-                                parallelScanner.Start(snapshot);
+                                if (m_options.DisableFileScanner)
+                                {
+                                    var d = m_database.GetLastBackupFileCountAndSize();
+                                    m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);
+                                }
+                                else
+                                {
+                                    parallelScanner = new System.Threading.Thread(CountFilesThread)
+                                    {
+                                        Name = "Read ahead file counter",
+                                        IsBackground = true
+                                    };
+                                    parallelScanner.Start(snapshot);
+                                }
                             }
 
                             string lasttempfilelist = null;
