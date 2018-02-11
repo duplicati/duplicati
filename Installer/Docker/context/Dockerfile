@@ -20,8 +20,8 @@ ENTRYPOINT ["/usr/sbin/tini", "--"]
 ENV XDG_CONFIG_HOME=/data
 VOLUME /data
 
-COPY context/duplicati context/duplicati-server /usr/bin/
-RUN chmod 0755 /usr/bin/duplicati /usr/bin/duplicati-server
+COPY context/duplicati-cli context/duplicati-server /usr/bin/
+RUN chmod 0755 /usr/bin/duplicati-cli /usr/bin/duplicati-server
 
 ARG CHANNEL=
 ARG VERSION=
