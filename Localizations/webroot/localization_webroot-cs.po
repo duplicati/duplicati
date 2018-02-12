@@ -240,10 +240,6 @@ msgstr "Záloha:"
 msgid "Beta"
 msgstr "Vývojová testovací (beta)"
 
-#: templates/restore.html:143
-msgid "Bitcoin: {{bitcoinaddr}}"
-msgstr "Bitcoin: {{bitcoinaddr}}"
-
 #: scripts/services/AppUtils.js:67
 msgid "Broken access"
 msgstr "Nefunkční přístup"
@@ -649,13 +645,13 @@ msgstr "Opravdu chcete smazat místní databázi pro: {{name}}"
 msgid "Donate"
 msgstr "Darovat"
 
-#: index.html:144 index.html:272
-msgid "Donate with Bitcoins"
-msgstr "Darovat v Bitcoinech"
-
 #: index.html:147 index.html:275
 msgid "Donate with PayPal"
 msgstr "Darovat prostřednictvím PayPal"
+
+#: index.html:144 index.html:272
+msgid "Donate with crypto currency"
+msgstr "Darovat v kryptoměně"
 
 #: templates/settings.html:58 templates/settings.html:60
 msgid "Donation messages"
@@ -1516,7 +1512,7 @@ msgstr "Žádné / vypnuté"
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:147
+#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:146
 #: templates/settings.html:147
 msgid "OK"
 msgstr "OK"
@@ -2113,10 +2109,10 @@ msgstr "Výchozí téma vzhledu modrá na bílé (od Alexe)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
-"The folder {{folder}} does not exist\n"
+"The folder {{folder}} does not exist.\n"
 "Create it now?"
 msgstr ""
-"Složka {{folder}} neexistuje\n"
+"Složka {{folder}} neesxistuje.\n"
 "Vytvořit nyní?"
 
 #: scripts/directives/backupEditUri.js:212
@@ -2348,10 +2344,6 @@ msgstr "Nastavení uživatelského rozhraní"
 msgid "Username"
 msgstr "Uživatelské jméno"
 
-#: templates/restore.html:142
-msgid "VISA, Mastercard, ... via Paypal"
-msgstr "VISA, Mastercard, … přes Paypal"
-
 #: templates/addoredit.html:151
 msgid "Validating ..."
 msgstr "Ověřování…"
@@ -2420,6 +2412,14 @@ msgstr "Čekání na nahrání…"
 #: templates/settings.html:109
 msgid "Warnings, errors and crashes"
 msgstr "Varování, chyby a pády"
+
+#: templates/restore.html:142
+msgid ""
+"We accept donations via different services, such as OpenCollective, PayPal, "
+"BountySource and various crypto currencies."
+msgstr ""
+"Přijímáme dary prostřednictvím různých služeb, jako například "
+"OpenCollective, PayPal, BountySource a různé kryptoměny."
 
 #: templates/addoredit.html:50
 msgid "We recommend that you encrypt all backups stored outside your system"

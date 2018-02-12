@@ -242,15 +242,11 @@ msgstr "Posizione Backup"
 
 #: templates/home.html:60
 msgid "Backup:"
-msgstr "Backup:"
+msgstr "Dimensione backup:"
 
 #: templates/settings.html:81
 msgid "Beta"
 msgstr "Beta"
-
-#: templates/restore.html:143
-msgid "Bitcoin: {{bitcoinaddr}}"
-msgstr "Bitcoin: {{bitcoinaddr}}"
 
 #: scripts/services/AppUtils.js:67
 msgid "Broken access"
@@ -334,11 +330,11 @@ msgstr "Non puoi spostare in un file esistente"
 
 #: templates/about.html:5
 msgid "Changelog"
-msgstr "Registro modifiche"
+msgstr "Changelog"
 
 #: templates/updatechangelog.html:2
 msgid "Changelog for {{appname}} {{version}}"
-msgstr "Registro modifiche di {{appname}} {{version}}"
+msgstr "Changelog di {{appname}} {{version}}"
 
 #: scripts/controllers/UpdateChangelogController.js:24
 msgid "Check failed:"
@@ -374,7 +370,7 @@ msgstr "Riga di comando..."
 
 #: templates/home.html:29
 msgid "Compact now"
-msgstr "Comprimi ora"
+msgstr "Comprimi"
 
 #: scripts/services/ServerStatus.js:41 scripts/services/ServerStatus.js:64
 msgid "Compacting remote data ..."
@@ -489,7 +485,7 @@ msgstr "Solo arresti anomali"
 
 #: templates/home.html:36
 msgid "Create bug report ..."
-msgstr "Crea rapporto bug..."
+msgstr "Crea segnalazione bug..."
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
@@ -501,7 +497,7 @@ msgstr "Creato nuovo utente limitato"
 
 #: scripts/services/ServerStatus.js:59
 msgid "Creating bug report ..."
-msgstr "Creazione rapporto bug..."
+msgstr "Creazione segnalazione bug..."
 
 #: scripts/services/EditUriBuiltins.js:112
 msgid "Creating new user with limited access ..."
@@ -643,7 +639,7 @@ msgstr "Annulla"
 
 #: templates/settings.html:50
 msgid "Display and color theme"
-msgstr "Schermo e colore tema"
+msgstr "Tema interfaccia"
 
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
@@ -657,25 +653,25 @@ msgstr "Vuoi veramente cancellare il database locale per: {{name}} ?"
 msgid "Donate"
 msgstr "Donazione"
 
-#: index.html:144 index.html:272
-msgid "Donate with Bitcoins"
-msgstr "Donazione con Bitcoin"
-
 #: index.html:147 index.html:275
 msgid "Donate with PayPal"
 msgstr "Donazione con PayPal"
 
+#: index.html:144 index.html:272
+msgid "Donate with crypto currency"
+msgstr "Dona con valuta criptata"
+
 #: templates/settings.html:58 templates/settings.html:60
 msgid "Donation messages"
-msgstr "Messaggio donazione"
+msgstr "Messaggi donazione"
 
 #: templates/settings.html:62
 msgid "Donation messages are hidden, click to show"
-msgstr "Messaggio donazione è nascosto, clicca per mostrarlo"
+msgstr "I messaggi di donazione sono nascosti, clicca per mostrarli"
 
 #: templates/settings.html:61
 msgid "Donation messages are visible, click to hide"
-msgstr "Messaggio donazione è visibile, clicca per nasconderlo"
+msgstr "I messaggi di donazione sono visibili, clicca per nasconderli"
 
 #: templates/export.html:45
 msgid "Done"
@@ -1180,7 +1176,7 @@ msgstr "Risposta errata, riprova"
 
 #: templates/settings.html:92
 msgid "Individual builds for developers only."
-msgstr "Versioni particolari solo per gli sviluppatori."
+msgstr "Build individuali per soli sviluppatori."
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
@@ -1225,7 +1221,7 @@ msgstr "Backup da mantenere"
 
 #: templates/settings.html:40
 msgid "Language in user interface"
-msgstr "Lingua nell'interfaccia utente"
+msgstr "Lingua interfaccia utente"
 
 #: scripts/controllers/RestoreController.js:37
 msgid "Last month"
@@ -1308,11 +1304,11 @@ msgstr "Posizione in cui sono creati i bucket"
 
 #: templates/log.html:4
 msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
-msgstr "Dati di registro per <b>{{Backup.Backup.Name}}</b>"
+msgstr "Dati di log per <b>{{Backup.Backup.Name}}</b>"
 
 #: templates/log.html:3
 msgid "Log data from the server"
-msgstr "Dati di registro dal server"
+msgstr "Dati di log dal server"
 
 #: index.html:229
 msgid "Log out"
@@ -1442,7 +1438,7 @@ msgstr "Avanti"
 
 #: templates/home.html:51
 msgid "Next scheduled run:"
-msgstr "Prossima esecuzione pianificata: "
+msgstr "Prossima esecuzione: "
 
 #: index.html:183
 msgid "Next scheduled task:"
@@ -1529,7 +1525,7 @@ msgstr "Nessuno / disattivato"
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:147
+#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:146
 #: templates/settings.html:147
 msgid "OK"
 msgstr "OK"
@@ -1574,7 +1570,7 @@ msgid ""
 " individual backup"
 msgstr ""
 "Le opzioni aggiunte qui sono applicate a tutti i backup, ma possono essere "
-"ignorate in ogni singolo backup"
+"sovrascritte per ogni backup"
 
 #: templates/restore.html:81
 msgid "Original location"
@@ -1762,7 +1758,7 @@ msgstr "Ripristino dalla configurazione backup"
 
 #: templates/restorewizard.html:15
 msgid "Restore from configuration ..."
-msgstr "Ripristino dalla configurazione..."
+msgstr "Ripristino da file di configurazione..."
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
@@ -1860,8 +1856,7 @@ msgstr "Secondi"
 
 #: templates/log.html:29
 msgid "Select a log level and see messages as they happen:"
-msgstr ""
-"Selezionare un livello di registro e visiona i messaggi che avvengono:"
+msgstr "Selezionare un livello di log e visiona i messaggi che avvengono:"
 
 #: templates/restore.html:23 templates/restore.html:38
 #: templates/restoredirect.html:23
@@ -1922,11 +1917,11 @@ msgstr "Mostra cartelle nascoste"
 
 #: index.html:223
 msgid "Show log"
-msgstr "Mostra registro"
+msgstr "Mostra log"
 
 #: templates/home.html:35
 msgid "Show log ..."
-msgstr "Mostra registro..."
+msgstr "Mostra log ..."
 
 #: templates/addoredit.html:131
 msgid "Show treeview"
@@ -1958,11 +1953,11 @@ msgstr "Cartella sorgente"
 
 #: templates/home.html:56
 msgid "Source:"
-msgstr "Sorgente:"
+msgstr "Dimensione sorgente:"
 
 #: templates/settings.html:87
 msgid "Specific builds for developers only."
-msgstr "Versioni specifiche solo per sviluppatori."
+msgstr "Build specifiche per soli sviluppatori."
 
 #: scripts/services/SystemInfo.js:78
 msgid "Standard protocols"
@@ -2020,7 +2015,7 @@ msgstr "Classe di archiviazione per la creazione di un bucket"
 
 #: templates/log.html:7
 msgid "Stored"
-msgstr "Archivia"
+msgstr "Archiviati"
 
 #: scripts/controllers/EditBackupController.js:40
 msgid "Strong"
@@ -2118,19 +2113,19 @@ msgstr "Connessione al server persa, nuovo tentativo tra {{time}}..."
 
 #: templates/settings.html:54
 msgid "The dark theme (by Michal)"
-msgstr "Il tema scuro (da Michal)"
+msgstr "Tema scuro (da Michal)"
 
 #: templates/settings.html:53
 msgid "The default blue on white theme (by Alex)"
-msgstr "Il blu predefinito sul tema bianco (da Alex)"
+msgstr "Predefinito - Tema blu su bianco (da Alex)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
-"The folder {{folder}} does not exist\n"
+"The folder {{folder}} does not exist.\n"
 "Create it now?"
 msgstr ""
-"La cartella {{folder}} non esiste\n"
-"Crearla ora?"
+"La cartella {{folder}} non esiste. \n"
+"Creala adesso?"
 
 #: scripts/directives/backupEditUri.js:212
 msgid ""
@@ -2273,8 +2268,8 @@ msgstr "Certificato server affidabile?"
 msgid ""
 "Try out the new features we are working on. Don't use with important data."
 msgstr ""
-"Prova le nuove funzioni su cui stiamo lavorando. Non usare con dati "
-"importanti."
+"Prova le nuove funzioni su cui stiamo lavorando. Non usarlo in ambienti di "
+"produzione."
 
 #: scripts/services/AppUtils.js:104
 msgid "Tue"
@@ -2294,7 +2289,7 @@ msgstr "Finché non riprende"
 
 #: templates/settings.html:65
 msgid "Update channel"
-msgstr "Aggiorna canale"
+msgstr "Canale di aggiornamento"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Update failed:"
@@ -2368,10 +2363,6 @@ msgstr "Impostazioni interfaccia utente"
 msgid "Username"
 msgstr "Nome utente"
 
-#: templates/restore.html:142
-msgid "VISA, Mastercard, ... via Paypal"
-msgstr "VISA, Mastercard, ... via Paypal"
-
 #: templates/addoredit.html:151
 msgid "Validating ..."
 msgstr "Convalida..."
@@ -2411,7 +2402,7 @@ msgstr "Molto debole"
 
 #: index.html:248
 msgid "Visit us on"
-msgstr "Veni a trovarci su"
+msgstr "Seguici su"
 
 #: templates/delete.html:21
 msgid ""
@@ -2440,6 +2431,14 @@ msgstr "In attesa del caricamento..."
 #: templates/settings.html:109
 msgid "Warnings, errors and crashes"
 msgstr "Avvisi, errori e arresti anomali"
+
+#: templates/restore.html:142
+msgid ""
+"We accept donations via different services, such as OpenCollective, PayPal, "
+"BountySource and various crypto currencies."
+msgstr ""
+"Accettiamo donazioni tramite diversi servizi, come OpenCollective, PayPal, "
+"BountySource e varie criptovalute."
 
 #: templates/addoredit.html:50
 msgid "We recommend that you encrypt all backups stored outside your system"
@@ -2681,7 +2680,7 @@ msgstr "byte/s"
 #: templates/advancedoptionseditor.html:28
 #: templates/advancedoptionseditor.html:35
 msgid "custom"
-msgstr "personalizzato"
+msgstr "Personalizzato"
 
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
@@ -2711,7 +2710,7 @@ msgstr ""
 
 #: scripts/controllers/StateController.js:50
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
-msgstr "{{files}} file ({{size}}) vanno {{speed_txt}}"
+msgstr "Caricamento di {{files}} file ({{size}}) {{speed_txt}}"
 
 #: templates/home.html:61 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
@@ -2730,4 +2729,4 @@ msgstr "{{number}} Minuti"
 
 #: templates/home.html:42
 msgid "{{time}} (took {{duration}})"
-msgstr "{{time}} (took {{duration}})"
+msgstr "{{time}} (durato {{duration}})"

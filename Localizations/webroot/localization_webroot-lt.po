@@ -116,7 +116,7 @@ msgstr "Papildomai:"
 
 #: scripts/controllers/EditBackupController.js:22
 msgid "All"
-msgstr ""
+msgstr "Visi"
 
 #: scripts/directives/sourceFolderPicker.js:423
 msgid "All Hyper-V Machines"
@@ -242,10 +242,6 @@ msgstr "Kopija:"
 #: templates/settings.html:81
 msgid "Beta"
 msgstr "Beta"
-
-#: templates/restore.html:143
-msgid "Bitcoin: {{bitcoinaddr}}"
-msgstr "Bitcoin: {{bitcoinaddr}}"
 
 #: scripts/services/AppUtils.js:67
 msgid "Broken access"
@@ -564,7 +560,7 @@ msgstr "Numatytas ({{channelname}})"
 
 #: templates/addoredit.html:201
 msgid "Default Filters"
-msgstr ""
+msgstr "Numatytieji filtrai"
 
 #: templates/settings.html:131
 msgid "Default options"
@@ -652,13 +648,13 @@ msgstr "Ar tikrai norite ištrinti lokalią duomenų bazę: {{name}}"
 msgid "Donate"
 msgstr "Paremti"
 
-#: index.html:144 index.html:272
-msgid "Donate with Bitcoins"
-msgstr "Paremti per Bitcoins"
-
 #: index.html:147 index.html:275
 msgid "Donate with PayPal"
 msgstr "Paremti per PayPal"
+
+#: index.html:144 index.html:272
+msgid "Donate with crypto currency"
+msgstr "Paremti kriptografine valiuta"
 
 #: templates/settings.html:58 templates/settings.html:60
 msgid "Donation messages"
@@ -702,7 +698,7 @@ msgstr "Duplicati svetainė"
 
 #: index.html:251
 msgid "Duplicati forum"
-msgstr ""
+msgstr "Duplicati forumas"
 
 #: templates/delete.html:15
 msgid ""
@@ -970,7 +966,7 @@ msgstr "Baigta!"
 
 #: scripts/controllers/AppController.js:170
 msgid "First run setup"
-msgstr ""
+msgstr "Pirmojo paleidimo sąranka"
 
 #: scripts/services/AppUtils.js:50
 msgid "Folder"
@@ -1129,6 +1125,8 @@ msgid ""
 "If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
 "Do you want to set a password now?"
 msgstr ""
+"Jei jūsų įrenginys yra daugelio naudotojų aplinkoje (t.y. Įrenginyje yra daugiau nei viena paskyra), turite nustatyti slaptažodį, kad kiti naudotojai negalėtų pasiekti jūsų paskyroje esančių duomenų.\n"
+"Ar norite dabar nustatyti slaptažodį dabar?"
 
 #: templates/import.html:26
 msgid "Import"
@@ -1192,7 +1190,7 @@ msgstr "Diegimas nepavyko:"
 
 #: scripts/services/EditUriBuiltins.js:771
 msgid "Invalid characters in path"
-msgstr ""
+msgstr "Kelio pavadinime yra netinkamų simbolių"
 
 #: scripts/controllers/EditBackupController.js:323
 #: scripts/controllers/EditBackupController.js:330
@@ -1241,7 +1239,7 @@ msgstr "Bibliotekos"
 
 #: scripts/controllers/EditBackupController.js:21
 msgid "Linux"
-msgstr ""
+msgstr "Linux"
 
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates ..."
@@ -1353,11 +1351,11 @@ msgstr "Microsoft SQL duomenų bazės"
 
 #: templates/backends/sia.html:14
 msgid "Minimum redundancy"
-msgstr ""
+msgstr "Minimalus perteklinių kopijų kiekis"
 
 #: scripts/services/EditUriBuiltins.js:775
 msgid "Minimum redundancy is 1.0"
-msgstr ""
+msgstr "Minimalus perteklinių kopijų skaičius yra 1.0"
 
 #: scripts/services/AppUtils.js:88 scripts/services/AppUtils.js:98
 #: templates/settings.html:33
@@ -1506,7 +1504,7 @@ msgstr "Nėra planinių užduočių"
 
 #: scripts/controllers/AppController.js:172
 msgid "No, my machine has only a single account"
-msgstr ""
+msgstr "Ne, mano kompiuteryje yra tik vienas naudotojas"
 
 #: scripts/controllers/EditBackupController.js:304
 msgid "Non-matching passphrase"
@@ -1524,14 +1522,14 @@ msgstr "Nieko / išjungta"
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:147
+#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:146
 #: templates/settings.html:147
 msgid "OK"
 msgstr "OK"
 
 #: scripts/controllers/EditBackupController.js:20
 msgid "OSX"
-msgstr ""
+msgstr "OSX"
 
 #: templates/backends/openstack.html:7
 msgid "OpenStack AuthURI"
@@ -1635,488 +1633,495 @@ msgstr "Pauzė"
 
 #: templates/settings.html:16
 msgid "Pause after startup or hibernation"
-msgstr ""
+msgstr "Pauzė po paleidimo ar ramybės būsenos"
 
 #: scripts/controllers/AppController.js:42
 msgid "Pause options"
-msgstr ""
+msgstr "Pauzės parametrai"
 
 #: templates/restore.html:123
 msgid "Permissions"
-msgstr ""
+msgstr "Leidimai"
 
 #: templates/restore.html:85
 msgid "Pick location"
-msgstr ""
+msgstr "Pasirinkite vietą"
 
 #: templates/restorewizard.html:10
 msgid "Point to your backup files and restore from there"
-msgstr ""
+msgstr "Pasirinkite atsarginės kopijos failus ir atkurkite iš jos"
 
 #: templates/backends/generic.html:9
 msgid "Port"
-msgstr ""
+msgstr "Portas"
 
 #: templates/addoredit.html:110 templates/addoredit.html:251
 #: templates/addoredit.html:301 templates/addoredit.html:381
 #: templates/restoredirect.html:81
 msgid "Previous"
-msgstr ""
+msgstr "Ankstesnis"
 
 #: templates/backends/gcs.html:39
 msgid "ProjectID is optional if the bucket exist"
-msgstr ""
+msgstr "ProjectID yra neprivalomas, jei egzistuoja saugykla"
 
 #: scripts/services/SystemInfo.js:79
 msgid "Proprietary"
-msgstr ""
+msgstr "Patentuota"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
-msgstr ""
+msgstr "Naikinami failai ..."
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
-msgstr ""
+msgstr "Vietinė duomenų bazė kuriama iš naujo ..."
 
 #: templates/localdatabase.html:20
 msgid "Recreate (delete and repair)"
-msgstr ""
+msgstr "Perkurti (ištrinti ir taisyti)"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database ..."
-msgstr ""
+msgstr "Perkuriama duomenų bazė ..."
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup ..."
-msgstr ""
+msgstr "Registruojama laikina atsarginė kopija ..."
 
 #: scripts/controllers/EditBackupController.js:125
 msgid "Relative paths not allowed"
-msgstr ""
+msgstr "Santykiniai keliai neleidžiami"
 
 #: templates/captcha.html:7
 msgid "Reload"
-msgstr ""
+msgstr "Užkrauti iš naujo"
 
 #: templates/log.html:10
 msgid "Remote"
-msgstr ""
+msgstr "Nuotolinis"
 
 #: templates/addoredit.html:193
 msgid "Remove"
-msgstr ""
+msgstr "Pašalinti"
 
 #: templates/advancedoptionseditor.html:40
 msgid "Remove option"
-msgstr ""
+msgstr "Pašalinti parinktį"
 
 #: templates/localdatabase.html:18
 msgid "Repair"
-msgstr ""
+msgstr "Remontuoti"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Reparing ..."
-msgstr ""
+msgstr "Remontuojama ..."
 
 #: templates/addoredit.html:58
 msgid "Repeat Passphrase"
-msgstr ""
+msgstr "Pakartokite slaptą frazę"
 
 #: templates/home.html:33
 msgid "Reporting:"
-msgstr ""
+msgstr "Ataskaitų teikimas:"
 
 #: templates/localdatabase.html:31
 msgid "Reset"
-msgstr ""
+msgstr "Atstatyti"
 
 #: index.html:214 templates/restore.html:131
 msgid "Restore"
-msgstr ""
+msgstr "Atkurti"
 
 #: templates/restore.html:45
 msgid "Restore files"
-msgstr ""
+msgstr "Atkurti failus"
 
 #: templates/home.html:14
 msgid "Restore files ..."
-msgstr ""
+msgstr "Atkurti failus ..."
 
 #: templates/restore.html:46
 msgid "Restore files from {{backupname}}"
-msgstr ""
+msgstr "Atkurti failus iš {{backupname}}"
 
 #: templates/restore.html:48
 msgid "Restore from"
-msgstr ""
+msgstr "Atkurti iš"
 
 #: templates/import.html:4
 msgid "Restore from backup configuration"
-msgstr ""
+msgstr "Atkurti iš atsarginės kopijos konfigūracijos"
 
 #: templates/restorewizard.html:15
 msgid "Restore from configuration ..."
-msgstr ""
+msgstr "Atkurti iš konfigūracijos ..."
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
 msgid "Restore options"
-msgstr ""
+msgstr "Atkurimo parinktis"
 
 #: templates/restore.html:126
 msgid "Restore read/write permissions"
-msgstr ""
+msgstr "Atkurti skaitymo/rašymo leidimus"
 
 #: scripts/controllers/RestoreController.js:371
 #: scripts/controllers/RestoreController.js:393
 msgid "Restoring files ..."
-msgstr ""
+msgstr "Failai atkūriami ..."
 
 #: index.html:217
 msgid "Resume"
-msgstr ""
+msgstr "Tęsti"
 
 #: templates/addoredit.html:273
 msgid "Run again every"
-msgstr ""
+msgstr "Vykdyti dar kartą kas"
 
 #: templates/home.html:13 templates/home.html:47
 msgid "Run now"
-msgstr ""
+msgstr "Vykdyti dabar"
 
 #: scripts/controllers/StateController.js:25
 msgid "Running ..."
-msgstr ""
+msgstr "Vykdoma ..."
 
 #: templates/commandline.html:58
 msgid "Running ...."
-msgstr ""
+msgstr "Vykdoma ...."
 
 #: templates/commandline.html:47
 msgid "Running commandline entry"
-msgstr ""
+msgstr "Vykdoma komandų eilutės komanda"
 
 #: index.html:172
 msgid "Running task:"
-msgstr ""
+msgstr "Vykdoma užduotis:"
 
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
-msgstr ""
+msgstr "Suderinamas su S3"
 
 #: templates/settings.html:69
 msgid "Same as the base install version: {{channelname}}"
-msgstr ""
+msgstr "Ta pati, kaip pagrindinė diegimo versija: {{channelname}}"
 
 #: scripts/services/AppUtils.js:108
 msgid "Sat"
-msgstr ""
+msgstr "Šešt"
 
 #: templates/addoredit.html:380 templates/localdatabase.html:32
 msgid "Save"
-msgstr ""
+msgstr "Įrašyti"
 
 #: templates/localdatabase.html:33
 msgid "Save and repair"
-msgstr ""
+msgstr "Įrašyti ir taisyti"
 
 #: templates/restore.html:118
 msgid "Save different versions with timestamp in file name"
-msgstr ""
+msgstr "Išsaugokite kitą versiją su laiko žymoma failo pavadinime"
 
 #: templates/import.html:19
 msgid "Save immediately"
-msgstr ""
+msgstr "Įrašyti nedelsiant"
 
 #: scripts/services/ServerStatus.js:50
 msgid "Scanning existing files ..."
-msgstr ""
+msgstr "Ieškoma esamų failų ..."
 
 #: scripts/services/ServerStatus.js:51
 msgid "Scanning for local blocks ..."
-msgstr ""
+msgstr "Ieškoma lokalių blokų ..."
 
 #: templates/addoredit.html:259 templates/addoredit.html:27
 msgid "Schedule"
-msgstr ""
+msgstr "Tvarkaraštis"
 
 #: templates/restore.html:60
 msgid "Search"
-msgstr ""
+msgstr "Paieška"
 
 #: templates/restore.html:56
 msgid "Search for files"
-msgstr ""
+msgstr "Failų paieška"
 
 #: scripts/services/AppUtils.js:97 templates/settings.html:32
 msgid "Seconds"
-msgstr ""
+msgstr "Sekundės"
 
 #: templates/log.html:29
 msgid "Select a log level and see messages as they happen:"
 msgstr ""
+"Pasirinkite žurnalo lygį ir peržiūrėkite pranešimus, kaip jie įvyksta:"
 
 #: templates/restore.html:23 templates/restore.html:38
 #: templates/restoredirect.html:23
 msgid "Select files"
-msgstr ""
+msgstr "Pasirinkite failus"
 
 #: scripts/services/EditUriBuiltins.js:767 templates/backends/s3.html:8
 #: templates/backends/sia.html:2
 msgid "Server"
-msgstr ""
+msgstr "Serveris"
 
 #: templates/backends/generic.html:7
 msgid "Server and port"
-msgstr ""
+msgstr "Serveris ir portas"
 
 #: templates/backends/generic.html:8
 msgid "Server hostname or IP"
-msgstr ""
+msgstr "Serverio pavadinimas ir IP"
 
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
 msgid "Server is currently paused,"
-msgstr ""
+msgstr "Serveris šiuo metu pristabdytas"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server is currently paused, do you want to resume now?"
-msgstr ""
+msgstr "Serveris šiuo metu pristabdytas, ar norite pratęsti jo darbą?"
 
 #: templates/backends/sia.html:10
 msgid "Server password"
-msgstr ""
+msgstr "Serverio slaptažodis"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server paused"
-msgstr ""
+msgstr "Serveris pristabdytas"
 
 #: templates/about.html:71
 msgid "Server state properties"
-msgstr ""
+msgstr "Serverio būsenos parametrai"
 
 #: index.html:220 templates/settings.html:2
 msgid "Settings"
-msgstr ""
+msgstr "Nustatymai"
 
 #: templates/addoredit.html:65 templates/notificationarea.html:12
 #: templates/notificationarea.html:30
 msgid "Show"
-msgstr ""
+msgstr "Rodyti"
 
 #: templates/addoredit.html:128
 msgid "Show advanced editor"
-msgstr ""
+msgstr "Rodyti patobulintą redaktorių"
 
 #: templates/addoredit.html:139 templates/backends/file.html:16
 #: templates/restore.html:99
 msgid "Show hidden folders"
-msgstr ""
+msgstr "Rodyti paslėptus aplankus"
 
 #: index.html:223
 msgid "Show log"
-msgstr ""
+msgstr "Rodyti žurnalą"
 
 #: templates/home.html:35
 msgid "Show log ..."
-msgstr ""
+msgstr "Rodyti žurnalą ..."
 
 #: templates/addoredit.html:131
 msgid "Show treeview"
-msgstr ""
+msgstr "Rodyti medžio vaizdą"
 
 #: templates/backends/sia.html:11
 msgid "Sia server password"
-msgstr ""
+msgstr "Sia serverio slaptažodis"
 
 #: templates/backends/openstack.html:33
 msgid ""
 "Some OpenStack providers allow an API key instead of a password and tenant "
 "name"
 msgstr ""
+"Kai kurie OpenStack tiekėjai vietoj slaptažodžio pateikia API raktą ir "
+"nuomininko vardą"
 
 #: templates/addoredit.html:26
 msgid "Source Data"
-msgstr ""
+msgstr "Šaltinio duomenys"
 
 #: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:120
 msgid "Source data"
-msgstr ""
+msgstr "Šaltinio duomenys"
 
 #: templates/addoredit.html:145
 msgid "Source folders"
-msgstr ""
+msgstr "Šaltinio aplankai"
 
 #: templates/home.html:56
 msgid "Source:"
-msgstr ""
+msgstr "Šaltinis:"
 
 #: templates/settings.html:87
 msgid "Specific builds for developers only."
-msgstr ""
+msgstr "Specifinės versijos programuotojams."
 
 #: scripts/services/SystemInfo.js:78
 msgid "Standard protocols"
-msgstr ""
+msgstr "Standartiniai protokolai"
 
 #: scripts/services/ServerStatus.js:33 scripts/services/ServerStatus.js:45
 msgid "Starting ..."
-msgstr ""
+msgstr "Pradedama ..."
 
 #: scripts/controllers/RestoreController.js:367
 #: scripts/controllers/RestoreController.js:391
 msgid "Starting the restore process ..."
-msgstr ""
+msgstr "Atkūrimo proceso pradžia ..."
 
 #: scripts/controllers/StateController.js:112
 msgid "Stop after the current file"
-msgstr ""
+msgstr "Stabdyti po dabartinio failo"
 
 #: scripts/controllers/StateController.js:103
 msgid "Stop after upload"
-msgstr ""
+msgstr "Stabdyti po įkėlimo"
 
 #: scripts/controllers/StateController.js:103
 #: scripts/controllers/StateController.js:112
 msgid "Stop now"
-msgstr ""
+msgstr "Stabdyti dabar"
 
 #: scripts/controllers/StateController.js:101
 msgid "Stop running backup"
-msgstr ""
+msgstr "Stabdyti vykdomą atsarginę kopiją"
 
 #: scripts/controllers/StateController.js:110
 msgid "Stop running task"
-msgstr ""
+msgstr "Stabdyti vykdomą užduotį"
 
 #: index.html:168
 msgid "Stopping after upload:"
-msgstr ""
+msgstr "Stabdoma po įkėlimo:"
 
 #: index.html:173
 msgid "Stopping task:"
-msgstr ""
+msgstr "Stabdoma užduotis:"
 
 #: templates/edituri.html:3
 msgid "Storage Type"
-msgstr ""
+msgstr "Saugyklos tipas"
 
 #: templates/backends/s3.html:38
 msgid "Storage class"
-msgstr ""
+msgstr "Saugyklos klasė"
 
 #: templates/backends/gcs.html:32
 msgid "Storage class for creating a bucket"
-msgstr ""
+msgstr "Saugyklos klasė saugyklos kūrimui"
 
 #: templates/log.html:7
 msgid "Stored"
-msgstr ""
+msgstr "Išsaugota"
 
 #: scripts/controllers/EditBackupController.js:40
 msgid "Strong"
-msgstr ""
+msgstr "Stiprus"
 
 #: scripts/directives/backupEditUri.js:51
 #: scripts/directives/backupEditUri.js:54
 msgid "Success"
-msgstr ""
+msgstr "Sėkmė"
 
 #: scripts/services/AppUtils.js:109
 msgid "Sun"
-msgstr ""
+msgstr "Sekm"
 
 #: scripts/services/AppUtils.js:71
 msgid "Symbolic link"
-msgstr ""
+msgstr "Simbolinė nuoroda"
 
 #: templates/settings.html:107
 msgid "System default ({{levelname}})"
-msgstr ""
+msgstr "Sistemos numatytasis ({{levelname}})"
 
 #: scripts/controllers/EditBackupController.js:27
 msgid "System files"
-msgstr ""
+msgstr "Sisteminiai failai"
 
 #: templates/about.html:7
 msgid "System info"
-msgstr ""
+msgstr "Sistemos informacija"
 
 #: templates/about.html:63
 msgid "System properties"
-msgstr ""
+msgstr "Sistemos ypatybės"
 
 #: scripts/services/AppUtils.js:84
 msgid "TByte"
-msgstr ""
+msgstr "TByte"
 
 #: scripts/services/AppUtils.js:117
 msgid "TByte/s"
-msgstr ""
+msgstr "TByte/sek"
 
 #: templates/backends/sia.html:7
 msgid "Target path, ie /backup"
-msgstr ""
+msgstr "Kelias iki tikslo, pvz.: /backup"
 
 #: templates/waitarea.html:5
 msgid "Task is running"
-msgstr ""
+msgstr "Užduotis vykdoma"
 
 #: scripts/controllers/EditBackupController.js:28
 msgid "Temporary files"
-msgstr ""
+msgstr "Laikini failai"
 
 #: templates/backends/openstack.html:27
 msgid "Tenant Name"
-msgstr ""
+msgstr "Nuomininko vardas"
 
 #: templates/edituri.html:21
 msgid "Test connection"
-msgstr ""
+msgstr "Patikrinti prisijungimą"
 
 #: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
 msgid "Testing ..."
-msgstr ""
+msgstr "Tikrinama ..."
 
 #: scripts/directives/backupEditUri.js:44
 msgid "Testing connection ..."
-msgstr ""
+msgstr "Tikrinamas prisijungimas ..."
 
 #: scripts/services/EditUriBuiltins.js:42
 msgid "Testing permissions ..."
-msgstr ""
+msgstr "Tikrinamos prieigos teisės ..."
 
 #: scripts/services/EditUriBuiltins.js:42
 msgid "Testing permissions..."
-msgstr ""
+msgstr "Tikrinamos prieigos teisės ..."
 
 #: scripts/services/EditUriBuiltins.js:719
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
+"Saugyklos pavadinimas turi būti iš mažųjų raidžių, konvertuoti automatiškai?"
 
 #: scripts/services/EditUriBuiltins.js:702
 msgid ""
 "The bucket name should start with your username, prepend automatically?"
 msgstr ""
+"Saugyklos pavadinimas turi prasidėti naudotojo vardu, pridėti automatiškai?"
 
 #: index.html:312
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
-msgstr ""
+msgstr "Dingo ryšys su serveriu, bandysime prisijungti po {{time}} ..."
 
 #: templates/settings.html:54
 msgid "The dark theme (by Michal)"
-msgstr ""
+msgstr "Tamsi tema (nuo Michal)"
 
 #: templates/settings.html:53
 msgid "The default blue on white theme (by Alex)"
-msgstr ""
+msgstr "Numatyta mėlyna ant balto tema (nuo Alex)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
-"The folder {{folder}} does not exist\n"
+"The folder {{folder}} does not exist.\n"
 "Create it now?"
 msgstr ""
+"Aplankas {{folder}} neegzistuoja.\n"
+"Sukurti jį dabar?"
 
 #: scripts/directives/backupEditUri.js:212
 msgid ""
@@ -2124,10 +2129,13 @@ msgid ""
 "\n"
 "Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
 msgstr ""
+"Serverio raktas pasikeitė, su administratoriumi patikrinkite ar jis geras, priešingu atveju jūsų duomenys gali būti perimti.\n"
+"\n"
+"Ar norite PAKEISTI jūsų DABARTINĮ serverio raktą \"{{prev}}\" PATEIKTU serverio raktu: {{key}}?"
 
 #: scripts/controllers/EditBackupController.js:140
 msgid "The path does not appear to exist, do you want to add it anyway?"
-msgstr ""
+msgstr "Panašu, kad toks kelias neegzistuoja, vis tiek jį pridėti?"
 
 #: scripts/controllers/EditBackupController.js:150
 msgid ""
@@ -2135,12 +2143,15 @@ msgid ""
 "\n"
 "Do you want to include the specified file?"
 msgstr ""
+"Kelias pasibaigia ne '{{dirsep}}' simboliu, tai reiškia, kad pridėjote failą, ne aplanką.\n"
+"\n"
+"Ar norite pridėti nurodytą failą?"
 
 #: scripts/controllers/EditBackupController.js:125
 msgid ""
 "The path must be an absolute path, i.e. it must start with a forward slash "
 "'/'"
-msgstr ""
+msgstr "Kelias turi būti absoliutus, tai yra turi prasidėti simboliu '/'"
 
 #: scripts/services/EditUriBuiltins.js:630
 msgid ""
@@ -2322,10 +2333,6 @@ msgstr ""
 msgid "Username"
 msgstr ""
 
-#: templates/restore.html:142
-msgid "VISA, Mastercard, ... via Paypal"
-msgstr ""
-
 #: templates/addoredit.html:151
 msgid "Validating ..."
 msgstr ""
@@ -2391,6 +2398,12 @@ msgstr ""
 
 #: templates/settings.html:109
 msgid "Warnings, errors and crashes"
+msgstr ""
+
+#: templates/restore.html:142
+msgid ""
+"We accept donations via different services, such as OpenCollective, PayPal, "
+"BountySource and various crypto currencies."
 msgstr ""
 
 #: templates/addoredit.html:50
