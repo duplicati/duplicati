@@ -2,7 +2,7 @@ ARG ARCH=
 FROM ${ARCH}mono:5-slim
 
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         libmono-sqlite4.0-cil \
         libmono-system-drawing4.0-cil \
         referenceassemblies-pcl && \
@@ -10,7 +10,7 @@ RUN apt-get update && \
 
 ENV TINI_VERSION v0.16.1
 RUN apt-get update && \
-    apt-get install -y curl && \
+    apt-get install -y --no-install-recommends curl && \
     curl -L -o /usr/sbin/tini https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-$(dpkg --print-architecture) && \
     chmod 0755 /usr/sbin/tini && \
     apt-get autoremove --purge -y curl && \
