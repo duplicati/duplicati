@@ -43,7 +43,7 @@ done
 for arch in ${ARCHITECTURES}; do
     tags="linux-${arch}-${VERSION} linux-${arch}-${CHANNEL}"
     if [ ${CHANNEL} = ${DEFAULT_CHANNEL} ]; then
-        tags="linux-${arch} ${tags}"
+        tags="linux-${arch}-latest ${tags}"
     fi
     if [ ${arch} = ${DEFAULT_ARCHITECTURE} ]; then
         tags="${VERSION} ${CHANNEL} ${tags}"
