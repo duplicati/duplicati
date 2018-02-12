@@ -7,7 +7,8 @@ RUN apt-get update && \
         libmono-sqlite4.0-cil \
         libmono-system-drawing4.0-cil \
         referenceassemblies-pcl && \
-    rm -rf /var/lib/apt/lists
+    rm -rf /var/lib/apt/lists && \
+    cert-sync /etc/ssl/certs/ca-certificates.crt
 
 ENV TINI_VERSION v0.16.1
 RUN curl -L -o /usr/sbin/tini https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-$(dpkg --print-architecture) && \
