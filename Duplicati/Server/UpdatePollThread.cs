@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server
@@ -80,7 +81,7 @@ namespace Duplicati.Server
             }
         }
 
-        public void ActivateUpdate()
+        public bool ActivateUpdate()
         {
             if (Duplicati.Library.AutoUpdater.UpdaterManager.SetRunUpdate())
             {
@@ -92,11 +93,69 @@ namespace Duplicati.Server
 
                     // On Windows, execute script file from the Last updates folder location
                     Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+
+                    // Wait a few seconds for script to finish running
+                    Thread.Sleep(5000);
                 }
 
                 IsUpdateRequested = true;
                 Program.ApplicationExitEvent.Set();
+                return true;
             }
+
+            return false;
+        }
+
+        private bool DownloadUpdate()
+        {
+            bool downloadAndUnpackFinished = false;
+            lock (m_lock)
+                m_download = false;
+
+            var v = Program.DataConnection.ApplicationSettings.UpdatedVersion;
+            if (v != null)
+            {
+                ThreadState = UpdatePollerStates.Downloading;
+                Program.StatusEventNotifyer.SignalNewEvent();
+
+                downloadAndUnpackFinished = UpdaterManager.DownloadAndUnpackUpdate(v, (pg) => { DownloadProgess = pg; });
+                if (downloadAndUnpackFinished)
+                    Program.StatusEventNotifyer.SignalNewEvent();
+            }
+
+            return downloadAndUnpackFinished;
+        }
+
+        // If tasks are running or scheduled, retry the operation for about 180 seconds until can be safely executed
+        private static bool TryExecuteOperation(Func<bool> operationMethod)
+        {
+            bool done = false;
+            int retry = 0;
+            int retries = 60;
+            bool operationResult = false;
+
+            // Try to execute Operation, wait until resources are available
+            while (!done)
+            {
+                // Cannot execute Operation while task is running or scheduled
+                if (Program.WorkThread.CurrentTask == null && Program.WorkThread.CurrentTasks.Count == 0)
+                {
+                    operationResult = operationMethod();
+                    done = true;
+                }
+                else
+                {
+                    if (retry++ < retries)
+                        Thread.Sleep(3000);
+                    else
+                    {
+                        // Give up
+                        done = true;
+                    }
+                }
+            }
+
+            return operationResult;
         }
 
         public void Terminate()
@@ -135,9 +194,10 @@ namespace Duplicati.Server
                 if (nextCheck - DateTime.UtcNow > maxcheck)
                     nextCheck = DateTime.UtcNow - TimeSpan.FromSeconds(1);
 
-                if (nextCheck < DateTime.UtcNow || m_forceCheck)
+                bool autoUpdateCheck = nextCheck < DateTime.UtcNow;
+                if (autoUpdateCheck || m_forceCheck)
                 {
-                    lock(m_lock)
+                    lock (m_lock)
                         m_forceCheck = false;
 
                     ThreadState = UpdatePollerStates.Checking;
@@ -200,19 +260,14 @@ namespace Duplicati.Server
                     }
                 }
 
-                if (m_download)
+                bool autoDownloadUpdate = autoUpdateCheck && Program.DataConnection.ApplicationSettings.AutoInstallUpdate && Program.DataConnection.ApplicationSettings.UpdatedVersion != null;
+                bool downloadAndUnpackUpdateFinished = false;
+                if (autoDownloadUpdate || m_download)
                 {
-                    lock(m_lock)
-                        m_download = false;
-
-                    var v = Program.DataConnection.ApplicationSettings.UpdatedVersion;
-                    if (v != null)
+                    // Do not download another update if an update has been installed
+                    if (!UpdaterManager.HasUpdateInstalled)
                     {
-                        ThreadState = UpdatePollerStates.Downloading;
-                        Program.StatusEventNotifyer.SignalNewEvent();
-
-                        if (Duplicati.Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(v, (pg) => { DownloadProgess = pg; }))
-                            Program.StatusEventNotifyer.SignalNewEvent();
+                        downloadAndUnpackUpdateFinished = TryExecuteOperation(DownloadUpdate);
                     }
                 }
 
@@ -222,6 +277,11 @@ namespace Duplicati.Server
                 {
                     ThreadState = UpdatePollerStates.Waiting;
                     Program.StatusEventNotifyer.SignalNewEvent();
+                }
+
+                if (autoDownloadUpdate && (downloadAndUnpackUpdateFinished || UpdaterManager.HasUpdateInstalled))
+                {
+                    TryExecuteOperation(ActivateUpdate);
                 }
 
                 var waitTime = nextCheck - DateTime.UtcNow;
@@ -234,7 +294,7 @@ namespace Duplicati.Server
                 // A re-check does not cause an update check
                 if (waitTime.TotalDays > 1)
                     waitTime = TimeSpan.FromDays(1);
-                
+
                 m_waitSignal.WaitOne(waitTime, true);
             }   
         }

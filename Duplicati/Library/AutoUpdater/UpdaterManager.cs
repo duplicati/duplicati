@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library.AutoUpdater
@@ -246,7 +247,7 @@ namespace Duplicati.Library.AutoUpdater
             if (Version.TryParse(str, out v))
                 return v;
             else
-                return new Version(0, 0);
+                return new Version(99, 0);
         }
 
         public static bool HasUpdateInstalled
@@ -504,7 +505,7 @@ namespace Duplicati.Library.AutoUpdater
                                 var versionstring = TryParseVersion(version.Version).ToString();
                                 var targetfolder = System.IO.Path.Combine(INSTALLDIR, versionstring);
                                 if (System.IO.Directory.Exists(targetfolder))
-                                    System.IO.Directory.Delete(targetfolder, true);
+                                    TryDeleteFolder(targetfolder, true);
                                 
                                 System.IO.Directory.CreateDirectory(targetfolder);
 
@@ -534,14 +535,15 @@ namespace Duplicati.Library.AutoUpdater
                                 m_hasUpdateInstalled = null;
 
                                 var obsolete = (from n in FindInstalledVersions()
-                                    where n.Value.Version != version.Version && n.Value.Version != SelfVersion.Version
+                                    where n.Value.Version != versionstring && n.Value.Version != SelfVersion.Version
                                     let x = TryParseVersion(n.Value.Version) 
                                     orderby x descending
-                                    select n).Skip(1).ToArray();
+                                    select n).Skip(3).ToArray();
 
                                 foreach(var f in obsolete)
-                                    try { System.IO.Directory.Delete(f.Key, true); }
-                                    catch { }
+                                        if (!path.Contains(SelfVersion.Version) && !path.Contains(versionstring))
+                                        try { TryDeleteFolder(f.Key, true); }
+                                        catch { }
 
                                 return true;
                             }
@@ -560,6 +562,32 @@ namespace Duplicati.Library.AutoUpdater
             }
 
             return false;
+        }
+        private static void TryDeleteFolder(string appDirectory, bool recursive)
+        {
+            bool done = false;
+            int retry = 0;
+            int retries = 60;
+            if (Directory.Exists(appDirectory))
+            {
+                while (!done)
+                {
+                    try
+                    {
+                        Directory.Delete(appDirectory, recursive);
+                        done = true;
+                    }
+                    catch (Exception)
+                    {
+                        if (retry++ < retries)
+                            Thread.Sleep(1000);
+                        else
+                        {
+                            done = true;
+                        }
+                    }
+                }
+            }
         }
 
         public static bool VerifyUnpackedFolder(string folder, UpdateInfo version = null)

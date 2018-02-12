@@ -44,6 +44,7 @@ namespace Duplicati.Server.Database
             public const string UPDATE_CHECK_LAST = "last-update-check";
             public const string UPDATE_CHECK_INTERVAL = "update-check-interval";
             public const string UPDATE_CHECK_NEW_VERSION = "update-check-latest";
+            public const string AUTO_INSTALL_UPDATE = "auto-install-update";
             public const string UNACKED_ERROR = "unacked-error";
             public const string UNACKED_WARNING = "unacked-warning";
             public const string SERVER_LISTEN_INTERFACE = "server-listen-interface";
@@ -399,6 +400,23 @@ namespace Duplicati.Server.Database
             }
         }
 
+        public bool AutoInstallUpdate
+        {
+            get
+            {
+                bool b;
+                if (bool.TryParse(m_values[CONST.AUTO_INSTALL_UPDATE], out b))
+                    return b;
+                else
+                    return false;
+            }
+            set
+            {
+                lock (m_connection.m_lock)
+                    m_values[CONST.AUTO_INSTALL_UPDATE] = value.ToString();
+                SaveSettings();
+            }
+        }
         public DateTime NextUpdateCheck
         {
             get
