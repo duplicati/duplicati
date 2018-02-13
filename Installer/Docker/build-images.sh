@@ -10,9 +10,9 @@ DEFAULT_ARCHITECTURE=amd64
 DEFAULT_CHANNEL=beta
 REPOSITORY=duplicati/duplicati
 
-ARCHIVE_NAME=`basename -s .zip $1`
-VERSION=`echo "${ARCHIVE_NAME}" | cut -d "-" -f 2-`
-CHANNEL=`echo "${ARCHIVE_NAME}" | cut -d "_" -f 2`
+ARCHIVE_NAME=$(basename -s .zip $1)
+VERSION=$(echo "${ARCHIVE_NAME}" | cut -d "-" -f 2-)
+CHANNEL=$(echo "${ARCHIVE_NAME}" | cut -d "_" -f 2)
 DIRNAME=duplicati
 
 if [ -d "${DIRNAME}" ]; then
