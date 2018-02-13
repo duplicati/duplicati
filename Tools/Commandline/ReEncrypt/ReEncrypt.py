@@ -1,52 +1,55 @@
 #!/usr/bin/env python3
-
-# by Ben Fisher, https://github.com/downpoured
-# a Python script to restore files from Duplicati
-# similar to Duplicati.RecoveryTool, but with no dependencies on Mono/.NET
-# uses streaming apis to restore a large number of files and use limited RAM.
-# supports backups using AES encryption (.aes) or No Encryption (.zip),
-# if data uses GPG/other encryption, decrypt files to .zip before running this tool.
+## Copyright (C) 2017, The Duplicati Team
+## http://www.duplicati.com, info@duplicati.com
+##
+## This library is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as
+## published by the Free Software Foundation; either version 2.1 of the
+## License, or (at your option) any later version.
+##
+## This library is distributed in the hope that it will be useful, but
+## WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public
+## License along with this library; if not, write to the Free Software
+## Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import os
 import sys
 import io
 import json
-import sqlite3
 import zipfile
-import codecs
-import getpass
-#import fnmatch
 import base64
 import hashlib
 import pyAesCrypt
 from collections import OrderedDict
 from tempfile import mkstemp, mkdtemp, TemporaryFile, TemporaryDirectory, NamedTemporaryFile
-from pprint import pprint
-from subprocess import Popen, PIPE, run
-#import subprocess
-#import pexpect
 import gnupg
 import shutil
 
-
-
-##
-def mainRestore(options):
+def mainReEncrypt(options):
     # locate dlist
     dlists = [name for name in os.listdir(options['orig']['path']) if name.endswith(".dlist.%s" %(options['orig']['extension']))]
 
     # loop over all dlists; they only need to be enencrypted, and encrypted. They have no relation to the dindex and dblock files.
     with NamedTemporaryFile() as temp_file:
         for dlist_enc in dlists:
-            decrypt(options['orig'],os.path.join(options['orig']['path'],dlist_enc),options['orig']['passwd'],temp_file.name)
-            encrypt(options['new'],temp_file.name,options['new']['passwd'], os.path.join(options['new']['path'],change_ext(dlist_enc,options['orig']['extension'],options['new']['extension'])))
+            dlist_enc_fullpath = os.path.join(options['orig']['path'],dlist_enc)
+            dlist_reenc_fullpath = os.path.join(options['new']['path'],change_ext(dlist_enc,options['orig']['extension'],options['new']['extension']))
+            decrypt(options['orig'],dlist_enc_fullpath,options['orig']['passwd'],temp_file.name)
+            encrypt(options['new'],temp_file.name,options['new']['passwd'], dlist_reenc_fullpath)
     
     # locate dlist
     dindex = [name for name in os.listdir(options['orig']['path']) if name.endswith(".dindex.%s" %(options['orig']['extension']))]
 
     with NamedTemporaryFile() as temp_dindex, NamedTemporaryFile() as temp_dindex_reenc, TemporaryDirectory() as temp_path_zip:
         for dindex_enc in dindex:
-            decrypt(options['orig'],os.path.join(options['orig']['path'],dindex_enc),options['orig']['passwd'],temp_dindex.name)
+            dindex_enc_fullpath = os.path.join(options['orig']['path'],dindex_enc)
+            dindex_reenc_fullpath = os.path.join(options['new']['path'],change_ext(dindex_enc,options['orig']['extension'],options['new']['extension']))
+            
+            decrypt(options['orig'],dindex_enc_fullpath,options['orig']['passwd'],temp_dindex.name)
             
             unzip(temp_dindex,temp_path_zip)
 
@@ -66,14 +69,15 @@ def mainRestore(options):
                     print('dblock: %s expected_hash: %s calc_hash: %s exact: %s' % (dblock,expected_hash.decode('utf8'),actual_hash.decode('utf8'),expected_hash==actual_hash))
 
                 with NamedTemporaryFile(delete=False) as temp_dblock:
-                    decrypt(options['orig'],os.path.join(options['orig']['path'],dblock),options['orig']['passwd'],temp_dblock.name)
-                    encrypt(options['new'],temp_dblock.name,options['new']['passwd'], os.path.join(options['new']['path'],change_ext(dblock,options['orig']['extension'],options['new']['extension'])))
-                new_hash = computeHash(os.path.join(options['new']['path'],change_ext(dblock,options['orig']['extension'],options['new']['extension'])))
+                    dblock_enc_fullpath = os.path.join(options['orig']['path'],dblock)
+                    dblock_reenc_fullpath = os.path.join(options['new']['path'],change_ext(dblock,options['orig']['extension'],options['new']['extension']))
+                    decrypt(options['orig'],dblock_enc_fullpath,options['orig']['passwd'],temp_dblock.name)
+                    encrypt(options['new'],temp_dblock.name,options['new']['passwd'], dblock_reenc_fullpath)
+                new_hash = computeHash(dblock_reenc_fullpath)
                 
                 data['volumehash'] = new_hash.decode('utf8')
                 data['volumesize'] = os.stat(os.path.join(options['new']['path'],change_ext(dblock,options['orig']['extension'],options['new']['extension']))).st_size
                 print('dblock: %s old_hash: %s new_hash: %s' % (dblock,expected_hash.decode('utf8'),data['volumehash']))
-                #print(data['volumehash'])
 
                 with open(os.path.join(vol_path,dblock),'w') as data_file:
                     json.dump(data, data_file)
@@ -81,42 +85,42 @@ def mainRestore(options):
                 os.rename(os.path.join(vol_path, dblock), os.path.join(vol_path, change_ext(dblock,options['orig']['extension'],options['new']['extension']))) 
      
             make_zipfile(temp_dindex_reenc.name,temp_path_zip)
-            encrypt(options['new'],temp_dindex_reenc.name, options['new']['passwd'],os.path.join(options['new']['path'],change_ext(dindex_enc,options['orig']['extension'],options['new']['extension'])))
+            encrypt(options['new'],temp_dindex_reenc.name, options['new']['passwd'],dindex_reenc_fullpath)
 
 def change_ext(filename, ext_old, ext_new):
     return filename.replace(ext_old, ext_new)
 
 def decrypt(options, encrypted, passw, decrypted):
+    print('decrypting: %s to %s' % (encrypted, decrypted))
     if options['encryption']=='aes':
         bufferSize = 64 * 1024
         pyAesCrypt.decryptFile(encrypted, decrypted, passw, bufferSize)
-    if options['encryption']:
+    if options['encryption']=='gpg':
         gpg = gnupg.GPG()
         with open(encrypted, 'rb') as f:
             status  = gpg.decrypt_file(f, output=decrypted,passphrase=passw)
-    if options['encryption']:
+    if options['encryption']=='none':
         shutil.copy(encrypted,decrypted)
     
 
 def encrypt(options,decrypted, passw, encrypted):
-    if options['encryption']:
+    print('encrypting: %s %s' % (decrypted, encrypted))
+    if options['encryption']=='aes':
         bufferSize = 64 * 1024
         pyAesCrypt.encryptFile(decrypted, encrypted, passw, bufferSize)
-    if options['encryption']:
+    if options['encryption']=='gpg':
         gpg = gnupg.GPG()
         with open(decrypted, 'rb') as f:
             status  = gpg.encrypt_file(f, recipients=options['recipients'], output=encrypted, armor=False)
-    if options['encryption']:
+    if options['encryption']=='none':
         shutil.copy(decrypted,encrypted)
-        #print('ok: %s' % status.ok)
-        #print('status: %s' % status.status)
-        #print('stderr: %s' % status.stderr)
 
 def unzip(archive, path):
     with zipfile.ZipFile(archive.name) as zf:
         zf.extractall(path)
 
 def make_zipfile(output_filename, source_dir):
+    print('zipping: %s to %s' % (source_dir, output_filename))  
     relroot=source_dir
     with zipfile.ZipFile(output_filename, "w", zipfile.ZIP_DEFLATED) as zip:
         for root, dirs, files in os.walk(source_dir):
@@ -143,6 +147,7 @@ def zipdir(path,ziph):
             ziph.write(os.path.join(root, file))
             
 def computeHash(path):
+    print('hashing: %s ' % (path))
     buffersize=64 * 1024
     hasher = hashlib.sha256()
     with open(path, 'rb') as f:
@@ -154,20 +159,10 @@ def computeHash(path):
     return base64.b64encode(hasher.digest())
 
 def main():
-    options = {}
-    options['orig'] = {}
-    options['new'] = {}
-    options['verify_hash'] = False
-    options['orig']['encryption'] = 'aes'
-    options['orig']['extension'] = 'zip.aes'
-    options['orig']['passwd'] = '123456'
-    options['orig']['path'] = '/mnt/c/Duplicati/test_aes'
-    options['new']['encryption'] = 'gpg'
-    options['new']['extension'] = 'zip.gpg'
-    options['new']['passwd'] = ''
-    options['new']['path'] = '/mnt/c/Duplicati/test_de4'
-    options['new']['recipients'] = ['user@host.com']
-    mainRestore(options)
+    with open('data.txt') as infile:
+        options = json.load(infile)
+
+    mainReEncrypt(options)
     print('Complete.')
 
 if __name__ == '__main__':

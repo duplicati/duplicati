@@ -1,0 +1,16 @@
+{
+	"orig": {
+		"extension": "zip.aes", 
+		"path": "/mnt/c/Duplicati/test_aes", 
+		"passwd": "123456", 
+		"encryption": "aes"
+		}, 
+	"new": {
+		"recipients": ["user@host.com"],
+		"extension": "zip.aes",
+		"path": "/mnt/c/Duplicati/test_de",
+		"passwd": "654321",
+		"encryption": "aes"
+		}, 
+	"verify_hash": true
+}
