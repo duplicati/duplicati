@@ -247,7 +247,10 @@ namespace Duplicati.Library.AutoUpdater
             if (Version.TryParse(str, out v))
                 return v;
             else
+            {
+                UpdateLogger.Log($"Tried to parse version {str} but failed. Returned version {new Version(99, 0)}");
                 return new Version(99, 0);
+            }
         }
 
         public static bool HasUpdateInstalled
@@ -503,9 +506,13 @@ namespace Duplicati.Library.AutoUpdater
                             if (VerifyUnpackedFolder(tempfolder, version))
                             {
                                 var versionstring = TryParseVersion(version.Version).ToString();
+                                UpdateLogger.Log($"Install directory {versionstring} verified.");
                                 var targetfolder = System.IO.Path.Combine(INSTALLDIR, versionstring);
                                 if (System.IO.Directory.Exists(targetfolder))
+                                {
+                                    UpdateLogger.Log($"Install directory {versionstring} exists. Try deleting it.");
                                     TryDeleteFolder(targetfolder, true);
+                                }
                                 
                                 System.IO.Directory.CreateDirectory(targetfolder);
 
@@ -527,6 +534,7 @@ namespace Duplicati.Library.AutoUpdater
                                     else
                                         System.IO.File.Copy(e, fullpath);
                                 }
+                                UpdateLogger.Log($"Directory {versionstring} contents copied to install directory.");
 
                                 // Verification will kick in when we list the installed updates
                                 //VerifyUnpackedFolder(targetfolder, version);
@@ -534,17 +542,24 @@ namespace Duplicati.Library.AutoUpdater
                                  
                                 m_hasUpdateInstalled = null;
 
+                                UpdateLogger.Log($"Current version {SelfVersion.Version}, installing {versionstring}");
                                 var obsolete = (from n in FindInstalledVersions()
                                     where n.Value.Version != versionstring && n.Value.Version != SelfVersion.Version
                                     let x = TryParseVersion(n.Value.Version) 
                                     orderby x descending
                                     select n).Skip(3).ToArray();
 
+                                if(obsolete.Any())
+                                    UpdateLogger.Log($"Deleting old versions: {string.Join(",",obsolete.Select(p=>p.Key).ToArray())}.");
+                                else
+                                    UpdateLogger.Log("No old versions to delete.");
                                 foreach(var f in obsolete)
-                                        if (!path.Contains(SelfVersion.Version) && !path.Contains(versionstring))
+                                    if (!f.Key.Contains(versionstring) && !f.Key.Contains(SelfVersion.Version))
+                                    {
+                                        UpdateLogger.Log($"Trying to delete directory {f.Key}");
                                         try { TryDeleteFolder(f.Key, true); }
                                         catch { }
-
+                                    }
                                 return true;
                             }
                             else
@@ -577,12 +592,13 @@ namespace Duplicati.Library.AutoUpdater
                         Directory.Delete(appDirectory, recursive);
                         done = true;
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
                         if (retry++ < retries)
                             Thread.Sleep(1000);
                         else
                         {
+                            UpdateLogger.Log($"DeleteDirectory -> Unable to delete {(recursive ? "(recursive)" : "")} the directory {appDirectory}. Exception: {ex.Message}");
                             done = true;
                         }
                     }

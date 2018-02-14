@@ -41,6 +41,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="UpdateLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UpdaterManager.cs" />
     <Compile Include="UpdateInfo.cs" />

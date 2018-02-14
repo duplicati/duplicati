@@ -85,9 +85,11 @@ namespace Duplicati.Server
         {
             if (Duplicati.Library.AutoUpdater.UpdaterManager.SetRunUpdate())
             {
+                UpdateLogger.Log("Start activating updates.");
                 // If we are on Windows
                 if (Library.Utility.Utility.IsClientWindows)
                 {
+                    UpdateLogger.Log("Execute updates script.");
                     var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
                     var runUpdateScriptBat = "run-update-script.bat";
 
@@ -95,15 +97,20 @@ namespace Duplicati.Server
                     Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
 
                     // Wait a few seconds for script to finish running
+                    UpdateLogger.Log("Executing updates script. Wait a few seconds for script to finish running");
                     Thread.Sleep(5000);
                 }
 
+                UpdateLogger.Log("Application Exit Event.");
                 IsUpdateRequested = true;
                 Program.ApplicationExitEvent.Set();
                 return true;
             }
-
+            else
+            {
+                UpdateLogger.Log("Stop activating updates. Update has not been installed");
             return false;
+            }
         }
 
         private bool DownloadUpdate()
@@ -140,6 +147,7 @@ namespace Duplicati.Server
                 // Cannot execute Operation while task is running or scheduled
                 if (Program.WorkThread.CurrentTask == null && Program.WorkThread.CurrentTasks.Count == 0)
                 {
+                    UpdateLogger.Log($"Executing Operation '{operationMethod.Method.Name}'.");
                     operationResult = operationMethod();
                     done = true;
                 }
@@ -150,6 +158,7 @@ namespace Duplicati.Server
                     else
                     {
                         // Give up
+                        UpdateLogger.Log($"Cannot execute Operation '{operationMethod.Method.Name}' while task is running or scheduled.");
                         done = true;
                     }
                 }
@@ -179,6 +188,7 @@ namespace Duplicati.Server
 
             while (!m_terminated)
             {
+                UpdateLogger.Log($"Running update pool (at every {Program.DataConnection.ApplicationSettings.UpdateCheckInterval})");
                 var nextCheck = Program.DataConnection.ApplicationSettings.NextUpdateCheck;
 
                 var maxcheck = TimeSpan.FromDays(7);
@@ -197,6 +207,7 @@ namespace Duplicati.Server
                 bool autoUpdateCheck = nextCheck < DateTime.UtcNow;
                 if (autoUpdateCheck || m_forceCheck)
                 {
+                    UpdateLogger.Log($"Checking updates ({(autoUpdateCheck ? "auto" : "force")}).");
                     lock (m_lock)
                         m_forceCheck = false;
 
@@ -257,6 +268,7 @@ namespace Duplicati.Server
                                         return all.Where(x => x.Action == "update:new").FirstOrDefault() ?? self;
                                     }
                                 );
+                        UpdateLogger.Log($"Updates {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname} found.");
                     }
                 }
 
@@ -268,6 +280,10 @@ namespace Duplicati.Server
                     if (!UpdaterManager.HasUpdateInstalled)
                     {
                         downloadAndUnpackUpdateFinished = TryExecuteOperation(DownloadUpdate);
+                    }
+                    else
+                    {
+                        UpdateLogger.Log("An update has been installed. Cannot download another update.");
                     }
                 }
 
@@ -295,6 +311,7 @@ namespace Duplicati.Server
                 if (waitTime.TotalDays > 1)
                     waitTime = TimeSpan.FromDays(1);
 
+                UpdateLogger.Log($"Update pool next running time: {waitTime}.");
                 m_waitSignal.WaitOne(waitTime, true);
             }   
         }
