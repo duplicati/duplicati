@@ -205,6 +205,7 @@ namespace Duplicati.Server
                     nextCheck = DateTime.UtcNow - TimeSpan.FromSeconds(1);
 
                 bool autoUpdateCheck = nextCheck < DateTime.UtcNow;
+                bool updatePrepareForDownload = false;
                 if (autoUpdateCheck || m_forceCheck)
                 {
                     UpdateLogger.Log($"Checking updates ({(autoUpdateCheck ? "auto" : "force")}).");
@@ -257,6 +258,7 @@ namespace Duplicati.Server
 
                     if (Program.DataConnection.ApplicationSettings.UpdatedVersion != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(Program.DataConnection.ApplicationSettings.UpdatedVersion.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
                     {
+                        updatePrepareForDownload = true;
                         Program.DataConnection.RegisterNotification(
                                     NotificationType.Information,
                                     "Found update",
@@ -272,8 +274,15 @@ namespace Duplicati.Server
                     }
                 }
 
-                bool autoDownloadUpdate = autoUpdateCheck && Program.DataConnection.ApplicationSettings.AutoInstallUpdate && Program.DataConnection.ApplicationSettings.UpdatedVersion != null;
+                bool autoDownloadUpdate = autoUpdateCheck && Program.DataConnection.ApplicationSettings.AutoInstallUpdate && updatePrepareForDownload;
                 bool downloadAndUnpackUpdateFinished = false;
+
+                if(autoDownloadUpdate)
+                    UpdateLogger.Log($"Auto install update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
+
+                if (m_download)
+                    UpdateLogger.Log($"Manual install update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
+
                 if (autoDownloadUpdate || m_download)
                 {
                     // Do not download another update if an update has been installed
@@ -297,6 +306,11 @@ namespace Duplicati.Server
 
                 if (autoDownloadUpdate && (downloadAndUnpackUpdateFinished || UpdaterManager.HasUpdateInstalled))
                 {
+                    if (downloadAndUnpackUpdateFinished)
+                        UpdateLogger.Log($"Auto activate update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
+                    else if (UpdaterManager.HasUpdateInstalled)
+                        UpdateLogger.Log($"Auto activate previous installed update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
+
                     TryExecuteOperation(ActivateUpdate);
                 }
 
