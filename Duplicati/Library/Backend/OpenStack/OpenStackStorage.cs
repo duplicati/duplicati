@@ -422,6 +422,8 @@ namespace Duplicati.Library.Backend.OpenStack
                 return Strings.OpenStack.Description;
             }
         }
+
+        public string DNSName => throw new NotImplementedException();
         #endregion
         #region IDisposable implementation
         public void Dispose()

@@ -318,6 +318,8 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
+        public string DNSName => throw new NotImplementedException();
+
         public void Get(string remotename, System.IO.Stream stream)
         {
             // Downloading from Jottacloud: Will only succeed if the file has a completed revision,

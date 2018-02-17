@@ -115,6 +115,8 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public string DNSName => throw new NotImplementedException();
+
         #endregion
 
         #region [Constructors]

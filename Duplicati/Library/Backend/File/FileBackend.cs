@@ -351,6 +351,8 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public string DNSName => throw new NotImplementedException();
+
         public void Rename(string oldname, string newname)
         {
             var source = GetRemoteName(oldname);

@@ -457,6 +457,8 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                 return Strings.AmzCD.Description;
             }
         }
+
+        public string DNSName => throw new NotImplementedException();
         #endregion
         #region IDisposable implementation
         public void Dispose()

@@ -440,6 +440,8 @@ namespace Duplicati.Library.Backend.Sia
             }
         }
 
+        public string DNSName => throw new NotImplementedException();
+
         #endregion
 
         #region IDisposable Members

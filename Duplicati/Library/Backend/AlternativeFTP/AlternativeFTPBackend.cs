@@ -450,6 +450,8 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
+        public string DNSName => throw new NotImplementedException();
+
         private static System.IO.Stream StringToStream(string str)
         {
             var stream = new System.IO.MemoryStream();

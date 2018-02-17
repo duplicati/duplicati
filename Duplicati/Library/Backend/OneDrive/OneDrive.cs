@@ -500,7 +500,9 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        #endregion 
+        public string DNSName => throw new NotImplementedException();
+
+        #endregion
 
         #region IStreamingBackend Members
 

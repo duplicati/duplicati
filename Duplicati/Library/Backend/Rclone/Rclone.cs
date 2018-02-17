@@ -284,6 +284,8 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public string DNSName => throw new NotImplementedException();
+
         public void Test()
         {
             this.TestList();

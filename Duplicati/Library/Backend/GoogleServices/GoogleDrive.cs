@@ -346,6 +346,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 }
             }
         }
+
+        public string DNSName => throw new NotImplementedException();
         #endregion
 
         #region IRenameEnabledBackend implementation

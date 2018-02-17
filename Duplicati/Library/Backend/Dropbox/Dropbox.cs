@@ -136,6 +136,8 @@ namespace Duplicati.Library.Backend
 
         public string Description { get { return Strings.Dropbox.Description; } }
 
+        public string DNSName => throw new NotImplementedException();
+
         public void Test()
         {
             this.TestList();

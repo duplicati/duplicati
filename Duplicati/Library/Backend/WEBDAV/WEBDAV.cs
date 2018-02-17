@@ -311,6 +311,8 @@ namespace Duplicati.Library.Backend
             get { return Strings.WEBDAV.Description; }
         }
 
+        public string DNSName => throw new NotImplementedException();
+
         public void Test()
         {
             this.List();

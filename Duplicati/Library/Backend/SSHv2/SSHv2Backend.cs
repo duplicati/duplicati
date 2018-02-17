@@ -368,5 +368,7 @@ namespace Duplicati.Library.Backend
                 return m_con;
             }
         }
+
+        public string DNSName => throw new NotImplementedException();
     }
 }

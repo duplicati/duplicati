@@ -260,6 +260,8 @@ namespace Duplicati.Library.Backend.Mega
             }
         }
 
+        public string DNSName => throw new NotImplementedException();
+
         #endregion
 
         #region IDisposable implementation

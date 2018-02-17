@@ -474,6 +474,8 @@ namespace Duplicati.Library.Backend
             get { return m_wrapper; }
         }
 
+        public string DNSName => throw new NotImplementedException();
+
         private string GetFullKey(string name)
         {
             //AWS SDK encodes the filenames correctly
