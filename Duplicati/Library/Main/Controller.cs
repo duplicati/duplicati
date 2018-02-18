@@ -919,9 +919,10 @@ namespace Duplicati.Library.Main
             {
                 foreach (var configEntry in m_options.RetentionPolicy)
                 {
-                    if (configEntry.Value >= configEntry.Key)
+                    if (!configEntry.IsKeepAllVersions() && !configEntry.IsUnlimtedTimeframe() &&
+                        configEntry.Interval >= configEntry.Timeframe)
                     {
-                        throw new Interface.UserInformationException("A time frame cannot be smaller than its interval");
+                        throw new Interface.UserInformationException("An interval cannot be bigger than the timeframe it is in");
                     }
                 }
             }

@@ -816,10 +816,10 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the time frames and intervals for the retention policy
         /// </summary>        
-        public Dictionary<TimeSpan, TimeSpan> RetentionPolicy
+        public List<RetentionPolicyValue> RetentionPolicy
         {
             get {
-                var retentionPolicyConfig = new Dictionary<TimeSpan, TimeSpan>();
+                var retentionPolicyConfig = new List<RetentionPolicyValue>();
 
                 string v;
                 m_options.TryGetValue("retention-policy", out v);
@@ -831,11 +831,7 @@ namespace Duplicati.Library.Main
 
                 foreach (var periodIntervalString in periodIntervalStrings)
                 {
-                    var periodInterval = periodIntervalString.Split(':');
-                    var period = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[0]);
-                    var interval = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[1]);
-
-                    retentionPolicyConfig.Add(period, interval);
+                    retentionPolicyConfig.Add(RetentionPolicyValue.CreateFromString(periodIntervalString));
                 }
 
                 return retentionPolicyConfig;
@@ -1878,5 +1874,89 @@ namespace Duplicati.Library.Main
             return Library.Utility.Utility.ParseBoolOption(m_options, name);
         }
 
+        /// <summary>
+        /// Class for handling a single RententionPolicy timeframe-interval-pair
+        /// </summary>
+        public class RetentionPolicyValue
+        {
+            public readonly TimeSpan Timeframe;
+            public readonly TimeSpan Interval;
+
+            public RetentionPolicyValue(TimeSpan timeframe, TimeSpan interval)
+            {
+                if (timeframe < TimeSpan.Zero)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(timeframe), string.Format("The timeframe cannot be negative: '{0}'", timeframe));
+                }
+                if (interval < TimeSpan.Zero)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(interval), string.Format("The interval cannot be negative: '{0}'", interval));
+                }
+
+                this.Timeframe = timeframe;
+                this.Interval = interval;
+            }
+
+            /// <summary>
+            /// Returns whether this is an unlimited timeframe or not
+            /// </summary>
+            /// <returns></returns>
+            public Boolean IsUnlimtedTimeframe()
+            {
+                // Timeframes equal or bigger than the maximum TimeSpan effectivly represent an unlimited timeframe
+                return Timeframe >= TimeSpan.MaxValue;
+            }
+
+            /// <summary>
+            /// Returns whether all versions in this timeframe should be kept or not
+            /// </summary>
+            /// <returns></returns>
+            public Boolean IsKeepAllVersions()
+            {
+                /// Intervals between two versions that are equal or smaller than zero effectivly result in
+                /// all versions in that timeframe being kept.
+                return Interval <= TimeSpan.Zero;
+            }
+
+            public override string ToString()
+            {
+                return (IsUnlimtedTimeframe() ? "Unlimited" : Timeframe.ToString()) + " / " + (IsKeepAllVersions() ? "Keep all" : Interval.ToString());
+            }
+
+            /// <summary>
+            /// Parses a string representation of a timeframe-interval-pair and returns a RentionPolicyValue object
+            /// </summary>
+            /// <returns></returns>
+            public static RetentionPolicyValue CreateFromString(string rententionPolicyValueString)
+            {
+                var periodInterval = rententionPolicyValueString.Split(':');
+
+                TimeSpan timeframe;
+                // Timeframe "U" (= Unlimited) means: For unlimted time keep one version every X interval.
+                // So the timeframe has to span the maximum time possible.
+                if (String.Equals(periodInterval[0], "U", StringComparison.OrdinalIgnoreCase))
+                {
+                    timeframe = TimeSpan.MaxValue;
+                }
+                else
+                {
+                    timeframe = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[0]);
+                }
+
+                TimeSpan interval;
+                // Interval "U" (= Unlimited) means: For period X keep all versions.
+                // So the interval between two versions has to be zero.
+                if (String.Equals(periodInterval[1], "U", StringComparison.OrdinalIgnoreCase))
+                {
+                    interval = TimeSpan.Zero;
+                }
+                else
+                {
+                    interval = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[1]);
+                }
+
+                return new RetentionPolicyValue(timeframe, interval);
+            }
+        }
     }
 }
