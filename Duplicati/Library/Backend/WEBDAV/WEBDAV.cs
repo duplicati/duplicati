@@ -33,6 +33,7 @@ namespace Duplicati.Library.Backend
         private string m_reverseProtocolUrl;
         private string m_rawurl;
         private string m_rawurlPort;
+        private string m_dnsName;
         private bool m_useIntegratedAuthentication = false;
         private bool m_forceDigestAuthentication = false;
         private bool m_useSSL = false;
@@ -61,6 +62,7 @@ namespace Duplicati.Library.Backend
         {
             var u = new Utility.Uri(url);
             u.RequireHost();
+            m_dnsName = u.Host;
 
             if (!string.IsNullOrEmpty(u.Username))
             {
@@ -311,7 +313,12 @@ namespace Duplicati.Library.Backend
             get { return Strings.WEBDAV.Description; }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName 
+        {
+            get { return m_dnsName; }
+        }
+
+        //=> throw new NotImplementedException();
 
         public void Test()
         {

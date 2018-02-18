@@ -519,6 +519,19 @@ namespace Duplicati.Library.Main
                                 throw;
                             }
 
+                            // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
+                            if (ex is System.Net.WebException)
+                            {
+                                try
+                                {
+                                    System.Net.Dns.GetHostEntry(m_backend.DNSName);
+                                }
+                                catch
+                                {
+                                    Logging.Log.WriteMessage("Failed to resolve IP for " + m_backend.DNSName, Logging.LogMessageType.Warning);
+                                }
+                            }
+
                             m_statwriter.SendEvent(item.BackendActionType, retries < m_numberofretries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
                             bool recovered = false;
