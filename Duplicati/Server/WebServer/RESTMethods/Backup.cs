@@ -574,7 +574,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var backup = Program.DataConnection.GetBackup(key);
             if (backup == null)
             {
-                info.ReportClientError("Invalid or missing backup id");
+                info.ReportClientError("Invalid or missing backup id", System.Net.HttpStatusCode.NotFound);
                 return;
             }
 
