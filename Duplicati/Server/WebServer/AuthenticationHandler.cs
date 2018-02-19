@@ -286,7 +286,7 @@ namespace Duplicati.Server.WebServer
                 else
                 {
                     response.Status = System.Net.HttpStatusCode.BadRequest;
-                    response.Reason = "Missing XSRF Token";
+                    response.Reason = "Missing XSRF Token. Please reload the page";
 
                     return true;
                 }
