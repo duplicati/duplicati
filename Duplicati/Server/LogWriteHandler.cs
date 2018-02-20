@@ -235,7 +235,7 @@ namespace Duplicati.Server
             }
         }
 
-        public LogEntry[] AfterID(long id, LogMessageType level)
+        public LogEntry[] AfterID(long id, LogMessageType level, int pagesize)
         {
             RenewTimeout(level);
             UpdateLogLevel();
@@ -245,7 +245,15 @@ namespace Duplicati.Server
                 if (m_buffer == null)
                     return new LogEntry[0];
                 
-                return m_buffer.FlatArray((x) => x.ID > id && x.Type >= level );
+                var buffer = m_buffer.FlatArray((x) => x.ID > id && x.Type >= level );
+                // Return the <page_size> newest entries
+                if (buffer.Length > pagesize) {
+                    var index = buffer.Length - pagesize;
+                    return buffer.Skip(index).Take(pagesize).ToArray();
+                }
+                else {
+                    return buffer;
+                }
             }
         }
 
