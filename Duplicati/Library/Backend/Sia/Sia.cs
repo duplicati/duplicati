@@ -440,7 +440,10 @@ namespace Duplicati.Library.Backend.Sia
             }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         #endregion
 

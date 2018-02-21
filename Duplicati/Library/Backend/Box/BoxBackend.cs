@@ -337,7 +337,10 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         #endregion
 

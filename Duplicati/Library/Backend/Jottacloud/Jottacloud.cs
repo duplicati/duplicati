@@ -318,7 +318,10 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         public void Get(string remotename, System.IO.Stream stream)
         {

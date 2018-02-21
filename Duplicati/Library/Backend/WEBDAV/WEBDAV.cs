@@ -318,8 +318,6 @@ namespace Duplicati.Library.Backend
             get { return m_dnsName; }
         }
 
-        //=> throw new NotImplementedException();
-
         public void Test()
         {
             this.List();

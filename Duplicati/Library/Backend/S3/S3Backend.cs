@@ -474,7 +474,10 @@ namespace Duplicati.Library.Backend
             get { return m_wrapper; }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         private string GetFullKey(string name)
         {

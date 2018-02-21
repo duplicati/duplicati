@@ -423,7 +423,11 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
+
         #endregion
         #region IDisposable implementation
         public void Dispose()

@@ -526,11 +526,11 @@ namespace Duplicati.Library.Main
                                 {
                                     try
                                     {
-                                        System.Net.Dns.GetHostEntry(m_backend.DNSName);
+                                        if (!string.IsNullOrWhiteSpace(m_backend.DNSName))
+                                            System.Net.Dns.GetHostEntry(m_backend.DNSName);
                                     }
                                     catch
                                     {
-                                        Logging.Log.WriteMessage("Failed to resolve IP for " + m_backend.DNSName, Logging.LogMessageType.Warning);
                                     }
                                 }
                             }

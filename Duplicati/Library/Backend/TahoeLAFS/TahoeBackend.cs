@@ -254,7 +254,10 @@ namespace Duplicati.Library.Backend
             get { return Strings.TahoeBackend.Description; }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         #endregion
 

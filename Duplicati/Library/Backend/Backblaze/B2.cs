@@ -422,7 +422,10 @@ namespace Duplicati.Library.Backend.Backblaze
             get { return Strings.B2.Description; }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         public void Dispose()
         {

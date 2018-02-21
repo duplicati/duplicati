@@ -115,7 +115,10 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         #endregion
 

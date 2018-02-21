@@ -171,7 +171,10 @@ namespace Duplicati.Library.Backend.HubiC
             }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         #endregion
 

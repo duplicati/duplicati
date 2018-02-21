@@ -450,7 +450,10 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         private static System.IO.Stream StringToStream(string str)
         {

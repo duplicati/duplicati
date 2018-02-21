@@ -159,7 +159,10 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public string DNSName => throw new NotImplementedException();
+        public string DNSName
+        {
+            get { return null; }
+        }
 
         public void Test()
         {
