@@ -114,6 +114,10 @@ namespace Duplicati.Library.Utility
             // If no filter sets are specified, we use the default for the platform we're on
             if (!anyOptions)
             {
+                // Until we agree on how default filters should be applied,
+                // we do not apply default filters
+
+                /*
                 if (Utility.IsClientWindows)
                 {
                     filterSets |= DefaultFilterSet.Windows;
@@ -127,7 +131,8 @@ namespace Duplicati.Library.Utility
                 if (Utility.IsClientLinux)
                 {
                     filterSets |= DefaultFilterSet.Linux;
-                }
+                }*/
+
             }
 
             if (filterSets == DefaultFilterSet.None)
