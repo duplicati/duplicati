@@ -315,21 +315,26 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             return;
         }
 
-        if ($scope.KeepType == 'time' || $scope.KeepType == '')
-        {
-            delete opts['keep-versions'];
-            delete opts['retention-policy'];
+        // Retention options are mutual exclusive -> allow only one to be selected at a time
+        function resetAllRetentionOptionsExcept(optionToKeep = '') {
+            ['keep-versions', 'keep-time', 'retention-policy'].forEach(function(entry) {
+                if (entry != optionToKeep) {
+                    delete opts[entry];
+                }
+            });
         }
-        if ($scope.KeepType == 'versions' || $scope.KeepType == '')
-        {
-            delete opts['keep-time'];
-            delete opts['retention-policy'];
-        }
-        if ($scope.KeepType == 'smart' || $scope.KeepType == '')
-        {
-            delete opts['keep-versions'];
-            delete opts['keep-time'];
-            delete opts['retention-policy'];
+        
+        if ($scope.KeepType == 'time') {
+            resetAllRetentionOptionsExcept('keep-time');
+        
+        } else if ($scope.KeepType == 'versions') {
+            resetAllRetentionOptionsExcept('keep-versions');
+        
+        } else if ($scope.KeepType == 'smart' || $scope.KeepType == 'custom') {
+            resetAllRetentionOptionsExcept('retention-policy');
+        
+        } else {
+            resetAllRetentionOptionsExcept(); // keep none
         }
 
         if ($scope.KeepType == 'time' && (opts['keep-time'] || '').trim().length == 0)
