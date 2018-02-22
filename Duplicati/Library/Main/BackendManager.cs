@@ -519,6 +519,22 @@ namespace Duplicati.Library.Main
                                 throw;
                             }
 
+                            if (ex is System.Net.WebException)
+                            {
+                                // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
+                                if (((System.Net.WebException)ex).Status == System.Net.WebExceptionStatus.NameResolutionFailure)
+                                {
+                                    try
+                                    {
+                                        if (!string.IsNullOrWhiteSpace(m_backend.DNSName))
+                                            System.Net.Dns.GetHostEntry(m_backend.DNSName);
+                                    }
+                                    catch
+                                    {
+                                    }
+                                }
+                            }
+
                             m_statwriter.SendEvent(item.BackendActionType, retries < m_numberofretries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
                             bool recovered = false;

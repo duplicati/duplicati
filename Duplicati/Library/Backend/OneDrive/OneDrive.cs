@@ -500,7 +500,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        #endregion 
+        public string DNSName
+        {
+            get { return null; }
+        }
+
+        #endregion
 
         #region IStreamingBackend Members
 
