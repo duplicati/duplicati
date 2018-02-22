@@ -1034,6 +1034,10 @@ namespace Duplicati.Library.Main
                 }
             }
 
+            // For now, warn not to use 7z
+            if (string.Equals(m_options.CompressionModule, "7z", StringComparison.OrdinalIgnoreCase))
+                log.AddWarning("The 7z compression module has known issues and should only be used for experimental purposes", null);
+
             //TODO: Based on the action, see if all options are relevant
         }
 
