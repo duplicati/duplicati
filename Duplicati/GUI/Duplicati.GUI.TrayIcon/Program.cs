@@ -8,6 +8,12 @@ namespace Duplicati.GUI.TrayIcon
 {
     public static class Program
     {
+        public enum PasswordSource
+        {
+            Database,
+            HostedServer
+        }
+
         public static HttpServerConnection Connection;
     
         private const string TOOLKIT_OPTION = "toolkit";
@@ -150,28 +156,28 @@ namespace Duplicati.GUI.TrayIcon
                 openui = Duplicati.Server.Program.IsFirstRun || Duplicati.Server.Program.ServerPortChanged;
                 password = Duplicati.Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
                 saltedpassword = true;
-                serverURL = (new UriBuilder(serverURL) { Port = Duplicati.Server.Program.ServerPort }).Uri;
+
+                var cert = Duplicati.Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
+                var scheme = "http";
+
+                if (cert != null && cert.HasPrivateKey)
+                    scheme = "https";
+
+                serverURL = (new UriBuilder(serverURL)
+                {
+                    Port = Duplicati.Server.Program.ServerPort,
+                    Scheme = scheme
+                }).Uri;
             }
             
             if (Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) && Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
                 databaseConnection = Server.Program.GetDatabaseConnection(options);
 
-            string pwd;
-
-            if (options.TryGetValue("webserver-password", out pwd))
-            {
-                password = pwd;
-                saltedpassword = false;
-            }
-
             if (databaseConnection != null)
             {
                 password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                 saltedpassword = false;
-            }
 
-            if (databaseConnection != null)
-            {
                 var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
                 var scheme = "http";
 
@@ -183,6 +189,14 @@ namespace Duplicati.GUI.TrayIcon
                         Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
                         Scheme = scheme
                     }).Uri;
+            }
+
+            string pwd;
+
+            if (options.TryGetValue("webserver-password", out pwd))
+            {
+                password = pwd;
+                saltedpassword = false;
             }
 
             string url;
@@ -200,7 +214,7 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null, options))
+                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, options))
                         {
                             using (var tk = RunTrayIcon(toolkit))
                             {
