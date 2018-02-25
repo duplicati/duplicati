@@ -457,6 +457,12 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                 return Strings.AmzCD.Description;
             }
         }
+
+        public string DNSName
+        {
+            get { return null; }
+        }
+
         #endregion
         #region IDisposable implementation
         public void Dispose()

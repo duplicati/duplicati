@@ -355,6 +355,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public string DNSName
+        {
+            get { return null; }
+        }
+
         public void Test()
         {
             this.TestList();

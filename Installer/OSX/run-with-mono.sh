@@ -26,7 +26,7 @@ REQUIRED_MINOR=0
 
 VERSION_TITLE="Cannot launch $APP_NAME"
 VERSION_MSG="$APP_NAME requires the Mono Framework version $REQUIRED_MAJOR.$REQUIRED_MINOR or later."
-DOWNLOAD_URL="http://www.go-mono.com/mono-downloads/download.html"
+DOWNLOAD_URL="http://www.mono-project.com/download/stable/#download-mac"
 
 # Try to find system default Mono if an override was not supplied
 if [ "z${MONO_BIN}" == "z" ]; then

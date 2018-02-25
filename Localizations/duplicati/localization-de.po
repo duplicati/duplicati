@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-11-17 13:00+0100\n"
+"POT-Creation-Date: 2018-01-18 11:11+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Tobias Schwendemann <admin@lyrex.net>, 2017\n"
+"Last-Translator: Alexander Niederklapfer <alex@krmpfkrmpf-studios.com>, 2018\n"
 "Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1719,10 +1719,13 @@ msgid ""
 "lower number means less data, but can increase the number of Class C "
 "transaction on B2. Suggested values are between 100 and 1000"
 msgstr ""
+"Diese Option legt die Seitengröße für Inhaltsauflistungen von B2-Buckets "
+"fest. Ein niedriegerer Wert führt zu weniger Daten, aber kann die Anzahl an "
+"Class-C Transaktionen zu B2 vergrößern. Empfohlener Bereich: 100-1000."
 
 #: Library/Backend/Backblaze/Strings.cs:19
 msgid "The size of file-listing pages"
-msgstr ""
+msgstr "Seitengröße für Inhaltsauflistungen"
 
 #: Library/Backend/Backblaze/Strings.cs:20
 #, csharp-format
@@ -2933,21 +2936,27 @@ msgid ""
 "backup files that are locked by other programs. If this is set to \"off\", "
 "Duplicati will not attempt to create a disk snapshot. Setting this to "
 "\"auto\" makes Duplicati attempt to create a snapshot, and fail silently if "
-"that was not allowed or supported. A setting of \"on\" will also make "
-"Duplicati attempt to create a snapshot, but will produce a warning message "
-"in the log if it fails. Setting it to \"required\" will make Duplicati abort"
-" the backup if the snapshot creation fails. On windows this uses the Volume "
-"Shadow Copy Services (VSS) and requires administrative privileges. On Linux "
-"this uses Logical Volume Management (LVM) and requires root privileges."
+"that was not allowed or supported (note that the OS may still log system "
+"warnings). A setting of \"on\" will also make Duplicati attempt to create a "
+"snapshot, but will produce a warning message in the log if it fails. Setting"
+" it to \"required\" will make Duplicati abort the backup if the snapshot "
+"creation fails. On windows this uses the Volume Shadow Copy Services (VSS) "
+"and requires administrative privileges. On Linux this uses Logical Volume "
+"Management (LVM) and requires root privileges."
 msgstr ""
-"Diese Einstellung steuert die Verwendung von Schnappschüssen, wodurch Duplicati auch gesperrte Dateien sichern kann. \n"
-"\"Aus\": Die Funktion ist deaktiviert.\n"
-"\"Auto\": Es wird versucht einen Snapshot zu erstellen. Es werden aber keine Warnmeldungen protokoliert.\n"
-"\"Ein\": Es wird versucht einen Snapshot zu erstellen. Warnmeldungen werden protokoliert.\n"
-"\"Erforderlich\": Es wird versucht einen Snapshot zu erstellen. Das Backup wird abgebrochen wenn dies nicht möglich ist.\n"
-"\n"
-"Unter Windows werden der \"Volumenschattenkopie\" Dienst sowie administrative Rechte benötigt.\n"
-"Unter Linux werden \"LVM\" sowie Root Berechtigungen benötigt."
+"Diese Einstellungen steuern die Verwendung von Schnappschüssen, wodurch "
+"Duplicati auch gesperrte Dateien sichern kann. \"Aus\" bedeutet dass "
+"Duplicati nicht versuchen wird einen Schnappschuss des Laufwerks zu "
+"erstellen. Mit \"Auto\" versucht Duplicati einen Schnappschuss zu erzeugen, "
+"erzeugt aber keine Fehlermeldung wenn das nicht ordnungsgemäß funktioniert "
+"hat, weil Berechtigungen fehlen oder diese Funktion nicht unterstützt wird "
+"(Achtung: möglicherweise protokolliert das Betriebsystem aber einen Fehler)."
+" Bei \"Ein\" wird eine Warnung im Protokoll erzeugt, wenn der Versuch einen "
+"Schnappschuss zu erzeugen fehlschlägt. \"Erforderlich\" bricht den "
+"Sicherungsvorgang nach einem Fehler ab. Unter Windows werden dazu der "
+"\"Volumenschattenkopie\"-Dienst (VSS) sowie Administratorprivilegien "
+"benötigt. Unter Linux benützt Duplicate den Logical Volume Manager (LVM) und"
+" erfordert root-Berechtigungen."
 
 #: Library/Main/Strings.cs:91
 msgid "Controls the use of disk snapshots"
@@ -3918,35 +3927,35 @@ msgstr ""
 msgid "Failed to create a snapshot: {0}"
 msgstr "Fehler beim Erstellen des Snapshots: {0}"
 
-#: Library/Main/BackendManager.cs:595
+#: Library/Main/BackendManager.cs:546
 #, csharp-format
 msgid "Failed to dispose backend instance: {0}"
 msgstr "Fehler beim Back-End-Instanz zu entsorgen: {0}"
 
-#: Library/Main/BackendManager.cs:618
+#: Library/Main/BackendManager.cs:569
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr "Löschung der Datei fehlgeschlagen {0}, prüfe ob Datei existiert"
 
-#: Library/Main/BackendManager.cs:624
+#: Library/Main/BackendManager.cs:575
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 "Fehler überwunden, beim Versuch die nicht existierende Datei {0} zu löschen"
 
-#: Library/Main/BackendManager.cs:629
+#: Library/Main/BackendManager.cs:580
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr "Überwinden eines Fehlers beim Löschen der Datei {0} fehlgeschlagen"
 
-#: Library/Main/BackendManager.cs:1134
+#: Library/Main/BackendManager.cs:1085
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 "Löschen fehlgeschlagen für {0}, die Datei wurde nicht gefunden, zeige "
 "Inhalte."
 
-#: Library/Main/BackendManager.cs:1147
+#: Library/Main/BackendManager.cs:1098
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr "Liste zeigt an, dass die Datei {0} korrekt gelöscht wurde."

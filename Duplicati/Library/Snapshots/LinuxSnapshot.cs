@@ -455,7 +455,7 @@ namespace Duplicati.Library.Snapshots
         public string GetSymlinkTarget(string file)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
-            return UnixSupport.File.GetSymlinkTarget(NoSnapshot.NormalizePath(local));
+            return _sysIO.GetSymlinkTarget(local);
         }
 
         /// <summary>

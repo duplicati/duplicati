@@ -34,6 +34,16 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
+        public void Run10kNoProgress()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => { 
+                opts["disable-file-scanner"] = "true"; 
+            });
+        }
+
+        [Test]
+        [Category("Border")]
         public void Run10k()
         {
             PrepareSourceData();

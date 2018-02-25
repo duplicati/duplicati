@@ -244,10 +244,6 @@ msgstr "Back-up:"
 msgid "Beta"
 msgstr "Beta"
 
-#: templates/restore.html:143
-msgid "Bitcoin: {{bitcoinaddr}}"
-msgstr "Bitcoin: {{bitcoinaddr}}"
-
 #: scripts/services/AppUtils.js:67
 msgid "Broken access"
 msgstr "Verbroken toegang"
@@ -489,7 +485,7 @@ msgstr "Bug rapport maken ..."
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
-msgstr "Folder aanmaken?"
+msgstr "Map aanmaken?"
 
 #: scripts/services/EditUriBuiltins.js:121
 msgid "Created new limited user"
@@ -654,13 +650,13 @@ msgstr "Wilt u de lokale database voor: {{name}} echt verwijderen?"
 msgid "Donate"
 msgstr "Doneren"
 
-#: index.html:144 index.html:272
-msgid "Donate with Bitcoins"
-msgstr "Doneer met Bitcoins"
-
 #: index.html:147 index.html:275
 msgid "Donate with PayPal"
 msgstr "Doneer met PayPal"
+
+#: index.html:144 index.html:272
+msgid "Donate with crypto currency"
+msgstr "Doneer met crypto-valuta"
 
 #: templates/settings.html:58 templates/settings.html:60
 msgid "Donation messages"
@@ -1525,7 +1521,7 @@ msgstr "Geen / uitgeschakeld"
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:147
+#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:146
 #: templates/settings.html:147
 msgid "OK"
 msgstr "OK"
@@ -2121,9 +2117,11 @@ msgstr "Het standaard blauw op wit thema (door Alex)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
-"The folder {{folder}} does not exist\n"
+"The folder {{folder}} does not exist.\n"
 "Create it now?"
-msgstr "De map {{folder}} bestaat niet. Nu aanmaken?"
+msgstr ""
+"De map {{folder}} bestaat niet.\n"
+"Nu aanmaken?"
 
 #: scripts/directives/backupEditUri.js:212
 msgid ""
@@ -2218,11 +2216,11 @@ msgstr ""
 
 #: scripts/controllers/RestoreController.js:36
 msgid "This month"
-msgstr "Deze maand"
+msgstr "Afgelopen maand"
 
 #: scripts/controllers/RestoreController.js:35
 msgid "This week"
-msgstr "Deze wek"
+msgstr "Afgelopen week"
 
 #: scripts/controllers/AppController.js:57
 msgid "Throttle settings"
@@ -2362,10 +2360,6 @@ msgstr "Gebruikersinterface instellingen"
 msgid "Username"
 msgstr "Gebruikersnaam"
 
-#: templates/restore.html:142
-msgid "VISA, Mastercard, ... via Paypal"
-msgstr "VISA, Mastercard, ... via PayPal"
-
 #: templates/addoredit.html:151
 msgid "Validating ..."
 msgstr "Valideren ..."
@@ -2436,6 +2430,14 @@ msgstr "Wachten op upload ..."
 #: templates/settings.html:109
 msgid "Warnings, errors and crashes"
 msgstr "Waarschuwingen, fouten en crashes"
+
+#: templates/restore.html:142
+msgid ""
+"We accept donations via different services, such as OpenCollective, PayPal, "
+"BountySource and various crypto currencies."
+msgstr ""
+"We accepteren donaties via verschillende services, zoals OpenCollective, "
+"PayPal, BountySource en diverse crypto-valuta."
 
 #: templates/addoredit.html:50
 msgid "We recommend that you encrypt all backups stored outside your system"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-11-17 13:00+0100\n"
+"POT-Creation-Date: 2018-01-18 11:11+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Massimo Piceni <massimo.piceni@inwind.it>, 2017\n"
 "Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
@@ -80,7 +80,7 @@ msgstr ""
 
 #: Server/Strings.cs:21
 msgid "Disables database encryption"
-msgstr "Disattiva criptazione database"
+msgstr "Disattiva crittografia database"
 
 #: Server/Strings.cs:22
 #, csharp-format
@@ -115,7 +115,7 @@ msgstr ""
 
 #: Server/Strings.cs:26
 msgid "The password for decryption of certificate PKCS #12 file."
-msgstr "Password per la decriptazione del file certificato PKCS #12."
+msgstr "Password per decriptare il file del certificato PKCS #12."
 
 #: Server/Strings.cs:27
 msgid ""
@@ -179,7 +179,7 @@ msgstr ""
 
 #: Server/Strings.cs:35
 msgid "Sets the database encryption key"
-msgstr "Imposta la chiave di criptografia del database"
+msgstr "Imposta la chiave di crittografia del database"
 
 #: Server/Strings.cs:36
 #, csharp-format
@@ -188,7 +188,7 @@ msgid ""
 "database. This option can also be set with the environment variable {0}. Use"
 " the option --{1} to disable the database scrambling."
 msgstr ""
-"Questa opzione imposta la chiave di criptografia usata per codificare le "
+"Questa opzione imposta la chiave di crittografia usata per codificare le "
 "impostazioni locali del database. Questa opzione può essere impostata anche "
 "con la variabile d'ambiente {0}. Usa l'opzione --{1} per disabilitare la "
 "codifica del database."
@@ -227,11 +227,11 @@ msgid ""
 " bit AES encryption."
 msgstr ""
 "Questo modulo cripta tutti i file nello stesso modo utilizzato da AESCrypt, "
-"usando la criptazione AES 256 bit."
+"usando la crittografia AES 256 bit."
 
 #: Library/Encryption/Strings.cs:5
 msgid "AES-256 encryption, built in"
-msgstr "Costruito con criptazione AES-256"
+msgstr "Crittografia AES-256, nativo"
 
 #: Library/Encryption/Strings.cs:6
 msgid "Empty passphrase not allowed"
@@ -244,12 +244,12 @@ msgid ""
 "multithreading)"
 msgstr ""
 "Usa questa opzione per impostare il livello di thread consentito per le "
-"operazioni di criptazione AES. I valori validi sono 0 (utilizzo predefinito)"
-" o da 1 (senza multithreading) a 4 (max. multithreading)"
+"operazioni di crittografia AES. I valori validi sono 0 (utilizzo "
+"predefinito) o da 1 (senza multithreading) a 4 (max. multithreading)"
 
 #: Library/Encryption/Strings.cs:8
 msgid "Set thread level utilized for crypting (0-4)"
-msgstr "Imposta il livello di thread utilizzato per la criptazione (0-4)"
+msgstr "Imposta il livello di thread utilizzato per la crittografia (0-4)"
 
 #: Library/Encryption/Strings.cs:11
 #, csharp-format
@@ -265,7 +265,7 @@ msgid ""
 "program is available via the PATH environment variable. It is possible to "
 "supply the path to GPG using the --gpg-program-path switch."
 msgstr ""
-"Il modulo di criptazione GPG utilizza il programma GNU Privacy Guard per "
+"Il modulo di crittografia GPG utilizza il programma GNU Privacy Guard per "
 "criptare e decriptare i file. Richiede che l'eseguibile GPG sia disponibile "
 "nel sistema. In Windows si presume che questo sia nella cartella predefinita"
 " di installazione sotto Programmi, sotto Linux e OSX si presume che il "
@@ -287,14 +287,14 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:17
 msgid "Extra GPG commandline options for decryption"
-msgstr "Opzioni aggiuntive per GPG da riga di comando per la decriptazione"
+msgstr "Opzioni aggiuntive per GPG da riga di comando per la decrittografia"
 
 #: Library/Encryption/Strings.cs:18
 msgid ""
 "The GPG encryption/decryption will use the --armor option for GPG to protect"
 " the files with armor. Specify this switch to remove the --armor option."
 msgstr ""
-"La criptazione/decriptazione GPG userà l'opzione --armor per GPG per "
+"La crittografia/decrittografia GPG userà l'opzione --armor per GPG per "
 "proteggere i file con armature. Specifica questo interruttore per rimuovere "
 "l'opzione --armor."
 
@@ -313,7 +313,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:21
 msgid "Extra GPG commandline options for encryption"
-msgstr "Opzioni aggiuntive per GPG da riga di comando per la criptazione"
+msgstr "Opzioni aggiuntive per GPG da riga di comando per la crittografia"
 
 #: Library/Encryption/Strings.cs:22
 #, csharp-format
@@ -354,11 +354,11 @@ msgstr "Usa GPG Armor"
 
 #: Library/Encryption/Strings.cs:28
 msgid "Overrides the GPG command supplied for decryption"
-msgstr "Sovrascittura del comando GPG fornito per la decriptazione"
+msgstr "Sovrascrive il comando GPG fornito per la decrittografia"
 
 #: Library/Encryption/Strings.cs:29
 msgid "The GPG decryption command"
-msgstr "Il comando di decriptazione GPG"
+msgstr "Comando di decrittografia GPG"
 
 #: Library/Encryption/Strings.cs:30
 #, csharp-format
@@ -366,18 +366,18 @@ msgid ""
 "Overrides the default GPG encryption command \"{0}\", normal usage is to "
 "request asymetric encryption with the setting {1}"
 msgstr ""
-"Esegue la sovrascrittura del comando di criptazione GPG predefinito '{0}', "
-"l'utilizzo normale consiste nel richiedere la criptazione asimmetrica con "
+"Esegue la sovrascrittura del comando di crittografia GPG predefinito '{0}', "
+"un utilizzo normale consiste nel richiedere la crittografia asimmetrica con "
 "l'impostazione {1}"
 
 #: Library/Encryption/Strings.cs:31
 msgid "The GPG encryption command"
-msgstr "Il comando di criptazione GPG"
+msgstr "Comando di crittografia GPG"
 
 #: Library/Encryption/Strings.cs:34
 #, csharp-format
 msgid "Decryption failed: {0}"
-msgstr "Decriptazione non riuscita: {0}"
+msgstr "Decrittografia non riuscita: {0}"
 
 #: Library/Encryption/Strings.cs:35
 msgid "Failure while invoking GnuPG, program won't flush output"
@@ -1288,23 +1288,23 @@ msgid ""
 "If this flag is set, the FTP encryption mode will be changed to the selected"
 " option."
 msgstr ""
-"Se questo flag è impostato, la modalità di criptazione FTP sarà modificata "
+"Se questo flag è abilitato, la modalità di crittografia FTP sarà modificata "
 "dall'opzione selezionata."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:23
 msgid "Configure the FTP encryption mode"
-msgstr "Configura la modalità di criptazione FTP"
+msgstr "Configura la modalità di crittografia FTP"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:24
 msgid "This flag controls the SSL policy to use when encryption is enabled."
 msgstr ""
-"Questo flag controlla i criteri SSL da utilizzare quando la criptazione è "
-"abilitata."
+"Questo flag controlla il criterio SSL da utilizzare quando la crittografia è"
+" abilitata."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr ""
-"Configura il criterio SSL da utilizzare quando la criptazione è abilitata"
+"Configura il criterio SSL da utilizzare quando la crittografia è abilitata"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:26
 #, csharp-format
@@ -2644,12 +2644,12 @@ msgid ""
 "unencrypted, you can turn of encryption completely by using this switch."
 msgstr ""
 "Se archivi i backup su un disco locale e preferisci che siano mantenuti non "
-"criptati, puoi disattivare completamente la criptazione utilizzando questa "
+"criptati, puoi disattivare completamente la crittografia utilizzando questa "
 "opzione."
 
 #: Library/Main/Strings.cs:49
 msgid "Disable encryption"
-msgstr "Disattiva criptazione"
+msgstr "Disattiva crittografia"
 
 #: Library/Main/Strings.cs:50
 msgid ""
@@ -2892,15 +2892,15 @@ msgid ""
 "volumes, when reading an existing file, the filename is used to select the "
 "encryption module."
 msgstr ""
-"Duplicati supporta moduli di criptazione come componenti aggiuntivi. Usa "
-"questa opzione per selezionare un modulo da utilizzare per la criptazione. "
-"Questo è applicato solo quando si creano nuovi volumi, quando si legge un "
-"file esistente, il nome del file è utilizzato per selezionare il modulo di "
-"criptazione."
+"Duplicati supporta moduli di crittografia come componenti aggiuntivi. Usa "
+"questa opzione per selezionare un modulo da utilizzare per la crittografia. "
+"Viene applicato solo quando si creano nuovi volumi. Quando si legge un file "
+"esistente, il nome del file è utilizzato per selezionare il modulo di "
+"crittografia."
 
 #: Library/Main/Strings.cs:85
 msgid "Select what module to use for encryption"
-msgstr "Selezionare il modulo da utilizzare per la criptazione"
+msgstr "Selezionare il modulo da utilizzare per la crittografia"
 
 #: Library/Main/Strings.cs:86
 msgid "Supply one or more module names, separated by commas to unload them"
@@ -2924,25 +2924,27 @@ msgid ""
 "backup files that are locked by other programs. If this is set to \"off\", "
 "Duplicati will not attempt to create a disk snapshot. Setting this to "
 "\"auto\" makes Duplicati attempt to create a snapshot, and fail silently if "
-"that was not allowed or supported. A setting of \"on\" will also make "
-"Duplicati attempt to create a snapshot, but will produce a warning message "
-"in the log if it fails. Setting it to \"required\" will make Duplicati abort"
-" the backup if the snapshot creation fails. On windows this uses the Volume "
-"Shadow Copy Services (VSS) and requires administrative privileges. On Linux "
-"this uses Logical Volume Management (LVM) and requires root privileges."
+"that was not allowed or supported (note that the OS may still log system "
+"warnings). A setting of \"on\" will also make Duplicati attempt to create a "
+"snapshot, but will produce a warning message in the log if it fails. Setting"
+" it to \"required\" will make Duplicati abort the backup if the snapshot "
+"creation fails. On windows this uses the Volume Shadow Copy Services (VSS) "
+"and requires administrative privileges. On Linux this uses Logical Volume "
+"Management (LVM) and requires root privileges."
 msgstr ""
-"Questa impostazione controlla l'utilizzo di istantanee, e consente a "
-"Duplicati di eseguire il backup dei file bloccati da altri programmi. "
-"Impostandola su \"off\", Duplicati non tenterà di creare un'istantanea del "
-"disco. L'impostazione di questa su \"auto\" farà si che Duplicati tenti di "
-"creare un'istantanea, e  se fallisce non sarà notificato se ciò non è stato "
-"consentito o supportato. Impostandola su \"on\" Duplicati farà un tentativo "
-"di creare un'istantanea, ma produrrà un messaggio di avviso nel registro se "
-"non ci riesce. Impostandola su \"required\" farà si che Duplicati "
-"interromperà il backup se la creazione di un'istantanea non riesce. In "
-"Windows questo utilizza il Volume Shadow Copy Services (VSS) e richiede i "
-"privilegi dell'amministratore. In Linux questo utilizza Logical Volume "
-"Management (LVM) e richiede privilegi di root."
+"Questa impostazione controlla l'utilizzo delle istantanee, che consentono a "
+"Duplicati di eseguire il backup dei file bloccati da altri programmi. Se è "
+"impostata su \"Off\", Duplicati non tenterà di creare un'istantanea del "
+"disco. Impostandola su \"Auto\", Duplicati tenta di creare un'istantanea e, "
+"se non è consentita o supportata, in caso di errore non sarà prodotta "
+"nessuna notifica (si noti che il sistema operativo può ancora registrare gli"
+" avvisi di sistema). Impostandola su \"On\" Duplicati tenterà di creare "
+"un'istantanea ma se fallisce, mostrerà un messaggio di avviso nel registro."
+"  Impostandola su \"Required\", Duplicati interromperà il backup se la "
+"creazione dell'istantanea fallisce. Su Windows questa funzione utilizza il "
+"Volume Shadow Copy Services (VSS) e richiede privilegi amministrativi. Su "
+"Linux questa funzione utilizza Logical Volume Management (LVM) e richiede i "
+"privilegi di root."
 
 #: Library/Main/Strings.cs:91
 msgid "Controls the use of disk snapshots"
@@ -4014,13 +4016,13 @@ msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
-"La libreria di criptazione non supporta le trasformazioni riutilizzabili per"
-" l'algoritmo hash {0}"
+"La libreria di crittografia non supporta le trasformazioni riutilizzabili "
+"per l'algoritmo hash {0}"
 
 #: Library/Main/Strings.cs:243
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
-msgstr "La libreria di criptazione non supporta l'algoritmo hash {0}"
+msgstr "La libreria di crittografia non supporta l'algoritmo hash {0}"
 
 #: Library/Main/Strings.cs:244
 msgid "The passphrase cannot be changed for an existing backup"
@@ -4031,52 +4033,52 @@ msgstr "La passphrase non può essere modificata per un backup esistente"
 msgid "Failed to create a snapshot: {0}"
 msgstr "Creare dell'istantanea fallita: {0}"
 
-#: Library/Main/BackendManager.cs:595
+#: Library/Main/BackendManager.cs:546
 #, csharp-format
 msgid "Failed to dispose backend instance: {0}"
 msgstr "Impossibile disporre l'istanza del backend: {0}"
 
-#: Library/Main/BackendManager.cs:618
+#: Library/Main/BackendManager.cs:569
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr "Impossibile cancellare il file {0}, verifica se il file esiste"
 
-#: Library/Main/BackendManager.cs:624
+#: Library/Main/BackendManager.cs:575
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 "Recuperato dal problema con il tentativo di cancellare file non esistenti "
 "{0}"
 
-#: Library/Main/BackendManager.cs:629
+#: Library/Main/BackendManager.cs:580
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr "Impossibile recuperare da errore cancellazione file {0}"
 
-#: Library/Main/BackendManager.cs:1134
+#: Library/Main/BackendManager.cs:1085
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 "Operazione di cancellazione non riuscita per {0} con FileNonTrovato, "
 "contenuto dell'elenco"
 
-#: Library/Main/BackendManager.cs:1147
+#: Library/Main/BackendManager.cs:1098
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr "L'elenco indica che il file {0} è stato cancellato correttamente"
 
 #: Library/Modules/Builtin/Strings.cs:7
 msgid "Confirm encryption passphrase"
-msgstr "Conferma passphrase di criptazione"
+msgstr "Conferma passphrase crittografia"
 
 #: Library/Modules/Builtin/Strings.cs:8
 msgid ""
 "This module will ask the user for an encryption password on the command line"
 " unless encryption is disabled or the password is supplied by other means"
 msgstr ""
-"Questo modulo chiederà all'utente una password di criptazione da riga di "
-"comando a meno che la criptazione non sia disattivata o che la password sia "
-"fornita con altri mezzi"
+"Questo modulo chiederà all'utente una password di crittografia da riga di "
+"comando a meno che la crittografia non sia disattivata o la password sia "
+"fornita in altri modi"
 
 #: Library/Modules/Builtin/Strings.cs:9
 msgid "Password prompt"
@@ -4088,7 +4090,7 @@ msgstr "Non sono consentite passphrase vuote"
 
 #: Library/Modules/Builtin/Strings.cs:11
 msgid "Enter encryption passphrase"
-msgstr "Inserisci passphrase criptazione"
+msgstr "Inserisci passphrase crittografia"
 
 #: Library/Modules/Builtin/Strings.cs:12
 msgid "The passphrases do not match"
@@ -4846,7 +4848,7 @@ msgstr "Moduli di compressione supportati:"
 
 #: CommandLine/Strings.cs:13
 msgid "Supported encryption modules:"
-msgstr "Moduli di criptazione supportati:"
+msgstr "Moduli di crittografia supportati:"
 
 #: CommandLine/Strings.cs:14
 msgid "Supported options:"

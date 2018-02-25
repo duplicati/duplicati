@@ -75,6 +75,11 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_LOG_RETENTION = "30D";
 
         /// <summary>
+        /// The default threshold for warning about coming close to quota
+        /// </summary>
+        private const int DEFAULT_QUOTA_WARNING_THRESHOLD = 10;
+
+        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -251,7 +256,8 @@ namespace Duplicati.Library.Main
                     "exclude-files-attributes",
                     "compression-extension-file",
                     "full-remote-verification",
-                    "disable-synthetic-filelist"
+                    "disable-synthetic-filelist",
+                    "disable-file-scanner"
                 };
             }
         }
@@ -460,8 +466,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
                     new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepLong, "false"),
                     new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
-                    
+
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
+                    new CommandLineArgument("quota-warning-threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.QuotaWarningThresholdShort, Strings.Options.QuotaWarningThresholdLong, DEFAULT_QUOTA_WARNING_THRESHOLD.ToString()),
 
                     new CommandLineArgument("default-filters", CommandLineArgument.ArgumentType.String, Strings.Options.DefaultFiltersShort, Strings.Options.DefaultFiltersLong(DefaultFilterSet.Windows.ToString(), DefaultFilterSet.OSX.ToString(), DefaultFilterSet.Linux.ToString(), DefaultFilterSet.All.ToString()), string.Empty, new[] { "default-filter" }),
 
@@ -524,6 +531,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
 
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
+                    new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
                 });
 
                 return lst;
@@ -1304,6 +1312,29 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the threshold at which a quota warning should be generated.
+        /// </summary>
+        /// <remarks>
+        /// This is treated as a percentage, where a warning is given when the amount of free space is less than this percentage of the backup size.
+        /// </remarks>
+        public int QuotaWarningThreshold
+        {
+            get
+            {
+                string tmp;
+                m_options.TryGetValue("quota-warning-threshold", out tmp);
+                if (string.IsNullOrEmpty(tmp))
+                {
+                    return DEFAULT_QUOTA_WARNING_THRESHOLD;
+                }
+                else
+                {
+                    return int.Parse(tmp);
+                }
+            }
+        }
+
+        /// <summary>
         /// Gets the display name of the backup
         /// </summary>
         public string BackupName
@@ -1760,6 +1791,15 @@ namespace Duplicati.Library.Main
         public bool AutoVacuum
         {
             get { return GetBool("auto-vacuum"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the local filescanner should be disabled
+        /// </summary>
+        /// <value><c>true</c> if the filescanner should be disabled; otherwise, <c>false</c>.</value>
+        public bool DisableFileScanner
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-file-scanner"); }
         }
 
         /// <summary>

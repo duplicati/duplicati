@@ -886,9 +886,31 @@ namespace Duplicati.Library.Main
         /// <param name="log">The log instance</param>
         private void ValidateOptions(ILogWriter log)
         {
-            if (m_options.KeepTime.Ticks > 0 && m_options.KeepVersions > 0)
-                throw new Interface.UserInformationException(string.Format("Setting both --{0} and --{1} is not permitted", "keep-versions", "keep-time"));
+            // Check if only one of the retention options is set
+            var selectedRetentionOptions = new List<String>();
 
+            if (m_options.KeepTime.Ticks > 0)
+            {
+                selectedRetentionOptions.Add("keep-time");
+            }
+
+            if (m_options.KeepVersions > 0)
+            {
+                selectedRetentionOptions.Add("keep-versions");
+            }
+
+            if (m_options.RetentionPolicy.Count() > 0)
+            {
+                selectedRetentionOptions.Add("retention-policy");
+            }
+
+            if (selectedRetentionOptions.Count() > 1)
+            {
+                throw new Interface.UserInformationException(string.Format("Setting multiple retention options ({0}) is not permitted",
+                    String.Join(", ", selectedRetentionOptions.Select(x => "--" + x))));
+            }
+
+            // Check Prefix
             if (!string.IsNullOrWhiteSpace(m_options.Prefix) && m_options.Prefix.Contains("-"))
                 throw new Interface.UserInformationException("The prefix cannot contain hyphens (-)");
 

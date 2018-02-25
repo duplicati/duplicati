@@ -293,7 +293,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             else
             {
-                Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup));
+                Program.WorkThread.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup), true);
                 Program.StatusEventNotifyer.SignalNewEvent();
             }
 
@@ -574,7 +574,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var backup = Program.DataConnection.GetBackup(key);
             if (backup == null)
             {
-                info.ReportClientError("Invalid or missing backup id");
+                info.ReportClientError("Invalid or missing backup id", System.Net.HttpStatusCode.NotFound);
                 return;
             }
 

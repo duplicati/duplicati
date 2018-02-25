@@ -422,6 +422,12 @@ namespace Duplicati.Library.Backend.OpenStack
                 return Strings.OpenStack.Description;
             }
         }
+
+        public string DNSName
+        {
+            get { return null; }
+        }
+
         #endregion
         #region IDisposable implementation
         public void Dispose()

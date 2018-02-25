@@ -29,13 +29,19 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 var level_str = input["level"].Value ?? "";
                 var id_str = input["id"].Value ?? "";
 
+                int pagesize;
+                if (!int.TryParse(info.Request.QueryString["pagesize"].Value, out pagesize))
+                    pagesize = 100;
+
+                pagesize = Math.Max(1, Math.Min(500, pagesize));
+
                 Library.Logging.LogMessageType level;
                 long id;
 
                 long.TryParse(id_str, out id);
                 Enum.TryParse(level_str, true, out level);
 
-                info.OutputOK(Program.LogHandler.AfterID(id, level));
+                info.OutputOK(Program.LogHandler.AfterID(id, level, pagesize));
             }
             else
             {

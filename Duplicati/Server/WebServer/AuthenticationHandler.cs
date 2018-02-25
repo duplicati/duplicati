@@ -52,9 +52,6 @@ namespace Duplicati.Server.WebServer
             string xsrftoken = request.Headers[XSRF_HEADER_NAME] ?? "";
 
             if (string.IsNullOrWhiteSpace(xsrftoken))
-                xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(xsrftoken);
-
-            if (string.IsNullOrWhiteSpace(xsrftoken))
             {
                 var xsrfq = request.Form[XSRF_HEADER_NAME] ?? request.Form[Duplicati.Library.Utility.Uri.UrlEncode(XSRF_HEADER_NAME)];
                 xsrftoken = (xsrfq == null || string.IsNullOrWhiteSpace(xsrfq.Value)) ? "" : xsrfq.Value;
@@ -289,7 +286,7 @@ namespace Duplicati.Server.WebServer
                 else
                 {
                     response.Status = System.Net.HttpStatusCode.BadRequest;
-                    response.Reason = "Missing XSRF Token";
+                    response.Reason = "Missing XSRF Token. Please reload the page";
 
                     return true;
                 }

@@ -204,19 +204,14 @@ ul.tabs {
     }
 
     .entries {
-        div.entryline {
+        div.entryline.clickable {
             cursor: pointer;
         }
     }
 
     .entries.livedata {
-        li {
-            height: 1.2em;
-        }
-
         li.expanded {
             height: auto;
-            overflow: auto;
         }
     }
 
@@ -677,6 +672,7 @@ body {
                 width: 260px;
                 padding-left: 40px;
                 float: left;
+                position: fixed;
 
                 > ul {
                     > li {
@@ -883,7 +879,7 @@ body {
 
             .content {
                 float: left;
-                padding-left: 50px;
+                padding-left: 350px;
                 padding-bottom: 50px;
                 max-width: 700px;
 
@@ -1491,7 +1487,7 @@ body {
 
                     ul.entries {
                         li {
-                            padding-top: 30px;
+                            padding-top: 10px;
                         }
                     }
                 }

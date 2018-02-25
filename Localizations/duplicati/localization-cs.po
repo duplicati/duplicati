@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-11-17 13:00+0100\n"
+"POT-Creation-Date: 2018-01-18 11:11+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Lukáš Tyrychtr <lukastyrychtr@mail.muni.cz>, 2017\n"
 "Language-Team: Czech (https://www.transifex.com/duplicati/teams/67655/cs/)\n"
@@ -2877,24 +2877,26 @@ msgid ""
 "backup files that are locked by other programs. If this is set to \"off\", "
 "Duplicati will not attempt to create a disk snapshot. Setting this to "
 "\"auto\" makes Duplicati attempt to create a snapshot, and fail silently if "
-"that was not allowed or supported. A setting of \"on\" will also make "
-"Duplicati attempt to create a snapshot, but will produce a warning message "
-"in the log if it fails. Setting it to \"required\" will make Duplicati abort"
-" the backup if the snapshot creation fails. On windows this uses the Volume "
-"Shadow Copy Services (VSS) and requires administrative privileges. On Linux "
-"this uses Logical Volume Management (LVM) and requires root privileges."
+"that was not allowed or supported (note that the OS may still log system "
+"warnings). A setting of \"on\" will also make Duplicati attempt to create a "
+"snapshot, but will produce a warning message in the log if it fails. Setting"
+" it to \"required\" will make Duplicati abort the backup if the snapshot "
+"creation fails. On windows this uses the Volume Shadow Copy Services (VSS) "
+"and requires administrative privileges. On Linux this uses Logical Volume "
+"Management (LVM) and requires root privileges."
 msgstr ""
-"Toto nastavení řídí využití zachycených stavů, které Duplicati umožňuje "
-"zálohovat soubory, které jsou otevřené jinými programy. Pokud je toto "
-"nastaveno na „vypnuto“, Duplicati se nebude snažit vytvářet zachycené stavy "
-"jednotek datového úložiště. Nastavením na „automaticky“ se Duplicati pokusí "
-"vytvořit zachycený stav a pokud to není možné nebo podporované, nebude o tom"
-" informovat. Nastavení na „zapnuto“ znamená, že Duplicati se pokusí vytvořit"
-" zachycený stav a v případě nezdaru to zaznamená do záznamu událostí (log). "
-"Nastavení na „vyžadováno“ způsobí že Duplicati přeruší zálohování pokud se "
-"vytvoření zachyceného stavu nezdaří. Na systému Windows toto použije služby "
-"stínové kopie svazku (VSS) a vyžaduje práva správce. Na systému Linux toto "
-"použije správu logických svazků (LVM) a vyžaduje práva správce systému "
+"Toto nastavení řídí využití zachycených stavů, které umožňují Duplicati "
+"zálohovat soubory, které jsou uzamčené jinými programy. Pokud je toto "
+"nastaveno na „vypnuto“, Duplicati se nebude pokoušet vytvořit zachycený stav"
+" jednotky. Nastavením na „automaticky“ se Duplicati pokusí vytvořit "
+"zachycený stav a pokud to nebude umožněno nebo podporováno, nikde to nebude "
+"vypisovat (operační systém si o tom ale i tak může zapsat varování do svého "
+"záznamu událostí). Nastavením na „zapnuto“ se Duplicati také pokusí vytvořit"
+" zachycený stav, ale v případě nezdaru už vypíše do svého záznamu událostí "
+"chybu. Nastavení na „vyžadováno“ způsobí, že pokud se vytváření zachyceného "
+"stavu nezdaří, Duplicati přeruší zálohování. Na Windows toto používá službu "
+"stínových svazků (VSS) a vyžaduje práva správce systému. Na GNU/Linux toto "
+"používá správu logických svazků (LVM) a vyžaduje práva správce systému "
 "(root)."
 
 #: Library/Main/Strings.cs:91
@@ -3964,34 +3966,34 @@ msgstr "Heslo existující zálohy nemůže být změněno"
 msgid "Failed to create a snapshot: {0}"
 msgstr "Zachycený stav se nepodařilo vytvořit: {0}"
 
-#: Library/Main/BackendManager.cs:595
+#: Library/Main/BackendManager.cs:546
 #, csharp-format
 msgid "Failed to dispose backend instance: {0}"
 msgstr "Nepodařilo se zahodit instanci backendu: {0}"
 
-#: Library/Main/BackendManager.cs:618
+#: Library/Main/BackendManager.cs:569
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr "Nepodařilo se smazat soubor {0}, testuje se existence souboru"
 
-#: Library/Main/BackendManager.cs:624
+#: Library/Main/BackendManager.cs:575
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr "Zotaveno z problému z pokusu o smazání neexistujícího souboru {0}"
 
-#: Library/Main/BackendManager.cs:629
+#: Library/Main/BackendManager.cs:580
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr "Nepodařilo se zotavit z chyby při mazání souboru {0}"
 
-#: Library/Main/BackendManager.cs:1134
+#: Library/Main/BackendManager.cs:1085
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 "Operace smazání {0} se nezdařila, protože soubor nebyl nalezen "
 "(FileNotFound), náhradně bude vypsán obsah"
 
-#: Library/Main/BackendManager.cs:1147
+#: Library/Main/BackendManager.cs:1098
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr "Výpis indikuje úspěšné smazání souboru {0}"

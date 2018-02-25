@@ -38,6 +38,16 @@ namespace Duplicati.Library.UsageReporter
         private const int MAX_QUEUE_SIZE = 500;
 
         /// <summary>
+        /// The maximum number of backlog files to consider
+        /// </summary>
+        private const int MAX_BACKLOG = 6;
+
+        /// <summary>
+        /// The maximum time a backlog file is considered valid
+        /// </summary>
+        private static readonly TimeSpan MAX_BACKLOG_AGE = TimeSpan.FromDays(30);
+
+        /// <summary>
         /// The time to wait before sending event
         /// </summary>
         private static readonly TimeSpan WAIT_TIME = TimeSpan.FromMinutes(5);
@@ -85,14 +95,7 @@ namespace Duplicati.Library.UsageReporter
                             return;
                     }
 
-                    foreach (var f in GetAbandonedFiles(null))
-                    {
-                        // Check if we should exit
-                        if (await self.Input.IsRetiredAsync)
-                            return;
-                    
-                        await self.Output.WriteAsync(f);
-                    }
+                    await ProcessAbandonedFiles(self.Output, self.Input, null);
 
                     var rs = new ReportSet();
                     var tf = GetTempFilename(instanceid);
@@ -131,13 +134,7 @@ namespace Duplicati.Library.UsageReporter
                             self.Output.WriteNoWait(tf);
                             rs = new ReportSet();
 
-                            foreach (var f in GetAbandonedFiles(tf))
-                            {
-                                if (await self.Input.IsRetiredAsync)
-                                    return;
-                            
-                                self.Output.WriteNoWait(f);
-                            }
+                            await ProcessAbandonedFiles(self.Output, self.Input, null);
 
                             tf = nextFilename;
                         }
@@ -148,18 +145,48 @@ namespace Duplicati.Library.UsageReporter
             return new Tuple<Task, IWriteChannel<ReportItem>>(task, channel);
         }
 
+
+        /// <summary>
+        /// Transmits abandoned files to the server, and enforces discard rules
+        /// </summary>
+        /// <returns>An awaitable task.</returns>
+        /// <param name="target">The target channel.</param>
+        /// <param name="source">The source channel, used to check for stopping conditions</param>
+        /// <param name="current">The current file, which should not be uploaded.</param>
+        private static async Task ProcessAbandonedFiles(IWriteChannel<string> target, IReadChannel<ReportItem> source, string current)
+        {
+            var abandonLeft = MAX_BACKLOG;
+            var abandonCutOff = long.Parse(DateTime.UtcNow.Add(-MAX_BACKLOG_AGE).ToString("yyyyMMddHHmmss"));
+            foreach (var f in GetAbandonedFiles(current))
+            {
+                if (await source.IsRetiredAsync)
+                    return;
+
+                if (abandonLeft > 0 && f.Value > abandonCutOff)
+                {
+                    abandonLeft--;
+                    target.WriteNoWait(f.Key);
+                }
+                else
+                {
+                    try { File.Delete(f.Key); }
+                    catch { }
+                }
+            }
+
+        }
+
         /// <summary>
         /// Gets a list of abandoned files, meaning files that appear to be Duplicati files.
         /// These should have been uploaded, but if they are found they are somehow left-over.
         /// </summary>
-        /// <returns>The abandoned files.</returns>
+        /// <returns>The abandoned files, value is the timestamp, key is the filename.</returns>
         /// <param name="current">The current file, which is excluded from the results.</param>
-        private static IEnumerable<string> GetAbandonedFiles(string current)
+        private static IEnumerable<KeyValuePair<string, long>> GetAbandonedFiles(string current)
         {
-            return 
-                from n in GetAbandonedMatches(current)
-                orderby n.Value
-                select n.Key;
+            return
+                GetAbandonedMatches(current)
+                            .OrderByDescending(x => x.Value);
         }
 
         /// <summary>
