@@ -45,7 +45,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 var updateInfo = Program.DataConnection.ApplicationSettings.UpdatedVersion;
                 if (updateInfo == null)
                 {
-                    info.ReportClientError("No update found");
+                    info.ReportClientError("No update found", System.Net.HttpStatusCode.NotFound);
                 }
                 else
                 {
