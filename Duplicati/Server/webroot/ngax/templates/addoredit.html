@@ -335,7 +335,7 @@
                         <input type="text" ng-model="Options['retention-policy']" ng-show="KeepType == 'custom'" />
                     </div>
                     <div class="hint" translate  ng-show="KeepType == 'custom'">
-                        Enter a retention strategy manually. Placeholders are D/W/Y for days/weeks/years. The syntax is: 7D:1D,4W:1W,36M:1M. This example keeps one backup for each of the next 7 days, one for each of the next 4 weeks, and one for each of the next 36 months. This can also be written as 1W:1D,1M:1W,3Y:1M.
+                        Enter a retention strategy manually. Placeholders are D/W/Y for days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. This example keeps one backup for each of the next 7 days, one for each of the next 4 weeks, and one for each of the next 36 months. This can also be written as 1W:1D,1M:1W,3Y:1M.
                     </div>
 
                     <div class="retention-options" ng-show="KeepType == 'versions'">
