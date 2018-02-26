@@ -526,8 +526,10 @@ namespace Duplicati.Library.Main
                                 {
                                     try
                                     {
-                                        if (!string.IsNullOrWhiteSpace(m_backend.DNSName))
-                                            System.Net.Dns.GetHostEntry(m_backend.DNSName);
+                                        var names = m_backend.DNSName ?? new string[0];
+                                        foreach(var name in names)
+                                            if (!string.IsNullOrWhiteSpace(name))
+                                                System.Net.Dns.GetHostEntry(name);
                                     }
                                     catch
                                     {

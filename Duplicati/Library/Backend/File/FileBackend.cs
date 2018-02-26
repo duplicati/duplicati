@@ -351,7 +351,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
             get { return null; }
         }

@@ -115,9 +115,9 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { m_orgUrl.Host, string.IsNullOrWhiteSpace(m_spWebUrl) ? null : new Utility.Uri(m_spWebUrl).Host }; }
         }
 
         #endregion

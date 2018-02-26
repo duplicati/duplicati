@@ -474,9 +474,9 @@ namespace Duplicati.Library.Backend
             get { return m_wrapper; }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { m_wrapper.DNSHost }; }
         }
 
         private string GetFullKey(string name)
