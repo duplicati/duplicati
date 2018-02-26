@@ -368,5 +368,10 @@ namespace Duplicati.Library.Backend
                 return m_con;
             }
         }
+
+        public string DNSName
+        {
+            get { return null; }
+        }
     }
 }

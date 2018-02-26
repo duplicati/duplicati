@@ -115,6 +115,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public string DNSName
+        {
+            get { return null; }
+        }
+
         #endregion
 
         #region [Constructors]

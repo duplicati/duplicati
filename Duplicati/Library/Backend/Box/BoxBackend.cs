@@ -337,6 +337,11 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
+        public string DNSName
+        {
+            get { return null; }
+        }
+
         #endregion
 
         #region IDisposable implementation

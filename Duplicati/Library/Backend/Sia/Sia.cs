@@ -440,6 +440,11 @@ namespace Duplicati.Library.Backend.Sia
             }
         }
 
+        public string DNSName
+        {
+            get { return null; }
+        }
+
         #endregion
 
         #region IDisposable Members
