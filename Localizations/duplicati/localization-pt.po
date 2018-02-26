@@ -65,7 +65,7 @@ msgstr ""
 
 #: Server/Strings.cs:16 CommandLine/Strings.cs:22
 msgid "Path to a file with parameters"
-msgstr "Caminho do ficheiro (com parâmetros)"
+msgstr "Caminho para o ficheiro, com parâmetros"
 
 #: Server/Strings.cs:17 CommandLine/Strings.cs:19
 #, csharp-format
@@ -296,7 +296,7 @@ msgstr ""
 #: Library/Encryption/Strings.cs:22
 #, csharp-format
 msgid "Failed to execute GPG at \"\"{0}\" {1}\": {2}"
-msgstr ""
+msgstr "Falha ao executar GPG em \"\"{0}\" {1}\": {2}"
 
 #: Library/Encryption/Strings.cs:23
 msgid ""
@@ -306,7 +306,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:24
 msgid "The path to GnuPG"
-msgstr ""
+msgstr "O caminho para GnuPG"
 
 #: Library/Encryption/Strings.cs:25
 #, csharp-format

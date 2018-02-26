@@ -3,10 +3,11 @@
 # Mikki Sørensen <Mikki-10@hotmail.com>, 2016
 # Brian Kirkegaard, 2016
 # Rune Henriksen <pectojilien@gmail.com>, 2017
+# Michael Fogh Kristensen <michael@visualdesign.dk>, 2018
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Rune Henriksen <pectojilien@gmail.com>, 2017\n"
+"Last-Translator: Michael Fogh Kristensen <michael@visualdesign.dk>, 2018\n"
 "Language-Team: Danish (https://www.transifex.com/duplicati/teams/67655/da/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -467,7 +468,7 @@ msgstr "Kopieret!"
 
 #: templates/copy_clipboard_buttons.html:3
 msgid "Copy"
-msgstr ""
+msgstr "Kopier"
 
 #: templates/addoredit.html:99 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
@@ -595,7 +596,7 @@ msgstr "Slet backup"
 
 #: templates/addoredit.html:320
 msgid "Delete backups that are older than"
-msgstr ""
+msgstr "Slet sikkerhedskopier, der er ældre end"
 
 #: templates/delete.html:13
 msgid "Delete local database"
@@ -911,7 +912,7 @@ msgstr "Eksporterer ..."
 
 #: templates/externallink.html:1
 msgid "External link"
-msgstr ""
+msgstr "Eksternt link"
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
@@ -1097,6 +1098,8 @@ msgid ""
 "If at least one newer backup is found, all backups older than this date are "
 "deleted."
 msgstr ""
+"Hvis der findes mindst en nyere sikkerhedskopi, slettes alle backups, der er"
+" ældre end denne dato."
 
 #: templates/localdatabase.html:13
 msgid ""
@@ -1183,7 +1186,7 @@ msgstr "Importer fra en fil"
 
 #: templates/import.html:19
 msgid "Import metadata"
-msgstr ""
+msgstr "Importer metadata"
 
 #: templates/import.html:35
 msgid "Importing ..."
@@ -1249,11 +1252,11 @@ msgstr "KByte/s"
 
 #: templates/addoredit.html:321
 msgid "Keep a specific number of backups"
-msgstr ""
+msgstr "Gem et bestemt antal backups"
 
 #: templates/addoredit.html:319
 msgid "Keep all backups"
-msgstr ""
+msgstr "Gem alle backups"
 
 #: templates/settings.html:40
 msgid "Language in user interface"
@@ -1560,7 +1563,7 @@ msgstr "Ingen / deaktiveret"
 
 #: templates/addoredit.html:326
 msgid "Nothing will be deleted. The backup size will grow with each change."
-msgstr ""
+msgstr "Intet vil blive slettet. Backup størrelsen vokser med hver ændring."
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
@@ -1584,6 +1587,8 @@ msgid ""
 "Once there are more backups than the specified number, the oldest backups "
 "are deleted."
 msgstr ""
+"Når der er flere backups end det angivne antal, slettes de ældste "
+"sikkerhedskopier."
 
 #: templates/backends/openstack.html:7
 msgid "OpenStack AuthURI"
@@ -1637,6 +1642,9 @@ msgid ""
 "backup for each of the last 7 days, each of the last 4 weeks, each of the "
 "last 12 months. There will always be at least one remaining backup."
 msgstr ""
+"Over tid vil backups blive slettet automatisk. Der vil forblive en backup "
+"for hver af de sidste 7 dage, hver af de sidste 4 uger, hver af de sidste 12"
+" måneder. Der vil altid være mindst en tilbageværende backup."
 
 #: templates/restore.html:114
 msgid "Overwrite"
@@ -2200,6 +2208,8 @@ msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
 msgstr ""
+"Mappen {{folder}} eksisterer ikke.\n"
+"Opret den nu?"
 
 #: scripts/directives/backupEditUri.js:212
 msgid ""
@@ -2501,6 +2511,8 @@ msgid ""
 "We accept donations via different services, such as OpenCollective, PayPal, "
 "BountySource and various crypto currencies."
 msgstr ""
+"Vi accepterer donationer via forskellige tjenester, såsom OpenCollective, "
+"PayPal, BountySource og forskellige krypto-valutaer."
 
 #: templates/addoredit.html:50
 msgid "We recommend that you encrypt all backups stored outside your system"

@@ -12,7 +12,7 @@ msgstr ""
 
 #: templates/advancedoptionseditor.html:48
 msgid "- pick an option -"
-msgstr "選擇一個選項"
+msgstr "選擇一個項目"
 
 #: templates/delete.html:7 templates/localdatabase.html:4
 msgid "...loading..."
@@ -83,7 +83,7 @@ msgstr "加入進階選項"
 
 #: index.html:205
 msgid "Add backup"
-msgstr "加入備份"
+msgstr "備份"
 
 #: templates/addoredit.html:197
 msgid "Add filter"
@@ -116,7 +116,7 @@ msgstr "進階："
 
 #: scripts/controllers/EditBackupController.js:24
 msgid "All"
-msgstr ""
+msgstr "全部"
 
 #: scripts/directives/sourceFolderPicker.js:423
 msgid "All Hyper-V Machines"
@@ -176,7 +176,7 @@ msgstr "匿名使用報告"
 
 #: templates/export.html:8
 msgid "As Command-line"
-msgstr "如同 Command-Line"
+msgstr "顯示為 Command-Line"
 
 #: scripts/services/EditUriBuiltins.js:648 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/oauth.html:8
@@ -235,7 +235,7 @@ msgstr "備份位置"
 
 #: templates/addoredit.html:317
 msgid "Backup retention"
-msgstr ""
+msgstr "保留備份數目"
 
 #: templates/home.html:60
 msgid "Backup:"
@@ -462,7 +462,7 @@ msgstr "已複製"
 
 #: templates/copy_clipboard_buttons.html:3
 msgid "Copy"
-msgstr ""
+msgstr "複製"
 
 #: templates/addoredit.html:99 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
@@ -530,7 +530,7 @@ msgstr "自訂授權 URL"
 
 #: templates/addoredit.html:323
 msgid "Custom backup retention"
-msgstr ""
+msgstr "自訂備份保留規則"
 
 #: templates/backends/gcs.html:18
 msgid "Custom location ({{server}})"
@@ -570,7 +570,7 @@ msgstr "預設 ({{channelname}})"
 
 #: templates/addoredit.html:201
 msgid "Default Filters"
-msgstr ""
+msgstr "預設篩選條件"
 
 #: templates/settings.html:131
 msgid "Default options"
@@ -590,7 +590,7 @@ msgstr "刪除備份"
 
 #: templates/addoredit.html:320
 msgid "Delete backups that are older than"
-msgstr ""
+msgstr "刪除指定條件以前的備份"
 
 #: templates/delete.html:13
 msgid "Delete local database"
@@ -771,6 +771,9 @@ msgid ""
 "one for each of the next 36 months. This can also be written as "
 "1W:1D,1M:1W,3Y:1M."
 msgstr ""
+"手動輸入保留原則。可用關鍵字為 D/W/Y 分別代表 日/週/ "
+"年。語法為：7D:1D,4W:1W,36M:1M。上述例子表示，每7日保留1份，每4週保留1份，每36個月保留1份。您也可以寫成 "
+"1W:1D,1M:1W,3Y:1M。"
 
 #: templates/backends/azure.html:12
 msgid "Enter access key"
@@ -905,7 +908,7 @@ msgstr "正在匯出 ..."
 
 #: templates/externallink.html:1
 msgid "External link"
-msgstr ""
+msgstr "外部連結"
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
@@ -1088,7 +1091,7 @@ msgstr "如果已錯過時間，將儘可能快速進行這個工作。"
 msgid ""
 "If at least one newer backup is found, all backups older than this date are "
 "deleted."
-msgstr ""
+msgstr "如果有更新的備份存在，則刪除比這個日期早的所有備份。"
 
 #: templates/localdatabase.html:13
 msgid ""
@@ -1168,7 +1171,7 @@ msgstr "從檔案匯入"
 
 #: templates/import.html:19
 msgid "Import metadata"
-msgstr ""
+msgstr "匯入 metadata"
 
 #: templates/import.html:35
 msgid "Importing ..."
@@ -1192,7 +1195,7 @@ msgstr "回應不正確，請重試一次"
 
 #: templates/settings.html:92
 msgid "Individual builds for developers only."
-msgstr "Individual builds for developers only."
+msgstr "開發者專用個人版本，一般使用者請勿使用。"
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
@@ -1234,11 +1237,11 @@ msgstr "KByte/s"
 
 #: templates/addoredit.html:321
 msgid "Keep a specific number of backups"
-msgstr ""
+msgstr "保留指定份數的備份"
 
 #: templates/addoredit.html:319
 msgid "Keep all backups"
-msgstr ""
+msgstr "保留所有備份"
 
 #: templates/settings.html:40
 msgid "Language in user interface"
@@ -1258,11 +1261,11 @@ msgstr "最新"
 
 #: templates/about.html:6
 msgid "Libraries"
-msgstr "Libraries"
+msgstr "函式庫"
 
 #: scripts/controllers/EditBackupController.js:23
 msgid "Linux"
-msgstr ""
+msgstr "Linux"
 
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates ..."
@@ -1301,7 +1304,7 @@ msgstr "正在載入遠端儲存區使用資訊 ..."
 
 #: scripts/services/EditUriBuiltins.js:818
 msgid "Local Repository"
-msgstr ""
+msgstr "本機 Repository"
 
 #: templates/localdatabase.html:2
 msgid "Local database for"
@@ -1313,7 +1316,7 @@ msgstr "本機資料庫路徑："
 
 #: templates/backends/rclone.html:2
 msgid "Local repository"
-msgstr ""
+msgstr "本機 repository"
 
 #: scripts/services/SystemInfo.js:78
 msgid "Local storage"
@@ -1463,7 +1466,7 @@ msgstr "下一頁"
 
 #: templates/home.html:51
 msgid "Next scheduled run:"
-msgstr "下一次排程執行時間："
+msgstr "下一次排程執行："
 
 #: index.html:177
 msgid "Next scheduled task:"
@@ -1544,7 +1547,7 @@ msgstr "無 / 取消"
 
 #: templates/addoredit.html:326
 msgid "Nothing will be deleted. The backup size will grow with each change."
-msgstr ""
+msgstr "什麼都不刪除。備份大小將隨著每次異動而持續增長。"
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
@@ -1561,13 +1564,13 @@ msgstr "確定"
 
 #: scripts/controllers/EditBackupController.js:22
 msgid "OSX"
-msgstr ""
+msgstr "OSX"
 
 #: templates/addoredit.html:344
 msgid ""
 "Once there are more backups than the specified number, the oldest backups "
 "are deleted."
-msgstr ""
+msgstr "當備份數量超過指定數目，最舊的備份將被刪除。"
 
 #: templates/backends/openstack.html:7
 msgid "OpenStack AuthURI"
@@ -1618,7 +1621,7 @@ msgid ""
 "Over time backups will be deleted automatically. There will remain one "
 "backup for each of the last 7 days, each of the last 4 weeks, each of the "
 "last 12 months. There will always be at least one remaining backup."
-msgstr ""
+msgstr "智慧保留模式，兼具長時間保存與短時間份數考量。保留每7天、每4週、每12個月均有一份備份。"
 
 #: templates/restore.html:114
 msgid "Overwrite"
@@ -1710,7 +1713,7 @@ msgstr "ProjectID is optional if the bucket exist"
 
 #: scripts/services/SystemInfo.js:80
 msgid "Proprietary"
-msgstr "所有權"
+msgstr "雲端服務"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
@@ -1746,19 +1749,19 @@ msgstr "入遠端"
 
 #: scripts/services/EditUriBuiltins.js:819
 msgid "Remote Path"
-msgstr ""
+msgstr "遠端 Path"
 
 #: scripts/services/EditUriBuiltins.js:817
 msgid "Remote Repository"
-msgstr ""
+msgstr "遠端 Repository"
 
 #: templates/backends/rclone.html:10
 msgid "Remote path"
-msgstr ""
+msgstr "遠端 path"
 
 #: templates/backends/rclone.html:6
 msgid "Remote repository"
-msgstr ""
+msgstr "遠端 repository"
 
 #: templates/addoredit.html:193
 msgid "Remove"
@@ -1989,7 +1992,7 @@ msgstr "Sia 伺服器密碼"
 
 #: templates/addoredit.html:322
 msgid "Smart backup retention"
-msgstr ""
+msgstr "智慧管理備份數"
 
 #: templates/backends/openstack.html:33
 msgid ""
@@ -2015,7 +2018,7 @@ msgstr "來源："
 
 #: templates/settings.html:87
 msgid "Specific builds for developers only."
-msgstr "Specific builds for developers only."
+msgstr "開發者實驗正在開發中的新功能用，非開發者請勿使用。"
 
 #: scripts/services/SystemInfo.js:79
 msgid "Standard protocols"
@@ -2177,7 +2180,7 @@ msgstr "預設白色主題 (by Alex)"
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
-msgstr ""
+msgstr "資料夾 {{folder}} 不存在，是否立即建立？"
 
 #: scripts/directives/backupEditUri.js:212
 msgid ""
@@ -2309,7 +2312,7 @@ msgstr "信任伺服器憑證？"
 #: templates/settings.html:82
 msgid ""
 "Try out the new features we are working on. Don't use with important data."
-msgstr "試試我們正在進行的新功能。不要使用在重要的資料上。"
+msgstr "試試我們正在進行的新功能。請避免使用在重要的資料上。"
 
 #: scripts/services/AppUtils.js:104
 msgid "Tue"
@@ -2329,7 +2332,7 @@ msgstr "手動繼續"
 
 #: templates/settings.html:65
 msgid "Update channel"
-msgstr "更新分支"
+msgstr "更新頻道"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Update failed:"
@@ -2337,7 +2340,7 @@ msgstr "更新失敗："
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid "Updating with existing database"
-msgstr "正在更新已存在資料庫 ..."
+msgstr "正在更新既有資料庫 ..."
 
 #: templates/addoredit.html:311
 msgid "Upload volume size"
@@ -2353,6 +2356,8 @@ msgid ""
 " features. We use them to generate <external-link link=\"link\">public usage"
 " statistics</external-link>"
 msgstr ""
+"使用情況報告有助於我們改進使用者體驗並評估新功能的影響。 We use them to generate <external-link "
+"link=\"link\">public usage statistics</external-link>"
 
 #: templates/settings.html:102
 msgid "Usage statistics"
@@ -2473,7 +2478,7 @@ msgstr "警告、錯誤與當機"
 msgid ""
 "We accept donations via different services, such as OpenCollective, PayPal, "
 "BountySource and various crypto currencies."
-msgstr ""
+msgstr "我們接受多種服務的贊助，例如 OpenCollective、PayPal、BountySource 以及多種加密貨幣。"
 
 #: templates/addoredit.html:50
 msgid "We recommend that you encrypt all backups stored outside your system"
@@ -2505,7 +2510,7 @@ msgstr "您要還原檔案到哪裡？"
 
 #: scripts/controllers/EditBackupController.js:21
 msgid "Windows"
-msgstr ""
+msgstr "Windows"
 
 #: scripts/services/AppUtils.js:93 templates/addoredit.html:352
 msgid "Years"
@@ -2610,7 +2615,7 @@ msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
 "of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
-msgstr ""
+msgstr "您已經產生足夠強度的密碼。請確保您已經另外備份好這組密碼，若您遺失這組密碼，您的資料將無法還原。"
 
 #: scripts/controllers/EditBackupController.js:313
 msgid "You must choose at least one source folder"
@@ -2638,7 +2643,7 @@ msgstr "您必須輸入有效的起迄時間來保留備份"
 
 #: scripts/controllers/EditBackupController.js:351
 msgid "You must enter a valid rentention policy string"
-msgstr ""
+msgstr "您必需輸入符合可用字串的備份保留原則"
 
 #: scripts/services/EditUriBuiltins.js:708
 msgid "You must enter either a password or an API Key"
