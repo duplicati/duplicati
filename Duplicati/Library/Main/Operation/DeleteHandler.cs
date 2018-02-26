@@ -214,8 +214,8 @@ namespace Duplicati.Library.Main.Operation
         private List<DateTime> ApplyRetentionPolicy(DateTime[] backups)
         {
             // Any work to do?
-            Dictionary<TimeSpan, TimeSpan> retentionPolicyOptionValue = m_options.RetentionPolicy;
-            if (retentionPolicyOptionValue.Count == 0 || backups.Length == 0)
+            var retentionPolicyOptionValues = m_options.RetentionPolicy;
+            if (retentionPolicyOptionValues.Count == 0 || backups.Length == 0)
             {
                 return new List<DateTime>(); // don't delete any backups
             }
@@ -235,7 +235,7 @@ namespace Duplicati.Library.Main.Operation
             var deleteMostRecentBackup = m_options.AllowFullRemoval;
 
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: Time frames and intervals pairs: {0}",
-                string.Join(", ", retentionPolicyOptionValue.Select(x => x.Key + " / " + x.Value))), Logging.LogMessageType.Information);
+                string.Join(", ", retentionPolicyOptionValues)), Logging.LogMessageType.Information);
 
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups to consider: {0}",
                 string.Join(", ", clonedBackupList)), Logging.LogMessageType.Information);
@@ -245,14 +245,12 @@ namespace Duplicati.Library.Main.Operation
             // The order in which the time frames values are checked has to be from the smallest to the largest.
             List<DateTime> backupsToDelete = new List<DateTime>();
             var now = DateTime.Now;
-            foreach (var singleRetentionPolicyOptionValue in retentionPolicyOptionValue.OrderBy(x => x.Key))
+            foreach (var singleRetentionPolicyOptionValue in retentionPolicyOptionValues.OrderBy(x => x.Timeframe))
             {
-                var period = singleRetentionPolicyOptionValue.Key;
-                var interval = singleRetentionPolicyOptionValue.Value;
+                // The timeframe in the retention policy option is only a timespan which has to be applied to the current DateTime to get the actual lower bound
+                DateTime timeFrame = (singleRetentionPolicyOptionValue.IsUnlimtedTimeframe()) ? DateTime.MinValue : (now - singleRetentionPolicyOptionValue.Timeframe);
 
-                DateTime timeFrame = (period > TimeSpan.Zero) ? (now - period) : DateTime.MinValue; // period equal or below 0 means "biggest time frame possible"
-
-                Logging.Log.WriteMessage(string.Format("[Retention Policy]: Next time frame and interval pair: {0} / {1}", timeFrame, interval), Logging.LogMessageType.Profiling);
+                Logging.Log.WriteMessage(string.Format("[Retention Policy]: Next time frame and interval pair: {0}", singleRetentionPolicyOptionValue.ToString()), Logging.LogMessageType.Profiling);
 
                 List<DateTime> backupsInTimeFrame = new List<DateTime>();
                 while (clonedBackupList.Count > 0 && clonedBackupList[0] >= timeFrame)
@@ -271,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
                     // Keep this backup if
                     // - no backup has yet been added to the time frame (keeps at least the oldest backup in a time frame)
                     // - difference between last added backup and this backup is bigger than the specified interval
-                    if (lastKept == null || (backup - lastKept.Value) >= interval)
+                    if (lastKept == null || singleRetentionPolicyOptionValue.IsKeepAllVersions() || (backup - lastKept.Value) >= singleRetentionPolicyOptionValue.Interval)
                     {
                         Logging.Log.WriteMessage(string.Format("[Retention Policy]: Keeping backup: {0}", backup), Logging.LogMessageType.Profiling);
                         lastKept = backup;
