@@ -125,7 +125,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             if (parts.Length <= 1)
             {
-                info.ReportClientError("No url or operation supplied");
+                info.ReportClientError("No url or operation supplied", System.Net.HttpStatusCode.BadRequest);
                 return;
             }
 
@@ -147,7 +147,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     TestConnection(url, info);
                     return;
                 default:
-                    info.ReportClientError("No such method");
+                    info.ReportClientError("No such method", System.Net.HttpStatusCode.BadRequest);
                     return;
             }
         }
@@ -177,7 +177,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     TestConnection(url, info);
                     return;
                 default:
-                    info.ReportClientError("No such method");
+                    info.ReportClientError("No such method", System.Net.HttpStatusCode.BadRequest);
                     return;
             }
         }

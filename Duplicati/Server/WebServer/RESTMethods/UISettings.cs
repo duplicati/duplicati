@@ -30,7 +30,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
 			if (string.IsNullOrWhiteSpace(key))
 			{
-				info.ReportClientError("Scheme is missing");
+                info.ReportClientError("Scheme is missing", System.Net.HttpStatusCode.BadRequest);
 				return;
 			}
 
@@ -41,13 +41,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
 			}
 			catch (Exception ex)
 			{
-				info.ReportClientError(string.Format("Unable to parse settings object: {0}", ex.Message));
+                info.ReportClientError(string.Format("Unable to parse settings object: {0}", ex.Message), System.Net.HttpStatusCode.BadRequest);
 				return;
 			}
 
 			if (data == null)
 			{
-				info.ReportClientError(string.Format("Unable to parse settings object"));
+                info.ReportClientError(string.Format("Unable to parse settings object"), System.Net.HttpStatusCode.BadRequest);
 				return;
 			}
 

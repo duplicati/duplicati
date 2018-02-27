@@ -55,7 +55,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         }
                         catch (Exception ex)
                         {
-                            info.ReportClientError(ex.Message);
+                            info.ReportClientError(ex.Message, System.Net.HttpStatusCode.BadRequest);
                             return;
                         }
                         if (ts.TotalMilliseconds > 0)
