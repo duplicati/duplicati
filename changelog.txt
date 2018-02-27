@@ -1,3 +1,17 @@
+2018-02-27 - 2.0.2.20_canary_2018-02-27
+==========
+* Added Docker images, thanks @fkrull
+* Fixed log entries being cut in UI, thanks @Pectojin
+* Improved the webserver status codes, thanks @Pectojin
+* Fixed the Mono download link for the OSX package, thanks @aranaur
+* Improved the log UI to not load excessive results, thanks @Pectojin
+* Fixed an issue where retention options would not clear in the UI, thanks @TekkiWuff
+* Not applying default filters, unless explicitly enabled by the user
+* Automatically reloading DNS entries for WebDAV if there is a name lookup error, thanks @Pectojin
+* Improved rentention policy syntax and functionality, thanks @TekkiWuff
+* Added script to re-encrypt remote files, thanks @wjansenw
+* Fixed a number of incorrect HTTP status codes, thanks @Pectojin
+
 2018-02-12 - 2.0.2.19_canary_2018-02-12
 ==========
 * Updated translations
