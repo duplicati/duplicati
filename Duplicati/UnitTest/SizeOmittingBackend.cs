@@ -110,6 +110,8 @@ namespace Duplicati.UnitTest
                 return "A testing backend that does not return size information";
             }
         }
+
+        public string DNSName => m_backend.DNSName;
         #endregion
         #region IDisposable implementation
         public void Dispose()
