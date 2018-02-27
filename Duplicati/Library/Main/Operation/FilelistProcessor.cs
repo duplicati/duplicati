@@ -96,7 +96,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (extraCount > 0)
             {
-                var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
+                var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair (Backup-Options -> Advanced -> Database -> Repair)", extraCount);
                 log.AddError(s, null);
                 throw new Duplicati.Library.Interface.UserInformationException(s);
             }
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!tp.BackupPrefixes.Contains(options.Prefix) && tp.BackupPrefixes.Length > 0)
                     s = string.Format("Found {0} files that are missing from the remote storage, and no files with the backup prefix {1}, but found the following backup prefixes: {2}", missingCount, options.Prefix, string.Join(", ", tp.BackupPrefixes));
                 else
-                    s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
+                    s = string.Format("Found {0} files that are missing from the remote storage, please run repair (Backup-Options -> Advanced -> Database -> Repair)", missingCount);
                 
                 log.AddError(s, null);
                 throw new Duplicati.Library.Interface.UserInformationException(s);
