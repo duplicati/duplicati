@@ -369,9 +369,9 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { m_server }; }
         }
     }
 }

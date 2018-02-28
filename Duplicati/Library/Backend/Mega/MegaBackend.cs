@@ -260,7 +260,7 @@ namespace Duplicati.Library.Backend.Mega
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
             get { return null; }
         }

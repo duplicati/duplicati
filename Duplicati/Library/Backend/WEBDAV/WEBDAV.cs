@@ -313,9 +313,9 @@ namespace Duplicati.Library.Backend
             get { return Strings.WEBDAV.Description; }
         }
 
-        public string DNSName 
+        public string[] DNSName 
         {
-            get { return m_dnsName; }
+            get { return new string[] { m_dnsName }; }
         }
 
         public void Test()

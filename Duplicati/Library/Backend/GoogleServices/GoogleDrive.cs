@@ -347,9 +347,9 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { new System.Uri(DRIVE_API_URL).Host, new System.Uri(DRIVE_API_UPLOAD_URL).Host }; }
         }
 
         #endregion

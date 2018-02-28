@@ -337,9 +337,9 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { new Uri(BOX_API_URL).Host, new Uri(BOX_UPLOAD_URL).Host }; }
         }
 
         #endregion

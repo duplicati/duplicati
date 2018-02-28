@@ -11,8 +11,8 @@ namespace Duplicati.Library.Backend
 {
     public class DropboxHelper : OAuthHelper
     {
-        private const string API_URL = "https://api.dropboxapi.com/2";
-        private const string CONTENT_API_URL = "https://content.dropboxapi.com/2";
+        internal const string API_URL = "https://api.dropboxapi.com/2";
+        internal const string CONTENT_API_URL = "https://content.dropboxapi.com/2";
         private const int DROPBOX_MAX_CHUNK_UPLOAD = 10 * 1024 * 1024; // 10 MB max upload
         private const string API_ARG_HEADER = "DROPBOX-API-arg";
 

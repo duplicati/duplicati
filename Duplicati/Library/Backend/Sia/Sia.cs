@@ -440,9 +440,9 @@ namespace Duplicati.Library.Backend.Sia
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { new System.Uri(m_apihost).Host }; }
         }
 
         #endregion

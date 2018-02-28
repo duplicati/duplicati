@@ -78,6 +78,13 @@ namespace Duplicati.UnitTest
         {
             m_backend.CreateFolder();
         }
+        public string[] DNSName
+        {
+            get
+            {
+                return m_backend.DNSName;
+            }
+        }
         public string DisplayName
         {
             get
@@ -110,8 +117,6 @@ namespace Duplicati.UnitTest
                 return "A testing backend that does not return size information";
             }
         }
-
-        public string DNSName => m_backend.DNSName;
         #endregion
         #region IDisposable implementation
         public void Dispose()

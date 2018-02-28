@@ -450,9 +450,9 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { new Uri(_url).Host }; }
         }
 
         private static System.IO.Stream StringToStream(string str)

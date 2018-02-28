@@ -254,9 +254,9 @@ namespace Duplicati.Library.Backend
             get { return Strings.TahoeBackend.Description; }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { new Uri(m_url).Host }; }
         }
 
         #endregion

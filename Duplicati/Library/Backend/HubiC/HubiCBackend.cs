@@ -28,7 +28,7 @@ namespace Duplicati.Library.Backend.HubiC
         private const string HUBIC_API_URL = "https://api.hubic.com/1.0/";
         private const string HUBIC_API_CREDENTIAL_URL = HUBIC_API_URL + "account/credentials";
 
-        private OpenStackStorage m_openstack;
+        private OpenStackHelper m_openstack;
 
         private class HubiCAuthResponse
         {
@@ -76,6 +76,17 @@ namespace Duplicati.Library.Backend.HubiC
             protected override string SimpleStorageEndPoint
             {
                 get { return AuthToken.endpoint; }
+            }
+
+            public string EndPointDnsName
+            {
+                get
+                {
+                    if (m_token == null || string.IsNullOrWhiteSpace(m_token.endpoint))
+                        return null;
+                    
+                    return new Uri(m_token.endpoint).Host;
+                }
             }
         }
 
@@ -171,9 +182,9 @@ namespace Duplicati.Library.Backend.HubiC
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { new Uri(HUBIC_API_URL).Host, m_openstack.EndPointDnsName }; }
         }
 
         #endregion
