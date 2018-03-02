@@ -208,7 +208,8 @@ namespace Duplicati.Library.Main.Operation
                                      select n).ToList();
 
             log.KnownFileCount = remotelist.Count;
-            log.KnownFileSize = remotelist.Select(x => Math.Max(0, x.File.Size)).Sum();
+            long knownFileSize = remotelist.Select(x => Math.Max(0, x.File.Size)).Sum();
+            log.KnownFileSize = knownFileSize;
             log.UnknownFileCount = unknownlist.Count;
             log.UnknownFileSize = unknownlist.Select(x => Math.Max(0, x.Size)).Sum();
             log.BackupListCount = filesets.Count;
@@ -223,6 +224,27 @@ namespace Duplicati.Library.Main.Operation
                     {
                         log.TotalQuotaSpace = quota.TotalQuotaSpace;
                         log.FreeQuotaSpace = quota.FreeQuotaSpace;
+
+                        // Check to see if there should be a warning or error about the quota
+                        // Since this processor may be called multiple times during a backup
+                        // (both at the start and end, for example), the log keeps track of
+                        // whether a quota error or warning has been sent already.
+                        // Note that an error can still be sent later even if a warning was sent earlier.
+                        if (!log.ReportedQuotaError && quota.FreeQuotaSpace == 0)
+                        {
+                            log.ReportedQuotaError = true;
+                            log.AddError(string.Format("Backend quota has been exceeded: Using {0} of {1} ({2} available)", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace), Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace)), null);
+                        }
+                        else if (!log.ReportedQuotaWarning && !log.ReportedQuotaError && quota.FreeQuotaSpace >= 0) // Negative value means the backend didn't return the quota info
+                        {
+                            // Warnings are sent if the available free space is less than the given percentage of the total backup size.
+                            double warningThreshold = options.QuotaWarningThreshold / (double)100;
+                            if (quota.FreeQuotaSpace < warningThreshold * knownFileSize)
+                            {
+                                log.ReportedQuotaWarning = true;
+                                log.AddWarning(string.Format("Backend quota is close to being exceeded: Using {0} of {1} ({2} available)", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace), Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace)), null);
+                            }
+                        }
                     }
                 }
 

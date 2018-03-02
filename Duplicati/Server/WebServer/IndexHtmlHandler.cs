@@ -49,6 +49,7 @@ namespace Duplicati.Server.WebServer
                 response.Status = System.Net.HttpStatusCode.OK;
                 response.Reason = "OK";
                 response.ContentType = "text/html; charset=utf-8";
+                response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
 
                 using (var fs = System.IO.File.OpenRead(System.IO.File.Exists(html) ? html : htm))
                 {

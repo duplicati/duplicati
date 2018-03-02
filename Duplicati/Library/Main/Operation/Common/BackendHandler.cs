@@ -375,6 +375,28 @@ namespace Duplicati.Library.Main.Operation.Common
                     if (ex is System.Threading.ThreadAbortException || ex is OperationCanceledException)
                         break;
 
+                    if (ex is System.Net.WebException && ((System.Net.WebException)ex).Status == System.Net.WebExceptionStatus.NameResolutionFailure)
+                    {
+                        try
+                        {
+                            var names = m_backend.DNSName ?? new string[0];
+                            foreach (var name in names)
+                                if (!string.IsNullOrWhiteSpace(name))
+                                    try
+                                    {
+                                        System.Net.Dns.GetHostEntry(name);
+                                    }
+                                    catch (Exception dnsex)
+                                    {
+                                        await m_log.WriteVerboseAsync("Failed to refresh DNS record for {0}: {1}", name, dnsex);
+                                    }
+                        }
+                        catch (Exception bkdnsex)
+                        {
+                            await m_log.WriteWarningAsync("Failed to get DNS names from the backend", bkdnsex);
+                        }
+                    }
+
                     await m_stats.SendEventAsync(item.Operation, i < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
                     bool recovered = false;

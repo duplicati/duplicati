@@ -195,8 +195,8 @@ namespace Duplicati.Library.Main.Operation
         private List<DateTime> ApplyRetentionPolicy(DateTime[] backups)
         {
             // Any work to do?
-            Dictionary<TimeSpan, TimeSpan> retentionPolicyOptionValue = m_options.RetentionPolicy;
-            if (retentionPolicyOptionValue.Count == 0 || backups.Length == 0)
+            var retentionPolicyOptionValues = m_options.RetentionPolicy;
+            if (retentionPolicyOptionValues.Count == 0 || backups.Length == 0)
             {
                 return new List<DateTime>(); // don't delete any backups
             }
@@ -209,11 +209,14 @@ namespace Duplicati.Library.Main.Operation
             // Make sure the backups are in descending order (newest backup in the beginning)
             clonedBackupList = clonedBackupList.OrderByDescending(x => x).ToList();
 
-            // Most current backup should never get deleted in this process, so exclude it
+            // Most recent backup usually should never get deleted in this process, so exclude it for now,
+            // but keep a reference to potentiall delete it when allow-full-removal is set
+            var mostRecentBackup = clonedBackupList.ElementAt(0);
             clonedBackupList.RemoveAt(0);
+            var deleteMostRecentBackup = m_options.AllowFullRemoval;
 
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: Time frames and intervals pairs: {0}",
-                string.Join(", ", retentionPolicyOptionValue.Select(x => x.Key + " / " + x.Value))), Logging.LogMessageType.Information);
+                string.Join(", ", retentionPolicyOptionValues)), Logging.LogMessageType.Information);
 
             Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups to consider: {0}",
                 string.Join(", ", clonedBackupList)), Logging.LogMessageType.Information);
@@ -221,18 +224,14 @@ namespace Duplicati.Library.Main.Operation
             // Collect all potential backups in each time frame and thin out according to the specified interval,
             // starting with the oldest backup in that time frame.
             // The order in which the time frames values are checked has to be from the smallest to the largest.
-            // If backups are not within any time frame, they will NOT be deleted here.
-            // The --keep-time and --keep-versions switched should be used to ultimately delete backups that are too old
             List<DateTime> backupsToDelete = new List<DateTime>();
             var now = DateTime.Now;
-            foreach (var singleRetentionPolicyOptionValue in retentionPolicyOptionValue.OrderBy(x => x.Key))
+            foreach (var singleRetentionPolicyOptionValue in retentionPolicyOptionValues.OrderBy(x => x.Timeframe))
             {
-                var period = singleRetentionPolicyOptionValue.Key;
-                var interval = singleRetentionPolicyOptionValue.Value;
+                // The timeframe in the retention policy option is only a timespan which has to be applied to the current DateTime to get the actual lower bound
+                DateTime timeFrame = (singleRetentionPolicyOptionValue.IsUnlimtedTimeframe()) ? DateTime.MinValue : (now - singleRetentionPolicyOptionValue.Timeframe);
 
-                DateTime timeFrame = (period > TimeSpan.Zero) ? (now - period) : DateTime.MinValue; // period equal or below 0 means "biggest time frame possible"
-
-                Logging.Log.WriteMessage(string.Format("[Retention Policy]: Next time frame and interval pair: {0} / {1}", timeFrame, interval), Logging.LogMessageType.Profiling);
+                Logging.Log.WriteMessage(string.Format("[Retention Policy]: Next time frame and interval pair: {0}", singleRetentionPolicyOptionValue.ToString()), Logging.LogMessageType.Profiling);
 
                 List<DateTime> backupsInTimeFrame = new List<DateTime>();
                 while (clonedBackupList.Count > 0 && clonedBackupList[0] >= timeFrame)
@@ -251,23 +250,36 @@ namespace Duplicati.Library.Main.Operation
                     // Keep this backup if
                     // - no backup has yet been added to the time frame (keeps at least the oldest backup in a time frame)
                     // - difference between last added backup and this backup is bigger than the specified interval
-                    if (lastKept == null || (backup - lastKept.Value) >= interval)
+                    if (lastKept == null || singleRetentionPolicyOptionValue.IsKeepAllVersions() || (backup - lastKept.Value) >= singleRetentionPolicyOptionValue.Interval)
                     {
                         Logging.Log.WriteMessage(string.Format("[Retention Policy]: Keeping backup: {0}", backup), Logging.LogMessageType.Profiling);
                         lastKept = backup;
                     }
                     else
                     {
-                        Logging.Log.WriteMessage(string.Format("[Retention Policy]: Marking backup for deletion: {0}", backup), Logging.LogMessageType.Profiling);
+                        Logging.Log.WriteMessage(string.Format("[Retention Policy]: Deleting backup: {0}", backup), Logging.LogMessageType.Profiling);
                         backupsToDelete.Add(backup);
                     }
                 }
+
+                // Check if most recent backup is outside of this time frame (meaning older/smaller)
+                deleteMostRecentBackup &= (mostRecentBackup < timeFrame);
             }
 
-            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups outside of all time frames and thus not checked: {0}",
-                    string.Join(", ", clonedBackupList)), Logging.LogMessageType.Profiling);
+            // Delete all remaining backups
+            backupsToDelete.AddRange(clonedBackupList);
+            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups outside of all time frames and thus getting deleted: {0}",
+                    string.Join(", ", clonedBackupList)), Logging.LogMessageType.Information);
 
-            Logging.Log.WriteMessage(string.Format("[Retention Policy]: Backups to delete: {0}",
+            // Delete most recent backup if allow-full-removal is set and the most current backup is outside of any time frame
+            if (deleteMostRecentBackup)
+            {
+                backupsToDelete.Add(mostRecentBackup);
+                Logging.Log.WriteMessage(string.Format("[Retention Policy]: Deleting most recent backup: {0}",
+                    mostRecentBackup), Logging.LogMessageType.Information);
+            }
+
+            Logging.Log.WriteMessage(string.Format("[Retention Policy]: All backups to delete: {0}",
                 string.Join(", ", backupsToDelete.OrderByDescending(x => x))), Logging.LogMessageType.Information);
 
             return backupsToDelete;

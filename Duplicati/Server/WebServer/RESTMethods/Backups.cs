@@ -120,7 +120,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             var err = Program.DataConnection.ValidateBackup(ipx.Backup, ipx.Schedule);
                             if (!string.IsNullOrWhiteSpace(err))
                             {
-                                info.ReportClientError(err);
+                                info.ReportClientError(err, System.Net.HttpStatusCode.BadRequest);
                                 return;
                             }
 
@@ -168,7 +168,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
                 if (data.Backup == null)
                 {
-                    info.ReportClientError("Data object had no backup entry");
+                    info.ReportClientError("Data object had no backup entry", System.Net.HttpStatusCode.BadRequest);
                     return;
                 }
 
@@ -200,14 +200,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     {
                         if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
                         {
-                            info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name);
+                            info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name, System.Net.HttpStatusCode.Conflict);
                             return;
                         }
 
                         var err = Program.DataConnection.ValidateBackup(data.Backup, data.Schedule);
                         if (!string.IsNullOrWhiteSpace(err))
                         {
-                            info.ReportClientError(err);
+                            info.ReportClientError(err, System.Net.HttpStatusCode.BadRequest);
                             return;
                         }
 
@@ -220,9 +220,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
             catch (Exception ex)
             {
                 if (data == null)
-                    info.ReportClientError(string.Format("Unable to parse backup or schedule object: {0}", ex.Message));
+                    info.ReportClientError(string.Format("Unable to parse backup or schedule object: {0}", ex.Message), System.Net.HttpStatusCode.BadRequest);
                 else
-                    info.ReportClientError(string.Format("Unable to save schedule or backup object: {0}", ex.Message));
+                    info.ReportClientError(string.Format("Unable to save schedule or backup object: {0}", ex.Message), System.Net.HttpStatusCode.InternalServerError);
             }
         }
 

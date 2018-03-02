@@ -457,6 +457,30 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                 return Strings.AmzCD.Description;
             }
         }
+
+        public string[] DNSName
+        {
+            get 
+            {
+                var contentUrl = string.Empty;
+                var metdataUrl = string.Empty;
+
+                if (m_endPointInfo != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(m_endPointInfo.ContentUrl))
+                        contentUrl = new Uri(m_endPointInfo.ContentUrl).Host;
+                    if (!string.IsNullOrWhiteSpace(m_endPointInfo.MetadataUrl))
+                        metdataUrl = new Uri(m_endPointInfo.MetadataUrl).Host;
+                }
+                
+                return new string[] { 
+                    new Uri(CLOUDRIVE_MASTER_URL).Host, 
+                    contentUrl, 
+                    metdataUrl 
+                }; 
+            }
+        }
+
         #endregion
         #region IDisposable implementation
         public void Dispose()

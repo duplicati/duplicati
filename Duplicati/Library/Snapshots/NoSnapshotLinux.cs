@@ -45,7 +45,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string file)
         {
-            return UnixSupport.File.GetSymlinkTarget(NormalizePath(file));
+            return _sysIO.GetSymlinkTarget(file);
         }
         
         /// <summary>

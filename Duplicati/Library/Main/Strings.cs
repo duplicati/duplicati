@@ -119,6 +119,8 @@ namespace Duplicati.Library.Main.Strings
         public static string UploadUnchangedBackupsShort { get { return LC.L(@"Upload empty backup files"); } }
         public static string QuotasizeLong { get { return LC.L(@"This value can be used to set a known upper limit on the amount of space a backend has. If the backend reports the size itself, this value is ignored"); } }
         public static string QuotasizeShort { get { return LC.L(@"A reported maximum storage"); } }
+        public static string QuotaWarningThresholdLong { get { return LC.L(@"Sets a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less that this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored"); } }
+        public static string QuotaWarningThresholdShort { get { return LC.L(@"Threshold for warning about low quota"); } }
         public static string DefaultFiltersLong(string windows, string osx, string linux, string all) { return LC.L(@"Exclude files that match the given filter sets. Which default filter sets should be used. Valid sets are ""{0}"", ""{1}"", ""{2}"", and ""{3}"". If this parameter is set with no value, the set for the current operating system will be used.", windows, osx, linux, all); }
         public static string DefaultFiltersShort { get { return LC.L(@"Default filter sets"); } }
         public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
@@ -181,7 +183,7 @@ namespace Duplicati.Library.Main.Strings
         public static string KeeptimeShort { get { return LC.L(@"Keep all versions within a timespan"); } }
         public static string KeeptimeLong { get { return LC.L(@"Use this option to set the timespan in which backups are kept."); } }
         public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
-        public static string RetentionPolicyLong { get { return LC.L(@"Use this option to reduce the number of versions that are kept with increasing version age by deleting most of the old backups. The expected format is a comma seperated list of collon sperated time frame and interval pairs. For example the value ""7D:0s,3M:1D,10Y:2M"" means ""For 7 day keep all backups, for 3 months keep one backup per day and for 10 years one backup every 2nd month"); } }
+        public static string RetentionPolicyLong { get { return LC.L(@"Use this option to reduce the number of versions that are kept with increasing version age by deleting most of the old backups. The expected format is a comma separated list of colon separated time frame and interval pairs. For example the value ""7D:0s,3M:1D,10Y:2M"" means ""For 7 day keep all backups, for 3 months keep one backup every day, for 10 years one backup every 2nd month and delete every backup older than this."". This option also supports using the specifier ""U"" to indicate an unlimited time interval."); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
         public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }
         public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
@@ -241,6 +243,8 @@ namespace Duplicati.Library.Main.Strings
         public static string AllowfullremovalLong { get { return LC.L(@"By default, the last fileset cannot be removed. This is a safeguard to make sure that all remote data is not deleted by a configuration mistake. Use this flag to disable that protection, such that all filesets can be deleted."); } }
         public static string AutoVacuumShort { get { return LC.L(@"Allow automatic rebuilding of local database to save space."); } }
         public static string AutoVacuumLong { get { return LC.L(@"Some operations that manipulate the local database leave unused entries behind. These entries are not deleted from a hard drive until a VACUUM operation is run. This operation saves disk space in the long run but needs to temporarily create a copy of all valid entries in the database. Setting this to true will allow Duplicati to perform VACUUM operations at its discretion."); } }
+        public static string DisablefilescannerShort { get { return LC.L(@"Disable the read-ahead scanner"); } }
+        public static string DisablefilescannerLong { get { return LC.L(@"When this flag is enabled, the scanner that computes the size of source files is disabled, and instead the reported size is read from the database. Using this flag can speed up the backup by reducing disk access, but will give a less accurate progress indicator."); } }
     }
 
     internal static class Common

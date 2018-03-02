@@ -159,6 +159,11 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
+        public string[] DNSName
+        {
+            get { return _azureBlob.DnsNames; }
+        }
+
         public void Test()
         {
             this.TestList();

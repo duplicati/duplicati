@@ -145,7 +145,8 @@ namespace Duplicati.Library.Backend.Box
             if (m_filecache != null && m_filecache.ContainsKey(name))
                 return m_filecache[name];
 
-            PagedFileListResponse(CurrentFolder, false);
+            // Make sure we enumerate this, otherwise the m_filecache is not assigned
+            PagedFileListResponse(CurrentFolder, false).LastOrDefault();
 
             if (m_filecache != null && m_filecache.ContainsKey(name))
                 return m_filecache[name];
@@ -334,6 +335,11 @@ namespace Duplicati.Library.Backend.Box
             {
                 return Strings.Box.Description;
             }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(BOX_API_URL).Host, new Uri(BOX_UPLOAD_URL).Host }; }
         }
 
         #endregion

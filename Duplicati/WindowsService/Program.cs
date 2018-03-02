@@ -47,7 +47,7 @@ namespace Duplicati.WindowsService
             else if (install || uninstall)
             {
                 // Remove the install and uninstall flags if they are present
-                var commandline = string.Join(" ", args.Where(x => !(string.Equals("install", x, StringComparison.OrdinalIgnoreCase) || string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase))));
+                var commandline = Library.Utility.Utility.WrapAsCommandLine(args.Where(x => !(string.Equals("install", x, StringComparison.OrdinalIgnoreCase) || string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase))));
                 var selfexec = Assembly.GetExecutingAssembly().Location;
 
 

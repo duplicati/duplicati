@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
+using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -35,7 +36,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 if (options.StoreMetadata)
                 {
-                    metadata = snapshot.GetMetadata(path, attributes.HasFlag(System.IO.FileAttributes.ReparsePoint), options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
+                    metadata = snapshot.GetMetadata(path, snapshot.IsSymlink(path, attributes), options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
                     if (metadata == null)
                         metadata = new Dictionary<string, string>();
 

@@ -1,0 +1,4 @@
+#!/bin/bash
+EXE_FILE=/opt/duplicati/Duplicati.Server.exe
+APP_NAME=DuplicatiServer
+exec -a "$APP_NAME" mono "$EXE_FILE" "$@"

@@ -318,6 +318,11 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(JFS_ROOT).Host, new Uri(JFS_ROOT_UPLOAD).Host }; }
+        }
+
         public void Get(string remotename, System.IO.Stream stream)
         {
             // Downloading from Jottacloud: Will only succeed if the file has a completed revision,

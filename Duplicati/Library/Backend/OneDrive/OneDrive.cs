@@ -500,7 +500,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        #endregion 
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(WLID_SERVER).Host, new Uri(ONEDRIVE_SERVICE_URL).Host, string.IsNullOrWhiteSpace(m_userid) ? null : string.Format("cid-{0}.users.storage.live.com", m_userid) }; }
+        }
+
+        #endregion
 
         #region IStreamingBackend Members
 

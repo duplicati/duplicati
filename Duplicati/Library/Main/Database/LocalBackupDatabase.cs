@@ -608,6 +608,18 @@ namespace Duplicati.Library.Main.Database
             return lastFilesetId;
         }
 
+        internal Tuple<long, long> GetLastBackupFileCountAndSize()
+        {
+            using (var cmd = m_connection.CreateCommand())
+            {
+                var lastFilesetId = cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC LIMIT 1");
+                var count = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" NOT IN (?, ?)", -1, lastFilesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+                var size = cmd.ExecuteScalarInt64(@"SELECT SUM(""Blockset"".""Length"") FROM ""File"", ""FilesetEntry"", ""Blockset"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" NOT IN (?, ?)", -1, lastFilesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+
+                return new Tuple<long, long>(count, size);
+            }
+        }
+
         internal void UpdateChangeStatistics(BackupResults results)
         {
             using(var cmd = m_connection.CreateCommand(Transaction))

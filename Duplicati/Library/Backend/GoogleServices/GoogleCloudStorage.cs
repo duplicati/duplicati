@@ -260,6 +260,12 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         {
             get { return Strings.GoogleCloudStorage.Description; }
         }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new System.Uri(UPLOAD_API_URL).Host, new System.Uri(API_URL).Host }; }
+        }
+
         #endregion
 
         public void Put(string remotename, System.IO.Stream stream)

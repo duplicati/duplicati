@@ -290,6 +290,11 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(m_authUrl).Host, string.IsNullOrWhiteSpace(m_storageUrl) ? null : new Uri(m_storageUrl).Host }; }
+        }
+
         public void Get(string remotename, System.IO.Stream stream)
         {
             var req = CreateRequest("/" + remotename, "");

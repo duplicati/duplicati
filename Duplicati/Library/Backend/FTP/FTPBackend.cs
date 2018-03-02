@@ -355,6 +355,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(m_url).Host }; }
+        }
+
         public void Test()
         {
             this.TestList();

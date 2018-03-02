@@ -143,33 +143,46 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
             {
-                if (options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
+                // Not all reparse points are symlinks.
+                // For example, on Windows 10 Fall Creator's Update, the OneDrive folder (and all subfolders)
+                // are reparse points, which allows the folder to hook into the OneDrive service and download things on-demand.
+                // If we can't find a symlink target for the current path, we won't treat it as a symlink.
+                string symlinkTarget = snapshot.GetSymlinkTarget(path);
+                if (!string.IsNullOrWhiteSpace(symlinkTarget))
                 {
-                    await log.WriteVerboseAsync("Ignoring symlink {0}", path);
-                    return false;
-                }
-
-                if (options.SymlinkPolicy == Options.SymlinkStrategy.Store)
-                {
-                    var metadata = await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot, log);
-
-                    if (!metadata.ContainsKey("CoreSymlinkTarget"))
+                    if (options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
                     {
-                        var p = snapshot.GetSymlinkTarget(path);
-
-                        if (string.IsNullOrWhiteSpace(p))
-                            await log.WriteVerboseAsync("Ignoring empty symlink {0}", path);
-                        else
-                            metadata["CoreSymlinkTarget"] = p;
+                        await log.WriteVerboseAsync("Ignoring symlink {0}", path);
+                        return false;
                     }
 
-                    var metahash = Utility.WrapMetadata(metadata, options);
-                    await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, log, database, streamblockchannel);
+                    if (options.SymlinkPolicy == Options.SymlinkStrategy.Store)
+                    {
+                        var metadata = await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot, log);
 
-                    await log.WriteVerboseAsync("Stored symlink {0}", path);
-                    // Don't process further
-                    return false;
+                        if (!metadata.ContainsKey("CoreSymlinkTarget"))
+                        {
+                            var p = snapshot.GetSymlinkTarget(path);
+
+                            if (string.IsNullOrWhiteSpace(p))
+                                await log.WriteVerboseAsync("Ignoring empty symlink {0}", path);
+                            else
+                                metadata["CoreSymlinkTarget"] = p;
+                        }
+
+                        var metahash = Utility.WrapMetadata(metadata, options);
+                        await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, log, database, streamblockchannel);
+
+                        await log.WriteVerboseAsync("Stored symlink {0}", path);
+                        // Don't process further
+                        return false;
+                    }
                 }
+                else
+                {
+                    await log.WriteVerboseAsync("Treating empty symlink as regular path {0}", path);
+                }
+
             }
 
             if ((attributes & FileAttributes.Directory) == FileAttributes.Directory)

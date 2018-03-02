@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -38,7 +39,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             if (string.IsNullOrEmpty(path))
             {
-                info.ReportClientError("No path parameter was found");
+                info.ReportClientError("No path parameter was found", System.Net.HttpStatusCode.BadRequest);
                 return;
             }
 
@@ -67,7 +68,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             if (Duplicati.Library.Utility.Utility.IsClientLinux && !path.StartsWith("/", StringComparison.Ordinal))
             {
-                info.ReportClientError("The path parameter must start with a forward-slash");
+                info.ReportClientError("The path parameter must start with a forward-slash", System.Net.HttpStatusCode.BadRequest);
                 return;
             }
 
@@ -87,12 +88,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     {
                     }
 
-                    info.ReportServerError("File or folder not found");
+                    info.ReportServerError("File or folder not found", System.Net.HttpStatusCode.NotFound);
                     return;
                 }
                 else
                 {
-                    info.ReportClientError(string.Format("No such operation found: {0}", command));
+                    info.ReportClientError(string.Format("No such operation found: {0}", command), System.Net.HttpStatusCode.NotFound);
                     return;
                 }
             }
@@ -143,7 +144,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             catch (Exception ex)
             {
-                info.ReportClientError("Failed to process the path: " + ex.Message);
+                info.ReportClientError("Failed to process the path: " + ex.Message, System.Net.HttpStatusCode.InternalServerError);
             }
         }
 
@@ -215,7 +216,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 try
                 {
                     var attr = systemIO.GetFileAttributes(s);
-                    var isSymlink = (attr & FileAttributes.ReparsePoint) != 0;
+                    var isSymlink = systemIO.IsSymlink(s, attr);
                     var isFolder = (attr & FileAttributes.Directory) != 0;
                     var isFile = !isFolder;
                     var isHidden = (attr & FileAttributes.Hidden) != 0;

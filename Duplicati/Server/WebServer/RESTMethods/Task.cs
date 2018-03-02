@@ -60,7 +60,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             else
             {
-                info.ReportClientError("Invalid request");
+                info.ReportClientError("Invalid request", System.Net.HttpStatusCode.BadRequest);
             }
         }
 
@@ -97,7 +97,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 }
             }
 
-            info.ReportClientError("Invalid or missing task id");
+            info.ReportClientError("Invalid or missing task id", System.Net.HttpStatusCode.NotFound);
         }
     }
 }

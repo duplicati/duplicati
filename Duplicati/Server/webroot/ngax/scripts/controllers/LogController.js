@@ -32,7 +32,8 @@ backupApp.controller('LogController', function($scope, $routeParams, $timeout, S
 
                 resp.data.reverse();
                 $scope.LiveData.unshift.apply($scope.LiveData, resp.data);
-                $scope.LiveData.Length = Math.min(1000, $scope.LiveData.length);
+                $scope.LiveData.Length = Math.min(300, $scope.LiveData.length);
+                $scope.LiveData = $scope.LiveData.slice(0,$scope.LiveData.Length)
 
                 $scope.LiveRefreshing = false;
                 if ($scope.LiveRefreshPending)

@@ -422,6 +422,18 @@ namespace Duplicati.Library.Backend.OpenStack
                 return Strings.OpenStack.Description;
             }
         }
+
+        public virtual string[] DNSName
+        {
+            get 
+            { 
+                return new string[] { 
+                    new System.Uri(m_authUri).Host, 
+                    string.IsNullOrWhiteSpace(m_simplestorageendpoint) ? null : new System.Uri(m_simplestorageendpoint).Host 
+                }; 
+            }
+        }
+
         #endregion
         #region IDisposable implementation
         public void Dispose()

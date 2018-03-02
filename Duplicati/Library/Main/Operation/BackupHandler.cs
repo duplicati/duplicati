@@ -300,8 +300,20 @@ namespace Duplicati.Library.Main.Operation
                         {
                             try
                             {
-                                // Start the parallel scanner
-                                parallelScanner = Backup.CountFilesHandler.Run(snapshot, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
+                                // Start parallel scan, or use the database
+                                if (m_options.ChangedFilelist == null || m_options.ChangedFilelist.Length < 1)
+                                {
+                                    if (m_options.DisableFileScanner)
+                                    {
+                                        var d = m_database.GetLastBackupFileCountAndSize();
+                                        m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);
+                                    }
+                                    else
+                                    {
+                                        parallelScanner = Backup.CountFilesHandler.Run(snapshot, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
+                                    }
+                                }
+
 
                                 // Make sure the database is sane
                                 await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, true);

@@ -346,6 +346,12 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 }
             }
         }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new System.Uri(DRIVE_API_URL).Host, new System.Uri(DRIVE_API_UPLOAD_URL).Host }; }
+        }
+
         #endregion
 
         #region IRenameEnabledBackend implementation

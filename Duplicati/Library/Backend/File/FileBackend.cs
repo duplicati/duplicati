@@ -351,6 +351,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public string[] DNSName
+        {
+            get { return null; }
+        }
+
         public void Rename(string oldname, string newname)
         {
             var source = GetRemoteName(oldname);

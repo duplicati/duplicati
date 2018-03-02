@@ -36,6 +36,29 @@ namespace Duplicati.Library.Backend.AzureBlob
         private readonly string _containerName;
         private readonly CloudBlobContainer _container;
 
+        public string[] DnsNames
+        {
+            get
+            {
+                var lst = new List<string>();
+                if (_container != null)
+                {
+                    if (_container.Uri != null)
+                        lst.Add(_container.Uri.Host);
+
+                    if (_container.StorageUri != null)
+                    {
+                        if (_container.StorageUri.PrimaryUri != null)
+                            lst.Add(_container.StorageUri.PrimaryUri.Host);
+                        if (_container.StorageUri.SecondaryUri != null)
+                            lst.Add(_container.StorageUri.SecondaryUri.Host);
+                    }
+                }
+
+                return lst.ToArray();
+            }
+        }
+
         public AzureBlobWrapper(string accountName, string accessKey, string containerName)
         {
             _containerName = containerName;

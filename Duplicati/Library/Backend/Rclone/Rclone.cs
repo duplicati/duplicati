@@ -284,6 +284,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public string[] DNSName
+        {
+            get { return new string[] { remote_repo }; }
+        }
+
         public void Test()
         {
             this.TestList();

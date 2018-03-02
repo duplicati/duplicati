@@ -474,6 +474,11 @@ namespace Duplicati.Library.Backend
             get { return m_wrapper; }
         }
 
+        public string[] DNSName
+        {
+            get { return new string[] { m_wrapper.DNSHost }; }
+        }
+
         private string GetFullKey(string name)
         {
             //AWS SDK encodes the filenames correctly

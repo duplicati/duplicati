@@ -78,6 +78,13 @@ namespace Duplicati.UnitTest
         {
             m_backend.CreateFolder();
         }
+        public string[] DNSName
+        {
+            get
+            {
+                return m_backend.DNSName;
+            }
+        }
         public string DisplayName
         {
             get

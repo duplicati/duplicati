@@ -82,6 +82,11 @@ namespace Duplicati.Library.Interface
         string Description { get; }
 
         /// <summary>
+        /// The DNS names used to resolve the IP addresses for this backend
+        /// </summary>
+        string[] DNSName { get; }
+
+        /// <summary>
         /// The purpose of this method is to test the connection to the remote backend.
         /// If any problem is encountered, this method should throw an exception.
         /// If the encountered problem is a missing target &quot;folder&quot;,

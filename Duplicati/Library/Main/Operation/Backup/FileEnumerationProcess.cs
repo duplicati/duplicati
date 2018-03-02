@@ -21,6 +21,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Main.Operation.Common;
+using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -191,7 +192,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             // If the file is a symlink, apply special handling
-            var isSymlink = (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint;
+            var isSymlink = snapshot.IsSymlink(path, attributes);
             if (isSymlink && symlinkPolicy == Options.SymlinkStrategy.Ignore)
             {
                 await log.WriteVerboseAsync("Excluding symlink: {0}", path);

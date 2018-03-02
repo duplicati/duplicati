@@ -1,3 +1,50 @@
+2018-02-27 - 2.0.2.20_canary_2018-02-27
+==========
+* Added Docker images, thanks @fkrull
+* Fixed log entries being cut in UI, thanks @Pectojin
+* Improved the webserver status codes, thanks @Pectojin
+* Fixed the Mono download link for the OSX package, thanks @aranaur
+* Improved the log UI to not load excessive results, thanks @Pectojin
+* Fixed an issue where retention options would not clear in the UI, thanks @TekkiWuff
+* Not applying default filters, unless explicitly enabled by the user
+* Automatically reloading DNS entries for WebDAV if there is a name lookup error, thanks @Pectojin
+* Improved rentention policy syntax and functionality, thanks @TekkiWuff
+* Added script to re-encrypt remote files, thanks @wjansenw
+* Fixed a number of incorrect HTTP status codes, thanks @Pectojin
+
+2018-02-12 - 2.0.2.19_canary_2018-02-12
+==========
+* Updated translations
+* Rebuilt stylesheet
+
+2018-02-11 - 2.0.2.18_canary_2018-02-11
+==========
+* Fixes to the "advanced options" list in the GUI, thanks @pectojin
+* Fixed OpenStack URI selector in the GUI, thanks @pectojin
+* Added workaround to broken OneDrive file listing, thanks @osmogar
+* Improvements to the log page, thanks @pectojin
+* Fixed a scheduler issue with clock drift, thanks @pectojin
+* Added option to ignore metadata when importing a backup, thanks @pectojin
+* Improvements to backup retention, thanks @TekkiWuff
+* Added `--parameters-file` to the server, thanks @pectojin
+* Fixed incorrect size requirements for Synology package
+* Fixes to the DuplicatiVerify.ps script, thanks @mnaiman
+* Fixed showing backup durations longer than 24 hours, thanks @pectojin
+* Fixed leaving orphan data in the settings database after deleting a backup job, thanks @pectojin
+* Fixed many caching issues, which should also fix the XSRF error message
+* Fixed sending "run now" commands in front of the backup queue, thanks @pectojin
+* Added warnings when the backup is nearing the quota limit, thanks @tygill
+* Fixed all reparse points were treated as symlinks, which fixes backup of OneDrive folders, thanks @tygill
+* Fixed a crash on very fast copy operations, thanks @TekkiWuff
+* Added .m2ts (BlueRay container) to the list of non-compressible extensions, thanks @pectojin
+* Fixed a bug in the box.com backend that prevented backups
+* Fixed a weird "0 warnings" message
+* Made the GUI menu stay in place instead of scroll away, thanks @pectojin
+* Fixed a problem where default filters were not applied when running from the server, thanks @tygill
+* Added limitations to the usage reporter, so it does not attempt to submit a large backlog of data
+* Fixed two cases where commandline arguments were not correctly formatted when sent to new processes
+* Added support for disabling the file-size read-ahead scanner
+
 2018-01-23 - 2.0.2.17_canary_2018-01-23
 ==========
 - Fixed a bug with the update packages having an invalid hash
