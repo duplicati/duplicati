@@ -447,17 +447,7 @@ Inside scripts and the commandline --parameters-file, where multiple filters are
 
 Duplicati has some built-in filters for different operating systems. In addition to the sets below, there is the special set "All", which selects all filters. These sets are specified via the --default-filters parameter.
 
-  Common
-    %COMMON_FILTERS%
-
-  Windows
-    %WINDOWS_FILTERS%
-
-  OSX
-    %OSX_FILTERS%
-
-  Linux
-    %LINUX_FILTERS%
+%FILTER_GROUPS%
 
 
 # =============================================================================

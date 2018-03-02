@@ -36,6 +36,6 @@ namespace Duplicati.Library.Utility.Strings {
         public static string IncorrectUsageError { get { return LC.L(@"Cannot read and write on the same stream"); } }
     }
     internal static class Filters {
-        public static string UnknownDefaultFilterSet(string filterSet) { return LC.L(@"Unknown default filter set: {0}", filterSet); }
+        public static string UnknownFilterGroup(string filterSet) { return LC.L(@"The string {0} does not represent a known filter group name. Valid values are: {1}", filterSet, string.Join(", ", Enum.GetNames(typeof(DefaultFilterGroup)))); }
     }
 }

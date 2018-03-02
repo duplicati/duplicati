@@ -121,7 +121,13 @@ namespace Duplicati.Library.Main.Strings
         public static string QuotasizeShort { get { return LC.L(@"A reported maximum storage"); } }
         public static string QuotaWarningThresholdLong { get { return LC.L(@"Sets a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less that this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored"); } }
         public static string QuotaWarningThresholdShort { get { return LC.L(@"Threshold for warning about low quota"); } }
-        public static string DefaultFiltersLong(string windows, string osx, string linux, string all) { return LC.L(@"Exclude files that match the given filter sets. Which default filter sets should be used. Valid sets are ""{0}"", ""{1}"", ""{2}"", and ""{3}"". If this parameter is set with no value, the set for the current operating system will be used.", windows, osx, linux, all); }
+        public static string DefaultFiltersLong() 
+        {
+            return
+                LC.L(@"This option specifies which built-in filter sets that should be applied. Multiple filters can be supplied, separated with commas.")
+                  + System.Environment.NewLine
+                  + Library.Utility.DefaultFilters.GetOptionDescriptions(4, false);
+        }        
         public static string DefaultFiltersShort { get { return LC.L(@"Default filter sets"); } }
         public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
         public static string SymlinkpolicyLong(string store, string ignore, string follow) { return LC.L(@"Use this option to handle symlinks differently. The ""{0}"" option will simply record a symlink with its name and destination, and a restore will recreate the symlink as a link. Use the option ""{1}"" to ignore all symlinks and not store any information about them. Previous versions of Duplicati used the setting ""{2}"", which will cause symlinked files to be included and restore as normal files.", store, ignore, follow); }
