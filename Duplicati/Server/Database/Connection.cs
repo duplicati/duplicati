@@ -164,7 +164,10 @@ namespace Duplicati.Server.Database
         
         internal void SetFilters(IEnumerable<IFilter> values, long id, System.Data.IDbTransaction transaction = null)
         {
-            lock(m_lock)
+            if (values == null)
+                return;
+
+            lock (m_lock)
                 using(var tr = transaction == null ? m_connection.BeginTransaction() : null)
                 {
                     OverwriteAndUpdateDb(
