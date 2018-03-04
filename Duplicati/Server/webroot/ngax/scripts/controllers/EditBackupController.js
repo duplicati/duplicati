@@ -316,7 +316,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         }
 
         // Retention options are mutual exclusive -> allow only one to be selected at a time
-        function resetAllRetentionOptionsExcept(optionToKeep = '') {
+        function resetAllRetentionOptionsExcept(optionToKeep) {
             ['keep-versions', 'keep-time', 'retention-policy'].forEach(function(entry) {
                 if (entry != optionToKeep) {
                     delete opts[entry];
