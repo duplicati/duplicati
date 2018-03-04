@@ -37,11 +37,11 @@ namespace Duplicati.UnitTest
                 var opts = new Dictionary<string, string>();
                 opts["zip-compression-level"] = "9";
 
-                using (var z0 = Library.DynamicLoader.CompressionLoader.GetModule(module, tf0, Library.Interface.ArchiveMode.Write, opts))
+                using (var z0 = Library.DynamicLoader.CompressionLoader.GetArchiveWriter(module, tf0, opts))
                 using (var fs0 = z0.CreateFile("sample", Library.Interface.CompressionHint.Noncompressible, DateTime.Now))
                     fs0.Write(new byte[TESTSIZE], 0, TESTSIZE);
 
-                using (var z1 = Library.DynamicLoader.CompressionLoader.GetModule(module, tf1, Library.Interface.ArchiveMode.Write, opts))
+                using (var z1 = Library.DynamicLoader.CompressionLoader.GetArchiveWriter(module, tf1, opts))
                 using (var fs1 = z1.CreateFile("sample", Library.Interface.CompressionHint.Compressible, DateTime.Now))
                     fs1.Write(new byte[TESTSIZE], 0, TESTSIZE);
 
@@ -72,7 +72,7 @@ namespace Duplicati.UnitTest
                 opts["zip-compression-level"] = "9";
 
                 // Compress test streams
-                using (var z0 = Library.DynamicLoader.CompressionLoader.GetModule(module, stream, Library.Interface.ArchiveMode.Write, opts))
+                using (var z0 = Library.DynamicLoader.CompressionLoader.GetArchiveWriter(module, stream, opts))
                 {
                     // Add two files to the archive
                     using (var fs1 = z0.CreateFile("sample1", Library.Interface.CompressionHint.Compressible, DateTime.Now))
@@ -84,7 +84,7 @@ namespace Duplicati.UnitTest
 
                 Console.WriteLine("Compression rate for module {0}: {1:0.00}%", module, 100.0 * stream.Length / (TESTSIZE * 2));
                 // Decompress
-                using (var z0 = Library.DynamicLoader.CompressionLoader.GetModule(module, stream, Library.Interface.ArchiveMode.Read, opts))
+                using (var z0 = Library.DynamicLoader.CompressionLoader.GetArchiveReader(module, stream, opts))
                 {
                     // Get files list
                     var files = z0.ListFiles(null);

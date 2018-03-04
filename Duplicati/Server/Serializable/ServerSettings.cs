@@ -46,7 +46,7 @@ namespace Duplicati.Server.Serializable
             /// <summary>
             /// Constructor for compression module interface
             /// </summary>
-            public DynamicModule(Duplicati.Library.Interface.ICompression module)
+            public DynamicModule(Duplicati.Library.Interface.ICompressionInfo module)
             {
                 this.Key = module.FilenameExtension;
                 this.Description = module.Description;

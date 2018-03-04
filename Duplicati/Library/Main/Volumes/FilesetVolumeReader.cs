@@ -221,14 +221,14 @@ namespace Duplicati.Library.Main.Volumes
                     }
                 }
 
-                private ICompression m_compression;
+                private IArchiveReader m_compression;
                 private FileEntry m_current;
                 private StreamReader m_stream;
                 private JsonReader m_reader;
                 private bool m_done;
                 private bool m_first;
 
-                public FileEntryEnumerator(ICompression compression)
+                public FileEntryEnumerator(IArchiveReader compression)
                 {
                     m_compression = compression;
                     this.Reset();
@@ -302,8 +302,8 @@ namespace Duplicati.Library.Main.Volumes
                 }
             }
 
-            private ICompression m_compression;
-            public FileEntryEnumerable(ICompression compression)
+            private IArchiveReader m_compression;
+            public FileEntryEnumerable(IArchiveReader compression)
             {
                 m_compression = compression;
             }
@@ -323,12 +323,12 @@ namespace Duplicati.Library.Main.Volumes
         {
             private class ControlFileEnumerator : IEnumerator<KeyValuePair<string, Stream>>
             {
-                private ICompression m_compression;
+                private IArchiveReader m_compression;
                 private string[] m_files;
                 private long m_index;
                 private KeyValuePair<string, Stream>? m_current;
 
-                public ControlFileEnumerator(ICompression compression)
+                public ControlFileEnumerator(IArchiveReader compression)
                 {
                     m_compression = compression;
                     this.Reset();
@@ -365,8 +365,8 @@ namespace Duplicati.Library.Main.Volumes
                 }
             }
 
-            private ICompression m_compression;
-            public ControlFileEnumerable(ICompression compression)
+            private IArchiveReader m_compression;
+            public ControlFileEnumerable(IArchiveReader compression)
             {
                 m_compression = compression;
             }
@@ -375,7 +375,7 @@ namespace Duplicati.Library.Main.Volumes
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
         }
 
-        public FilesetVolumeReader(ICompression compression, Options options)
+        public FilesetVolumeReader(IArchiveReader compression, Options options)
             : base(compression, options)
         {
         }

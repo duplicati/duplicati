@@ -19,8 +19,6 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
 namespace Duplicati.Library.Interface
 {
@@ -75,7 +73,10 @@ namespace Duplicati.Library.Interface
         bool LowOverheadMode { get; set; }
     }
 
-    public interface IArchiveReader
+    /// <summary>
+    /// The interface for reading from an archive.
+    /// </summary>
+    public interface IArchiveReader : ICompressionInfo
     {
         /// <summary>
         /// Returns all files in the archive, matching the prefix, if any.
@@ -113,7 +114,10 @@ namespace Duplicati.Library.Interface
         bool FileExists(string file);
     }
 
-    public interface IArchiveWriter
+    /// <summary>
+    /// The interface for writing to an archive.
+    /// </summary>
+    public interface IArchiveWriter : ICompressionInfo
     {
         /// <summary>
         /// Creates a file in the archive.
@@ -131,17 +135,10 @@ namespace Duplicati.Library.Interface
     }
 
     /// <summary>
-    /// An interface for accessing files in an archive, such as a folder or compressed file.
-    /// All modules that implements compression must implement this interface.
-    /// The classes that implements this interface MUST also 
-    /// implement a default constructor and a construtor that
-    /// has the signature new(string file, Dictionary&lt;string, string&gt; options).
-    /// The default constructor is used to construct an instance
-    /// so the DisplayName and other values can be read.
-    /// The other constructor is used to do the actual work.
-    /// The input file may not exist or have zero length, in which case it should be created.
+    /// An interface for accessing compression module properties.
+    /// Most of the values (except Size) SHOULD be accessible for an instance built with a default constructor.
     /// </summary>
-    public interface ICompression : IDisposable, IArchiveReader, IArchiveWriter
+    public interface ICompressionInfo : IDisposable
     {
         /// <summary>
         /// The total size of the archive.
@@ -167,5 +164,20 @@ namespace Duplicati.Library.Interface
         /// Gets a list of supported commandline arguments
         /// </summary>
         IList<ICommandLineArgument> SupportedCommands { get; }
+    }
+
+    /// <summary>
+    /// An interface for accessing files in an archive, such as a folder or compressed file.
+    /// All modules that implements compression must implement this interface.
+    /// The classes that implements this interface MUST also 
+    /// implement a default constructor and a construtor that
+    /// has the signature new(Stream file, ArchiveMode mode, Dictionary&lt;string, string&gt; options).
+    /// The default constructor is used to construct an instance
+    /// so the DisplayName and other values can be read via IArchiveBase interface.
+    /// The other constructor is used to do the actual work.
+    /// The stream should be writable if mode is ArchiveMode.Writer and readable if mode is ArchiveMode.Reader.
+    /// </summary>
+    public interface ICompression : ICompressionInfo, IArchiveReader, IArchiveWriter
+    {
     }
 }

@@ -169,7 +169,7 @@ namespace Duplicati.CommandLine
                     lines.Add("");
                     lines.Add("");
                     lines.Add(Strings.Program.SupportedCompressionModulesHeader);
-                    foreach (Duplicati.Library.Interface.ICompression mod in Library.DynamicLoader.CompressionLoader.Modules)
+                    foreach (Duplicati.Library.Interface.ICompressionInfo mod in Library.DynamicLoader.CompressionLoader.Modules)
                         PrintCompressionModule(mod, lines);
 
                     lines.Add("");
@@ -347,7 +347,7 @@ namespace Duplicati.CommandLine
             lines.Add("");
         }
 
-        private static void PrintCompressionModule(Duplicati.Library.Interface.ICompression mod, List<string> lines)
+        private static void PrintCompressionModule(Duplicati.Library.Interface.ICompressionInfo mod, List<string> lines)
         {
             lines.Add(mod.DisplayName + " (." + mod.FilenameExtension + "):");
             lines.Add(" " + mod.Description);
