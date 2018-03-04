@@ -843,7 +843,7 @@ namespace Duplicati.Server
             options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.OrdinalIgnoreCase));
         }
         
-        private static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
+        internal static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
         {
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
@@ -891,7 +891,7 @@ namespace Duplicati.Server
             return filter;
         }
 
-        private static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        internal static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
         {
             return 
                 (from n in Program.DataConnection.Settings

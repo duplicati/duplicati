@@ -242,6 +242,8 @@ namespace Duplicati.Library.Main.Strings
         public static string AutoVacuumLong { get { return LC.L(@"Some operations that manipulate the local database leave unused entries behind. These entries are not deleted from a hard drive until a VACUUM operation is run. This operation saves disk space in the long run but needs to temporarily create a copy of all valid entries in the database. Setting this to true will allow Duplicati to perform VACUUM operations at its discretion."); } }
         public static string DisablefilescannerShort { get { return LC.L(@"Disable the read-ahead scanner"); } }
         public static string DisablefilescannerLong { get { return LC.L(@"When this flag is enabled, the scanner that computes the size of source files is disabled, and instead the reported size is read from the database. Using this flag can speed up the backup by reducing disk access, but will give a less accurate progress indicator."); } }
+        public static string DisableOnBatteryShort { get { return LC.L("Disable the backup when on battery power"); } }
+        public static string DisableOnBatteryLong { get { return LC.L("When this flag is enabled, a scheduled backup will not run if the system is detected to be running on battery power (manual or command line backups will still be run).  If the detected power source is mains (i.e., AC) or unknown, then scheduled backups will proceed as normal."); } }
 
         public static string LogfileloglevelLong { get { return LC.L(@"Specifies the amount of log information to write into the file specified by --log-file"); } }
         public static string LogfileloglevelShort { get { return LC.L(@"Log file information level"); } }
