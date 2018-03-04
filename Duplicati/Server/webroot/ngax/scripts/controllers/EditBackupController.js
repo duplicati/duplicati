@@ -351,7 +351,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             return;
         }
 
-        if ($scope.KeepType == 'custom' && (opts['retention-policy'] || '').indexOf(':') <= 1) 
+        if ($scope.KeepType == 'custom' && (opts['retention-policy'] || '').indexOf(':') <= 0) 
         {
             DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a valid rentention policy string'));
             $scope.CurrentStep = 4;
