@@ -333,7 +333,6 @@ namespace Duplicati.Library.Utility
 
             if (group.HasFlag(FilterGroup.Applications))
             {
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 yield return Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 yield return Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
                 yield return Environment.GetFolderPath(Environment.SpecialFolder.AdminTools);
