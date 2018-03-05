@@ -185,6 +185,7 @@ namespace Duplicati.Library.Utility
                 FilterPrefixMatches(
                     CreateCommonFilters(group)
                         .Concat(osFilters)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
                     )
                     .Distinct(Utility.ClientFilenameStringComparer);
         }
