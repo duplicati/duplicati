@@ -361,19 +361,14 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*.fseventsd");
                 yield return FilterGroups.CreateWildcardFilter(@"*.dbfseventsd");
 
-                yield return FilterGroups.CreateWildcardFilter(@"/private/");
-                /*
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/Network/");
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/tmp/");
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/var/automount/");
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/var/db/dhcpclient/");
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/var/db/fseventsd/");
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/var/folders/");
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/var/run/");
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/var/spool/postfix/");
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/var/tmp/");
-                yield return DefaultFilters.CreateWildcardFilter(@"/private/var/vm/");
-                */
+                yield return FilterGroups.CreateWildcardFilter(@"/private/Network/");
+                yield return FilterGroups.CreateWildcardFilter(@"/private/var/automount/");
+                yield return FilterGroups.CreateWildcardFilter(@"/private/var/db/dhcpclient/");
+                yield return FilterGroups.CreateWildcardFilter(@"/private/var/db/fseventsd/");
+                yield return FilterGroups.CreateWildcardFilter(@"/private/var/folders/");
+                yield return FilterGroups.CreateWildcardFilter(@"/private/var/run/");
+                yield return FilterGroups.CreateWildcardFilter(@"/private/var/spool/postfix/");
+                yield return FilterGroups.CreateWildcardFilter(@"/private/var/vm/");
 
                 foreach (var p in GetOSXExcludeFiles() ?? new string[0])
                     yield return p;
@@ -431,6 +426,9 @@ namespace Duplicati.Library.Utility
 
             if (group.HasFlag(FilterGroup.TemporaryFolders))
             {
+                yield return FilterGroups.CreateWildcardFilter(@"/private/tmp/");
+                yield return FilterGroups.CreateWildcardFilter(@"/private/var/tmp/");
+
                 yield return FilterGroups.CreateWildcardFilter(@"*/Microsoft User Data/Entourage Temp/");
                 yield return FilterGroups.CreateWildcardFilter(@"/tmp/");
                 yield return FilterGroups.CreateWildcardFilter(@"/var/");
