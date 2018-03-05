@@ -126,7 +126,7 @@ namespace Duplicati.Library.Main.Strings
             return
                 LC.L(@"This option specifies which built-in filter sets that should be applied. Multiple filters can be supplied, separated with commas.")
                   + System.Environment.NewLine
-                  + Library.Utility.DefaultFilters.GetOptionDescriptions(4, false);
+                  + Library.Utility.FilterGroups.GetOptionDescriptions(4, false);
         }        
         public static string DefaultFiltersShort { get { return LC.L(@"Default filter sets"); } }
         public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }

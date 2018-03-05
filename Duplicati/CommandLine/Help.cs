@@ -105,7 +105,7 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
                 tp = tp.Replace("%DEFAULTCOMPRESSIONMODULE%", opts.CompressionModule);
                 tp = tp.Replace("%GENERICMODULES%", string.Join(", ", Library.DynamicLoader.GenericLoader.Keys));
-                tp = tp.Replace("%FILTER_GROUPS%", Library.Utility.DefaultFilters.GetOptionDescriptions(4, true));
+                tp = tp.Replace("%FILTER_GROUPS%", Library.Utility.FilterGroups.GetOptionDescriptions(4, true));
 
                 if (Library.Utility.Utility.IsClientWindows)
                 {

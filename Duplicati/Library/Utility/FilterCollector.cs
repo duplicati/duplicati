@@ -57,7 +57,7 @@ namespace Duplicati.Library.Utility
                 }
                 else if (key.Equals("default-filters", StringComparison.OrdinalIgnoreCase) || key.Equals("default-filter", StringComparison.OrdinalIgnoreCase))
                 {
-                    m_filters.AddRange(DefaultFilters.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(value ?? string.Empty)));
+                    m_filters.AddRange(FilterGroups.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(value ?? string.Empty)));
                     return false;
                 }
 
