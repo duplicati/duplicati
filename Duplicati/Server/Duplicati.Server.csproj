@@ -8,7 +8,7 @@
     <Prefer32Bit>False</Prefer32Bit>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Server</RootNamespace>
-    <AssemblyName>Duplicati.Server</AssemblyName>
+    <AssemblyName>TrustBackup.Server</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
