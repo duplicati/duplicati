@@ -384,6 +384,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"/Previous Systems*");
                 yield return FilterGroups.CreateWildcardFilter(@"/mach.sym");
                 yield return FilterGroups.CreateWildcardFilter(@"/mach_kernel");
+                yield return FilterGroups.CreateWildcardFilter(@"/bin/");
                 yield return FilterGroups.CreateWildcardFilter(@"/sbin/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Library/Logs/");
                 yield return FilterGroups.CreateWildcardFilter(@"/Network/");
