@@ -1,3 +1,12 @@
+2018-03-06 - 2.0.2.21_canary_2018-03-06
+==========
+* Rebuilt the style.css file
+* Added support in all backends for reloading DNS names when the error indicates a DNS error
+* Removed some default filters (still disabled by default), thanks @tygill
+* Fixed a parsing case for the 'U' parameter, thanks @TekkiWuff
+* Fixed a problem with IE not loading the page correctly, thanks @TekkiWuff
+* Fixed a problem with setting the initial password on the server and some change-password issues, thanks @mnaiman
+
 2018-02-27 - 2.0.2.20_canary_2018-02-27
 ==========
 * Added Docker images, thanks @fkrull
