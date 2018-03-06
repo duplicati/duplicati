@@ -30,7 +30,7 @@ DOWNLOAD_URL="http://www.mono-project.com/download/stable/#download-mac"
 
 # Try to find system default Mono if an override was not supplied
 if [ "z${MONO_BIN}" == "z" ]; then
-	MONO_BIN=`which mono`
+	MONO_BIN=$(which mono)
 
     # If the result is broken, don't use it
 	if [ ! -f "${MONO_BIN}" ]; then
