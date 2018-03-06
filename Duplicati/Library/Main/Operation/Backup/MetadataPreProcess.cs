@@ -50,8 +50,18 @@ namespace Duplicati.Library.Main.Operation.Backup
             public IMetahash MetaHashAndSize;
             public bool MetadataChanged;
         }
-            
+
+        public static Task RunOnlyRecord(Snapshots.ISnapshotService snapshot, Options options)
+        {
+            return Run(snapshot, options, null, -1, false);
+        }
+
         public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid)
+        {
+            return Run(snapshot, options, database, lastfilesetid, true);
+        }
+
+        private static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid, bool storeData)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -60,7 +70,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 LogChannel = Common.Channels.LogChannel.ForWrite,
                 Output = Backup.Channels.ProcessedFiles.ForWrite,
             },
-                
+
             async self =>
             {
                 var log = new LogWrapper(self.LogChannel);
@@ -72,67 +82,86 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     var lastwrite = new DateTime(0, DateTimeKind.Utc);
                     var attributes = default(FileAttributes);
-                    try 
-                    { 
-                        lastwrite = snapshot.GetLastWriteTimeUtc(path); 
+                    try
+                    {
+                        lastwrite = snapshot.GetLastWriteTimeUtc(path);
                     }
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         await log.WriteWarningAsync(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
                     }
 
-                    try 
-                    { 
-                        attributes = snapshot.GetAttributes(path); 
+                    try
+                    {
+                        attributes = snapshot.GetAttributes(path);
                     }
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         await log.WriteWarningAsync(string.Format("Failed to read attributes on \"{0}\"", path), ex);
                     }
 
-                    // If we only have metadata, stop here
-                    if (await ProcessMetadata(path, attributes, lastwrite, options, log, snapshot, emptymetadata, database, self.StreamBlockChannel))
+                    if (storeData)
                     {
-                        try
+                        // If we only have metadata, stop here
+                        if (await ProcessMetadata(path, attributes, lastwrite, options, log, snapshot, emptymetadata, database, self.StreamBlockChannel))
                         {
-                            if (options.CheckFiletimeOnly || options.DisableFiletimeCheck)
+                            try
                             {
-                                var tmp = await database.GetFileLastModifiedAsync(path, lastfilesetid);
-                                await self.Output.WriteAsync(new FileEntry() {
-                                    OldId = tmp.Key < 0 ? -1 : tmp.Key,
-                                    Path = path,
-                                    Attributes = attributes,
-                                    LastWrite = lastwrite,
-                                    OldModified = tmp.Key < 0 ? new DateTime(0) : tmp.Value,
-                                    LastFileSize = -1 ,
-                                    OldMetaHash = null,
-                                    OldMetaSize = -1
-                                });
+                                if (options.CheckFiletimeOnly || options.DisableFiletimeCheck)
+                                {
+                                    var tmp = await database.GetFileLastModifiedAsync(path, lastfilesetid);
+                                    await self.Output.WriteAsync(new FileEntry()
+                                    {
+                                        OldId = tmp.Key < 0 ? -1 : tmp.Key,
+                                        Path = path,
+                                        Attributes = attributes,
+                                        LastWrite = lastwrite,
+                                        OldModified = tmp.Key < 0 ? new DateTime(0) : tmp.Value,
+                                        LastFileSize = -1,
+                                        OldMetaHash = null,
+                                        OldMetaSize = -1
+                                    });
+                                }
+                                else
+                                {
+                                    var res = await database.GetFileEntryAsync(path, lastfilesetid);
+                                    await self.Output.WriteAsync(new FileEntry()
+                                    {
+                                        OldId = res == null ? -1 : res.id,
+                                        Path = path,
+                                        Attributes = attributes,
+                                        LastWrite = lastwrite,
+                                        OldModified = res == null ? new DateTime(0) : res.modified,
+                                        LastFileSize = res == null ? -1 : res.filesize,
+                                        OldMetaHash = res == null ? null : res.metahash,
+                                        OldMetaSize = res == null ? -1 : res.metasize
+                                    });
+                                }
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                var res = await database.GetFileEntryAsync(path, lastfilesetid);
-                                await self.Output.WriteAsync(new FileEntry() {
-                                    OldId = res == null ? -1 : res.id,
-                                    Path = path,
-                                    Attributes = attributes,
-                                    LastWrite = lastwrite,
-                                    OldModified = res == null ? new DateTime(0) : res.modified,
-                                    LastFileSize = res == null ? -1 : res.filesize,
-                                    OldMetaHash = res == null ? null : res.metahash,
-                                    OldMetaSize = res == null ? -1 : res.metasize
-                                });
+                                await log.WriteErrorAsync(string.Format("Failed to process entry, path: {0}", path), ex);
                             }
-                        }
-                        catch(Exception ex)
-                        {
-                            await log.WriteErrorAsync(string.Format("Failed to process entry, path: {0}", path), ex);
                         }
                     }
+                    else
+                    {
+                        // Write a dummy output
+                        await self.Output.WriteAsync(new FileEntry()
+                        {
+                            OldId = -1,
+                            Path = path,
+                            Attributes = attributes,
+                            LastWrite = lastwrite,
+                            OldModified = new DateTime(0),
+                            LastFileSize = -1,
+                            OldMetaHash = null,
+                            OldMetaSize = -1
+                        });
+
+                    }
                 }
-
             });
-
         }
 
         /// <summary>

@@ -16,7 +16,9 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using CoCoL;
 using System.IO;
+using System.Threading.Tasks;
 using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.Main.Operation
@@ -34,49 +36,53 @@ namespace Duplicati.Library.Main.Operation
         
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
-            var storeSymlinks = m_options.SymlinkPolicy == Duplicati.Library.Main.Options.SymlinkStrategy.Store;
             var sourcefilter = new Library.Utility.FilterExpression(sources, true);
 
+            using(new IsolatedChannelScope(Common.Channels.LogChannel))
             using(var snapshot = BackupHandler.GetSnapshot(sources, m_options, m_result))
             {
-                foreach(var path in new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_result).EnumerateFilesAndFolders())
-                {
-                    var fa = FileAttributes.Normal;
-                    try { fa = snapshot.GetAttributes(path); }
-                    catch { }
-                    
-                    if (storeSymlinks && snapshot.IsSymlink(path, fa))
+                var enumeratorTask = Backup.FileEnumerationProcess.Run(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_options.ChangedFilelist, m_result.TaskReader);
+                var metadataTask = Backup.MetadataPreProcess.RunOnlyRecord(snapshot, m_options);
+
+                var fileCounterTask = AutomationExtensions.RunTask(
+                    new
                     {
-                        m_result.AddVerboseMessage("Storing symlink: {0}", path);
-                    }
-                    else if ((fa & FileAttributes.Directory) == FileAttributes.Directory)
+                        Input = Backup.Channels.ProcessedFiles.ForRead
+                    },
+                    async self =>
                     {
-                        m_result.AddVerboseMessage("Including folder: {0}", path);
-                    }
-                    else
-                    {
-                        m_result.FileCount++;
-                        var size = -1L;
-                    
-                        try
+                        while (await m_result.TaskReader.ProgressAsync)
                         {
-                            size = snapshot.GetFileSize(path);
-                            m_result.FileSize += size;
+                            var f = await self.Input.ReadAsync(CoCoL.Timeout.Infinite);
+                            long filestatsize = -1;
+                            try
+                            {
+                                filestatsize = snapshot.GetFileSize(f.Path);
+                            }
+                            catch
+                            {
+                            }
+
+                            var tooLargeFile = m_options.SkipFilesLargerThan != long.MaxValue && m_options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > m_options.SkipFilesLargerThan;
+
+                            if (tooLargeFile)
+                                m_result.AddVerboseMessage("Excluding file due to size: {0} ({1})", f.Path, filestatsize < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(filestatsize));                    
+                            else
+                                m_result.AddVerboseMessage("Including file: {0} ({1})", f.Path, filestatsize < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(filestatsize));
                         }
-                        catch
-                        {
-                        }
-                    
-                    
-                        if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || size < m_options.SkipFilesLargerThan)
-                            m_result.AddVerboseMessage("Including file: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
-                        else
-                            m_result.AddVerboseMessage("Excluding file due to size: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));                    
                     }
-                    
-                }
+                );
+
+                Task.WhenAll(
+                    enumeratorTask,
+                    metadataTask,
+                    fileCounterTask
+                )
+                .WaitForTaskOrThrow();
             }
         }
+
+
         
         #region IDisposable implementation
         public void Dispose()
