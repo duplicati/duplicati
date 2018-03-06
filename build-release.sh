@@ -353,7 +353,7 @@ ${RELEASE_CHANGEINFO_NEWS}
 	DISCOURSE_USERNAME=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 1)
 	DISCOURSE_APIKEY=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 2)
 
-	curl -vvv -X POST "https://forum.duplicati.com/posts" \
+	curl -X POST "https://forum.duplicati.com/posts" \
 		-F "api_key=${DISCOURSE_APIKEY}" \
 		-F "api_username=${DISCOURSE_USERNAME}" \
 		-F "category=Releases" \
