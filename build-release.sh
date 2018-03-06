@@ -357,7 +357,7 @@ ${RELEASE_CHANGEINFO_NEWS}
 		-F "api_key=${DISCOURSE_APIKEY}" \
 		-F "api_username=${DISCOURSE_USERNAME}" \
 		-F "category=Releases" \
-		-F "title=Release+${RELEASE_VERSION}+(${RELEASE_TYPE})+${RELEASE_TIMESTAMP}" \
+		-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
 		-F "raw=${body}"
 fi
 
