@@ -28,6 +28,7 @@ AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
 AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
 
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
+DISCOURSE_TOKEN_FILE="${HOME}/.config/discourse-api-token"
 XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
@@ -335,6 +336,29 @@ else
 	    --user "duplicati" \
 	    --security-token "${GITHUB_TOKEN}" \
 	    --file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
+fi
+
+
+DISCOURSE_TOKEN=$(cat "${DISCOURSE_TOKEN_FILE}")
+
+if [ "x${DISCOURSE_TOKEN}" == "x" ]; then
+	echo "No DISCOURSE_TOKEN found in environment, you can manually create the post on the forum"
+else
+
+	body="# [${RELEASE_VERSION}-${RELEASE_NAME}](https://github.com/duplicati/duplicati/releases/tag/v${RELEASE_VERSION}-${RELEASE_NAME})
+
+${RELEASE_CHANGEINFO_NEWS}
+"
+
+	DISCOURSE_USERNAME=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 1)
+	DISCOURSE_APIKEY=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 2)
+
+	curl -vvv -X POST "https://forum.duplicati.com/posts" \
+		-F "api_key=${DISCOURSE_APIKEY}" \
+		-F "api_username=${DISCOURSE_USERNAME}" \
+		-F "category=Releases" \
+		-F "title=Release+${RELEASE_VERSION}+(${RELEASE_TYPE})+${RELEASE_TIMESTAMP}" \
+		-F "raw=${body}"
 fi
 
 echo
