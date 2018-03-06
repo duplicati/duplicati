@@ -62,15 +62,15 @@ namespace Duplicati.GUI.TrayIcon
 
         private readonly Dictionary<string, string> m_updateRequest;
         private readonly Dictionary<string, string> m_options;
-        private readonly bool m_dbPasswordSourceDatabase;
-        private string m_TrayIconHeaderValue => m_dbPasswordSourceDatabase ? "database" : "user";
+        private readonly Program.PasswordSource m_passwordSource;
+        private string m_TrayIconHeaderValue => (m_passwordSource == Program.PasswordSource.Database) ? "database" : "user";
 
         public IServerStatus Status { get { return m_status; } }
 
         private object m_lock = new object();
         private Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
 
-        public HttpServerConnection(Uri server, string password, bool saltedpassword, bool dbPasswordSourceDatabase, Dictionary<string, string> options)
+        public HttpServerConnection(Uri server, string password, bool saltedpassword, Program.PasswordSource passwordSource, Dictionary<string, string> options)
         {
             m_baseUri = server.ToString();
             if (!m_baseUri.EndsWith("/", StringComparison.Ordinal))
@@ -83,7 +83,7 @@ namespace Duplicati.GUI.TrayIcon
             m_password = password;
             m_saltedpassword = saltedpassword;
             m_options = options;
-            m_dbPasswordSourceDatabase = dbPasswordSourceDatabase;
+            m_passwordSource = passwordSource;
 
             m_updateRequest = new Dictionary<string, string>();
             m_updateRequest["longpoll"] = "false";
@@ -364,15 +364,25 @@ namespace Duplicati.GUI.TrayIcon
                         wex.Status == System.Net.WebExceptionStatus.ProtocolError &&
                         httpex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                     {
-                        if (m_dbPasswordSourceDatabase)
+                        //Can survive if server password is changed via web ui
+                        switch (m_passwordSource)
                         {
-                            Program.databaseConnection.ApplicationSettings.ReloadSettings();
-
-                            //Can survive if server password is changed via web ui
-                            if (Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon != m_password)
-                                m_password = Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
-                            else
-                                hasTriedPassword = true;
+                            case Program.PasswordSource.Database:
+                                Program.databaseConnection.ApplicationSettings.ReloadSettings();
+                                
+                                if (Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon != m_password)
+                                    m_password = Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
+                                else
+                                    hasTriedPassword = true;
+                                break;
+                            case Program.PasswordSource.HostedServer:
+                                if (Server.Program.DataConnection.ApplicationSettings.WebserverPassword != m_password)
+                                    m_password = Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
+                                else
+                                    hasTriedPassword = true;
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
                         }
 
                         m_authtoken = GetAuthToken();

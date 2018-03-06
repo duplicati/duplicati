@@ -1,6 +1,6 @@
-RELEASE_TIMESTAMP=`date +%Y-%m-%d`
+RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
 
-RELEASE_INC_VERSION=`cat Updates/build_version.txt`
+RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
 RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
 
 if [ "x$1" == "x" ]; then
@@ -28,6 +28,7 @@ AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
 AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
 
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
+DISCOURSE_TOKEN_FILE="${HOME}/.config/discourse-api-token"
 XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
@@ -95,7 +96,7 @@ if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
 	exit 0
 fi
 
-RELEASE_CHANGEINFO_NEWS=`cat "${RELEASE_CHANGELOG_NEWS_FILE}"`
+RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
 
 git stash save "${GIT_STASH_NAME}"
 
@@ -115,7 +116,7 @@ echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.t
 echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
 cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
 
-RELEASE_CHANGEINFO=`cat ${RELEASE_CHANGELOG_FILE}`
+RELEASE_CHANGEINFO=$(cat ${RELEASE_CHANGELOG_FILE})
 if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
     echo "No information in changeinfo file"
     exit 0
@@ -199,14 +200,14 @@ if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 	authenticode_sign() {
 		NEST=""
 		for hashalg in sha1 sha256; do
-			SIGN_MSG=`osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.verisign.com/scripts/timstamp.dll" -in "$1" -out tmpfile`
+			SIGN_MSG=$(osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.verisign.com/scripts/timstamp.dll" -in "$1" -out tmpfile)
 			if [ "${SIGN_MSG}" != "Succeeded" ]; then echo "${SIGN_MSG}"; fi
 			mv tmpfile "$1"
 			NEST="-nest"
 		done
 	}
 
-	PFX_PASS=`"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${AUTHENTICODE_PASSWORD}"`
+	PFX_PASS=$("${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${AUTHENTICODE_PASSWORD}")
 
 	DECRYPT_STATUS=$?
 	if [ "${DECRYPT_STATUS}" -ne 0 ]; then
@@ -263,9 +264,9 @@ aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.mani
 
 aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 
-ZIP_MD5=`md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}'`
-ZIP_SHA1=`shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}'`
-ZIP_SHA256=`shasum -a 256 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}'`
+ZIP_MD5=$(md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}')
+ZIP_SHA1=$(shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}')
+ZIP_SHA256=$(shasum -a 256 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}')
 
 cat > "latest.json" <<EOF
 {
@@ -311,11 +312,11 @@ if [ "${RELEASE_TYPE}" == "stable" ]; then
 	PRE_RELEASE_LABEL=""
 fi
 
-RELEASE_MESSAGE=`printf "Changes in this version:\n${RELEASE_CHANGEINFO_NEWS}"`
+RELEASE_MESSAGE=$(printf "Changes in this version:\n${RELEASE_CHANGEINFO_NEWS}")
 
 # Using the tool from https://github.com/aktau/github-release
 
-GITHUB_TOKEN=`cat "${GITHUB_TOKEN_FILE}"`
+GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
 
 if [ "x${GITHUB_TOKEN}" == "x" ]; then
 	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
@@ -335,6 +336,29 @@ else
 	    --user "duplicati" \
 	    --security-token "${GITHUB_TOKEN}" \
 	    --file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
+fi
+
+
+DISCOURSE_TOKEN=$(cat "${DISCOURSE_TOKEN_FILE}")
+
+if [ "x${DISCOURSE_TOKEN}" == "x" ]; then
+	echo "No DISCOURSE_TOKEN found in environment, you can manually create the post on the forum"
+else
+
+	body="# [${RELEASE_VERSION}-${RELEASE_NAME}](https://github.com/duplicati/duplicati/releases/tag/v${RELEASE_VERSION}-${RELEASE_NAME})
+
+${RELEASE_CHANGEINFO_NEWS}
+"
+
+	DISCOURSE_USERNAME=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 1)
+	DISCOURSE_APIKEY=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 2)
+
+	curl -X POST "https://forum.duplicati.com/posts" \
+		-F "api_key=${DISCOURSE_APIKEY}" \
+		-F "api_username=${DISCOURSE_USERNAME}" \
+		-F "category=Releases" \
+		-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
+		-F "raw=${body}"
 fi
 
 echo
