@@ -81,7 +81,7 @@ namespace Duplicati.Server.Database
             lock(m_lock)
             {
                 if (backup == null)
-                    throw new ArgumentNullException("backup");
+                    throw new ArgumentNullException(nameof(backup));
                 if (backup.ID != null)
                     throw new ArgumentException("Backup is already active, cannot make temporary");
                 
@@ -276,7 +276,7 @@ namespace Duplicati.Server.Database
         internal IBackup GetBackup(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof(id));
             
             long lid;
             if (long.TryParse(id, out lid))

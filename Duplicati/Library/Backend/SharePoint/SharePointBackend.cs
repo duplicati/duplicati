@@ -417,7 +417,7 @@ namespace Duplicati.Library.Backend
             public CustomWebRequestExecutorFactory(WebRequestExecutorFactory parent)
             {
                 if (parent == null)
-                    throw new ArgumentNullException("parent");
+                    throw new ArgumentNullException(nameof(parent));
                 m_parent = parent;
             }
 

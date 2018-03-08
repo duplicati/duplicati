@@ -62,10 +62,10 @@ namespace Duplicati.Library.DynamicLoader
             public IEncryption GetModule(string fileExtension, string passphrase, Dictionary<string, string> options)
             {
                 if (string.IsNullOrEmpty(fileExtension))
-                    throw new ArgumentNullException("fileExtension");
+                    throw new ArgumentNullException(nameof(fileExtension));
 
                 if (string.IsNullOrEmpty(passphrase))
-                    throw new ArgumentNullException("passphrase");
+                    throw new ArgumentNullException(nameof(passphrase));
 
                 LoadInterfaces();
 
@@ -86,7 +86,7 @@ namespace Duplicati.Library.DynamicLoader
             public IList<ICommandLineArgument> GetSupportedCommands(string key)
             {
                 if (string.IsNullOrEmpty(key))
-                    throw new ArgumentNullException("key");
+                    throw new ArgumentNullException(nameof(key));
 
                 LoadInterfaces();
 
