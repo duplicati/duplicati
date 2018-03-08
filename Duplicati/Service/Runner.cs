@@ -54,7 +54,7 @@ namespace Duplicati.Service
         {
             var self_exec = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            var exec = System.IO.Path.Combine(path, "Duplicati.Server.exe");
+            var exec = System.IO.Path.Combine(path, "TrustBackup.Server.exe");
             var cmdargs = "--ping-pong-keepalive=true";
             if (m_cmdargs != null && m_cmdargs.Length > 0)
                 cmdargs = cmdargs + " " + string.Join(" ", m_cmdargs);

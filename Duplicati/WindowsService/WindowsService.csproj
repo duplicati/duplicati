@@ -9,7 +9,7 @@
     <Prefer32Bit>False</Prefer32Bit>    
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.WindowsService</RootNamespace>
-    <AssemblyName>Duplicati.WindowsService</AssemblyName>
+    <AssemblyName>TrustBackup.WindowsService</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
