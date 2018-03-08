@@ -288,7 +288,7 @@ namespace Duplicati.Library.Utility
         }
     
         /// <summary>
-        /// Creates a new <see cref="Duplicati.Library.Main.FilterExpression"/> instance.
+        /// Creates a new <see cref="Duplicati.Library.Utility.FilterExpression"/> instance.
         /// </summary>
         /// <param name="filter">The filter string that represents the filter</param>
         public FilterExpression(IEnumerable<string> filter, bool result = true)
