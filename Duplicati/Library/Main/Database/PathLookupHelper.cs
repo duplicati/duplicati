@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Database
         private readonly List<KeyValuePair<string, FolderEntry>> m_lookup;
         
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Database.PathLookupHelper`1"/> class.
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Database.PathLookupHelper{T}"/> class.
         /// </summary>
         /// <param name="useHotPath">If set to <c>true</c> use hotpath optimization</param>
         public PathLookupHelper(bool useHotPath = true)
