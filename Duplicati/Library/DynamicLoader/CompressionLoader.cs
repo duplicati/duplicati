@@ -57,6 +57,8 @@ namespace Duplicati.Library.DynamicLoader
             /// Instanciates a specific compression module, given the file extension and options
             /// </summary>
             /// <param name="fileExtension">The file extension to create the instance for</param>
+            /// <param name="stream">The stream of the file used to compress/decompress contents</param>
+            /// <param name="mode">The mode for compression/decompression</param>
             /// <param name="options">The options to pass to the instance constructor</param>
             /// <returns>The instanciated encryption module or null if the file extension is not supported</returns>
             public ICompression GetModule(string fileExtension, Stream stream, ArchiveMode mode, Dictionary<string, string> options)
@@ -130,6 +132,7 @@ namespace Duplicati.Library.DynamicLoader
         /// </summary>
         /// <param name="fileextension">The file extension to create the instance for</param>
         /// <param name="stream">The stream of the file used to compress/decompress contents</param>
+        /// <param name="mode">The mode for compression/decompression</param>
         /// <param name="options">The options to pass to the instance constructor</param>
         /// <returns>The instanciated compression module or null if the file extension is not supported</returns>
         public static ICompression GetModule(string fileextension, Stream stream, ArchiveMode mode, Dictionary<string, string> options)
