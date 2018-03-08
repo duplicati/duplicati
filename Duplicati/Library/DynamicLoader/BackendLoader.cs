@@ -160,7 +160,7 @@ namespace Duplicati.Library.DynamicLoader
         public static IList<ICommandLineArgument> GetSupportedCommands(string url)
         {
             if (string.IsNullOrEmpty(url))
-                throw new ArgumentNullException("url");
+                throw new ArgumentNullException(nameof(url));
 
             return _backendLoader.GetSupportedCommands(url);
         }

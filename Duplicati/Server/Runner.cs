@@ -142,7 +142,7 @@ namespace Duplicati.Server
                 : base()
             {
                 if (runner == null)
-                    throw new ArgumentNullException("runner");
+                    throw new ArgumentNullException(nameof(runner));
                 Run = runner;
                 Operation = DuplicatiOperation.CustomRunner;
                 Backup = new Database.Backup();

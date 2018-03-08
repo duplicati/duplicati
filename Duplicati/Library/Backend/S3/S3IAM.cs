@@ -138,7 +138,7 @@ namespace Duplicati.Library.Backend
         private string GeneratePolicyDoc(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentNullException("path");
+                throw new ArgumentNullException(nameof(path));
 
             path = path.Trim().Trim('/').Trim();
 

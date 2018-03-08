@@ -63,7 +63,7 @@ namespace Duplicati.Library.DynamicLoader
             public ICompression GetModule(string fileExtension, Stream stream, ArchiveMode mode, Dictionary<string, string> options)
             {
                 if (string.IsNullOrEmpty(fileExtension))
-                    throw new ArgumentNullException("fileExtension");
+                    throw new ArgumentNullException(nameof(fileExtension));
 
                 LoadInterfaces();
 
@@ -84,7 +84,7 @@ namespace Duplicati.Library.DynamicLoader
             public IList<ICommandLineArgument> GetSupportedCommands(string key)
             {
                 if (string.IsNullOrEmpty(key))
-                    throw new ArgumentNullException("key");
+                    throw new ArgumentNullException(nameof(key));
 
                 LoadInterfaces();
 
