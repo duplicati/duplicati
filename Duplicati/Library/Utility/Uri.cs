@@ -124,7 +124,7 @@ namespace Duplicati.Library.Utility
         }
         
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.Utility.Uri"/> struct.
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.Uri"/> struct.
         /// </summary>
         /// <param name="url">The URL to parse</param>
         public Uri(string url)
