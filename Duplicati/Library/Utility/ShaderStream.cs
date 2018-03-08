@@ -22,7 +22,7 @@ using System;
 namespace Duplicati.Library.Utility
 {
     /// <summary>
-    /// A small utility stream that allows to keep streams open and counts the bytes sent through. </summary>
+    /// A small utility stream that allows to keep streams open and counts the bytes sent through.
     /// </summary>
     public class ShaderStream : System.IO.Stream
     {
