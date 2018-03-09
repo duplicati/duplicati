@@ -37,6 +37,11 @@ backupApp.directive('notificationArea', function() {
             );
         };
 
+        $scope.doRepair = function(backupid) {
+        AppService.post('/backup/' + backupid + '/repair');
+        $location.path('/');
+        };
+
         $scope.doInstallUpdate = function(id) {
             AppService.post('/updates/install');
         };
