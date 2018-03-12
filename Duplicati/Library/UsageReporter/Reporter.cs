@@ -26,6 +26,11 @@ namespace Duplicati.Library.UsageReporter
     public static class Reporter
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(Reporter));
+        
+        /// <summary>
         /// The primary input channel for new report messages
         /// </summary>
         private static IWriteChannel<ReportItem> _eventChannel;
@@ -122,7 +127,7 @@ namespace Duplicati.Library.UsageReporter
             {
                 ShutdownTask.Wait(TimeSpan.FromSeconds(30));
                 if (!ShutdownTask.IsCompleted)
-                    Logging.Log.WriteMessage("Failed to shut down usage reporter after 30 seconds, leaving hanging ...", Logging.LogMessageType.Warning);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "ReporterShutdownFailuer", null, "Failed to shut down usage reporter after 30 seconds, leaving hanging ...");
             }
 
             AppDomain.CurrentDomain.UnhandledException -= HandleUncaughtException;

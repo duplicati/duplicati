@@ -26,14 +26,12 @@ namespace Duplicati.Library.Logging
     /// <summary>
     /// Interface for a loggin destination
     /// </summary>
-    public interface ILog
+    public interface ILogDestination
     {
         /// <summary>
         /// The function called when a message is logged
         /// </summary>
-        /// <param name="message">The message logged</param>
-        /// <param name="type">The type of message logged</param>
-        /// <param name="exception">An exception, may be null</param>
-        void WriteMessage(string message, LogMessageType type, Exception exception);
+        /// <param name="entry">The message to log</param>
+        void WriteMessage(LogEntry entry);
     }
 }

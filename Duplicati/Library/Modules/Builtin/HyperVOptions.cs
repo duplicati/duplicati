@@ -27,6 +27,10 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class HyperVOptions : Interface.IGenericSourceModule
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<HyperVOptions>();
         private const string m_HyperVPathGuidRegExp = @"\%HYPERV\%\\([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})";
         private const string m_HyperVPathAllRegExp = @"%HYPERV%";
 
@@ -69,7 +73,7 @@ namespace Duplicati.Library.Modules.Builtin
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
             if (!Utility.Utility.IsClientWindows)
             {
-                Logging.Log.WriteMessage("Hyper-V backup works only on Windows OS", Logging.LogMessageType.Warning);
+                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVWindowsOnly", null, "Hyper-V backup works only on Windows OS");
 
                 if (paths != null)
                     paths = paths.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
@@ -121,26 +125,26 @@ namespace Duplicati.Library.Modules.Builtin
 
                 if (excludedWriters.Contains(HyperVUtility.HyperVWriterGuid))
                 {
-                    Logging.Log.WriteMessage(string.Format("Excluded writers for VSS cannot contain Hyper-V writer when backuping Hyper-V virtual machines. Removing \"{0}\" to continue", HyperVUtility.HyperVWriterGuid.ToString()), Logging.LogMessageType.Warning);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "CannotExcludeHyperVVSSWriter", null, "Excluded writers for VSS cannot contain Hyper-V writer when backuping Hyper-V virtual machines. Removing \"{0}\" to continue", HyperVUtility.HyperVWriterGuid.ToString());
                     changedOptions["vss-exclude-writers"] = string.Join(";", excludedWriters.Where(x => x != HyperVUtility.HyperVWriterGuid));
                 }
             }
             
             if (!commandlineOptions.Keys.Contains("snapshot-policy") || !commandlineOptions["snapshot-policy"].Equals("required", StringComparison.OrdinalIgnoreCase))
             {
-                Logging.Log.WriteMessage("Snapshot strategy have to be set to \"required\" when backuping Hyper-V virtual machines. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
+                Logging.Log.WriteWarningMessage(LOGTAG, "MustSetSnapshotPolicy", null, "Snapshot policy have to be set to \"required\" when backuping Hyper-V virtual machines. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
                 changedOptions["snapshot-policy"] = "required";
             }
             
             if (!hypervUtility.IsVSSWriterSupported)
-                Logging.Log.WriteMessage("This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version", Logging.LogMessageType.Warning);
+                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version");
 
-            Logging.Log.WriteMessage("Starting to gather Hyper-V information", Logging.LogMessageType.Information);
+            Logging.Log.WriteInformationMessage(LOGTAG, "StartingHyperVQuery", "Starting to gather Hyper-V information");
             hypervUtility.QueryHyperVGuestsInfo(true);          
-            Logging.Log.WriteMessage(string.Format("Found {0} virtual machines on Hyper-V", hypervUtility.Guests.Count), Logging.LogMessageType.Information);
+            Logging.Log.WriteInformationMessage(LOGTAG, "HyperVMachineCount", "Found {0} virtual machines on Hyper-V", hypervUtility.Guests.Count);
 
             foreach (var guest in hypervUtility.Guests)
-                Logging.Log.WriteMessage(string.Format("Found VM name {0}, ID {1}, files {2}", guest.Name, guest.ID, string.Join(";", guest.DataPaths)), Logging.LogMessageType.Profiling);
+                Logging.Log.WriteProfilingMessage(LOGTAG, "FoundHyperVMachine", "Found VM name {0}, ID {1}, files {2}", guest.Name, guest.ID, string.Join(";", guest.DataPaths));
 
             List<HyperVGuest> guestsForBackup = new List<HyperVGuest>();
 
@@ -153,7 +157,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundGuest = hypervUtility.Guests.Where(x => x.ID == new Guid(guestID));
 
                     if (foundGuest.Count() != 1)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in source with ID {0} cannot be found", guestID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in source with ID {0} cannot be found", guestID), "HyperVGuestNotFound");
 
                     guestsForBackup.Add(foundGuest.First());
                 }
@@ -164,10 +168,10 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundGuest = hypervUtility.Guests.Where(x => x.ID == new Guid(guestID));
 
                     if (foundGuest.Count() != 1)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in include filter with ID {0} cannot be found", guestID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in include filter with ID {0} cannot be found", guestID), "HyperVGuestNotFound");
 
                     guestsForBackup.Add(foundGuest.First());
-                    Logging.Log.WriteMessage(string.Format("Including {0} based on including filters", guestID), Logging.LogMessageType.Information);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "IncludeByFilter", "Including {0} based on including filters", guestID);
                 }
 
             guestsForBackup = guestsForBackup.Distinct().ToList();
@@ -178,10 +182,10 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundGuest = guestsForBackup.Where(x => x.ID == new Guid(guestID));
 
                     if (foundGuest.Count() != 1)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in exclude filter with ID {0} cannot be found", guestID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Hyper-V guest specified in exclude filter with ID {0} cannot be found", guestID), "HyperVGuestNotFound");
 
                     guestsForBackup.Remove(foundGuest.First());
-                    Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", guestID), Logging.LogMessageType.Information);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "ExcludeByFilter", "Excluding {0} based on excluding filters", guestID);
                 }
 
             var pathsForBackup = new List<string>(paths);
@@ -196,11 +200,11 @@ namespace Duplicati.Library.Modules.Builtin
 
                     if (!filterhandler.Matches(pathForBackup, out bResult, out matchFilter))
                     {
-                        Logging.Log.WriteMessage(string.Format("For VM {0} - adding {1}", guestForBackup.Name, pathForBackup), Logging.LogMessageType.Information);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "IncludeHyperV", "For VM {0} - adding {1}", guestForBackup.Name, pathForBackup);
                         pathsForBackup.Add(pathForBackup);
                     }
                     else
-                        Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", pathForBackup), Logging.LogMessageType.Information);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "ExcludeByFilter", "Excluding {0} based on excluding filters", pathForBackup);
                 }
 
             paths = pathsForBackup.Where(x => !x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))

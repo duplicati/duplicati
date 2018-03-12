@@ -361,11 +361,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                                 return;
                             }
 
-                            throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, fileEntry.Size, streamLen));
+                            throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, fileEntry.Size, streamLen), "AftpListVerifySizeFailure");
                         }
                     }
 
-                    throw new UserInformationException(Strings.ListVerifyFailure(remotename, fileEntries.Select(n => n.Name)));
+                    throw new UserInformationException(Strings.ListVerifyFailure(remotename, fileEntries.Select(n => n.Name)), "AftpListVerifySizeFailure");
                 }
             }
             catch (FtpCommandException ex)

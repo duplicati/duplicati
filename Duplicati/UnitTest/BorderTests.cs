@@ -206,7 +206,6 @@ namespace Duplicati.UnitTest
         private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
         {
             var testopts = TestOptions;
-            testopts["verbose"] = "true";
             testopts["blocksize"] = blocksize.ToString() + "b";
             if (modifyOptions != null)
                 modifyOptions(testopts);

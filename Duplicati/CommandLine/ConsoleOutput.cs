@@ -22,21 +22,21 @@ using Duplicati.Library.Main;
 
 namespace Duplicati.CommandLine
 {
-    public class ConsoleOutput : Library.Main.IMessageSink
+    public class ConsoleOutput : Library.Main.IMessageSink, IDisposable
     {
         private object m_lock = new object();
         
         public bool QuietConsole { get; private set; }
-        public bool VerboseOutput { get; private set; }
         public bool VerboseErrors { get; private set; }
         public TextWriter Output { get; private set; }
+        public bool FullResults { get; private set; }
         
         public ConsoleOutput(TextWriter output, Dictionary<string, string> options)
         {
             this.Output = output;
             this.QuietConsole = Library.Utility.Utility.ParseBoolOption(options, "quiet-console");
-            this.VerboseOutput = Library.Utility.Utility.ParseBoolOption(options, "verbose");
             this.VerboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
+            this.FullResults = Library.Utility.Utility.ParseBoolOption(options, "full-results");
         }
     
         #region IMessageSink implementation
@@ -92,43 +92,37 @@ namespace Duplicati.CommandLine
                     }
                 }
         }
-                        
-        public void VerboseEvent(string message, object[] args)
+
+        public void WriteMessage(Library.Logging.LogEntry entry)
         {
-            if (VerboseOutput)
-                lock(m_lock)
-                    Output.WriteLine(message, args);
+            if (QuietConsole)
+                return;
+                
+            lock (m_lock)
+            {
+                if (entry.Exception != null)
+                    Output.WriteLine("{0} => {1}", entry.FormattedMessage, VerboseErrors ? entry.Exception.ToString() : entry.Exception.Message);
+                else if (entry.Level == Library.Logging.LogMessageType.DryRun)
+                    Output.WriteLine("[Dryrun]: {0}", entry.FormattedMessage);
+
+                else
+                    Output.WriteLine(entry.FormattedMessage);
+            }
+
         }
+
         public void MessageEvent(string message)
         {
-            if (!QuietConsole)
-                lock(m_lock)
-                    Output.WriteLine(message);
+            if (QuietConsole)
+                return;
+                
+            lock (m_lock)
+                Output.WriteLine(message);
+
         }
-        
-        public void RetryEvent(string message, Exception ex)
+
+        public void Dispose()
         {
-            if (!QuietConsole)
-                lock(m_lock)
-                    Output.WriteLine(ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message));
-        }
-        public void WarningEvent(string message, Exception ex)
-        {
-            if (!QuietConsole)
-                lock(m_lock)
-                    Output.WriteLine(ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message));
-        }
-        public void ErrorEvent(string message, Exception ex)
-        {
-            if (!QuietConsole)
-                lock(m_lock)
-                    Output.WriteLine(ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message));
-        }
-        public void DryrunEvent(string message)
-        {
-            if (!QuietConsole)
-                lock(m_lock)
-                    Output.WriteLine(string.Format("[Dryrun]: {0}", message));
         }
         #endregion
     }

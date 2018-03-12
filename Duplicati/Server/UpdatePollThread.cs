@@ -183,6 +183,9 @@ namespace Duplicati.Server
                                     null,
                                     null,
                                     "update:new",
+                                    null,
+                                    "NewUpdateFound",
+                                    null,
                                     (self, all) => {
                                         return all.Where(x => x.Action == "update:new").FirstOrDefault() ?? self;
                                     }

@@ -39,6 +39,10 @@ namespace Duplicati.Library.Snapshots
     public class WindowsSnapshot : ISnapshotService
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
+        /// <summary>
         /// The main reference to the backup controller
         /// </summary>
         private IVssBackupComponents m_backup;
@@ -114,13 +118,13 @@ namespace Duplicati.Library.Snapshots
                 m_sourcepaths = Utility.Utility.GetUniqueItems(m_sourcepaths, Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).ToList();
 
                 foreach(var pathDuplicate in pathDuplicates)
-                    Logging.Log.WriteMessage(string.Format("Removing duplicate source: {0}", pathDuplicate), Logging.LogMessageType.Information);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "VSSDuplicates", "Removing duplicate source: {0}", pathDuplicate);
 
                 //Sanity check for multiple inclusions of the same files/folders
                 var pathIncludedPaths = m_sourcepaths.Where(x => m_sourcepaths.Where(y => y != x).Any(z => x.StartsWith(z, Utility.Utility.ClientFilenameStringComparision))).ToList();
 
                 foreach (var pathIncluded in pathIncludedPaths)
-                    Logging.Log.WriteMessage(string.Format("Removing already included source: {0}", pathIncluded), Logging.LogMessageType.Information);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "VSSMultiInclude", "Removing already included source: {0}", pathIncluded);
 
                 if (pathIncludedPaths.Count > 0)
                     m_sourcepaths = m_sourcepaths.Except(pathIncludedPaths, Utility.Utility.ClientFilenameStringComparer).ToList();

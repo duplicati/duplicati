@@ -23,6 +23,11 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class TestFilterHandler : IDisposable
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<TestFilterHandler>();
+
         private readonly Options m_options;
         private TestFilterResults m_result;
         
@@ -37,21 +42,21 @@ namespace Duplicati.Library.Main.Operation
             var storeSymlinks = m_options.SymlinkPolicy == Duplicati.Library.Main.Options.SymlinkStrategy.Store;
             var sourcefilter = new Library.Utility.FilterExpression(sources, true);
 
-            using(var snapshot = BackupHandler.GetSnapshot(sources, m_options, m_result))
+            using(var snapshot = BackupHandler.GetSnapshot(sources, m_options))
             {
-                foreach(var path in new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_result).EnumerateFilesAndFolders())
+                foreach(var path in new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy).EnumerateFilesAndFolders())
                 {
                     var fa = FileAttributes.Normal;
                     try { fa = snapshot.GetAttributes(path); }
-                    catch { }
-                    
+                    catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message); }
+
                     if (storeSymlinks && snapshot.IsSymlink(path, fa))
                     {
-                        m_result.AddVerboseMessage("Storing symlink: {0}", path);
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "StoreSymlink", "Storing symlink: {0}", path);
                     }
                     else if ((fa & FileAttributes.Directory) == FileAttributes.Directory)
                     {
-                        m_result.AddVerboseMessage("Including folder: {0}", path);
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "AddDirectory", "Including folder {0}", path);
                     }
                     else
                     {
@@ -63,15 +68,16 @@ namespace Duplicati.Library.Main.Operation
                             size = snapshot.GetFileSize(path);
                             m_result.FileSize += size;
                         }
-                        catch
-                        {
+                        catch (Exception ex) 
+                        { 
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "SizeReadFailed", "Failed to read length of file {0}: {1}", path, ex.Message); 
                         }
                     
                     
                         if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || size < m_options.SkipFilesLargerThan)
-                            m_result.AddVerboseMessage("Including file: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "IncludeFile", "Including file: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
                         else
-                            m_result.AddVerboseMessage("Excluding file due to size: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));                    
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "ExcludeLargeFile", "Excluding file due to size: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
                     }
                     
                 }

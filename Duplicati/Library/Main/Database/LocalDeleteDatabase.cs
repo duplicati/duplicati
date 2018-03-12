@@ -25,6 +25,11 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalDeleteDatabase : LocalDatabase
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalDeleteDatabase>();
+
         private System.Data.IDbCommand m_moveBlockToNewVolumeCommand;
 
         public LocalDeleteDatabase(string path, string operation)
@@ -164,7 +169,7 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<string> CompactableVolumes { get; }
             bool ShouldReclaim { get; }
             bool ShouldCompact { get; }
-            void ReportCompactData(ILogWriter log); 
+            void ReportCompactData(); 
         }
         
         private class CompactReport : ICompactReport
@@ -204,26 +209,23 @@ namespace Duplicati.Library.Main.Database
                 m_smallvolumecount = m_smallvolumes.Count();
             }
             
-            public void ReportCompactData(ILogWriter log)
+            public void ReportCompactData()
             {
                 var wastepercentage = ((m_wastedspace / (float)m_fullsize) * 100);
-                if (log.VerboseOutput)
-                {
-                    log.AddVerboseMessage(string.Format("Found {0} fully deletable volume(s)", m_deletablevolumes));
-                    log.AddVerboseMessage(string.Format("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace)));
-                    log.AddVerboseMessage(string.Format("Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize)));
-                }
-                
+                Logging.Log.WriteVerboseMessage(LOGTAG, "FullyDeletableCount", "Found {0} fully deletable volume(s)", m_deletablevolumes);
+                Logging.Log.WriteVerboseMessage(LOGTAG, "SmallVolumeCount", "Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace));
+                Logging.Log.WriteVerboseMessage(LOGTAG, "WastedSpaceVolumes", "Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize));
+
                 if (m_deletablevolumes > 0)
-                    log.AddMessage(string.Format("Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes);
                 else if (wastepercentage >= m_wastethreshold && m_wastevolumes.Count() >= 2)
-                    log.AddMessage(string.Format("Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold);
                 else if (m_smallspace > m_volsize)
-                    log.AddMessage(string.Format("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize)));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize));
                 else if (m_smallvolumecount > m_maxsmallfilecount)
-                    log.AddMessage(string.Format("Compacting because there are {0} small volumes and the maximum is {1}", m_smallvolumecount, m_maxsmallfilecount));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting because there are {0} small volumes and the maximum is {1}", m_smallvolumecount, m_maxsmallfilecount);
                 else
-                    log.AddMessage("Compacting not required");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting not required");
             }
             
             public bool ShouldReclaim

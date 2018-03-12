@@ -8,6 +8,11 @@ namespace Duplicati.Library.Main.Database
 {
     internal partial class LocalRestoreDatabase : LocalDatabase
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRestoreDatabase));
+
         protected string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
         protected string m_tempfiletable;
         protected string m_tempblocktable;
@@ -173,7 +178,7 @@ namespace Duplicati.Library.Main.Database
         }
 
 
-        public Tuple<long, long> PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter, ILogWriter log)
+        public Tuple<long, long> PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter)
         {
             var guid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -195,7 +200,7 @@ namespace Duplicati.Library.Main.Database
                             .Select(pair => pair.index + 1)
                             .FirstOrDefault() - 1;
                             
-                    log.AddMessage(string.Format("Searching backup {0} ({1}) ...", ix, m_restoreTime));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "SearchingBackup", "Searching backup {0} ({1}) ...", ix, m_restoreTime);
                     
                     cmd.Parameters.Clear();
     
@@ -251,13 +256,13 @@ namespace Duplicati.Library.Main.Database
                                         sb.AppendLine(rd.GetValue(0).ToString());
     
                                 var actualrestoretime = ParseFromEpochSeconds(cmd.ExecuteScalarInt64(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", 0, filesetId));
-                                log.AddWarning(string.Format("{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb), null);
+                                Logging.Log.WriteWarningMessage(LOGTAG, "FilesNotFoundInBackupList", null, "{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb);
                                 cmd.Parameters.Clear();
                             }
                             
                             cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_filenamestable));
                             
-                            using(new Logging.Timer("CommitPrepareFileset"))
+                            using(new Logging.Timer(LOGTAG, "CommitPrepareFileset", "CommitPrepareFileset"))
                                 tr.Commit();
                         }
                     }
@@ -305,7 +310,7 @@ namespace Duplicati.Library.Main.Database
 
                         if (filecount > 0)
                         {
-                            log.AddVerboseMessage("Needs to restore {0} files ({1})", filecount, Library.Utility.Utility.FormatSizeString(filesize));
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "RestoreTargetFileCount", "Needs to restore {0} files ({1})", filecount, Library.Utility.Utility.FormatSizeString(filesize));
                             return new Tuple<long, long>(filecount, filesize);
                         }
                     }                
@@ -440,7 +445,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void FindMissingBlocks(ILogWriter log, bool skipMetadata)
+        public void FindMissingBlocks(bool skipMetadata)
         {
             using(var cmd = m_connection.CreateCommand())
             {
@@ -454,11 +459,8 @@ namespace Duplicati.Library.Main.Database
                     p2 = cmd.ExecuteNonQuery();
                 }
 
-                if (log.VerboseOutput)
-                {
-                    var size = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_tempblocktable), 0);
-                    log.AddVerboseMessage("Restore list contains {0} blocks with a total size of {1}", p1 + p2, Library.Utility.Utility.FormatSizeString(size));
-                }
+                var size = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_tempblocktable), 0);
+                Logging.Log.WriteVerboseMessage(LOGTAG, "RestoreSourceSize", "Restore list contains {0} blocks with a total size of {1}", p1 + p2, Library.Utility.Utility.FormatSizeString(size));
             }
         }
 
@@ -947,7 +949,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempfiletable);
                         cmd.ExecuteNonQuery();
                     }
-                    catch(Exception ex) { if (m_result != null) m_result.AddWarning(string.Format("Cleanup error: {0}", ex.Message),  ex); }
+                    catch(Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_tempfiletable = null; }
 
                 if (m_tempblocktable != null)
@@ -956,7 +958,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempblocktable);
                         cmd.ExecuteNonQuery();
                     }
-                    catch(Exception ex) { if (m_result != null) m_result.AddWarning(string.Format("Cleanup error: {0}", ex.Message),  ex); }
+                    catch(Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_tempblocktable = null; }
 
 
@@ -966,7 +968,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_fileprogtable);
                         cmd.ExecuteNonQuery();
                     }
-                    catch (Exception ex) { if (m_result != null) m_result.AddWarning(string.Format("Cleanup error: {0}", ex.Message), ex); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_fileprogtable = null; }
 
                 if (m_totalprogtable != null)
@@ -975,7 +977,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_totalprogtable);
                         cmd.ExecuteNonQuery();
                     }
-                    catch (Exception ex) { if (m_result != null) m_result.AddWarning(string.Format("Cleanup error: {0}", ex.Message), ex); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_totalprogtable = null; }
 
                 if (m_filesnewlydonetable != null)
@@ -984,7 +986,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_filesnewlydonetable);
                         cmd.ExecuteNonQuery();
                     }
-                    catch (Exception ex) { if (m_result != null) m_result.AddWarning(string.Format("Cleanup error: {0}", ex.Message), ex); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_filesnewlydonetable = null; }
             
             }
@@ -996,7 +998,7 @@ namespace Duplicati.Library.Main.Database
             void SetAllBlocksMissing(long targetfileid);
             void SetAllBlocksRestored(long targetfileid, bool includeMetadata);
             void SetFileDataVerified(long targetfileid);
-            void Commit(ILogWriter log);
+            void Commit();
             void UpdateProcessed(IOperationProgressUpdater writer);
             System.Data.IDbTransaction Transaction { get; }
         }
@@ -1132,12 +1134,12 @@ namespace Duplicati.Library.Main.Database
 
             }
 
-            public void Commit(ILogWriter log)
+            public void Commit()
             {
                 var tr = m_insertblockCommand.Transaction;
                 m_insertblockCommand.Dispose();
                 m_insertblockCommand = null;
-                using (new Logging.Timer("CommitBlockMarker"))
+                using (new Logging.Timer(LOGTAG, "CommitBlockMarker", "CommitBlockMarker"))
                     tr.Commit();
                 tr.Dispose();
             }

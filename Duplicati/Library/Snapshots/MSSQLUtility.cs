@@ -64,6 +64,10 @@ namespace Duplicati.Library.Snapshots
     public class MSSQLUtility
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<MSSQLUtility>();
+        /// <summary>
         /// The MS SQL VSS Writer Guid
         /// </summary>
         public static readonly Guid MSSQLWriterGuid = new Guid("a65faa63-5ea8-4ebc-9dbd-a0c4db26912a");
@@ -119,7 +123,7 @@ namespace Duplicati.Library.Snapshots
             IsMSSQLInstalled = arrInstalledInstances == null ? false : arrInstalledInstances.Length > 0;
 
             if (!IsMSSQLInstalled)
-                Logging.Log.WriteMessage("Cannot find any MS SQL Server instance. MS SQL Server is probably not installed.", Logging.LogMessageType.Information);
+                Logging.Log.WriteInformationMessage(LOGTAG, "NoMSSQLInstance", "Cannot find any MS SQL Server instance. MS SQL Server is probably not installed.");
         }
 
         /// <summary>
@@ -151,7 +155,7 @@ namespace Duplicati.Library.Snapshots
                     var writerMetaData = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(MSSQLWriterGuid));
 
                     if (writerMetaData == null)
-                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.");
+                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.", "NoMsSqlVssWriter");
 
                     foreach (var component in writerMetaData.Components)
                     {

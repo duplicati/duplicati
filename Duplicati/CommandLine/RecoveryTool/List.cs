@@ -91,7 +91,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             {
                 var items = ParseListFiles(folder);
                 if (index < 0 || index >= items.Length)
-                    throw new Duplicati.Library.Interface.UserInformationException(string.Format("Valid range for version is 0 to {0}", items.Length - 1));
+                    throw new Duplicati.Library.Interface.UserInformationException(string.Format("Valid range for version is 0 to {0}", items.Length - 1), "RecoveryToolInvalidVersion");
 
                 return items[index].Value;
             }

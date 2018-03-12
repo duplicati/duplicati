@@ -12,6 +12,11 @@ using System.Text.RegularExpressions;
 namespace Duplicati.Library.Modules.Builtin {
     public class SendHttpMessage : Interface.IGenericCallbackModule
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<SendHttpMessage>();
+
         #region Option names
 
         /// <summary>
@@ -266,7 +271,7 @@ namespace Duplicati.Library.Modules.Builtin {
                     top = top.InnerException;
                 }
 
-                Logging.Log.WriteMessage(Strings.SendHttpMessage.SendMessageError(sb.ToString()), LogMessageType.Warning, ex);
+                Logging.Log.WriteWarningMessage(LOGTAG, "SendMessageError", ex, Strings.SendHttpMessage.SendMessageError(sb.ToString()));
             }
         }
 

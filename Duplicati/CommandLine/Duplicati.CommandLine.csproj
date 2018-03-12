@@ -54,6 +54,7 @@
     <Compile Include="Commands.cs" />
     <Compile Include="ConsoleOutput.cs" />
     <Compile Include="Strings.cs" />
+    <Compile Include="ConsoleLogTarget.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
