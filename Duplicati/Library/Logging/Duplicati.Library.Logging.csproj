@@ -49,6 +49,7 @@
     <Compile Include="LogTagFilter.cs" />
     <Compile Include="LogEntry.cs" />
     <Compile Include="LambdaSupport.cs" />
+    <Compile Include="RepeatingLogScope.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

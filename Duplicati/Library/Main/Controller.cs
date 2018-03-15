@@ -632,6 +632,7 @@ namespace Duplicati.Library.Main
                     Logging.Log.WriteInformationMessage(LOGTAG, "StartingOperation", Strings.Controller.StartingOperationMessage(m_options.MainAction));
 
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
+                    using( new Logging.RepeatingLogScope())
                         method(result);
 
                     if (result.EndTime.Ticks == 0)
@@ -831,6 +832,8 @@ namespace Duplicati.Library.Main
                     m_options.LogFileLogFilter
                 );
             }
+
+
 
             if (m_options.HasTempDir)
             {
