@@ -119,7 +119,7 @@ namespace Duplicati.UnitTest
                     options["prefix"] = "duplicati_unittest";
 
                 //We want all messages in the log
-                options["log-level"] = LogMessageType.Profiling.ToString();
+                options["log-file-log-level"] = LogMessageType.Profiling.ToString();
                 //We cannot rely on USN numbering, but we can use USN enumeration
                 //options["disable-usn-diff-check"] = "true";
 
