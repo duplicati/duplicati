@@ -1,3 +1,18 @@
+2018-03-16 - 2.0.3.1_experimental_2018-03-16
+==========
+This experimental release is mostly the same as the canary build v2.0.2.20.
+Some of the major changes from the experimental build 2.0.2.15 are:
+
+* A new UI for setting the retention policy
+* Added an rclone backend
+* External links in the UI are now marked
+* Fixed a number of browser cache issues, which should fix the XSRF errors
+* Optional warnings when reaching the quota limit
+* Fixed not attempting to read non-symlink reparse points on Windows
+* Fixed a problem with the box.com backend
+* Fixed some crashes that were caused by the usage reporter filling up reports
+* Option to disable the file-size read-ahead scanner
+
 2018-03-06 - 2.0.2.21_canary_2018-03-06
 ==========
 * Rebuilt the style.css file
