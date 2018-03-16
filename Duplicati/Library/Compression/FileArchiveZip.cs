@@ -37,6 +37,11 @@ namespace Duplicati.Library.Compression
     /// </summary>
     public class FileArchiveZip : ICompression
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileArchiveZip>();
+
         private const string CannotReadWhileWriting = "Cannot read while writing";
         private const string CannotWriteWhileReading = "Cannot write while reading";
 
@@ -353,7 +358,7 @@ namespace Duplicati.Library.Compression
                     if (m_using_reader)
                         throw;
 
-                    Logging.Log.WriteMessage("Zip archive appears to have a broken Central Record Header, switching to stream mode", Logging.LogMessageType.Warning, ex);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeaderFallback", ex, "Zip archive appears to have a broken Central Record Header, switching to stream mode");
                     SwitchToReader();
 
                     var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
@@ -377,7 +382,7 @@ namespace Duplicati.Library.Compression
                         if (d.Count < 2)
                             throw;
 
-                        Logging.Log.WriteMessage(string.Format("Zip archive appears to have broken records, returning the {0} records that could be recovered", d.Count), Logging.LogMessageType.Warning, ex2);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeader", ex2, "Zip archive appears to have broken records, returning the {0} records that could be recovered", d.Count);
                     }
 
                     m_entryDict = d;

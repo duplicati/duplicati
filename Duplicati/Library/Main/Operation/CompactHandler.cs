@@ -26,6 +26,10 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class CompactHandler
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<CompactHandler>();
         protected string m_backendurl;
         protected Options m_options;
         protected CompactResults m_result;
@@ -58,7 +62,7 @@ namespace Duplicati.Library.Main.Operation
                     
                     if (!m_options.Dryrun)
                     {
-                        using(new Logging.Timer("CommitCompact"))
+                        using(new Logging.Timer(LOGTAG, "CommitCompact", "CommitCompact"))
                             tr.Commit();
                         if (changed)
                         {
@@ -86,7 +90,7 @@ namespace Duplicati.Library.Main.Operation
         internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, ref System.Data.IDbTransaction transaction, BackendManager sharedBackend)
         {
             var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
-            report.ReportCompactData(m_result);
+            report.ReportCompactData();
             
             if (report.ShouldReclaim || report.ShouldCompact)
             {
@@ -177,7 +181,7 @@ namespace Duplicati.Library.Main.Operation
                                                 if (!m_options.Dryrun)
                                                     backend.Put(newvol, newvolindex);
                                                 else
-                                                    m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize)));
+                                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
                                                 
                                                 
                                                 newvol = new BlockVolumeWriter(m_options);
@@ -217,7 +221,7 @@ namespace Duplicati.Library.Main.Operation
                                 if (!m_options.Dryrun)
                                     backend.Put(newvol, newvolindex);
                                 else
-                                    m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize)));
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
                             }
                             else
                             {
@@ -248,23 +252,23 @@ namespace Duplicati.Library.Main.Operation
                     if (m_result.Dryrun)
                     {
                         if (downloadedVolumes.Count == 0)
-                            m_result.AddDryrunMessage(string.Format("Would delete {0} files, which would reduce storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "CompactResults", "Would delete {0} files, which would reduce storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize));
                         else
-                            m_result.AddDryrunMessage(string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", 
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "CompactResults", "Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", 
                                                                     m_result.DownloadedFileCount, 
                                                                     Library.Utility.Utility.FormatSizeString(m_result.DownloadedFileSize), 
                                                                     m_result.DeletedFileCount, 
                                                                     Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, 
                                                                     Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), 
                                                                     m_result.DeletedFileCount - m_result.UploadedFileCount, 
-                                                                    Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
+                                                                    Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize));
                     }
                     else
                     {
                         if (m_result.DownloadedFileCount == 0)
-                            m_result.AddMessage(string.Format("Deleted {0} files, which reduced storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
+                            Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Deleted {0} files, which reduced storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize));
                         else
-                            m_result.AddMessage(string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", 
+                            Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", 
                                                               m_result.DownloadedFileCount, 
                                                               Library.Utility.Utility.FormatSizeString(downloadSize), 
                                                               m_result.DeletedFileCount, 
@@ -272,7 +276,7 @@ namespace Duplicati.Library.Main.Operation
                                                               m_result.UploadedFileCount, 
                                                               Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), 
                                                               m_result.DeletedFileCount - m_result.UploadedFileCount, 
-                                                              Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
+                                                              Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize));
                     }
                             
                     backend.WaitForComplete(db, transaction);
@@ -314,7 +318,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.Dryrun)
                     backend.Delete(f.Name, f.Size);
                 else
-                    m_result.AddDryrunMessage(string.Format("Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFile", "Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size));
 
                 yield return new KeyValuePair<string, long>(f.Name, f.Size);
             }               

@@ -759,11 +759,12 @@ namespace Duplicati.Server.Database
             return true;
         }
 
-        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, Func<INotification, INotification[], INotification> conflicthandler)
+        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, string logid, string messageid, string logtag, Func<INotification, INotification[], INotification> conflicthandler)
         {
             lock(m_lock)
             {
-                var notification = new Notification() {
+                var notification = new Notification()
+                {
                     ID = -1,
                     Type = type,
                     Title = title,
@@ -771,7 +772,10 @@ namespace Duplicati.Server.Database
                     Exception = ex == null ? "" : ex.ToString(),
                     BackupID = backupid,
                     Action = action ?? "",
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
+                    LogEntryID = logid,
+                    MessageID = messageid,
+                    MessageLogTag = logtag
                 };
 
                 var conflictResult = conflicthandler(notification, GetNotifications());

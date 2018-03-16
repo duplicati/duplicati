@@ -19,6 +19,11 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class SendMail : Interface.IGenericCallbackModule
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<SendMail>();
+
         #region Option names
 
         /// <summary>
@@ -374,7 +379,7 @@ namespace Duplicati.Library.Modules.Builtin
                 foreach(var server in servers)
                 {
                     if (lastEx != null)
-                        Logging.Log.WriteMessage(Strings.SendMail.SendMailFailedRetryError(lastServer, lastEx.Message, server), LogMessageType.Warning, lastEx);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "SendMailFailedWillRetry", lastEx, Strings.SendMail.SendMailFailedRetryError(lastServer, lastEx.Message, server));
                 
                     lastServer = server;
                     try
@@ -405,12 +410,12 @@ namespace Duplicati.Library.Modules.Builtin
                             {
                                 var log = Encoding.UTF8.GetString(ms.GetBuffer());
                                 if (!string.IsNullOrWhiteSpace(log))
-                                    Logging.Log.WriteMessage(Strings.SendMail.SendMailLog(log), LogMessageType.Profiling);
+                                    Logging.Log.WriteProfilingMessage(LOGTAG, "SendMailResult", Strings.SendMail.SendMailLog(log));
                             }
                         }
                         
                         lastEx = null;
-                        Logging.Log.WriteMessage(Strings.SendMail.SendMailSuccess(server), LogMessageType.Information);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SendMailComplete", Strings.SendMail.SendMailSuccess(server));
                         break;
                     }
                     catch (Exception ex)
@@ -434,7 +439,7 @@ namespace Duplicati.Library.Modules.Builtin
                     top = top.InnerException;
                 }
 
-                Logging.Log.WriteMessage(Strings.SendMail.SendMailFailedError(sb.ToString()), LogMessageType.Warning, ex);
+                Logging.Log.WriteWarningMessage(LOGTAG, "SendMailError", ex, Strings.SendMail.SendMailFailedError(sb.ToString()));
             }
         }
 

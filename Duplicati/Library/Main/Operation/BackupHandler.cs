@@ -12,6 +12,11 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class BackupHandler : IDisposable
     {    
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackupHandler>();
+
         private readonly Options m_options;
         private string m_backendurl;
 
@@ -57,24 +62,24 @@ namespace Duplicati.Library.Main.Operation
             m_symlinkPolicy = m_options.SymlinkPolicy;
                 
             if (options.AllowPassphraseChange)
-                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported);
+                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
         
         
         public class FilterHandler
         {
+            private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType<FilterHandler>();
             private Snapshots.ISnapshotService m_snapshot;
             private FileAttributes m_attributeFilter;
             private Duplicati.Library.Utility.IFilter m_enumeratefilter;
             private Duplicati.Library.Utility.IFilter m_emitfilter;
             private Options.SymlinkStrategy m_symlinkPolicy;
             private Options.HardlinkStrategy m_hardlinkPolicy;
-            private ILogWriter m_logWriter;
             private Dictionary<string, string> m_hardlinkmap;
             private Duplicati.Library.Utility.IFilter m_sourcefilter;
             private Queue<string> m_mixinqueue;
             
-            public FilterHandler(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, ILogWriter logWriter)
+            public FilterHandler(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy)
             {
                 m_snapshot = snapshot;
                 m_attributeFilter = attributeFilter;
@@ -82,7 +87,6 @@ namespace Duplicati.Library.Main.Operation
                 m_emitfilter = filter;
                 m_symlinkPolicy = symlinkPolicy;
                 m_hardlinkPolicy = hardlinkPolicy;
-                m_logWriter = logWriter;
                 m_hardlinkmap = new Dictionary<string, string>();
                 m_mixinqueue = new Queue<string>();
 
@@ -99,8 +103,7 @@ namespace Duplicati.Library.Main.Operation
 
             public void ReportError(string rootpath, string path, Exception ex)
             {
-                if (m_logWriter != null)
-                    m_logWriter.AddWarning(string.Format("Error reported while accessing file: {0}", path), ex);                
+                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", path);
             }
 
             public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
@@ -109,15 +112,13 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (m_snapshot.IsBlockDevice(path))
                     {
-                        if (m_logWriter != null)
-                            m_logWriter.AddVerboseMessage("Excluding block device: {0}", path);
+                        Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingBlockDevice", "Excluding block device: {0}", path);
                         return false;
                     }
                 }
                 catch (Exception ex)
                 {
-                    if (m_logWriter != null)
-                        m_logWriter.AddWarning(string.Format("Failed to process path: {0}", path), ex);
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
                     return false;
                 }
 
@@ -125,8 +126,7 @@ namespace Duplicati.Library.Main.Operation
                 bool sourcematches;
                 if (m_sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
                 {
-                    if (m_logWriter != null)
-                        m_logWriter.AddVerboseMessage("Including source path: {0}", path);
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingSourcePath", "Including source path: {0}", path);
 
                     return true;
                 }
@@ -140,8 +140,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (m_hardlinkPolicy == Options.HardlinkStrategy.None)
                             {
-                                if (m_logWriter != null)
-                                    m_logWriter.AddVerboseMessage("Excluding hardlink: {0} ({1})", path, id);
+                                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingHardlinkByPolicy", "Excluding hardlink: {0} ({1})", path, id);
                                 return false;
                             }
                             else if (m_hardlinkPolicy == Options.HardlinkStrategy.First)
@@ -149,8 +148,7 @@ namespace Duplicati.Library.Main.Operation
                                 string prevPath;
                                 if (m_hardlinkmap.TryGetValue(id, out prevPath))
                                 {
-                                    if (m_logWriter != null)
-                                        m_logWriter.AddVerboseMessage("Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
+                                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingDuplicateHardlink", "Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
                                     return false;
                                 }
                                 else
@@ -162,44 +160,38 @@ namespace Duplicati.Library.Main.Operation
                     }
                     catch (Exception ex)
                     {
-                        if (m_logWriter != null)
-                            m_logWriter.AddWarning(string.Format("Failed to process path: {0}", path), ex);
+                        Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
                         return false;
                     }                    
                 }
             
                 if ((m_attributeFilter & attributes) != 0)
                 {
-                    if (m_logWriter != null)
-                        m_logWriter.AddVerboseMessage("Excluding path due to attribute filter: {0}", path);
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromAttributes", "Excluding path due to attribute filter: {0}", path);
                     return false;
                 }
                             
                 Library.Utility.IFilter match;
                 if (!Library.Utility.FilterExpression.Matches(m_enumeratefilter, path, out match))
                 {
-                    if (m_logWriter != null)
-                        m_logWriter.AddVerboseMessage("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromFilter", "Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
                     return false;
                 }
                 else if (match != null)
                 {
-                    if (m_logWriter != null)
-                        m_logWriter.AddVerboseMessage("Including path due to filter: {0} => {1}", path, match.ToString());
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPathFromFilter", "Including path due to filter: {0} => {1}", path, match.ToString());
                 }
 
                 var isSymlink = m_snapshot.IsSymlink(path, attributes);
                 if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Ignore)
                 {
-                    if (m_logWriter != null)
-                        m_logWriter.AddVerboseMessage("Excluding symlink: {0}", path);
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludeSymlink", "Excluding symlink: {0}", path);
                     return false;
                 }
 
                 if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Store)
                 {
-                    if (m_logWriter != null)
-                        m_logWriter.AddVerboseMessage("Storing symlink: {0}", path);
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "StoreSymlink", "Storing symlink: {0}", path);
 
                     m_mixinqueue.Enqueue(path);
                     return false;
@@ -231,7 +223,7 @@ namespace Duplicati.Library.Main.Operation
                 foreach(var s in list.Where(x => {
                     var fa = FileAttributes.Normal;
                     try { fa = m_snapshot.GetAttributes(x); }
-                    catch { }
+                    catch(Exception ex) { Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", x, ex.Message); }
 
                     return AttributeFilter(null, x, fa);
                 }))
@@ -248,7 +240,7 @@ namespace Duplicati.Library.Main.Operation
         }
 
 
-        public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options, ILogWriter log)
+        public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options)
         {
             try
             {
@@ -260,7 +252,7 @@ namespace Duplicati.Library.Main.Operation
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw;
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                    log.AddWarning(Strings.Common.SnapshotFailedError(ex.ToString()), ex);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
             }
 
             return Library.Utility.Utility.IsClientLinux ?
@@ -271,17 +263,18 @@ namespace Duplicati.Library.Main.Operation
 
         private void CountFilesThread(object state)
         {
+            var COUNTER_LOGTAG = LOGTAG + ".Counter";
             var snapshot = (Snapshots.ISnapshotService)state;
             var updater = m_result.OperationProgressUpdater;
             var count = 0L;
             var size = 0L;
             var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
             
-            foreach(var path in new FilterHandler(snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, null).EnumerateFilesAndFolders())
+            foreach(var path in new FilterHandler(snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy).EnumerateFilesAndFolders())
             {
                 var fa = FileAttributes.Normal;
                 try { fa = snapshot.GetAttributes(path); }
-                catch { }
+                catch (Exception ex) { Logging.Log.WriteVerboseMessage(COUNTER_LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message); }
 
                 if (followSymlinks && snapshot.IsSymlink(path, fa))
                     continue;
@@ -291,7 +284,7 @@ namespace Duplicati.Library.Main.Operation
                 count++;
                 
                 try { size += snapshot.GetFileSize(path); }
-                catch { }
+                catch (Exception ex) { Logging.Log.WriteVerboseMessage(COUNTER_LOGTAG, "SizeReadFailed", "Failed to read length of file {0}: {1}", path, ex.Message); }
                 
                 m_result.OperationProgressUpdater.UpdatefileCount(count, size, false);                    
             }
@@ -305,7 +298,7 @@ namespace Duplicati.Library.Main.Operation
             var incompleteFilesets = m_database.GetIncompleteFilesets(null).OrderBy(x => x.Value).ToList();
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
-            m_result.AddMessage(string.Format("Uploading filelist from previous interrupted backup"));
+            Logging.Log.WriteInformationMessage(LOGTAG, "PreviousBackupFilelistUpload", "Uploading filelist from previous interrupted backup");
             using(var trn = m_database.BeginTransaction())
             {
                 var incompleteSet = incompleteFilesets.Last();
@@ -353,13 +346,13 @@ namespace Duplicati.Library.Main.Operation
 
                     if (m_options.Dryrun)
                     {
-                        m_result.AddDryrunMessage(string.Format("Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length)));
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadFileset", "Would upload fileset: {0}, size: {1}", fsw.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(fsw.LocalFilename).Length));
                     }
                     else
                     {
                         m_database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, trn);
 
-                        using(new Logging.Timer("CommitUpdateFilelistVolume"))
+                        using(new Logging.Timer(LOGTAG, "CommitUpdateFilelistVolume", "CommitUpdateFilelistVolume"))
                             trn.Commit();
 
                         backend.Put(fsw);
@@ -384,7 +377,7 @@ namespace Duplicati.Library.Main.Operation
 
                 foreach (var blockfile in m_database.GetMissingIndexFiles())
                 {
-                    m_result.AddMessage(string.Format("Re-creating missing index file for {0}", blockfile));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RecreateMissingIndexFile", "Re-creating missing index file for {0}", blockfile);
                     var w = new IndexVolumeWriter(m_options);
                     w.VolumeID = m_database.RegisterRemoteVolume(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, null);
 
@@ -406,7 +399,7 @@ namespace Duplicati.Library.Main.Operation
                     m_database.AddIndexBlockLink(w.VolumeID, volumeid, null);
 
                     if (m_options.Dryrun)
-                        m_result.AddDryrunMessage(string.Format("would upload new index file {0}, with size {1}, previous size {2}", w.RemoteFilename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(w.Filesize)));
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUpdateIndexFile", "Would upload new index file {0}, with size {1}, previous size {2}", w.RemoteFilename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(w.Filesize));
                     else
                     {
                         m_database.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -419,7 +412,7 @@ namespace Duplicati.Library.Main.Operation
         private void PreBackupVerify(BackendManager backend, string protectedfile)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
-            using(new Logging.Timer("PreBackupVerify"))
+            using(new Logging.Timer(LOGTAG, "PreBackupVerify", "PreBackupVerify"))
             {
                 try
                 {
@@ -435,11 +428,11 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (m_options.AutoCleanup)
                     {
-                        m_result.AddWarning("Backend verification failed, attempting automatic cleanup", ex);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendVerifyFailedAttemptingCleanup", ex, "Backend verification failed, attempting automatic cleanup");
                         m_result.RepairResults = new RepairResults(m_result);
                         new RepairHandler(backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
 
-                        m_result.AddMessage("Backend cleanup finished, retrying verification");
+                        Logging.Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
                         FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
                     }
                     else
@@ -450,20 +443,20 @@ namespace Duplicati.Library.Main.Operation
 
         private void RunMainOperation(Snapshots.ISnapshotService snapshot, BackendManager backend)
         {
-            var filterhandler = new FilterHandler(snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy, m_result);
+            var filterhandler = new FilterHandler(snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy);
 
-            using(new Logging.Timer("BackupMainOperation"))
+            using(new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
                 if (m_options.ChangedFilelist != null && m_options.ChangedFilelist.Length >= 1)
                 {
-                    m_result.AddVerboseMessage("Processing supplied change list instead of enumerating filesystem");
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "UsingChangeList", "Processing supplied change list instead of enumerating filesystem");
                     m_result.OperationProgressUpdater.UpdatefileCount(m_options.ChangedFilelist.Length, 0, true);
 
                     foreach(var p in filterhandler.Mixin(m_options.ChangedFilelist))
                     {
                         if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                         {
-                            m_result.AddMessage("Stopping backup operation on request");
+                            Logging.Log.WriteInformationMessage(LOGTAG, "StopBackup", "Stopping backup operation on request");
                             break;
                         }
 
@@ -473,7 +466,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         catch (Exception ex)
                         {
-                            m_result.AddWarning(string.Format("Failed to process element: {0}, message: {1}", p, ex.Message), ex);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedToProcessEntry", ex, "Failed to process element: {0}, message: {1}", p, ex.Message);
                         }
                     }
 
@@ -485,13 +478,13 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                         {
-                            m_result.AddMessage("Stopping backup operation on request");
+                            Logging.Log.WriteInformationMessage(LOGTAG, "StopBackup", "Stopping backup operation on request");
                             break;
                         }
 
                         var fa = FileAttributes.Normal;
                         try { fa = snapshot.GetAttributes(path); }
-                        catch { }
+                        catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message); }
 
                         this.HandleFilesystemEntry(snapshot, backend, path, fa);
                     }
@@ -506,7 +499,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var lastVolumeSize = -1L;
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Finalize);
-            using(new Logging.Timer("FinalizeRemoteVolumes"))
+            using(new Logging.Timer(LOGTAG, "FinalizeRemoteVolumes", "FinalizeRemoteVolumes"))
             {
                 if (m_blockvolume != null && m_blockvolume.SourceSize > 0)
                 {
@@ -514,13 +507,13 @@ namespace Duplicati.Library.Main.Operation
 
                     if (m_options.Dryrun)
                     {
-                        m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadBlock", "Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
                         if (m_indexvolume != null)
                         {
                             m_blockvolume.Close();
                             UpdateIndexVolume();
                             m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
-                            m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadIndex", "Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length));
                         }
 
                         m_blockvolume.Dispose();
@@ -534,13 +527,13 @@ namespace Duplicati.Library.Main.Operation
                         m_blockvolume.Close();
                         UpdateIndexVolume();
 
-                        using(new Logging.Timer("CommitUpdateRemoteVolume"))
+                        using(new Logging.Timer(LOGTAG, "CommitUpdateRemoteVolume", "CommitUpdateRemoteVolume"))
                             m_transaction.Commit();
                         m_transaction = m_database.BeginTransaction();
 
                         backend.Put(m_blockvolume, m_indexvolume);
 
-                        using(new Logging.Timer("CommitUpdateRemoteVolume"))
+                        using(new Logging.Timer(LOGTAG, "CommitUpdateRemoteVolume", "CommitUpdateRemoteVolume"))
                             m_transaction.Commit();
                         m_transaction = m_database.BeginTransaction();
 
@@ -563,7 +556,7 @@ namespace Duplicati.Library.Main.Operation
             //Changes in the filelist triggers a filelist upload
             if (m_options.UploadUnchangedBackups || changeCount > 0)
             {
-                using(new Logging.Timer("Uploading a new fileset"))
+                using(new Logging.Timer(LOGTAG, "UploadNewFileset", "Uploading a new fileset"))
                 {
                     if (!string.IsNullOrEmpty(m_options.ControlFiles))
                         foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
@@ -573,18 +566,18 @@ namespace Duplicati.Library.Main.Operation
                     filesetvolume.Close();
 
                     if (m_options.Dryrun)
-                        m_result.AddDryrunMessage(string.Format("Would upload fileset volume: {0}, size: {1}", filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(filesetvolume.LocalFilename).Length)));
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadFileset", "Would upload fileset volume: {0}, size: {1}", filesetvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(filesetvolume.LocalFilename).Length));
                     else
                     {
                         m_database.UpdateRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
 
-                        using(new Logging.Timer("CommitUpdateRemoteVolume"))
+                        using(new Logging.Timer(LOGTAG, "CommitUpdateRemoteVolume", "CommitUpdateRemoteVolume"))
                             m_transaction.Commit();
                         m_transaction = m_database.BeginTransaction();
 
                         backend.Put(filesetvolume);
 
-                        using(new Logging.Timer("CommitUpdateRemoteVolume"))
+                        using(new Logging.Timer(LOGTAG, "CommitUpdateRemoteVolume", "CommitUpdateRemoteVolume"))
                             m_transaction.Commit();
                         m_transaction = m_database.BeginTransaction();
 
@@ -593,7 +586,7 @@ namespace Duplicati.Library.Main.Operation
             }
             else
             {
-                m_result.AddVerboseMessage("removing temp files, as no data needs to be uploaded");
+                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingLeftoverTempFile", "removing temp files, as no data needs to be uploaded");
                 m_database.RemoveRemoteVolume(filesetvolume.RemoteFilename, m_transaction);
             }
         }
@@ -624,7 +617,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
             {
-                using(new Logging.Timer("AfterBackupVerify"))
+                using(new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
                     FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
                 backend.WaitForComplete(m_database, null);
             }
@@ -689,13 +682,13 @@ namespace Duplicati.Library.Main.Operation
 
                 var probe_path = m_database.GetFirstPath();
                 if (probe_path != null && Duplicati.Library.Utility.Utility.GuessDirSeparator(probe_path) != System.IO.Path.DirectorySeparatorChar.ToString())
-                    throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"));
+                    throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"), "CrossOsDatabaseReuseNotSupported");
 
                 if (m_database.PartiallyRecreated)
-                    throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                    throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
                 
                 if (m_database.RepairInProgress)
-                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.");
+                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.", "DatabaseRepairInProgress");
 
                 m_blocksize = m_options.Blocksize;
                 m_maxmetadatasize = (m_blocksize / (long)m_options.BlockhashSize) * m_blocksize;
@@ -707,14 +700,14 @@ namespace Duplicati.Library.Main.Operation
                 m_filehasher = Library.Utility.HashAlgorithmHelper.Create(m_options.FileHashAlgorithm);
 
                 if (m_blockhasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgoithmNotSupported");
                 if (m_filehasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm), "FileHashAlgoithmNotSupported");
 
                 if (!m_blockhasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm), "BlockHashAlgoithmNotSupported");
                 if (!m_filehasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm), "FileHashAlgoithmNotSupported");
 
                 m_database.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, false);
                 // If there is no filter, we set an empty filter to simplify the code
@@ -730,7 +723,7 @@ namespace Duplicati.Library.Main.Operation
                     using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     {
-                        using(var snapshot = GetSnapshot(sources, m_options, m_result))
+                        using(var snapshot = GetSnapshot(sources, m_options))
                         {
                             // Start parallel scan, or use the database
                             if (m_options.ChangedFilelist == null || m_options.ChangedFilelist.Length < 1)
@@ -778,22 +771,22 @@ namespace Duplicati.Library.Main.Operation
                                     // Remove the protected file
                                     if (syntbase.State == RemoteVolumeState.Uploading)
                                     {
-                                        m_result.AddMessage(string.Format("removing incomplete remote file listed as {0}: {1}", syntbase.State, syntbase.Name));
+                                        Logging.Log.WriteInformationMessage(LOGTAG, "RemoveIncompleteFilelist", "Removing incomplete remote file listed as {0}: {1}", syntbase.State, syntbase.Name);
                                         backend.Delete(syntbase.Name, syntbase.Size);
                                     }
                                     else if (syntbase.State == RemoteVolumeState.Temporary)
                                     {
-                                        m_result.AddMessage(string.Format("removing file listed as {0}: {1}", syntbase.State, syntbase.Name));
+                                        Logging.Log.WriteInformationMessage(LOGTAG, "RemoveTemporaryFile", "Removing file listed as {0}: {1}", syntbase.State, syntbase.Name);
                                         m_database.RemoveRemoteVolume(syntbase.Name);
                                     }
                                 }
                                 else if (syntbase.Name == null || syntbase.State != RemoteVolumeState.Uploaded)
-                                    m_result.AddWarning(string.Format("Expected there to be a temporary fileset for synthetic filelist ({0}, {1}), but none was found?", lasttempfileid, lasttempfilelist), null);
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "MissingTemporaryFilelist", null, "Expected there to be a temporary fileset for synthetic filelist ({0}, {1}), but none was found?", lasttempfileid, lasttempfilelist);
                             }
 
                             var prevfileset = m_database.FilesetTimes.FirstOrDefault();
                             if (prevfileset.Value.ToUniversalTime() > m_database.OperationTimestamp.ToUniversalTime())
-                                throw new UserInformationException(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()));
+                                throw new UserInformationException(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()), "FilesetIntervalClockIssue");
                             
                             m_lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
 
@@ -823,21 +816,21 @@ namespace Duplicati.Library.Main.Operation
 
                         var lastVolumeSize = FinalizeRemoteVolumes(backend);
                         
-                        using(new Logging.Timer("UpdateChangeStatistics"))
+                        using(new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
                             m_database.UpdateChangeStatistics(m_result);
-                        using(new Logging.Timer("VerifyConsistency"))
+                        using(new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
                             m_database.VerifyConsistency(m_transaction, m_options.Blocksize, m_options.BlockhashSize, false);
     
                         UploadRealFileList(backend, filesetvolume);
                                         
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-                        using(new Logging.Timer("Async backend wait"))
+                        using(new Logging.Timer(LOGTAG, "AsyncBackendWait", "Async backend wait"))
                             backend.WaitForEmpty(m_database, m_transaction);
                             
                         if (m_result.TaskControlRendevouz() != TaskControlState.Stop) 
                             CompactIfRequired(backend, lastVolumeSize);
 
-                        using (new Logging.Timer("Async backend wait"))
+                        using (new Logging.Timer(LOGTAG, "AsyncBackendWait", "Async backend wait"))
                             backend.WaitForComplete(m_database, m_transaction);
 
                         if (m_options.UploadVerificationFile)
@@ -853,7 +846,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            using(new Logging.Timer("CommitFinalizingBackup"))
+                            using(new Logging.Timer(LOGTAG, "CommitFinalizingBackupe", "CommitFinalizingBackup"))
                                 m_transaction.Commit();
                                 
                             m_transaction = null;
@@ -879,7 +872,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 catch (Exception ex)
                 {
-                    m_result.AddError("Fatal error", ex);
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FatalError", ex, "Fatal error");
                     throw;
                 }
                 finally
@@ -889,18 +882,19 @@ namespace Duplicati.Library.Main.Operation
                         parallelScanner.Abort();
                         parallelScanner.Join(500);
                         if (parallelScanner.IsAlive)
-                            m_result.AddWarning("Failed to terminate filecounter thread", null);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FileCounterTerminateFailed", null, "Failed to terminate filecounter thread");
                     }
                 
                     if (m_transaction != null)
                         try { m_transaction.Rollback(); }
-                        catch (Exception ex) { m_result.AddError(string.Format("Rollback error: {0}", ex.Message), ex); }
+                        catch (Exception ex) { Logging.Log.WriteErrorMessage(LOGTAG, "RollbackError", ex, "Rollback error: {0}", ex.Message); }
                 }
             }
         }
 
         private Dictionary<string, string> GenerateMetadata(Snapshots.ISnapshotService snapshot, string path, System.IO.FileAttributes attributes)
         {
+            string METALOGTAG = LOGTAG + ".Metadata";
             try
             {
                 Dictionary<string, string> metadata;
@@ -922,7 +916,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         catch (Exception ex)
                         {
-                            m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                            Logging.Log.WriteWarningMessage(METALOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", path);
                         }
                     }
 
@@ -934,7 +928,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         catch (Exception ex)
                         {
-                            m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                            Logging.Log.WriteWarningMessage(METALOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", path);
                         }
                     }
                 }
@@ -947,13 +941,15 @@ namespace Duplicati.Library.Main.Operation
             }
             catch(Exception ex)
             {
-                m_result.AddWarning(string.Format("Failed to process metadata for \"{0}\", storing empty metadata", path), ex);
+                Logging.Log.WriteWarningMessage(METALOGTAG, "MetadataProcessFailed", ex, "Failed to process metadata for \"{0}\", storing empty metadata", path);
                 return new Dictionary<string, string>();
             }
         }
         
         private bool HandleFilesystemEntry(Snapshots.ISnapshotService snapshot, BackendManager backend, string path, System.IO.FileAttributes attributes)
         {
+            string FILELOGTAG = LOGTAG + ".FileEntry";
+
             // If we lost the connection, there is no point in keeping on processing
             if (backend.HasDied)
                 throw backend.LastException;
@@ -975,7 +971,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 catch (Exception ex) 
                 {
-                    m_result.AddWarning(string.Format("Failed to read timestamp on \"{0}\"", path), ex);
+                    Logging.Log.WriteWarningMessage(FILELOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", path);
                 }
                                             
                 if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
@@ -989,7 +985,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
                         {
-                            m_result.AddVerboseMessage("Ignoring symlink {0}", path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "IgnoreSymlink", "Ignoring symlink {0}", path);
                             return false;
                         }
 
@@ -1005,14 +1001,14 @@ namespace Duplicati.Library.Main.Operation
                             var metahash = Utility.WrapMetadata(metadata, m_options);
                             AddSymlinkToOutput(backend, path, DateTime.UtcNow, metahash);
 
-                            m_result.AddVerboseMessage("Stored symlink {0}", path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "StoreSymlink", "Stored symlink {0}", path);
                             //Do not recurse symlinks
                             return false;
                         }
                     }
                     else
                     {
-                        m_result.AddVerboseMessage("Treating empty symlink as regular path {0}", path);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "FollowingEmptySymlink", "Treating empty symlink as regular path {0}", path);
                     }
                 }
     
@@ -1029,7 +1025,7 @@ namespace Duplicati.Library.Main.Operation
                         metahash = EMPTY_METADATA;
                     }
     
-                    m_result.AddVerboseMessage("Adding directory {0}", path);
+                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "AddDirectory", "Adding directory {0}", path);
                     AddFolderToOutput(backend, path, lastwrite, metahash);
                     return true;
                 }
@@ -1047,7 +1043,7 @@ namespace Duplicati.Library.Main.Operation
 
                 long filestatsize = -1;
                 try { filestatsize = snapshot.GetFileSize(path); }
-                catch { }
+                catch (Exception ex) { Logging.Log.WriteVerboseMessage(FILELOGTAG, "SizeReadFailed", "Failed to read length of file {0}: {1}", path, ex.Message); }
 
                 IMetahash metahashandsize = m_options.StoreMetadata ? Utility.WrapMetadata(GenerateMetadata(snapshot, path, attributes), m_options) : EMPTY_METADATA;
 
@@ -1070,7 +1066,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if ((oldId < 0 || m_options.DisableFiletimeCheck || timestampChanged || filesizeChanged || metadatachanged) && !tooLargeFile)
                 {
-                    m_result.AddVerboseMessage("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", path, oldId <= 0, timestampChanged, filesizeChanged, metadatachanged, lastwrite, oldModified);
+                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", path, oldId <= 0, timestampChanged, filesizeChanged, metadatachanged, lastwrite, oldModified);
 
                     m_result.OpenedFiles++;
                     
@@ -1085,7 +1081,7 @@ namespace Duplicati.Library.Main.Operation
                         using (var fs = snapshot.OpenRead(path))
                         {
                             try { m_result.OperationProgressUpdater.StartFile(path, fs.Length); }
-                            catch (Exception ex) { m_result.AddWarning(string.Format("Failed to read file length for file {0}", path), ex); }
+                            catch (Exception ex) { Logging.Log.WriteWarningMessage(FILELOGTAG, "FileLengthFailure", ex, "Failed to read file length for file {0}", path); }
                             
                             if ((filesize = ProcessStream(fs, hint, backend, blocklisthashes, hashcollector, false)) < 0)
                                 return false;
@@ -1097,16 +1093,16 @@ namespace Duplicati.Library.Main.Operation
                         if (oldHash != filekey)
                         {
                             if (oldHash == null)
-                                m_result.AddVerboseMessage("New file {0}", path);
+                                Logging.Log.WriteVerboseMessage(FILELOGTAG, "NewFile", "New file {0}", path);
                             else
-                                m_result.AddVerboseMessage("File has changed {0}", path);
+                                Logging.Log.WriteVerboseMessage(FILELOGTAG, "ChangedFile", "File has changed {0}", path);
                             if (oldId < 0)
                             {
                                 m_result.AddedFiles++;
                                 m_result.SizeOfAddedFiles += filesize;
                                 
                                 if (m_options.Dryrun)
-                                    m_result.AddDryrunMessage(string.Format("Would add new file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WoudlAddNewFile", "Would add new file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
                             else
                             {
@@ -1114,7 +1110,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.SizeOfModifiedFiles += filesize;
                                 
                                 if (m_options.Dryrun)
-                                    m_result.AddDryrunMessage(string.Format("Would add changed file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize)));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WoudlAddChangedFile", "Would add changed file {0}, size {1}", path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
                             AddFileToOutput(backend, path, filesize, lastwrite, metahashandsize, hashcollector, filekey, blocklisthashes);
@@ -1122,7 +1118,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (metadatachanged)
                         {
-                            m_result.AddVerboseMessage("File has only metadata changes {0}", path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", path);
                             AddFileToOutput(backend, path, filesize, lastwrite, metahashandsize, hashcollector, filekey, blocklisthashes);
                             changed = true;
                         }
@@ -1130,17 +1126,16 @@ namespace Duplicati.Library.Main.Operation
                         {
                             // When we write the file to output, update the last modified time
                             oldModified = lastwrite;
-                            m_result.AddVerboseMessage("File has not changed {0}", path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "NoFileChanges", "File has not changed {0}", path);
                         }
-
                     }
                 }
                 else
                 {
                     if (tooLargeFile)                
-                        m_result.AddVerboseMessage("Excluding file because the size {0} exceeds limit ({1}): {2}", Library.Utility.Utility.FormatSizeString(filestatsize), Library.Utility.Utility.FormatSizeString(m_options.SkipFilesLargerThan), path);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "ExcludeLargeFile", "Excluding file because the size {0} exceeds limit ({1}): {2}", Library.Utility.Utility.FormatSizeString(filestatsize), Library.Utility.Utility.FormatSizeString(m_options.SkipFilesLargerThan), path);
                     else
-                        m_result.AddVerboseMessage("Skipped checking file, because timestamp was not updated {0}", path);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", path);
                 }
 
                 // If the file was not previously found, we cannot add it
@@ -1156,7 +1151,7 @@ namespace Duplicati.Library.Main.Operation
             }
             catch (Exception ex)
             {
-                m_result.AddWarning(string.Format("Failed to process path: {0}", path), ex);
+                Logging.Log.WriteWarningMessage(FILELOGTAG, "PathProcessingFailed", ex, "Failed to process path: {0}", path);
                 m_result.FilesWithError++;
             }
 
@@ -1272,13 +1267,13 @@ namespace Duplicati.Library.Main.Operation
                     if (m_options.Dryrun)
                     {
                         m_blockvolume.Close();
-                        m_result.AddDryrunMessage(string.Format("Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length)));
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadBlock", "Would upload block volume: {0}, size: {1}", m_blockvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_blockvolume.LocalFilename).Length));
                         
                         if (m_indexvolume != null)
                         {
                             UpdateIndexVolume();
                             m_indexvolume.FinishVolume(Library.Utility.Utility.CalculateHash(m_blockvolume.LocalFilename), new FileInfo(m_blockvolume.LocalFilename).Length);
-                            m_result.AddDryrunMessage(string.Format("Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length)));
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadIndex", "Would upload index volume: {0}, size: {1}", m_indexvolume.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(m_indexvolume.LocalFilename).Length));
                             m_indexvolume.Dispose();
                             m_indexvolume = null;
                         }
@@ -1297,7 +1292,7 @@ namespace Duplicati.Library.Main.Operation
                         backend.FlushDbMessages(m_database, m_transaction);
                         m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
 
-                        using(new Logging.Timer("CommitAddBlockToOutputFlush"))
+                        using(new Logging.Timer(LOGTAG, "CommitAddBlockToOutputFlush", "CommitAddBlockToOutputFlush"))
                             m_transaction.Commit();
                         m_transaction = m_database.BeginTransaction();
 
@@ -1305,7 +1300,7 @@ namespace Duplicati.Library.Main.Operation
                         m_blockvolume = null;
                         m_indexvolume = null;
 
-                        using(new Logging.Timer("CommitAddBlockToOutputFlush"))
+                        using(new Logging.Timer(LOGTAG, "CommitAddBlockToOutputFlush", "CommitAddBlockToOutputFlush"))
                             m_transaction.Commit();
                         m_transaction = m_database.BeginTransaction();
                         
@@ -1335,7 +1330,7 @@ namespace Duplicati.Library.Main.Operation
                 // This could be done such that an extra query is made if the metadata
                 // spans multiple blocklist hashes, as it is not expected to be common
 
-                m_result.AddWarning(string.Format("Metadata size is {0}, but the largest accepted size is {1}, recording empty metadata", meta.Blob.Length, m_maxmetadatasize), null);
+                Logging.Log.WriteWarningMessage(LOGTAG, "TooLargeMetadata", null, "Metadata size is {0}, but the largest accepted size is {1}, recording empty metadata", meta.Blob.Length, m_maxmetadatasize);
                 meta = EMPTY_METADATA;
             }
 
@@ -1412,14 +1407,14 @@ namespace Duplicati.Library.Main.Operation
             if (m_blockvolume != null)
             {
                 try { m_blockvolume.Dispose(); }
-                catch (Exception ex) { m_result.AddError("Failed disposing block volume", ex); }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BlockDisposeFailed", ex, "Failed disposing block volume", ex); }
                 finally { m_blockvolume = null; }
             }
 
             if (m_indexvolume != null)
             {
                 try { m_indexvolume.Dispose(); }
-                catch (Exception ex) { m_result.AddError("Failed disposing index volume", ex); }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "IndexDisposeFailed", ex, "Failed disposing index volume", ex); }
                 finally { m_indexvolume = null; }
             }
 

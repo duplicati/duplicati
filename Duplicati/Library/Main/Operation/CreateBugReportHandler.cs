@@ -24,6 +24,10 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class CreateBugReportHandler
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<CreateBugReportHandler>();
         private string m_targetpath;
         private Options m_options;
         private CreateLogDatabaseResults m_result;
@@ -44,15 +48,15 @@ namespace Duplicati.Library.Main.Operation
                 m_targetpath = m_targetpath + "." + module;
 
             if (System.IO.File.Exists(m_targetpath))
-                throw new UserInformationException(string.Format("Output file already exists, not overwriting: {0}", m_targetpath));
+                throw new UserInformationException(string.Format("Output file already exists, not overwriting: {0}", m_targetpath), "BugReportTargetAlreadyExists");
 
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "BugReportSourceDatabaseNotFound");
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.BugReport_Running);
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
-            m_result.AddMessage("Scrubbing filenames from database, this may take a while, please wait");
+            Logging.Log.WriteInformationMessage(LOGTAG, "ScrubbingFilenames", "Scrubbing filenames from database, this may take a while, please wait");
 
             using (var tmp = new Library.Utility.TempFile())
             {

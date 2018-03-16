@@ -18,6 +18,11 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class SendJabberMessage : Interface.IGenericCallbackModule
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<SendJabberMessage>();
+
         #region Option names
 
         /// <summary>
@@ -264,7 +269,7 @@ namespace Duplicati.Library.Modules.Builtin
                     top = top.InnerException;
                 }
 
-                Logging.Log.WriteMessage(Strings.SendJabberMessage.SendMessageError(sb.ToString()), LogMessageType.Warning, ex);
+                Logging.Log.WriteWarningMessage(LOGTAG, "SendFailed", ex, Strings.SendJabberMessage.SendMessageError(sb.ToString()));
             }
         }
 

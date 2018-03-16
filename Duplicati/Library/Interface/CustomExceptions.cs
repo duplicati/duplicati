@@ -33,14 +33,21 @@ namespace Duplicati.Library.Interface
     [Serializable]
     public class UserInformationException : Exception
     {
-        public UserInformationException(string message)
+        /// <summary>
+        /// The help ID for the exception
+        /// </summary>
+        public readonly string HelpID;
+
+        public UserInformationException(string message, string helpId)
             : base(message)
         {
+            HelpID = helpId;
         }
 
-        public UserInformationException(string message, Exception innerException)
+        public UserInformationException(string message, string helpId, Exception innerException)
             : base(message, innerException)
         {
+            HelpID = helpId;
         }
     }
 
@@ -51,19 +58,19 @@ namespace Duplicati.Library.Interface
     public class FolderMissingException : UserInformationException
     {
         public FolderMissingException()
-            : base(Strings.Common.FolderMissingError)
+            : base(Strings.Common.FolderMissingError, "FolderMissing")
         { }
 
         public FolderMissingException(string message)
-            : base(message)
+            : base(message, "FolderMissing")
         { }
 
         public FolderMissingException(Exception innerException)
-            : base(Strings.Common.FolderMissingError, innerException)
+            : base(Strings.Common.FolderMissingError, "FolderMissing", innerException)
         { }
 
         public FolderMissingException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(message, "FolderMissing", innerException)
         { }
     }
 
@@ -74,19 +81,19 @@ namespace Duplicati.Library.Interface
     public class FileMissingException : UserInformationException
     {
         public FileMissingException()
-            : base(LC.L("The requested file does not exist"))
+            : base(LC.L("The requested file does not exist"), "FileMissing")
         { }
 
         public FileMissingException(string message)
-            : base(message)
+            : base(message, "FileMissing")
         { }
 
         public FileMissingException(Exception innerException)
-            : base(LC.L("The requested file does not exist"), innerException)
+            : base(LC.L("The requested file does not exist"), "FileMissing", innerException)
         { }
 
         public FileMissingException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(message, "FileMissing", innerException)
         { }
     }
 
@@ -97,19 +104,19 @@ namespace Duplicati.Library.Interface
     public class FolderAreadyExistedException : UserInformationException
     {
         public FolderAreadyExistedException()
-            : base(Strings.Common.FolderAlreadyExistsError)
+            : base(Strings.Common.FolderAlreadyExistsError, "FolderAlreadyExists")
         { }
 
         public FolderAreadyExistedException(string message)
-            : base(message)
+            : base(message, "FolderAlreadyExists")
         { }
 
         public FolderAreadyExistedException(Exception innerException)
-            : base(Strings.Common.FolderAlreadyExistsError, innerException)
+            : base(Strings.Common.FolderAlreadyExistsError, "FolderAlreadyExists", innerException)
         { }
 
         public FolderAreadyExistedException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(message, "FolderAlreadyExists", innerException)
         { }
     }
 
@@ -120,19 +127,19 @@ namespace Duplicati.Library.Interface
     public class CancelException : UserInformationException
     {
         public CancelException()
-            : base(Strings.Common.CancelExceptionError)
+            : base(Strings.Common.CancelExceptionError, "Cancelled")
         { }
 
         public CancelException(string message)
-            : base(message)
+            : base(message, "Cancelled")
         { }
 
         public CancelException(Exception innerException)
-            : base(Strings.Common.CancelExceptionError, innerException)
+            : base(Strings.Common.CancelExceptionError, "Cancelled", innerException)
         { }
 
         public CancelException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(message, "Cancelled", innerException)
         { }
 }
 }

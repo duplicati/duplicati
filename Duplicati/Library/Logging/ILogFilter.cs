@@ -1,5 +1,4 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-
+﻿//  Copyright (C) 2018, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
@@ -16,24 +15,18 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-
-namespace Duplicati.Server.Database
+namespace Duplicati.Library.Logging
 {
-    public class Notification : Server.Serialization.Interface.INotification
+    /// <summary>
+    /// An interface for filtering log messages
+    /// </summary>
+    public interface ILogFilter
     {
-        #region INotification implementation
-        public long ID { get; set; }
-        public Duplicati.Server.Serialization.NotificationType Type { get; set; }
-        public string Title { get; set; }
-        public string Message { get; set; }
-        public string Exception { get; set; }
-        public string BackupID { get; set; }
-        public string Action { get; set; }
-        public DateTime Timestamp  { get; set; }
-        public string LogEntryID { get; set; }
-        public string MessageID { get; set; }
-        public string MessageLogTag { get; set; }
-        #endregion
+        /// <summary>
+        /// A method called to determine if a given message should be filtered or not
+        /// </summary>
+        /// <returns><c>true</c> if the message is included; <c>false</c> otherwise</returns>
+        /// <param name="entry">The entry to examine</param>
+        bool Accepts(LogEntry entry);
     }
 }
-

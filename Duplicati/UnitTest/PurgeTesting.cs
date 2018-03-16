@@ -42,7 +42,6 @@ namespace Duplicati.UnitTest
             var basedatasize = 0;
 
             var testopts = TestOptions;
-            testopts["verbose"] = "true";
             testopts["blocksize"] = blocksize.ToString() + "b";
 
             var filenames = BorderTests.WriteTestFilesToFolder(DATAFOLDER, blocksize, basedatasize).Select(x => "a" + x.Key).ToList();
@@ -170,7 +169,6 @@ namespace Duplicati.UnitTest
             var basedatasize = 0;
 
             var testopts = TestOptions;
-            testopts["verbose"] = "true";
             testopts["blocksize"] = blocksize.ToString() + "b";
 
             var filenames = BorderTests.WriteTestFilesToFolder(DATAFOLDER, blocksize, basedatasize).Select(x => "a" + x.Key).ToList();
