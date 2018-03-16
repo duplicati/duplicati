@@ -82,83 +82,9 @@ namespace Duplicati.Library.Main
         private bool m_doResetLocale;
 
         /// <summary>
-        /// The caffeinate process runner
-        /// </summary>
-        private System.Diagnostics.Process m_caffeinate;
-
-        /// <summary>
         /// The multi-controller log target
         /// </summary>
         private ControllerMultiLogTarget m_logTarget;
-
-        /// <summary>
-        /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
-        /// </summary>
-        /// <param name="isRunning">Flag indicating execution state</param>
-        private void OperationRunning(bool isRunning)
-        {
-            if (m_options != null && !m_options.AllowSleep)
-            {
-                if (Duplicati.Library.Utility.Utility.IsClientWindows)
-                {
-                    try
-                    {
-                        Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
-                    }
-                    catch (Exception ex)
-                    {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
-                    }
-                }
-                else if (Duplicati.Library.Utility.Utility.IsClientOSX)
-                {
-                    if (isRunning)
-                    {
-                        try
-                        {
-                            if (m_caffeinate == null)
-                            {
-                                // -s prevents sleep on AC, -i prevents sleep generally
-                                var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s");
-                                psi.RedirectStandardInput = true;
-                                psi.UseShellExecute = false;
-                                m_caffeinate = System.Diagnostics.Process.Start(psi);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
-                        }
-                    }
-                    else
-                    {
-                        try
-                        {
-                            if (m_caffeinate != null && !m_caffeinate.HasExited)
-                            {
-                                // Send CTRL+C
-                                m_caffeinate.StandardInput.Write("\x3");
-                                m_caffeinate.StandardInput.Flush();
-                                m_caffeinate.WaitForExit(500);
-
-                                if (!m_caffeinate.HasExited)
-                                {
-                                    m_caffeinate.Kill();
-                                    m_caffeinate.WaitForExit(500);
-                                    if (!m_caffeinate.HasExited)
-                                        throw new Exception("Failed to kill the caffeinate process");
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionDisableError", ex, "Failed to unset sleep prevention");
-                        }
-                            
-                    }
-                }
-            }
-        }
 
         /// <summary>
         /// Constructs a new interface for performing backup and restore operations
@@ -627,12 +553,13 @@ namespace Duplicati.Library.Main
                 {
                     m_currentTask = result;
                     m_currentTaskThread = System.Threading.Thread.CurrentThread;
-                    SetupCommonOptions(result, ref paths, ref filter);
 
+                    SetupCommonOptions(result, ref paths, ref filter);
                     Logging.Log.WriteInformationMessage(LOGTAG, "StartingOperation", Strings.Controller.StartingOperationMessage(m_options.MainAction));
 
+                    using (new ProcessController(m_options))
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
-                    using( new Logging.RepeatingLogScope())
+                    using (new Logging.RepeatingLogScope())
                         method(result);
 
                     if (result.EndTime.Ticks == 0)
@@ -701,7 +628,6 @@ namespace Duplicati.Library.Main
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"DisposeError{mx.Key}", ex, "Dispose for {0} failed: {1}", mx.Key, ex.Message); }
 
                 m_options.LoadedModules.Clear();
-                OperationRunning(false);
             }
 
             if (m_resetPriority != null)
@@ -817,8 +743,6 @@ namespace Duplicati.Library.Main
                 filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
             }
             m_options.RawOptions.Remove("filter"); // "--filter" is not a supported command line option
-
-            OperationRunning(true);
 
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {

@@ -112,6 +112,7 @@
     <Compile Include="Operation\ListBrokenFilesHandler.cs" />
     <Compile Include="Operation\PurgeBrokenFilesHandler.cs" />
     <Compile Include="ControllerMultiLogTarget.cs" />
+    <Compile Include="ProcessController.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

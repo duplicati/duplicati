@@ -55,6 +55,11 @@ namespace Duplicati.Library.Utility
 
         #region Function calls
 
+        /// <summary>
+        /// Sets the state of the thread execution.
+        /// </summary>
+        /// <returns>The thread execution state.</returns>
+        /// <param name="esFlags">The flags to use.</param>
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
 
