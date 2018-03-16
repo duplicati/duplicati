@@ -280,7 +280,8 @@ namespace Duplicati.Library.Main
                     "max-upload-pr-second",
                     "max-download-pr-second",
                     "no-connection-reuse",
-                    "allow-sleep"
+                    "allow-sleep",
+                    "use-background-io-priority"
                 };
             }
         }
@@ -474,6 +475,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
                     new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepLong, "false"),
+                    new CommandLineArgument("use-background-io-priority", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UsebackgroundiopriorityShort, Strings.Options.UsebackgroundiopriorityLong, "false"),
                     new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
 
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
@@ -955,9 +957,14 @@ namespace Duplicati.Library.Main
         public bool SynchronousUpload { get { return Library.Utility.Utility.ParseBoolOption(m_options, "synchronous-upload"); } }
 
         /// <summary>
-        /// A value indicating if system is allowed to enter sleep power states during backup/restore ops (win32 only)
+        /// A value indicating if system is allowed to enter sleep power states during backup/restore
         /// </summary>
         public bool AllowSleep { get { return GetBool("allow-sleep"); } }
+
+        /// <summary>
+        /// A value indicating if system should use the low-priority IO during backup/restore
+        /// </summary>
+        public bool UseBackgroundIOPriority { get { return GetBool("use-background-io-priority"); } }
 
         /// <summary>
         /// A value indicating if use of the streaming interface is disallowed
