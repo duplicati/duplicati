@@ -126,6 +126,11 @@ namespace Duplicati.Server
         /// </summary>
         public static LogWriteHandler LogHandler = new LogWriteHandler();
 
+        /// <summary>
+        /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server) 
+        /// </summary>
+        public static string Origin = "Server";
+
         private static System.Threading.Timer PurgeTempFilesTimer = null;
 
         public static int ServerPort
@@ -140,6 +145,12 @@ namespace Duplicati.Server
         {
             get { return DataConnection.ApplicationSettings.IsFirstRun; }
             set { DataConnection.ApplicationSettings.IsFirstRun = value; }
+        }
+
+        public static string StartedBy
+        {
+            get { return Origin; }
+            set { Origin = value; }
         }
 
         public static bool ServerPortChanged

@@ -156,6 +156,8 @@ namespace Duplicati.GUI.TrayIcon
                 openui = Duplicati.Server.Program.IsFirstRun || Duplicati.Server.Program.ServerPortChanged;
                 password = Duplicati.Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
                 saltedpassword = true;
+                // Tell the hosted server it was started by the TrayIcon
+                Duplicati.Server.Program.Origin = "Tray icon";
 
                 var cert = Duplicati.Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
                 var scheme = "http";
