@@ -1,3 +1,10 @@
+2018-03-16 - 2.0.3.2_canary_2018-03-16
+==========
+* Added a new logging system with filters
+* Source code documentation fixes and code quality fixes, thanks @warwickmm
+* Improved the speed of the re-encrypt python script, thanks @piegamesde
+* Added username and started-by information in the WebUI, thanks @Pectojin
+
 2018-03-16 - 2.0.3.1_experimental_2018-03-16
 ==========
 This experimental release is mostly the same as the canary build v2.0.2.20.
