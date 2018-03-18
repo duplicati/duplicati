@@ -33,7 +33,11 @@ namespace Duplicati.Library.Logging
         /// <param name="entry">The method to call for logging.</param>
         public FunctionLogDestination(Action<LogEntry> entry)
         {
-            m_entry = entry ?? throw new ArgumentNullException(nameof(entry));
+            if (Object.ReferenceEquals(entry, null))
+            {
+                throw new ArgumentNullException(nameof(entry));
+            }
+            m_entry = entry;
         }
 
         /// <summary>
@@ -62,7 +66,11 @@ namespace Duplicati.Library.Logging
         /// <param name="handler">The method to call for filtering.</param>
         public FunctionFilter(Func<LogEntry, bool> handler)
         {
-            m_handler = handler ?? throw new ArgumentNullException(nameof(handler));
+            if (Object.ReferenceEquals(handler, null))
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+            m_handler = handler;
         }
 
         /// <summary>
