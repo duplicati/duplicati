@@ -79,7 +79,9 @@ namespace Duplicati.Library.Main
         {
             foreach (var e in m_targets)
             {
-                var found = e.Item3.Matches(entry.Tag, out var result, out var match);
+                bool result;
+                Duplicati.Library.Utility.IFilter match;
+                var found = e.Item3.Matches(entry.Tag, out result, out match);
 
                 // If there is a filter match, use that
                 if (found)
