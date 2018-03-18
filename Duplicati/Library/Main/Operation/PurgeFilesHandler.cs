@@ -171,11 +171,11 @@ namespace Duplicati.Library.Main.Operation
                                         {
                                             var msg = string.Format("  Purging file {0} ({1})", fe.Key, Library.Utility.Utility.FormatSizeString(fe.Value));
 
-                                            Logging.Log.WriteProfilingMessage(LOGTAG, "PurgeFile", msg);
-                                            Logging.Log.WriteVerboseMessage(LOGTAG, "PurgeFile", msg);
+                                            Logging.Log.WriteProfilingMessage(LOGTAG, "PurgeFile", "{0}", msg);
+                                            Logging.Log.WriteVerboseMessage(LOGTAG, "PurgeFile", "{0}", msg);
 
                                             if (m_options.Dryrun)
-                                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldPurgeFile", msg);
+                                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldPurgeFile", "{0}", msg);
                                         }
 
                                         if (m_options.Dryrun)
