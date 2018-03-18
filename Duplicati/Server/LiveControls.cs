@@ -102,7 +102,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The object that ensures concurrent operations
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
 
         /// <summary>
         /// Gets the current overridden thread priority

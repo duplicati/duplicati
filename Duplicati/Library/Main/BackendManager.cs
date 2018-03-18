@@ -244,7 +244,7 @@ namespace Duplicati.Library.Main
 
         private class DatabaseCollector
         {
-            private object m_dbqueuelock = new object();
+            private readonly object m_dbqueuelock = new object();
             private LocalDatabase m_database;
             private System.Threading.Thread m_callerThread;
             private List<IDbEntry> m_dbqueue;

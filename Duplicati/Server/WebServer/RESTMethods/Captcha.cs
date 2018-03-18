@@ -38,7 +38,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
         }
 
-        private static object m_lock = new object();
+        private static readonly object m_lock = new object();
         private static Dictionary<string, CaptchaEntry> m_captchas = new Dictionary<string, CaptchaEntry>();
 
         public static bool SolvedCaptcha(string token, string target, string answer)

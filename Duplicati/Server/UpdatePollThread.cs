@@ -31,7 +31,7 @@ namespace Duplicati.Server
         private volatile bool m_terminated = false;
         private volatile bool m_download = false;
         private volatile bool m_forceCheck = false;
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         private AutoResetEvent m_waitSignal;
         private double m_downloadProgress;
 

@@ -37,7 +37,7 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// A lock used to guarantee threadsafe access to the interface lookup table
         /// </summary>
-        protected object m_lock = new object();
+        protected readonly object m_lock = new object();
 
         /// <summary>
         /// A cached list of interfaces

@@ -264,7 +264,7 @@ namespace Duplicati.Server
             private ProgressState m_state;
             private Duplicati.Library.Main.IBackendProgress m_backendProgress;
             private Duplicati.Library.Main.IOperationProgress m_operationProgress;
-            private object m_lock = new object();
+            private readonly object m_lock = new object();
             
             public MessageSink(long taskId, string backupId)
             {

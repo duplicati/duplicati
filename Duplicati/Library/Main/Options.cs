@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Lock that protects the options collection
         /// </summary>
-        protected object m_lock = new object();
+        protected readonly object m_lock = new object();
 
         protected Dictionary<string, string> m_options;
 

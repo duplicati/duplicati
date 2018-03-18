@@ -38,7 +38,7 @@ namespace Duplicati.Library.Utility
                 
 #if DEBUG
         //In debug mode, we track the creation of temporary files, and encode the generating method into the name
-        private static object m_lock = new object();
+        private static readonly object m_lock = new object();
         private static Dictionary<string, System.Diagnostics.StackTrace> m_fileTrace = new Dictionary<string, System.Diagnostics.StackTrace>();
         
         public static System.Diagnostics.StackTrace GetStackTraceForTempFile(string filename)

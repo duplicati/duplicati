@@ -115,7 +115,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The lock that protects the data structures
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         /// <summary>
         /// The queue storing the elements produced
         /// </summary>
