@@ -1304,7 +1304,8 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                m_options.TryGetValue("log-file-log-filter", out var value);
+                string value;
+                m_options.TryGetValue("log-file-log-filter", out value);
                 return ParseLogFilter(value);
             }
         }
@@ -1317,7 +1318,8 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                m_options.TryGetValue("console-log-filter", out var value);
+                string value;
+                m_options.TryGetValue("console-log-filter", out value);
                 return ParseLogFilter(value);
             }
         }

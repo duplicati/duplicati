@@ -75,7 +75,9 @@ namespace Duplicati.Library.Logging
             {
                 if (m_logContext == null)
                     return null;
-                m_logContext.TryGetValue(key, out var s);
+
+                string s;
+                m_logContext.TryGetValue(key, out s);
                 return s;
             }
 
