@@ -266,6 +266,23 @@ namespace Duplicati.CommandLine.BackendTester
                     for (int i = 0; i < files.Count; i++)
                         Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming);
 
+                    TempFile originalRenamedFile = null;
+                    string renamedFileNewName = null;
+                    IRenameEnabledBackend renameEnabledBackend = backend as IRenameEnabledBackend;
+                    if (renameEnabledBackend != null)
+                    {
+                        // Rename the second file in the list, if there are more than one. If not, just do the first one.
+                        int renameIndex = files.Count > 1 ? 1 : 0;
+                        originalRenamedFile = files[renameIndex];
+
+                        renamedFileNewName = CreateRandomRemoteFileName(min_filename_size, max_filename_size, allowedChars, trimFilenameSpaces, rnd);
+
+                        Console.WriteLine("Renaming file {0} from {1} to {2}", renameIndex, originalRenamedFile.remotefilename, renamedFileNewName);
+
+                        renameEnabledBackend.Rename(originalRenamedFile.remotefilename, renamedFileNewName);
+                        files[renameIndex] = new TempFile(renamedFileNewName, originalRenamedFile.localfilename, originalRenamedFile.hash, originalRenamedFile.length);
+                    }
+
                     Console.WriteLine("Verifying file list ...");
 
                     curlist = backend.List();
@@ -288,7 +305,14 @@ namespace Duplicati.CommandLine.BackendTester
                                 }
 
                             if (!found)
-                                Console.WriteLine("*** File with name {0} was found on server but not uploaded!", fe.Name);
+                                if (originalRenamedFile != null && renamedFileNewName != null && originalRenamedFile.remotefilename == fe.Name)
+                                {
+                                    Console.WriteLine("*** File with name {0} was found on server but was supposed to have been renamed to {1}!", fe.Name, renamedFileNewName);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("*** File with name {0} was found on server but not uploaded!", fe.Name);
+                                }
                         }
 
                     foreach (TempFile tx in files)
