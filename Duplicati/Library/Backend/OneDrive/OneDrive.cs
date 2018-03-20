@@ -9,6 +9,9 @@ namespace Duplicati.Library.Backend
 {
     public class OneDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
+        private const string SERVICES_AGREEMENT = "https://www.microsoft.com/en-us/servicesagreement";
+        private const string PRIVACY_STATEMENT = "https://privacy.microsoft.com/en-us/privacystatement";
+
         private const string AUTHID_OPTION = "authid";
 
         private const string WLID_SERVER = "https://apis.live.net/v5.0";
@@ -381,9 +384,9 @@ namespace Duplicati.Library.Backend
         {
             get { return Strings.OneDrive.Description(
                     "Microsoft Service Agreement",
-                    "http://explore.live.com/microsoft-service-agreement",
+                    SERVICES_AGREEMENT,
                     "Microsoft Online Privacy Statement", 
-                    "http://privacy.microsoft.com/en-us/fullnotice.mspx"
+                    PRIVACY_STATEMENT
                     ); 
             }
         }
