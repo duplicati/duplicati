@@ -415,6 +415,28 @@ namespace Duplicati.CommandLine.BackendTester
                         }
                     }
                 }
+
+                // Test DNSName lookup
+                Console.WriteLine("Checking DNS names used by this backend...");
+                try
+                {
+                    string[] dnsNames = backend.DNSName;
+                    if (dnsNames != null)
+                    {
+                        foreach (string dnsName in dnsNames)
+                        {
+                            Console.WriteLine(dnsName);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No DNS names reported");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("*** Checking DNSName failed: {0}", ex);
+                }
             }
             finally
             {
