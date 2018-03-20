@@ -92,7 +92,7 @@ namespace Duplicati.Library.Backend
             string authid;
             options.TryGetValue(AUTHID_OPTION, out authid);
             if (string.IsNullOrEmpty(authid))
-                throw new UserInformationException(Strings.MicrosoftGraph.MissingAuthId(OAuthHelper.OAUTH_LOGIN_URL(this.ProtocolKey)));
+                throw new UserInformationException(Strings.MicrosoftGraph.MissingAuthId(OAuthHelper.OAUTH_LOGIN_URL(this.ProtocolKey)), "MicrosoftGraphBackendMissingAuthId");
 
             string fragmentSizeStr;
             if (!(options.TryGetValue(UPLOAD_SESSION_FRAGMENT_SIZE_OPTION, out fragmentSizeStr) && int.TryParse(fragmentSizeStr, out this.fragmentSize)))

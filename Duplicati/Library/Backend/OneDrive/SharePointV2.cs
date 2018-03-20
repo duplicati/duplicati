@@ -22,7 +22,7 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                throw new UserInformationException(Strings.SharePointV2.MissingSiteId);
+                throw new UserInformationException(Strings.SharePointV2.MissingSiteId, "SharePointMissingSiteId");
             }
         }
 

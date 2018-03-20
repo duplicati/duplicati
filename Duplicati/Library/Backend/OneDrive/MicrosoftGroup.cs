@@ -22,7 +22,7 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                throw new UserInformationException(Strings.MicrosoftGroup.MissingGroupId);
+                throw new UserInformationException(Strings.MicrosoftGroup.MissingGroupId, "MicrosoftGroupMissingGroupId");
             }
         }
 
