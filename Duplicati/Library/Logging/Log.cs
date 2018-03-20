@@ -85,7 +85,7 @@ namespace Duplicati.Library.Logging
         /// <summary>
         /// Static lock object to provide thread safe logging
         /// </summary>
-        private static object m_lock = new object();
+        private static readonly object m_lock = new object();
 
         /// <summary>
         /// Gets the lock instance used to protect the logging calls

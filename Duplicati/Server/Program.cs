@@ -44,7 +44,7 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the lock to be used before manipulating the shared resources
         /// </summary>
-        public static object MainLock = new object();
+        public static readonly object MainLock = new object();
 
         /// <summary>
         /// This is the scheduling thread

@@ -24,7 +24,7 @@ namespace Duplicati.CommandLine
 {
     public class ConsoleOutput : Library.Main.IMessageSink, IDisposable
     {
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         
         public bool QuietConsole { get; private set; }
         public bool VerboseErrors { get; private set; }

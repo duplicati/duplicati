@@ -53,7 +53,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The data syncronization lock
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
 
         /// <summary>
         /// An event that is raised when the schedule changes
