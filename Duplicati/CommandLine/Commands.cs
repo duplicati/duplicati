@@ -545,6 +545,11 @@ namespace Duplicati.CommandLine
             {
                 using (var periodicOutput = new PeriodicOutput(output, TimeSpan.FromSeconds(5)))
                 {
+                    if ((new Duplicati.Library.Main.Options(options)).DisableOnBattery && (Duplicati.Library.Utility.Power.PowerSupply.GetSource() == Duplicati.Library.Utility.Power.PowerSupply.Source.Battery))
+                    {
+                        output.MessageEvent("The \"disable-on-battery\" option only affects scheduled backups and is ignored by backups run manually or from the command line.");
+                    }
+
                     output.MessageEvent(string.Format("Backup started at {0}", DateTime.Now));
 
                     output.PhaseChanged += (phase, previousPhase) =>
