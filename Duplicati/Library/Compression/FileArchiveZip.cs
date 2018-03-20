@@ -33,7 +33,7 @@ namespace Duplicati.Library.Compression
 {
     /// <summary>
     /// An abstraction of a zip archive as a FileArchive, based on SharpCompress.
-    /// Please note, duplicati does not require both Read & Write access at the same time so this has not been implemented.
+    /// Please note, duplicati does not require both Read &amp; Write access at the same time so this has not been implemented.
     /// </summary>
     public class FileArchiveZip : ICompression
     {
