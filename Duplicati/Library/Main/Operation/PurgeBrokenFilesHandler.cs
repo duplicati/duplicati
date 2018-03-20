@@ -23,6 +23,10 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class PurgeBrokenFilesHandler
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(PurgeBrokenFilesHandler));
         protected string m_backendurl;
         protected Options m_options;
         protected PurgeBrokenFilesResults m_result;
@@ -37,10 +41,10 @@ namespace Duplicati.Library.Main.Operation
         public void Run(Library.Utility.IFilter filter)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             if (filter != null && !filter.Empty)
-                throw new UserInformationException("Filters are not supported for this operation");
+                throw new UserInformationException("Filters are not supported for this operation", "FiltersNotAllowedOnPurgeBrokenFiles");
 
             List<Database.RemoteVolumeEntry> missing = null;
             
@@ -48,7 +52,7 @@ namespace Duplicati.Library.Main.Operation
             using (var tr = db.BeginTransaction())
             {
                 if (db.PartiallyRecreated)
-                    throw new UserInformationException("The command does not work on partially recreated databases");
+                    throw new UserInformationException("The command does not work on partially recreated databases", "CannotPurgeOnPartialDatabase");
 
                 var sets = ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(m_backendurl, m_result, db, tr, m_options, out missing);
                 if (sets == null)
@@ -57,14 +61,14 @@ namespace Duplicati.Library.Main.Operation
                 if (sets.Length == 0)
                 {
                     if (missing == null)
-                        m_result.AddMessage("Found no broken filesets");
+                        Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesets", "Found no broken filesets");
                     else if (missing.Count == 0)
-                        m_result.AddMessage("Found no broken filesets and no missing remote files");
+                        Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsOrMissingFiles", "Found no broken filesets and no missing remote files");
                     else
-                        throw new UserInformationException(string.Format("Found no broken filesets, but {0} missing remote files", sets.Length));
+                        throw new UserInformationException(string.Format("Found no broken filesets, but {0} missing remote files", sets.Length), "NoBrokenSetsButMissingRemoteFiles");
                 }
 
-                m_result.AddMessage(string.Format("Found {0} broken filesets with {1} affected files, purging files", sets.Length, sets.Sum(x => x.Item3)));
+                Logging.Log.WriteInformationMessage(LOGTAG, "FoundBrokenFilesets", "Found {0} broken filesets with {1} affected files, purging files", sets.Length, sets.Sum(x => x.Item3));
 
                 var pgoffset = 0.0f;
                 var pgspan = 0.95f / sets.Length;
@@ -86,9 +90,9 @@ namespace Duplicati.Library.Main.Operation
                 if (fully_emptied.Length != 0)
                 {
                     if (fully_emptied.Length == 1)
-                        m_result.AddMessage(string.Format("Removing entire fileset {1} as all {0} file(s) are broken", fully_emptied.First().Timestamp, fully_emptied.First().RemoveCount));
+                        Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing entire fileset {1} as all {0} file(s) are broken", fully_emptied.First().Timestamp, fully_emptied.First().RemoveCount);
                     else
-                        m_result.AddMessage(string.Format("Removing {0} filesets where all file(s) are broken: {1}", fully_emptied.Length, string.Join(", ", fully_emptied.Select(x => x.Timestamp.ToLocalTime().ToString()))));
+                        Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing {0} filesets where all file(s) are broken: {1}", fully_emptied.Length, string.Join(", ", fully_emptied.Select(x => x.Timestamp.ToLocalTime().ToString())));
 
                     m_result.DeleteResults = new DeleteResults(m_result);
                     using (var rmdb = new Database.LocalDeleteDatabase(db))
@@ -106,7 +110,7 @@ namespace Duplicati.Library.Main.Operation
 
                             if (!m_options.Dryrun)
                             {
-                                using (new Logging.Timer("CommitDelete"))
+                                using (new Logging.Timer(LOGTAG, "CommitDelete", "CommitDelete"))
                                     deltr.Commit();
 
                                 rmdb.WriteResults();
@@ -133,7 +137,7 @@ namespace Duplicati.Library.Main.Operation
 
                     foreach (var bs in to_purge)
                     {
-                        m_result.AddMessage(string.Format("Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime()));
+                        Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime());
                         var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
 
                         using (var pgdb = new Database.LocalPurgeDatabase(db))
@@ -174,7 +178,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         foreach (var f in missing)
                             if (m_options.Dryrun)
-                                m_result.AddDryrunMessage(string.Format("Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFile", "Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size));
                             else
                                 backend.Delete(f.Name, f.Size);
                     }
@@ -182,9 +186,9 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!m_options.Dryrun && db.RepairInProgress)
                 {                    
-                    m_result.AddMessage("Database was previously marked as in-progress, checking if it is valid after purging files");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "ValidatingDatabase", "Database was previously marked as in-progress, checking if it is valid after purging files");
                     db.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, true);
-                    m_result.AddMessage("Purge completed, and consistency checks completed, marking database as complete");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "UpdatingDatabase", "Purge completed, and consistency checks completed, marking database as complete");
                     db.RepairInProgress = false;
                 }
 

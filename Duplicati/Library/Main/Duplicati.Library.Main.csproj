@@ -111,6 +111,8 @@
     <Compile Include="Database\LocalListBrokenFilesDatabase.cs" />
     <Compile Include="Operation\ListBrokenFilesHandler.cs" />
     <Compile Include="Operation\PurgeBrokenFilesHandler.cs" />
+    <Compile Include="ControllerMultiLogTarget.cs" />
+    <Compile Include="ProcessController.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
@@ -148,6 +150,10 @@
     <ProjectReference Include="..\UsageReporter\Duplicati.Library.UsageReporter.csproj">
       <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
       <Name>Duplicati.Library.UsageReporter</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
+      <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
+      <Name>Duplicati.Library.Modules.Builtin</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

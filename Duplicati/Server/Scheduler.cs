@@ -34,6 +34,8 @@ namespace Duplicati.Server
     /// </summary>
     public class Scheduler
     {
+        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Scheduler>();
+
         /// <summary>
         /// The thread that runs the scheduler
         /// </summary>
@@ -53,7 +55,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The data syncronization lock
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
 
         /// <summary>
         /// An event that is raised when the schedule changes
@@ -278,7 +280,18 @@ namespace Duplicati.Server
                                 {
                                     var entry = Program.DataConnection.GetBackup(id);
                                     if (entry != null)
-                                        jobsToRun.Add(Server.Runner.CreateTask(Duplicati.Server.Serialization.DuplicatiOperation.Backup, entry));
+                                    {
+                                        Dictionary<string, string> options = Duplicati.Server.Runner.GetCommonOptions(entry, Duplicati.Server.Serialization.DuplicatiOperation.Backup);
+                                        Duplicati.Server.Runner.ApplyOptions(entry, Duplicati.Server.Serialization.DuplicatiOperation.Backup, options);
+                                        if ((new Duplicati.Library.Main.Options(options)).DisableOnBattery && (Duplicati.Library.Utility.Power.PowerSupply.GetSource() == Duplicati.Library.Utility.Power.PowerSupply.Source.Battery))
+                                        {
+                                            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "BackupDisabledOnBattery", "Scheduled backup disabled while on battery power.");
+                                        }
+                                        else
+                                        {
+                                            jobsToRun.Add(Server.Runner.CreateTask(Duplicati.Server.Serialization.DuplicatiOperation.Backup, entry));
+                                        }
+                                    }
                                 }
                             }
 

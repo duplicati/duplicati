@@ -26,15 +26,18 @@ namespace Duplicati.Library.Logging
     /// <summary>
     /// Writes log messages to a stream
     /// </summary>
-    public class StreamLog : ILog, IDisposable
+    public class StreamLogDestination : ILogDestination, IDisposable
     {
+        /// <summary>
+        /// The stream to log to
+        /// </summary>
         private System.IO.StreamWriter m_stream;
 
         /// <summary>
         /// Constructs a new log destination, writing to the supplied stream
         /// </summary>
         /// <param name="stream">The stream to write log messages into</param>
-        public StreamLog(System.IO.Stream stream)
+        public StreamLogDestination(System.IO.Stream stream)
         {
             m_stream = new System.IO.StreamWriter(stream);
             m_stream.AutoFlush = true;
@@ -44,7 +47,7 @@ namespace Duplicati.Library.Logging
         /// Constructs a new log destination, writing to the supplied file
         /// </summary>
         /// <param name="filename">The file to write to</param>
-        public StreamLog(string filename)
+        public StreamLogDestination(string filename)
             : this(new System.IO.FileStream(filename, System.IO.FileMode.Append, System.IO.FileAccess.Write))
         {
         }
@@ -54,17 +57,18 @@ namespace Duplicati.Library.Logging
         /// <summary>
         /// The function called when a message is logged
         /// </summary>
-        /// <param name="message">The message logged</param>
-        /// <param name="type">The type of message logged</param>
-        /// <param name="exception">An exception, may be null</param>
-        public virtual void WriteMessage(string message, LogMessageType type, Exception exception)
+        /// <param name="entry">The entry to write</param>
+        public virtual void WriteMessage(LogEntry entry)
         {
-            m_stream.WriteLine("{0:u} - {1}: {2}", DateTime.UtcNow.ToString("u"), type, message);
-            if (exception != null)
+
+            /*m_stream.WriteLine("{0:u} - {1}: {2}", entry.When.ToLocalTime(), entry.Level, entry.FormattedMessage);
+            if (entry.Exception != null)
             {
-                m_stream.WriteLine(exception);
+                m_stream.WriteLine(entry.Exception);
                 m_stream.WriteLine();
-            }
+            }*/
+
+            m_stream.WriteLine(entry.AsString(true));
         }
             
         #endregion

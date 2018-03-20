@@ -22,6 +22,10 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class PurgeFilesHandler
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<PurgeFilesHandler>();
         protected string m_backendurl;
         protected Options m_options;
         protected PurgeFilesResults m_result;
@@ -36,10 +40,10 @@ namespace Duplicati.Library.Main.Operation
         public void Run(Library.Utility.IFilter filter)
         {
             if (filter == null || filter.Empty)
-                throw new UserInformationException("Cannot purge with an empty filter, as that would cause all files to be removed.\nTo remove an entire backup set, use the \"delete\" command.");
+                throw new UserInformationException("Cannot purge with an empty filter, as that would cause all files to be removed.\nTo remove an entire backup set, use the \"delete\" command.", "EmptyFilterPurgeNotAllowed");
 
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             using (var db = new Database.LocalPurgeDatabase(m_options.Dbpath))
                 DoRun(db, filter, null, 0, 1);
@@ -53,25 +57,25 @@ namespace Duplicati.Library.Main.Operation
         private void DoRun(Database.LocalPurgeDatabase db, Library.Utility.IFilter filter, Action<System.Data.IDbCommand, long, string> filtercommand, float pgoffset, float pgspan)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Begin);
-            m_result.AddMessage("Starting purge operation");
+            Logging.Log.WriteInformationMessage(LOGTAG, "StartingPurge", "Starting purge operation");
 
             var doCompactStep = !m_options.NoAutoCompact && filtercommand == null;
 
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 if (db.PartiallyRecreated)
-                    throw new UserInformationException("The purge command does not work on partially recreated databases");
+                    throw new UserInformationException("The purge command does not work on partially recreated databases", "PurgeNotAllowedOnPartialDatabase");
 
                 if (db.RepairInProgress && filtercommand == null)
-                    throw new UserInformationException(string.Format("The purge command does not work on an incomplete database, try the {0} operation.", "purge-broken-files"));
+                    throw new UserInformationException(string.Format("The purge command does not work on an incomplete database, try the {0} operation.", "purge-broken-files"), "PurgeNotAllowedOnIncompleteDatabase");
 
                 var versions = db.GetFilesetIDs(m_options.Time, m_options.Version).ToArray();
                 if (versions.Length <= 0)
-                    throw new UserInformationException("No filesets matched the supplied time or versions");
+                    throw new UserInformationException("No filesets matched the supplied time or versions", "NoFilesetFoundForTimeOrVersion");
 
                 var orphans = db.CountOrphanFiles(null);
                 if (orphans != 0)
-                    throw new UserInformationException(string.Format("Unable to start the purge process as there are {0} orphan file(s)", orphans));
+                    throw new UserInformationException(string.Format("Unable to start the purge process as there are {0} orphan file(s)", orphans), "CannotPurgeWithOrphans");
 
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
@@ -137,7 +141,7 @@ namespace Duplicati.Library.Main.Operation
 
                             if (tempset.RemovedFileCount == 0)
                             {
-                                m_result.AddMessage(string.Format("Not writing a new fileset for {0} as it was not changed", prevfilename));
+                                Logging.Log.WriteInformationMessage(LOGTAG, "NotWritingNewFileset", "Not writing a new fileset for {0} as it was not changed", prevfilename);
                                 currentprogress += versionprogress;
                                 tr.Rollback();
                                 continue;
@@ -150,7 +154,7 @@ namespace Duplicati.Library.Main.Operation
                                     var newids = tempset.ConvertToPermanentFileset(vol.RemoteFilename, ts);
                                     vol.VolumeID = newids.Item1;
 
-                                    m_result.AddMessage(string.Format("Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize)));
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "ReplacingFileset", "Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize));
 
                                     db.WriteFileset(vol, tr, newids.Item2);
 
@@ -161,30 +165,28 @@ namespace Duplicati.Library.Main.Operation
                                     currentprogress += (versionprogress / 2);
                                     m_result.OperationProgressUpdater.UpdateProgress(currentprogress);
 
-                                    if (m_options.Dryrun || m_options.Verbose || Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
+                                    if (m_options.Dryrun || m_options.FullResult)
                                     {
                                         foreach (var fe in tempset.ListAllDeletedFiles())
                                         {
                                             var msg = string.Format("  Purging file {0} ({1})", fe.Key, Library.Utility.Utility.FormatSizeString(fe.Value));
 
-                                            if (Logging.Log.LogLevel == Logging.LogMessageType.Profiling)
-                                                Logging.Log.WriteMessage(msg, Logging.LogMessageType.Profiling);
+                                            Logging.Log.WriteProfilingMessage(LOGTAG, "PurgeFile", msg);
+                                            Logging.Log.WriteVerboseMessage(LOGTAG, "PurgeFile", msg);
 
                                             if (m_options.Dryrun)
-                                                m_result.AddDryrunMessage(msg);
-                                            else if (m_options.Verbose)
-                                                m_result.AddVerboseMessage(msg);
+                                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldPurgeFile", msg);
                                         }
 
                                         if (m_options.Dryrun)
-                                            m_result.AddDryrunMessage("Writing files to remote storage");
-                                        else if (m_options.Verbose)
-                                            m_result.AddVerboseMessage("Writing files to remote storage");
+                                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldWriteRemoteFiles", "Would write files to remote storage");
+
+                                        Logging.Log.WriteVerboseMessage(LOGTAG, "WritingRemoteFiles", "Writing files to remote storage");
                                     }
 
                                     if (m_options.Dryrun)
                                     {
-                                        m_result.AddDryrunMessage(string.Format("Would upload file {0} ({1}) and delete file {2}, removing {3} files", vol.RemoteFilename, Library.Utility.Utility.FormatSizeString(vol.Filesize), prevfilename, tempset.RemovedFileCount));
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadAndDelete", "Would upload file {0} ({1}) and delete file {2}, removing {3} files", vol.RemoteFilename, Library.Utility.Utility.FormatSizeString(vol.Filesize), prevfilename, tempset.RemovedFileCount);
                                         tr.Rollback();
                                     }
                                     else
@@ -212,7 +214,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (m_result.RewrittenFileLists == 0)
                     {
-                        m_result.AddMessage("Skipping compacting as no new volumes were written");
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SkippingCompacting", "Skipping compacting as no new volumes were written");
                     }
                     else
                     {

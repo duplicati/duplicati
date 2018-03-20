@@ -159,7 +159,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         /// <returns>A new TreeNode instance on success; null if an exception occurred during creation.</returns>
         private static Serializable.TreeNode TryCreateTreeNodeForDrive(DriveInfo driveInfo)
         {
-            if (driveInfo == null) throw new ArgumentNullException("driveInfo");
+            if (driveInfo == null) throw new ArgumentNullException(nameof(driveInfo));
 
             try
             {

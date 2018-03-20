@@ -8,6 +8,10 @@ namespace Duplicati.Server
     public class Program
     {
         /// <summary>
+        /// The log tag for messages from this class
+        /// </summary>
+        public static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
+        /// <summary>
         /// The path to the directory that contains the main executable
         /// </summary>
         public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
@@ -40,7 +44,7 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the lock to be used before manipulating the shared resources
         /// </summary>
-        public static object MainLock = new object();
+        public static readonly object MainLock = new object();
 
         /// <summary>
         /// This is the scheduling thread
@@ -122,6 +126,11 @@ namespace Duplicati.Server
         /// </summary>
         public static LogWriteHandler LogHandler = new LogWriteHandler();
 
+        /// <summary>
+        /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server) 
+        /// </summary>
+        public static string Origin = "Server";
+
         private static System.Threading.Timer PurgeTempFilesTimer = null;
 
         public static int ServerPort
@@ -136,6 +145,12 @@ namespace Duplicati.Server
         {
             get { return DataConnection.ApplicationSettings.IsFirstRun; }
             set { DataConnection.ApplicationSettings.IsFirstRun = value; }
+        }
+
+        public static string StartedBy
+        {
+            get { return Origin; }
+            set { Origin = value; }
         }
 
         public static bool ServerPortChanged
@@ -243,7 +258,7 @@ namespace Duplicati.Server
             try
             {
                 // Setup the log redirect
-                Duplicati.Library.Logging.Log.CurrentLog = Program.LogHandler;
+                var logscope = Library.Logging.Log.StartScope(Program.LogHandler, null);
 
                 if (commandlineOptions.ContainsKey("log-file"))
                 {
@@ -859,7 +874,7 @@ namespace Duplicati.Server
                 // If the user specifies parameters-file, all filters must be in the file.
                 // Allowing to specify some filters on the command line could result in wrong filter ordering
                 if (!filter.Empty && !newfilter.Empty)
-                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Program.FiltersCannotBeUsedWithFileError2);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Program.FiltersCannotBeUsedWithFileError2, "FiltersCannotBeUsedOnCommandLineAndInParameterFile");
 
                 if (!newfilter.Empty)
                     filter = newfilter;
@@ -886,8 +901,8 @@ namespace Duplicati.Server
 
                 if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
                     cargs.AddRange(newsource);
-                else if (newsource.Count > 0 && Library.Utility.Utility.ParseBoolOption(options, "verbose"))
-                    Console.WriteLine(Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
+                else if (newsource.Count > 0)
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "NotUsingBackupSources", Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
 
                 return true;
             }

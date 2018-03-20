@@ -27,6 +27,11 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class MSSQLOptions : Interface.IGenericSourceModule
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<MSSQLOptions>();
+
         private const string m_MSSQLPathDBRegExp = @"\%MSSQL\%\\(.+)";
         private const string m_MSSQLPathAllRegExp = @"%MSSQL%";
 
@@ -69,7 +74,7 @@ namespace Duplicati.Library.Modules.Builtin
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
             if (!Utility.Utility.IsClientWindows)
             {
-                Logging.Log.WriteMessage("Microsoft SQL Server databases backup works only on Windows OS", Logging.LogMessageType.Warning);
+                Logging.Log.WriteWarningMessage(LOGTAG, "MSSqlWindowsOnly", null, "Microsoft SQL Server databases backup works only on Windows OS");
 
                 if (paths != null)
                     paths = paths.Where(x => !x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
@@ -121,23 +126,23 @@ namespace Duplicati.Library.Modules.Builtin
 
                 if (excludedWriters.Contains(MSSQLUtility.MSSQLWriterGuid))
                 {
-                    Logging.Log.WriteMessage(string.Format("Excluded writers for VSS cannot contain MS SQL writer when backuping Microsoft SQL Server databases. Removing \"{0}\" to continue", MSSQLUtility.MSSQLWriterGuid.ToString()), Logging.LogMessageType.Warning);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "CannotExcludeMsSqlVSSWriter", null, "Excluded writers for VSS cannot contain MS SQL writer when backuping Microsoft SQL Server databases. Removing \"{0}\" to continue", MSSQLUtility.MSSQLWriterGuid.ToString());
                     changedOptions["vss-exclude-writers"] = string.Join(";", excludedWriters.Where(x => x != MSSQLUtility.MSSQLWriterGuid));
                 }
             }
 
             if (!commandlineOptions.Keys.Contains("snapshot-policy") || !commandlineOptions["snapshot-policy"].Equals("required", StringComparison.OrdinalIgnoreCase))
             {
-                Logging.Log.WriteMessage("Snapshot strategy have to be set to \"required\" when backuping Microsoft SQL Server databases. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
+                Logging.Log.WriteWarningMessage(LOGTAG, "MustSetSnapshotPolicy", null, "Snapshot policy have to be set to \"required\" when backuping Microsoft SQL Server databases. Changing to \"required\" to continue");
                 changedOptions["snapshot-policy"] = "required";
             }
 
-            Logging.Log.WriteMessage("Starting to gather Microsoft SQL Server information", Logging.LogMessageType.Information);
+            Logging.Log.WriteInformationMessage(LOGTAG, "StartingMsSqlQuery", "Starting to gather Microsoft SQL Server information", Logging.LogMessageType.Information);
             mssqlUtility.QueryDBsInfo();
-            Logging.Log.WriteMessage(string.Format("Found {0} databases on Microsoft SQL Server", mssqlUtility.DBs.Count), Logging.LogMessageType.Information);
+            Logging.Log.WriteInformationMessage(LOGTAG, "MsSqlDatabaseCount", "Found {0} databases on Microsoft SQL Server", mssqlUtility.DBs.Count);
 
             foreach(var db in mssqlUtility.DBs)
-                Logging.Log.WriteMessage(string.Format("Found DB name {0}, ID {1}, files {2}", db.Name, db.ID, string.Join(";", db.DataPaths)), Logging.LogMessageType.Profiling);
+                Logging.Log.WriteProfilingMessage(LOGTAG, "MsSqlDatabaseName", "Found DB name {0}, ID {1}, files {2}", db.Name, db.ID, string.Join(";", db.DataPaths));
 
             List<MSSQLDB> dbsForBackup = new List<MSSQLDB>();
             
@@ -150,7 +155,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundDB = mssqlUtility.DBs.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
 
                     if (foundDB.Count() != 1)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in source with ID {0} cannot be found", dbID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in source with ID {0} cannot be found", dbID), "MsSqlDatabaseNotFound");
 
                     dbsForBackup.Add(foundDB.First());
                 }
@@ -161,10 +166,10 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundDB = mssqlUtility.DBs.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
 
                     if (foundDB.Count() != 1)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in include filter with ID {0} cannot be found", dbID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in include filter with ID {0} cannot be found", dbID), "MsSqlDatabaseNotFound");
 
                     dbsForBackup.Add(foundDB.First());
-                    Logging.Log.WriteMessage(string.Format("Including {0} based on including filters", dbID), Logging.LogMessageType.Information);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "IncludeByFilter", "Including {0} based on including filters", dbID);
                 }
 
             dbsForBackup = dbsForBackup.Distinct().ToList();
@@ -175,10 +180,10 @@ namespace Duplicati.Library.Modules.Builtin
                     var foundDB = dbsForBackup.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
 
                     if (foundDB.Count() != 1)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in exclude filter with ID {0} cannot be found", dbID));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in exclude filter with ID {0} cannot be found", dbID), "MsSqlDatabaseNotFound");
 
                     dbsForBackup.Remove(foundDB.First());
-                    Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", dbID), Logging.LogMessageType.Information);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "ExcludeByFilter", "Excluding {0} based on excluding filters", dbID);
                 }
 
             var pathsForBackup = new List<string>(paths);
@@ -193,11 +198,11 @@ namespace Duplicati.Library.Modules.Builtin
 
                     if (!filterhandler.Matches(pathForBackup, out bResult, out matchFilter))
                     {
-                        Logging.Log.WriteMessage(string.Format("For DB {0} - adding {1}", dbForBackup.Name, pathForBackup), Logging.LogMessageType.Information);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "IncludeDatabase", "For DB {0} - adding {1}", dbForBackup.Name, pathForBackup);
                         pathsForBackup.Add(pathForBackup);
                     }
                     else
-                        Logging.Log.WriteMessage(string.Format("Excluding {0} based on excluding filters", pathForBackup), Logging.LogMessageType.Information);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "ExcludeByFilter", "Excluding {0} based on excluding filters", pathForBackup);
                 }
 
             paths = pathsForBackup.Where(x => !x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))

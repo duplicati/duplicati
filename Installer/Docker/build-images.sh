@@ -69,3 +69,5 @@ for arch in ${ARCHITECTURES}; do
         docker push ${REPOSITORY}:${tag}
     done
 done
+
+rm -rf "${DIRNAME}"

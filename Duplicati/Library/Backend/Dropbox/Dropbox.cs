@@ -136,9 +136,9 @@ namespace Duplicati.Library.Backend
 
         public string Description { get { return Strings.Dropbox.Description; } }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { new Uri(DropboxHelper.API_URL).Host, new Uri(DropboxHelper.CONTENT_API_URL).Host }; }
         }
 
         public void Test()

@@ -94,12 +94,12 @@ namespace Duplicati.CommandLine.BackendTool
                 using(var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[1], options))
                 {
                     if (backend == null)
-                        throw new UserInformationException("Backend not supported");
+                        throw new UserInformationException("Backend not supported", "InvalidBackend");
                         
                     if (command == "list")
                     {
                         if (args.Count != 2)
-                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
                         Console.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}", "Name", "Dir/File", "LastChange", "Size"));
                     
                         foreach(var e in backend.List())
@@ -110,7 +110,7 @@ namespace Duplicati.CommandLine.BackendTool
                     else if (command == "create")
                     {
                         if (args.Count != 2)
-                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
                         backend.CreateFolder();
                         
@@ -119,7 +119,7 @@ namespace Duplicati.CommandLine.BackendTool
                     else if (command == "delete")
                     {
                         if (args.Count < 3)
-                            throw new UserInformationException("DELETE requires a filename argument");
+                            throw new UserInformationException("DELETE requires a filename argument", "BackendToolDeleteRequiresAnArgument");
                         if (args.Count > 3)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
                         backend.Delete(Path.GetFileName(args[2]));
@@ -129,11 +129,11 @@ namespace Duplicati.CommandLine.BackendTool
                     else if (command == "get")
                     {
                         if (args.Count < 3)
-                            throw new UserInformationException("GET requires a filename argument");
+                            throw new UserInformationException("GET requires a filename argument", "BackendToolGetRequiresAnArgument");
                         if (args.Count > 3)
-                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
                         if (File.Exists(args[2]))
-                            throw new UserInformationException("File already exists, not overwriting!");
+                            throw new UserInformationException("File already exists, not overwriting!", "BackendToolFileAlreadyExists");
                         backend.Get(Path.GetFileName(args[2]), args[2]);
                         
                         return 0;
@@ -141,9 +141,9 @@ namespace Duplicati.CommandLine.BackendTool
                     else if (command == "put")
                     {
                         if (args.Count < 3)
-                            throw new UserInformationException("PUT requires a filename argument");
+                            throw new UserInformationException("PUT requires a filename argument","BackendToolPutRequiresAndArgument");
                         if (args.Count > 3)
-                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)));
+                            throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
                            
                         backend.Put(Path.GetFileName(args[2]), args[2]);
                         

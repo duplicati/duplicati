@@ -288,7 +288,7 @@ namespace Duplicati.Library.Utility
         }
     
         /// <summary>
-        /// Creates a new <see cref="Duplicati.Library.Main.FilterExpression"/> instance.
+        /// Creates a new <see cref="Duplicati.Library.Utility.FilterExpression"/> instance.
         /// </summary>
         /// <param name="filter">The filter string that represents the filter</param>
         public FilterExpression(IEnumerable<string> filter, bool result = true)
@@ -375,7 +375,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The lock object for protecting access to the lookup table
         /// </summary>
-        private static object _matchLock = new object();
+        private readonly static object _matchLock = new object();
 
         /// <summary>
         /// Utility function to match a filter with a default fall-through value

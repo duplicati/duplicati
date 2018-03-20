@@ -143,7 +143,7 @@ namespace Duplicati.CommandLine
 
         public static int Affected(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            var fullresult = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose") || Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
+            var fullresult = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
             var backend = args[0];
             args.RemoveAt(0);
 
@@ -172,7 +172,8 @@ namespace Duplicati.CommandLine
                     options["no-encryption"] = "true";
             }
 
-            using(var i = new Library.Main.Controller(backend, options, new ConsoleOutput(outwriter, options)))
+            using(var console = new ConsoleOutput(outwriter, options))
+            using(var i = new Library.Main.Controller(backend, options, console))
             {
                 setup(i);
                 i.ListAffected(args, res => 
@@ -242,7 +243,8 @@ namespace Duplicati.CommandLine
             if (Duplicati.Library.Utility.Utility.ParseBoolOption(options, "list-sets-only"))
                 filter = new Duplicati.Library.Utility.FilterExpression();
 
-            using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using(var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 var backend = args[0];
@@ -391,7 +393,8 @@ namespace Duplicati.CommandLine
                 return 200;
             }
         
-            using(var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using(var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 args.RemoveAt(0);
@@ -422,7 +425,8 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
 
-            using (var i = new Duplicati.Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Duplicati.Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 i.Repair(filter);
@@ -452,11 +456,10 @@ namespace Duplicati.CommandLine
                 if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal) && args[ix].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
                     args[ix] += "*";
             
-            var output = new ConsoleOutput(outwriter, options);
-            output.MessageEvent(string.Format("Restore started at {0}", DateTime.Now));
-
+            using(var output = new ConsoleOutput(outwriter, options))
             using (var i = new Library.Main.Controller(backend, options, output))
             {
+                output.MessageEvent(string.Format("Restore started at {0}", DateTime.Now));
                 setup(i);
                 if (controlFiles)
                 {
@@ -517,7 +520,7 @@ namespace Duplicati.CommandLine
                             output.MessageEvent("***********************************************");
                         }
 
-                        if (output.VerboseOutput)
+                        if (output.FullResults)
                             Library.Utility.Utility.PrintSerializeObject(res, outwriter);
 
                         if (res.Warnings.Count() > 0)
@@ -537,110 +540,116 @@ namespace Duplicati.CommandLine
             var backend = args[0];
             args.RemoveAt(0);
             var dirs = args.ToArray();
-            var output = new ConsoleOutput(outwriter, options);
-            
             Library.Interface.IBackupResults result;
-
-            using(var periodicOutput = new PeriodicOutput(output, TimeSpan.FromSeconds(5)))
+            using (var output = new ConsoleOutput(outwriter, options))
             {
-                output.MessageEvent(string.Format("Backup started at {0}", DateTime.Now));
-                
-                output.PhaseChanged += (phase, previousPhase) => 
+                using (var periodicOutput = new PeriodicOutput(output, TimeSpan.FromSeconds(5)))
                 {
-                    if (previousPhase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest)
-                        output.MessageEvent("Remote backup verification completed");
-
-                    switch (phase)
+                    if ((new Duplicati.Library.Main.Options(options)).DisableOnBattery && (Duplicati.Library.Utility.Power.PowerSupply.GetSource() == Duplicati.Library.Utility.Power.PowerSupply.Source.Battery))
                     {
-                        case Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles:
-                            output.MessageEvent("Scanning local files ...");
-                            periodicOutput.SetReady();
-                            break;
-                        case Duplicati.Library.Main.OperationPhase.Backup_Finalize:
-                            periodicOutput.SetFinished();
-                            break;
-                        case Duplicati.Library.Main.OperationPhase.Backup_PreBackupVerify:
-                            output.MessageEvent("Checking remote backup ...");
-                            break;
-                        case Duplicati.Library.Main.OperationPhase.Backup_PostBackupVerify:
-                            output.MessageEvent("Checking remote backup ...");
-                            break;
-                        case Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest:
-                            output.MessageEvent("Verifying remote backup ...");
-                            break;
-                        case Duplicati.Library.Main.OperationPhase.Backup_Compact:
-                            output.MessageEvent("Compacting remote backup ...");
-                            break;
+                        output.MessageEvent("The \"disable-on-battery\" option only affects scheduled backups and is ignored by backups run manually or from the command line.");
                     }
-                };
-                
-                periodicOutput.WriteOutput += (progress, files, size, counting) => {
-                    output.MessageEvent(string.Format("  {0} files need to be examined ({1}){2}", files, Library.Utility.Utility.FormatSizeString(size), counting ? " (still counting)" : ""));
-                };
 
-                using (var i = new Library.Main.Controller(backend, options, output))
-                {
-                    setup(i);
-                    result = i.Backup(dirs, filter);
+                    output.MessageEvent(string.Format("Backup started at {0}", DateTime.Now));
+
+                    output.PhaseChanged += (phase, previousPhase) =>
+                    {
+                        if (previousPhase == Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest)
+                            output.MessageEvent("Remote backup verification completed");
+
+                        switch (phase)
+                        {
+                            case Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles:
+                                output.MessageEvent("Scanning local files ...");
+                                periodicOutput.SetReady();
+                                break;
+                            case Duplicati.Library.Main.OperationPhase.Backup_Finalize:
+                                periodicOutput.SetFinished();
+                                break;
+                            case Duplicati.Library.Main.OperationPhase.Backup_PreBackupVerify:
+                                output.MessageEvent("Checking remote backup ...");
+                                break;
+                            case Duplicati.Library.Main.OperationPhase.Backup_PostBackupVerify:
+                                output.MessageEvent("Checking remote backup ...");
+                                break;
+                            case Duplicati.Library.Main.OperationPhase.Backup_PostBackupTest:
+                                output.MessageEvent("Verifying remote backup ...");
+                                break;
+                            case Duplicati.Library.Main.OperationPhase.Backup_Compact:
+                                output.MessageEvent("Compacting remote backup ...");
+                                break;
+                        }
+                    };
+
+                    periodicOutput.WriteOutput += (progress, files, size, counting) =>
+                    {
+                        output.MessageEvent(string.Format("  {0} files need to be examined ({1}){2}", files, Library.Utility.Utility.FormatSizeString(size), counting ? " (still counting)" : ""));
+                    };
+
+                    using (var i = new Library.Main.Controller(backend, options, output))
+                    {
+                        setup(i);
+                        result = i.Backup(dirs, filter);
+                    }
                 }
+
+                if (output.FullResults)
+                {
+                    Library.Utility.Utility.PrintSerializeObject(result, outwriter);
+                    outwriter.WriteLine();
+                }
+
+                var parsedStats = result.BackendStatistics as Duplicati.Library.Interface.IParsedBackendStatistics;
+                output.MessageEvent(string.Format("  Duration of backup: {0:hh\\:mm\\:ss}", result.Duration));
+                if (parsedStats != null)
+                {
+                    if (parsedStats.KnownFileCount > 0)
+                    {
+                        output.MessageEvent(string.Format("  Remote files: {0}", parsedStats.KnownFileCount));
+                        output.MessageEvent(string.Format("  Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
+                    }
+
+                    if (parsedStats.TotalQuotaSpace >= 0)
+                    {
+                        output.MessageEvent(string.Format("  Total remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.TotalQuotaSpace)));
+                    }
+
+                    if (parsedStats.FreeQuotaSpace >= 0)
+                    {
+                        output.MessageEvent(string.Format("  Available remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.FreeQuotaSpace)));
+                    }
+                }
+
+                output.MessageEvent(string.Format("  Files added: {0}", result.AddedFiles));
+                output.MessageEvent(string.Format("  Files deleted: {0}", result.DeletedFiles));
+                output.MessageEvent(string.Format("  Files changed: {0}", result.ModifiedFiles));
+
+                output.MessageEvent(string.Format("  Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
+                output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
+
+                if (result.ExaminedFiles == 0 && (filter != null || !filter.Empty))
+                    output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filters\" command");
+
+                output.MessageEvent("Backup completed successfully!");
+
+                //Interrupted = 50
+                if (result.PartialBackup)
+                    return 50;
+
+                //Completed with errors = 3
+                if (result.ParsedResult == Library.Interface.ParsedResultType.Error)
+                    return 3;
+
+                //Completed with warnings = 2
+                if (result.ParsedResult == Library.Interface.ParsedResultType.Warning)
+                    return 2;
+
+                //Success, but no upload = 1
+                if (result.BackendStatistics.BytesUploaded == 0)
+                    return 1;
+
+                return 0;
             }
-            
-            if (output.VerboseOutput)
-            {
-                Library.Utility.Utility.PrintSerializeObject(result, outwriter);
-                outwriter.WriteLine();
-            }
-
-            var parsedStats = result.BackendStatistics as Duplicati.Library.Interface.IParsedBackendStatistics;
-            output.MessageEvent(string.Format("  Duration of backup: {0:hh\\:mm\\:ss}", result.Duration));
-            if (parsedStats != null)
-            {
-                if (parsedStats.KnownFileCount > 0)
-                {
-                    output.MessageEvent(string.Format("  Remote files: {0}", parsedStats.KnownFileCount));
-                    output.MessageEvent(string.Format("  Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
-                }
-
-                if (parsedStats.TotalQuotaSpace >= 0)
-                {
-                    output.MessageEvent(string.Format("  Total remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.TotalQuotaSpace)));
-                }
-
-                if (parsedStats.FreeQuotaSpace >= 0)
-                {
-                    output.MessageEvent(string.Format("  Available remote quota: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.FreeQuotaSpace)));
-                }
-            }
-                
-            output.MessageEvent(string.Format("  Files added: {0}", result.AddedFiles));
-            output.MessageEvent(string.Format("  Files deleted: {0}", result.DeletedFiles));
-            output.MessageEvent(string.Format("  Files changed: {0}", result.ModifiedFiles));
-
-            output.MessageEvent(string.Format("  Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
-            output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
-
-            if (result.ExaminedFiles == 0 && (filter != null || !filter.Empty))
-                output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filters\" command");
-
-            output.MessageEvent("Backup completed successfully!");
-            
-            //Interrupted = 50
-            if (result.PartialBackup)
-                return 50;
-
-            //Completed with errors = 3
-            if (result.ParsedResult == Library.Interface.ParsedResultType.Error)
-                return 3;
-            
-            //Completed with warnings = 2
-            if (result.ParsedResult == Library.Interface.ParsedResultType.Warning)
-                return 2;
-
-            //Success, but no upload = 1
-            if (result.BackendStatistics.BytesUploaded == 0)
-                return 1;
-            
-            return 0;
         }
                 
         public static int Compact(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
@@ -648,7 +657,8 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
 
-            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using(var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 i.Compact();
@@ -659,7 +669,7 @@ namespace Duplicati.CommandLine
 
         public static int Test(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            var verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose") || Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
+            var fullResults = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
             if (args.Count != 1 && args.Count != 2)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
             
@@ -673,7 +683,8 @@ namespace Duplicati.CommandLine
             }
             
             Library.Interface.ITestResults result;
-            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 result = i.Test(tests);
@@ -700,7 +711,7 @@ namespace Duplicati.CommandLine
                         var changecount = n.Value.Count();
                         if (changecount == 0)
                         {
-                            if (verbose)
+                            if (fullResults)
                                 Console.WriteLine("{0}: No errors", n.Key);
                         }
                         else
@@ -711,7 +722,7 @@ namespace Duplicati.CommandLine
                             {
                                 count++;
                                 Console.WriteLine("\t{0}: {1}", c.Key, c.Value);
-                                if (!verbose && count == 10 && changecount > 10)
+                                if (!fullResults && count == 10 && changecount > 10)
                                 {
                                     Console.WriteLine("\t... and {0} more", changecount - count);
                                     break;
@@ -764,7 +775,8 @@ namespace Duplicati.CommandLine
             else if (args.Count == 1)
                 args.Add("report");
 
-            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 i.CreateLogDatabase(args[1]);
@@ -782,7 +794,7 @@ namespace Duplicati.CommandLine
         
         public static int ListChanges(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            var fullresult = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose") || Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
+            var fullresult = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
 
             if (args.Count < 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
@@ -907,7 +919,8 @@ namespace Duplicati.CommandLine
                     outwriter.WriteLine("Size of backup {0}: {1}", result.CompareVersionIndex, Library.Utility.Utility.FormatSizeString(result.CurrentSize));                    
                 };
                             
-            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 if (args.Count == 2)
@@ -927,9 +940,8 @@ namespace Duplicati.CommandLine
                 return 200;
             }
         
-            options["verbose"] = "true";
-        
-            using(var i = new Library.Main.Controller("dummy://", options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using(var i = new Library.Main.Controller("dummy://", options, console))
             {
                 setup(i);
                 var result = i.TestFilter(args.ToArray(), filter);
@@ -948,7 +960,8 @@ namespace Duplicati.CommandLine
                 return 200;
             }
 
-            using (var i = new Library.Main.Controller("dummy://", options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller("dummy://", options, console))
             {
                 setup(i);
                 foreach (var line in i.SystemInfo().Lines)
@@ -986,7 +999,8 @@ namespace Duplicati.CommandLine
             }
 
 
-            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 i.PurgeFiles(filter);
@@ -1000,11 +1014,11 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
 
-            var con = new ConsoleOutput(outwriter, options);
             var previd = -1L;
             var outputcount = 0L;
-            var verbose = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "verbose") || Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
+            var fullresult = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
 
+            using (var con = new ConsoleOutput(outwriter, options))
             using (var i = new Library.Main.Controller(args[0], options, con))
             {
                 setup(i);
@@ -1019,7 +1033,7 @@ namespace Duplicati.CommandLine
 
                     con.MessageEvent(string.Format("\t{0} ({1})", path, Library.Utility.Utility.FormatSizeString(size)));
                     outputcount++;
-                    if (outputcount >= 5 && !verbose && count != outputcount)
+                    if (outputcount >= 5 && !fullresult && count != outputcount)
                     {
                         con.MessageEvent(string.Format("\t ... and {0} more, (use --{1} to list all)", count - outputcount, "full-result"));
                         return false;
@@ -1038,7 +1052,8 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
 
-            using (var i = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 var res = i.PurgeBrokenFiles(filter);
@@ -1055,7 +1070,8 @@ namespace Duplicati.CommandLine
                 return 200;
             }
 
-            using (var i = new Library.Main.Controller("dummy://", options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller("dummy://", options, console))
             {
                 setup(i);
                 foreach (var l in i.SendMail().Lines)
@@ -1074,8 +1090,8 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
 
-            using (
-                var controller = new Library.Main.Controller(args[0], options, new ConsoleOutput(outwriter, options)))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var controller = new Library.Main.Controller(args[0], options, console))
             {
                 setup(controller);
                 controller.Vacuum();

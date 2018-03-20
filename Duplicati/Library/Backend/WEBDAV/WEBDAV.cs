@@ -140,7 +140,7 @@ namespace Duplicati.Library.Backend
                     throw new Interface.FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
                 if (wex.Response as System.Net.HttpWebResponse != null && (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.MethodNotAllowed)
-                    throw new UserInformationException(Strings.WEBDAV.MethodNotAllowedError((wex.Response as System.Net.HttpWebResponse).StatusCode), wex);
+                    throw new UserInformationException(Strings.WEBDAV.MethodNotAllowedError((wex.Response as System.Net.HttpWebResponse).StatusCode), "WebdavMethodNotAllowed", wex);
 
                     throw;
             }
@@ -313,9 +313,9 @@ namespace Duplicati.Library.Backend
             get { return Strings.WEBDAV.Description; }
         }
 
-        public string DNSName 
+        public string[] DNSName 
         {
-            get { return m_dnsName; }
+            get { return new string[] { m_dnsName }; }
         }
 
         public void Test()

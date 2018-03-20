@@ -30,6 +30,11 @@ namespace Duplicati.Server
     public class LiveControls
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<LiveControls>();
+
+        /// <summary>
         /// An event that is activated when the pause state changes
         /// </summary>
         public event EventHandler StateChanged;
@@ -97,7 +102,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The object that ensures concurrent operations
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
 
         /// <summary>
         /// Gets the current overridden thread priority
@@ -190,7 +195,7 @@ namespace Duplicati.Server
                 }
                 catch (Exception ex)
                 {
-                    Library.Logging.Log.WriteMessage(string.Format("Failed to parse download limit: {0}", settings.DownloadSpeedLimit), Library.Logging.LogMessageType.Error, ex);
+                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "ParseDownloadLimitError", ex, "Failed to parse download limit: {0}", settings.DownloadSpeedLimit);
                 }
 
             if (!string.IsNullOrEmpty(settings.UploadSpeedLimit))
@@ -200,7 +205,7 @@ namespace Duplicati.Server
                 }
                 catch (Exception ex)
                 {
-                    Library.Logging.Log.WriteMessage(string.Format("Failed to parse upload limit: {0}", settings.UploadSpeedLimit), Library.Logging.LogMessageType.Error, ex);
+                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "ParseUploadLimitError", ex, "Failed to parse upload limit: {0}", settings.UploadSpeedLimit);
                 }
 
             try

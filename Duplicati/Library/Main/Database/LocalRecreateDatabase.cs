@@ -8,6 +8,11 @@ namespace Duplicati.Library.Main.Database
 {
     internal partial class LocalRecreateDatabase : LocalRestoreDatabase
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRecreateDatabase));
+
         private class PathEntryKeeper
         {
             private SortedList<KeyValuePair<long, long>, long> m_versions;
@@ -274,7 +279,7 @@ namespace Duplicati.Library.Main.Database
                 }
                 catch (Exception ex)
                 {
-                    m_result.AddError("Blockset insert failed, comitting temporary tables for trace purposes", ex);
+                    Logging.Log.WriteErrorMessage(LOGTAG, "BlocksetInsertFailed", ex, "Blockset insert failed, comitting temporary tables for trace purposes");
 
                     using (var fixcmd = m_connection.CreateCommand())
                     {
@@ -408,7 +413,7 @@ namespace Duplicati.Library.Main.Database
             }
                             
             if (c != expectedblocklisthashes)
-                m_result.AddWarning(string.Format("Mismatching number of blocklist hashes detected on blockset {2}. Expected {0} blocklist hashes, but found {1}", expectedblocklisthashes, c, blocksetid), null);
+                Logging.Log.WriteWarningMessage(LOGTAG, "MismatchInBlocklistHashCount", null, "Mismatching number of blocklist hashes detected on blockset {2}. Expected {0} blocklist hashes, but found {1}", expectedblocklisthashes, c, blocksetid);
             
             return blocksetid;
         }

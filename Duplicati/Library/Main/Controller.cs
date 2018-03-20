@@ -30,6 +30,10 @@ namespace Duplicati.Library.Main
     public class Controller : IDisposable
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<Controller>();
+        /// <summary>
         /// The backend url
         /// </summary>
         private string m_backend;
@@ -41,16 +45,6 @@ namespace Duplicati.Library.Main
         /// The destination for all output messages during execution
         /// </summary>
         private IMessageSink m_messageSink;
-
-        /// <summary>
-        /// The stream log, if any
-        /// </summary>
-        private Logging.StreamLog m_logfile = null;
-
-        /// <summary>
-        /// The logging filescope
-        /// </summary>
-        private IDisposable m_logfilescope = null;
 
         /// <summary>
         /// The current executing task
@@ -88,78 +82,9 @@ namespace Duplicati.Library.Main
         private bool m_doResetLocale;
 
         /// <summary>
-        /// The caffeinate process runner
+        /// The multi-controller log target
         /// </summary>
-        private System.Diagnostics.Process m_caffeinate;
-
-        /// <summary>
-        /// This gets called whenever execution of an operation is started or stopped; it currently handles the AllowSleep option
-        /// </summary>
-        /// <param name="isRunning">Flag indicating execution state</param>
-        private void OperationRunning(bool isRunning)
-        {
-            if (m_options != null && !m_options.AllowSleep)
-            {
-                if (Duplicati.Library.Utility.Utility.IsClientWindows)
-                {
-                    try
-                    {
-                        Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | (isRunning ? Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED : 0));
-                    }
-                    catch (Exception ex)
-                    {
-                        Logging.Log.WriteMessage("Failed to set sleep prevention", Logging.LogMessageType.Warning, ex);
-                    }
-                }
-                else if (Duplicati.Library.Utility.Utility.IsClientOSX)
-                {
-                    if (isRunning)
-                    {
-                        try
-                        {
-                            if (m_caffeinate == null)
-                            {
-                                // -s prevents sleep on AC, -i prevents sleep generally
-                                var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s");
-                                psi.RedirectStandardInput = true;
-                                psi.UseShellExecute = false;
-                                m_caffeinate = System.Diagnostics.Process.Start(psi);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logging.Log.WriteMessage("Failed to set sleep prevention", Logging.LogMessageType.Warning, ex);
-                        }
-                    }
-                    else
-                    {
-                        try
-                        {
-                            if (m_caffeinate != null && !m_caffeinate.HasExited)
-                            {
-                                // Send CTRL+C
-                                m_caffeinate.StandardInput.Write("\x3");
-                                m_caffeinate.StandardInput.Flush();
-                                m_caffeinate.WaitForExit(500);
-
-                                if (!m_caffeinate.HasExited)
-                                {
-                                    m_caffeinate.Kill();
-                                    m_caffeinate.WaitForExit(500);
-                                    if (!m_caffeinate.HasExited)
-                                        throw new Exception("Failed to kill the caffeinate process");
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logging.Log.WriteMessage("Failed to unset sleep prevention", Logging.LogMessageType.Warning, ex);
-                        }
-                            
-                    }
-                }
-            }
-        }
+        private ControllerMultiLogTarget m_logTarget;
 
         /// <summary>
         /// Constructs a new interface for performing backup and restore operations
@@ -191,10 +116,10 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <returns>The expanded and filtered sources.</returns>
         /// <param name="inputsources">The paths to use.</param>
-        public string[] ExpandInputSources(string[] inputsources, IFilter filter, ILogWriter log)
+        public string[] ExpandInputSources(string[] inputsources, IFilter filter)
         {
             if (inputsources == null || inputsources.Length == 0)
-                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError);
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError, "NoSourceFolders");
 
             var sources = new List<string>(inputsources.Length);
 
@@ -216,7 +141,7 @@ namespace Duplicati.Library.Main
                     foreach (System.IO.DriveInfo drive in drives)
                     {
                         string expandedSource = drive.Name[0] + sourcePath;
-                        log.AddVerboseMessage(@"Adding source path ""{0}"" due to wildcard source path ""{1}""", expandedSource, inputsources[i]);
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "AddingSourcePathFromWildcard", @"Adding source path ""{0}"" due to wildcard source path ""{1}""", expandedSource, inputsources[i]);
                         expandedSources.Add(expandedSource);
                     }
                 }
@@ -233,21 +158,21 @@ namespace Duplicati.Library.Main
                         if (!string.IsNullOrEmpty(driveLetter))
                         {
                             string expandedSource = driveLetter + inputsources[i].Substring(@"\\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}".Length);
-                            log.AddVerboseMessage(@"Adding source path ""{0}"" in place of volume guid source path ""{1}""", expandedSource, inputsources[i]);
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "AddingSourceFromGuid", @"Adding source path ""{0}"" in place of volume guid source path ""{1}""", expandedSource, inputsources[i]);
                             expandedSources.Add(expandedSource);
                         }
                         else
                         {
                             // If we aren't allow to have missing sources, throw an exception indicating we couldn't find a drive where this volume is mounted
                             if (!m_options.AllowMissingSource)
-                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameNotFoundError(inputsources[i], volumeGuid));
+                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameNotFoundError(inputsources[i], volumeGuid), "MissingSourceFolder");
                         }
                     }
                     else
                     {
                         // If we aren't allow to have missing sources, throw an exception indicating we couldn't find this volume
                         if (!m_options.AllowMissingSource)
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameInvalidError(inputsources[i]));
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameInvalidError(inputsources[i]), "SourceVolumeNameInvalid");
                     }
                 }
                 else
@@ -266,7 +191,7 @@ namespace Duplicati.Library.Main
                     catch (Exception ex)
                     {
                         // Note that we use the original source (with the *) in the error
-                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(expandedSource, ex.Message), ex);
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.InvalidPathError(expandedSource, ex.Message), "InputSourceInvalid", ex);
                     }
 
                     var fi = new System.IO.FileInfo(source);
@@ -292,7 +217,7 @@ namespace Duplicati.Library.Main
             sources = Library.Utility.Utility.GetUniqueItems(sources, Library.Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).OrderBy(a => a).ToList();
 
             foreach (var pathDuplicate in pathDuplicates)
-                log.AddVerboseMessage(string.Format("Removing duplicate source: {0}", pathDuplicate));
+                Logging.Log.WriteVerboseMessage(LOGTAG, "RemoveDuplicateSource", "Removing duplicate source: {0}", pathDuplicate);
 
             //Sanity check for multiple inclusions of the same folder
             for (int i = 0; i < sources.Count; i++)
@@ -309,14 +234,14 @@ namespace Duplicati.Library.Main
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
                             {
-                                log.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
                                 filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
                             }
                             else
-                                log.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
                         }
                         else
-                            log.AddVerboseMessage("Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
 
                         sources.RemoveAt(i);
                         i--;
@@ -335,7 +260,7 @@ namespace Duplicati.Library.Main
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
                 using (var h = new Operation.BackupHandler(m_backend, m_options, result))
-                    h.Run(ExpandInputSources(inputsources, filter, result), filter);
+                    h.Run(ExpandInputSources(inputsources, filter), filter);
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
                 Library.UsageReporter.Reporter.Report("BACKUP_FILESIZE", result.SizeOfExaminedFiles);
@@ -436,7 +361,7 @@ namespace Duplicati.Library.Main
                         }
                         catch (Exception ex)
                         {
-                            result.AddWarning(string.Format("Failed to delete remote file: {0}", list[i].File.Name), ex);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "DeleteFilesetError", ex, "Failed to delete remote file: {0}", list[i].File.Name);
                         }
                         result.OperationProgressUpdater.UpdateProgress((float)i / list.Count);
                     }
@@ -511,13 +436,18 @@ namespace Duplicati.Library.Main
 
         public Library.Interface.ITestFilterResults TestFilter(string[] paths, Library.Utility.IFilter filter = null)
         {
-            m_options.RawOptions["verbose"] = "true";
             m_options.RawOptions["dry-run"] = "true";
             m_options.RawOptions["dbpath"] = "INVALID!";
 
-            return RunAction(new TestFilterResults(), ref paths, ref filter, (result) => {
-                new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter, result), filter);
-            });
+            // Redirect all messages from the filter to the message sink
+            var filtertag = Logging.Log.LogTagFromType<Operation.BackupHandler.FilterHandler>();
+            using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.Tag.Contains(filtertag)))
+            {
+                return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>
+                {
+                    new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter), filter);
+                });
+            }
         }
 
         public Library.Interface.ISystemInfoResults SystemInfo()
@@ -560,23 +490,25 @@ namespace Duplicati.Library.Main
             if (string.IsNullOrWhiteSpace(targetmail))
                 throw new Exception(string.Format("No email specified, please use --{0}", "send-mail-to"));
 
-            if (m_options.Loglevel == Logging.LogMessageType.Error)
-                m_options.RawOptions["log-level"] = Logging.LogMessageType.Warning.ToString();
-
             m_options.RawOptions["disable-module"] = string.Join(
                 ",",
                 DynamicLoader.GenericLoader.Modules
                          .Where(m =>
-                              !(m is Library.Interface.IConnectionModule) && m.GetType().FullName != "Duplicati.Library.Modules.Builtin.SendMail"
+                                !(m is Modules.Builtin.SendMail)
                          )
                 .Select(x => x.Key)
             );
                          
-            return RunAction(new SendMailResults(), result =>
+            /// Forward all messages from the email module to the message sink
+            var filtertag = Logging.Log.LogTagFromType<Modules.Builtin.SendMail>();
+            using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.Tag.Contains(filtertag)))
             {
-                result.Lines = new string[0];
-                System.Threading.Thread.Sleep(5);
-            });
+                return RunAction(new SendMailResults(), result =>
+                {
+                    result.Lines = new string[0];
+                    System.Threading.Thread.Sleep(5);
+                });
+            }
         }
 
         public Library.Interface.IVacuumResults Vacuum()
@@ -587,7 +519,7 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl, Logging.ILog
+            where T : ISetCommonOptions, ITaskControl, Logging.ILogDestination
         {
             var tmp = new string[0];
             IFilter tempfilter = null;
@@ -595,33 +527,39 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, ref string[] paths, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl, Logging.ILog
+            where T : ISetCommonOptions, ITaskControl, Logging.ILogDestination
         {
             IFilter tempfilter = null;
             return RunAction<T>(result, ref paths, ref tempfilter, method);
         }
 
         private T RunAction<T>(T result, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl, Logging.ILog
+            where T : ISetCommonOptions, ITaskControl, Logging.ILogDestination
         {
             var tmp = new string[0];
             return RunAction<T>(result, ref tmp, ref filter, method);
         }
 
         private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl, Logging.ILog
+            where T : ISetCommonOptions, ITaskControl, Logging.ILogDestination
         {
-            using (Logging.Log.StartScope(result))
+            m_logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null);
+            using (Logging.Log.StartScope(m_logTarget, null))
             {
+                m_logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
+                result.MessageSink = m_messageSink;
+
                 try
                 {
                     m_currentTask = result;
                     m_currentTaskThread = System.Threading.Thread.CurrentThread;
+
                     SetupCommonOptions(result, ref paths, ref filter);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "StartingOperation", Strings.Controller.StartingOperationMessage(m_options.MainAction));
 
-                    result.WriteLogMessageDirect(Strings.Controller.StartingOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
-
-                    using (new Logging.Timer(string.Format("Running {0}", result.MainOperation)))
+                    using (new ProcessController(m_options))
+                    using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
+                    using (new Logging.RepeatingLogScope())
                         method(result);
 
                     if (result.EndTime.Ticks == 0)
@@ -630,7 +568,7 @@ namespace Duplicati.Library.Main
 
                     OnOperationComplete(result);
 
-                    result.WriteLogMessageDirect(Strings.Controller.CompletedOperationMessage(m_options.MainAction), Logging.LogMessageType.Information, null);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
 
                     return result;
                 }
@@ -643,7 +581,7 @@ namespace Duplicati.Library.Main
 
                     OnOperationComplete(ex);
 
-                    result.WriteLogMessageDirect(Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message), Logging.LogMessageType.Error, ex);
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
 
                     throw;
                 }
@@ -682,15 +620,14 @@ namespace Duplicati.Library.Main
                 foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
                     if (mx.Key && mx.Value is Duplicati.Library.Interface.IGenericCallbackModule)
                         try { ((Duplicati.Library.Interface.IGenericCallbackModule)mx.Value).OnFinish(result); }
-                        catch (Exception ex) { Logging.Log.WriteMessage(string.Format("OnFinish callback {0} failed: {1}", mx.Key, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex); }
+                        catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
 
                 foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
                     if (mx.Key && mx.Value is IDisposable)
                         try { ((IDisposable)mx.Value).Dispose(); }
-                        catch (Exception ex) { Logging.Log.WriteMessage(string.Format("Dispose for {0} failed: {1}", mx.Key, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex); }
+                        catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"DisposeError{mx.Key}", ex, "Dispose for {0} failed: {1}", mx.Key, ex.Message); }
 
                 m_options.LoadedModules.Clear();
-                OperationRunning(false);
             }
 
             if (m_resetPriority != null)
@@ -724,24 +661,16 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            if (m_logfilescope != null)
+            if (m_logTarget != null)
             {
-                m_logfilescope.Dispose();
-                m_logfilescope = null;
+                m_logTarget.Dispose();
+                m_logTarget = null;
             }
-
-            if (m_logfile != null)
-            {
-                m_logfile.Dispose();
-                m_logfile = null;
-            }
-
         }
 
         private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths, ref IFilter filter)
         {
             m_options.MainAction = result.MainOperation;
-            result.MessageSink = m_messageSink;
 
             switch (m_options.MainAction)
             {
@@ -815,22 +744,20 @@ namespace Duplicati.Library.Main
             }
             m_options.RawOptions.Remove("filter"); // "--filter" is not a supported command line option
 
-            OperationRunning(true);
-
-            if (m_options.HasLoglevel)
-                Library.Logging.Log.LogLevel = m_options.Loglevel;
-
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {
                 var path = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(m_options.Logfile));
                 if (!System.IO.Directory.Exists(path))
                     System.IO.Directory.CreateDirectory(path);
 
-                m_logfilescope = Logging.Log.StartScope(m_logfile = new Library.Logging.StreamLog(m_options.Logfile));
+                m_logTarget.AddTarget(
+                    new Library.Logging.StreamLogDestination(m_options.Logfile),
+                    m_options.LogFileLoglevel,
+                    m_options.LogFileLogFilter
+                );
             }
 
-            result.VerboseErrors = m_options.DebugOutput;
-            result.VerboseOutput = m_options.Verbose;
+
 
             if (m_options.HasTempDir)
             {
@@ -861,7 +788,7 @@ namespace Duplicati.Library.Main
                 }
                 catch (Exception ex) // or only: MissingMethodException
                 {
-                    Library.Logging.Log.WriteMessage(Strings.Controller.FailedForceLocaleError(ex.Message), Logging.LogMessageType.Warning);
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LocaleChangeError", ex, Strings.Controller.FailedForceLocaleError(ex.Message));
                     m_doResetLocale = false;
                     m_resetLocale = m_resetLocaleUI = null;
                 }
@@ -876,15 +803,14 @@ namespace Duplicati.Library.Main
             if (string.IsNullOrEmpty(m_options.Dbpath))
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
 
-            ValidateOptions(result);
+            ValidateOptions();
         }
 
         /// <summary>
         /// This function will examine all options passed on the commandline, and test for unsupported or deprecated values.
         /// Any errors will be logged into the statistics module.
         /// </summary>
-        /// <param name="log">The log instance</param>
-        private void ValidateOptions(ILogWriter log)
+        private void ValidateOptions()
         {
             // Check if only one of the retention options is set
             var selectedRetentionOptions = new List<String>();
@@ -907,12 +833,12 @@ namespace Duplicati.Library.Main
             if (selectedRetentionOptions.Count() > 1)
             {
                 throw new Interface.UserInformationException(string.Format("Setting multiple retention options ({0}) is not permitted",
-                    String.Join(", ", selectedRetentionOptions.Select(x => "--" + x))));
+                    String.Join(", ", selectedRetentionOptions.Select(x => "--" + x))), "MultipleRetentionOptionsNotSupported");
             }
 
             // Check Prefix
             if (!string.IsNullOrWhiteSpace(m_options.Prefix) && m_options.Prefix.Contains("-"))
-                throw new Interface.UserInformationException("The prefix cannot contain hyphens (-)");
+                throw new Interface.UserInformationException("The prefix cannot contain hyphens (-)", "PrefixCannotContainHyphens");
 
             //Check validity of retention-policy option value
             try
@@ -922,18 +848,14 @@ namespace Duplicati.Library.Main
                     if (!configEntry.IsKeepAllVersions() && !configEntry.IsUnlimtedTimeframe() &&
                         configEntry.Interval >= configEntry.Timeframe)
                     {
-                        throw new Interface.UserInformationException("An interval cannot be bigger than the timeframe it is in");
+                        throw new Interface.UserInformationException("An interval cannot be bigger than the timeframe it is in", "IntervalCannotBeBiggerThanTimeFrame");
                     }
                 }
             }
             catch (Exception e) // simply reading the option value might also result in an exception due to incorrect formatting
             {
-                throw new Interface.UserInformationException(string.Format("An error occoured while processing the value of --{0}", "retention-policy"), e);
+                throw new Interface.UserInformationException(string.Format("An error occoured while processing the value of --{0}", "retention-policy"), "RetentionPolicyParseError", e);
             }
-
-            //No point in going through with this if we can't report
-            if (log == null)
-                return;
 
             //Keep a list of all supplied options
             Dictionary<string, string> ropts = new Dictionary<string, string>(m_options.RawOptions);
@@ -981,7 +903,7 @@ namespace Duplicati.Library.Main
                     foreach (Library.Interface.ICommandLineArgument a in l)
                     {
                         if (supportedOptions.ContainsKey(a.Name) && Array.IndexOf(Options.KnownDuplicates, a.Name.ToLower()) < 0)
-                            log.AddWarning(Strings.Controller.DuplicateOptionNameWarning(a.Name), null);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(a.Name));
 
                         supportedOptions[a.Name] = a;
 
@@ -989,7 +911,7 @@ namespace Duplicati.Library.Main
                             foreach (string s in a.Aliases)
                             {
                                 if (supportedOptions.ContainsKey(s) && Array.IndexOf(Options.KnownDuplicates, s.ToLower()) < 0)
-                                    log.AddWarning(Strings.Controller.DuplicateOptionNameWarning(s), null);
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(s));
 
                                 supportedOptions[s] = a;
                             }
@@ -1008,7 +930,7 @@ namespace Duplicati.Library.Main
                                     if (a.Name != s)
                                         optname += " (" + s + ")";
 
-                                    log.AddWarning(Strings.Controller.DeprecatedOptionUsedWarning(optname, a.DeprecationMessage), null);
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "DeprecatedOption", null, Strings.Controller.DeprecatedOptionUsedWarning(optname, a.DeprecationMessage), null);
                                 }
 
                         }
@@ -1019,9 +941,9 @@ namespace Duplicati.Library.Main
             foreach (string s in ropts.Keys)
                 if (!supportedOptions.ContainsKey(s))
                     if (disabledModuleOptions.ContainsKey(s))
-                        log.AddWarning(Strings.Controller.UnsupportedOptionDisabledModuleWarning(s, disabledModuleOptions[s]), null);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedDisabledModule", null, Strings.Controller.UnsupportedOptionDisabledModuleWarning(s, disabledModuleOptions[s]), null);
                     else
-                        log.AddWarning(Strings.Controller.UnsupportedOptionWarning(s), null);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedOption", null, Strings.Controller.UnsupportedOptionWarning(s), null);
 
             //Look at the value supplied for each argument and see if is valid according to its type
             foreach (string s in ropts.Keys)
@@ -1031,13 +953,13 @@ namespace Duplicati.Library.Main
                 {
                     string validationMessage = ValidateOptionValue(arg, s, ropts[s]);
                     if (validationMessage != null)
-                        log.AddWarning(validationMessage, null);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "OptionValidationError", null, validationMessage);
                 }
             }
 
             // For now, warn not to use 7z
             if (string.Equals(m_options.CompressionModule, "7z", StringComparison.OrdinalIgnoreCase))
-                log.AddWarning("The 7z compression module has known issues and should only be used for experimental purposes", null);
+                Logging.Log.WriteWarningMessage(LOGTAG, "7zModuleHasIssues", null, "The 7z compression module has known issues and should only be used for experimental purposes");
 
             //TODO: Based on the action, see if all options are relevant
         }

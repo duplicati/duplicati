@@ -224,7 +224,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                     m_waitUntil = DateTime.Now + m_delayTimeSpan;
                 }
                 else if (self != null && self.Count > 1)
-                    throw new UserInformationException(Strings.AmzCD.MultipleEntries(p, "/" + string.Join("/", curpath)));
+                    throw new UserInformationException(Strings.AmzCD.MultipleEntries(p, "/" + string.Join("/", curpath)), "AmzCDMultipleEntries");
                 else
                     parent = self.Data.First();
             }
@@ -458,9 +458,27 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get 
+            {
+                var contentUrl = string.Empty;
+                var metdataUrl = string.Empty;
+
+                if (m_endPointInfo != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(m_endPointInfo.ContentUrl))
+                        contentUrl = new Uri(m_endPointInfo.ContentUrl).Host;
+                    if (!string.IsNullOrWhiteSpace(m_endPointInfo.MetadataUrl))
+                        metdataUrl = new Uri(m_endPointInfo.MetadataUrl).Host;
+                }
+                
+                return new string[] { 
+                    new Uri(CLOUDRIVE_MASTER_URL).Host, 
+                    contentUrl, 
+                    metdataUrl 
+                }; 
+            }
         }
 
         #endregion

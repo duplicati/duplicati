@@ -26,10 +26,10 @@ MONO=/Library/Frameworks/Mono.framework/Commands/mono
 
 GPG=/usr/local/bin/gpg2
 
-ZIPFILE=`basename "$1"`
-VERSION=`echo "${ZIPFILE}" | cut -d "-" -f 2 | cut -d "_" -f 1`
-BUILDTYPE=`echo "${ZIPFILE}" | cut -d "-" -f 2 | cut -d "_" -f 2`
-BUILDTAG_RAW=`echo "${ZIPFILE}" | cut -d "." -f 1-4 | cut -d "-" -f 2-4`
+ZIPFILE=$(basename "$1")
+VERSION=$(echo "${ZIPFILE}" | cut -d "-" -f 2 | cut -d "_" -f 1)
+BUILDTYPE=$(echo "${ZIPFILE}" | cut -d "-" -f 2 | cut -d "_" -f 2)
+BUILDTAG_RAW=$(echo "${ZIPFILE}" | cut -d "." -f 1-4 | cut -d "-" -f 2-4)
 BUILDTAG="${BUILDTAG_RAW//-}"
 
 RPMNAME="duplicati-${VERSION}-${BUILDTAG}.noarch.rpm"
@@ -69,13 +69,13 @@ if [ -f "${GPG_KEYFILE}" ]; then
 		echo
 	fi
 
-	GPGDATA=`"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}"`
+	GPGDATA=$("${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}")
 	if [ ! $? -eq 0 ]; then
 		echo "Decrypting GPG keyfile failed"
 		exit 1
 	fi
-	GPGID=`echo "${GPGDATA}" | head -n 1`
-	GPGKEY=`echo "${GPGDATA}" | head -n 2 | tail -n 1`
+	GPGID=$(echo "${GPGDATA}" | head -n 1)
+	GPGKEY=$(echo "${GPGDATA}" | head -n 2 | tail -n 1)
 else
 	echo "No GPG keyfile found, skipping gpg signatures"
 fi
@@ -188,14 +188,14 @@ if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 	authenticode_sign() {
 		NEST=""
 		for hashalg in sha1 sha256; do
-			SIGN_MSG=`osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.verisign.com/scripts/timstamp.dll" -in "$1" -out tmpfile`
+			SIGN_MSG=$(osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.verisign.com/scripts/timstamp.dll" -in "$1" -out tmpfile)
 			if [ "${SIGN_MSG}" != "Succeeded" ]; then echo "${SIGN_MSG}"; fi
 			mv tmpfile "$1"
 			NEST="-nest"
 		done
 	}
 
-	PFX_PASS=`"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${AUTHENTICODE_PASSWORD}"`
+	PFX_PASS=$("${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${AUTHENTICODE_PASSWORD}")
 
 	DECRYPT_STATUS=$?
 	if [ "${DECRYPT_STATUS}" -ne 0 ]; then
@@ -232,9 +232,9 @@ process_installer() {
 		aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/$1" "s3://updates.duplicati.com/${BUILDTYPE}/$1"
 	fi
 
-	local MD5=`md5 ${UPDATE_TARGET}/$1 | awk -F ' ' '{print $NF}'`
-	local SHA1=`shasum -a 1 ${UPDATE_TARGET}/$1 | awk -F ' ' '{print $1}'`
-	local SHA256=`shasum -a 256 ${UPDATE_TARGET}/$1 | awk -F ' ' '{print $1}'`
+	local MD5=$(md5 ${UPDATE_TARGET}/$1 | awk -F ' ' '{print $NF}')
+	local SHA1=$(shasum -a 1 ${UPDATE_TARGET}/$1 | awk -F ' ' '{print $1}')
+	local SHA256=$(shasum -a 256 ${UPDATE_TARGET}/$1 | awk -F ' ' '{print $1}')
 
 cat >> "./tmp/latest-installers.json" <<EOF
 	"$2": {
@@ -299,7 +299,7 @@ rm -rf "./tmp/${SIG_FOLDER}"
 
 aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${SIGNAME}" "s3://updates.duplicati.com/${BUILDTYPE}/${SIGNAME}"
 
-GITHUB_TOKEN=`cat "${GITHUB_TOKEN_FILE}"`
+GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
 
 if [ "x${GITHUB_TOKEN}" == "x" ]; then
 	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"

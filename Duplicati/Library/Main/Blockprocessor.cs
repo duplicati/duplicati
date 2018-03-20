@@ -15,10 +15,10 @@ namespace Duplicati.Library.Main
         public Blockprocessor(Stream stream, byte[] buffer)
         {
             if (stream == null)
-                throw new ArgumentNullException("stream");
+                throw new ArgumentNullException(nameof(stream));
 
             if (buffer == null)
-                throw new ArgumentNullException("buffer");
+                throw new ArgumentNullException(nameof(buffer));
 
             m_stream = stream;
             m_buffer = buffer;

@@ -21,6 +21,11 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalBugReportDatabase : LocalDatabase
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalBugReportDatabase));
+
         public LocalBugReportDatabase(string path)
             : base(path, "BugReportCreate", false)
         {
@@ -59,7 +64,7 @@ namespace Duplicati.Library.Main.Database
                 
                 cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tablename));
                 
-                using(new Logging.Timer("CommitUpdateBugReport"))
+                using(new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
                     tr.Commit();
                 
                 cmd.Transaction = null;

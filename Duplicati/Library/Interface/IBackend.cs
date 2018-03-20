@@ -82,9 +82,9 @@ namespace Duplicati.Library.Interface
         string Description { get; }
 
         /// <summary>
-        /// The DNS name used to resolve the IP address for this backend
+        /// The DNS names used to resolve the IP addresses for this backend
         /// </summary>
-        string DNSName { get; }
+        string[] DNSName { get; }
 
         /// <summary>
         /// The purpose of this method is to test the connection to the remote backend.

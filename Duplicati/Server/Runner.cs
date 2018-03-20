@@ -142,7 +142,7 @@ namespace Duplicati.Server
                 : base()
             {
                 if (runner == null)
-                    throw new ArgumentNullException("runner");
+                    throw new ArgumentNullException(nameof(runner));
                 Run = runner;
                 Operation = DuplicatiOperation.CustomRunner;
                 Backup = new Database.Backup();
@@ -264,7 +264,7 @@ namespace Duplicati.Server
             private ProgressState m_state;
             private Duplicati.Library.Main.IBackendProgress m_backendProgress;
             private Duplicati.Library.Main.IOperationProgress m_operationProgress;
-            private object m_lock = new object();
+            private readonly object m_lock = new object();
             
             public MessageSink(long taskId, string backupId)
             {
@@ -306,24 +306,10 @@ namespace Duplicati.Server
                     }
                 }
             }
-            public void VerboseEvent(string message, object[] args)
+            public void WriteMessage(Library.Logging.LogEntry entry)
             {
             }
-            public void MessageEvent(string message)
-            {
-            }
-            public void RetryEvent(string message, Exception ex)
-            {
-            }
-            public void WarningEvent(string message, Exception ex)
-            {
-            }
-            public void ErrorEvent(string message, Exception ex)
-            {
-            }
-            public void DryrunEvent(string message)
-            {
-            }
+
             public Duplicati.Library.Main.IBackendProgress BackendProgress
             {
                 set
@@ -512,6 +498,11 @@ namespace Duplicati.Server
                     }
                 }
 
+                // Attach a log scope that tags all messages to relay the TaskID and BackupID
+                using (Library.Logging.Log.StartScope(log => { 
+                    log[LogWriteHandler.LOG_EXTRA_TASKID] = data.TaskID.ToString(); 
+                    log[LogWriteHandler.LOG_EXTRA_BACKUPID] = data.BackupID; 
+                }))
                 using (tempfolder)
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
@@ -615,6 +606,9 @@ namespace Duplicati.Server
                                          null,
                                          null,
                                          "bug-report:created:" + tempid,
+                                         null,
+                                         "BugreportCreatedReady",
+                                         "",
                                          (n, a) => n
                                      );
 
@@ -683,6 +677,10 @@ namespace Duplicati.Server
             if (!backup.IsTemporary)
                 Program.DataConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
 
+            string messageid = null;
+            if (ex is Library.Interface.UserInformationException)
+                messageid = ((Library.Interface.UserInformationException)ex).HelpID;
+
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.DataConnection.RegisterNotification(
                 NotificationType.Error, 
@@ -692,6 +690,9 @@ namespace Duplicati.Server
                 ex,
                 backup.ID,
                 "backup:show-log",
+                null,
+                messageid,
+                null,
                 (n, a) => {
                     return a.Where(x => x.BackupID == backup.ID).FirstOrDefault() ?? n;
                 }
@@ -762,6 +763,9 @@ namespace Duplicati.Server
                         null,
                         backup.ID,
                         "backup:show-log",
+                        null, 
+                        null,
+                        null,
                         (n, a) =>
                         {
                             var existing = (a.Where(x => x.BackupID == backup.ID)).FirstOrDefault();
@@ -801,6 +805,9 @@ namespace Duplicati.Server
                         message,
                         null,
                         backup.ID,
+                        null,
+                        null,
+                        null,
                         "backup:show-log",
                         (n, a) => n
                     );
@@ -836,7 +843,7 @@ namespace Duplicati.Server
             options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.OrdinalIgnoreCase));
         }
         
-        private static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
+        internal static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
         {
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
@@ -884,7 +891,7 @@ namespace Duplicati.Server
             return filter;
         }
 
-        private static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        internal static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
         {
             return 
                 (from n in Program.DataConnection.Settings

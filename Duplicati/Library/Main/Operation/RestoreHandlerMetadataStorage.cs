@@ -22,6 +22,10 @@ namespace Duplicati.Library.Main.Operation
 {
     public class RestoreHandlerMetadataStorage : IDisposable
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<RestoreHandlerMetadataStorage>();
         private TempFile m_temp;
         private FileStream m_stream;
         private long m_entries;
@@ -81,9 +85,9 @@ namespace Duplicati.Library.Main.Operation
                 var bf = BitConverter.GetBytes(0L);
                 var buf = new byte[8 * 1024];
 
-                Logging.Log.WriteMessage(string.Format("The metadata storage file has {0} entries and takes up {1}", m_entries, Library.Utility.Utility.FormatSizeString(m_stream.Length)), Duplicati.Library.Logging.LogMessageType.Profiling);
+                Logging.Log.WriteProfilingMessage(LOGTAG, "MetadataStorageSize", "The metadata storage file has {0} entries and takes up {1}", m_entries, Library.Utility.Utility.FormatSizeString(m_stream.Length));
 
-                using(new Logging.Timer("Read metadata from file"))
+                using(new Logging.Timer(LOGTAG, "ReadMetadata", "Read metadata from file"))
                     for(var e = 0L; e < m_entries; e++)
                     {
                         m_stream.Position = pos;
@@ -116,12 +120,12 @@ namespace Duplicati.Library.Main.Operation
         {
             if (m_stream != null)
                 try { m_stream.Dispose(); }
-                catch { }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Failed to dispose stream"); }
                 finally { m_stream = null; }
 
             if (m_temp != null)
                 try { m_temp.Dispose(); }
-                catch { }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Failed to temp file stream"); }
                 finally { m_temp = null; }
 
         }

@@ -203,16 +203,16 @@ namespace Duplicati.Library.Backend.OpenStack
             options.TryGetValue(REGION_OPTION, out m_region);
 
             if (string.IsNullOrWhiteSpace(m_username))
-                throw new UserInformationException(Strings.OpenStack.MissingOptionError(USERNAME_OPTION));
+                throw new UserInformationException(Strings.OpenStack.MissingOptionError(USERNAME_OPTION), "OpenStackMissingUsername");
             if (string.IsNullOrWhiteSpace(m_authUri))
-                throw new UserInformationException(Strings.OpenStack.MissingOptionError(AUTHURI_OPTION));
+                throw new UserInformationException(Strings.OpenStack.MissingOptionError(AUTHURI_OPTION), "OpenStackMissingAuthUri");
 
             if (string.IsNullOrWhiteSpace(m_apikey))
             {
                 if (string.IsNullOrWhiteSpace(m_password))
-                    throw new UserInformationException(Strings.OpenStack.MissingOptionError(PASSWORD_OPTION));
+                    throw new UserInformationException(Strings.OpenStack.MissingOptionError(PASSWORD_OPTION), "OpenStackMissingPassword");
                 if (string.IsNullOrWhiteSpace(m_tenantName))
-                    throw new UserInformationException(Strings.OpenStack.MissingOptionError(TENANTNAME_OPTION));
+                    throw new UserInformationException(Strings.OpenStack.MissingOptionError(TENANTNAME_OPTION), "OpenStackMissingTenantName");
             }
 
             m_helper = new WebHelper(this);
@@ -423,9 +423,15 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public string DNSName
+        public virtual string[] DNSName
         {
-            get { return null; }
+            get 
+            { 
+                return new string[] { 
+                    new System.Uri(m_authUri).Host, 
+                    string.IsNullOrWhiteSpace(m_simplestorageendpoint) ? null : new System.Uri(m_simplestorageendpoint).Host 
+                }; 
+            }
         }
 
         #endregion
