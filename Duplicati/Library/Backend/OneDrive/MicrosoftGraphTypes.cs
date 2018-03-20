@@ -511,5 +511,8 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
 
         [JsonProperty("nextExpectedRanges", NullValueHandling = NullValueHandling.Ignore)]
         public string[] NextExpectedRanges { get; set; }
+
+        [JsonProperty("item", NullValueHandling = NullValueHandling.Ignore)]
+        public DriveItem Item { get; set; }
     }
 }

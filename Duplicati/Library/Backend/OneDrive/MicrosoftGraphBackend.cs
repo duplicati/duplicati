@@ -328,6 +328,10 @@ namespace Duplicati.Library.Backend
                 // but also states that the nextExpectedRanges value returned may indicate multiple ranges...
                 // For now, this plays it safe and does a sequential upload.
                 HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename)));
+
+                // Indicate that we want to replace any existing content with this new data we're uploading
+                StringContent createSessionContent = this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } });
+
                 HttpResponseMessage createSessionResponse = this.m_client.SendAsync(createSessionRequest).Await();
                 UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
 
@@ -392,8 +396,7 @@ namespace Duplicati.Library.Backend
                             }
                         }
 
-                        // Note: On the last request, the json result includes the default properties of the item that was uploaded,
-                        // instead of just the upload session results.
+                        // Note: On the last request, the json result includes the default properties of the item that was uploaded
                         var result = this.ParseResponse<UploadSession>(response);
 
                         // If we successfully sent this piece, then we can break out of the retry loop
@@ -479,7 +482,7 @@ namespace Duplicati.Library.Backend
             var request = new HttpRequestMessage(method, url);
             if (body != null)
             {
-                request.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
+                request.Content = this.PrepareContent(body);
             }
 
             return this.SendRequest<T>(request);
@@ -532,6 +535,11 @@ namespace Duplicati.Library.Backend
             {
                 return this.m_serializer.Deserialize<T>(jsonReader);
             }
+        }
+
+        private StringContent PrepareContent<T>(T body)
+        {
+            return new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
         }
     }
 }
