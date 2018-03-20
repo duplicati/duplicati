@@ -83,6 +83,8 @@ namespace Duplicati.Library.Backend
         private readonly int fragmentRetryCount;
         private readonly int fragmentRetryDelay; // In milliseconds
 
+        private string[] dnsNames = null;
+
         protected MicrosoftGraphBackend() { } // Constructor needed for dynamic loading to find it
 
         protected MicrosoftGraphBackend(string url, Dictionary<string, string> options)
@@ -152,9 +154,34 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get
+            {
+                if (this.dnsNames == null)
+                {
+                    // The DNS names that this instance may need to access include:
+                    // - Core graph API endpoint
+                    // - Upload session endpoint (which seems to be different depending on the drive being accessed - not sure if it can vary for a single drive)
+                    // To get the upload session endpoint, we can start an upload session and then immediately cancel it.
+                    // We pick a random file name (using a guid) to make sure we don't conflict with an existing file
+                    string dnsTestFile = string.Format("DNSNameTest-{0}", Guid.NewGuid());
+                    UploadSession uploadSession = this.Post<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.m_path, NormalizeSlashes(dnsTestFile)), null);
+
+                    // Cancelling an upload session is done by sending a DELETE to the upload URL
+                    var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl);
+                    var response = this.m_client.SendAsync(request).Await();
+                    this.CheckResponse(response);
+
+                    this.dnsNames = new[]
+                        {
+                            new System.Uri(BASE_ADDRESS).Host,
+                            new System.Uri(uploadSession.UploadUrl).Host,
+                        };
+                }
+
+                return this.dnsNames;
+            }
         }
 
         public IQuotaInfo Quota
