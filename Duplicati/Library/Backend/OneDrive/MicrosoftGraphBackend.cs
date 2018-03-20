@@ -168,7 +168,7 @@ namespace Duplicati.Library.Backend
                     string dnsTestFile = string.Format("DNSNameTest-{0}", Guid.NewGuid());
                     UploadSession uploadSession = this.Post<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.m_path, NormalizeSlashes(dnsTestFile)), null);
 
-                    // Cancelling an upload session is done by sending a DELETE to the upload URL
+                    // Canceling an upload session is done by sending a DELETE to the upload URL
                     var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl);
                     var response = this.m_client.SendAsync(request).Await();
                     this.CheckResponse(response);
@@ -177,7 +177,9 @@ namespace Duplicati.Library.Backend
                         {
                             new System.Uri(BASE_ADDRESS).Host,
                             new System.Uri(uploadSession.UploadUrl).Host,
-                        };
+                        }
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
                 }
 
                 return this.dnsNames;
