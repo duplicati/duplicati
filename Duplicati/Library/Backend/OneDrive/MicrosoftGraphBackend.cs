@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 
@@ -68,6 +69,8 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private const int UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE = 320 * 1024;
 
+        private static readonly string USER_AGENT_VERSION = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
         private static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
 
         protected delegate string DescriptionTemplateDelegate(string mssadescription, string mssalink, string msopdescription, string msoplink);
@@ -110,6 +113,7 @@ namespace Duplicati.Library.Backend
             this.m_authenticator = new OAuthHttpMessageHandler(authid, this.ProtocolKey);
             this.m_client = new HttpClient(this.m_authenticator, true);
             this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
+            this.m_client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Duplicati", USER_AGENT_VERSION));
 
             // Extract out the path to the backup root folder from the given URI
             var uri = new Utility.Uri(url);
