@@ -383,6 +383,38 @@ namespace Duplicati.CommandLine.BackendTester
                         }
 
                 }
+
+                // Test quota retrieval
+                IQuotaEnabledBackend quotaEnabledBackend = backend as IQuotaEnabledBackend;
+                if (quotaEnabledBackend != null)
+                {
+                    Console.WriteLine("Checking quota...");
+                    IQuotaInfo quota = null;
+                    bool noException;
+                    try
+                    {
+                        quota = quotaEnabledBackend.Quota;
+                        noException = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("*** Checking quota information failed: {0}", ex);
+                        noException = false;
+                    }
+
+                    if (noException)
+                    {
+                        if (quota != null)
+                        {
+                            Console.WriteLine("Free Space:  {0}", Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace));
+                            Console.WriteLine("Total Space: {0}", Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace));
+                        }
+                        else
+                        {
+                            Console.WriteLine("Unable to retrieve quota information");
+                        }
+                    }
+                }
             }
             finally
             {
