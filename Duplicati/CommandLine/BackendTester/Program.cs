@@ -164,6 +164,7 @@ namespace Duplicati.CommandLine.BackendTester
                 IEnumerable<Library.Interface.IFileEntry> curlist = null;
                 try
                 {
+                    backend.Test();
                     curlist = backend.List();
                 }
                 catch (FolderMissingException fex)
