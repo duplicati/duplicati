@@ -73,6 +73,37 @@ namespace Duplicati.Library.Utility
     public static class FilterGroups
     {
         /// <summary>
+        /// In addition to the default names from the enums, these alternate / shorter names are also available.
+        /// </summary>
+        private static Dictionary<string, FilterGroup> filterGroupAliases = new Dictionary<string, FilterGroup>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "System", FilterGroup.SystemFiles },
+
+                { "OS", FilterGroup.OperatingSystem },
+
+                { "CacheFolders", FilterGroup.CacheFiles },
+                { "Caches", FilterGroup.CacheFiles },
+                { "Cache", FilterGroup.CacheFiles },
+
+                { "TemporaryFiles", FilterGroup.TemporaryFolders },
+                { "TempFolders", FilterGroup.TemporaryFolders },
+                { "TempFiles", FilterGroup.TemporaryFolders },
+                { "Temp", FilterGroup.TemporaryFolders },
+
+                { "Apps", FilterGroup.Applications },
+            };
+
+        /// <summary>
+        /// Gets the list of alternate aliases which can refer to this group.
+        /// </summary>
+        /// <param name="group">Filter group</param>
+        /// <returns>Group aliases</returns>
+        public static IEnumerable<string> GetAliases(FilterGroup group)
+        {
+            return FilterGroups.filterGroupAliases.Where(pair => pair.Value == group).Select(pair => pair.Key);
+        }
+
+        /// <summary>
         /// Helper method that parses a string with a number of options and returns the group that it represents
         /// </summary>
         /// <returns>The filters specified by the group.</returns>
@@ -85,8 +116,11 @@ namespace Duplicati.Library.Utility
             foreach (var f in (filters ?? string.Empty).Split(new char[] { ':', ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 any = true;
-                if (!Enum.TryParse<FilterGroup>(f, true, out var fg))
+                if (!Enum.TryParse<FilterGroup>(f, true, out var fg) &&
+                    !FilterGroups.filterGroupAliases.TryGetValue(f, out fg))
+                {
                     throw new ArgumentException(Strings.Filters.UnknownFilterGroup(f));
+                }
 
                 res |= fg;
             }

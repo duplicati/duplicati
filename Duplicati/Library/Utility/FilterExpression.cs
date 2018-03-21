@@ -133,52 +133,45 @@ namespace Duplicati.Library.Utility
             /// <returns>Group regex</returns>
             private static Regex GetFilterGroupRegex(string filterGroupName)
             {
-                FilterGroup filterGroup;
-                if (Enum.TryParse(filterGroupName, true /* ignoreCase */, out filterGroup))
+                FilterGroup filterGroup = FilterGroups.ParseFilterList(filterGroupName, FilterGroup.None);
+                Regex result;
+                if (FilterEntry.filterGroupRegexCache.TryGetValue(filterGroup, out result))
                 {
-                    Regex result;
-                    if (FilterEntry.filterGroupRegexCache.TryGetValue(filterGroup, out result))
-                    {
-                        return result;
-                    }
-                    else
-                    {
-                        // Get the filter strings for this filter group, and convert them to their regex forms
-                        List<string> regexStrings = FilterGroups.GetFilterStrings(filterGroup)
-                        .Select(filterString =>
-                        {
-                            if (filterString.StartsWith("[", StringComparison.Ordinal) && filterString.EndsWith("]", StringComparison.Ordinal))
-                            {
-                                return filterString.Substring(1, filterString.Length - 2);
-                            }
-                            else
-                            {
-                                return Utility.ConvertGlobbingToRegExp(filterString);
-                            }
-                        })
-                        .ToList();
-
-                        string regexString;
-                        if (regexStrings.Count == 1)
-                        {
-                            regexString = regexStrings.Single();
-                        }
-                        else
-                        {
-                            // If there are multiple regex strings, then they need to be merged by wrapping each in parenthesis and ORing them together
-                            regexString = "(" + string.Join(")|(", regexStrings) + ")";
-                        }
-
-                        result = new Regex(regexString, REGEXP_OPTIONS);
-
-                        FilterEntry.filterGroupRegexCache[filterGroup] = result;
-
-                        return result;
-                    }
+                    return result;
                 }
                 else
                 {
-                    throw new ArgumentException(string.Format("Unknown filter group {0}", filterGroupName));
+                    // Get the filter strings for this filter group, and convert them to their regex forms
+                    List<string> regexStrings = FilterGroups.GetFilterStrings(filterGroup)
+                    .Select(filterString =>
+                    {
+                        if (filterString.StartsWith("[", StringComparison.Ordinal) && filterString.EndsWith("]", StringComparison.Ordinal))
+                        {
+                            return filterString.Substring(1, filterString.Length - 2);
+                        }
+                        else
+                        {
+                            return Utility.ConvertGlobbingToRegExp(filterString);
+                        }
+                    })
+                    .ToList();
+
+                    string regexString;
+                    if (regexStrings.Count == 1)
+                    {
+                        regexString = regexStrings.Single();
+                    }
+                    else
+                    {
+                        // If there are multiple regex strings, then they need to be merged by wrapping each in parenthesis and ORing them together
+                        regexString = "(" + string.Join(")|(", regexStrings) + ")";
+                    }
+
+                    result = new Regex(regexString, REGEXP_OPTIONS);
+
+                    FilterEntry.filterGroupRegexCache[filterGroup] = result;
+
+                    return result;
                 }
             }
             
