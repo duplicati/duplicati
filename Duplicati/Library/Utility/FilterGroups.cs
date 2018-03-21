@@ -235,12 +235,26 @@ namespace Duplicati.Library.Utility
         /// <param name="filters">Filters.</param>
         private static IEnumerable<string> FilterPrefixMatches(IEnumerable<string> filters)
         {
+            // Any paths that start with "?:" or "*:" can refer to a path on any drive.
+            // If we see any of them, then we remember them, so that if we then see a path that starts with an absolute drive letter
+            // ("C:" or "D:") we can remove it if the path matches.
+            HashSet<string> wildcardRootWindowsPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             string prev = null;
             foreach (var n in filters.OrderBy(x => x, Utility.ClientFilenameStringComparer))
-                if (prev != null && prev.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) && n.StartsWith(prev, Utility.ClientFilenameStringComparision))
+            {
+                if (n.StartsWith("?:", StringComparison.Ordinal) || n.StartsWith("*:", StringComparison.Ordinal))
+                {
+                    wildcardRootWindowsPaths.Add(n.Substring(2));
+                }
+
+                if (n.Length > 2 && char.IsLetter(n[0]) && n[1] == ':' && wildcardRootWindowsPaths.Contains(n.Substring(2)))
+                    continue;
+                else if (prev != null && prev.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) && n.StartsWith(prev, Utility.ClientFilenameStringComparision))
                     continue;
                 else
                     yield return prev = n;
+            }
         }
 
         /// <summary>
@@ -294,7 +308,13 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/ntuser.dat*");
 
                 foreach (var s in GetWindowsRegistryFilters() ?? new string[0])
-                    yield return s;
+                {
+                    // If this path refers to the root of a drive, then prepend it with "?:" since that's how Duplicati's root path matching works.
+                    if (s.StartsWith(@"\", StringComparison.Ordinal) || s.StartsWith("/", StringComparison.Ordinal))
+                        yield return "?:" + s;
+                    else
+                        yield return s;
+                }
             }
 
             if (group.HasFlag(FilterGroup.OperatingSystem))
@@ -313,7 +333,7 @@ namespace Duplicati.Library.Utility
                     yield return windir;
 
                     // Also exclude "C:\Windows.old\"
-                    yield return windir.TrimEnd('\\') + ".old\\";
+                    yield return windir.TrimEnd('\\', '/') + ".old";
                 }
             }
 
