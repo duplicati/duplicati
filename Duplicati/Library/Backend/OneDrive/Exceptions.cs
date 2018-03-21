@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 using Duplicati.Library.Utility;
 
@@ -9,6 +11,8 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
 {
     public class MicrosoftGraphException : Exception
     {
+        private static readonly Regex authorizationHeaderRemover = new Regex(@"Authorization:\s*Bearer\s+[A-Za-z0-9+/=]+", RegexOptions.IgnoreCase);
+
         public MicrosoftGraphException(HttpResponseMessage response)
             : this(string.Format("{0}: {1} error from request {2}", response.StatusCode, response.ReasonPhrase, response.RequestMessage.RequestUri), response)
         {
@@ -32,8 +36,14 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         {
             if (response != null)
             {
-                string content = response.Content.ReadAsStringAsync().Await();
-                return string.Format("{0}\n{1}\n{2}", response.RequestMessage, response, JsonConvert.SerializeObject(JsonConvert.DeserializeObject(content), Formatting.Indented));
+                // Start to read the content
+                Task<string> content = response.Content.ReadAsStringAsync();
+
+                // Since the exception message may be saved / sent in logs, we want to prevent the authorization header from being included.
+                // it wouldn't be as bad as recording the username/password in logs, since the token will expire, but it doesn't hurt to be safe.
+                // So we replace anything in the request that looks like the auth header with a safe version.
+                string requestMessage = authorizationHeaderRemover.Replace(response.RequestMessage.ToString(), "Authorization: Bearer ABC...XYZ");
+                return string.Format("{0}\n{1}\n{2}", requestMessage, response, JsonConvert.SerializeObject(JsonConvert.DeserializeObject(content.Await()), Formatting.Indented));
             }
             else
             {
