@@ -531,7 +531,7 @@ namespace Duplicati.Server
                                 string defaultFiltersValue;
                                 if (options.TryGetValue("default-filters", out defaultFiltersValue) || options.TryGetValue("default-filter", out defaultFiltersValue))
                                 {
-                                    defaultFilters = Library.Utility.DefaultFilters.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(defaultFiltersValue ?? string.Empty));
+                                    defaultFilters = Library.Utility.FilterGroups.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(defaultFiltersValue ?? string.Empty));
                                 }
 
                                 var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation), defaultFilters);

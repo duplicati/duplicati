@@ -105,11 +105,7 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
                 tp = tp.Replace("%DEFAULTCOMPRESSIONMODULE%", opts.CompressionModule);
                 tp = tp.Replace("%GENERICMODULES%", string.Join(", ", Library.DynamicLoader.GenericLoader.Keys));
-                
-                tp = tp.Replace("%COMMON_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Common.OrderBy(x => x)));
-                tp = tp.Replace("%WINDOWS_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Windows.OrderBy(x => x)));
-                tp = tp.Replace("%OSX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.OSX.OrderBy(x => x)));
-                tp = tp.Replace("%LINUX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Linux.OrderBy(x => x)));
+                tp = tp.Replace("%FILTER_GROUPS%", Library.Utility.FilterGroups.GetOptionDescriptions(4, true));
 
                 if (Library.Utility.Utility.IsClientWindows)
                 {
