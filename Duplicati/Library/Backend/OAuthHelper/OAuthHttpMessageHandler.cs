@@ -30,7 +30,7 @@ namespace Duplicati.Library
         /// </summary>
         public const string DISABLE_AUTHENTICATION_PROPERTY = "OAuthHttpMessageHandler_DisableAuthentication";
 
-        private OAuthHelper m_oauth;
+        private readonly OAuthHelper m_oauth;
 
         public OAuthHttpMessageHandler(string authid, string protocolKey)
         {
