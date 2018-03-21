@@ -53,14 +53,9 @@ namespace Duplicati.Library.Utility
         Applications = 0x10,
 
         /// <summary>
-        /// Meta option that includes all the other filters
-        /// </summary>
-        All = SystemFiles | OperatingSystem | CacheFiles | TemporaryFolders | Applications,
-
-        /// <summary>
         /// Meta option that specifies the default exclude filters
         /// </summary>
-        DefaultExclude = All,
+        DefaultExclude = SystemFiles | OperatingSystem | CacheFiles | TemporaryFolders | Applications,
 
         /// <summary>
         /// Meta option that specifies the default include filters
@@ -151,9 +146,9 @@ namespace Duplicati.Library.Utility
             foreach (var e in Enum.GetValues(typeof(FilterGroup)))
             {
                 var ed = (FilterGroup)e;
-                if (defaultExclude.HasFlag(ed) && ed != defaultExclude && ed != FilterGroup.All && ed != FilterGroup.None)
+                if (defaultExclude.HasFlag(ed) && ed != defaultExclude && ed != FilterGroup.None)
                     defaultExcludeValues.Add(e.ToString());
-                if (defaultInclude.HasFlag(ed) && ed != defaultInclude && ed != FilterGroup.All && ed != FilterGroup.None)
+                if (defaultInclude.HasFlag(ed) && ed != defaultInclude && ed != FilterGroup.None)
                     defaultIncludeValues.Add(e.ToString());
             }
 
@@ -161,9 +156,8 @@ namespace Duplicati.Library.Utility
             
             var sb = new System.Text.StringBuilder();
             sb.AppendLine(ind + LC.L("{0}: Selects no filters.", nameof(FilterGroup.None)));
-            sb.AppendLine(ind + LC.L("{0}: Selects all the filter groups.", nameof(FilterGroup.All)));
-            sb.AppendLine(ind + LC.L("{0}: A set of default exclude filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultExclude), FilterGroup.DefaultExclude == FilterGroup.All ? nameof(FilterGroup.All) : string.Join(",", defaultExcludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
-            sb.AppendLine(ind + LC.L("{0}: A set of default include filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultInclude), FilterGroup.DefaultInclude == FilterGroup.All ? nameof(FilterGroup.All) : string.Join(",", defaultIncludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
+            sb.AppendLine(ind + LC.L("{0}: A set of default exclude filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultExclude), string.Join(",", defaultExcludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
+            sb.AppendLine(ind + LC.L("{0}: A set of default include filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultInclude), string.Join(",", defaultIncludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
 
             if (includevalues)
                 sb.AppendLine();
