@@ -58,9 +58,14 @@ namespace Duplicati.Library.Utility
         All = SystemFiles | OperatingSystem | CacheFiles | TemporaryFolders | Applications,
 
         /// <summary>
-        /// Meta option that specifies the default filters
+        /// Meta option that specifies the default exclude filters
         /// </summary>
-        Default = All
+        DefaultExclude = All,
+
+        /// <summary>
+        /// Meta option that specifies the default include filters
+        /// </summary>
+        DefaultInclude = None,
     }
 
     /// <summary>
@@ -109,7 +114,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The filters specified by the group.</returns>
         /// <param name="filters">The filter string.</param>
         /// <param name="defaultValue">The value to use if there are no filter groups specified in the string</param>
-        public static FilterGroup ParseFilterList(string filters, FilterGroup defaultValue = FilterGroup.Default)
+        public static FilterGroup ParseFilterList(string filters, FilterGroup defaultValue = FilterGroup.None)
         {
             var res = FilterGroup.None;
             var any = false;
@@ -132,20 +137,24 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Gets a string that describes the default filter options
+        /// Gets a string that describes the filter group options
         /// </summary>
         /// <returns>The option descriptions.</returns>
         /// <param name="indentation">The string indentation to use.</param>
         /// <param name="includevalues">If set to <c>true</c> include actual filter paths in the output.</param>
         public static string GetOptionDescriptions(int indentation, bool includevalues)
         {
-            var def = FilterGroup.Default;
-            var defaultvalues = new List<string>();
+            var defaultExclude = FilterGroup.DefaultExclude;
+            var defaultExcludeValues = new List<string>();
+            var defaultInclude = FilterGroup.DefaultInclude;
+            var defaultIncludeValues = new List<string>();
             foreach (var e in Enum.GetValues(typeof(FilterGroup)))
             {
                 var ed = (FilterGroup)e;
-                if (def.HasFlag(ed) && ed != def && ed != FilterGroup.All && ed != FilterGroup.None)
-                    defaultvalues.Add(e.ToString());
+                if (defaultExclude.HasFlag(ed) && ed != defaultExclude && ed != FilterGroup.All && ed != FilterGroup.None)
+                    defaultExcludeValues.Add(e.ToString());
+                if (defaultInclude.HasFlag(ed) && ed != defaultInclude && ed != FilterGroup.All && ed != FilterGroup.None)
+                    defaultIncludeValues.Add(e.ToString());
             }
 
             var ind = new string(' ', indentation);
@@ -153,7 +162,8 @@ namespace Duplicati.Library.Utility
             var sb = new System.Text.StringBuilder();
             sb.AppendLine(ind + LC.L("{0}: Selects no filters.", nameof(FilterGroup.None)));
             sb.AppendLine(ind + LC.L("{0}: Selects all the filter groups.", nameof(FilterGroup.All)));
-            sb.AppendLine(ind + LC.L("{0}: A set of default filters, currently evaluates to: {1}.", nameof(FilterGroup.Default), string.Join(",", defaultvalues)));
+            sb.AppendLine(ind + LC.L("{0}: A set of default exclude filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultExclude), FilterGroup.DefaultExclude == FilterGroup.All ? nameof(FilterGroup.All) : string.Join(",", defaultExcludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
+            sb.AppendLine(ind + LC.L("{0}: A set of default include filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultInclude), FilterGroup.DefaultInclude == FilterGroup.All ? nameof(FilterGroup.All) : string.Join(",", defaultIncludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
 
             if (includevalues)
                 sb.AppendLine();
