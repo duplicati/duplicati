@@ -168,7 +168,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The filters from the group.</returns>
         /// <param name="group">The group to use.</param>
-        private static IEnumerable<string> GetFilterStrings(FilterGroup group)
+        public static IEnumerable<string> GetFilterStrings(FilterGroup group)
         {
             IEnumerable<string> osFilters;
 
