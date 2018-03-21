@@ -95,7 +95,16 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.MicrosoftGraph.MissingAuthId(OAuthHelper.OAUTH_LOGIN_URL(this.ProtocolKey)), "MicrosoftGraphBackendMissingAuthId");
 
             string fragmentSizeStr;
-            if (!(options.TryGetValue(UPLOAD_SESSION_FRAGMENT_SIZE_OPTION, out fragmentSizeStr) && int.TryParse(fragmentSizeStr, out this.fragmentSize)))
+            if (options.TryGetValue(UPLOAD_SESSION_FRAGMENT_SIZE_OPTION, out fragmentSizeStr) && int.TryParse(fragmentSizeStr, out this.fragmentSize))
+            {
+                // Make sure the fragment size is a multiple of the desired multiple size.
+                // If it isn't, we round down to the nearest multiple below it.
+                this.fragmentSize = (this.fragmentSize / UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE) * UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE;
+
+                // Make sure the fragment size isn't larger than the maximum
+                this.fragmentSize = Math.Min(this.fragmentSize, UPLOAD_SESSION_FRAGMENT_MAX_SIZE);
+            }
+            else
             {
                 this.fragmentSize = UPLOAD_SESSION_FRAGMENT_DEFAULT_SIZE;
             }
