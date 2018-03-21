@@ -167,42 +167,36 @@ namespace Duplicati.Library.Utility
 
             if (includevalues)
                 sb.AppendLine();
+
+            Action<FilterGroup, bool> appendAliasesAndValues = (filterGroup, lastLine) =>
+            {
+                if (includevalues)
+                {
+                    if (FilterGroups.GetAliases(filterGroup).Any())
+                    {
+                        sb.AppendLine(ind + LC.L(" Aliases: {0}", string.Join(",", FilterGroups.GetAliases(filterGroup).OrderBy(x => x, StringComparer.OrdinalIgnoreCase))));
+                    }
+                    foreach (var v in GetFilterStrings(filterGroup))
+                    {
+                        sb.AppendLine(ind + "  " + v);
+                    }
+                    if (!lastLine)
+                    {
+                        sb.AppendLine();
+                    }
+                }
+            };
             
-            sb.AppendLine(ind + LC.L("{0}: Files that are owned by the system or not suited to be backed up. This includes any operating system reported protected files. Most users should at least apply these filters.", Library.Utility.FilterGroup.SystemFiles));
-            if (includevalues)
-            {
-                foreach (var v in GetFilterStrings(FilterGroup.SystemFiles))
-                    sb.AppendLine(ind + "  " + v);
-                sb.AppendLine();
-            }
-            sb.AppendLine(ind + LC.L("{0}: Files that belong to the operating system. These files are restored when the operating system is re-installed.", Library.Utility.FilterGroup.OperatingSystem));
-            if (includevalues)
-            {
-                foreach (var v in GetFilterStrings(FilterGroup.OperatingSystem))
-                    sb.AppendLine(ind + "  " + v);
-                sb.AppendLine();
-            }
-            sb.AppendLine(ind + LC.L("{0}: Files and folders that are known to be storage of temporary data.", Library.Utility.FilterGroup.TemporaryFolders));
-            if (includevalues)
-            {
-                foreach (var v in GetFilterStrings(FilterGroup.TemporaryFolders))
-                    sb.AppendLine(ind + "  " + v);
-                sb.AppendLine();
-            }
-            sb.AppendLine(ind + LC.L("{0}: Files and folders that are known cache locations for the operating system and various applications", Library.Utility.FilterGroup.CacheFiles));
-            if (includevalues)
-            {
-                foreach (var v in GetFilterStrings(FilterGroup.CacheFiles))
-                    sb.AppendLine(ind + "  " + v);
-                sb.AppendLine();
-            }
-            sb.AppendLine(ind + LC.L("{0}: Installed programs and their libraries, but not their settings.", Library.Utility.FilterGroup.Applications));
-            if (includevalues)
-            {
-                foreach (var v in GetFilterStrings(FilterGroup.Applications))
-                    sb.AppendLine(ind + "  " + v);
-                sb.AppendLine();
-            }
+            sb.AppendLine(ind + LC.L("{0}: Files that are owned by the system or not suited to be backed up. This includes any operating system reported protected files. Most users should at least apply these filters.", nameof(FilterGroup.SystemFiles)));
+            appendAliasesAndValues(FilterGroup.SystemFiles, false);
+            sb.AppendLine(ind + LC.L("{0}: Files that belong to the operating system. These files are restored when the operating system is re-installed.", nameof(FilterGroup.OperatingSystem)));
+            appendAliasesAndValues(FilterGroup.OperatingSystem, false);
+            sb.AppendLine(ind + LC.L("{0}: Files and folders that are known to be storage of temporary data.", nameof(FilterGroup.TemporaryFolders)));
+            appendAliasesAndValues(FilterGroup.TemporaryFolders, false);
+            sb.AppendLine(ind + LC.L("{0}: Files and folders that are known cache locations for the operating system and various applications", nameof(FilterGroup.CacheFiles)));
+            appendAliasesAndValues(FilterGroup.CacheFiles, false);
+            sb.AppendLine(ind + LC.L("{0}: Installed programs and their libraries, but not their settings.", nameof(FilterGroup.Applications)));
+            appendAliasesAndValues(FilterGroup.Applications, true);
 
             return sb.ToString();
         }

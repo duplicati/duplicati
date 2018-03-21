@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
+using FilterGroup = Duplicati.Library.Utility.FilterGroup;
+
 namespace Duplicati.CommandLine
 {
     public static class Help
@@ -105,7 +107,9 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
                 tp = tp.Replace("%DEFAULTCOMPRESSIONMODULE%", opts.CompressionModule);
                 tp = tp.Replace("%GENERICMODULES%", string.Join(", ", Library.DynamicLoader.GenericLoader.Keys));
-                tp = tp.Replace("%FILTER_GROUPS%", Library.Utility.FilterGroups.GetOptionDescriptions(4, true));
+                var metaGroupNames = new[] { nameof(FilterGroup.All), nameof(FilterGroup.None), nameof(FilterGroup.DefaultExclude), nameof(FilterGroup.DefaultInclude), };
+                tp = tp.Replace("%FILTER_GROUPS_SHORT%", string.Join(Environment.NewLine + "  ", metaGroupNames.Concat(Enum.GetNames(typeof(FilterGroup)).Except(metaGroupNames, StringComparer.OrdinalIgnoreCase).OrderBy(x => x, StringComparer.OrdinalIgnoreCase)).Select(group => "{" + group + "}")));
+                tp = tp.Replace("%FILTER_GROUPS_LONG%", Library.Utility.FilterGroups.GetOptionDescriptions(4, true));
 
                 if (Library.Utility.Utility.IsClientWindows)
                 {
