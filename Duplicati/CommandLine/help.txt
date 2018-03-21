@@ -434,8 +434,6 @@ Duplicati can apply globbing and regex filter rules to backup and restore specif
     Adds an include filter
   --exclude=<filter>
     Adds an exclude filter
-  --default-filters=<filter-sets>
-    Which default filter sets should be used. Valid sets are "Windows", "OSX", "Linux", and "All".
 
 Inside scripts and the commandline --parameters-file, where multiple filters are supplied with a single option, filters must be prefixed with either a plus (+) or a (-), for include and exclude respectively. Example:
   +*.txt%PATH_SEPARATOR%-[.*\.xyz]%PATH_SEPARATOR%+*

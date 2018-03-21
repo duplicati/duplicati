@@ -225,27 +225,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Gets the filters for a specific group
-        /// </summary>
-        /// <returns>The filters from the group.</returns>
-        /// <param name="groups">The groups to use.</param>
-        public static IEnumerable<IFilter> GetFilters(string groups)
-        {
-            return GetFilters(ParseFilterList(groups));
-        }
-
-        /// <summary>
-        /// Gets the filters for a specific group
-        /// </summary>
-        /// <returns>The filters from the group.</returns>
-        /// <param name="group">The group to use.</param>
-        public static IEnumerable<IFilter> GetFilters(FilterGroup group)
-        {
-            return GetFilterStrings(group)
-                    .Select(x => new FilterExpression(x, false));
-        }
-
-        /// <summary>
         /// Filters all items that have a prefix
         /// </summary>
         /// <returns>The prefix matches.</returns>

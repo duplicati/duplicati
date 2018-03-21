@@ -55,11 +55,6 @@ namespace Duplicati.Library.Utility
                         return false;
                     }
                 }
-                else if (key.Equals("default-filters", StringComparison.OrdinalIgnoreCase) || key.Equals("default-filter", StringComparison.OrdinalIgnoreCase))
-                {
-                    m_filters.AddRange(FilterGroups.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(value ?? string.Empty)));
-                    return false;
-                }
 
                 if (callbackHandler != null)
                     return callbackHandler(key, value);
