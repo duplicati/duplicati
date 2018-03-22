@@ -50,6 +50,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Stores files in a Microsoft Office 365 Group via the Microsoft Graph API. Allowed formats are ""sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder"" (with ""//"" being optionally used to indicate the root document folder), or just ""sharepoint://subfolder"" (in which case you must also explicitly specify the SharePoint site's ID via --site-id). Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3})", mssadescription, mssalink, msopdescription, msoplink); }
         public static string GroupIdShort { get { return LC.L(@"ID of the group"); } }
         public static string GroupIdLong { get { return LC.L(@"ID of the group to store data in"); } }
+        public static string GroupEmailShort { get { return LC.L(@"Email of the group"); } }
+        public static string GroupEmailLong { get { return LC.L(@"Email of the group to store data in"); } }
         public static string MissingGroupId { get { return LC.L(@"No group ID was provided"); } }
         public static string NoGroupsWithEmail(string email) { return LC.L(@"No groups were found with the given email address: {0}", email); }
         public static string MultipleGroupsWithEmail(string email) { return LC.L(@"Multiple groups were found with the given email address: {0}", email); }
