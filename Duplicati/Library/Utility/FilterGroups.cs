@@ -260,7 +260,13 @@ namespace Duplicati.Library.Utility
         {
             if (group.HasFlag(FilterGroup.CacheFiles))
             {
+                // TODO: The control_dir_v2 might be under a different path for OEM branded instances.
+                // However, the AppName is loaded and controlled by the AutoUpdater assembly, which we can't reference here without an ugly circular dependency or dependency injection.
+                // What is the best way to solve this?
+                yield return FilterGroups.CreateWildcardFilter(@"*/Duplicati/control_dir_v2"); // Duplicati uses this directory to store lock files and communicate with other processes.
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/*cache*");
+                yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/*LOCK*"); // Chrome appears to lock various files under it's settings folder using files named 'LOCK' or 'lockfile'
+                yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/*Current*"); // 'Current Session' and 'Current Tabs' appear to be locked while running Chrome
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/Safe Browsing*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/iPhoto Library/iPod Photo Cache/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Mozilla/Firefox/*cache*");
@@ -291,8 +297,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/MSOCache*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/NTUSER*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/RECYCLER/");
-                yield return FilterGroups.CreateWildcardFilter(@"*UsrClass.dat");
-                yield return FilterGroups.CreateWildcardFilter(@"*UsrClass.dat.LOG");
+                yield return FilterGroups.CreateWildcardFilter(@"*UsrClass.dat*");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/hiberfil.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/pagefile.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/swapfile.sys");
@@ -333,17 +338,28 @@ namespace Duplicati.Library.Utility
 
             if (group.HasFlag(FilterGroup.CacheFiles))
             {
-                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Apple Computer/Mobile Sync/");
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/AMD/DxCache/"); // Appears to be a shader cache folder for AMD video card drivers
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Apple Computer/Mobile Sync/");
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Comms/UnistoreDB/"); // Looks like storage about music / pictures for universal store apps
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/ElevatedDiagnostics/"); // Seems to be used by sfc tool and Windows troubleshooting
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/VSCommon/*SQM*"); // SQM appears to be 'service quality management', and it looks like these files report things about Visual Studio installation: https://stackoverflow.com/questions/23050561/what-permissions-policies-are-needed-to-support-loaduserprofile-true-for-new-app
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/Explorer/"); // Stores icon and thumbnail caches
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/INetCache/"); // 
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/UPPS/"); // Not sure what this one is, but seems to be a common one to fail to backup: http://support.wdc.com/knowledgebase/answer.aspx?ID=17969&lang=en
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/WebCache*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows Store/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Packages/"); // https://superuser.com/questions/490925/explain-windows-8-windows-store-appdata-packages-and-what-to-backup
                 yield return FilterGroups.CreateWildcardFilter(@"*/Application Data/Apple Computer/Mobile Sync/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Application Data/Application Data*");
+                yield return FilterGroups.CreateWildcardFilter(@"*/Dropbox/Dropbox.exe.log"); // Dropbox log file, which may be kept open by Dropbox while it is running
+                yield return FilterGroups.CreateWildcardFilter(@"*/Dropbox/QuitReports/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies-journal");
-                yield return FilterGroups.CreateWildcardFilter(@"*/Thumbs.db");
+                yield return FilterGroups.CreateWildcardFilter(@"*/Local Settings/History/");
+                yield return FilterGroups.CreateWildcardFilter(@"*/OneDrive/.849C9593-D756-4E56-8D6E-42412F2A707B"); // This looks like a hidden cache file for the OneDrive service: https://onedrive.uservoice.com/forums/262982-onedrive/suggestions/10059663-get-rid-of-undeleteable-849c9593-d756-4e56-8d6e
                 yield return FilterGroups.CreateWildcardFilter(@"*/Safari/Library/Caches/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Temporary Internet Files/");
-                yield return FilterGroups.CreateWildcardFilter(@"*/Local Settings/History/");
+                yield return FilterGroups.CreateWildcardFilter(@"*/Thumbs.db");
 
                 yield return Environment.GetFolderPath(Environment.SpecialFolder.History);
                 yield return Environment.GetFolderPath(Environment.SpecialFolder.InternetCache);
