@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Lock that protects the options collection
         /// </summary>
-        protected object m_lock = new object();
+        protected readonly object m_lock = new object();
 
         protected Dictionary<string, string> m_options;
 
@@ -257,7 +257,8 @@ namespace Duplicati.Library.Main
                     "compression-extension-file",
                     "full-remote-verification",
                     "disable-synthetic-filelist",
-                    "disable-file-scanner"
+                    "disable-file-scanner",
+                    "disable-on-battery"
                 };
             }
         }
@@ -543,6 +544,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
+                    new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
                 });
 
                 return lst;
@@ -1888,6 +1890,15 @@ namespace Duplicati.Library.Main
         public bool DisableFileScanner
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-file-scanner"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating whether the backup should be disabled when on battery power.
+        /// </summary>
+        /// <value><c>true</c> if the backup should be disabled when on battery power; otherwise, <c>false</c>.</value>
+        public bool DisableOnBattery
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-on-battery"); }
         }
 
         /// <summary>

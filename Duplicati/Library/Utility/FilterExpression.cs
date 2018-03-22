@@ -375,7 +375,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The lock object for protecting access to the lookup table
         /// </summary>
-        private static object _matchLock = new object();
+        private readonly static object _matchLock = new object();
 
         /// <summary>
         /// Utility function to match a filter with a default fall-through value

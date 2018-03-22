@@ -143,7 +143,7 @@ namespace Duplicati.Server
             private int m_tail;
             private int m_length;
             private int m_key;
-            private object m_lock = new object();
+            private readonly object m_lock = new object();
 
             public RingBuffer(int size, IEnumerable<T> initial = null)
             {
@@ -227,7 +227,7 @@ namespace Duplicati.Server
         }
 
         private DateTime[] m_timeouts;
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         private volatile bool m_anytimeouts = false;
         private RingBuffer<LogEntry> m_buffer;
 

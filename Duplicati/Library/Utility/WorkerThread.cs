@@ -33,7 +33,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Locking object for shared data
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         /// <summary>
         /// The wait event
         /// </summary>

@@ -30,7 +30,7 @@ namespace Duplicati.Service
         private Action m_onStoppedAction;
         private Action<string, bool> m_reportMessage;
 
-        private object m_writelock = new object();
+        private readonly object m_writelock = new object();
         private readonly string[] m_cmdargs;
 
 

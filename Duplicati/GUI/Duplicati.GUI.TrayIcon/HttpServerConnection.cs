@@ -67,7 +67,7 @@ namespace Duplicati.GUI.TrayIcon
 
         public IServerStatus Status { get { return m_status; } }
 
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         private Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
 
         public HttpServerConnection(Uri server, string password, bool saltedpassword, Program.PasswordSource passwordSource, Dictionary<string, string> options)

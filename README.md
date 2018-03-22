@@ -42,6 +42,8 @@ Support
 
 Duplicati is supported by an [active community and you can reach them via our forum](https://forum.duplicati.com).
 
+We have a great [Duplicati manual](https://docs.duplicati.com) that you can also [contribute to](https://github.com/kees-z/DuplicatiDocs).
+
 Features
 ========
 
