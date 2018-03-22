@@ -202,7 +202,13 @@ namespace Duplicati.Library.Backend
                 Drive driveInfo = this.Get<Drive>(this.DrivePrefix);
                 if (driveInfo.Quota != null)
                 {
-                    return new QuotaInfo(driveInfo.Quota.Total, driveInfo.Quota.Remaining);
+                    // Some sources (SharePoint for example) seem to return 0 for these values even when the quota isn't exceeded..
+                    // As a special test, if all the returned values are 0, we pretend that no quota was reported.
+                    // This way we don't send spurious warnings because the quota looks like it is exceeded.
+                    if (driveInfo.Quota.Total != 0 || driveInfo.Quota.Remaining != 0 || driveInfo.Quota.Used != 0)
+                    {
+                        return new QuotaInfo(driveInfo.Quota.Total, driveInfo.Quota.Remaining);
+                    }
                 }
 
                 return null;
