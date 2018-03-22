@@ -127,9 +127,7 @@ namespace Duplicati.Library.Backend
             this.m_client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Duplicati", USER_AGENT_VERSION));
 
             // Extract out the path to the backup root folder from the given URI
-            var uri = new Utility.Uri(url);
-
-            this.m_path = NormalizeSlashes(Utility.Uri.UrlDecode(uri.HostAndPath));
+            this.m_path = NormalizeSlashes(this.GetRootPathFromUrl(url));
         }
 
         public abstract string ProtocolKey { get; }
@@ -449,39 +447,25 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        /// <summary>
-        /// Normalizes the slashes in a url fragment. For example:
-        ///   "" => ""
-        ///   "test" => "/test"
-        ///   "test/" => "/test"
-        ///   "a\b" => "/a/b"
-        /// </summary>
-        /// <param name="url">Url fragment to normalize</param>
-        /// <returns>Normalized fragment</returns>
-        private static string NormalizeSlashes(string url)
+        protected virtual string GetRootPathFromUrl(string url)
         {
-            url = url.Replace('\\', '/');
+            // Extract out the path to the backup root folder from the given URI
+            var uri = new Utility.Uri(url);
 
-            if (url.Length != 0 && !url.StartsWith("/", StringComparison.Ordinal))
-                url = "/" + url;
-
-            if (url.EndsWith("/", StringComparison.Ordinal))
-                url = url.Substring(0, url.Length - 1);
-
-            return url;
+            return Utility.Uri.UrlDecode(uri.HostAndPath);
         }
 
-        private T Get<T>(string url)
+        protected T Get<T>(string url)
         {
             return this.SendRequest<T>(HttpMethod.Get, url);
         }
 
-        private T Post<T>(string url, T body)
+        protected T Post<T>(string url, T body)
         {
             return this.SendRequest(HttpMethod.Post, url, body);
         }
 
-        private T Patch<T>(string url, T body)
+        protected T Patch<T>(string url, T body)
         {
             return this.SendRequest(PatchMethod, url, body);
         }
@@ -550,6 +534,28 @@ namespace Duplicati.Library.Backend
             {
                 return this.m_serializer.Deserialize<T>(jsonReader);
             }
+        }
+
+        /// <summary>
+        /// Normalizes the slashes in a url fragment. For example:
+        ///   "" => ""
+        ///   "test" => "/test"
+        ///   "test/" => "/test"
+        ///   "a\b" => "/a/b"
+        /// </summary>
+        /// <param name="url">Url fragment to normalize</param>
+        /// <returns>Normalized fragment</returns>
+        private static string NormalizeSlashes(string url)
+        {
+            url = url.Replace('\\', '/');
+
+            if (url.Length != 0 && !url.StartsWith("/", StringComparison.Ordinal))
+                url = "/" + url;
+
+            if (url.EndsWith("/", StringComparison.Ordinal))
+                url = url.Substring(0, url.Length - 1);
+
+            return url;
         }
 
         private StringContent PrepareContent<T>(T body)

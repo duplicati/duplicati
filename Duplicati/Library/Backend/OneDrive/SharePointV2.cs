@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
+using Duplicati.Library.Backend.MicrosoftGraph;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
@@ -9,21 +13,31 @@ namespace Duplicati.Library.Backend
         private const string SITE_ID_OPTION = "site-id";
 
         private readonly string drivePath;
+        private string siteId = null;
 
         public SharePointV2() { } // Constructor needed for dynamic loading to find it
 
         public SharePointV2(string url, Dictionary<string, string> options)
             : base(url, options)
         {
-            string siteId;
-            if (options.TryGetValue(SITE_ID_OPTION, out siteId))
+            // Check to see if a site ID was explicitly provided
+            string siteIdOption;
+            if (options.TryGetValue(SITE_ID_OPTION, out siteIdOption))
             {
-                this.drivePath = string.Format("/sites/{0}", siteId);
+                if (!string.IsNullOrEmpty(this.siteId) && !string.Equals(this.siteId, siteIdOption))
+                {
+                    throw new UserInformationException(Strings.SharePointV2.ConflictingSiteId(siteIdOption, this.siteId), "SharePointConflictingSiteId");
+                }
+
+                this.siteId = siteIdOption;
             }
-            else
+
+            if (string.IsNullOrEmpty(this.siteId))
             {
                 throw new UserInformationException(Strings.SharePointV2.MissingSiteId, "SharePointMissingSiteId");
             }
+
+            this.drivePath = string.Format("/sites/{0}/drive", this.siteId);
         }
 
         public override string ProtocolKey
@@ -58,6 +72,83 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(SITE_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.SharePointV2.SiteIdShort, Strings.SharePointV2.SiteIdLong),
                 };
             }
+        }
+
+        /// <summary>
+        /// This method takes an input URL, which could be either in the format that the old SharePoint backend accepted or
+        /// just the host and path (effectively, just the path) that the graph base backend expects,
+        /// and converts it to just the local path within the drive.
+        /// 
+        /// At the same time, if the given URL is in the form of a full SharePoint site URL, then it also determines the site-id and stores it.
+        /// </summary>
+        /// <param name="url">Input URL</param>
+        /// <returns>Path within the drive</returns>
+        protected override string GetRootPathFromUrl(string url)
+        {
+            Uri uri = new Uri(url);
+            SharePointSite site = this.GetSharePointSite(uri);
+            if (site != null)
+            {
+                // Get the web URL of the site's main drive
+                try
+                {
+                    Drive drive = this.Get<Drive>(string.Format("{0}/sites/{1}/drive", this.ApiVersion, site.Id));
+
+                    this.siteId = site.Id;
+                    Uri driveWebUrl = new Uri(drive.WebUrl);
+
+                    // Make sure to replace any "//" in the original path with "/", so the substrings line up.
+                    return uri.LocalPath.Replace("//", "/").Substring(driveWebUrl.LocalPath.Length);
+                }
+                catch (MicrosoftGraphException)
+                {
+                    // Couldn't get the drive info, so assume the URL we were given isn't actually a full SharePoint site.
+                }
+            }
+
+            return base.GetRootPathFromUrl(url);
+        }
+
+        private SharePointSite GetSharePointSite(Uri url)
+        {
+            UriBuilder uri = new UriBuilder(url);
+
+            // We can get a SharePoint site's info by querying /v1.0/sites/{hostname}:{siteWebPath}.
+            // Since this full URL likely has the web path as some subpart of it, we check against each subpath to see if that is a site,
+            // and if it is, we record the site ID.
+            string requestBase = string.Format("{0}/sites/{1}", this.ApiVersion, uri.Host);
+
+            // Just like the original SharePoint backend, use the "//" as a hint at where the site might be
+            int siteHint = uri.Path.IndexOf("//");
+            if (siteHint >= 0)
+            {
+                try
+                {
+                    string request = string.Format("{0}:/{1}", requestBase, uri.Path.Substring(0, siteHint));
+                    return this.Get<SharePointSite>(request);
+                }
+                catch (MicrosoftGraphException)
+                {
+                    // This isn't the right path
+                }
+            }
+
+            string[] pathPieces = uri.Path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = pathPieces.Length; i > 0; i--)
+            {
+                try
+                {
+                    string request = string.Format("{0}:/{1}", requestBase, string.Join("/", pathPieces.Take(i)));
+                    return this.Get<SharePointSite>(request);
+                }
+                catch (MicrosoftGraphException)
+                {
+                    // This isn't the right path
+                }
+            }
+
+            // Couldn't find the site
+            return null;
         }
     }
 }

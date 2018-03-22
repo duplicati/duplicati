@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -122,7 +123,7 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
 
         [JsonProperty("state", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public QuotaState State { get; set; }
+        public QuotaState? State { get; set; }
     }
 
     public enum DriveType
@@ -514,5 +515,38 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
 
         [JsonProperty("item", NullValueHandling = NullValueHandling.Ignore)]
         public DriveItem Item { get; set; }
+    }
+
+    public class SharePointSite : BaseItem
+    {
+    }
+
+    public class Group : BaseItem
+    {
+        [JsonProperty("mail", NullValueHandling = NullValueHandling.Ignore)]
+        public string Mail { get; set; }
+
+        [JsonProperty("proxyAddresses", NullValueHandling = NullValueHandling.Ignore)]
+        public string[] ProxyAddresses { get; set; }
+
+        [JsonProperty("mailNickname", NullValueHandling = NullValueHandling.Ignore)]
+        public string MailNickname { get; set; }
+
+        [JsonProperty("groupTypes", NullValueHandling = NullValueHandling.Ignore)]
+        public string[] GroupTypes { get; set; }
+
+        [JsonIgnore]
+        public bool IsUnifiedGroup
+        {
+            get
+            {
+                if (this.GroupTypes != null)
+                {
+                    return this.GroupTypes.Any(type => string.Equals("Unified", type, StringComparison.OrdinalIgnoreCase));
+                }
+
+                return false;
+            }
+        }
     }
 }
