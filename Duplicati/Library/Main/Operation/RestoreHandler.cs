@@ -494,7 +494,7 @@ namespace Duplicati.Library.Main.Operation
                             catch (Exception ex)
                             {
                                 fileErrors++;
-                                Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, ex.Message);
+                                Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "{0}", ex.Message);
                                 if (ex is System.Threading.ThreadAbortException)
                                     throw;
                             }
