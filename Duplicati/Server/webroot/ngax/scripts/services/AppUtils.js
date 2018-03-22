@@ -142,8 +142,8 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             name: gettextCatalog.getString('Exclude file'),
             key: '-path',
             prefix: '-',
-            exclude: ['*', '?'],
-            rx: '\\-([^\\[\\*\\?]+)'
+            exclude: ['*', '?', '{'],
+            rx: '\\-([^\\[\\{\\*\\?]+)'
         }, {
             name: gettextCatalog.getString('Exclude file extension'),
             key: '-ext',
@@ -159,6 +159,11 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             key: '+[]',
             prefix: '+[',
             suffix: ']'
+        }, {
+            name: gettextCatalog.getString('Exclude filter group'),
+            key: '-{}',
+            prefix: '-{',
+            suffix: '}'
         }, {
             name: gettextCatalog.getString('Include expression'),
             key: '+',
