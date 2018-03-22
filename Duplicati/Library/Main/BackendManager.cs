@@ -828,7 +828,7 @@ namespace Duplicati.Library.Main
                     {
                         using (var ss = new ShaderStream(nextTierWriter, false))
                         {
-                            using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                            using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
                             using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                             {
                                 taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
@@ -913,7 +913,7 @@ namespace Duplicati.Library.Main
                     using (var hs = GetFileHasherStream(fs, System.Security.Cryptography.CryptoStreamMode.Write, out getFileHash))
                     using (var ss = new ShaderStream(hs, true))
                     {
-                        using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                        using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
                         using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
                         { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
                         ss.Flush();
