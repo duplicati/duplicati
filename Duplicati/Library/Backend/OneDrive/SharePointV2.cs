@@ -86,6 +86,16 @@ namespace Duplicati.Library.Backend
         protected override string GetRootPathFromUrl(string url)
         {
             Uri uri = new Uri(url);
+
+            // If the user gave a URL like "https://{tenant}.sharepoint.com/path" in the UI,
+            // it might appear here as "sharepoint://https://{tenant}.sharepoint.com/path".
+            // If that's the case, the URIs Host will be https, and we should create a new URI without it.
+            if (string.Equals(uri.Host, "https", StringComparison.OrdinalIgnoreCase) || string.Equals(uri.Host, "http", StringComparison.OrdinalIgnoreCase))
+            {
+                // LocalPath will already be prefixed by "//", due to the https:// part.
+                uri = new Uri(string.Format("{0}:{1}", uri.Scheme, uri.LocalPath));
+            }
+
             SharePointSite site = this.GetSharePointSite(uri);
             if (site != null)
             {
