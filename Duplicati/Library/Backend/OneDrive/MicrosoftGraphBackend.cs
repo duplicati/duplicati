@@ -376,6 +376,9 @@ namespace Duplicati.Library.Backend
                         try
                         {
                             response = this.m_client.SendAsync(request).Await();
+
+                            // Note: On the last request, the json result includes the default properties of the item that was uploaded
+                            var result = this.ParseResponse<UploadSession>(response);
                         }
                         catch (MicrosoftGraphException ex)
                         {
@@ -410,9 +413,6 @@ namespace Duplicati.Library.Backend
                                 throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
                             }
                         }
-
-                        // Note: On the last request, the json result includes the default properties of the item that was uploaded
-                        var result = this.ParseResponse<UploadSession>(response);
 
                         // If we successfully sent this piece, then we can break out of the retry loop
                         break;
