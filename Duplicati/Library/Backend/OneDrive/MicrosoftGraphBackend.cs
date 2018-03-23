@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 
@@ -69,15 +68,12 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private const int UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE = 320 * 1024;
 
-        private static readonly string USER_AGENT_VERSION = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
         private static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
 
         protected delegate string DescriptionTemplateDelegate(string mssadescription, string mssalink, string msopdescription, string msoplink);
 
         private readonly JsonSerializer m_serializer = new JsonSerializer();
-        private readonly OAuthHttpMessageHandler m_authenticator;
-        private readonly HttpClient m_client;
+        private readonly OAuthHttpClient m_client;
         private readonly string m_path;
         private readonly int fragmentSize;
         private readonly int fragmentRetryCount;
@@ -121,10 +117,8 @@ namespace Duplicati.Library.Backend
                 this.fragmentRetryDelay = UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY;
             }
 
-            this.m_authenticator = new OAuthHttpMessageHandler(authid, this.ProtocolKey);
-            this.m_client = new HttpClient(this.m_authenticator, true);
+            this.m_client = new OAuthHttpClient(authid, this.ProtocolKey);
             this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
-            this.m_client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Duplicati", USER_AGENT_VERSION));
 
             // Extract out the path to the backup root folder from the given URI
             this.m_path = NormalizeSlashes(this.GetRootPathFromUrl(url));
@@ -367,13 +361,11 @@ namespace Duplicati.Library.Backend
                         HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put, uploadSession.UploadUrl);
                         request.Content = fragmentContent;
 
-                        // The uploaded put requests will error if they are authenticated
-                        this.m_authenticator.PreventAuthentication(request);
-
                         HttpResponseMessage response = null;
                         try
                         {
-                            response = this.m_client.SendAsync(request).Await();
+                            // The uploaded put requests will error if they are authenticated
+                            response = this.m_client.SendAsync(request, false).Await();
 
                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
                             var result = this.ParseResponse<UploadSession>(response);

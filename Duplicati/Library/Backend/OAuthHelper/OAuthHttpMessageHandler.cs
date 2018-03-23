@@ -14,8 +14,6 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -23,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library
 {
-    public class OAuthHttpMessageHandler : HttpClientHandler
+    public class OAuthHttpMessageHandler : WebRequestHandler
     {
         /// <summary>
         /// Requests which contain a property with this name (in 'request.Properties') will not have the authentication header automatically added.
