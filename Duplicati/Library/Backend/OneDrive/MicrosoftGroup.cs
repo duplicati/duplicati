@@ -38,7 +38,7 @@ namespace Duplicati.Library.Backend
             
             if (string.IsNullOrEmpty(groupId))
             {
-                throw new UserInformationException(Strings.MicrosoftGroup.MissingGroupId, "MicrosoftGroupMissingGroupId");
+                throw new UserInformationException(Strings.MicrosoftGroup.MissingGroupIdAndEmailAddress, "MicrosoftGroupMissingGroupIdAndEmailAddress");
             }
 
             this.drivePath = string.Format("/groups/{0}/drive", groupId);
