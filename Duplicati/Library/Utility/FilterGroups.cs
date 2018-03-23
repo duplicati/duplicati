@@ -46,7 +46,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Files and folders that are temporary locations
         /// </summary>
-        TemporaryFolders = 0x08,
+        TemporaryFiles = 0x08,
         /// <summary>
         /// Files and folders that are application binaries (i.e. installed programs)
         /// </summary>
@@ -55,12 +55,12 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Meta option that specifies the default exclude filters
         /// </summary>
-        DefaultExclude = SystemFiles | OperatingSystem | CacheFiles | TemporaryFolders | Applications,
+        DefaultExcludes = SystemFiles | OperatingSystem | CacheFiles | TemporaryFiles | Applications,
 
         /// <summary>
         /// Meta option that specifies the default include filters
         /// </summary>
-        DefaultInclude = None,
+        DefaultIncludes = None,
     }
 
     /// <summary>
@@ -78,6 +78,7 @@ namespace Duplicati.Library.Utility
         private static Dictionary<string, FilterGroup> filterGroupAliases = new Dictionary<string, FilterGroup>(StringComparer.OrdinalIgnoreCase)
             {
                 { "System", FilterGroup.SystemFiles },
+                { "Sys", FilterGroup.SystemFiles },
 
                 { "OS", FilterGroup.OperatingSystem },
 
@@ -85,12 +86,25 @@ namespace Duplicati.Library.Utility
                 { "Caches", FilterGroup.CacheFiles },
                 { "Cache", FilterGroup.CacheFiles },
 
-                { "TemporaryFiles", FilterGroup.TemporaryFolders },
-                { "TempFolders", FilterGroup.TemporaryFolders },
-                { "TempFiles", FilterGroup.TemporaryFolders },
-                { "Temp", FilterGroup.TemporaryFolders },
+                { "TemporaryFolders", FilterGroup.TemporaryFiles },
+                { "TempFolders", FilterGroup.TemporaryFiles },
+                { "TempFiles", FilterGroup.TemporaryFiles },
+                { "Temp", FilterGroup.TemporaryFiles },
+                { "Tmp", FilterGroup.TemporaryFiles },
 
+                { "Application", FilterGroup.Applications },
                 { "Apps", FilterGroup.Applications },
+                { "App", FilterGroup.Applications },
+
+                { "DefaultExclude", FilterGroup.DefaultExcludes },
+                { "Excludes", FilterGroup.DefaultExcludes },
+                { "Exclude", FilterGroup.DefaultExcludes },
+                { "Exc", FilterGroup.DefaultExcludes },
+
+                { "DefaultInclude", FilterGroup.DefaultIncludes },
+                { "Includes", FilterGroup.DefaultIncludes },
+                { "Include", FilterGroup.DefaultIncludes },
+                { "Inc", FilterGroup.DefaultIncludes },
             };
 
         /// <summary>
@@ -139,9 +153,9 @@ namespace Duplicati.Library.Utility
         /// <param name="includevalues">If set to <c>true</c> include actual filter paths in the output.</param>
         public static string GetOptionDescriptions(int indentation, bool includevalues)
         {
-            var defaultExclude = FilterGroup.DefaultExclude;
+            var defaultExclude = FilterGroup.DefaultExcludes;
             var defaultExcludeValues = new List<string>();
-            var defaultInclude = FilterGroup.DefaultInclude;
+            var defaultInclude = FilterGroup.DefaultIncludes;
             var defaultIncludeValues = new List<string>();
             foreach (var e in Enum.GetValues(typeof(FilterGroup)))
             {
@@ -156,8 +170,8 @@ namespace Duplicati.Library.Utility
             
             var sb = new System.Text.StringBuilder();
             sb.AppendLine(ind + LC.L("{0}: Selects no filters.", nameof(FilterGroup.None)));
-            sb.AppendLine(ind + LC.L("{0}: A set of default exclude filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultExclude), string.Join(",", defaultExcludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
-            sb.AppendLine(ind + LC.L("{0}: A set of default include filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultInclude), string.Join(",", defaultIncludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
+            sb.AppendLine(ind + LC.L("{0}: A set of default exclude filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultExcludes), string.Join(",", defaultExcludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
+            sb.AppendLine(ind + LC.L("{0}: A set of default include filters, currently evaluates to: {1}.", nameof(FilterGroup.DefaultIncludes), string.Join(",", defaultIncludeValues.DefaultIfEmpty(nameof(FilterGroup.None)))));
 
             if (includevalues)
                 sb.AppendLine();
@@ -185,8 +199,8 @@ namespace Duplicati.Library.Utility
             appendAliasesAndValues(FilterGroup.SystemFiles, false);
             sb.AppendLine(ind + LC.L("{0}: Files that belong to the operating system. These files are restored when the operating system is re-installed.", nameof(FilterGroup.OperatingSystem)));
             appendAliasesAndValues(FilterGroup.OperatingSystem, false);
-            sb.AppendLine(ind + LC.L("{0}: Files and folders that are known to be storage of temporary data.", nameof(FilterGroup.TemporaryFolders)));
-            appendAliasesAndValues(FilterGroup.TemporaryFolders, false);
+            sb.AppendLine(ind + LC.L("{0}: Files and folders that are known to be storage of temporary data.", nameof(FilterGroup.TemporaryFiles)));
+            appendAliasesAndValues(FilterGroup.TemporaryFiles, false);
             sb.AppendLine(ind + LC.L("{0}: Files and folders that are known cache locations for the operating system and various applications", nameof(FilterGroup.CacheFiles)));
             appendAliasesAndValues(FilterGroup.CacheFiles, false);
             sb.AppendLine(ind + LC.L("{0}: Installed programs and their libraries, but not their settings.", nameof(FilterGroup.Applications)));
@@ -273,7 +287,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateRegexFilter(@".*/(cookies|permissions).sqllite(-.{3})?");
             }
 
-            if (group.HasFlag(FilterGroup.TemporaryFolders))
+            if (group.HasFlag(FilterGroup.TemporaryFiles))
             {
                 yield return Library.Utility.TempFolder.SystemTempPath;
             }
@@ -367,7 +381,7 @@ namespace Duplicati.Library.Utility
 
             }
 
-            if (group.HasFlag(FilterGroup.TemporaryFolders))
+            if (group.HasFlag(FilterGroup.TemporaryFiles))
             {
                 yield return FilterGroups.CreateWildcardFilter(@"*/$RECYCLE.BIN/");
                 yield return FilterGroups.CreateWildcardFilter(@"*.tmp");
@@ -471,7 +485,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"/Desktop DF");
             }
 
-            if (group.HasFlag(FilterGroup.TemporaryFolders))
+            if (group.HasFlag(FilterGroup.TemporaryFiles))
             {
                 yield return FilterGroups.CreateWildcardFilter(@"/private/tmp/");
                 yield return FilterGroups.CreateWildcardFilter(@"/private/var/tmp/");
@@ -520,7 +534,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"/var/");
             }
                 
-            if (group.HasFlag(FilterGroup.TemporaryFolders))
+            if (group.HasFlag(FilterGroup.TemporaryFiles))
             {
                 yield return FilterGroups.CreateWildcardFilter(@"*/lost+found/");
                 yield return FilterGroups.CreateWildcardFilter(@"*~");

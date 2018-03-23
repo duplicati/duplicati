@@ -107,7 +107,7 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
                 tp = tp.Replace("%DEFAULTCOMPRESSIONMODULE%", opts.CompressionModule);
                 tp = tp.Replace("%GENERICMODULES%", string.Join(", ", Library.DynamicLoader.GenericLoader.Keys));
-                var metaGroupNames = new[] { nameof(FilterGroup.None), nameof(FilterGroup.DefaultExclude), nameof(FilterGroup.DefaultInclude), };
+                var metaGroupNames = new[] { nameof(FilterGroup.None), nameof(FilterGroup.DefaultExcludes), nameof(FilterGroup.DefaultIncludes), };
                 tp = tp.Replace("%FILTER_GROUPS_SHORT%", string.Join(Environment.NewLine + "  ", metaGroupNames.Concat(Enum.GetNames(typeof(FilterGroup)).Except(metaGroupNames, StringComparer.OrdinalIgnoreCase).OrderBy(x => x, StringComparer.OrdinalIgnoreCase)).Select(group => "{" + group + "}")));
                 tp = tp.Replace("%FILTER_GROUPS_LONG%", Library.Utility.FilterGroups.GetOptionDescriptions(4, true));
 
