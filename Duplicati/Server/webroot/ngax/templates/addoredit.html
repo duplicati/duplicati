@@ -188,8 +188,14 @@
                                     <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
                                     </select>
 
-                                    <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
-
+                                    <div ng-show="!(Backup.Filters[$index].indexOf('-{') == 0 || Backup.Filters[$index].indexOf('+{') == 0)">
+                                        <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
+                                    </div>
+                                    <div ng-show="Backup.Filters[$index].indexOf('-{') == 0 || Backup.Filters[$index].indexOf('+{') == 0">
+                                        <select parse-filter-content ng-model="Backup.Filters[$index]" ng-options="item.value as item.name for item in AppUtils.filterGroups">
+                                        </select>
+                                    </div>
+                                    
                                     <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
                                 </li>
 
