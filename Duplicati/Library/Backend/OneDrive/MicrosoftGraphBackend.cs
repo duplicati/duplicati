@@ -42,7 +42,7 @@ namespace Duplicati.Library.Backend
         private const string UPLOAD_SESSION_FRAGMENT_RETRY_DELAY_OPTION = "fragment-retry-delay";
 
         private const int UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_COUNT = 5;
-        private const int UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY = 500;
+        private const int UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY = 1000;
 
         /// <summary>
         /// Max size of file that can be uploaded in a single PUT request is 4 MB:
@@ -101,8 +101,8 @@ namespace Duplicati.Library.Backend
                 // If it isn't, we round down to the nearest multiple below it.
                 this.fragmentSize = (this.fragmentSize / UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE) * UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE;
 
-                // Make sure the fragment size isn't larger than the maximum
-                this.fragmentSize = Math.Min(this.fragmentSize, UPLOAD_SESSION_FRAGMENT_MAX_SIZE);
+                // Make sure the fragment size isn't larger than the maximum, or smaller than the minimum
+                this.fragmentSize = Math.Max(Math.Min(this.fragmentSize, UPLOAD_SESSION_FRAGMENT_MAX_SIZE), UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE);
             }
             else
             {
