@@ -5,7 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{7E119745-1F62-43F0-936C-F312A1912C0B}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <Prefer32Bit>False</Prefer32Bit>    
+    <Prefer32Bit>False</Prefer32Bit>
     <RootNamespace>Duplicati.Library.AutoUpdater</RootNamespace>
     <AssemblyName>Duplicati.Library.AutoUpdater</AssemblyName>
     <AssemblyOriginatorKeyFile>..\..\GUI\Duplicati.GUI.TrayIcon\Duplicati.snk</AssemblyOriginatorKeyFile>
@@ -77,7 +77,6 @@
     <EmbeddedResource Include="AutoUpdateBuildChannel.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
 </Project>

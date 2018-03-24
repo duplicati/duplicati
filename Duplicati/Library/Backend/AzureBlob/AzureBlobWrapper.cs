@@ -71,17 +71,18 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public void AddContainer()
         {
-            _container.Create(BlobContainerPublicAccessType.Off);
+            _container.CreateAsync().GetAwaiter().GetResult();
+            _container.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Off });
         }
 
         public virtual void GetFileStream(string keyName, Stream target)
         {
-            _container.GetBlockBlobReference(keyName).DownloadToStream(target);
+            _container.GetBlockBlobReference(keyName).DownloadToStreamAsync(target).GetAwaiter().GetResult();
         }
 
         public void GetFileObject(string keyName, string localfile)
         {
-            _container.GetBlockBlobReference(keyName).DownloadToFile(localfile, FileMode.Create);
+            _container.GetBlockBlobReference(keyName).DownloadToFileAsync(localfile, FileMode.Create).GetAwaiter().GetResult();
         }
 
         public void AddFileObject(string keyName, string localfile)
@@ -94,17 +95,32 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public virtual void AddFileStream(string keyName, Stream source)
         {
-            _container.GetBlockBlobReference(keyName).UploadFromStream(source);
+            _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source).GetAwaiter().GetResult();
         }
 
         public void DeleteObject(string keyName)
         {
-            _container.GetBlockBlobReference(keyName).DeleteIfExists();
+            _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync().GetAwaiter().GetResult();
+        }
+
+        private IEnumerable<IListBlobItem> ListBlobs(){
+            BlobContinuationToken continuationToken = null;
+            var results = new List<IListBlobItem>();
+
+            do
+            {
+                var response = _container.ListBlobsSegmentedAsync("", true, BlobListingDetails.Metadata, null, continuationToken, null, null).GetAwaiter().GetResult();
+                continuationToken = response.ContinuationToken;
+                results.AddRange(response.Results);
+            }
+            while (continuationToken != null);
+
+            return results;
         }
 
         public virtual List<IFileEntry> ListContainerEntries()
         {
-            var listBlobItems = _container.ListBlobs(blobListingDetails: BlobListingDetails.Metadata);
+            var listBlobItems = ListBlobs();
             try
             {
                 return listBlobItems.Select(x =>

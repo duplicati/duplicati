@@ -21,7 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.FtpClient;
+using FluentFTP;
 using System.Net.Security;
 using System.Security.Authentication;
 using Duplicati.Library.Interface;

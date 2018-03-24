@@ -156,14 +156,14 @@ namespace Duplicati.Library.Backend
             var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
             try
             {
-                var user = cl.GetUser().User;
+                var user = cl.GetUserAsync().GetAwaiter().GetResult().User;
 
                 dict["isroot"] = "False"; //user.Arn.EndsWith(":root", StringComparison.Ordinal).ToString();
                 dict["arn"] = user.Arn;
                 dict["id"] = user.UserId;
                 dict["name"] = user.UserName;
 
-                dict["isroot"] = (cl.SimulatePrincipalPolicy(new SimulatePrincipalPolicyRequest() { PolicySourceArn = user.Arn, ActionNames = new[] { "iam:CreateUser" }.ToList() }).EvaluationResults.First().EvalDecision == PolicyEvaluationDecisionType.Allowed).ToString();
+                dict["isroot"] = (cl.SimulatePrincipalPolicyAsync(new SimulatePrincipalPolicyRequest() { PolicySourceArn = user.Arn, ActionNames = new[] { "iam:CreateUser" }.ToList() }).GetAwaiter().GetResult().EvaluationResults.First().EvalDecision == PolicyEvaluationDecisionType.Allowed).ToString();
             }
             catch (Exception ex)
             {
@@ -182,13 +182,13 @@ namespace Duplicati.Library.Backend
             var policydoc = GeneratePolicyDoc(path);
 
             var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
-            var user = cl.CreateUser(new CreateUserRequest(username)).User;
-            cl.PutUserPolicy(new PutUserPolicyRequest(
+            var user = cl.CreateUserAsync(new CreateUserRequest(username)).GetAwaiter().GetResult().User;
+            cl.PutUserPolicyAsync(new PutUserPolicyRequest(
                 user.UserName,
                 policyname,
                 policydoc
-            ));
-            var key = cl.CreateAccessKey(new CreateAccessKeyRequest() { UserName = user.UserName }).AccessKey;
+            )).GetAwaiter().GetResult();
+            var key = cl.CreateAccessKeyAsync(new CreateAccessKeyRequest() { UserName = user.UserName }).GetAwaiter().GetResult().AccessKey;
 
             var dict = new Dictionary<string, string>();
             dict["accessid"] = key.AccessKeyId;

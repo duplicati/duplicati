@@ -18,8 +18,6 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Interface

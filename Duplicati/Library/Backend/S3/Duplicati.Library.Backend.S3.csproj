@@ -1,85 +1,28 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.Library.Backend</RootNamespace>
-    <AssemblyName>Duplicati.Library.Backend.S3</AssemblyName>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+    <Version>2.0.0.7</Version>
+    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <UseMSBuildEngine>false</UseMSBuildEngine>
+    <Copyright>LGPL, Copyright � Duplicati Team 2015</Copyright>
+    <Product>Duplicati.Library.Backend.S3</Product>
+    <Company>Duplicati Team</Company>
+    <Authors>Duplicati Team</Authors>
+    <Description>S3 backend for Duplicati</Description>
+    <PackageId>S3</PackageId>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="AWSSDK.Core">
-      <HintPath>..\..\..\..\packages\AWSSDK.Core.3.3.17.10\lib\net45\AWSSDK.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="AWSSDK.IdentityManagement">
-      <HintPath>..\..\..\..\packages\AWSSDK.IdentityManagement.3.3.5\lib\net45\AWSSDK.IdentityManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="AWSSDK.S3">
-      <HintPath>..\..\..\..\packages\AWSSDK.S3.3.3.11\lib\net45\AWSSDK.S3.dll</HintPath>
-    </Reference>
+    <PackageReference Include="AWSSDK.Core" Version="3.3.21.17" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.5.5" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.17.2" />
   </ItemGroup>
+  
   <ItemGroup>
-    <Compile Include="S3Backend.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="S3Wrapper.cs" />
-    <Compile Include="S3Config.cs" />
-    <Compile Include="Strings.cs" />
-    <Compile Include="S3IAM.cs" />
+    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
+    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
-      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Library.Utility</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
-      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
-      <Name>Duplicati.Library.Interface</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
-      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
-      <Name>Duplicati.Library.Localization</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="Duplicati.snk" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

@@ -1,7 +1,7 @@
 {
-    "name": "System.Net.FtpClient",
+    "name": "FluentFTP",
     "description": "A .Net library for connecting with the FTP protocol",
-    "link": "https://netftp.codeplex.com",
+    "link": "https://github.com/robinrodricks/FluentFTP",
     "license": "MIT",
     "notes": ""
 }

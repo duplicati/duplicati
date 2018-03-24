@@ -296,16 +296,16 @@
       <Link>licenses\rumps\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\System.Net.FtpClient\Homepage.txt">
-      <Link>licenses\System.Net.FtpClient\Homepage.txt</Link>
+    <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
+      <Link>licenses\FluentFTP\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\System.Net.FtpClient\License.txt">
-      <Link>licenses\System.Net.FtpClient\License.txt</Link>
+    <Content Include="..\..\thirdparty\FluentFTP\License.txt">
+      <Link>licenses\FluentFTP\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\System.Net.FtpClient\licensedata.json">
-      <Link>licenses\System.Net.FtpClient\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\FluentFTP\licensedata.json">
+      <Link>licenses\FluentFTP\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\MailKit\Homepage.txt">

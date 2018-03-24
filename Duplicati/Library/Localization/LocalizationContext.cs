@@ -38,8 +38,10 @@ namespace Duplicati.Library.Localization
         /// <param name="ci">The localization to use.</param>
         public LocalizationContext(System.Globalization.CultureInfo ci)
         {
+            /* TODO-DNC
             m_prev = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LocalizationService.LOGICAL_CONTEXT_KEY);
             System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LocalizationService.LOGICAL_CONTEXT_KEY, ci.Name);
+            */
             m_isDisposed = false;
         }
 
@@ -56,7 +58,9 @@ namespace Duplicati.Library.Localization
         {
             if (!m_isDisposed)
             {
+                /* TODO-DNC
                 System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LocalizationService.LOGICAL_CONTEXT_KEY, m_prev);
+                */
                 m_isDisposed = true;
             }
         }
