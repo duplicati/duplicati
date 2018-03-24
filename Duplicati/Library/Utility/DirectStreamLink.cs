@@ -41,7 +41,7 @@ namespace Duplicati.Library.Utility
         /// Used to protect accesses to all state vars and making decisions
         /// on blocking thereon.
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
 
         /// <summary> An event to wake reader. </summary>
         private ManualResetEventSlim m_signalDataAvailable = new ManualResetEventSlim(false);

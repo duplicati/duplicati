@@ -235,14 +235,14 @@ namespace Duplicati.Library.Snapshots
                 GetBackupPrivilege(out hasPrivilege, out isEnabled);
 
                 if (!hasPrivilege)
-                    throw new Duplicati.Library.Interface.UserInformationException(Strings.WinNativeMethod.MissingBackupPrivilegeError);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.WinNativeMethod.MissingBackupPrivilegeError, "MissingBackupPrivilege");
 
                 return isEnabled;
             }
             set
             {
                 if (!CanEnableBackupPrivilege)
-                    throw new Duplicati.Library.Interface.UserInformationException(Strings.WinNativeMethod.MissingBackupPrivilegeError);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.WinNativeMethod.MissingBackupPrivilegeError, "MissingBackupPrivilege");
 
                 int token = 0;
                 int outsize = 0;

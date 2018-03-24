@@ -17,22 +17,24 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Linq;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Main
 {
     /// <summary>
     /// Interface for recieving messages from the Duplicati operations
     /// </summary>
-    public interface IMessageSink
+    public interface IMessageSink : Logging.ILogDestination
     {
+        /// <summary>
+        /// Handles an event from the backend
+        /// </summary>
+        /// <param name="action">The backend action.</param>
+        /// <param name="type">The event type.</param>
+        /// <param name="path">The target path.</param>
+        /// <param name="size">The size of the element.</param>
         void BackendEvent(BackendActionType action, BackendEventType type, string path, long size);
-        void VerboseEvent(string message, object[] args);
-        void MessageEvent(string message);
-        void RetryEvent(string message, Exception ex);
-        void WarningEvent(string message, Exception ex);
-        void ErrorEvent(string message, Exception ex);
-        void DryrunEvent(string message);
-        
+
         /// <summary>
         /// Sets the backend progress update object
         /// </summary>
@@ -104,40 +106,10 @@ namespace Duplicati.Library.Main
                 s.BackendEvent(action, type, path, size);
         }
 
-        public void DryrunEvent(string message)
+        public void WriteMessage(LogEntry entry)
         {
             foreach (var s in m_sinks)
-                s.DryrunEvent(message);
-        }
-
-        public void ErrorEvent(string message, Exception ex)
-        {
-            foreach (var s in m_sinks)
-                s.ErrorEvent(message, ex);
-        }
-
-        public void MessageEvent(string message)
-        {
-            foreach (var s in m_sinks)
-                s.MessageEvent(message);
-        }
-
-        public void RetryEvent(string message, Exception ex)
-        {
-            foreach (var s in m_sinks)
-                s.RetryEvent(message, ex);
-        }
-
-        public void VerboseEvent(string message, object[] args)
-        {
-            foreach (var s in m_sinks)
-                s.VerboseEvent(message, args);
-        }
-
-        public void WarningEvent(string message, Exception ex)
-        {
-            foreach (var s in m_sinks)
-                s.WarningEvent(message, ex);
+                s.WriteMessage(entry);
         }
     }
     

@@ -81,7 +81,7 @@ namespace Duplicati.Server.Database
             lock(m_lock)
             {
                 if (backup == null)
-                    throw new ArgumentNullException("backup");
+                    throw new ArgumentNullException(nameof(backup));
                 if (backup.ID != null)
                     throw new ArgumentException("Backup is already active, cannot make temporary");
                 
@@ -276,7 +276,7 @@ namespace Duplicati.Server.Database
         internal IBackup GetBackup(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof(id));
             
             long lid;
             if (long.TryParse(id, out lid))
@@ -759,11 +759,12 @@ namespace Duplicati.Server.Database
             return true;
         }
 
-        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, Func<INotification, INotification[], INotification> conflicthandler)
+        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, string logid, string messageid, string logtag, Func<INotification, INotification[], INotification> conflicthandler)
         {
             lock(m_lock)
             {
-                var notification = new Notification() {
+                var notification = new Notification()
+                {
                     ID = -1,
                     Type = type,
                     Title = title,
@@ -771,7 +772,10 @@ namespace Duplicati.Server.Database
                     Exception = ex == null ? "" : ex.ToString(),
                     BackupID = backupid,
                     Action = action ?? "",
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
+                    LogEntryID = logid,
+                    MessageID = messageid,
+                    MessageLogTag = logtag
                 };
 
                 var conflictResult = conflicthandler(notification, GetNotifications());

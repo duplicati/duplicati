@@ -27,7 +27,7 @@ namespace Duplicati.Server
     /// and provides an entry point for the runner
     /// to redirect log output to a file
     /// </summary>
-    public class LogWriteHandler : ILog, IDisposable
+    public class LogWriteHandler : ILogDestination, IDisposable
     {
         /// <summary>
         /// The number of messages to keep when inactive
@@ -37,6 +37,15 @@ namespace Duplicati.Server
         /// The number of messages to keep when active
         /// </summary>
         private const int ACTIVE_SIZE = 5000;
+
+        /// <summary>
+        /// The context key used for conveying the backup ID
+        /// </summary>
+        public const string LOG_EXTRA_BACKUPID = "BackupID";
+        /// <summary>
+        /// The context key used for conveying the task ID
+        /// </summary>
+        public const string LOG_EXTRA_TASKID = "TaskID";
 
         /// <summary>
         /// Represents a single log event
@@ -51,41 +60,76 @@ namespace Duplicati.Server
             /// <summary>
             /// The time the message was logged
             /// </summary>
-            public DateTime When;
+            public readonly DateTime When;
 
             /// <summary>
             /// The ID assigned to the message
             /// </summary>
-            public long ID;
+            public readonly long ID;
 
             /// <summary>
             /// The logged message
             /// </summary>
-            public string Message;
+            public readonly string Message;
+
+            /// <summary>
+            /// The log tag
+            /// </summary>
+            public readonly string Tag;
+
+            /// <summary>
+            /// The message ID
+            /// </summary>
+            public readonly string MessageID;
+
+            /// <summary>
+            /// The message ID
+            /// </summary>
+            public readonly string ExceptionID;
 
             /// <summary>
             /// The message type
             /// </summary>
-            public LogMessageType Type;
+            public readonly LogMessageType Type;
 
             /// <summary>
             /// Exception data attached to the message
             /// </summary>
-            public Exception Exception;
+            public readonly Exception Exception;
+
+            /// <summary>
+            /// The backup ID, if any
+            /// </summary>
+            public readonly string BackupID;
+
+            /// <summary>
+            /// The task ID, if any
+            /// </summary>
+            public readonly string TaskID;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="Duplicati.Server.LogWriteHandler+LogEntry"/> struct.
             /// </summary>
-            /// <param name="message">Message.</param>
-            /// <param name="type">Type.</param>
-            /// <param name="exception">Exception.</param>
-            public LogEntry(string message, LogMessageType type, Exception exception)
+            /// <param name="entry">The log entry to store</param>
+            public LogEntry(Duplicati.Library.Logging.LogEntry entry)
             {
                 this.ID = System.Threading.Interlocked.Increment(ref _id);
-                this.When = DateTime.UtcNow;
-                this.Message = message;
-                this.Type = type;
-                this.Exception = exception;
+                this.When = entry.When;
+                this.Message = entry.FormattedMessage;
+                this.Type = entry.Level;
+                this.Exception = entry.Exception;
+                this.Tag = entry.Tag;
+                this.MessageID = entry.Id;
+                this.BackupID = entry[LOG_EXTRA_BACKUPID];
+                this.TaskID = entry[LOG_EXTRA_TASKID];
+
+                if (entry.Exception == null)
+                    this.ExceptionID = null;
+                else if (entry.Exception is Library.Interface.UserInformationException)
+                    this.ExceptionID = ((Library.Interface.UserInformationException)entry.Exception).HelpID;
+                else
+                    this.ExceptionID = entry.Exception.GetType().FullName;
+                    
             }
         }
 
@@ -99,7 +143,7 @@ namespace Duplicati.Server
             private int m_tail;
             private int m_length;
             private int m_key;
-            private object m_lock = new object();
+            private readonly object m_lock = new object();
 
             public RingBuffer(int size, IEnumerable<T> initial = null)
             {
@@ -183,12 +227,13 @@ namespace Duplicati.Server
         }
 
         private DateTime[] m_timeouts;
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         private volatile bool m_anytimeouts = false;
         private RingBuffer<LogEntry> m_buffer;
 
-        private ILog m_serverfile;
+        private ILogDestination m_serverfile;
         private LogMessageType m_serverloglevel;
+        private LogMessageType m_logLevel;
 
         public LogWriteHandler()
         {
@@ -214,7 +259,7 @@ namespace Duplicati.Server
             if (!System.IO.Directory.Exists(dir))
                 System.IO.Directory.CreateDirectory(dir);
 
-            m_serverfile = new StreamLog(path);
+            m_serverfile = new StreamLogDestination(path);
             m_serverloglevel = level;
 
             UpdateLogLevel();
@@ -267,20 +312,23 @@ namespace Duplicati.Server
         }
 
         private void UpdateLogLevel()
-        {
-            Duplicati.Library.Logging.Log.LogLevel = 
+        {   
+            m_logLevel =
                 (LogMessageType)(GetActiveTimeouts().Union(new int[] { (int)m_serverloglevel }).Min());
         }
 
 
         #region ILog implementation
 
-        public void WriteMessage(string message, LogMessageType type, Exception exception)
+        public void WriteMessage(Duplicati.Library.Logging.LogEntry entry)
         {
-            if (m_serverfile != null && type >= m_serverloglevel)
+            if (entry.Level < m_logLevel) 
+                return;
+            
+            if (m_serverfile != null && entry.Level >= m_serverloglevel)
                 try
                 {
-                    m_serverfile.WriteMessage(message, type, exception);
+                    m_serverfile.WriteMessage(entry);
                 }
                 catch
                 {
@@ -303,7 +351,7 @@ namespace Duplicati.Server
                 }
 
                 if (m_buffer != null)
-                    m_buffer.Enqueue(new LogEntry(message, type, exception));
+                    m_buffer.Enqueue(new LogEntry(entry));
             }
 
         }

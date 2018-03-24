@@ -113,7 +113,7 @@ namespace Duplicati.Library.Backend
                 }
 
                 if (m_path == null)
-                    throw new UserInformationException(Strings.FileBackend.NoDestinationWithMarkerFileError(markerfile, paths.ToArray()));
+                    throw new UserInformationException(Strings.FileBackend.NoDestinationWithMarkerFileError(markerfile, paths.ToArray()), "NoDestinationWithMarker");
             }
 
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
@@ -351,7 +351,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
             get { return null; }
         }

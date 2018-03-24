@@ -500,9 +500,9 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { new Uri(WLID_SERVER).Host, new Uri(ONEDRIVE_SERVICE_URL).Host, string.IsNullOrWhiteSpace(m_userid) ? null : string.Format("cid-{0}.users.storage.live.com", m_userid) }; }
         }
 
         #endregion

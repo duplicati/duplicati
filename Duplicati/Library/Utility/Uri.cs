@@ -124,13 +124,13 @@ namespace Duplicati.Library.Utility
         }
         
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.Utility.Uri"/> struct.
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.Uri"/> struct.
         /// </summary>
         /// <param name="url">The URL to parse</param>
         public Uri(string url)
         {
             if (string.IsNullOrEmpty(url))
-                throw new ArgumentNullException("url");
+                throw new ArgumentNullException(nameof(url));
             
             m_queryParams = null;
             this.OriginalUri = url;
@@ -356,7 +356,7 @@ namespace Duplicati.Library.Utility
         public static string UrlEncode(string value, System.Text.Encoding encoding = null, string spacevalue = "+") 
         {
             if (value == null)
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
                 
             encoding = encoding ?? System.Text.Encoding.UTF8;
 
@@ -399,7 +399,7 @@ namespace Duplicati.Library.Utility
         public static string UrlDecode(string value, System.Text.Encoding encoding = null)
         {
             if (value == null)
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
                 
             encoding = encoding ?? System.Text.Encoding.UTF8;
                 
@@ -443,7 +443,7 @@ namespace Duplicati.Library.Utility
         public static NameValueCollection ParseQueryString(string query)
         {
             if (query == null)
-                throw new ArgumentNullException("query");
+                throw new ArgumentNullException(nameof(query));
             if (query.StartsWith("?", StringComparison.Ordinal))
                 query = query.Substring(1);
             if (string.IsNullOrEmpty(query))

@@ -1527,7 +1527,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:12
 msgid "Remote path"
-msgstr ""
+msgstr "Fjernvej"
 
 #: Library/Backend/Rclone/Strings.cs:13
 msgid "Path on the Remote repository. "
@@ -1760,7 +1760,7 @@ msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:10
 msgid "Backup path"
-msgstr ""
+msgstr "Backup sti"
 
 #: Library/Backend/Sia/Strings.cs:11
 msgid "Target path, ie /backup"
@@ -1906,7 +1906,7 @@ msgstr "Ikke gyldigt mount givet"
 
 #: Library/Backend/Jottacloud/Strings.cs:16
 msgid "Supplies the backup device to use"
-msgstr ""
+msgstr "Leverer den backupenhed, der skal bruges"
 
 #: Library/Backend/Jottacloud/Strings.cs:17
 #, csharp-format
@@ -1916,6 +1916,10 @@ msgid ""
 "When you specify a custom device you should also specify the mount point to "
 "use on this device with the \"{0}\" option."
 msgstr ""
+"Den backup enhed, der skal bruges. Bliver oprettet, hvis den ikke allerede "
+"eksisterer. Du kan styre dine enheder fra backuppanelet i Jottacloud's web-"
+"interface. Når du angiver en brugerdefineret enhed, skal du også angive det "
+"mount point, der skal bruges til denne enhed, med indstillingen \"{0}\"."
 
 #: Library/Backend/Jottacloud/Strings.cs:18
 msgid "Supplies the mount point to use on the server"
@@ -1973,6 +1977,8 @@ msgid ""
 "Use this option to have files moved to the recycle bin folder instead of "
 "removing them permanently when compacting or deleting backups."
 msgstr ""
+"Brug denne indstilling til at få filer flyttet til papirkurv mappen i stedet"
+" for at fjerne dem permanent, når du komprimerer eller sletter backups."
 
 #: Library/Backend/SharePoint/Strings.cs:15
 msgid "Move deleted files to the recycle bin"
@@ -2256,6 +2262,11 @@ msgid ""
 "This is likely caused by upgrading to a newer version and then downgrading.\n"
 "If this is the case, there is likely a backup file of the previous database version in the folder {2}."
 msgstr ""
+"\n"
+"Databasen har version {0}, men den største understøttede version er {1}.\n"
+"\n"
+"Dette skyldes sandsynligvis opgradering til en nyere version og derefter nedgradering.\n"
+"Hvis dette er tilfældet, er der sandsynligvis en backupfil af den tidligere databaseversion i mappen {2}."
 
 #: Library/SQLiteHelper/Strings.cs:11
 msgid "Unknown table layout detected"

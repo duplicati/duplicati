@@ -169,9 +169,9 @@ namespace Duplicati.Library.Backend
                 awsKey = uri.Password;
 
             if (string.IsNullOrEmpty(awsID))
-                throw new UserInformationException(Strings.S3Backend.NoAMZUserIDError);
+                throw new UserInformationException(Strings.S3Backend.NoAMZUserIDError, "S3NoAmzUserID");
             if (string.IsNullOrEmpty(awsKey))
-                throw new UserInformationException(Strings.S3Backend.NoAMZKeyError);
+                throw new UserInformationException(Strings.S3Backend.NoAMZKeyError, "S3NoAmzKey");
 
             bool euBuckets = Utility.Utility.ParseBoolOption(options, EU_BUCKETS_OPTION);
             bool useRRS = Utility.Utility.ParseBoolOption(options, RRS_OPTION);
@@ -181,7 +181,7 @@ namespace Duplicati.Library.Backend
             options.TryGetValue(LOCATION_OPTION, out locationConstraint);
 
             if (!string.IsNullOrEmpty(locationConstraint) && euBuckets)
-                throw new UserInformationException(Strings.S3Backend.OptionsAreMutuallyExclusiveError(LOCATION_OPTION, EU_BUCKETS_OPTION));
+                throw new UserInformationException(Strings.S3Backend.OptionsAreMutuallyExclusiveError(LOCATION_OPTION, EU_BUCKETS_OPTION), "S3CannotMixLocationAndEuOptions");
 
             if (euBuckets)
                 locationConstraint = S3_EU_REGION_NAME;
@@ -240,7 +240,7 @@ namespace Duplicati.Library.Backend
                             m_prefix = m_prefix.Substring(1);
                     }
                     else
-                        throw new UserInformationException(Strings.S3Backend.UnableToDecodeBucketnameError(url));
+                        throw new UserInformationException(Strings.S3Backend.UnableToDecodeBucketnameError(url), "S3CannotDecodeBucketName");
                 }
 
                 try { Console.Error.WriteLine(Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix)); }
@@ -474,9 +474,9 @@ namespace Duplicati.Library.Backend
             get { return m_wrapper; }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { m_wrapper.DNSHost }; }
         }
 
         private string GetFullKey(string name)

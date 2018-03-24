@@ -12,6 +12,11 @@ namespace Duplicati.Server.WebServer
     public class Server
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Server>();
+
+        /// <summary>
         /// Option for changing the webroot folder
         /// </summary>
         public const string OPTION_WEBROOT = "webservice-webroot";
@@ -65,19 +70,6 @@ namespace Duplicati.Server.WebServer
         /// A string that is sent out instead of password values
         /// </summary>
         public const string PASSWORD_PLACEHOLDER = "**********";
-
-        /// <summary>
-        /// Writes a log message to Console, Service-hook and normal log
-        /// </summary>
-        /// <param name="message">The message to write.</param>
-        /// <param name="type">The message type.</param>
-        /// <param name="ex">The exception, if any.</param>
-        public static void WriteLogMessage(string message, Library.Logging.LogMessageType type, Exception ex)
-        {
-            System.Console.WriteLine(message);
-            Library.Logging.Log.WriteMessage(message, type, ex);
-            Program.LogHandler.WriteMessage(message, type, ex);
-        }
 
         /// <summary>
         /// Sets up the webserver and starts it
@@ -134,7 +126,7 @@ namespace Duplicati.Server.WebServer
                 }
                 catch (Exception ex)
                 {
-                    WriteLogMessage(Strings.Server.DefectSSLCertInDatabase, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "DefectStoredSSLCert", ex, Strings.Server.DefectSSLCertInDatabase);
                 }
             }
             else if (certificateFile.Length == 0)
@@ -184,7 +176,7 @@ namespace Duplicati.Server.WebServer
                     if (certValid && !cert.Equals(Program.DataConnection.ApplicationSettings.ServerSSLCertificate))
                         Program.DataConnection.ApplicationSettings.ServerSSLCertificate = cert;
 
-                    WriteLogMessage(Strings.Server.StartedServer(listenInterface.ToString(), p), Library.Logging.LogMessageType.Information, null);
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerListening", Strings.Server.StartedServer(listenInterface.ToString(), p));
                     
                     return;
                 }

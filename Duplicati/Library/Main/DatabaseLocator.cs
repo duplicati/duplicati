@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main
                 select n).ToList();
             
             if (matches.Count > 1)
-                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Multiple sources found for: {0}", backend));
+                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Multiple sources found for: {0}", backend), "MultipleLocalDatabaseSourcesFound");
             
             // Re-select
             if (matches.Count == 0 && anyUsername && string.IsNullOrEmpty(username))
@@ -149,7 +149,7 @@ namespace Duplicati.Library.Main
                     select n).ToList();
                     
                 if (matches.Count > 1)
-                    throw new Duplicati.Library.Interface.UserInformationException(String.Format("Multiple sources found for \"{0}\", try supplying --{1}", backend, "auth-username"));
+                    throw new Duplicati.Library.Interface.UserInformationException(String.Format("Multiple sources found for \"{0}\", try supplying --{1}", backend, "auth-username"), "MultipleLocalDatabaseSourcesFound");
             }
             
             if (matches.Count == 0 && !autoCreate)
@@ -172,7 +172,7 @@ namespace Duplicati.Library.Main
                     newpath = System.IO.Path.Combine(folder, GenerateRandomName());
                 
                 if (System.IO.File.Exists(newpath))
-                    throw new Duplicati.Library.Interface.UserInformationException("Unable to find a unique name for the database, please use --dbpath");
+                    throw new Duplicati.Library.Interface.UserInformationException("Unable to find a unique name for the database, please use --dbpath", "CannotCreateRandomName");
                 
                 //Create a new one, add it to the list, and save it
                 configs.Add(new BackendEntry() {

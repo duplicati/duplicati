@@ -13,7 +13,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The lock that grants exclusive access to control structures
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         /// <summary>
         /// The current eventID
         /// </summary>

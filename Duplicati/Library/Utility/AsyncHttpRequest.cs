@@ -79,7 +79,7 @@ namespace Duplicati.Library.Utility
         public AsyncHttpRequest(WebRequest request)
         {
             if (request == null)
-                throw new ArgumentNullException("request");
+                throw new ArgumentNullException(nameof(request));
             m_request = request;
             m_timeout = m_request.Timeout;
             if (m_timeout != System.Threading.Timeout.Infinite)

@@ -1,3 +1,48 @@
+2018-03-16 - 2.0.3.2_canary_2018-03-16
+==========
+* Added a new logging system with filters
+* Source code documentation fixes and code quality fixes, thanks @warwickmm
+* Improved the speed of the re-encrypt python script, thanks @piegamesde
+* Added username and started-by information in the WebUI, thanks @Pectojin
+
+2018-03-16 - 2.0.3.1_experimental_2018-03-16
+==========
+This experimental release is mostly the same as the canary build v2.0.2.20.
+Some of the major changes from the experimental build 2.0.2.15 are:
+
+* A new UI for setting the retention policy
+* Added an rclone backend
+* External links in the UI are now marked
+* Fixed a number of browser cache issues, which should fix the XSRF errors
+* Optional warnings when reaching the quota limit
+* Fixed not attempting to read non-symlink reparse points on Windows
+* Fixed a problem with the box.com backend
+* Fixed some crashes that were caused by the usage reporter filling up reports
+* Option to disable the file-size read-ahead scanner
+
+2018-03-06 - 2.0.2.21_canary_2018-03-06
+==========
+* Rebuilt the style.css file
+* Added support in all backends for reloading DNS names when the error indicates a DNS error
+* Removed some default filters (still disabled by default), thanks @tygill
+* Fixed a parsing case for the 'U' parameter, thanks @TekkiWuff
+* Fixed a problem with IE not loading the page correctly, thanks @TekkiWuff
+* Fixed a problem with setting the initial password on the server and some change-password issues, thanks @mnaiman
+
+2018-02-27 - 2.0.2.20_canary_2018-02-27
+==========
+* Added Docker images, thanks @fkrull
+* Fixed log entries being cut in UI, thanks @Pectojin
+* Improved the webserver status codes, thanks @Pectojin
+* Fixed the Mono download link for the OSX package, thanks @aranaur
+* Improved the log UI to not load excessive results, thanks @Pectojin
+* Fixed an issue where retention options would not clear in the UI, thanks @TekkiWuff
+* Not applying default filters, unless explicitly enabled by the user
+* Automatically reloading DNS entries for WebDAV if there is a name lookup error, thanks @Pectojin
+* Improved rentention policy syntax and functionality, thanks @TekkiWuff
+* Added script to re-encrypt remote files, thanks @wjansenw
+* Fixed a number of incorrect HTTP status codes, thanks @Pectojin
+
 2018-02-12 - 2.0.2.19_canary_2018-02-12
 ==========
 * Updated translations

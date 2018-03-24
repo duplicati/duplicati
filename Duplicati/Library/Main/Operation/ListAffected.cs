@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Operation
         public void Run(List<string> args, Action<Duplicati.Library.Interface.IListAffectedResults> callback = null)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             using(var db = new Database.LocalListAffectedDatabase(m_options.Dbpath))
             {

@@ -39,7 +39,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             if (string.IsNullOrEmpty(path))
             {
-                info.ReportClientError("No path parameter was found");
+                info.ReportClientError("No path parameter was found", System.Net.HttpStatusCode.BadRequest);
                 return;
             }
 
@@ -68,7 +68,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             if (Duplicati.Library.Utility.Utility.IsClientLinux && !path.StartsWith("/", StringComparison.Ordinal))
             {
-                info.ReportClientError("The path parameter must start with a forward-slash");
+                info.ReportClientError("The path parameter must start with a forward-slash", System.Net.HttpStatusCode.BadRequest);
                 return;
             }
 
@@ -88,12 +88,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     {
                     }
 
-                    info.ReportServerError("File or folder not found");
+                    info.ReportServerError("File or folder not found", System.Net.HttpStatusCode.NotFound);
                     return;
                 }
                 else
                 {
-                    info.ReportClientError(string.Format("No such operation found: {0}", command));
+                    info.ReportClientError(string.Format("No such operation found: {0}", command), System.Net.HttpStatusCode.NotFound);
                     return;
                 }
             }
@@ -144,7 +144,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             catch (Exception ex)
             {
-                info.ReportClientError("Failed to process the path: " + ex.Message);
+                info.ReportClientError("Failed to process the path: " + ex.Message, System.Net.HttpStatusCode.InternalServerError);
             }
         }
 
@@ -159,7 +159,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         /// <returns>A new TreeNode instance on success; null if an exception occurred during creation.</returns>
         private static Serializable.TreeNode TryCreateTreeNodeForDrive(DriveInfo driveInfo)
         {
-            if (driveInfo == null) throw new ArgumentNullException("driveInfo");
+            if (driveInfo == null) throw new ArgumentNullException(nameof(driveInfo));
 
             try
             {

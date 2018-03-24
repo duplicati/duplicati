@@ -127,7 +127,10 @@ CREATE TABLE "Notification" (
     "Exception" TEXT NOT NULL, 
     "BackupID" TEXT NULL,
     "Action" TEXT NOT NULL,
-    "Timestamp" INTEGER NOT NULL
+    "Timestamp" INTEGER NOT NULL,
+    "LogEntryID" TEXT NULL,
+    "MessageID" TEXT NULL,
+    "MessageLogTag" TEXT NULL
 );
 
 /*
@@ -150,5 +153,5 @@ CREATE TABLE "TempFile" (
     "Expires" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (4);
+INSERT INTO "Version" ("Version") VALUES (5);
 

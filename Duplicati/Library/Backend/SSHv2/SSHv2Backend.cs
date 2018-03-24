@@ -355,7 +355,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                throw new UserInformationException(string.Format("Failed to parse the keyfile, check the key format and passphrase. Error message was {0}", ex.Message), ex);
+                throw new UserInformationException(string.Format("Failed to parse the keyfile, check the key format and passphrase. Error message was {0}", ex.Message), "SSHFailedToParseKeyFile", ex);
             }
         }
 
@@ -369,9 +369,9 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
-            get { return null; }
+            get { return new string[] { m_server }; }
         }
     }
 }

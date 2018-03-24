@@ -64,6 +64,11 @@ namespace Duplicati.Library.Snapshots
 
     public class HyperVUtility
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<HyperVUtility>();
+
         private readonly ManagementScope _wmiScope;
         private readonly string _vmIdField;
         private readonly string _wmiHost = "localhost";
@@ -107,7 +112,7 @@ namespace Duplicati.Library.Snapshots
             //Set the VM ID Selector Field for the WMI Query
             _vmIdField = _wmiv2Namespace ? "VirtualSystemIdentifier" : "SystemName";
 
-            Logging.Log.WriteMessage(string.Format("Using WMI provider {0}", _wmiScope.Path), Logging.LogMessageType.Profiling);
+            Logging.Log.WriteProfilingMessage(LOGTAG, "WMISelect", "Using WMI provider {0}", _wmiScope.Path);
 
             IsVSSWriterSupported = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem")
                     .Get().OfType<ManagementObject>()
@@ -123,7 +128,7 @@ namespace Duplicati.Library.Snapshots
             catch { IsHyperVInstalled = false; }
 
             if (!IsHyperVInstalled)
-                Logging.Log.WriteMessage(string.Format("Cannot open WMI provider {0}. Hyper-V is probably not installed.", _wmiScope.Path), Logging.LogMessageType.Information);
+                Logging.Log.WriteInformationMessage(LOGTAG, "NoHyperVFound", "Cannot open WMI provider {0}. Hyper-V is probably not installed.", _wmiScope.Path);
         }
 
         /// <summary>
@@ -181,7 +186,7 @@ namespace Duplicati.Library.Snapshots
                     var writerMetaData = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid));
 
                     if (writerMetaData == null)
-                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
+                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.", "NoHyperVVssWriter");
 
                     foreach (var component in writerMetaData.Components)
                     {

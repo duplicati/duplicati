@@ -31,7 +31,7 @@ namespace Duplicati.Server
         private volatile bool m_terminated = false;
         private volatile bool m_download = false;
         private volatile bool m_forceCheck = false;
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         private AutoResetEvent m_waitSignal;
         private double m_downloadProgress;
 
@@ -183,6 +183,9 @@ namespace Duplicati.Server
                                     null,
                                     null,
                                     "update:new",
+                                    null,
+                                    "NewUpdateFound",
+                                    null,
                                     (self, all) => {
                                         return all.Where(x => x.Action == "update:new").FirstOrDefault() ?? self;
                                     }

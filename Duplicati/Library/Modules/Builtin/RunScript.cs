@@ -27,6 +27,11 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class RunScript : Duplicati.Library.Interface.IGenericCallbackModule
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<RunScript>();
+
         private const string STARTUP_OPTION = "run-script-before";
         private const string FINISH_OPTION = "run-script-after";
         private const string REQUIRED_OPTION = "run-script-before-required";
@@ -225,9 +230,9 @@ namespace Duplicati.Library.Modules.Builtin
                     if (requiredScript)
                     {
                         if (!p.HasExited)
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.ScriptTimeoutError(scriptpath));
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.ScriptTimeoutError(scriptpath), "RunScriptTimeout");
                         else if (p.ExitCode != 0)
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode), "RunScriptInvalidExitCode");
                     }
 
                     if (p.HasExited)
@@ -235,16 +240,16 @@ namespace Duplicati.Library.Modules.Builtin
                         stderr = cs.StandardError;
                         stdout = cs.StandardOutput;
                         if (p.ExitCode != 0)
-                            Logging.Log.WriteMessage(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode), Duplicati.Library.Logging.LogMessageType.Warning);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "InvalidExitCode", null, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
                     }
                     else
                     {
-                        Logging.Log.WriteMessage(Strings.RunScript.ScriptTimeoutError(scriptpath), Duplicati.Library.Logging.LogMessageType.Warning);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "ScriptTimeout", null, Strings.RunScript.ScriptTimeoutError(scriptpath));
                     }
                 }
 
                 if (!string.IsNullOrEmpty(stderr))
-                    Logging.Log.WriteMessage(Strings.RunScript.StdErrorReport(scriptpath, stderr), Duplicati.Library.Logging.LogMessageType.Warning);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "StdErrorNotEmpty", null, Strings.RunScript.StdErrorReport(scriptpath, stderr));
 
                 //We only allow setting parameters on startup
                 if (eventname == "BEFORE" && stdout != null)
@@ -302,7 +307,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteMessage(Strings.RunScript.ScriptExecuteError(scriptpath, ex.Message), Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                Logging.Log.WriteWarningMessage(LOGTAG, "ScriptExecuteError", ex, Strings.RunScript.ScriptExecuteError(scriptpath, ex.Message));
                 if (requiredScript)
                     throw;
             }

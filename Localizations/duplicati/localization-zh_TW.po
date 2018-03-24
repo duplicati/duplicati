@@ -161,7 +161,7 @@ msgstr ""
 
 #: Server/Strings.cs:36 Library/Main/Strings.cs:220
 msgid "Clean up old log data"
-msgstr ""
+msgstr "清理舊的記錄資料"
 
 #: Server/Strings.cs:37 Library/Main/Strings.cs:221
 msgid "Set the time after which log data will be purged from the database."
@@ -445,7 +445,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:30
 msgid "You must enter a username"
-msgstr ""
+msgstr "您需要輸入帳號"
 
 #: Library/Interface/Strings.cs:31
 msgid ""
@@ -467,7 +467,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:38
 msgid "Folder created!"
-msgstr ""
+msgstr "資料夾已建立"
 
 #: Library/Interface/Strings.cs:39
 msgid "The requested folder does not exist"
@@ -480,7 +480,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:41
 msgid "Cancelled"
-msgstr ""
+msgstr "已取消"
 
 #: Library/Interface/CustomExceptions.cs:77
 #: Library/Interface/CustomExceptions.cs:85
@@ -1339,7 +1339,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:8
 msgid "Local repository"
-msgstr ""
+msgstr "本機 repository"
 
 #: Library/Backend/Rclone/Strings.cs:9
 msgid ""
@@ -1349,7 +1349,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:10
 msgid "Remote repository"
-msgstr ""
+msgstr "遠端 repository"
 
 #: Library/Backend/Rclone/Strings.cs:11
 msgid ""
@@ -1359,7 +1359,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:12
 msgid "Remote path"
-msgstr ""
+msgstr "遠端 path"
 
 #: Library/Backend/Rclone/Strings.cs:13
 msgid "Path on the Remote repository. "
@@ -1428,7 +1428,7 @@ msgstr ""
 
 #: Library/Backend/File/Strings.cs:13
 msgid "Local folder or drive"
-msgstr ""
+msgstr "本機資料夾或磁碟"
 
 #: Library/Backend/File/Strings.cs:14
 #, csharp-format
@@ -3455,7 +3455,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:29
 msgid "Configure http requests"
-msgstr ""
+msgstr "http 相關選項"
 
 #: Library/Modules/Builtin/Strings.cs:30
 msgid "Alternate OAuth URL"
@@ -3538,7 +3538,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:52
 msgid "Run script"
-msgstr ""
+msgstr "執行 script"
 
 #: Library/Modules/Builtin/Strings.cs:53
 msgid ""
@@ -3608,7 +3608,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:68
 msgid "Send mail"
-msgstr ""
+msgstr "寄送郵件"
 
 #: Library/Modules/Builtin/Strings.cs:69
 #, csharp-format
@@ -3813,7 +3813,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:134
 msgid "XMPP report module"
-msgstr ""
+msgstr "XMPP 通知功能"
 
 #: Library/Modules/Builtin/Strings.cs:135
 msgid ""
@@ -3831,7 +3831,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:141
 msgid "HTTP report module"
-msgstr ""
+msgstr "HTTP 通知功能"
 
 #: Library/Modules/Builtin/Strings.cs:142
 msgid ""

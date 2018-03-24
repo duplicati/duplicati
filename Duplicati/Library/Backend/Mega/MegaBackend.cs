@@ -66,9 +66,9 @@ namespace Duplicati.Library.Backend.Mega
                 m_password = uri.Password;
 
             if (string.IsNullOrEmpty(m_username))
-                throw new UserInformationException(Strings.MegaBackend.NoUsernameError);
+                throw new UserInformationException(Strings.MegaBackend.NoUsernameError, "MegaNoUsername");
             if (string.IsNullOrEmpty(m_password))
-                throw new UserInformationException(Strings.MegaBackend.NoPasswordError);
+                throw new UserInformationException(Strings.MegaBackend.NoPasswordError, "MegaNoPassword");
 
             m_prefix = uri.HostAndPath ?? "";
         }
@@ -260,7 +260,7 @@ namespace Duplicati.Library.Backend.Mega
             }
         }
 
-        public string DNSName
+        public string[] DNSName
         {
             get { return null; }
         }

@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Lock that protects the options collection
         /// </summary>
-        protected object m_lock = new object();
+        protected readonly object m_lock = new object();
 
         protected Dictionary<string, string> m_options;
 
@@ -257,7 +257,8 @@ namespace Duplicati.Library.Main
                     "compression-extension-file",
                     "full-remote-verification",
                     "disable-synthetic-filelist",
-                    "disable-file-scanner"
+                    "disable-file-scanner",
+                    "disable-on-battery"
                 };
             }
         }
@@ -280,7 +281,8 @@ namespace Duplicati.Library.Main
                     "max-upload-pr-second",
                     "max-download-pr-second",
                     "no-connection-reuse",
-                    "allow-sleep"
+                    "allow-sleep",
+                    "use-background-io-priority"
                 };
             }
         }
@@ -310,7 +312,10 @@ namespace Duplicati.Library.Main
                     "debug-output",
                     "debug-retry-errors",
                     "log-file",
-                    "log-level",
+                    "log-file-log-level",
+                    "log-file-log-filter",
+                    "console-log-level",
+                    "console-log-filter",
                 };
             }
         }
@@ -460,11 +465,18 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("debug-output", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugoutputShort, Strings.Options.DebugoutputLong, "false"),
                     new CommandLineArgument("debug-retry-errors", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugretryerrorsShort, Strings.Options.DebugretryerrorsLong, "false"),
 
-                    new CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileShort),
-                    new CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                    new CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileLong),
+                    new CommandLineArgument("log-file-log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LogfileloglevelShort, Strings.Options.LogfileloglevelShort, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                    new CommandLineArgument("log-file-log-filter", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Options.LogfilelogfiltersShort, Strings.Options.LogfilelogfiltersLong(System.IO.Path.PathSeparator.ToString()), null),
+
+                    new CommandLineArgument("console-log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ConsoleloglevelShort, Strings.Options.ConsoleloglevelShort, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                    new CommandLineArgument("console-log-filter", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Options.ConsolelogfiltersShort, Strings.Options.ConsolelogfiltersLong(System.IO.Path.PathSeparator.ToString()), null),
+
+                    new CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)), Strings.Options.LogLevelDeprecated("log-file-log-level", "console-log-level")),
 
                     new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
                     new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepLong, "false"),
+                    new CommandLineArgument("use-background-io-priority", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UsebackgroundiopriorityShort, Strings.Options.UsebackgroundiopriorityLong, "false"),
                     new CommandLineArgument("no-connection-reuse", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoconnectionreuseShort, Strings.Options.NoconnectionreuseLong, "false"),
 
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
@@ -478,7 +490,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
                     new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, Strings.Options.CompressionextensionfileLong(DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
-                    new CommandLineArgument("verbose", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VerboseShort, Strings.Options.VerboseLong, "false"),
+                    new CommandLineArgument("verbose", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VerboseShort, Strings.Options.VerboseLong, "false", null, null, Strings.Options.VerboseDeprecated),
                     new CommandLineArgument("full-result", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullresultShort, Strings.Options.FullresultLong, "false"),
 
                     new CommandLineArgument("overwrite", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OverwriteShort, Strings.Options.OverwriteLong, "false"),
@@ -532,6 +544,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
+                    new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
                 });
 
                 return lst;
@@ -816,10 +829,10 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the time frames and intervals for the retention policy
         /// </summary>        
-        public Dictionary<TimeSpan, TimeSpan> RetentionPolicy
+        public List<RetentionPolicyValue> RetentionPolicy
         {
             get {
-                var retentionPolicyConfig = new Dictionary<TimeSpan, TimeSpan>();
+                var retentionPolicyConfig = new List<RetentionPolicyValue>();
 
                 string v;
                 m_options.TryGetValue("retention-policy", out v);
@@ -831,11 +844,7 @@ namespace Duplicati.Library.Main
 
                 foreach (var periodIntervalString in periodIntervalStrings)
                 {
-                    var periodInterval = periodIntervalString.Split(':');
-                    var period = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[0]);
-                    var interval = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[1]);
-
-                    retentionPolicyConfig.Add(period, interval);
+                    retentionPolicyConfig.Add(RetentionPolicyValue.CreateFromString(periodIntervalString));
                 }
 
                 return retentionPolicyConfig;
@@ -937,7 +946,7 @@ namespace Duplicati.Library.Main
                 {
                     int x = int.Parse(m_options["number-of-retries"]);
                     if (x < 0)
-                        throw new UserInformationException("Invalid count for number-of-retries");
+                        throw new UserInformationException("Invalid count for number-of-retries", "NumberOfRetriesInvalid");
 
                     return x;
                 }
@@ -950,9 +959,14 @@ namespace Duplicati.Library.Main
         public bool SynchronousUpload { get { return Library.Utility.Utility.ParseBoolOption(m_options, "synchronous-upload"); } }
 
         /// <summary>
-        /// A value indicating if system is allowed to enter sleep power states during backup/restore ops (win32 only)
+        /// A value indicating if system is allowed to enter sleep power states during backup/restore
         /// </summary>
         public bool AllowSleep { get { return GetBool("allow-sleep"); } }
+
+        /// <summary>
+        /// A value indicating if system should use the low-priority IO during backup/restore
+        /// </summary>
+        public bool UseBackgroundIOPriority { get { return GetBool("use-background-io-priority"); } }
 
         /// <summary>
         /// A value indicating if use of the streaming interface is disallowed
@@ -1212,34 +1226,19 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a value indicating if the log level has been set
+        /// Gets the log-file detail level
         /// </summary>
-        public bool HasLoglevel
+        public Duplicati.Library.Logging.LogMessageType LogFileLoglevel
         {
             get
             {
                 string value;
-                if (!m_options.TryGetValue("log-level", out value))
+                if (!m_options.TryGetValue("log-file-log-level", out value))
                     value = null;
 
-                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
-                    if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
-                        return true;
-
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Gets the log detail level
-        /// </summary>
-        public Duplicati.Library.Logging.LogMessageType Loglevel
-        {
-            get
-            {
-                string value;
-                if (!m_options.TryGetValue("log-level", out value))
-                    value = null;
+                if (string.IsNullOrWhiteSpace(value))
+                    if (!m_options.TryGetValue("log-level", out value))
+                        value = null;
 
                 foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
@@ -1249,6 +1248,102 @@ namespace Duplicati.Library.Main
             }
         }
 
+        /// <summary>
+        /// Helper method to support filters with either a + or - prefix
+        /// </summary>
+        /// <returns>The IFilter instance.</returns>
+        /// <param name="msg">The filter string to parse.</param>
+        private static IFilter StringToIFilter(string msg)
+        {
+            if (string.IsNullOrWhiteSpace(msg))
+                return new FilterExpression();
+            if (msg[0] == '+')
+                return new FilterExpression(msg.Substring(1), true);
+            if (msg[0] == '-')
+                return new FilterExpression(msg.Substring(1), false);
+            return new FilterExpression(msg, true);
+        }
+
+        /// <summary>
+        /// Parses a log filter string, and returns the filter instance
+        /// </summary>
+        /// <returns>The log filter.</returns>
+        /// <param name="value">The filter string to parse.</param>
+        public static IFilter ParseLogFilter(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return new FilterExpression();
+
+            return value
+                .Split(new char[] { System.IO.Path.PathSeparator, ':', ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(StringToIFilter)
+                .Aggregate(FilterExpression.Combine);
+        }
+
+        /// <summary>
+        /// Parses a log level string
+        /// </summary>
+        /// <returns>The log level enumeration value.</returns>
+        /// <param name="value">The string value to parse.</param>
+        /// <param name="backupvalue">An optional fallback parsing value.</param>
+        public static Logging.LogMessageType ParseLogLevel(string value, string backupvalue)
+        {
+            value = string.IsNullOrWhiteSpace(value) ? backupvalue : value;
+            foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
+                    return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+
+            return Duplicati.Library.Logging.LogMessageType.Warning;
+        }
+
+        /// <summary>
+        /// Gets the filter used for log-file messages.
+        /// </summary>
+        /// <value>The log file filter.</value>
+        public IFilter LogFileLogFilter
+        {
+            get
+            {
+                m_options.TryGetValue("log-file-log-filter", out var value);
+                return ParseLogFilter(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the filter used for console messages.
+        /// </summary>
+        /// <value>The log file filter.</value>
+        public IFilter ConsoleLogFilter
+        {
+            get
+            {
+                m_options.TryGetValue("console-log-filter", out var value);
+                return ParseLogFilter(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the console log detail level
+        /// </summary>
+        public Duplicati.Library.Logging.LogMessageType ConsoleLoglevel
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("console-log-level", out value))
+                    value = null;
+
+                if (string.IsNullOrWhiteSpace(value))
+                    if (!m_options.TryGetValue("log-level", out value))
+                        value = null;
+
+                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
+                        return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+
+                return Duplicati.Library.Logging.LogMessageType.Warning;
+            }
+        }
         /// <summary>
         /// Gets the attribute filter used to exclude files and folders.
         /// </summary>
@@ -1281,11 +1376,6 @@ namespace Duplicati.Library.Main
         /// A value indicating if connections cannot be re-used
         /// </summary>
         public bool NoConnectionReuse { get { return GetBool("no-connection-reuse"); } }
-
-        /// <summary>
-        /// A value indicating if the output should be verbose
-        /// </summary>
-        public bool Verbose { get { return GetBool("verbose"); } }
 
         /// <summary>
         /// A value indicating if the returned value should not be truncated
@@ -1803,6 +1893,15 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets a flag indicating whether the backup should be disabled when on battery power.
+        /// </summary>
+        /// <value><c>true</c> if the backup should be disabled when on battery power; otherwise, <c>false</c>.</value>
+        public bool DisableOnBattery
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-on-battery"); }
+        }
+
+        /// <summary>
         /// Gets the threshold for when log data should be cleaned
         /// </summary>
         public DateTime LogRetention
@@ -1878,5 +1977,89 @@ namespace Duplicati.Library.Main
             return Library.Utility.Utility.ParseBoolOption(m_options, name);
         }
 
+        /// <summary>
+        /// Class for handling a single RententionPolicy timeframe-interval-pair
+        /// </summary>
+        public class RetentionPolicyValue
+        {
+            public readonly TimeSpan Timeframe;
+            public readonly TimeSpan Interval;
+
+            public RetentionPolicyValue(TimeSpan timeframe, TimeSpan interval)
+            {
+                if (timeframe < TimeSpan.Zero)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(timeframe), string.Format("The timeframe cannot be negative: '{0}'", timeframe));
+                }
+                if (interval < TimeSpan.Zero)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(interval), string.Format("The interval cannot be negative: '{0}'", interval));
+                }
+
+                this.Timeframe = timeframe;
+                this.Interval = interval;
+            }
+
+            /// <summary>
+            /// Returns whether this is an unlimited timeframe or not
+            /// </summary>
+            /// <returns></returns>
+            public Boolean IsUnlimtedTimeframe()
+            {
+                // Timeframes equal or bigger than the maximum TimeSpan effectivly represent an unlimited timeframe
+                return Timeframe >= TimeSpan.MaxValue;
+            }
+
+            /// <summary>
+            /// Returns whether all versions in this timeframe should be kept or not
+            /// </summary>
+            /// <returns></returns>
+            public Boolean IsKeepAllVersions()
+            {
+                /// Intervals between two versions that are equal or smaller than zero effectivly result in
+                /// all versions in that timeframe being kept.
+                return Interval <= TimeSpan.Zero;
+            }
+
+            public override string ToString()
+            {
+                return (IsUnlimtedTimeframe() ? "Unlimited" : Timeframe.ToString()) + " / " + (IsKeepAllVersions() ? "Keep all" : Interval.ToString());
+            }
+
+            /// <summary>
+            /// Parses a string representation of a timeframe-interval-pair and returns a RentionPolicyValue object
+            /// </summary>
+            /// <returns></returns>
+            public static RetentionPolicyValue CreateFromString(string rententionPolicyValueString)
+            {
+                var periodInterval = rententionPolicyValueString.Split(':');
+
+                TimeSpan timeframe;
+                // Timeframe "U" (= Unlimited) means: For unlimted time keep one version every X interval.
+                // So the timeframe has to span the maximum time possible.
+                if (String.Equals(periodInterval[0], "U", StringComparison.OrdinalIgnoreCase))
+                {
+                    timeframe = TimeSpan.MaxValue;
+                }
+                else
+                {
+                    timeframe = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[0]);
+                }
+
+                TimeSpan interval;
+                // Interval "U" (= Unlimited) means: For period X keep all versions.
+                // So the interval between two versions has to be zero.
+                if (String.Equals(periodInterval[1], "U", StringComparison.OrdinalIgnoreCase))
+                {
+                    interval = TimeSpan.Zero;
+                }
+                else
+                {
+                    interval = Library.Utility.Timeparser.ParseTimeSpan(periodInterval[1]);
+                }
+
+                return new RetentionPolicyValue(timeframe, interval);
+            }
+        }
     }
 }

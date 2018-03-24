@@ -8,6 +8,11 @@ namespace Duplicati.Library.Main.Database
 {
     public static class ExtensionMethods
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ExtensionMethods));
+
         public static void AddParameters(this System.Data.IDbCommand self, int count)
         {
             for(var i = 0; i < count; i++)
@@ -45,7 +50,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(string.Format("ExecuteNonQuery: {0}", self.CommandText)))
+            using(new Logging.Timer(LOGTAG, "ExecuteNonQuery", string.Format("ExecuteNonQuery: {0}", self.CommandText)))
                 return self.ExecuteNonQuery();
         }
 
@@ -61,7 +66,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(string.Format("ExecuteScalar: {0}", self.CommandText)))
+            using(new Logging.Timer(LOGTAG, "ExecuteScalar", string.Format("ExecuteScalar: {0}", self.CommandText)))
                 return self.ExecuteScalar();
         }
 
@@ -87,7 +92,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(string.Format("ExecuteScalarInt64: {0}", self.CommandText)))
+            using(new Logging.Timer(LOGTAG, "ExecuteScalarInt64", string.Format("ExecuteScalarInt64: {0}", self.CommandText)))
                 using(var rd = self.ExecuteReader())
                     if (rd.Read())
                         return ConvertValueToInt64(rd, 0, defaultvalue);
@@ -107,7 +112,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(string.Format("ExecuteReader: {0}", self.CommandText)))
+            using(new Logging.Timer(LOGTAG, "ExcuteReader", string.Format("ExecuteReader: {0}", self.CommandText)))
                 return self.ExecuteReader();
         }
 
