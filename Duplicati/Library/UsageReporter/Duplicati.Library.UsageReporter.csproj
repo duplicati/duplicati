@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.UsageReporter</RootNamespace>
     <AssemblyName>Duplicati.Library.UsageReporter</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>

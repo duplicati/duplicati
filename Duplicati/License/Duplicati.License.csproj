@@ -14,7 +14,7 @@
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
@@ -36,6 +36,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
@@ -409,21 +412,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="licenses\System.Net.FtpClient\" />
+  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="licenses\MegaApi\" />
-    <Folder Include="licenses\AngularJS\" />
-    <Folder Include="licenses\jQuery\" />
-    <Folder Include="licenses\CoCoL\" />
-    <Folder Include="licenses\rumps\" />
-    <Folder Include="licenses\System.Net.FtpClient\" />
-    <Folder Include="licenses\MimeKit\" />
-    <Folder Include="licenses\BouncyCastle\" />
-    <Folder Include="licenses\AngularGettext\" />
-    <Folder Include="licenses\mozroots\" />
-    <Folder Include="licenses\TlsTest\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

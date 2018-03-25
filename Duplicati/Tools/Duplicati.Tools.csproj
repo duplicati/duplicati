@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Tools</RootNamespace>
     <AssemblyName>Duplicati.Tools</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

@@ -1035,7 +1035,8 @@ namespace Duplicati.Library.AutoUpdater
                 m_hasUpdateInstalled = null;
 
             // Check if there are updates installed, otherwise use current
-            KeyValuePair<string, UpdateInfo> best = new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, SelfVersion);
+            KeyValuePair<string, UpdateInfo> best = new KeyValuePair<string, UpdateInfo>(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), SelfVersion);
+
             if (HasUpdateInstalled)
                 best = m_hasUpdateInstalled.Value;
 
@@ -1066,9 +1067,6 @@ namespace Duplicati.Library.AutoUpdater
 
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
-            if (Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("AUTOUPDATER_USE_APPDOMAIN"), false))
-                return RunFromMostRecentAppDomain(method, cmdargs, defaultstrategy);
-            else
                 return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
         }
 
@@ -1136,133 +1134,6 @@ namespace Duplicati.Library.AutoUpdater
             }
 
         }
-
-        public static int RunFromMostRecentAppDomain(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
-        {
-            // If the update is disabled, go straight in
-            if (DISABLE_UPDATE_DOMAIN)
-                return RunMethod(method, cmdargs);
-
-            // If we are not the primary domain, just execute
-            if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
-            {
-                int r = 0;
-                WrapWithUpdater(defaultstrategy, () => {
-                    r = RunMethod(method, cmdargs);
-                });
-
-                return r;
-            }
-
-            // If we are a re-launch, wait briefly for the other process to exit
-            var sleepmarker = System.Environment.GetEnvironmentVariable(string.Format(SLEEP_ENVNAME_TEMPLATE, APPNAME));
-            if (!string.IsNullOrWhiteSpace(sleepmarker))
-            {
-                System.Environment.SetEnvironmentVariable(string.Format(SLEEP_ENVNAME_TEMPLATE, APPNAME), null);
-                System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
-            }
-
-            // Check if there are updates installed, otherwise use current
-            KeyValuePair<string, UpdateInfo> best = new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, SelfVersion);
-            if (HasUpdateInstalled)
-                best = m_hasUpdateInstalled.Value;
-
-            if (INSTALLDIR != null && System.IO.File.Exists(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE)))
-            {
-                try
-                {
-                    var current = System.IO.File.ReadAllText(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE)).Trim();
-                    if (!string.IsNullOrWhiteSpace(current))
-                    {
-                        var targetfolder = System.IO.Path.Combine(INSTALLDIR, current);
-                        var currentmanifest = ReadInstalledManifest(targetfolder);
-                        if (currentmanifest != null && TryParseVersion(currentmanifest.Version) > TryParseVersion(best.Value.Version) && VerifyUnpackedFolder(targetfolder, currentmanifest))
-                            best = new KeyValuePair<string, UpdateInfo>(targetfolder, currentmanifest);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (OnError != null)
-                        OnError(ex);
-                }
-            }
-
-            Environment.SetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME), InstalledBaseDir);
-
-            var folder = best.Key;
-
-            // Basic idea with the loop is that the running AppDomain can use 
-            // RUN_UPDATED_ENVNAME_TEMPLATE to signal that a new version is ready
-            // when the caller exits, the new update is executed
-            //
-            // This allows more or less seamless updates
-            //
-
-            int result = 0;
-            while (!string.IsNullOrWhiteSpace(folder) && System.IO.Directory.Exists(folder))
-            {
-                var prevfolder = folder;
-                // Create the new domain
-                var domain = AppDomain.CreateDomain(
-                                 "UpdateDomain",
-                                 null,
-                                 folder,
-                                 "",
-                                 false
-                             );
-
-                domain.SetData("LOCALIZATION_FOLDER", InstalledBaseDir);
-
-                result = domain.ExecuteAssemblyByName(method.DeclaringType.Assembly.GetName().Name, cmdargs);
-
-                folder = (string)domain.GetData(RUN_UPDATED_FOLDER_PATH);
-
-                try { AppDomain.Unload(domain); }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Appdomain unload error: {0}", ex);
-                }
-
-                if (!string.IsNullOrWhiteSpace(folder))
-                {
-                    if (!VerifyUnpackedFolder(folder))
-                        folder = prevfolder; //Go back and run the previous version
-                    else if (RequiresRespawn)
-                    {
-                        // We have a valid update, and the current instance is terminated.
-                        // But due to external libraries, we need to re-spawn the original process
-
-                        try
-                        {
-                            var app = Environment.GetCommandLineArgs().First();
-                            var args = Library.Utility.Utility.WrapAsCommandLine(Environment.GetCommandLineArgs().Skip(1), false);
-
-                            if (!System.IO.Path.IsPathRooted(app))
-                                app = System.IO.Path.Combine(InstalledBaseDir, app);
-
-
-                            // Re-launch but give the OS a little time to fully unload all open handles, etc.                        
-                            var si = new System.Diagnostics.ProcessStartInfo(app, args);
-                            si.UseShellExecute = false;
-                            si.EnvironmentVariables.Add(string.Format(SLEEP_ENVNAME_TEMPLATE, APPNAME), "1");
-
-                            System.Diagnostics.Process.Start(si);
-
-                            return 0;
-                        }
-                        catch (Exception ex)
-                        {
-                            if (OnError != null)
-                                OnError(ex);
-                            folder = prevfolder;
-                        }
-                    }
-                }
-            }
-
-            return result;
-        }
-
     }
 }
 

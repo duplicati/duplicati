@@ -10,7 +10,7 @@
     <Prefer32Bit>False</Prefer32Bit>    
     <RootNamespace>UpdateVersionStamp</RootNamespace>
     <AssemblyName>UpdateVersionStamp</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

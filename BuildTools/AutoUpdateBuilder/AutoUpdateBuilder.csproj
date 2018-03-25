@@ -8,7 +8,7 @@
     <Prefer32Bit>False</Prefer32Bit>    
     <RootNamespace>AutoUpdateBuilder</RootNamespace>
     <AssemblyName>AutoUpdateBuilder</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
