@@ -1,0 +1,77 @@
+version: 1.0.{build}
+image: Visual Studio 2017
+configuration: Debug
+platform: Any CPU
+environment:
+    UNITTEST_BASEFOLDER: C:\projects\duplicati\testdata
+    COVERALLS_REPO_TOKEN:
+        secure: szQsrkP5rvra8L60SomD73/dFvRwot0UuyA566zqzI2qmLOr+MhLN0AyC8BTbhYY
+before_build:
+    - cmd: nuget restore Duplicati.sln
+build:
+    project: Duplicati.sln
+    verbosity: minimal
+test_script:
+    - ps: |
+        Start-FileDownload https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip
+
+        7z x DSMCBE.zip -otestdata
+        mkdir .\testData\data
+
+        nuget install OpenCover -Version 4.6.166 -OutputDirectory packages
+        nuget install coveralls.net -Version 0.6.0 -OutputDirectory packages
+        nuget install NUnit.Runners -Version 3.4.0 -OutputDirectory packages
+
+        $testDir = ".\Duplicati\UnitTest\bin\Debug"
+        $tests = @("$testDir\Duplicati.UnitTest.dll")
+        $testsPassed = $true
+
+        foreach ($elem in $tests) {
+            $testResultsFile = "$elem" + ".xml"
+
+            .\packages\OpenCover.4.6.166\tools\OpenCover.Console.exe `
+            -register:user `
+            -target:.\packages\NUnit.ConsoleRunner.3.4.0\tools\nunit3-console.exe `
+            "-targetargs:""$elem"" /framework:net-4.5 /where:cat!=BulkData /result:""$testResultsFile""" `
+            "-filter:+[Duplicati.Library.Main]* -[UnitTest]*" `
+            -output:opencover.xml `
+            -returntargetcode `
+
+            # Keep track of test failures so that we can throw an exception after
+            # uploading coverage and test results.
+            $testsPassed = $testsPassed -and $?
+
+            # Upload test results to AppVeyor.
+            $wc = New-Object "System.Net.WebClient"
+            $wc.UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\""$testResultsFile""))
+        }
+
+        if ($Env:COVERALLS_REPO_TOKEN) {
+            $revision = git rev-parse HEAD
+            $branch = git rev-parse --abbrev-ref HEAD
+            $commitAuthor = git show --quiet --format="%aN" $revision
+            $commitEmail = git show --quiet --format="%aE" $revision
+            $commitMessage = git show --quiet --format="%s" $revision
+
+            .\packages\coveralls.net.0.6.0\tools\csmacnz.Coveralls.exe `
+            --opencover -i opencover.xml `
+            --repoToken "$Env:COVERALLS_REPO_TOKEN" `
+            --commitId "$revision" `
+            --commitBranch "$branch" `
+            --commitAuthor "$commitAuthor" `
+            --commitEmail "$commitEmail" `
+            --commitMessage "$commitMessage" `
+            --useRelativePaths `
+            --basePath .\Duplicati\UnitTest\bin\Debug
+        }
+
+        if (!$testsPassed) {
+            throw "Tests failed."
+        }
+notifications:
+    - provider: Webhook
+      url: https://webhooks.gitter.im/e/a2c55bac2b5c38838e0f
+      method: POST
+      on_build_success: true
+      on_build_failure: true
+      on_build_status_changed: true
