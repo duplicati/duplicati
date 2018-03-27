@@ -1,0 +1,17 @@
+<div class="input text">
+    <label for="msgroup_group_email" translate>Group email</label>
+    <input type="text" name="msgroup_group_email" id="msgroup_group_email" ng-model="$parent.msgroup_group_email" placeholder="{{'Enter the email address of the Office 365 group' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="msgroup_path" translate>Path on server</label>
+    <input type="text" name="msgroup_path" id="msgroup_path" ng-model="$parent.Path" placeholder="{{'Enter the destination path' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="msgroup_authid">
+        <a ng-show="oauth_in_progress" href="{{oauth_start_link}}" target="_blank" translate>AuthID</a>
+        <a ng-hide="oauth_in_progress" href ng-click="oauth_start_token_creation()" translate>AuthID</a>
+    </label>
+    <input type="text" name="msgroup_authid" id="msgroup_authid" ng-model="$parent.AuthID" placeholder="{{'Click the AuthID link to create an AuthID' | translate}}" />
+</div>
