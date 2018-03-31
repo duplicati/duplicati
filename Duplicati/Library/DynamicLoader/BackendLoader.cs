@@ -98,7 +98,7 @@ namespace Duplicati.Library.DynamicLoader
                     {
                         // Unwrap exceptions for nicer display
                         if (tex.InnerException != null)
-                            throw tex.InnerException;
+                            throw new Exception("Unwrapped TargetInvocationException", tex.InnerException);
 
                         throw;
                     }
