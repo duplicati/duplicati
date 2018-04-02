@@ -1,3 +1,12 @@
+2018-04-02 - 2.0.3.4_canary_2018-04-02
+==========
+* Added support for setting low IO priority during backups
+* Changed order of throttling arguments to fix incorrect throtling
+* Added an option to disable backups when running on battery, thanks @warwickmm
+* Fixed a crash on the CLI help page, thanks @tygill
+* Added new Graph-API based backends for SharePoint and Office 365, thanks @tygill
+* Added new UI status badges, thanks @dbddhkpde
+
 2018-04-02 - 2.0.3.3_beta_2018-04-02
 ==========
 This beta release contains many changes, a quick summary of changes:
