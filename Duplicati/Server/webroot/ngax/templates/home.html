@@ -3,7 +3,8 @@
         <div class="tasklist">
             <div ng-repeat="item in backups" class="task">
                 <a href ng-click="$parent.TaskMenuID == item.Backup.ID ? $parent.TaskMenuID = null : $parent.TaskMenuID = item.Backup.ID">
-                    <img ng-show="item.Backup.ID != state.activeTask.Item2" src="img/backup.png">
+                    <img ng-show="item.Backup.ID != state.activeTask.Item2 && item.Backup.Metadata.NextScheduledRun == null" src="img/backup.png">
+                    <img ng-show="item.Backup.ID != state.activeTask.Item2 && item.Backup.Metadata.NextScheduledRun != null" src="img/backupschedule.png">
                     <img ng-show="item.Backup.ID == state.activeTask.Item2 && state.programState == 'Running'" src="img/backuprunning.png">
                     <img ng-show="item.Backup.ID == state.activeTask.Item2 && state.programState == 'Paused'" src="img/backuppause.png">
                     {{item.Backup.Name}}
