@@ -613,6 +613,38 @@ namespace Duplicati.Library.Utility
 
             return res;
         }
+
+        /// <summary>
+        /// Parses a log filter string, and returns the filter instance
+        /// </summary>
+        /// <returns>The log filter.</returns>
+        /// <param name="value">The filter string to parse.</param>
+        public static IFilter ParseLogFilter(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return new FilterExpression();
+
+            return value
+                .Split(new char[] { System.IO.Path.PathSeparator, ':', ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(StringToIFilter)
+                .Aggregate(FilterExpression.Combine);
+        }
+
+        /// <summary>
+        /// Helper method to support filters with either a + or - prefix
+        /// </summary>
+        /// <returns>The IFilter instance.</returns>
+        /// <param name="msg">The filter string to parse.</param>
+        public static IFilter StringToIFilter(string msg)
+        {
+            if (string.IsNullOrWhiteSpace(msg))
+                return new FilterExpression();
+            if (msg[0] == '+')
+                return new FilterExpression(msg.Substring(1), true);
+            if (msg[0] == '-')
+                return new FilterExpression(msg.Substring(1), false);
+            return new FilterExpression(msg, true);
+        }
     }
 }
 

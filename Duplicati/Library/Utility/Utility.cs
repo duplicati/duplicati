@@ -687,7 +687,15 @@ namespace Duplicati.Library.Utility
                 return ParseBool(opt, true);
             else
                 return false;
+        }
 
+        public static T ParseEnum<T>(string value, T @default)
+        {
+            foreach (string s in Enum.GetNames(typeof(T)))
+                if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
+                    return (T)Enum.Parse(typeof(T), s);
+
+            return @default;
         }
 
         /// <summary>

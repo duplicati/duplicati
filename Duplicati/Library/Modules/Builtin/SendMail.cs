@@ -62,6 +62,14 @@ namespace Duplicati.Library.Modules.Builtin
         /// Option used to specify if reports are sent for other operations than backups
         /// </summary>
         private const string OPTION_SENDALL = "send-mail-any-operation";
+        /// <summary>
+        /// Option used to set the log level for mail reports
+        /// </summary>
+        private const string OPTION_LOG_LEVEL = "send-mail-log-level";
+        /// <summary>
+        /// Option used to set the log filters for mail reports
+        /// </summary>
+        private const string OPTION_LOG_FILTER = "send-mail-log-filter";
 
         #endregion
 
@@ -142,6 +150,14 @@ namespace Duplicati.Library.Modules.Builtin
         /// True to send all operations
         /// </summary>
         private bool m_sendAll;
+        /// <summary>
+        /// The log scope that should be disposed
+        /// </summary>
+        private IDisposable m_logscope;
+        /// <summary>
+        /// The log storage
+        /// </summary>
+        private Utility.FileBackedStringList m_logstorage;
 
         #endregion
 
@@ -187,6 +203,10 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
                     new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string [] { "All" }).ToArray()),
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionSendallShort, Strings.SendMail.OptionSendallLong),
+
+                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.SendMail.OptionLoglevellShort, Strings.SendMail.OptionLoglevelLong, Logging.LogMessageType.Warning.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
+                    new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionLogfilterShort, Strings.SendMail.OptionLogfilterLong),
+
                 });
             }
         }
@@ -236,6 +256,21 @@ namespace Duplicati.Library.Modules.Builtin
                 m_body = DEFAULT_BODY;
             if (string.IsNullOrEmpty(m_from))
                 m_from = DEFAULT_SENDER;
+
+            m_options.TryGetValue(OPTION_LOG_FILTER, out var logfilterstring);
+            var filter = Utility.FilterExpression.ParseLogFilter(logfilterstring);
+            var logLevel = 
+
+            m_logstorage = new FileBackedStringList();
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m => {
+                
+                if (filter.Matches(m.Tag, out var result, out var match))
+                    return result;
+                else if (m.Level < loglevel)
+                    return false;
+                
+                return true;
+            });
         }
 
         #endregion
@@ -261,6 +296,14 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="result">The result object, if this derives from an exception, the operation failed</param>
         public void OnFinish(object result)
         {
+            // Dispose the current log scope
+            if (m_logscope != null)
+            {
+                try { m_logscope.Dispose(); }
+                catch { }
+                m_logscope = null;
+            }
+
             //If no email is supplied, then skip
             if (string.IsNullOrEmpty(m_to))
                 return;
