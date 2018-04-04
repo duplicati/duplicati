@@ -129,7 +129,7 @@ namespace Duplicati.Library.Backend
             string requestBase = string.Format("{0}/sites/{1}", this.ApiVersion, uri.Host);
 
             // Just like the original SharePoint backend, use the "//" as a hint at where the site might be
-            int siteHint = uri.Path.IndexOf("//");
+            int siteHint = uri.Path.IndexOf("//", StringComparison.Ordinal);
             if (siteHint >= 0)
             {
                 try
