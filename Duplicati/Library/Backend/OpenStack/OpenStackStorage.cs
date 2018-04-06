@@ -45,11 +45,11 @@ namespace Duplicati.Library.Backend.OpenStack
         private string m_container;
         private string m_prefix;
 
-        private string m_domainName;
+        private readonly string m_domainName;
         private string m_username;
         private string m_password;
         private string m_authUri;
-        private string m_version;
+        private readonly string m_version;
         private string m_tenantName;
         private string m_apikey;
         private string m_region;
@@ -90,7 +90,7 @@ namespace Duplicati.Library.Backend.OpenStack
 
                 public Identity()
                 {
-                    this.methods = new IdentityMethods[] { IdentityMethods.password };
+                    this.methods = new [] { IdentityMethods.password };
                 }
             }
 
@@ -147,12 +147,6 @@ namespace Duplicati.Library.Backend.OpenStack
                     this.name = name;
                 }
             }
-
-            public class TokenBasedRequest
-            {
-                public string id { get; set; }
-            }
-
 
             public AuthContainer auth { get; set; }
 
