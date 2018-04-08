@@ -212,11 +212,11 @@ namespace Duplicati.Server.Database
             }
         }
 
-		public bool UnackedError
+        public bool UnackedError
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.UNACKED_ERROR);
+                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.UNACKED_ERROR], false);
             }
             set
             {
@@ -230,7 +230,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.UNACKED_WARNING);
+                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.UNACKED_WARNING], false);
             }
             set
             {
@@ -239,6 +239,7 @@ namespace Duplicati.Server.Database
                 SaveSettings();
             }
         }
+
         public bool ServerPortChanged
         {
             get
