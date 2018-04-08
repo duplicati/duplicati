@@ -215,6 +215,18 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
             if (scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
                 scope.openstack_server = 'https://identity.api.rackspacecloud.com/';
         }
+
+        if (scope.openstack_versions == null) {
+            AppService.post('/webmodule/openstack-getconfig', {'openstack-config': 'Versions'}).then(function(data) {
+                scope.openstack_versions = data.data.Result;
+                if (scope.openstack_version == undefined )
+                    scope.openstack_version = 'v2.0';
+
+            }, AppUtils.connectionError);
+        } else {
+            if (scope.openstack_version == undefined )
+                scope.openstack_version = 'v2.0';
+        }
     };
 
 
@@ -312,12 +324,14 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.parsers['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
     EditUriBackendConfig.parsers['openstack'] = function(scope, module, server, port, path, options) {
+        scope.openstack_domainname = options['--openstack-domain-name'];
         scope.openstack_server = scope.openstack_server_custom = options['--openstack-authuri'];
+	scope.openstack_version = options['--openstack-version'];
         scope.openstack_tenantname = options['--openstack-tenant-name'];
         scope.openstack_apikey = options['--openstack-apikey'];
         scope.openstack_region = options['--openstack-region'];
 
-        var nukeopts = ['--openstack-authuri', '--openstack-tenant-name', '--openstack-apikey', '--openstack-region'];
+        var nukeopts = ['--openstack-domain-name', '--openstack-authuri', '--openstack-tenant-name', '--openstack-apikey', '--openstack-region', '--openstack-version'];
         for(var x in nukeopts)
             delete options[nukeopts[x]];
 
@@ -464,18 +478,24 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.builders['openstack'] = function(scope) {
         var opts = {
+            'openstack-domain-name': scope.openstack_domainname,
             'openstack-authuri': AppUtils.contains_value(scope.openstack_providers, scope.openstack_server) ? scope.openstack_server : scope.openstack_server_custom,
+	    'openstack-version': scope.openstack_version,
             'openstack-tenant-name': scope.openstack_tenantname,
             'openstack-apikey': scope.openstack_apikey,
             'openstack-region': scope.openstack_region
         };
 
+        if ((opts['openstack-domain-name'] || '') == '')
+            delete opts['openstack-domain-name'];
         if ((opts['openstack-tenant-name'] || '') == '')
             delete opts['openstack-tenant-name'];
         if ((opts['openstack-apikey'] || '') == '')
             delete opts['openstack-apikey'];
         if ((opts['openstack-region'] || '') == '')
             delete opts['openstack-region'];
+        if ((opts['openstack-version'] || '') == '')
+            delete opts['openstack-version'];
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
@@ -763,29 +783,45 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
 
     EditUriBackendConfig.validaters['openstack'] = function(scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
-            EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Bucket Name'));
-
+	EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
+	EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Bucket Name'));
+	
         if (res && (scope['openstack_server'] || '').trim().length == 0 && (scope['openstack_server_custom'] || '').trim().length == 0)
             res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must select or fill in the AuthURI'));
+	
+	if (((scope.openstack_version) || '').trim() == 'v3') {
+	    if (res && (scope.Password || '').trim().length == 0)
+		res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a password to use v3 API'));
+	    
+	    if (res && ((scope.openstack_domainname) || '').trim().length == 0)
+		res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a domain name to use v3 API'));
+	    
+	    if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
+		res = EditUriBackendCOnfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant (aka project) name to use v3 API'));
 
-        if (((scope.openstack_apikey) || '').trim().length == 0) {
-
-            if (res && (scope.Password || '').trim().length == 0)
-                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key'));
-
-            if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
-                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant name if you do not provide an API Key'));
-
-        } else {
-            if (res && (scope.Password || '').trim().length != 0)
-                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key, not both'));
-        }
-
+	    if (res && (scope.openstack_apikey || '').trim().length != 0)
+		res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Openstack API Key are not supported in v3 keystone API.'));
+	    
+	    
+	} else {
+	    
+	    if (((scope.openstack_apikey) || '').trim().length == 0) {
+		
+		if (res && (scope.Password || '').trim().length == 0)
+		    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key'));
+		
+		if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
+		    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant name if you do not provide an API Key'));
+		
+	    } else {
+		if (res && (scope.Password || '').trim().length != 0)
+		    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key, not both'));
+	    }
+	}
         if (res)
             continuation();
     };
-
+    
     EditUriBackendConfig.validaters['s3'] = function(scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name')) &&
