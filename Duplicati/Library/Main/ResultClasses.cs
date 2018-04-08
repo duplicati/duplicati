@@ -352,7 +352,7 @@ namespace Duplicati.Library.Main
         public IEnumerable<string> Warnings { get { return m_parent == null ? m_warnings : m_parent.Warnings; } }
         public IEnumerable<string> Errors { get { return m_parent == null ?  m_errors : m_parent.Errors; } }
 
-        public BasicResults()
+        protected BasicResults()
         {
             this.BeginTime = DateTime.UtcNow;
             this.m_parent = null;
@@ -367,7 +367,7 @@ namespace Duplicati.Library.Main
             m_operationProgressUpdater = new OperationProgressUpdater();
         }
 
-        public BasicResults(BasicResults p)
+        protected BasicResults(BasicResults p)
         {
             this.BeginTime = DateTime.UtcNow;
             this.m_parent = p;

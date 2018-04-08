@@ -24,7 +24,7 @@ namespace Duplicati.Library.Main.Volumes
             m_volumename = name;
         }
 
-        public VolumeWriterBase(Options options)
+        protected VolumeWriterBase(Options options)
             : this(options, DateTime.UtcNow)
         {
         }
@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main.Volumes
             m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
         }
 
-        public VolumeWriterBase(Options options, DateTime timestamp)
+        protected VolumeWriterBase(Options options, DateTime timestamp)
             : base(options)
         {
             if (!string.IsNullOrWhiteSpace(options.AsynchronousUploadFolder))
