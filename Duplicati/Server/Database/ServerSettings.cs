@@ -244,7 +244,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.SERVER_PORT_CHANGED);
+                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.SERVER_PORT_CHANGED], false);
             }
             set
             {
