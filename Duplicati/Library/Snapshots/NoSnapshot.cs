@@ -41,7 +41,7 @@ namespace Duplicati.Library.Snapshots
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sources">The folders that are about to be backed up</param>
-        public NoSnapshot(string[] sources)
+        protected NoSnapshot(string[] sources)
             : this(sources, new Dictionary<string, string>())
         {
         }
@@ -51,7 +51,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="sources">The folders that are about to be backed up</param>
         /// <param name="options">A set of system options</param>
-        public NoSnapshot(string[] sources, Dictionary<string, string> options)
+        protected NoSnapshot(string[] sources, Dictionary<string, string> options)
         {
             m_sources = new string[sources.Length];
             for (int i = 0; i < m_sources.Length; i++)

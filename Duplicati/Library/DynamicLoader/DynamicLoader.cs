@@ -60,7 +60,7 @@ namespace Duplicati.Library.DynamicLoader
         /// Construcst a new instance of the dynamic loader,
         ///  does not load anything
         /// </summary>
-        public DynamicLoader()
+        protected DynamicLoader()
         {
         }
 
