@@ -188,10 +188,6 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                var tp = m_values[CONST.IS_FIRST_RUN];
-                if (string.IsNullOrEmpty(tp))
-                    return true;
-
                 return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.IS_FIRST_RUN);
             }
             set
