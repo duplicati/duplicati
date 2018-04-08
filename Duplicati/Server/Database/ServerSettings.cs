@@ -198,23 +198,19 @@ namespace Duplicati.Server.Database
             }
         }
 
-		public bool HasAskedForPasswordProtection
-		{
-			get
-			{
-                var tp = m_values[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION];
-				if (string.IsNullOrEmpty(tp))
-					return true;
-
-				return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION);
-			}
-			set
-			{
-				lock (m_connection.m_lock)
-					m_values[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION] = value.ToString();
-				SaveSettings();
-			}
-		}
+        public bool HasAskedForPasswordProtection
+        {
+            get
+            {
+                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION);
+            }
+            set
+            {
+                lock (m_connection.m_lock)
+                    m_values[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION] = value.ToString();
+                SaveSettings();
+            }
+        }
 
 		public bool UnackedError
         {
