@@ -496,7 +496,7 @@ body {
             .state {
                 float: left;
                 color: darken(@hColor, 10%);
-                width: 580px;
+                width: 595px;
                 padding: 13px 15px;
                 margin: 10px 20px;
                 border: 1px darken(@hColor, 10%) solid;
@@ -568,6 +568,17 @@ body {
                     left: 0px;
                     background: fade(@hColor, 25%);
                     z-index: 5;
+                }
+
+                .task-name {
+                    flex: 1;
+                    overflow:hidden;
+                    text-overflow:ellipsis;
+                    cursor: help;
+                }
+
+                .task-state-info {
+                    display: flex;
                 }
             }
 
