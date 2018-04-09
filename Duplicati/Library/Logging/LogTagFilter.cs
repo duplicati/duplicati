@@ -57,11 +57,11 @@ namespace Duplicati.Library.Logging
         public bool Accepts(LogEntry entry)
         {
             // Skip all explicitly excluded
-            if (m_excludeTags.Any(x => entry.Tag.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
+            if (m_excludeTags.Any(x => entry.FilterTag.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
                 return false;
 
             // Include all explicitly included or under threshold
-            return entry.Level >= m_logLevel || m_includeTags.Any(x => entry.Tag.StartsWith(x, StringComparison.OrdinalIgnoreCase));
+            return entry.Level >= m_logLevel || m_includeTags.Any(x => entry.FilterTag.StartsWith(x, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

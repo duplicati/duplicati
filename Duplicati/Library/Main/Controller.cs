@@ -441,7 +441,7 @@ namespace Duplicati.Library.Main
 
             // Redirect all messages from the filter to the message sink
             var filtertag = Logging.Log.LogTagFromType<Operation.BackupHandler.FilterHandler>();
-            using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.Tag.Contains(filtertag)))
+            using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
                 return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>
                 {
@@ -501,7 +501,7 @@ namespace Duplicati.Library.Main
                          
             /// Forward all messages from the email module to the message sink
             var filtertag = Logging.Log.LogTagFromType<Modules.Builtin.SendMail>();
-            using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.Tag.Contains(filtertag)))
+            using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
                 return RunAction(new SendMailResults(), result =>
                 {

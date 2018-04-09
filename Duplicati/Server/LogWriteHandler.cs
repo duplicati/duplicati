@@ -118,7 +118,7 @@ namespace Duplicati.Server
                 this.Message = entry.FormattedMessage;
                 this.Type = entry.Level;
                 this.Exception = entry.Exception;
-                this.Tag = entry.Tag;
+                this.Tag = entry.FilterTag;
                 this.MessageID = entry.Id;
                 this.BackupID = entry[LOG_EXTRA_BACKUPID];
                 this.TaskID = entry[LOG_EXTRA_TASKID];
