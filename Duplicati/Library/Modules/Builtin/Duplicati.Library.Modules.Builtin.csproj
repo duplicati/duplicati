@@ -67,7 +67,7 @@
     <Compile Include="HyperVOptions.cs" />
     <Compile Include="HttpOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ResultSerializer.cs" />
+    <Compile Include="ResultExportFormat.cs" />
     <Compile Include="SendHttpMessage.cs" />
     <Compile Include="SendMail.cs" />
     <Compile Include="RunScript.cs" />
@@ -77,6 +77,10 @@
     <Compile Include="..\..\..\..\thirdparty\DnsLite\DnsLite.cs">
       <Link>DnsLite.cs</Link>
     </Compile>
+    <Compile Include="ResultSerialization\ResultFormatSerializerProvider.cs" />
+    <Compile Include="ResultSerialization\IResultFormatSerializer.cs" />
+    <Compile Include="ResultSerialization\DuplicatiFormatSerializer.cs" />
+    <Compile Include="ResultSerialization\JsonFormatSerializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -128,5 +132,8 @@
     <Content Include="run-script-example.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ResultSerialization\" />
   </ItemGroup>
 </Project>

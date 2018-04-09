@@ -11,8 +11,8 @@ using System.Text.RegularExpressions;
 using DnsLib;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
-using Duplicati.Library.Utility;
 using System.Net.NetworkInformation;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -49,6 +49,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// Option used to specify if reports are sent for other operations than backups
         /// </summary>
         private const string OPTION_SENDALL = "send-xmpp-any-operation";
+        /// <summary>
+        /// Option used to specify what format the result is sent in.
+        /// </summary>
+        private const string OPTION_RESULT_FORMAT = "send-xmpp-result-output-format";
 
         #endregion
 
@@ -85,6 +89,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// The parsed result level if
         /// </summary>
         private string m_parsedresultlevel = string.Empty;
+        /// <summary>
+        /// Serializer to use when serializing the message.
+        /// </summary>
+        private IResultFormatSerializer resultFormatSerializer;
 
         /// <summary>
         /// The server username
@@ -145,6 +153,7 @@ namespace Duplicati.Library.Modules.Builtin
         {
             get
             {
+                string[] resultOutputFormatOptions = new string[] { ResultExportFormat.Duplicati.ToString(), ResultExportFormat.Json.ToString() };
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmpptoShort, Strings.SendJabberMessage.SendxmpptoLong),
                     new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppmessageShort, Strings.SendJabberMessage.SendxmppmessageLong, DEFAULT_MESSAGE),
@@ -152,6 +161,13 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmpppasswordShort, Strings.SendJabberMessage.SendxmpppasswordLong),
                     new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.SendJabberMessage.SendxmpplevelShort, Strings.SendJabberMessage.SendxmpplevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string[] { "All" } ).ToArray()),
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendJabberMessage.SendxmppanyoperationShort, Strings.SendJabberMessage.SendxmppanyoperationLong),
+                    new CommandLineArgument(OPTION_RESULT_FORMAT,
+                        CommandLineArgument.ArgumentType.Enumeration,
+                        Strings.SendJabberMessage.ResultFormatShort,
+                        Strings.SendJabberMessage.ResultFormatLong(resultOutputFormatOptions),
+                        ResultExportFormat.Duplicati.ToString(),
+                        null,
+                        resultOutputFormatOptions)
                 });
             }
         }
@@ -171,6 +187,19 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(OPTION_PASSWORD, out m_password);
             commandlineOptions.TryGetValue(OPTION_MESSAGE, out m_body);
             m_options = commandlineOptions;
+
+            string tmpResultFormat;
+            ResultExportFormat resultFormat;
+            if (!commandlineOptions.TryGetValue(OPTION_RESULT_FORMAT, out tmpResultFormat))
+            {
+                resultFormat = ResultExportFormat.Duplicati;
+            }
+            else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
+            {
+                resultFormat = ResultExportFormat.Duplicati;
+            }
+
+            resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
 
             string tmp;
             commandlineOptions.TryGetValue(OPTION_SENDLEVEL, out tmp);
@@ -354,12 +383,12 @@ namespace Duplicati.Library.Modules.Builtin
             input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
             if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                using (TempFile tf = new TempFile())
-                {
-                    ResultSerializer.SerializeToFile(tf, result);
-                    input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                }
+            {
+                string resultExport = resultFormatSerializer.Serialize(result);
+                input = Regex.Replace(input, "\\%RESULT\\%", resultExport, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            }
 
             foreach (KeyValuePair<string, string> kv in m_options)
                 input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);

@@ -22,6 +22,7 @@ using System.Text;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -37,6 +38,8 @@ namespace Duplicati.Library.Modules.Builtin
         private const string REQUIRED_OPTION = "run-script-before-required";
         private const string TIMEOUT_OPTION = "run-script-timeout";
 
+        private const string RESULT_FORMAT_OPTION = "run-script-result-output-format";
+
         private const string DEFAULT_TIMEOUT = "60s";
 
         private string m_requiredScript = null;
@@ -48,6 +51,7 @@ namespace Duplicati.Library.Modules.Builtin
         private string m_remoteurl;
         private string[] m_localpath;
         private IDictionary<string, string> m_options;
+        private IResultFormatSerializer resultFormatSerializer;
 
         #region IGenericModule implementation
         public void Configure(IDictionary<string, string> commandlineOptions)
@@ -56,11 +60,23 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(REQUIRED_OPTION, out m_requiredScript);
             commandlineOptions.TryGetValue(FINISH_OPTION, out m_finishScript);
 
+            string tmpResultFormat;
+            ResultExportFormat resultFormat;
+            if (!commandlineOptions.TryGetValue(RESULT_FORMAT_OPTION, out tmpResultFormat)) {
+                resultFormat = ResultExportFormat.Duplicati;
+            }
+            else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat)) {
+                resultFormat = ResultExportFormat.Duplicati;
+            }
+
+            resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
+
             string t;
             if (!commandlineOptions.TryGetValue(TIMEOUT_OPTION, out t))
                 t = DEFAULT_TIMEOUT;
 
             m_timeout = (int)Utility.Timeparser.ParseTimeSpan(t).TotalMilliseconds;
+
             m_options = commandlineOptions;
         }
 
@@ -73,10 +89,18 @@ namespace Duplicati.Library.Modules.Builtin
         {
             get
             {
+                string[] resultOutputFormatOptions = new string[] { ResultExportFormat.Duplicati.ToString(), ResultExportFormat.Json.ToString() };
                 return new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument(STARTUP_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.StartupoptionShort, Strings.RunScript.StartupoptionLong),
                     new Duplicati.Library.Interface.CommandLineArgument(FINISH_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
                     new Duplicati.Library.Interface.CommandLineArgument(REQUIRED_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
+                    new CommandLineArgument(RESULT_FORMAT_OPTION,
+                        CommandLineArgument.ArgumentType.Enumeration,
+                        Strings.RunScript.ResultFormatShort,
+                        Strings.RunScript.ResultFormatLong(resultOutputFormatOptions),
+                        ResultExportFormat.Duplicati.ToString(),
+                        null,
+                        resultOutputFormatOptions),
                     new Duplicati.Library.Interface.CommandLineArgument(TIMEOUT_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
                 });
             }
@@ -115,7 +139,12 @@ namespace Duplicati.Library.Modules.Builtin
 
             using (TempFile tmpfile = new TempFile())
             {
-                ResultSerializer.SerializeToFile(tmpfile, result);
+                using (var streamWriter = new StreamWriter(tmpfile))
+                {
+                    string resultExport = resultFormatSerializer.Serialize(result);
+                    streamWriter.Write(resultExport);
+                }
+
                 Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile, level);
             }
         }
