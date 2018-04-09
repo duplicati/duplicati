@@ -1,3 +1,31 @@
+2018-04-02 - 2.0.3.4_canary_2018-04-02
+==========
+* Added support for setting low IO priority during backups
+* Changed order of throttling arguments to fix incorrect throtling
+* Added an option to disable backups when running on battery, thanks @warwickmm
+* Fixed a crash on the CLI help page, thanks @tygill
+* Added new Graph-API based backends for SharePoint and Office 365, thanks @tygill
+* Added new UI status badges, thanks @dbddhkpde
+
+2018-04-02 - 2.0.3.3_beta_2018-04-02
+==========
+This beta release contains many changes, a quick summary of changes:
+
+* Fixed not running the slow VACUUM command after each operation
+* Fixed a problem with SSL certificates periodically failing
+* Added Sia and rclone backends
+* Updated the hashing library to use faster native libraries where available
+* Added a new retention policy and UI which allows backup versions to decrease over time
+* Updated the auto-updater, such that new installs will spawn an extra process instead of using the AppDomain method as previously done.
+* Faster browsing of files to restore
+* Removed automatic tilde expansions as it created numerous problems
+* Multiple new languages added to the UI
+* Fixed a number of browser cache issues, which should fix the XSRF errors
+* Fixed not attempting to read non-symlink reparse points on Windows
+* Fixed some crashes that were caused by the usage reporter filling up reports
+
+Thanks to the many contributors who worked hard to get this release ready!
+
 2018-03-16 - 2.0.3.2_canary_2018-03-16
 ==========
 * Added a new logging system with filters

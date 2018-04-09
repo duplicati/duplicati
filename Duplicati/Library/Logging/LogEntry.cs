@@ -46,7 +46,12 @@ namespace Duplicati.Library.Logging
         public LogMessageType Level;
 
         /// <summary>
-        /// The tag for the message
+        /// The filter tag for the message
+        /// </summary>
+        public readonly string FilterTag;
+
+        /// <summary>
+        /// The filter tag for the message
         /// </summary>
         public readonly string Tag;
 
@@ -147,6 +152,7 @@ namespace Duplicati.Library.Logging
             Tag = tag;
             Id = id;
             Exception = exception;
+            FilterTag = level + "-" + tag + "-" + id;
         }
 
         /// <summary>
@@ -155,7 +161,7 @@ namespace Duplicati.Library.Logging
         /// <returns>A <see cref="T:System.String"/> that represents the current <see cref="T:Duplicati.Library.Logging.LogEntry"/>.</returns>
         public override string ToString()
         {
-            return string.Format("{0:yyyy-MM-dd HH:mm:ss zz} - [{1}]: {2}", When.ToLocalTime(), Tag, FormattedMessage);
+            return string.Format("{0:yyyy-MM-dd HH:mm:ss zz} - [{1}]: {2}", When.ToLocalTime(), FilterTag, FormattedMessage);
         }
 
         /// <summary>

@@ -282,6 +282,7 @@ namespace Duplicati.Library.Logging
         /// <param name="message">The message to write</param>
         /// <param name="tag">The tag-type for this message</param>
         /// <param name="id">The message id</param>
+        /// <param name="ex">The exception to attach</param>
         /// <param name="arguments">The message format arguments</param>
         public static void WriteErrorMessage(string tag, string id, Exception ex, string message, params object[] arguments)
         {
@@ -308,9 +309,10 @@ namespace Duplicati.Library.Logging
         /// <param name="ex">An exception value</param>
         /// <param name="tag">The tag-type for this message</param>
         /// <param name="id">The message id</param>
+        /// <param name="arguments">The arguments to format the log message with</param>
         public static void WriteMessage(LogMessageType type, string tag, string id, Exception ex, string message, params object[] arguments)
         {
-            var msg = new LogEntry(message, arguments, type, type + "-" + tag + "-" + id, id, ex);
+            var msg = new LogEntry(message, arguments, type, tag, id, ex);
 
             lock (m_lock)
             {
