@@ -689,6 +689,31 @@ namespace Duplicati.Library.Utility
                 return false;
         }
 
+        /// <summary>
+        /// Parses an enum found in the options dictionary
+        /// </summary>
+        /// <returns>The parsed or default enum value.</returns>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <typeparam name="T">The enum type parameter.</typeparam>
+        public static T ParseEnumOption<T>(IDictionary<string, string> options, string value, T @default)
+        {
+            string opt;
+            if (options.TryGetValue(value, out opt))
+                return ParseEnum<T>(opt, @default);
+            else
+                return @default;
+
+        }
+
+        /// <summary>
+        /// Attempts to parse an enum with case-insensitive lookup, returning the default value if there was no match
+        /// </summary>
+        /// <returns>The parsed or default enum value.</returns>
+        /// <param name="value">The string to parse.</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <typeparam name="T">The enum type parameter.</typeparam>
         public static T ParseEnum<T>(string value, T @default)
         {
             foreach (string s in Enum.GetNames(typeof(T)))

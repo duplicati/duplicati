@@ -162,5 +162,19 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendhttpanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string SendhttpanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations"); } }
         public static string SendMessageError(string message) { return LC.L(@"Failed to send http message: {0}", message); }
+        public static string SendasjsonShort { get { return LC.L(@"Send data as JSON body"); } }
+        public static string SendasjsonLong { get { return LC.L(@"Use this flag to send the result data as a JSON object"); } }
+        public static string HttpverbShort { get { return LC.L(@"Sets the HTTP verb to use"); } }
+        public static string HttpverbLong { get { return LC.L(@"Use this option to change the default HTTP verb used to submit a report"); } }
+    }
+
+    internal static class ReportHelper {
+        public static string SendMessageFailedError(string message) { return LC.L(@"Failed to send message: {0}", message); }
+        public static string OptionLoglevellShort { get { return LC.L("Defines a log level for messages"); } }
+        public static string OptionLoglevelLong { get { return LC.L("Use this option to set the log level for messages to include in the report"); } }
+        public static string OptionLogfilterShort { get { return LC.L("Log message filter"); } }
+        public static string OptionLogfilterLong { get { return LC.L("Use this option to set a filter expression that defines what options are included in the report"); } }
+        public static string OptionmaxloglinesShort { get { return LC.L("Limits log lines"); } }
+        public static string OptionmaxloglinesLong { get { return LC.L("Use this option to set the maximum number of log lines to include in the report. Zero or negative values means unlimited."); } }
     }
 }

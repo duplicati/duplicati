@@ -22,6 +22,7 @@ using System.Text;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
+using System.Linq;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -31,11 +32,23 @@ namespace Duplicati.Library.Modules.Builtin
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RunScript>();
+        /// <summary>
+        /// The default log level
+        /// </summary>
+        private const Logging.LogMessageType DEFAULT_LOG_LEVEL = Logging.LogMessageType.Warning;
 
         private const string STARTUP_OPTION = "run-script-before";
         private const string FINISH_OPTION = "run-script-after";
         private const string REQUIRED_OPTION = "run-script-before-required";
         private const string TIMEOUT_OPTION = "run-script-timeout";
+        /// <summary>
+        /// Option used to set the log level for mail reports
+        /// </summary>
+        private const string OPTION_LOG_LEVEL = "run-script-log-level";
+        /// <summary>
+        /// Option used to set the log filters for mail reports
+        /// </summary>
+        private const string OPTION_LOG_FILTER = "run-script-log-filter";
 
         private const string DEFAULT_TIMEOUT = "60s";
 
@@ -48,6 +61,16 @@ namespace Duplicati.Library.Modules.Builtin
         private string m_remoteurl;
         private string[] m_localpath;
         private IDictionary<string, string> m_options;
+
+        /// <summary>
+        /// The log scope that should be disposed
+        /// </summary>
+        private IDisposable m_logscope;
+        /// <summary>
+        /// The log storage
+        /// </summary>
+        private Utility.FileBackedStringList m_logstorage;
+
 
         #region IGenericModule implementation
         public void Configure(IDictionary<string, string> commandlineOptions)
@@ -62,6 +85,21 @@ namespace Duplicati.Library.Modules.Builtin
 
             m_timeout = (int)Utility.Timeparser.ParseTimeSpan(t).TotalMilliseconds;
             m_options = commandlineOptions;
+
+            m_options.TryGetValue(OPTION_LOG_FILTER, out var logfilterstring);
+            var filter = Utility.FilterExpression.ParseLogFilter(logfilterstring);
+            var logLevel = Utility.Utility.ParseEnumOption(m_options, OPTION_LOG_LEVEL, DEFAULT_LOG_LEVEL);
+
+            m_logstorage = new FileBackedStringList();
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m => {
+
+                if (filter.Matches(m.FilterTag, out var result, out var match))
+                    return result;
+                else if (m.Level < logLevel)
+                    return false;
+
+                return true;
+            });
         }
 
         public string Key { get { return "runscript"; } }
@@ -78,6 +116,9 @@ namespace Duplicati.Library.Modules.Builtin
                     new Duplicati.Library.Interface.CommandLineArgument(FINISH_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
                     new Duplicati.Library.Interface.CommandLineArgument(REQUIRED_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
                     new Duplicati.Library.Interface.CommandLineArgument(TIMEOUT_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
+
+                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
+                    new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
                 });
             }
         }
@@ -101,9 +142,16 @@ namespace Duplicati.Library.Modules.Builtin
 
         public void OnFinish (object result)
         {
+            // Dispose the current log scope
+            if (m_logscope != null)
+            {
+                try { m_logscope.Dispose(); }
+                catch { }
+                m_logscope = null;
+            }
+
             if (string.IsNullOrEmpty(m_finishScript))
                 return;
-
 
             ParsedResultType level;
             if (result is Exception)
@@ -115,13 +163,13 @@ namespace Duplicati.Library.Modules.Builtin
 
             using (TempFile tmpfile = new TempFile())
             {
-                SerializeResult(tmpfile, result);
+                SerializeResult(tmpfile, result, m_logstorage);
                 Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile, level);
             }
         }
         #endregion
 
-        public static void SerializeResult(string file, object result)
+        public static void SerializeResult(string file, object result, IEnumerable<string> loglines)
         {
             using(StreamWriter sw = new StreamWriter(file))
             {
@@ -181,7 +229,21 @@ namespace Duplicati.Library.Modules.Builtin
                 }
                 else
                 {
-                    Utility.Utility.PrintSerializeObject(result, sw);
+                    Utility.Utility.PrintSerializeObject(result, sw, 
+                                                         filter: (p, x) => 
+                    !new[] { 
+                        nameof(IBasicResults.Warnings),
+                        nameof(IBasicResults.Errors),
+                        nameof(IBasicResults.Messages),
+                    }.Contains(p.Name, StringComparer.Ordinal));
+                }
+
+                if (loglines != null)
+                {
+                    sw.WriteLine();
+                    sw.WriteLine("Log data:");
+                    foreach (var n in loglines)
+                        sw.WriteLine(n);
                 }
             }
         }

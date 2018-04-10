@@ -76,6 +76,7 @@
     <Compile Include="..\..\..\..\thirdparty\DnsLite\DnsLite.cs">
       <Link>DnsLite.cs</Link>
     </Compile>
+    <Compile Include="ReportHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
