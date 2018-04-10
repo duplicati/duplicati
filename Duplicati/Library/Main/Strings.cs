@@ -246,7 +246,7 @@ namespace Duplicati.Library.Main.Strings
         public static string LogfileloglevelLong { get { return LC.L(@"Specifies the amount of log information to write into the file specified by --log-file"); } }
         public static string LogfileloglevelShort { get { return LC.L(@"Log file information level"); } }
         public static string LogfilelogfiltersShort { get { return LC.L(@"Applies filters to the file log data"); } }
-        public static string LogfilelogfiltersLong(string delimiter) { return LC.L(@"This option accepts filters that removes or includes messages regardless of their log level. Multiple filters are supported by separating with {0}. Filters are matched against the log tag and assumed to be including, unless they start with '-'. Regular expressions are supported within hard braces. Example: ""+Path*{0}+*Mail*{0}-[.*DNS]"" "); }
+        public static string LogfilelogfiltersLong(string delimiter) { return LC.L(@"This option accepts filters that removes or includes messages regardless of their log level. Multiple filters are supported by separating with {0}. Filters are matched against the log tag and assumed to be including, unless they start with '-'. Regular expressions are supported within hard braces. Example: ""+Path*{0}+*Mail*{0}-[.*DNS]"" ", delimiter); }
         public static string ConsoleloglevelLong { get { return LC.L(@"Specifies the amount of log information to write as console output"); } }
         public static string ConsoleloglevelShort { get { return LC.L(@"Console information level"); } }
         public static string ConsolelogfiltersShort { get { return LC.L(@"Applies filters to the console log data"); } }

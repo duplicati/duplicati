@@ -64,7 +64,7 @@ namespace Duplicati.CommandLine
         /// <param name="entry">The entry to write.</param>
         public void WriteMessage(LogEntry entry)
         {
-            var found = m_filter.Matches(entry.Tag, out var result, out var match);
+            var found = m_filter.Matches(entry.FilterTag, out var result, out var match);
             // If there is a filter match, use that
             if (found)
             {

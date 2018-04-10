@@ -164,6 +164,7 @@ namespace Duplicati.CommandLine.BackendTester
                 IEnumerable<Library.Interface.IFileEntry> curlist = null;
                 try
                 {
+                    backend.Test();
                     curlist = backend.List();
                 }
                 catch (FolderMissingException fex)
@@ -210,6 +211,7 @@ namespace Duplicati.CommandLine.BackendTester
                 int max_filename_size = 80;
                 bool disableStreaming = Library.Utility.Utility.ParseBoolOption(options, "disable-streaming-transfers");
                 bool skipOverwriteTest = Library.Utility.Utility.ParseBoolOption(options, "skip-overwrite-test");
+                bool trimFilenameSpaces = Library.Utility.Utility.ParseBoolOption(options, "trim-filename-spaces");
 
                 if (options.ContainsKey("number-of-files"))
                     number_of_files = int.Parse(options["number-of-files"]);
@@ -232,17 +234,13 @@ namespace Duplicati.CommandLine.BackendTester
                     List<TempFile> files = new List<TempFile>();
                     for (int i = 0; i < number_of_files; i++)
                     {
-
-                        StringBuilder filename = new StringBuilder();
-                        int filenamelen = rnd.Next(min_filename_size, max_filename_size);
-                        for (int j = 0; j < filenamelen; j++)
-                            filename.Append(allowedChars[rnd.Next(0, allowedChars.Length)]);
+                        string filename = CreateRandomRemoteFileName(min_filename_size, max_filename_size, allowedChars, trimFilenameSpaces, rnd);
 
                         string localfilename = CreateRandomFile(tf, i, min_file_size, max_file_size, rnd);
 
                         //Calculate local hash and length
                         using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                            files.Add(new TempFile(filename.ToString(), localfilename, sha.ComputeHash(fs), fs.Length));
+                            files.Add(new TempFile(filename, localfilename, sha.ComputeHash(fs), fs.Length));
                     }
 
                     byte[] dummyFileHash = null;
@@ -268,6 +266,23 @@ namespace Duplicati.CommandLine.BackendTester
                     for (int i = 0; i < files.Count; i++)
                         Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming);
 
+                    TempFile originalRenamedFile = null;
+                    string renamedFileNewName = null;
+                    IRenameEnabledBackend renameEnabledBackend = backend as IRenameEnabledBackend;
+                    if (renameEnabledBackend != null)
+                    {
+                        // Rename the second file in the list, if there are more than one. If not, just do the first one.
+                        int renameIndex = files.Count > 1 ? 1 : 0;
+                        originalRenamedFile = files[renameIndex];
+
+                        renamedFileNewName = CreateRandomRemoteFileName(min_filename_size, max_filename_size, allowedChars, trimFilenameSpaces, rnd);
+
+                        Console.WriteLine("Renaming file {0} from {1} to {2}", renameIndex, originalRenamedFile.remotefilename, renamedFileNewName);
+
+                        renameEnabledBackend.Rename(originalRenamedFile.remotefilename, renamedFileNewName);
+                        files[renameIndex] = new TempFile(renamedFileNewName, originalRenamedFile.localfilename, originalRenamedFile.hash, originalRenamedFile.length);
+                    }
+
                     Console.WriteLine("Verifying file list ...");
 
                     curlist = backend.List();
@@ -290,7 +305,14 @@ namespace Duplicati.CommandLine.BackendTester
                                 }
 
                             if (!found)
-                                Console.WriteLine("*** File with name {0} was found on server but not uploaded!", fe.Name);
+                                if (originalRenamedFile != null && renamedFileNewName != null && originalRenamedFile.remotefilename == fe.Name)
+                                {
+                                    Console.WriteLine("*** File with name {0} was found on server but was supposed to have been renamed to {1}!", fe.Name, renamedFileNewName);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("*** File with name {0} was found on server but not uploaded!", fe.Name);
+                                }
                         }
 
                     foreach (TempFile tx in files)
@@ -361,6 +383,60 @@ namespace Duplicati.CommandLine.BackendTester
                         }
 
                 }
+
+                // Test quota retrieval
+                IQuotaEnabledBackend quotaEnabledBackend = backend as IQuotaEnabledBackend;
+                if (quotaEnabledBackend != null)
+                {
+                    Console.WriteLine("Checking quota...");
+                    IQuotaInfo quota = null;
+                    bool noException;
+                    try
+                    {
+                        quota = quotaEnabledBackend.Quota;
+                        noException = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("*** Checking quota information failed: {0}", ex);
+                        noException = false;
+                    }
+
+                    if (noException)
+                    {
+                        if (quota != null)
+                        {
+                            Console.WriteLine("Free Space:  {0}", Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace));
+                            Console.WriteLine("Total Space: {0}", Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace));
+                        }
+                        else
+                        {
+                            Console.WriteLine("Unable to retrieve quota information");
+                        }
+                    }
+                }
+
+                // Test DNSName lookup
+                Console.WriteLine("Checking DNS names used by this backend...");
+                try
+                {
+                    string[] dnsNames = backend.DNSName;
+                    if (dnsNames != null)
+                    {
+                        foreach (string dnsName in dnsNames)
+                        {
+                            Console.WriteLine(dnsName);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No DNS names reported");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("*** Checking DNSName failed: {0}", ex);
+                }
             }
             finally
             {
@@ -410,6 +486,20 @@ namespace Duplicati.CommandLine.BackendTester
             }
         }
 
+        private static string CreateRandomRemoteFileName(int min_filename_size, int max_filename_size, string allowedChars, bool trimFilenameSpaces, Random rnd)
+        {
+            StringBuilder filenameBuilder = new StringBuilder();
+            int filenamelen = rnd.Next(min_filename_size, max_filename_size);
+            for (int j = 0; j < filenamelen; j++)
+                filenameBuilder.Append(allowedChars[rnd.Next(0, allowedChars.Length)]);
+
+            string filename = filenameBuilder.ToString();
+            if (trimFilenameSpaces)
+                filename = filename.Trim();
+
+            return filename;
+        }
+
         private static string CreateRandomFile(Library.Utility.TempFolder tf, int i, int min_file_size, int max_file_size, Random rnd)
         {
             Console.Write("Generating file {0}", i);
@@ -446,12 +536,12 @@ namespace Duplicati.CommandLine.BackendTester
                     new CommandLineArgument("max-file-size", CommandLineArgument.ArgumentType.Size, "The maximum allowed file size", "File sizes are chosen at random, this value is the upper bound", "50mb"),
                     new CommandLineArgument("min-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the lower bound", "5"),
                     new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the upper bound", "80"),
+                    new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trims whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
                     new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allows automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
                     new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypasses the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
                     new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Removes any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
                     new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activates file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
                 });
-
             }
         }
     }

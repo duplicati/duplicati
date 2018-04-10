@@ -104,7 +104,7 @@ namespace Duplicati.Library.Utility
         public bool IsFileBacked { get { return !(m_stream is MemoryStream); } }
         public long SwitchToFileLimit { get; set; }
         
-        public FileBackedList()
+        protected FileBackedList()
         {
             m_file = null;
             m_stream = new MemoryStream();

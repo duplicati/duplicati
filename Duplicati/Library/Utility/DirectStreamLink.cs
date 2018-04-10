@@ -310,7 +310,7 @@ namespace Duplicati.Library.Utility
         {
             protected DirectStreamLink m_linkStream;
             protected long m_knownLength = -1;
-            public LinkedSubStream(DirectStreamLink linkStream)
+            protected LinkedSubStream(DirectStreamLink linkStream)
             { this.m_linkStream = linkStream; }
 
             public override bool CanSeek { get { return false; } }

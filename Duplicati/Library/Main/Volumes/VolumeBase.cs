@@ -150,7 +150,7 @@ namespace Duplicati.Library.Main.Volumes
         protected readonly string m_blockhash;
         protected readonly string m_filehash;
 
-        public VolumeBase(Options options)
+        protected VolumeBase(Options options)
         {
             m_blocksize = options.Blocksize;
             m_blockhash = options.BlockHashAlgorithm;

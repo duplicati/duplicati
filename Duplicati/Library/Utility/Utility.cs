@@ -24,6 +24,7 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Utility
 {
@@ -1571,6 +1572,32 @@ namespace Duplicati.Library.Utility
         public static string WrapAsCommandLine(IEnumerable<string> args, bool allowEnvExpansion = false)
         {
             return string.Join(" ", args.Select(x => WrapCommandLineElement(x, allowEnvExpansion)));
+        }
+
+        /// <summary>
+        /// Utility method that emulates C#'s built in await keyword without requiring the calling method to be async.
+        /// This method should be preferred over using Task.Result, as it doesn't wrap singular exceptions in AggregateExceptions.
+        /// (It uses Task.GetAwaiter().GetResult(), which is the same thing that await uses under the covers.)
+        /// https://stackoverflow.com/questions/17284517/is-task-result-the-same-as-getawaiter-getresult
+        /// </summary>
+        /// <param name="task">Task to await</param>
+        public static void Await(this Task task)
+        {
+            task.GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Utility method that emulates C#'s built in await keyword without requiring the calling method to be async.
+        /// This method should be preferred over using Task.Result, as it doesn't wrap singular exceptions in AggregateExceptions.
+        /// (It uses Task.GetAwaiter().GetResult(), which is the same thing that await uses under the covers.)
+        /// https://stackoverflow.com/questions/17284517/is-task-result-the-same-as-getawaiter-getresult
+        /// </summary>
+        /// <typeparam name="T">Result type</typeparam>
+        /// <param name="task">Task to await</param>
+        /// <returns>Task result</returns>
+        public static T Await<T>(this Task<T> task)
+        {
+            return task.GetAwaiter().GetResult();
         }
     }
 }

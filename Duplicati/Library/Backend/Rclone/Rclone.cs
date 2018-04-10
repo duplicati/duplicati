@@ -104,7 +104,7 @@ namespace Duplicati.Library.Backend
 
             ProcessStartInfo psi = new ProcessStartInfo
             {
-                Arguments = arguments,
+                Arguments = String.Format("{0} {1}", arguments, opt_rclone),
                 CreateNoWindow = true,
                 FileName = command,
                 RedirectStandardError = true,
