@@ -27,7 +27,7 @@ namespace Duplicati.Library.Logging
         /// <summary>
         /// A string that is written as the message to the log
         /// </summary>
-        private const string STILL_RUNNING = "...";
+        private const string STILL_RUNNING = "... ";
         /// <summary>
         /// The scope that we dispose when we are done
         /// </summary>
@@ -77,14 +77,22 @@ namespace Duplicati.Library.Logging
 
                 if (remainingTime < 0)
                 {
+                    var last = m_lastEntry;
+                    var recmsg = STILL_RUNNING + m_lastEntry.FormattedMessage;
+
                     Logging.Log.WriteMessage(
                         m_lastEntry.Level,
                         m_lastEntry.Tag,
                         m_lastEntry.Id,
                         m_lastEntry.Exception,
-                        STILL_RUNNING,
-                        m_lastEntry.Arguments
+                        recmsg,
+                        null
                     );
+
+                    // If the last message written is our own message,
+                    // don't use the generated one
+                    if (object.ReferenceEquals(m_lastEntry.Message, recmsg))
+                        m_lastEntry = last;
 
                     remainingTime = m_maxIdleTime;
                 }
