@@ -92,6 +92,8 @@ script:
   - if [[ "$JOB" == "job3" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Purge --workers=1; fi
   - echo "travis_fold:end:unit_tests_purge"
 # start server and run gui tests
-  - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
+  - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe & MONO_PID=$!
   - if [[ "$JOB" == "job3" ]]; then python guiTests/guiTest.py; fi
-  
+after_script:
+  # Background processes that remain running can caues Travis builds to hang.
+  - test -v MONO_PID && kill -9 $MONO_PID
