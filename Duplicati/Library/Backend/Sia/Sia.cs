@@ -440,6 +440,11 @@ namespace Duplicati.Library.Backend.Sia
             }
         }
 
+        public string[] DNSName
+        {
+            get { return new string[] { new System.Uri(m_apihost).Host }; }
+        }
+
         #endregion
 
         #region IDisposable Members

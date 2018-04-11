@@ -31,6 +31,11 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class FileBlockProcessor
     {
+        /// <summary>
+        /// The tag to use for log messages
+        /// </summary>
+        private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
+
         public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
@@ -38,12 +43,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 Input = Channels.AcceptedChangedFile.ForRead,
                 StreamBlockChannel = Channels.StreamBlock.ForWrite,
-                LogChannel = Common.Channels.LogChannel.ForWrite
             },
 
             async self =>
             {
-                var log = new LogWrapper(self.LogChannel);
                 var blocksize = options.Blocksize;
 
                 while (await taskreader.ProgressAsync)
@@ -69,11 +72,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     if (!res.Item1)
                                         return res.Item2;
 
-                                    await log.WriteWarningAsync(string.Format("Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2), null);
+                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpextedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2);
                                     e.MetadataChanged = true;
                                 }
 
-                                return (await MetadataPreProcess.AddMetadataToOutputAsync(e.Path, e.MetaHashAndSize, database, log, self.StreamBlockChannel)).Item2;
+                                return (await MetadataPreProcess.AddMetadataToOutputAsync(e.Path, e.MetaHashAndSize, database, self.StreamBlockChannel)).Item2;
                             });
 
                         using (var fs = snapshot.OpenRead(e.Path))                            
@@ -87,36 +90,36 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (oldHash != filekey)
                         {
                             if (oldHash == null)
-                                await log.WriteVerboseAsync("New file {0}", e.Path);
+                                Logging.Log.WriteVerboseMessage(FILELOGTAG, "NewFile", "New file {0}", e.Path);
                             else
-                                await log.WriteVerboseAsync("File has changed {0}", e.Path);
-
+                                Logging.Log.WriteVerboseMessage(FILELOGTAG, "ChangedFile", "File has changed {0}", e.Path);
+                            
                             if (e.OldId < 0)
                             {
                                 await stats.AddAddedFile(filesize);
 
                                 if (options.Dryrun)
-                                    await log.WriteDryRunAsync("Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WoudlAddNewFile", "Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
                             else
                             {
                                 await stats.AddModifiedFile(filesize);
 
                                 if (options.Dryrun)
-                                    await log.WriteDryRunAsync("Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WoudlAddChangedFile", "Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
                             await database.AddFileAsync(e.Path, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else if (e.MetadataChanged)
                         {
-                            await log.WriteVerboseAsync("File has only metadata changes {0}", e.Path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Path);
                             await database.AddFileAsync(e.Path, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else /*if (e.OldId >= 0)*/
                         {
                             // When we write the file to output, update the last modified time
-                            await log.WriteVerboseAsync("File has not changed {0}", e.Path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "NoFileChanges", "File has not changed {0}", e.Path);
                             await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                         }
                     }
@@ -125,7 +128,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (ex.IsRetiredException())
                             return;
                         else
-                            await log.WriteWarningAsync(string.Format("Failed to process file {0}", e.Path), ex);
+                            Logging.Log.WriteWarningMessage(FILELOGTAG, "PathProcessingFailed", ex, "Failed to process path: {0}", e.Path);
                     }
                 }
             }

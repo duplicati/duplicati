@@ -104,6 +104,11 @@ namespace Duplicati.Library.Snapshots
         {
             UnixSupport.File.CreateSymlink(symlinkfile, target);
         }
+
+        public string GetSymlinkTarget(string path)
+        {
+            return UnixSupport.File.GetSymlinkTarget(NoSnapshot.NormalizePath(path));
+        }
         
         public string PathGetDirectoryName(string path)
         {

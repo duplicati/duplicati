@@ -8,6 +8,11 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalDatabase : IDisposable
     {        
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalDatabase));
+
         protected readonly System.Data.IDbConnection m_connection;
         protected readonly long m_operationid = -1;
 
@@ -185,7 +190,7 @@ namespace Duplicati.Library.Main.Database
             if (deleteGraceTime.Ticks > 0)
                 using(var cmd = m_connection.CreateCommand(transaction))
                     if ((c = cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""DeleteGraceTime"" = ? WHERE ""Name"" = ? ", (DateTime.UtcNow + deleteGraceTime).Ticks, name)) != 1)
-                        throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
+                        throw new Exception(string.Format("Unexpected number of updates when recording remote volume updates: {0}!", c));
 
 
             if (!suppressCleanup && state == RemoteVolumeState.Deleted)
@@ -233,7 +238,7 @@ namespace Duplicati.Library.Main.Database
                             qs += "?,";
                         }
                         else
-                            m_result.AddWarning(string.Format("Skipping invalid version: {0}", v), null);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "SkipInvalidVersion", null, "Skipping invalid version: {0}", v);
                             
                         
                     if (qs.Length > 0)
@@ -519,9 +524,9 @@ namespace Duplicati.Library.Main.Database
                         res.Add(rd.ConvertValueToInt64(0));
                     
                     if (res.Count == 0)
-                        throw new Duplicati.Library.Interface.UserInformationException("No backup at the specified date");
+                        throw new Duplicati.Library.Interface.UserInformationException("No backup at the specified date", "NoBackupAtDate");
                     else
-                        m_result.AddWarning(string.Format("Restore time or version did not match any existing backups, selecting newest backup"), null);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "RestoreTimeNoMatch", null, "Restore time or version did not match any existing backups, selecting newest backup");
                 }
 
                 return res;
@@ -1077,7 +1082,7 @@ ORDER BY
                     var metablocklisthash = rd.GetValue(7).ToString();
 
                     if (path == lastpath)
-                        m_result.AddWarning(string.Format("Duplicate path detected: {0}!", path), null);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DuplicatePathFound", null, "Duplicate path detected: {0}!", path);
 
                     lastpath = path;
 
@@ -1400,9 +1405,6 @@ ORDER BY
                         (prop, item) => 
                             !typeof(IBackendProgressUpdater).IsAssignableFrom(prop.PropertyType) && 
                             !typeof(IMessageSink).IsAssignableFrom(prop.PropertyType) && 
-                            !typeof(ILogWriter).IsAssignableFrom(prop.PropertyType) &&
-                            prop.Name != "VerboseOutput" && 
-                            prop.Name != "VerboseErrors" &&
                            !(prop.Name == "MainOperation" && item is BackendWriter) &&
                            !(prop.Name == "EndTime" && item is BackendWriter) &&
                            !(prop.Name == "Duration" && item is BackendWriter) &&

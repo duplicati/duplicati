@@ -33,6 +33,7 @@ namespace Duplicati.Library.Backend
         private string m_reverseProtocolUrl;
         private string m_rawurl;
         private string m_rawurlPort;
+        private string m_dnsName;
         private bool m_useIntegratedAuthentication = false;
         private bool m_forceDigestAuthentication = false;
         private bool m_useSSL = false;
@@ -61,6 +62,7 @@ namespace Duplicati.Library.Backend
         {
             var u = new Utility.Uri(url);
             u.RequireHost();
+            m_dnsName = u.Host;
 
             if (!string.IsNullOrEmpty(u.Username))
             {
@@ -138,7 +140,7 @@ namespace Duplicati.Library.Backend
                     throw new Interface.FolderMissingException(Strings.WEBDAV.MissingFolderError(m_path, wex.Message), wex);
 
                 if (wex.Response as System.Net.HttpWebResponse != null && (wex.Response as System.Net.HttpWebResponse).StatusCode == System.Net.HttpStatusCode.MethodNotAllowed)
-                    throw new UserInformationException(Strings.WEBDAV.MethodNotAllowedError((wex.Response as System.Net.HttpWebResponse).StatusCode), wex);
+                    throw new UserInformationException(Strings.WEBDAV.MethodNotAllowedError((wex.Response as System.Net.HttpWebResponse).StatusCode), "WebdavMethodNotAllowed", wex);
 
                     throw;
             }
@@ -309,6 +311,11 @@ namespace Duplicati.Library.Backend
         public string Description
         {
             get { return Strings.WEBDAV.Description; }
+        }
+
+        public string[] DNSName 
+        {
+            get { return new string[] { m_dnsName }; }
         }
 
         public void Test()

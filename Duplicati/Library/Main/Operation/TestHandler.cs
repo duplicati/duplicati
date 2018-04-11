@@ -25,6 +25,11 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class TestHandler
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<TestHandler>();
+
         private readonly Options m_options;
         private string m_backendurl;
         private TestResults m_results;
@@ -39,7 +44,7 @@ namespace Duplicati.Library.Main.Operation
         public void Run(long samples)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
                                 
             using(var db = new LocalTestDatabase(m_options.Dbpath))
             using(var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db))
@@ -82,7 +87,7 @@ namespace Duplicati.Library.Main.Operation
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
                         using(var tf = vol.TempFile)
-                            res = TestVolumeInternals(db, vol, tf, m_options, m_results, m_options.FullBlockVerification ? 1.0 : 0.2);
+                            res = TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
                         m_results.AddResult(res.Key, res.Value);
 
                         if (!string.IsNullOrWhiteSpace(vol.Hash) && vol.Size > 0)
@@ -97,11 +102,11 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         if (m_options.Dryrun)
                                         {
-                                            m_results.AddDryrunMessage(string.Format("Sucessfully captured hash and size for {0}, would update database", vol.Name));
+                                            Logging.Log.WriteDryrunMessage(LOGTAG, "CaptureHashAndSize", "Sucessfully captured hash and size for {0}, would update database", vol.Name);
                                         }
                                         else
                                         {
-                                            m_results.AddMessage(string.Format("Sucessfully captured hash and size for {0}, updating database", vol.Name));
+                                            Logging.Log.WriteInformationMessage(LOGTAG, "CaptureHashAndSize", "Sucessfully captured hash and size for {0}, updating database", vol.Name);
                                             db.UpdateRemoteVolume(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash);
                                         }
                                     }
@@ -114,7 +119,7 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         m_results.AddResult(vol.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
-                        m_results.AddError(string.Format("Failed to process file {0}", vol.Name), ex);
+                        Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileProcessingFailed", ex, "Failed to process file {0}", vol.Name);
                         if (ex is System.Threading.ThreadAbortException)
                         {
                             m_results.EndTime = DateTime.UtcNow;
@@ -140,13 +145,13 @@ namespace Duplicati.Library.Main.Operation
 
                         if (f.Size <= 0 || string.IsNullOrWhiteSpace(f.Hash))
                         {
-                            m_results.AddMessage(string.Format("No hash or size recorded for {0}, performing full verification", f.Name));
+                            Logging.Log.WriteInformationMessage(LOGTAG, "MissingRemoteHash", "No hash or size recorded for {0}, performing full verification", f.Name);
                             KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
                             string hash;
                             long size;
 
                             using (var tf = backend.GetWithInfo(f.Name, out size, out hash))
-                                res = TestVolumeInternals(db, f, tf, m_options, m_results, 1);
+                                res = TestVolumeInternals(db, f, tf, m_options, 1);
                             m_results.AddResult(res.Key, res.Value);
 
                             if (!string.IsNullOrWhiteSpace(hash) && size > 0)
@@ -155,11 +160,11 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (m_options.Dryrun)
                                     {
-                                        m_results.AddDryrunMessage(string.Format("Sucessfully captured hash and size for {0}, would update database", f.Name));
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "CapturedHashAndSize", "Sucessfully captured hash and size for {0}, would update database", f.Name);
                                     }
                                     else
                                     {
-                                        m_results.AddMessage(string.Format("Sucessfully captured hash and size for {0}, updating database", f.Name));
+                                        Logging.Log.WriteInformationMessage(LOGTAG, "CapturedHashAndSize", "Sucessfully captured hash and size for {0}, updating database", f.Name);
                                         db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash);
                                     }
                                 }
@@ -174,7 +179,7 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
-                        m_results.AddError(string.Format("Failed to process file {0}", f.Name), ex);
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedToProcessFile", ex, "Failed to process file {0}", f.Name);
                         if (ex is System.Threading.ThreadAbortException)
                         {
                             m_results.EndTime = DateTime.UtcNow;
@@ -193,14 +198,14 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="vol">The remote volume being examined</param>
         /// <param name="tf">The path to the downloaded copy of the file</param>
         /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file</param>
-        public static KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, ILogWriter log, double sample_percent)
+        public static KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, double sample_percent)
         {
             var blockhasher = Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm);
  
             if (blockhasher == null)
-                throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm));
+                throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm), "BlockHashAlgorithmInvalid");
             if (!blockhasher.CanReuseTransform)
-                throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm));
+                throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm), "BlockHashAlgorithmInvalid");
                 
             var hashsize = blockhasher.HashSize / 8;
             var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);
@@ -282,7 +287,7 @@ namespace Duplicati.Library.Main.Operation
                     }
             }
 
-            log.AddWarning(string.Format("Unexpected file type {0} for {1}", parsedInfo.FileType, vol.Name), null);
+            Logging.Log.WriteWarningMessage(LOGTAG, "UnexpectedFileType", null, "Unexpected file type {0} for {1}", parsedInfo.FileType, vol.Name);
             return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, null);
         }
     }

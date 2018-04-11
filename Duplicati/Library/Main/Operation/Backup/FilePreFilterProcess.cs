@@ -30,12 +30,16 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class FilePreFilterProcess
     {
+        /// <summary>
+        /// The tag to use for log messages
+        /// </summary>
+        private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FilePreFilterProcess)) + ".FileEntry";
+
         public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats, BackupDatabase database)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                LogChannel = Common.Channels.LogChannel.ForWrite,
                 Input = Channels.ProcessedFiles.ForRead,
                 Output = Channels.AcceptedChangedFile.ForWrite
             },
@@ -44,7 +48,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
                 var blocksize = options.Blocksize;
-                var log = new LogWrapper(self.LogChannel);
 
                 while (true)
                 {
@@ -55,13 +58,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         filestatsize = snapshot.GetFileSize(e.Path);
                     }
-                    catch
+                    catch(Exception ex)
                     {
+                        Logging.Log.WriteExplicitMessage(FILELOGTAG, "FailedToReadSize", ex, "Failed tp read size of file: {0}", e.Path);
                     }
 
                     await stats.AddExaminedFile(filestatsize);
 
-                    e.MetaHashAndSize = options.StoreMetadata ? Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot, log), options) : EMPTY_METADATA;
+                    e.MetaHashAndSize = options.StoreMetadata ? Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot), options) : EMPTY_METADATA;
 
                     var timestampChanged = e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
                     var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
@@ -70,16 +74,16 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     if ((e.OldId < 0 || options.DisableFiletimeCheck || timestampChanged || filesizeChanged || e.MetadataChanged) && !tooLargeFile)
                     {
-                        await log.WriteVerboseAsync("Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, e.OldId <= 0, timestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, e.OldId <= 0, timestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
                         await self.Output.WriteAsync(e);
                     }
                     else
                     {
                         if (tooLargeFile)
-                            await log.WriteVerboseAsync("Skipped checking file, because the size exceeds limit {0}", e.Path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Path);                        
                         else
-                            await log.WriteVerboseAsync("Skipped checking file, because timestamp was not updated {0}", e.Path);
-
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", e.Path);                        
+                        
                         await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                     }
                 }

@@ -98,7 +98,7 @@ namespace Duplicati.Library.DynamicLoader
                     {
                         // Unwrap exceptions for nicer display
                         if (tex.InnerException != null)
-                            throw tex.InnerException;
+                            throw new Exception("Unwrapped TargetInvocationException", tex.InnerException);
 
                         throw;
                     }
@@ -160,7 +160,7 @@ namespace Duplicati.Library.DynamicLoader
         public static IList<ICommandLineArgument> GetSupportedCommands(string url)
         {
             if (string.IsNullOrEmpty(url))
-                throw new ArgumentNullException("url");
+                throw new ArgumentNullException(nameof(url));
 
             return _backendLoader.GetSupportedCommands(url);
         }

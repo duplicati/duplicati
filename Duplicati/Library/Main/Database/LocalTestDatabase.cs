@@ -174,7 +174,7 @@ namespace Duplicati.Library.Main.Database
               protected abstract string INSERTCOMMAND { get; }
               protected abstract int INSERTARGUMENTS { get; }
               
-              public Basiclist(System.Data.IDbConnection connection, string volumename)
+              protected Basiclist(System.Data.IDbConnection connection, string volumename)
               {
                 m_connection = connection;
                 m_volumename = volumename;

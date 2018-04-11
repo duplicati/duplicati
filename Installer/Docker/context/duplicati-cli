@@ -1,0 +1,4 @@
+#!/bin/bash
+EXE_FILE=/opt/duplicati/Duplicati.CommandLine.exe
+APP_NAME=Duplicati.CommandLine
+exec -a "$APP_NAME" mono "$EXE_FILE" "$@"

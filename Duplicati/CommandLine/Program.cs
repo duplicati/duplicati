@@ -29,6 +29,8 @@ namespace Duplicati.CommandLine
 {
     public class Program
     {
+        private static string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
+
         public static bool FROM_COMMANDLINE = false;
 
         /// <summary>
@@ -125,7 +127,6 @@ namespace Duplicati.CommandLine
                 var filter = tmpparsed.Item2;
 
                 verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
-                verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose");
 
                 if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.OrdinalIgnoreCase))
                 {
@@ -284,6 +285,13 @@ namespace Duplicati.CommandLine
                     }
                 }
 
+                /*if (ex is Duplicati.Library.Interface.UserInformationException)
+                {
+                    errwriter.WriteLine(Strings.Program.YouMayGetMoreHelpHere(
+                        Library.Logging.Log.CreateHelpLink(null, null, ((Library.Interface.UserInformationException)(ex)).HelpID, true)
+                    ));
+                }*/
+
                 //Error = 100
                 return 100;
             }
@@ -351,7 +359,7 @@ namespace Duplicati.CommandLine
                 // If the user specifies parameters-file, all filters must be in the file.
                 // Allowing to specify some filters on the command line could result in wrong filter ordering
                 if (!filter.Empty && !newfilter.Empty)
-                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Program.FiltersCannotBeUsedWithFileError2);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Program.FiltersCannotBeUsedWithFileError2, "FiltersCannotBeUsedOnCommandLineAndInParameterFile");
 
                 if (!newfilter.Empty)
                     filter = newfilter;
@@ -378,8 +386,8 @@ namespace Duplicati.CommandLine
 
                 if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
                        cargs.AddRange(newsource);
-                else if (newsource.Count > 0 && Library.Utility.Utility.ParseBoolOption(options, "verbose"))
-                    outwriter.WriteLine(Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
+                else if (newsource.Count > 0)
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "NotUsingBackupSources", Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
 
                 return true;
             }

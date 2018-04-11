@@ -100,7 +100,7 @@ namespace Duplicati.Library.Backend
             u.RequireHost();
             
             if (!u.Path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !u.Path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
-                throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError);
+                throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError, "TahoeInvalidUri");
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
@@ -252,6 +252,11 @@ namespace Duplicati.Library.Backend
         public string Description
         {
             get { return Strings.TahoeBackend.Description; }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(m_url).Host }; }
         }
 
         #endregion

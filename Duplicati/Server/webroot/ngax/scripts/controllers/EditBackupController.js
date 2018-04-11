@@ -1,5 +1,7 @@
 backupApp.controller('EditBackupController', function ($rootScope, $scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService, EditBackupService, gettext, gettextCatalog) {
 
+    var SMART_RETENTION = '1W:1D,4W:1W,12M:1M';
+
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
 
@@ -313,10 +315,27 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             return;
         }
 
-        if ($scope.KeepType == 'time' || $scope.KeepType == '')
-            delete opts['keep-versions'];
-        if ($scope.KeepType == 'versions' || $scope.KeepType == '')
-            delete opts['keep-time'];
+        // Retention options are mutual exclusive -> allow only one to be selected at a time
+        function resetAllRetentionOptionsExcept(optionToKeep) {
+            ['keep-versions', 'keep-time', 'retention-policy'].forEach(function(entry) {
+                if (entry != optionToKeep) {
+                    delete opts[entry];
+                }
+            });
+        }
+        
+        if ($scope.KeepType == 'time') {
+            resetAllRetentionOptionsExcept('keep-time');
+        
+        } else if ($scope.KeepType == 'versions') {
+            resetAllRetentionOptionsExcept('keep-versions');
+        
+        } else if ($scope.KeepType == 'smart' || $scope.KeepType == 'custom') {
+            resetAllRetentionOptionsExcept('retention-policy');
+        
+        } else {
+            resetAllRetentionOptionsExcept(); // keep none
+        }
 
         if ($scope.KeepType == 'time' && (opts['keep-time'] || '').trim().length == 0)
         {
@@ -331,6 +350,16 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             $scope.CurrentStep = 4;
             return;
         }
+
+        if ($scope.KeepType == 'custom' && (opts['retention-policy'] || '').indexOf(':') <= 0) 
+        {
+            DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a valid rentention policy string'));
+            $scope.CurrentStep = 4;
+            return;
+        }
+
+        if ($scope.KeepType == 'smart')
+            opts['retention-policy'] = SMART_RETENTION;
 
 
         result.Backup.Settings = [];
@@ -615,6 +644,13 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         {
             $scope.Options['keep-versions'] = parseInt($scope.Options['keep-versions']);
             $scope.KeepType = 'versions';
+        }
+        else if (($scope.Options['retention-policy'] || '').trim().length != 0)
+        {
+            if (($scope.Options['retention-policy'] || '').trim() == SMART_RETENTION)
+                $scope.KeepType = 'smart';
+            else
+                $scope.KeepType = 'custom';
         }
 
         var delopts = ['--skip-files-larger-than', '--no-encryption'];

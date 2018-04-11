@@ -15,6 +15,8 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
+
 namespace Duplicati.Library.Logging
 {
     /// <summary>
@@ -30,12 +32,12 @@ namespace Duplicati.Library.Logging
         /// <summary>
         /// The log instance assigned to this scope
         /// </summary>
-        public ILog Log;
+        private readonly ILogDestination m_log;
 
         /// <summary>
-        /// The current log level
+        /// The log filter
         /// </summary>
-        public LogMessageType LogLevel;
+        private readonly ILogFilter m_filter;
 
         /// <summary>
         /// The log scope parent
@@ -48,17 +50,37 @@ namespace Duplicati.Library.Logging
         private bool m_isDisposed = false;
 
         /// <summary>
+        /// A flag indicating if this is an isolating scope
+        /// </summary>
+        public readonly bool IsolatingScope;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Library.Logging.LogWrapper"/> class.
         /// </summary>
         /// <param name="self">The log instance to wrap.</param>
-        public LogScope(ILog self, LogMessageType level, LogScope parent)
+        /// <param name="filter">The log filter to use</param>
+        /// <param name="parent">The parent scope</param>
+        /// <param name="isolatingScope">A flag indicating if the scope is an isolating scope</param>
+        public LogScope(ILogDestination self, ILogFilter filter, LogScope parent, bool isolatingScope)
         {
-            Log = self;
-            LogLevel = level;
             Parent = parent;
+
+            m_log = self;
+            m_filter = filter;
+            IsolatingScope = isolatingScope;
 
             if (parent != null)
                 Logging.Log.StartScope(this);
+        }
+
+        /// <summary>
+        /// The function called when a message is logged
+        /// </summary>
+        /// <param name="entry">The log entry</param>
+        public void WriteMessage(LogEntry entry)
+        {
+            if (m_log != null && (m_filter == null || m_filter.Accepts(entry)))
+                m_log.WriteMessage(entry);
         }
 
         /// <summary>

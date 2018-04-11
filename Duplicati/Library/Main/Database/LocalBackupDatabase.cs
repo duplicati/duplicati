@@ -9,6 +9,11 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalBackupDatabase : LocalDatabase
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalBackupDatabase>();
+
         private class PathEntryKeeper
         {
             public DateTime Lastmodified;
@@ -202,7 +207,7 @@ namespace Duplicati.Library.Main.Database
                     @"   AND ""F"".""ID"" = ""E"".""BlocksetID"" ";
 
                 if (m_pathLookup != null)
-                    using(new Logging.Timer("Build path lastmodified lookup table"))
+                    using(new Logging.Timer(LOGTAG, "BuildLastModified", "Build path lastmodified lookup table"))
                     using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""FileID"", ""Lastmodified"", ""Length"", ""Path"", ""Metahash"", ""Metasize"" FROM ({0}) WHERE ""BlocksetID"" >= 0 ", scantableDefinition)))
                         while (rd.Read())
                         {
@@ -218,7 +223,7 @@ namespace Duplicati.Library.Main.Database
                 if (m_pathLookup != null)
                     try
                     {
-                        using(new Logging.Timer("Build path lookup table"))
+                        using(new Logging.Timer(LOGTAG, "BuildPathTable", "Build path lookup table"))
                         using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""Path"", ""BlocksetID"", ""MetadataID"", ""ID"" FROM ""File"" ")))
                             while (rd.Read())
                             {
@@ -265,8 +270,8 @@ namespace Duplicati.Library.Main.Database
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteMessage(string.Format("Failed to create block cache, this could mean you have hash collisions in your table, the hash that failed is {0}. Error message: {1}.", failedhash, ex.Message), Logging.LogMessageType.Warning);
-					Logging.Log.WriteMessage(string.Format("Disabling block cache due to error"), Logging.LogMessageType.Warning);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheFailure", ex, "Failed to create block cache, this could mean you have hash collisions in your table, the hash that failed is {0}. Error message: {1}.", failedhash, ex.Message);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheFailure", null, "Disabling block cache due to error");
 				}
 			}
 		}
@@ -300,7 +305,7 @@ namespace Duplicati.Library.Main.Database
                 if (exsize == size)
                     return false;
 
-                Logging.Log.WriteMessage(string.Format("Found hash collision on {0}, sizes {1} vs {2}. Disabling cache from now on.", key, size, exsize), Logging.LogMessageType.Warning);
+                Logging.Log.WriteWarningMessage(LOGTAG, "HashCollisionsFound", null, "Found hash collision on {0}, sizes {1} vs {2}. Disabling cache from now on.", key, size, exsize);
                 m_blockCache = null;
             }
 
@@ -381,14 +386,14 @@ namespace Duplicati.Library.Main.Database
                     var c = m_insertblocksetentryCommand.ExecuteNonQuery();
                     if (c != 1)
                     {
-                        m_result.AddError(string.Format("Checking errors, related to #1400. Unexpected result count: {0}, expected {1}, hash: {2}, size: {3}, blocksetid: {4}, ix: {5}, fullhash: {6}, fullsize: {7}", c, 1, h, exsize, blocksetid, ix, filehash, size), null);
+                        Logging.Log.WriteErrorMessage(LOGTAG, "CheckingErrorsForIssue1400", null, "Checking errors, related to #1400. Unexpected result count: {0}, expected {1}, hash: {2}, size: {3}, blocksetid: {4}, ix: {5}, fullhash: {6}, fullsize: {7}", c, 1, h, exsize, blocksetid, ix, filehash, size);
                         using (var cmd = m_connection.CreateCommand(tr.Parent))
                         {
                             var bid = cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ?", -1, h);
                             if (bid == -1)
                                 throw new Exception(string.Format("Could not find any blocks with the given hash: {0}", h));
                             foreach(var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""Size"" FROM ""Block"" WHERE ""Hash"" = ?", h))
-                                m_result.AddError(string.Format("Found block with ID {0} and hash {1} and size {2}", bid, h, rd.ConvertValueToInt64(0, -1)), null);
+                                Logging.Log.WriteErrorMessage(LOGTAG, "FoundIssue1400Error", null, "Found block with ID {0} and hash {1} and size {2}", bid, h, rd.ConvertValueToInt64(0, -1));
                         }
 
                         throw new Exception(string.Format("Unexpected result count: {0}, expected {1}, check log for more messages", c, 1));
@@ -621,6 +626,18 @@ namespace Duplicati.Library.Main.Database
             return lastFilesetId;
         }
 
+        internal Tuple<long, long> GetLastBackupFileCountAndSize()
+        {
+            using (var cmd = m_connection.CreateCommand())
+            {
+                var lastFilesetId = cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC LIMIT 1");
+                var count = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" NOT IN (?, ?)", -1, lastFilesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+                var size = cmd.ExecuteScalarInt64(@"SELECT SUM(""Blockset"".""Length"") FROM ""File"", ""FilesetEntry"", ""Blockset"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" NOT IN (?, ?)", -1, lastFilesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+
+                return new Tuple<long, long>(count, size);
+            }
+        }
+
         internal void UpdateChangeStatistics(BackupResults results, System.Data.IDbTransaction transaction)
         {
             using(var cmd = m_connection.CreateCommand(transaction))
@@ -653,9 +670,9 @@ namespace Duplicati.Library.Main.Database
                 finally
                 {
                     try { cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"";", tmpName1)); }
-                    catch (Exception ex) { m_result.AddWarning("Dispose temp table error", ex); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Dispose temp table error"); }
                     try { cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"";", tmpName2)); }
-                    catch (Exception ex) { m_result.AddWarning("Dispose temp table error", ex); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Dispose temp table error"); }
                 }
             }
         }

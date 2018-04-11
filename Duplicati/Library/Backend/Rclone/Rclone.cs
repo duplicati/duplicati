@@ -104,7 +104,7 @@ namespace Duplicati.Library.Backend
 
             ProcessStartInfo psi = new ProcessStartInfo
             {
-                Arguments = arguments,
+                Arguments = String.Format("{0} {1}", arguments, opt_rclone),
                 CreateNoWindow = true,
                 FileName = command,
                 RedirectStandardError = true,
@@ -282,6 +282,11 @@ namespace Duplicati.Library.Backend
             {
                 return Strings.Rclone.Description;
             }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { remote_repo }; }
         }
 
         public void Test()

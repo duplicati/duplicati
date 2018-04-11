@@ -314,15 +314,36 @@
                     </select>
                 </div>
                 <div class="input multiple text select keepBackups">
-                    <label for="keepTimeType" translate>Keep this number of backups</label>
+                    <label for="keepTimeType" translate>Backup retention</label>
                     <select id="keepTimeType" ng-model="KeepType">
-                        <option value="" translate>unlimited</option>
-                        <option value="time" translate>until they are older than</option>
-                        <option value="versions" translate>a specific number</option>
+                        <option value="" translate>Keep all backups</option>
+                        <option value="time" translate>Delete backups that are older than</option>
+                        <option value="versions" translate>Keep a specific number of backups</option>
+                        <option value="smart" translate>Smart backup retention</option>
+                        <option value="custom" translate>Custom backup retention</option>
                     </select>
 
-                    <input type="number" ng-model="Options['keep-versions']" ng-show="KeepType == 'versions'" min="1" />
-                    <div ng-show="KeepType == 'time'">
+                    <div ng-show="KeepType == ''" class="hint" translate>
+                        Nothing will be deleted. The backup size will grow with each change.
+                    </div>
+
+                    <div ng-show="KeepType == 'smart'" class="hint" translate>
+                        Over time backups will be deleted automatically. There will remain one backup for each of the last 7 days, each of the last 4 weeks, each of the last 12 months. There will always be at least one remaining backup.
+                    </div>
+
+                    <div class="retention-options" ng-show="KeepType == 'custom'">
+                        <input type="text" ng-model="Options['retention-policy']" ng-show="KeepType == 'custom'" />
+                    </div>
+                    <div class="hint" translate  ng-show="KeepType == 'custom'">
+                        Enter a retention strategy manually. Placeholders are D/W/Y for days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. This example keeps one backup for each of the next 7 days, one for each of the next 4 weeks, and one for each of the next 36 months. This can also be written as 1W:1D,1M:1W,3Y:1M.
+                    </div>
+
+                    <div class="retention-options" ng-show="KeepType == 'versions'">
+                        <input type="number" ng-model="Options['keep-versions']"  min="1" />
+                    </div>
+                    <div class="hint" ng-show="KeepType == 'versions'" translate>Once there are more backups than the specified number, the oldest backups are deleted.</div> 
+
+                    <div class="retention-options" ng-show="KeepType == 'time'">
                         <input type="text" class="number" parse-size-number ng-model="Options['keep-time']" />
                         <select parse-size-multiplier ng-model="Options['keep-time']" >
                             <option value="D" translate>Days</option>
@@ -331,7 +352,12 @@
                             <option value="Y" translate>Years</option>
                             <option value="" translate>custom</option>
                         </select>
+
                     </div>
+                    <div class="hint" ng-show="KeepType == 'time'" translate>
+                        If at least one newer backup is found, all backups older than this date are deleted.
+                    </div>
+
                 </div>
 
                 <div ng-repeat="module in ServerModules">

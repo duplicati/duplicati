@@ -89,7 +89,7 @@ namespace Duplicati.Library.Backend
                 {
                     // Check that it is not set to one of the special built-in mount points that we definitely cannot make use of.
                     if (Array.FindIndex(JFS_BUILTIN_ILLEGAL_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase)) != -1)
-                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint);
+                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint, "JottaIllegalMountPoint");
                     // Check if it is one of the legal built-in mount points.
                     // What to do if it is not is open for discussion: The JFS API supports creation of custom mount points not only
                     // for custom (backup) devices, but also for the built-in device. But this will not be visible via the official
@@ -99,7 +99,7 @@ namespace Duplicati.Library.Backend
                     if (i != -1)
                         m_mountPoint = JFS_BUILTIN_MOUNT_POINTS[i]; // Ensure correct casing (doesn't seem to matter, but in theory it could).
                     else
-                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint); // User defined mount points on built-in device currently not allowed.
+                        throw new UserInformationException(Strings.Jottacloud.IllegalMountPoint, "JottaIllegalMountPoint"); // User defined mount points on built-in device currently not allowed.
                 }
             }
             else
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Backend
             var u = new Utility.Uri(url);
             m_path = u.HostAndPath; // Host and path of "jottacloud://folder/subfolder" is "folder/subfolder", so the actual folder path within the mount point.
             if (string.IsNullOrEmpty(m_path)) // Require a folder. Actually it is possible to store files directly on the root level of the mount point, but that does not seem to be a good option.
-                throw new UserInformationException(Strings.Jottacloud.NoPathError);
+                throw new UserInformationException(Strings.Jottacloud.NoPathError, "JottaNoPath");
             if (!m_path.EndsWith("/", StringComparison.Ordinal))
                 m_path += "/";
             if (!string.IsNullOrEmpty(u.Username))
@@ -137,9 +137,9 @@ namespace Duplicati.Library.Backend
                 }
             }
             if (m_userInfo == null || string.IsNullOrEmpty(m_userInfo.UserName))
-                throw new UserInformationException(Strings.Jottacloud.NoUsernameError);
+                throw new UserInformationException(Strings.Jottacloud.NoUsernameError, "JottaNoUsername");
             if (m_userInfo == null || string.IsNullOrEmpty(m_userInfo.Password))
-                throw new UserInformationException(Strings.Jottacloud.NoPasswordError);
+                throw new UserInformationException(Strings.Jottacloud.NoPasswordError, "JottaNoPassword");
             if (m_userInfo != null) // Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
                 m_userInfo.Domain = "";
             m_url_device = JFS_ROOT + "/" + m_userInfo.UserName + "/" + m_device;
@@ -316,6 +316,11 @@ namespace Duplicati.Library.Backend
         public bool SupportsStreaming
         {
             get { return true; }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(JFS_ROOT).Host, new Uri(JFS_ROOT_UPLOAD).Host }; }
         }
 
         public void Get(string remotename, System.IO.Stream stream)

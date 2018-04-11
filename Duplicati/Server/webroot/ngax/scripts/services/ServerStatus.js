@@ -30,7 +30,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
     function reloadTexts() {
         self.progress_state_text = {
-            'Backup_Begin': gettextCatalog.getString('Starting ...'),
+            'Backup_Begin': gettextCatalog.getString('Starting Backup ...'),
             'Backup_PreBackupVerify': gettextCatalog.getString('Verifying backend data ...'),
             'Backup_PostBackupTest': gettextCatalog.getString('Verifying remote data ...'),
             'Backup_PreviousBackupFinalize': gettextCatalog.getString('Completing previous backup ...'),
@@ -41,8 +41,8 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             'Backup_Compact': gettextCatalog.getString('Compacting remote data ...'),
             'Backup_VerificationUpload': gettextCatalog.getString('Uploading verification file ...'),
             'Backup_PostBackupVerify': gettextCatalog.getString('Verifying backend data ...'),
-            'Backup_Complete': gettextCatalog.getString('Finished!'),
-            'Restore_Begin': gettextCatalog.getString('Starting ...'),
+            'Backup_Complete': gettextCatalog.getString('Backup Complete!'),
+            'Restore_Begin': gettextCatalog.getString('Starting Restore...'),
             'Restore_RecreateDatabase': gettextCatalog.getString('Rebuilding local database ...'),
             'Restore_PreRestoreVerify': gettextCatalog.getString('Verifying remote data ...'),
             'Restore_CreateFileList': gettextCatalog.getString('Building list of files to restore ...'),
@@ -52,17 +52,17 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             'Restore_PatchWithLocalBlocks': gettextCatalog.getString('Patching files with local blocks ...'),
             'Restore_DownloadingRemoteFiles': gettextCatalog.getString('Downloading files ...'),
             'Restore_PostRestoreVerify': gettextCatalog.getString('Verifying restored files ...'),
-            'Restore_Complete': gettextCatalog.getString('Finished!'),
+            'Restore_Complete': gettextCatalog.getString('Restore Complete!'),
             'Recreate_Running': gettextCatalog.getString('Recreating database ...'),
-            'Repair_Running': gettextCatalog.getString('Reparing ...'),
-            'Verify_Running': gettextCatalog.getString('Verifying ...'),
+            'Repair_Running': gettextCatalog.getString('Reparing database ...'),
+            'Verify_Running': gettextCatalog.getString('Verifying files...'),
             'BugReport_Running': gettextCatalog.getString('Creating bug report ...'),
             'Delete_Listing': gettextCatalog.getString('Listing remote files ...'),
             'Delete_Deleting': gettextCatalog.getString('Deleting remote files ...'),
-            'PurgeFiles_Begin,': gettextCatalog.getString('Listing remote files ...'),
+            'PurgeFiles_Begin,': gettextCatalog.getString('Listing remote files for Purge ...'),
             'PurgeFiles_Process,': gettextCatalog.getString('Purging files ...'),
             'PurgeFiles_Compact,': gettextCatalog.getString('Compacting remote data ...'),
-            'PurgeFiles_Complete,': gettextCatalog.getString('Finished!'),
+            'PurgeFiles_Complete,': gettextCatalog.getString('Purging files Complete!'),
             'Error': gettextCatalog.getString('Error!')
         };
     };
@@ -208,7 +208,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         var url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (((!fastcall) && (state.lastEventId > 0)) ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
         AppService.get(url, {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
             function (response) {
-                var oldEventId = state.lastEventId;                
+                var oldEventId = state.lastEventId;
                 var anychanged =
                     notifyIfChanged(response.data, 'LastEventID', 'lastEventId') |
                     notifyIfChanged(response.data, 'LastDataUpdateID', 'lastDataUpdateId') |
@@ -279,7 +279,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
                     //If we got a new XSRF token this time, quickly retry
                     if (state.xsfrerror && !oldxsfrstate) {
-                        longpoll(true);    
+                        longpoll(true);
                     } else {
                         // Otherwise, start countdown to next try
                         countdownForForReLongPoll(function() { longpoll(true); });

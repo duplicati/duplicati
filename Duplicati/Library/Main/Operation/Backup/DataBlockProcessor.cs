@@ -37,7 +37,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             return AutomationExtensions.RunTask(
             new
             {
-                LogChannel = Common.Channels.LogChannel.ForWrite,
                 Input = Channels.OutputBlocks.ForRead,
                 Output = Channels.BackendRequest.ForWrite,
                 SpillPickup = Channels.SpillPickup.ForWrite,
@@ -46,7 +45,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             async self =>
             {
                 BlockVolumeWriter blockvolume = null;
-                var log = new LogWrapper(self.LogChannel);
 
                 try
                 {

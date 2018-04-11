@@ -62,7 +62,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     if (foundVMs.Count == 1)
                         info.OutputOK(foundVMs[0].DataPaths.Select(x => new { text = x, id = x, cls = "folder", iconCls = "x-tree-icon-leaf", check = "false", leaf = "true" }).ToList());
                     else
-                        info.ReportClientError(string.Format("Cannot find VM with ID {0}.", key));
+                        info.ReportClientError(string.Format("Cannot find VM with ID {0}.", key), System.Net.HttpStatusCode.NotFound);
                 }
             }
             catch (Exception ex)

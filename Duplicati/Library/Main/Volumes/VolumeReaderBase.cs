@@ -34,7 +34,7 @@ namespace Duplicati.Library.Main.Volumes
             return LoadCompressor(compressor, stream, options);
         }
 
-        public VolumeReaderBase(string compressor, string file, Options options)
+        protected VolumeReaderBase(string compressor, string file, Options options)
             : base(options)
         {
             m_compression = LoadCompressor(compressor, file, options, out m_stream);
@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Volumes
             m_disposeCompression = true;
         }
 
-        public VolumeReaderBase(ICompression compression, Options options)
+        protected VolumeReaderBase(ICompression compression, Options options)
             : base(options)
         {
             m_compression = compression;

@@ -8,6 +8,10 @@ namespace Duplicati.Server
     public class Program
     {
         /// <summary>
+        /// The log tag for messages from this class
+        /// </summary>
+        public static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
+        /// <summary>
         /// The path to the directory that contains the main executable
         /// </summary>
         public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
@@ -40,7 +44,7 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the lock to be used before manipulating the shared resources
         /// </summary>
-        public static object MainLock = new object();
+        public static readonly object MainLock = new object();
 
         /// <summary>
         /// This is the scheduling thread
@@ -122,6 +126,11 @@ namespace Duplicati.Server
         /// </summary>
         public static LogWriteHandler LogHandler = new LogWriteHandler();
 
+        /// <summary>
+        /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server) 
+        /// </summary>
+        public static string Origin = "Server";
+
         private static System.Threading.Timer PurgeTempFilesTimer = null;
 
         public static int ServerPort
@@ -136,6 +145,12 @@ namespace Duplicati.Server
         {
             get { return DataConnection.ApplicationSettings.IsFirstRun; }
             set { DataConnection.ApplicationSettings.IsFirstRun = value; }
+        }
+
+        public static string StartedBy
+        {
+            get { return Origin; }
+            set { Origin = value; }
         }
 
         public static bool ServerPortChanged
@@ -153,7 +168,7 @@ namespace Duplicati.Server
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
 
-        public static int RealMain(string[] args)
+        public static int RealMain(string[] _args)
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
@@ -170,17 +185,47 @@ namespace Duplicati.Server
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
             var writeConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
-            
-            //Find commandline options here for handling special startup cases
-            var commandlineOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args));
 
-            foreach(var s in args)
+            //Find commandline options here for handling special startup cases
+            var args = new List<string>(_args);
+            var argtuple = Library.Utility.FilterCollector.ExtractOptions(new List<string>(args));
+            var commandlineOptions = argtuple.Item1;
+            var filter = argtuple.Item2;
+
+            foreach(var s in _args)
                 if (
                     s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
                     s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
                     s.Equals("usage", StringComparison.OrdinalIgnoreCase) ||
                     s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
                     commandlineOptions["help"] = "";
+
+            // Check if a parameters-file was provided. Skip if help was already specified
+            if (!commandlineOptions.ContainsKey("help"))
+            {
+                string filename = null;
+                if (commandlineOptions.ContainsKey("parameters-file"))
+                {
+                    filename = commandlineOptions["parameters-file"];
+                    commandlineOptions.Remove("parameters-file");
+                }
+                else if (commandlineOptions.ContainsKey("parameter-file"))
+                {
+                    filename = commandlineOptions["parameter-file"];
+                    commandlineOptions.Remove("parameter-file");
+                }
+                else if (commandlineOptions.ContainsKey("parameterfile"))
+                {
+                    filename = commandlineOptions["parameterfile"];
+                    commandlineOptions.Remove("parameterfile");
+                }
+
+                if (!string.IsNullOrEmpty(filename))
+                {
+                    // Check the parameters-file and add provided arguments (overriding commandline arguments)
+                    ReadOptionsFromFile(filename, ref filter, args, commandlineOptions);
+                }
+            }
 
             //If the commandline issues --help, just stop here
             if (commandlineOptions.ContainsKey("help"))
@@ -213,7 +258,7 @@ namespace Duplicati.Server
             try
             {
                 // Setup the log redirect
-                Duplicati.Library.Logging.Log.CurrentLog = Program.LogHandler;
+                var logscope = Library.Logging.Log.StartScope(Program.LogHandler, null);
 
                 if (commandlineOptions.ContainsKey("log-file"))
                 {
@@ -759,6 +804,7 @@ namespace Duplicati.Server
             {
                 var lst = new List<Duplicati.Library.Interface.ICommandLineArgument> (new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
                     new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
@@ -778,6 +824,91 @@ namespace Duplicati.Server
                     lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42"));
 
                 return lst.ToArray();
+            }
+        }
+
+        private static bool ReadOptionsFromFile(string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)
+        {
+            try
+            {
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
+                var newsource = new List<string>();
+                string newtarget = null;
+                string prependfilter = null;
+                string appendfilter = null;
+                string replacefilter = null;
+
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
+                    if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
+                    {
+                        newsource.Add(value);
+                        return false;
+                    }
+                    else if (key.Equals("target", StringComparison.OrdinalIgnoreCase))
+                    {
+                        newtarget = value;
+                        return false;
+                    }
+                    else if (key.Equals("append-filter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        appendfilter = value;
+                        return false;
+                    }
+                    else if (key.Equals("prepend-filter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        prependfilter = value;
+                        return false;
+                    }
+                    else if (key.Equals("replace-filter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        replacefilter = value;
+                        return false;
+                    }
+
+                    return true;
+                });
+
+                var opt = tmpparsed.Item1;
+                var newfilter = tmpparsed.Item2;
+
+                // If the user specifies parameters-file, all filters must be in the file.
+                // Allowing to specify some filters on the command line could result in wrong filter ordering
+                if (!filter.Empty && !newfilter.Empty)
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Program.FiltersCannotBeUsedWithFileError2, "FiltersCannotBeUsedOnCommandLineAndInParameterFile");
+
+                if (!newfilter.Empty)
+                    filter = newfilter;
+
+                if (!string.IsNullOrWhiteSpace(prependfilter))
+                    filter = Library.Utility.FilterExpression.Combine(Library.Utility.FilterExpression.Deserialize(prependfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)), filter);
+
+                if (!string.IsNullOrWhiteSpace(appendfilter))
+                    filter = Library.Utility.FilterExpression.Combine(filter, Library.Utility.FilterExpression.Deserialize(appendfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)));
+
+                if (!string.IsNullOrWhiteSpace(replacefilter))
+                    filter = Library.Utility.FilterExpression.Deserialize(replacefilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
+
+                foreach (KeyValuePair<String, String> keyvalue in opt)
+                    options[keyvalue.Key] = keyvalue.Value;
+
+                if (!string.IsNullOrEmpty(newtarget))
+                {
+                    if (cargs.Count <= 1)
+                        cargs.Add(newtarget);
+                    else
+                        cargs[1] = newtarget;
+                }
+
+                if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
+                    cargs.AddRange(newsource);
+                else if (newsource.Count > 0)
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "NotUsingBackupSources", Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(Strings.Program.FailedToParseParametersFileError(filename, e.Message));
             }
         }
     }

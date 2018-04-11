@@ -115,7 +115,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 // If the user specifies parameters-file, all filters must be in the file.
                 // Allowing to specify some filters on the command line could result in wrong filter ordering
                 if (!filter.Empty && !newfilter.Empty)
-                    throw new Duplicati.Library.Interface.UserInformationException("Filters cannot be specified on the commandline if filters are also present in the parameter file");
+                    throw new Duplicati.Library.Interface.UserInformationException("Filters cannot be specified on the commandline if filters are also present in the parameter file", "RecoveryToolFiltersOnCommandLineAndInParameterFile");
 
                 if (!newfilter.Empty)
                     filter = newfilter;

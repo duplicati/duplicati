@@ -22,7 +22,6 @@ using System.Collections.Generic;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture]
     public class BorderTests : BasicSetupHelper
     {
         public override void PrepareSourceData()
@@ -31,6 +30,16 @@ namespace Duplicati.UnitTest
 
             Directory.CreateDirectory(DATAFOLDER);
             Directory.CreateDirectory(TARGETFOLDER);
+        }
+
+        [Test]
+        [Category("Border")]
+        public void Run10kNoProgress()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => { 
+                opts["disable-file-scanner"] = "true"; 
+            });
         }
 
         [Test]
@@ -197,7 +206,6 @@ namespace Duplicati.UnitTest
         private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
         {
             var testopts = TestOptions;
-            testopts["verbose"] = "true";
             testopts["blocksize"] = blocksize.ToString() + "b";
             if (modifyOptions != null)
                 modifyOptions(testopts);

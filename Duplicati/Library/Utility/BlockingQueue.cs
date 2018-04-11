@@ -24,7 +24,7 @@ using System.Text;
 namespace Duplicati.Library.Utility
 {
     /// <summary>
-    /// Class for wrapping a <see cref="Duplicati.Library.Utility.BlockingQueue"/> as an <see cref="System.Collections.Generic.IEnumerable"/>
+    /// Class for wrapping a <see cref="Duplicati.Library.Utility.BlockingQueue{T}"/> as an <see cref="System.Collections.Generic.IEnumerable{T}"/>
     /// </summary>
     public class BlockingQueueAsEnumerable<T> : IEnumerable<T>
     {
@@ -115,7 +115,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The lock that protects the data structures
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         /// <summary>
         /// The queue storing the elements produced
         /// </summary>
@@ -138,19 +138,19 @@ namespace Duplicati.Library.Utility
         private long m_maxCapacity = 100;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.BlockingQueue"/> class with the default capacity
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.BlockingQueue{T}"/> class with the default capacity
         /// </summary>
         public BlockingQueue()
         {
         }
 
         /// <summary>
-        /// Gets a value indicating whether this <see cref="Duplicati.Library.Utility.BlockingQueue"/> is completed
+        /// Gets a value indicating whether this <see cref="Duplicati.Library.Utility.BlockingQueue{T}"/> is completed
         /// </summary>
         public bool Completed { get { return m_completed; } }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.BlockingQueue"/> class
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.BlockingQueue{T}"/> class
         /// </summary>
         /// <param name='maxCapacity'>The maximum capacity of the queue, the producers will be blocked if more elements are put into the queue</param>
         public BlockingQueue(long maxCapacity)

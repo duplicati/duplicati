@@ -34,6 +34,8 @@ namespace Duplicati.Library.Utility
     /// This class defines a set of common filters for files that don't typically need to be backed up.
     /// These filters are largely based on the filters described here:
     /// https://superuser.com/questions/443890/what-files-file-types-and-folders-to-exclude-from-user-folder-backup
+    /// which are in turn based on the filters defined by Crashplan:
+    /// https://support.code42.com/CrashPlan/4/Troubleshooting/What_is_not_backing_up#Admin_Excludes
     /// </summary>
     public static class DefaultFilters
     {
@@ -114,6 +116,10 @@ namespace Duplicati.Library.Utility
             // If no filter sets are specified, we use the default for the platform we're on
             if (!anyOptions)
             {
+                // Until we agree on how default filters should be applied,
+                // we do not apply default filters
+
+                /*
                 if (Utility.IsClientWindows)
                 {
                     filterSets |= DefaultFilterSet.Windows;
@@ -127,7 +133,8 @@ namespace Duplicati.Library.Utility
                 if (Utility.IsClientLinux)
                 {
                     filterSets |= DefaultFilterSet.Linux;
-                }
+                }*/
+
             }
 
             if (filterSets == DefaultFilterSet.None)
@@ -180,7 +187,6 @@ namespace Duplicati.Library.Utility
         {
             var filters = new[]
             {
-                DefaultFilters.CreateWildcardFilter(@"*/config.msi/*.rbf"), // https://github.com/duplicati/duplicati/issues/2886
                 DefaultFilters.CreateWildcardFilter(@"*.tmp"),
                 DefaultFilters.CreateWildcardFilter(@"*.tmp/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/$RECYCLE.BIN/*"),
@@ -188,48 +194,32 @@ namespace Duplicati.Library.Utility
                 DefaultFilters.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows Store/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/AppData/Local/Packages/*"), // https://superuser.com/questions/490925/explain-windows-8-windows-store-appdata-packages-and-what-to-backup
                 DefaultFilters.CreateWildcardFilter(@"*/AppData/Local/Temp*"),
-                DefaultFilters.CreateWildcardFilter(@"*/AppData/LocalLow/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/AppData/Temp*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Application Data/Apple Computer/Mobile Sync/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Application Data/Application Data*"),
-                DefaultFilters.CreateWildcardFilter(@"*/Cookies/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies"),
                 DefaultFilters.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies-journal"),
                 DefaultFilters.CreateWildcardFilter(@"*/I386*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Internet Explorer/*"),
-                DefaultFilters.CreateWildcardFilter(@"*/Local Settings/History/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Local Settings/Temp*"),
-                DefaultFilters.CreateWildcardFilter(@"*/LocalService/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Microsoft*/RecoveryStore*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Microsoft*/Windows/*.edb"),
                 DefaultFilters.CreateWildcardFilter(@"*/Microsoft*/Windows/*.log"),
                 DefaultFilters.CreateWildcardFilter(@"*/Microsoft*/Windows/Cookies*"),
                 DefaultFilters.CreateWildcardFilter(@"*/MSOCache*"),
-                DefaultFilters.CreateWildcardFilter(@"*/NetHood/*"),
-                DefaultFilters.CreateWildcardFilter(@"*/NetworkService/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/NTUSER*"),
-                DefaultFilters.CreateWildcardFilter(@"*/ntuser.dat*"),
-                DefaultFilters.CreateWildcardFilter(@"*/PrintHood/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Recent/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/RECYCLER/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Safari/Library/Caches/*"),
-                DefaultFilters.CreateWildcardFilter(@"*/SendTo/*"),
-                DefaultFilters.CreateWildcardFilter(@"*/Start Menu/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Temporary Internet Files/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Thumbs.db"),
                 DefaultFilters.CreateWildcardFilter(@"*UsrClass.dat"),
                 DefaultFilters.CreateWildcardFilter(@"*UsrClass.dat.LOG"),
-                DefaultFilters.CreateWildcardFilter(@"?:/autoexec.bat"),
-                DefaultFilters.CreateWildcardFilter(@"?:/Config.Msi*"),
+                DefaultFilters.CreateWildcardFilter(@"?:/Config.Msi*"), // https://github.com/duplicati/duplicati/issues/2886
                 DefaultFilters.CreateWildcardFilter(@"?:/hiberfil.sys"),
                 DefaultFilters.CreateWildcardFilter(@"?:/pagefile.sys"),
-                DefaultFilters.CreateWildcardFilter(@"?:/Program Files (x86)/*"),
-                DefaultFilters.CreateWildcardFilter(@"?:/Program Files/*"),
-                DefaultFilters.CreateWildcardFilter(@"?:/ProgramData/*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/swapfile.sys"),
                 DefaultFilters.CreateWildcardFilter(@"?:/System Volume Information/*"),
-                DefaultFilters.CreateWildcardFilter(@"?:/Windows.old/*"),
-                DefaultFilters.CreateWildcardFilter(@"?:/Windows/*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/Windows/Installer*"),
                 DefaultFilters.CreateWildcardFilter(@"?:/Windows/Temp*"),
             };
@@ -282,23 +272,20 @@ namespace Duplicati.Library.Utility
                 DefaultFilters.CreateWildcardFilter(@"*/Network Trash Folder/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/Trash/*"),
                 DefaultFilters.CreateWildcardFilter(@"*/VM Storage"),
-                DefaultFilters.CreateWildcardFilter(@"*Mobile.*Backups/*"),
+                DefaultFilters.CreateWildcardFilter(@"*MobileBackups/*"),
                 DefaultFilters.CreateWildcardFilter(@"/.vol/*"),
                 DefaultFilters.CreateWildcardFilter(@"/afs/*"),
                 DefaultFilters.CreateWildcardFilter(@"/automount/*"),
-                DefaultFilters.CreateWildcardFilter(@"/bin/*"),
                 DefaultFilters.CreateWildcardFilter(@"/cores/*"),
                 DefaultFilters.CreateWildcardFilter(@"/Desktop DB"),
                 DefaultFilters.CreateWildcardFilter(@"/Desktop DF"),
                 DefaultFilters.CreateWildcardFilter(@"/dev/.*"),
-                DefaultFilters.CreateWildcardFilter(@"/etc/*"),
                 DefaultFilters.CreateWildcardFilter(@"/mach.sym"),
                 DefaultFilters.CreateWildcardFilter(@"/mach_kernel"),
                 DefaultFilters.CreateWildcardFilter(@"/net/*"),
                 DefaultFilters.CreateWildcardFilter(@"/Network/*"),
                 DefaultFilters.CreateWildcardFilter(@"/Network/Servers*"),
                 DefaultFilters.CreateWildcardFilter(@"/Previous Systems*"),
-                DefaultFilters.CreateWildcardFilter(@"/private/*"),
                 DefaultFilters.CreateWildcardFilter(@"/private/Network/*"),
                 DefaultFilters.CreateWildcardFilter(@"/private/tmp/*"),
                 DefaultFilters.CreateWildcardFilter(@"/private/var/automount/*"),
@@ -309,13 +296,9 @@ namespace Duplicati.Library.Utility
                 DefaultFilters.CreateWildcardFilter(@"/private/var/spool/postfix/*"),
                 DefaultFilters.CreateWildcardFilter(@"/private/var/tmp/*"),
                 DefaultFilters.CreateWildcardFilter(@"/private/var/vm/*"),
-                DefaultFilters.CreateWildcardFilter(@"/sbin/*"),
-                DefaultFilters.CreateWildcardFilter(@"/sw/*"),
-                DefaultFilters.CreateWildcardFilter(@"/System/*"),
                 DefaultFilters.CreateWildcardFilter(@"/System/Library/Extensions/Caches/*"),
                 DefaultFilters.CreateWildcardFilter(@"/tmp/*"),
                 DefaultFilters.CreateWildcardFilter(@"/Users/Shared/SC Info*"),
-                DefaultFilters.CreateWildcardFilter(@"/usr/*"),
             };
         }
 
@@ -331,21 +314,11 @@ namespace Duplicati.Library.Utility
                 DefaultFilters.CreateWildcardFilter(@"*/.config/google-chrome/Default/Cookies-journal"),
                 DefaultFilters.CreateWildcardFilter(@"*/lost+found/*"),
                 DefaultFilters.CreateWildcardFilter(@"*~"),
-                DefaultFilters.CreateWildcardFilter(@"/bin/*"),
-                DefaultFilters.CreateWildcardFilter(@"/boot/*"),
                 DefaultFilters.CreateWildcardFilter(@"/dev/*"),
-                DefaultFilters.CreateWildcardFilter(@"/etc/*"),
-                DefaultFilters.CreateWildcardFilter(@"/initrd/*"),
-                DefaultFilters.CreateWildcardFilter(@"/lib/*"),
-                DefaultFilters.CreateWildcardFilter(@"/opt/*"),
                 DefaultFilters.CreateWildcardFilter(@"/proc/*"),
-                DefaultFilters.CreateWildcardFilter(@"/sbin/*"),
                 DefaultFilters.CreateWildcardFilter(@"/selinux/*"),
-                DefaultFilters.CreateWildcardFilter(@"/srv/*"),
                 DefaultFilters.CreateWildcardFilter(@"/sys/*"),
                 DefaultFilters.CreateWildcardFilter(@"/tmp/*"),
-                DefaultFilters.CreateWildcardFilter(@"/usr/*"),
-                DefaultFilters.CreateWildcardFilter(@"/var/*"),
             };
         }
 

@@ -28,20 +28,24 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class StreamBlockSplitter
     {
+        /// <summary>
+        /// The tag used for log messages
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(StreamBlockSplitter)) ;
+        private static readonly string FILELOGTAG = LOGTAG + ".FileEntry";
+
         public static Task Run(Options options, BackupDatabase database, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
             {
                 Input = Channels.StreamBlock.ForRead,
-                LogChannel = Common.Channels.LogChannel.ForWrite,
                 ProgressChannel = Channels.ProgressEvents.ForWrite,
                 BlockOutput = Channels.OutputBlocks.ForWrite
             },
 
             async self =>
             {
-                var log = new LogWrapper(self.LogChannel);
                 var blocksize = options.Blocksize;
                 var filehasher = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.FileHashAlgorithm);
                 var blockhasher = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm);
@@ -49,14 +53,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var maxmetadatasize = (options.Blocksize / (long)options.BlockhashSize) * options.Blocksize;
 
                  if (blockhasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
                  if (filehasher == null)
-                     throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
  
                  if (!blockhasher.CanReuseTransform)
-                     throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
                  if (!filehasher.CanReuseTransform)
-                     throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.FileHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
 
                 using (var empty_metadata_stream = new MemoryStream(emptymetadata.Blob))
                 while (await taskreader.ProgressAsync)
@@ -80,7 +84,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             long fslen = -1;
                             try { fslen = stream.Length; }
-                            catch (Exception ex) { await log.WriteWarningAsync(string.Format("Failed to read file length for file {0}", e.Path), ex); }
+                            catch (Exception ex) { Logging.Log.WriteWarningMessage(FILELOGTAG, "FileLengthFailure", ex, "Failed to read file length for file {0}", e.Path); } 
 
                             if (e.IsMetadata && fslen > maxmetadatasize)
                             {
@@ -90,7 +94,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 // This could be done such that an extra query is made if the metadata
                                 // spans multiple blocklist hashes, as it is not expected to be common
 
-                                await log.WriteWarningAsync(string.Format("Metadata size is {0}, but the largest accepted size is {1}, recording empty metadata for {2}", fslen, maxmetadatasize, e.Path), null);
+                                Logging.Log.WriteWarningMessage(LOGTAG, "TooLargeMetadata", null, "Metadata size is {0}, but the largest accepted size is {1}, recording empty metadata for {2}", fslen, maxmetadatasize, e.Path);
                                 empty_metadata_stream.Position = 0;
                                 stream = empty_metadata_stream;
                                 fslen = stream.Length;

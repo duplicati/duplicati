@@ -148,7 +148,7 @@ namespace Duplicati.Library.Snapshots
                         p.Kill();
                         p.WaitForExit(5 * 1000); //This should work, and if it does, prevents a race with any cleanup invocations
 
-                        throw new Duplicati.Library.Interface.UserInformationException(Strings.LinuxSnapshot.ExternalProgramTimeoutError(program, commandline));
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.LinuxSnapshot.ExternalProgramTimeoutError(program, commandline), "LvmScriptTimeout");
                     }
 
                     //Build the output string. Since the process has exited, these cannot block
@@ -156,7 +156,7 @@ namespace Duplicati.Library.Snapshots
 
                     //Throw an exception if something went wrong
                     if (p.ExitCode != expectedExitCode)
-                        throw new Duplicati.Library.Interface.UserInformationException(Strings.LinuxSnapshot.ScriptExitCodeError(p.ExitCode, expectedExitCode, output));
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.LinuxSnapshot.ScriptExitCodeError(p.ExitCode, expectedExitCode, output), "LvmScriptWrongExitCode");
 
                     return output;
                 }
@@ -455,7 +455,7 @@ namespace Duplicati.Library.Snapshots
         public string GetSymlinkTarget(string file)
         {
             var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
-            return UnixSupport.File.GetSymlinkTarget(NoSnapshot.NormalizePath(local));
+            return _sysIO.GetSymlinkTarget(local);
         }
 
         /// <summary>

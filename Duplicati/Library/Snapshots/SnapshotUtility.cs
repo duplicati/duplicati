@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Duplicati.Library.Snapshots
@@ -69,6 +70,60 @@ namespace Duplicati.Library.Snapshots
         private static ISnapshotService CreateWindowsSnapshot(string[] folders, Dictionary<string, string> options)
         {
             return new WindowsSnapshot(folders, options);
+        }
+
+        /// <summary>
+        /// Extension method for ISnapshotService which determines whether the given path is a symlink.
+        /// </summary>
+        /// <param name="snapshot">ISnapshotService implementation</param>
+        /// <param name="path">File or folder path</param>
+        /// <returns>Whether the path is a symlink</returns>
+        public static bool IsSymlink(this ISnapshotService snapshot, string path)
+        {
+            return snapshot.IsSymlink(path, snapshot.GetAttributes(path));
+        }
+
+        /// <summary>
+        /// Extension method for ISnapshotService which determines whether the given path is a symlink.
+        /// </summary>
+        /// <param name="snapshot">ISnapshotService implementation</param>
+        /// <param name="path">File or folder path</param>
+        /// <param name="attributes">File attributes</param>
+        /// <returns>Whether the path is a symlink</returns>
+        public static bool IsSymlink(this ISnapshotService snapshot, string path, FileAttributes attributes)
+        {
+            // Not all reparse points are symlinks.
+            // For example, on Windows 10 Fall Creator's Update, the OneDrive folder (and all subfolders)
+            // are reparse points, which allows the folder to hook into the OneDrive service and download things on-demand.
+            // If we can't find a symlink target for the current path, we won't treat it as a symlink.
+            return (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint && !string.IsNullOrEmpty(snapshot.GetSymlinkTarget(path));
+        }
+
+        /// <summary>
+        /// Extension method for ISystemIO which determines whether the given path is a symlink.
+        /// </summary>
+        /// <param name="systemIO">ISystemIO implementation</param>
+        /// <param name="path">File or folder path</param>
+        /// <returns>Whether the path is a symlink</returns>
+        public static bool IsSymlink(this ISystemIO systemIO, string path)
+        {
+            return systemIO.IsSymlink(path, systemIO.GetFileAttributes(path));
+        }
+
+        /// <summary>
+        /// Extension method for ISystemIO which determines whether the given path is a symlink.
+        /// </summary>
+        /// <param name="systemIO">ISystemIO implementation</param>
+        /// <param name="path">File or folder path</param>
+        /// <param name="attributes">File attributes</param>
+        /// <returns>Whether the path is a symlink</returns>
+        public static bool IsSymlink(this ISystemIO systemIO, string path, FileAttributes attributes)
+        {
+            // Not all reparse points are symlinks.
+            // For example, on Windows 10 Fall Creator's Update, the OneDrive folder (and all subfolders)
+            // are reparse points, which allows the folder to hook into the OneDrive service and download things on-demand.
+            // If we can't find a symlink target for the current path, we won't treat it as a symlink.
+            return (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint && !string.IsNullOrEmpty(systemIO.GetSymlinkTarget(path));
         }
 
         /// <summary>

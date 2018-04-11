@@ -29,6 +29,11 @@ namespace Duplicati.Library.Main.Operation.Common
     /// </summary>
     internal class DatabaseCommon : SingleRunner, IDisposable
     {
+        /// <summary>
+        /// The tag used for log messages
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<DatabaseCommon>();
+
         protected LocalDatabase m_db;
         protected System.Data.IDbTransaction m_transaction;
         protected Options m_options;
@@ -66,7 +71,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     return;                    
                 }
 
-                using(new Logging.Timer(message))
+                using(new Logging.Timer(LOGTAG, "CommitTransactionAsync", message))
                     m_transaction.Commit();
                 if (restart)
                     m_transaction = m_db.BeginTransaction();

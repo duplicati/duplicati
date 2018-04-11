@@ -88,9 +88,9 @@ namespace Duplicati.Library.Backend.Backblaze
                 accountKey = uri.Password;
 
             if (string.IsNullOrEmpty(accountId))
-                throw new UserInformationException(Strings.B2.NoB2UserIDError);
+                throw new UserInformationException(Strings.B2.NoB2UserIDError, "B2MissingUserID");
             if (string.IsNullOrEmpty(accountKey))
-                throw new UserInformationException(Strings.B2.NoB2KeyError);
+                throw new UserInformationException(Strings.B2.NoB2KeyError, "B2MissingKey");
             
             m_helper = new B2AuthHelper(accountId, accountKey);
 
@@ -100,7 +100,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 int.TryParse(options[B2_PAGESIZE_OPTION], out m_pagesize);
 
                 if (m_pagesize <= 0)
-                    throw new UserInformationException(Strings.B2.InvalidPageSizeError(B2_PAGESIZE_OPTION, options[B2_PAGESIZE_OPTION]));
+                    throw new UserInformationException(Strings.B2.InvalidPageSizeError(B2_PAGESIZE_OPTION, options[B2_PAGESIZE_OPTION]), "B2InvalidPageSize");
             }
 		}
 
@@ -420,6 +420,11 @@ namespace Duplicati.Library.Backend.Backblaze
         public string Description
         {
             get { return Strings.B2.Description; }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new System.Uri(B2AuthHelper.AUTH_URL).Host, m_helper?.APIDnsName, m_helper?.DownloadDnsName} ; }
         }
 
         public void Dispose()

@@ -81,7 +81,7 @@ namespace Duplicati.Server.Database
             lock(m_lock)
             {
                 if (backup == null)
-                    throw new ArgumentNullException("backup");
+                    throw new ArgumentNullException(nameof(backup));
                 if (backup.ID != null)
                     throw new ArgumentException("Backup is already active, cannot make temporary");
                 
@@ -276,7 +276,7 @@ namespace Duplicati.Server.Database
         internal IBackup GetBackup(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof(id));
             
             long lid;
             if (long.TryParse(id, out lid))
@@ -632,7 +632,14 @@ namespace Duplicati.Server.Database
                     var existing = GetScheduleIDsFromTags(new string[] { "ID=" + ID.ToString() });
                     if (existing.Any())
                         DeleteFromDb("Schedule", existing.First(), tr);
-                    
+
+                    DeleteFromDb("ErrorLog", ID, "BackupID", tr);
+                    DeleteFromDb("Filter", ID, "BackupID", tr);
+                    DeleteFromDb("Log", ID, "BackupID", tr);
+                    DeleteFromDb("Metadata", ID, "BackupID", tr);
+                    DeleteFromDb("Option", ID, "BackupID", tr);
+                    DeleteFromDb("Source", ID, "BackupID", tr);
+
                     DeleteFromDb("Backup", ID, tr);
                     
                     tr.Commit();
@@ -752,11 +759,12 @@ namespace Duplicati.Server.Database
             return true;
         }
 
-        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, Func<INotification, INotification[], INotification> conflicthandler)
+        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, string logid, string messageid, string logtag, Func<INotification, INotification[], INotification> conflicthandler)
         {
             lock(m_lock)
             {
-                var notification = new Notification() {
+                var notification = new Notification()
+                {
                     ID = -1,
                     Type = type,
                     Title = title,
@@ -764,7 +772,10 @@ namespace Duplicati.Server.Database
                     Exception = ex == null ? "" : ex.ToString(),
                     BackupID = backupid,
                     Action = action ?? "",
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
+                    LogEntryID = logid,
+                    MessageID = messageid,
+                    MessageLogTag = logtag
                 };
 
                 var conflictResult = conflicthandler(notification, GetNotifications());
@@ -1017,8 +1028,15 @@ namespace Duplicati.Server.Database
 
             return @default;
         }
-                        
-        private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction transaction = null)                        
+
+        // Overloaded function for legacy functionality
+        private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction transaction = null)
+        {
+            return DeleteFromDb(tablename, id, "ID", transaction);
+        }
+
+        // New function that allows to delete rows from tables with arbitrary identifier values (e.g. ID or BackupID)
+        private bool DeleteFromDb(string tablename, long id, string identifier, System.Data.IDbTransaction transaction = null)
         {
             if (transaction == null) 
             {
@@ -1034,13 +1052,14 @@ namespace Duplicati.Server.Database
                 using(var cmd = m_connection.CreateCommand())
                 {
                     cmd.Transaction = transaction;
-                    cmd.CommandText = string.Format(@"DELETE FROM ""{0}"" WHERE ID=?", tablename);
+                    cmd.CommandText = string.Format(@"DELETE FROM ""{0}"" WHERE ""{1}""=?", tablename, identifier);
                     var p = cmd.CreateParameter();
                     p.Value = id;
                     cmd.Parameters.Add(p);
                     
                     var r = cmd.ExecuteNonQuery();
-                    if (r > 1)
+                    // Roll back the transaction if more than 1 ID was deleted. Multiple "BackupID" rows being deleted isn't a problem.
+                    if (identifier == "ID" && r > 1)
                         throw new Exception(string.Format("Too many records attempted deleted from table {0} for id {1}: {2}", tablename, id, r));
                     return r == 1;
                 }

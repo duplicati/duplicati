@@ -38,6 +38,8 @@ namespace Duplicati.Library.Backend
         protected string m_storageClass;
         protected AmazonS3Client m_client;
 
+        public readonly string DNSHost;
+
         public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
         {
             var cfg = new AmazonS3Config();
@@ -73,6 +75,7 @@ namespace Duplicati.Library.Backend
 
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
+            DNSHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
         }
 
         public void AddBucket(string bucketName)

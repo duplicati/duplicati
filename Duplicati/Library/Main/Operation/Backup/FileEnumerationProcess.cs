@@ -21,6 +21,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Main.Operation.Common;
+using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -31,17 +32,20 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class FileEnumerationProcess 
     {
+        /// <summary>
+        /// The log tag to use
+        /// </summary>
+        private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(FileEnumerationProcess));
+
         public static Task Run(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, string[] changedfilelist, Common.ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new {
-                LogChannel = Common.Channels.LogChannel.ForWrite,
                 Output = Backup.Channels.SourcePaths.ForWrite
             },
 
             async self =>
             {
-                var log = new LogWrapper(self.LogChannel);
                 var hardlinkmap = new Dictionary<string, string>();
                 var mixinqueue = new Queue<string>();
                 Duplicati.Library.Utility.IFilter enumeratefilter = emitfilter;
@@ -67,15 +71,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                         }
 
-                        return AttributeFilterAsync(null, x, fa, snapshot, log, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, mixinqueue).WaitForTask().Result;
+                        return AttributeFilterAsync(null, x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, mixinqueue).WaitForTask().Result;
                     });
                 }
                 else
                 {
                     worklist = snapshot.EnumerateFilesAndFolders((root, path, attr) => {
-                        return AttributeFilterAsync(root, path, attr, snapshot, log, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, mixinqueue).WaitForTask().Result;                        
+                        return AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, mixinqueue).WaitForTask().Result;                        
                     }, (rootpath, path, ex) => {
-                        log.WriteWarningAsync(string.Format("Error reported while accessing path {0}", path), ex).WaitForTaskOrThrow();
+                        Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", path);
                     });
                 }
 
@@ -110,20 +114,20 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="rootpath">The root path that initiated this enumeration.</param>
         /// <param name="path">The current path.</param>
         /// <param name="attributes">The file or folder attributes.</param>
-        private static async Task<bool> AttributeFilterAsync(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, LogWrapper log, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, Queue<string> mixinqueue)
+        private static async Task<bool> AttributeFilterAsync(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, Queue<string> mixinqueue)
         {
 			// Step 1, exclude block devices
 			try
             {
                 if (snapshot.IsBlockDevice(path))
                 {
-                    await log.WriteVerboseAsync("Excluding block device: {0}", path);
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingBlockDevice", "Excluding block device: {0}", path);
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                await log.WriteWarningAsync(string.Format("Failed to process path: {0}", path), ex);
+                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
                 return false;
             }
 
@@ -132,7 +136,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             bool sourcematches;
             if (sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
             {
-                await log.WriteVerboseAsync("Including source path: {0}", path);
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingSourcePath", "Including source path: {0}", path);
                 return true;
             }
 
@@ -146,7 +150,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         if (hardlinkPolicy == Options.HardlinkStrategy.None)
                         {
-                            await log.WriteVerboseAsync("Excluding hardlink: {0} ({1})", path, id);
+                            Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingHardlinkByPolicy", "Excluding hardlink: {0} ({1})", path, id);
                             return false;
                         }
                         else if (hardlinkPolicy == Options.HardlinkStrategy.First)
@@ -154,7 +158,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             string prevPath;
                             if (hardlinkmap.TryGetValue(id, out prevPath))
                             {
-                                await log.WriteVerboseAsync("Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
+                                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingDuplicateHardlink", "Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
                                 return false;
                             }
                             else
@@ -166,7 +170,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 catch (Exception ex)
                 {
-                    await log.WriteWarningAsync(string.Format("Failed to process path: {0}", path), ex);
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
                     return false;
                 }                    
             }
@@ -174,7 +178,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             // If we exclude files based on attributes, filter that
             if ((attributeFilter & attributes) != 0)
             {
-                await log.WriteVerboseAsync("Excluding path due to attribute filter: {0}", path);
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromAttributes", "Excluding path due to attribute filter: {0}", path);
                 return false;
             }
 
@@ -182,30 +186,45 @@ namespace Duplicati.Library.Main.Operation.Backup
             Library.Utility.IFilter match;
             if (!Library.Utility.FilterExpression.Matches(enumeratefilter, path, out match))
             {
-                await log.WriteVerboseAsync("Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromFilter", "Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
                 return false;
             }
             else if (match != null)
             {
-                await log.WriteVerboseAsync("Including path due to filter: {0} => {1}", path, match.ToString());
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPathFromFilter", "Including path due to filter: {0} => {1}", path, match.ToString());
             }
 
             // If the file is a symlink, apply special handling
-            var isSymlink = (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint;
-            if (isSymlink && symlinkPolicy == Options.SymlinkStrategy.Ignore)
-            {
-                await log.WriteVerboseAsync("Excluding symlink: {0}", path);
-                return false;
-            }
+            var isSymlink = snapshot.IsSymlink(path, attributes);
+            string symlinkTarget = null;
+            if (isSymlink)
+                try { symlinkTarget = snapshot.GetSymlinkTarget(path); }
+                catch (Exception ex) { Logging.Log.WriteExplicitMessage(FILTER_LOGTAG, "SymlinkTargetReadError", ex, "Failed to read symlink target for path: {0}", path); }
 
-            if (isSymlink && symlinkPolicy == Options.SymlinkStrategy.Store)
+            if (isSymlink)
             {
-                await log.WriteVerboseAsync("Storing symlink: {0}", path);
+                if (!string.IsNullOrWhiteSpace(symlinkTarget))
+                {
+                    if (symlinkPolicy == Options.SymlinkStrategy.Ignore)
+                    {
+                        Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludeSymlink", "Excluding symlink: {0}", path);
+                        return false;
+                    }
 
-                // We return false because we do not want to recurse into the path,
-                // but we add the symlink to the mixin so we process the symlink itself
-                mixinqueue.Enqueue(path);
-                return false;
+                    if (symlinkPolicy == Options.SymlinkStrategy.Store)
+                    {
+                        Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "StoreSymlink", "Storing symlink: {0}", path);
+
+                        // We return false because we do not want to recurse into the path,
+                        // but we add the symlink to the mixin so we process the symlink itself
+                        mixinqueue.Enqueue(path);
+                        return false;
+                    }
+                }
+                else
+                {
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "FollowingEmptySymlink", "Treating empty symlink as regular path {0}", path);
+                }
             }
 
             // All the way through, yes!

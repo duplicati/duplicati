@@ -1,6 +1,6 @@
 <div class="settings" ng-controller="SystemSettingsController">
     <h1 translate>Settings</h1>
-    
+
     <form class="styled">
         <h2 translate>Access to user interface</h2>
         <div class="input mixed multiple">
@@ -12,7 +12,7 @@
             <input type="checkbox" class="checkbox" id="remote" name="remote" ng-model="allowRemoteAccess" />
             <label for="remote" translate>Allow remote access (requires restart)</label>
         </div>
-        
+
         <h2>{{'Pause after startup or hibernation' | translate}}<span class="info">i</span></h2>
         <div class="input mixed multiple">
             <label for="pauseTime" translate>Pause</label>
@@ -54,7 +54,7 @@
                 <option value="dark" translate>The dark theme (by Michal)</option>
             </select>
         </div>
-        
+
         <h2 translate>Donation messages</h2>
         <div class="input checkbox">
             <label for="suppresDonationMessages" translate>Donation messages</label>
@@ -68,7 +68,7 @@
             <label for="updateChannelDefault" translate translate-params-channelname="SystemInfo.DefaultUpdateChannel">Default ({{channelname}})</label>
             <div class="sublabel" class="" translate translate-params-channelname="SystemInfo.BaseVersionName">Same as the base install version: {{channelname}}</div>
         </div>
-        
+
         <!--
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelStable" value="stable" name="updateChannel" ng-model="updateChannel" />
@@ -79,22 +79,22 @@
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelBeta" value="beta" name="updateChannel" ng-model="updateChannel" />
             <label for="updateChannelBeta" translate>Beta</label>
-            <div class="sublabel" translate>Try out the new features we are working on. Don't use with important data.</div>
+            <div class="sublabel" translate>Try out the new features that we are working on. Currently the most stable version available. Test Restore data before using this in production environments.</div>
         </div>
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelExperimental" value="experimental" name="updateChannel" ng-model="updateChannel" />
             <label for="updateChannelExperimental" translate>Experimental</label>
-            <div class="sublabel" translate>Specific builds for developers only.</div>
+            <div class="sublabel" translate>Specific builds for developers only. Not for use with important data.</div>
         </div>
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelCanary" value="canary" name="updateChannel" ng-model="updateChannel" />
             <label for="updateChannelCanary" translate>Canary</label>
-            <div class="sublabel" translate>Individual builds for developers only.</div>
+            <div class="sublabel" translate>Individual builds for developers only. Not for use with important data.</div>
         </div>
         <!--
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelNightly" value="nightly" name="updateChannel" ng-model="updateChannel" />
-            <label for="updateChannelNightly" translate>Nightly</label>            
+            <label for="updateChannelNightly" translate>Nightly</label>
             <div class="sublabel" translate>Regular builds for developers only</div>
         </div>
         -->
@@ -112,13 +112,13 @@
                 <option value="none" translate>None / disabled</option>
             </select>
             <div class="sublabel"><p translate translate-params-link="'https://usage-reporter.duplicati.com/'">Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <external-link link="link">public usage statistics</external-link></p>
-            
+
             <p translate>All usage reports are sent anonymously and do not contain any personal information. They contain information about hardware and operating system, the type of backend, backup duration, overall size of source data and similar data. They do not contain paths, filenames, usernames, passwords or similar sensitive information.</p></div>
         </div>
 
         <div ng-repeat="module in ServerModules">
             <h2>{{module.DisplayName}}</h2>
-            
+
             <p ng-show="(module.ServiceLink || '').length > 0"><external-link link="module.ServiceLink">{{module.Description}}</external-link></p>
             <p ng-show="(module.ServiceLink || '').length == 0">{{module.Description}}</p>
 
@@ -127,7 +127,7 @@
                 <input type="text" title="{{opt.LongDescription}}" name="{{module.Key}}-{{opt.Name}}" id="{{module.Key}}-{{opt.Name}}" ng-model="servermodulesettings[opt.Name]" />
             </div>
         </div>
-                    
+
         <h2 translate>Default options</h2>
         <div class="sublabel"><p translate>Options added here are applied to all backups, but can be overridden in each individual backup</p></div>
         <div class="input textarea" ng-show="ShowAdvancedTextArea">
@@ -141,7 +141,7 @@
             <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle" translate>Edit as text</a>
             <advanced-options-editor ng-option-list="advancedOptionList" ng-model="advancedOptions"></advanced-options-editor>
         </div>
-        
+
         <div class="buttons">
             <a href="#" id="cancel" class="submit" translate>Cancel</a>
             <input type="button" id="save" class="submit" value="{{'OK' | translate}}" ng-click="save()" />

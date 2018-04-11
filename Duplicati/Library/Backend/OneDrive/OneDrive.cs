@@ -9,6 +9,9 @@ namespace Duplicati.Library.Backend
 {
     public class OneDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
+        private const string SERVICES_AGREEMENT = "https://www.microsoft.com/en-us/servicesagreement";
+        private const string PRIVACY_STATEMENT = "https://privacy.microsoft.com/en-us/privacystatement";
+
         private const string AUTHID_OPTION = "authid";
 
         private const string WLID_SERVER = "https://apis.live.net/v5.0";
@@ -254,33 +257,75 @@ namespace Duplicati.Library.Backend
         {
             int offset = 0;
             int count = FILE_LIST_PAGE_SIZE;
-            
+            int numFiles = 0;
+            int filesOk = 0;
+            int filesRepeated = 0;
+            int iteration = 0;
+
+            var files = new List<IFileEntry>();
+
             m_fileidCache.Clear();
 
-            while(count == FILE_LIST_PAGE_SIZE)
+            do
             {
-                var url = string.Format("{0}/{1}?access_token={2}&limit={3}&offset={4}", WLID_SERVER, string.Format(FOLDER_TEMPLATE, FolderID), Library.Utility.Uri.UrlEncode(m_oauth.AccessToken), FILE_LIST_PAGE_SIZE, offset);
-                var res = m_oauth.GetJSONData<WLID_DataItem>(url, x => x.UserAgent = USER_AGENT);
 
-                if (res != null && res.data != null)
+                while (count == FILE_LIST_PAGE_SIZE)
                 {
-                    count = res.data.Length;
-                    foreach(var r in res.data)
+                    var url = string.Format("{0}/{1}?access_token={2}&limit={3}&offset={4}", WLID_SERVER, string.Format(FOLDER_TEMPLATE, FolderID), Library.Utility.Uri.UrlEncode(m_oauth.AccessToken), FILE_LIST_PAGE_SIZE, offset);
+                    var res = m_oauth.GetJSONData<WLID_DataItem>(url);
+                    
+                    if (res != null && res.data != null)
                     {
-                        m_fileidCache.Add(r.name, r.id);
+                        count = res.data.Length;
 
-                        var fe = new FileEntry(r.name, r.size.Value, r.updated_time.Value, r.updated_time.Value);
-                        fe.IsFolder = string.Equals(r.type, "folder", StringComparison.OrdinalIgnoreCase);
-                        yield return fe;
+                        // log
+                        Console.WriteLine("Iteration: {0:D} Offset: {1:D} Count: {2:D} TotalOK: {3:D} TotalRep: {4:D} TotalFiles: {5:D}", iteration, offset, count, filesOk, filesRepeated, numFiles);
+
+                        foreach (var r in res.data)
+                        {
+
+                            if (m_fileidCache.ContainsKey(r.name))
+                            {
+                                filesRepeated++;
+                            }
+                            else
+                            {
+                                m_fileidCache.Add(r.name, r.id);
+
+                                var fe = new FileEntry(r.name, r.size.Value, r.updated_time.Value, r.updated_time.Value);
+                                fe.IsFolder = string.Equals(r.type, "folder", StringComparison.OrdinalIgnoreCase);
+                                files.Add(fe);
+                                
+                                filesOk++;
+                            }
+                        }
                     }
-                }
-                else
-                {
-                    count = 0;
+                    else
+                    {
+                        count = 0;
+                    }
+
+                    if (iteration != 0 && filesOk == numFiles) return files;
+
+                    offset += count;
+                    
                 }
 
-                offset += count;
+                // Save total number of files in the first iteration
+                if (iteration == 0)
+                {
+                    numFiles = offset;
+                }
+
+                filesRepeated = 0;
+                iteration++;
+
+                offset = 0;
+                count = FILE_LIST_PAGE_SIZE;
             }
+            while (filesOk != numFiles);
+
+            return files;
         }
 
         public void Put(string remotename, string filename)
@@ -339,9 +384,9 @@ namespace Duplicati.Library.Backend
         {
             get { return Strings.OneDrive.Description(
                     "Microsoft Service Agreement",
-                    "http://explore.live.com/microsoft-service-agreement",
+                    SERVICES_AGREEMENT,
                     "Microsoft Online Privacy Statement", 
-                    "http://privacy.microsoft.com/en-us/fullnotice.mspx"
+                    PRIVACY_STATEMENT
                     ); 
             }
         }
@@ -458,7 +503,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        #endregion 
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(WLID_SERVER).Host, new Uri(ONEDRIVE_SERVICE_URL).Host, string.IsNullOrWhiteSpace(m_userid) ? null : string.Format("cid-{0}.users.storage.live.com", m_userid) }; }
+        }
+
+        #endregion
 
         #region IStreamingBackend Members
 

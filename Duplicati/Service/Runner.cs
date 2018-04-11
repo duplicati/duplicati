@@ -16,6 +16,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
 
 namespace Duplicati.Service
 {
@@ -29,7 +30,7 @@ namespace Duplicati.Service
         private Action m_onStoppedAction;
         private Action<string, bool> m_reportMessage;
 
-        private object m_writelock = new object();
+        private readonly object m_writelock = new object();
         private readonly string[] m_cmdargs;
 
 
@@ -57,7 +58,7 @@ namespace Duplicati.Service
             var exec = System.IO.Path.Combine(path, "Duplicati.Server.exe");
             var cmdargs = "--ping-pong-keepalive=true";
             if (m_cmdargs != null && m_cmdargs.Length > 0)
-                cmdargs = cmdargs + " " + string.Join(" ", m_cmdargs);
+                cmdargs = Duplicati.Library.Utility.Utility.WrapAsCommandLine(new string[] { cmdargs }.Concat(m_cmdargs));
 
             var firstRun = true;
             var startAttempts = 0;
@@ -92,8 +93,8 @@ namespace Duplicati.Service
                         {
                             PingProcess();
                             m_onStartedAction();
-                            firstRun = false;
                         }
+                        firstRun = false;
 
                         while (!m_process.HasExited)
                         {

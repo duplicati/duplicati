@@ -73,9 +73,9 @@ namespace Duplicati.Library.Backend
                 m_password = uri.Password;
 
             if (string.IsNullOrEmpty(m_username))
-                throw new UserInformationException(Strings.CloudFiles.NoUserIDError);
+                throw new UserInformationException(Strings.CloudFiles.NoUserIDError, "CloudFilesNoUserID");
             if (string.IsNullOrEmpty(m_password))
-                throw new UserInformationException(Strings.CloudFiles.NoAPIKeyError);
+                throw new UserInformationException(Strings.CloudFiles.NoAPIKeyError, "CloudFilesNoApiKey");
 
             //Fallback to the previous format
             if (url.Contains(DUMMY_HOSTNAME))
@@ -288,6 +288,11 @@ namespace Duplicati.Library.Backend
         public bool SupportsStreaming
         {
             get { return true; }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(m_authUrl).Host, string.IsNullOrWhiteSpace(m_storageUrl) ? null : new Uri(m_storageUrl).Host }; }
         }
 
         public void Get(string remotename, System.IO.Stream stream)

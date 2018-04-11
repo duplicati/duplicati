@@ -12,6 +12,11 @@ namespace Duplicati.Server.WebServer
     public class Server
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Server>();
+
+        /// <summary>
         /// Option for changing the webroot folder
         /// </summary>
         public const string OPTION_WEBROOT = "webservice-webroot";
@@ -65,19 +70,6 @@ namespace Duplicati.Server.WebServer
         /// A string that is sent out instead of password values
         /// </summary>
         public const string PASSWORD_PLACEHOLDER = "**********";
-
-        /// <summary>
-        /// Writes a log message to Console, Service-hook and normal log
-        /// </summary>
-        /// <param name="message">The message to write.</param>
-        /// <param name="type">The message type.</param>
-        /// <param name="ex">The exception, if any.</param>
-        public static void WriteLogMessage(string message, Library.Logging.LogMessageType type, Exception ex)
-        {
-            System.Console.WriteLine(message);
-            Library.Logging.Log.WriteMessage(message, type, ex);
-            Program.LogHandler.WriteMessage(message, type, ex);
-        }
 
         /// <summary>
         /// Sets up the webserver and starts it
@@ -134,7 +126,7 @@ namespace Duplicati.Server.WebServer
                 }
                 catch (Exception ex)
                 {
-                    WriteLogMessage(Strings.Server.DefectSSLCertInDatabase, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "DefectStoredSSLCert", ex, Strings.Server.DefectSSLCertInDatabase);
                 }
             }
             else if (certificateFile.Length == 0)
@@ -184,7 +176,7 @@ namespace Duplicati.Server.WebServer
                     if (certValid && !cert.Equals(Program.DataConnection.ApplicationSettings.ServerSSLCertificate))
                         Program.DataConnection.ApplicationSettings.ServerSSLCertificate = cert;
 
-                    WriteLogMessage(Strings.Server.StartedServer(listenInterface.ToString(), p), Library.Logging.LogMessageType.Information, null);
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerListening", Strings.Server.StartedServer(listenInterface.ToString(), p));
                     
                     return;
                 }
@@ -271,26 +263,26 @@ namespace Duplicati.Server.WebServer
 
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "customized")))
             {
-                var customized_files = new FileModule("/customized/", System.IO.Path.Combine(install_webroot, "customized"));
+                var customized_files = new CacheControlFileHandler("/customized/", System.IO.Path.Combine(install_webroot, "customized"));
                 AddMimeTypes(customized_files);
                 server.Add(customized_files);
             }
 
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "oem")))
             {
-                var oem_files = new FileModule("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
+                var oem_files = new CacheControlFileHandler("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
                 AddMimeTypes(oem_files);
                 server.Add(oem_files);
             }
 
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "package")))
             {
-                var proxy_files = new FileModule("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
+                var proxy_files = new CacheControlFileHandler("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
                 AddMimeTypes(proxy_files);
                 server.Add(proxy_files);
             }
 
-            var fh = new FileModule("/", webroot, true);
+            var fh = new CacheControlFileHandler("/", webroot, true);
             AddMimeTypes(fh);
             server.Add(fh);
 
@@ -308,6 +300,27 @@ namespace Duplicati.Server.WebServer
             {
                 System.Diagnostics.Trace.WriteLine(string.Format("Rejecting request for {0}", request.Uri));
                 return false;
+            }
+        }
+
+        private class CacheControlFileHandler : FileModule
+        {
+            public CacheControlFileHandler(string baseUri, string basePath, bool useLastModifiedHeader = false)
+                : base(baseUri, basePath, useLastModifiedHeader)
+            {
+
+            }
+
+            public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
+            {
+                if (!this.CanHandle(request.Uri))
+                    return false;
+
+                if (request.Uri.AbsolutePath.EndsWith("index.html", StringComparison.Ordinal) || request.Uri.AbsolutePath.EndsWith("index.htm", StringComparison.Ordinal))
+                    response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+                else
+                    response.AddHeader("Cache-Control", "max-age=" + (60 * 60 * 24));
+                return base.Process(request, response, session);
             }
         }
     }

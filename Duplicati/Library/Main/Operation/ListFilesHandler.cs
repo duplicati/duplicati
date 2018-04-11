@@ -8,6 +8,11 @@ namespace Duplicati.Library.Main.Operation
 {    
     internal class ListFilesHandler
     {        
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<ListFilesHandler>();
+
         private string m_backendurl;
         private Options m_options;
         private ListResults m_result;
@@ -67,13 +72,13 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
                               
-            m_result.AddMessage("No local database, accessing remote store");
+            Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");
 
             //TODO: Add prefix and foldercontents
             if (m_options.ListFolderContents)
-                throw new UserInformationException("Listing folder contents is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
+                throw new UserInformationException("Listing folder contents is not supported without a local database, consider using the \"repair\" option to rebuild the database.", "FolderContentListingRequiresLocalDatabase");
             else if (m_options.ListPrefixOnly)
-                throw new UserInformationException("Listing prefixes is not supported without a local database, consider using the \"repair\" option to rebuild the database.");
+                throw new UserInformationException("Listing prefixes is not supported without a local database, consider using the \"repair\" option to rebuild the database.", "PrefixListingRequiresLocalDatabase");
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new Library.Utility.TempFile())
@@ -84,7 +89,7 @@ namespace Duplicati.Library.Main.Operation
                 
                 var filteredList = ParseAndFilterFilesets(backend.List(), m_options);
                 if (filteredList.Count == 0)
-                    throw new UserInformationException("No filesets found on remote target");
+                    throw new UserInformationException("No filesets found on remote target", "EmptyRemoteFolder");
 
                 var numberSeq = CreateResultSequence(filteredList);
                 if (filter.Empty)

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2018, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
@@ -15,15 +15,18 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using CoCoL;
-
-namespace Duplicati.Library.Main.Operation.Common
+namespace Duplicati.Library.Logging
 {
-    internal static class Channels
+    /// <summary>
+    /// An interface for filtering log messages
+    /// </summary>
+    public interface ILogFilter
     {
         /// <summary>
-        /// The log channel coordinats log messages
+        /// A method called to determine if a given message should be filtered or not
         /// </summary>
-        public static readonly ChannelMarkerWrapper<LogMessage> LogChannel = new ChannelMarkerWrapper<LogMessage>(new ChannelNameAttribute("LogChannel"));
+        /// <returns><c>true</c> if the message is included; <c>false</c> otherwise</returns>
+        /// <param name="entry">The entry to examine</param>
+        bool Accepts(LogEntry entry);
     }
 }

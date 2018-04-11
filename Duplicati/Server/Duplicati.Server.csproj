@@ -136,6 +136,7 @@
     <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
     <EmbeddedResource Include="Database\Database schema\4. Add autoincrement to backup id.sql" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="Database\Database schema\5. Extend notification table.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">

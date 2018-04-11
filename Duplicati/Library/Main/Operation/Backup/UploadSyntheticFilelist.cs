@@ -29,18 +29,20 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class UploadSyntheticFilelist
     {
+        /// <summary>
+        /// The tag used for log messages
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(UploadSyntheticFilelist));
+
         public static Task Run(BackupDatabase database, Options options, BackupResults result, ITaskReader taskreader, string lasttempfilelist, long lasttempfileid)
         {
             return AutomationExtensions.RunTask(new
             {
-                LogChannel = Common.Channels.LogChannel.ForWrite,
                 UploadChannel = Channels.BackendRequest.ForWrite
             },
 
             async self => 
             {                
-                var log = new LogWrapper(self.LogChannel);
-
                 // Check if we should upload a synthetic filelist
                 if (options.DisableSyntheticFilelist || string.IsNullOrWhiteSpace(lasttempfilelist) || lasttempfileid < 0)
                     return;
@@ -52,14 +54,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                 if (syntbase.Name == null || syntbase.State != RemoteVolumeState.Uploaded)
                 {
                     // TODO: If the repair succeeds, this could give a false warning?
-                    await log.WriteWarningAsync(string.Format("Expected there to be a temporary fileset for synthetic filelist ({0}, {1}, {2}), but none was found?", lasttempfileid, lasttempfilelist, syntbase.State), null);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "MissingTemporaryFilelist", null, "Expected there to be a temporary fileset for synthetic filelist ({0}, {1}), but none was found?", lasttempfileid, lasttempfilelist);
                     return;
                 }
 
                 // Files is missing or repaired
                 if (syntbase.Name == null || (syntbase.State != RemoteVolumeState.Uploading && syntbase.State != RemoteVolumeState.Temporary))
                 {
-                    await log.WriteInformationAsync(string.Format("Skipping synthetic upload because temporary fileset appers to be complete: ({0}, {1}, {2})", lasttempfileid, lasttempfilelist, syntbase.State), null);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "SkippingSyntheticListUpload", "Skipping synthetic upload because temporary fileset appers to be complete: ({0}, {1}, {2})", lasttempfileid, lasttempfilelist, syntbase.State);
                     return;
                 }
 
@@ -68,7 +70,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var incompleteFilesets = (await database.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToList();
 
                 result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
-                await log.WriteInformationAsync("Uploading filelist from previous interrupted backup");
+                Logging.Log.WriteInformationMessage(LOGTAG, "PreviousBackupFilelistUpload", "Uploading filelist from previous interrupted backup");
 
                 if (!await taskreader.ProgressAsync)
                     return;

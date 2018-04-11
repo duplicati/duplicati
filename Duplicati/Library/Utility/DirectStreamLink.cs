@@ -41,7 +41,7 @@ namespace Duplicati.Library.Utility
         /// Used to protect accesses to all state vars and making decisions
         /// on blocking thereon.
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
 
         /// <summary> An event to wake reader. </summary>
         private ManualResetEventSlim m_signalDataAvailable = new ManualResetEventSlim(false);
@@ -310,7 +310,7 @@ namespace Duplicati.Library.Utility
         {
             protected DirectStreamLink m_linkStream;
             protected long m_knownLength = -1;
-            public LinkedSubStream(DirectStreamLink linkStream)
+            protected LinkedSubStream(DirectStreamLink linkStream)
             { this.m_linkStream = linkStream; }
 
             public override bool CanSeek { get { return false; } }
