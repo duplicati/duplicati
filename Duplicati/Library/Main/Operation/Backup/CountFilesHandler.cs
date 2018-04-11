@@ -29,6 +29,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             // Make sure we create the enumeration process in a seperate scope,
             // but keep the log channel from the parent scope
             using(Logging.Log.StartIsolatingScope())
+            using(new IsolatedChannelScope())
             {
                 var enumeratorTask = Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist, taskreader);
 
