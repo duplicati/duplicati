@@ -48,9 +48,9 @@ script:
 # build duplicati
   - ls -la ~/build/duplicati/duplicati/packages/
   - echo "travis_fold:start:build_duplicati"
-  - msbuild /p:Configuration=Release Duplicati.sln
+  - msbuild /p:Configuration=Debug Duplicati.sln
   - echo "travis_fold:end:build_duplicati"
-  - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+#  - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 # download and extract testdata
   - echo "travis_fold:start:download_extract_testdata"
   - ls -la .
