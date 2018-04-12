@@ -13,7 +13,8 @@ namespace Duplicati.Library.Modules.Builtin
         /// <returns>The serialized result string.</returns>
         /// <param name="result">The result to serialize.</param>
         /// <param name="loglines">The log lines to serialize.</param>
-        string Serialize(object result, IEnumerable<string> loglines);
+        /// <param name="additional">Additional parameters to include</param>
+        string Serialize(object result, IEnumerable<string> loglines, Dictionary<string, string> additional);
 
         /// <summary>
         /// Returns the format that the serializer represents

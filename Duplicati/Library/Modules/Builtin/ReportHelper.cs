@@ -295,28 +295,60 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
         protected virtual string ReplaceTemplate(string input, object result, bool subjectline)
         {
-            input = Regex.Replace(input, "\\%OPERATIONNAME\\%", m_operationname ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            if (subjectline)
+            // For JSON, ignore the template and just use the contents
+            if (ExportFormat == ResultExportFormat.Json)
             {
-                input = Regex.Replace(input, "\\%RESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                var extra = new Dictionary<string, string>();
+
+                if (input.IndexOf("%OPERATIONNAME%", StringComparison.OrdinalIgnoreCase) >= 0)
+                    extra["OperationName"] = m_operationname;
+                if (input.IndexOf("%REMOTEURL%", StringComparison.OrdinalIgnoreCase) >= 0)
+                    extra["RemoteUrl"] = m_remoteurl;
+                if (input.IndexOf("%LOCALPATH%", StringComparison.OrdinalIgnoreCase) >= 0 && m_localpath != null)
+                    extra["LocalPath"] = string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath);
+                if (input.IndexOf("%PARSEDRESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
+                    extra["ParsedResult"] = m_parsedresultlevel;
+
+                if (input.IndexOf("%backup-name%", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (m_options.ContainsKey("backup-name"))
+                        extra["backup-name"] = m_options["backup-name"];
+                    else
+                        extra["backup-name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
+                }
+
+                foreach (KeyValuePair<string, string> kv in m_options)
+                    if (input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
+                        extra[kv.Key] = kv.Value;
+
+                return m_resultFormatSerializer.Serialize(result, LogLines, extra);
             }
             else
             {
-                if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, LogLines), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                input = Regex.Replace(input, "\\%OPERATIONNAME\\%", m_operationname ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                if (subjectline)
+                {
+                    input = Regex.Replace(input, "\\%RESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                }
+                else
+                {
+                    if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
+                        input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                }
+
+                foreach (KeyValuePair<string, string> kv in m_options)
+                    input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (!m_options.ContainsKey("backup-name"))
+                    input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
+                return input;
             }
-
-            foreach (KeyValuePair<string, string> kv in m_options)
-                input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-            if (!m_options.ContainsKey("backup-name"))
-                input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-            input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
-            return input;
         }
 
         /// <summary>

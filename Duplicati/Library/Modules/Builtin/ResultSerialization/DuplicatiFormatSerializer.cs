@@ -17,7 +17,8 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
         /// <returns>The serialized result string.</returns>
         /// <param name="result">The result to serialize.</param>
         /// <param name="loglines">The log lines to serialize.</param>
-        public string Serialize(object result, IEnumerable<string> loglines)
+        /// <param name="additional">Additional parameters to include</param>
+        public string Serialize(object result, IEnumerable<string> loglines, Dictionary<string, string> additional)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -87,6 +88,9 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
             {
                 Utility.Utility.PrintSerializeObject(result, sb);
             }
+
+            if (additional != null && additional.Count > 0)
+                sb.AppendLine(Serialize(additional, null, null));
 
             if (loglines != null && loglines.Any())
             {

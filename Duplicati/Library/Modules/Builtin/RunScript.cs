@@ -188,7 +188,7 @@ namespace Duplicati.Library.Modules.Builtin
             using (TempFile tmpfile = new TempFile())
             {
                 using (var streamWriter = new StreamWriter(tmpfile))
-                    streamWriter.Write(resultFormatSerializer.Serialize(result, m_logstorage));
+                    streamWriter.Write(resultFormatSerializer.Serialize(result, m_logstorage, null));
 
                 Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile, level);
             }

@@ -191,6 +191,7 @@ namespace Duplicati.Library.Modules.Builtin {
             // No need to do the expansion as we throw away the result
             if (subjectline)
                 return string.Empty;
+
             return base.ReplaceTemplate(input, result, subjectline);
 		}
 
