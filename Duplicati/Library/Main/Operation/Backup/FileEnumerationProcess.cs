@@ -184,6 +184,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             // Then check if the filename is not explicitly excluded by a filter
             Library.Utility.IFilter match;
+            var filtermatch = false;
             if (!Library.Utility.FilterExpression.Matches(enumeratefilter, path, out match))
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromFilter", "Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
@@ -191,6 +192,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
             else if (match != null)
             {
+                filtermatch = true;
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPathFromFilter", "Including path due to filter: {0} => {1}", path, match.ToString());
             }
 
@@ -226,6 +228,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "FollowingEmptySymlink", "Treating empty symlink as regular path {0}", path);
                 }
             }
+
+            if (!filtermatch)
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPath", "Including path as no filters matched: {0}", path);
 
             // All the way through, yes!
             return true;
