@@ -527,14 +527,7 @@ namespace Duplicati.Server
                     {
                         case DuplicatiOperation.Backup:
                             {
-                                IEnumerable<Library.Utility.IFilter> defaultFilters = null;
-                                string defaultFiltersValue;
-                                if (options.TryGetValue("default-filters", out defaultFiltersValue) || options.TryGetValue("default-filter", out defaultFiltersValue))
-                                {
-                                    defaultFilters = Library.Utility.DefaultFilters.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(defaultFiltersValue ?? string.Empty));
-                                }
-
-                                var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation), defaultFilters);
+                                var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation));
                                 var sources = 
                                     (from n in backup.Sources
                                         let p = SpecialFolders.ExpandEnvironmentVariables(n)
@@ -865,7 +858,7 @@ namespace Duplicati.Server
             return options;
         }
 
-        private static Library.Utility.IFilter ApplyFilter(Serialization.Interface.IBackup backup, DuplicatiOperation mode, Library.Utility.IFilter filter, IEnumerable<Library.Utility.IFilter> defaultFilters)
+        private static Library.Utility.IFilter ApplyFilter(Serialization.Interface.IBackup backup, DuplicatiOperation mode, Library.Utility.IFilter filter)
         {
             var f2 = backup.Filters;
             if (f2 != null && f2.Length > 0)
@@ -881,11 +874,6 @@ namespace Duplicati.Server
                     .Aggregate((a, b) => Library.Utility.FilterExpression.Combine(a, b));
 
                 filter = Library.Utility.FilterExpression.Combine(filter, nf);
-            }
-
-            if (defaultFilters != null && defaultFilters.Any())
-            {
-                filter = Library.Utility.FilterExpression.Combine(filter, defaultFilters.Aggregate((a, b) => Library.Utility.FilterExpression.Combine(a, b)));
             }
 
             return filter;

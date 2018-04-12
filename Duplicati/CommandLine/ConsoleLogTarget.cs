@@ -55,7 +55,7 @@ namespace Duplicati.CommandLine
             m_stdout = stdout;
             m_stderr = stderr;
             m_level = level;
-            m_filter = Library.Main.Options.ParseLogFilter(logfilter);
+            m_filter = FilterExpression.ParseLogFilter(logfilter);
         }
 
         /// <summary>

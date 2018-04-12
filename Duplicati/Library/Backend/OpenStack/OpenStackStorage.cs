@@ -42,31 +42,31 @@ namespace Duplicati.Library.Backend.OpenStack
         private const int PAGE_LIMIT = 500;
 
 
-        private string m_container;
-        private string m_prefix;
+        private readonly string m_container;
+        private readonly string m_prefix;
 
         private readonly string m_domainName;
-        private string m_username;
-        private string m_password;
-        private string m_authUri;
+        private readonly string m_username;
+        private readonly string m_password;
+        private readonly string m_authUri;
         private readonly string m_version;
-        private string m_tenantName;
-        private string m_apikey;
-        private string m_region;
+        private readonly string m_tenantName;
+        private readonly string m_apikey;
+        private readonly string m_region;
 
         protected string m_simplestorageendpoint;
 
-        private WebHelper m_helper = null;
+        private readonly WebHelper m_helper;
         private OpenStackAuthResponse.TokenClass m_accessToken;
 
-        public static readonly KeyValuePair<string, string>[] KNOWN_OPENSTACK_PROVIDERS = new KeyValuePair<string, string>[] {
+        public static readonly KeyValuePair<string, string>[] KNOWN_OPENSTACK_PROVIDERS = {
             new KeyValuePair<string, string>("Rackspace US", "https://identity.api.rackspacecloud.com/v2.0"),
             new KeyValuePair<string, string>("Rackspace UK", "https://lon.identity.api.rackspacecloud.com/v2.0"),
             new KeyValuePair<string, string>("OVH Cloud Storage", "https://auth.cloud.ovh.net/v2.0"),
             new KeyValuePair<string, string>("Selectel Cloud Storage", "https://auth.selcdn.ru"),
         };
 
-        public static readonly KeyValuePair<string, string>[] OPENSTACK_VERSIONS = new KeyValuePair<string, string>[] {
+        public static readonly KeyValuePair<string, string>[] OPENSTACK_VERSIONS = {
             new KeyValuePair<string, string>("v2.0", "v2"),
             new KeyValuePair<string, string>("v3", "v3"),
         };
@@ -209,7 +209,7 @@ namespace Duplicati.Library.Backend.OpenStack
 
                 if (string.IsNullOrEmpty(apikey))
                 {
-                    this.auth.PasswordCredentials = new PasswordBasedRequest()
+                    this.auth.PasswordCredentials = new PasswordBasedRequest
                     {
                         username = username,
                         password = password,
@@ -217,7 +217,7 @@ namespace Duplicati.Library.Backend.OpenStack
                 }
                 else
                 {
-                    this.auth.ApiCredentials = new ApiKeyBasedRequest()
+                    this.auth.ApiCredentials = new ApiKeyBasedRequest
                     {
                         username = username,
                         apiKey = apikey
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Backend.OpenStack
 
         private class WebHelper : JSONWebHelper
         {
-            private OpenStackStorage m_parent;
+            private readonly OpenStackStorage m_parent;
 
             public WebHelper(OpenStackStorage parent) { m_parent = parent; }
 
@@ -376,12 +376,12 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        private string JoinUrls(string uri, string fragment)
+        private static string JoinUrls(string uri, string fragment)
         {
             fragment = fragment ?? "";
             return uri + (uri.EndsWith("/", StringComparison.Ordinal) ? "" : "/") + (fragment.StartsWith("/", StringComparison.Ordinal) ? fragment.Substring(1) : fragment);
         }
-        private string JoinUrls(string uri, string fragment1, string fragment2)
+        private static string JoinUrls(string uri, string fragment1, string fragment2)
         {
             return JoinUrls(JoinUrls(uri, fragment1), fragment2);
         }
@@ -610,7 +610,7 @@ namespace Duplicati.Library.Backend.OpenStack
                 foreach(var s in KNOWN_OPENSTACK_PROVIDERS)
                     authuris.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
-                return new List<ICommandLineArgument>(new CommandLineArgument[] {
+                return new List<ICommandLineArgument>(new [] {
                     new CommandLineArgument(DOMAINNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.DomainnameOptionShort, Strings.OpenStack.UsernameOptionLong),
                     new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.UsernameOptionShort, Strings.OpenStack.UsernameOptionLong),
                     new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.OpenStack.PasswordOptionShort, Strings.OpenStack.PasswordOptionLong(TENANTNAME_OPTION)),

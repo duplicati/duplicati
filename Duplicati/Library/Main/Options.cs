@@ -492,8 +492,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
                     new CommandLineArgument("quota-warning-threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.QuotaWarningThresholdShort, Strings.Options.QuotaWarningThresholdLong, DEFAULT_QUOTA_WARNING_THRESHOLD.ToString()),
 
-                    new CommandLineArgument("default-filters", CommandLineArgument.ArgumentType.String, Strings.Options.DefaultFiltersShort, Strings.Options.DefaultFiltersLong(DefaultFilterSet.Windows.ToString(), DefaultFilterSet.OSX.ToString(), DefaultFilterSet.Linux.ToString(), DefaultFilterSet.All.ToString()), string.Empty, new[] { "default-filter" }),
-
                     new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, Strings.Options.SymlinkpolicyLong("store", "ignore", "follow"), Enum.GetName(typeof(SymlinkStrategy), SymlinkStrategy.Store), null, Enum.GetNames(typeof(SymlinkStrategy))),
                     new CommandLineArgument("hardlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.HardlinkpolicyShort, Strings.Options.HardlinkpolicyLong("first", "all", "none"), Enum.GetName(typeof(HardlinkStrategy), HardlinkStrategy.All), null, Enum.GetNames(typeof(HardlinkStrategy))),
                     new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, Strings.Options.ExcludefilesattributesLong(Enum.GetNames(typeof(System.IO.FileAttributes)))),
@@ -1262,37 +1260,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        /// <summary>
-        /// Helper method to support filters with either a + or - prefix
-        /// </summary>
-        /// <returns>The IFilter instance.</returns>
-        /// <param name="msg">The filter string to parse.</param>
-        private static IFilter StringToIFilter(string msg)
-        {
-            if (string.IsNullOrWhiteSpace(msg))
-                return new FilterExpression();
-            if (msg[0] == '+')
-                return new FilterExpression(msg.Substring(1), true);
-            if (msg[0] == '-')
-                return new FilterExpression(msg.Substring(1), false);
-            return new FilterExpression(msg, true);
-        }
 
-        /// <summary>
-        /// Parses a log filter string, and returns the filter instance
-        /// </summary>
-        /// <returns>The log filter.</returns>
-        /// <param name="value">The filter string to parse.</param>
-        public static IFilter ParseLogFilter(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return new FilterExpression();
-
-            return value
-                .Split(new char[] { System.IO.Path.PathSeparator, ':', ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(StringToIFilter)
-                .Aggregate(FilterExpression.Combine);
-        }
 
         /// <summary>
         /// Parses a log level string
@@ -1319,7 +1287,7 @@ namespace Duplicati.Library.Main
             get
             {
                 m_options.TryGetValue("log-file-log-filter", out var value);
-                return ParseLogFilter(value);
+                return Library.Utility.FilterExpression.ParseLogFilter(value);
             }
         }
 
@@ -1332,7 +1300,7 @@ namespace Duplicati.Library.Main
             get
             {
                 m_options.TryGetValue("console-log-filter", out var value);
-                return ParseLogFilter(value);
+                return Library.Utility.FilterExpression.ParseLogFilter(value);
             }
         }
 

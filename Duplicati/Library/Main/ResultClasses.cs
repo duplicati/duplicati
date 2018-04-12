@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Logging;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main
 {
@@ -228,6 +229,8 @@ namespace Duplicati.Library.Main
         protected Library.Utility.FileBackedStringList m_retryAttempts;
 
         protected IMessageSink m_messageSink;
+
+        [JsonIgnore]
         public IMessageSink MessageSink
         {
             get { return m_messageSink; }
@@ -389,6 +392,7 @@ namespace Duplicati.Library.Main
             }
         }
 
+        [JsonIgnore]
         public IBackendWriter BackendWriter { get { return (IBackendWriter)this.BackendStatistics; } }
 
         public event Action<TaskControlState> StateChangedEvent;
