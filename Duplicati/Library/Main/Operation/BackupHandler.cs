@@ -172,6 +172,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                             
                 Library.Utility.IFilter match;
+                var filtermatch = false;
                 if (!Library.Utility.FilterExpression.Matches(m_enumeratefilter, path, out match))
                 {
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromFilter", "Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
@@ -179,6 +180,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else if (match != null)
                 {
+                    filtermatch = true;
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPathFromFilter", "Including path due to filter: {0} => {1}", path, match.ToString());
                 }
 
@@ -196,7 +198,10 @@ namespace Duplicati.Library.Main.Operation
                     m_mixinqueue.Enqueue(path);
                     return false;
                 }
-                                
+                              
+                if (!filtermatch)
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPath", "Including path as no filters matched: {0}", path);
+
                 return true;
             }
 
