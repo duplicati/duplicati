@@ -53,3 +53,4 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("2.0.0.7")]
 [assembly: AssemblyVersion("2.0.0.7")]
 [assembly: AssemblyFileVersion("2.0.0.7")]
+[assembly: InternalsVisibleTo("Duplicati.Library.Modules.Builtin.UnitTest")]

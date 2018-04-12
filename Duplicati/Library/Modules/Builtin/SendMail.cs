@@ -14,6 +14,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using MailKit.Net.Smtp;
 using MimeKit;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -62,6 +63,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// Option used to specify if reports are sent for other operations than backups
         /// </summary>
         private const string OPTION_SENDALL = "send-mail-any-operation";
+        /// <summary>
+        /// Option used to specify what format the result is sent in.
+        /// </summary>
+        private const string OPTION_RESULT_FORMAT = "send-mail-result-output-format";
 
         #endregion
 
@@ -105,6 +110,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// The parsed result level
         /// </summary>
         private string m_parsedresultlevel = string.Empty;
+        /// <summary>
+        /// Serializer to use when serializing the message.
+        /// </summary>
+        private IResultFormatSerializer resultFormatSerializer;
 
         /// <summary>
         /// The server url to use
@@ -177,6 +186,7 @@ namespace Duplicati.Library.Modules.Builtin
         {
             get
             {
+                string[] resultOutputFormatOptions = new string[] { ResultExportFormat.Duplicati.ToString(), ResultExportFormat.Json.ToString() };
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionRecipientShort, Strings.SendMail.OptionRecipientLong),
                     new CommandLineArgument(OPTION_SENDER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSenderShort, Strings.SendMail.OptionSenderLong, DEFAULT_SENDER),
@@ -187,6 +197,14 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
                     new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string [] { "All" }).ToArray()),
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionSendallShort, Strings.SendMail.OptionSendallLong),
+                    new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
+                    new CommandLineArgument(OPTION_RESULT_FORMAT,
+                        CommandLineArgument.ArgumentType.Enumeration,
+                        Strings.SendMail.ResultFormatShort,
+                        Strings.SendMail.ResultFormatLong(resultOutputFormatOptions),
+                        ResultExportFormat.Duplicati.ToString(),
+                        null,
+                        resultOutputFormatOptions)
                 });
             }
         }
@@ -209,6 +227,20 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(OPTION_SUBJECT, out m_subject);
             commandlineOptions.TryGetValue(OPTION_BODY, out m_body);
             m_options = commandlineOptions;
+
+
+            string tmpResultFormat;
+            ResultExportFormat resultFormat;
+            if (!commandlineOptions.TryGetValue(OPTION_RESULT_FORMAT, out tmpResultFormat))
+            {
+                resultFormat = ResultExportFormat.Duplicati;
+            }
+            else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
+            {
+                resultFormat = ResultExportFormat.Duplicati;
+            }
+
+            resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
 
             string tmp;
             commandlineOptions.TryGetValue(OPTION_SENDLEVEL, out tmp);
@@ -458,11 +490,10 @@ namespace Duplicati.Library.Modules.Builtin
             else
             {
                 if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    using(TempFile tf = new TempFile())
-                    {
-                        RunScript.SerializeResult(tf, result);
-                        input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                    }
+                {
+                    string resultExport = resultFormatSerializer.Serialize(result);
+                    input = Regex.Replace(input, "\\%RESULT\\%", resultExport, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                }
             }
 
             foreach (KeyValuePair<string, string> kv in m_options)
