@@ -67,6 +67,10 @@ namespace Duplicati.Server
         /// <summary>
         /// The folder where control files are placed
         /// </summary>
+        /// <remarks>
+        /// This directory is referenced in the common filters in FilterGroups.cs.
+        /// If it is ever changed, the filter should be updated as well.
+        /// </remarks>
         private const string CONTROL_DIR = "control_dir_v2";
         /// <summary>
         /// The file that is locked by the first process

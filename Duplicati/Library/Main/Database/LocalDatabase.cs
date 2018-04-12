@@ -1147,7 +1147,7 @@ ORDER BY
                 if (type != Library.Utility.FilterType.Regexp && !Library.Utility.Utility.IsFSCaseSensitive && filter.ToString().Any(x => x > 127))
                     type = Library.Utility.FilterType.Regexp;
                 
-                if (type == Library.Utility.FilterType.Regexp)
+                if (type == Library.Utility.FilterType.Regexp || type == Library.Utility.FilterType.Group)
                 {
                     using(var cmd = m_connection.CreateCommand())
                     {

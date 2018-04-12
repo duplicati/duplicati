@@ -43,10 +43,12 @@
     <Reference Include="FasterHashing">
       <HintPath>..\..\..\packages\FasterHashing.1.3.0\lib\net45\FasterHashing.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
-    <Compile Include="DefaultFilters.cs" />
+    <Compile Include="FilterGroups.cs" />
     <Compile Include="KeyGenerator.cs" />
     <Compile Include="OverrideableStream.cs" />
     <Compile Include="ProgressReportingStream.cs" />

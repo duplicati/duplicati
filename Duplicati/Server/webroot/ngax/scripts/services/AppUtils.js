@@ -142,8 +142,8 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             name: gettextCatalog.getString('Exclude file'),
             key: '-path',
             prefix: '-',
-            exclude: ['*', '?'],
-            rx: '\\-([^\\[\\*\\?]+)'
+            exclude: ['*', '?', '{'],
+            rx: '\\-([^\\[\\{\\*\\?]+)'
         }, {
             name: gettextCatalog.getString('Exclude file extension'),
             key: '-ext',
@@ -160,6 +160,17 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             prefix: '+[',
             suffix: ']'
         }, {
+            name: gettextCatalog.getString('Exclude filter group'),
+            key: '-{}',
+            prefix: '-{',
+            suffix: '}'
+        }, {
+        //// Since all the current filter groups are intended for exclusion, there isn't a reason to show the 'Include group' section in the UI yet.
+        //    name: gettextCatalog.getString('Include filter group'),
+        //    key: '+{}',
+        //    prefix: '+{',
+        //    suffix: '}'
+        //}, {
             name: gettextCatalog.getString('Include expression'),
             key: '+',
             prefix: '+'
@@ -167,6 +178,30 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             name: gettextCatalog.getString('Exclude expression'),
             key: '-',
             prefix: '-'
+        }];
+        
+        apputils.filterGroups = [{
+            name: gettextCatalog.getString('Default excludes'),
+            value: 'DefaultExcludes'
+        }, {
+        //// As the DefaultIncludes are currently empty, we don't need to include them in the UI yet.
+        //    name: gettextCatalog.getString('Default includes'),
+        //    value: 'DefaultIncludes'
+        //}, {
+            name: gettextCatalog.getString('System Files'),
+            value: 'SystemFiles'
+        }, {
+            name: gettextCatalog.getString('Operating System'),
+            value: 'OperatingSystem'
+        }, {
+            name: gettextCatalog.getString('Cache Files'),
+            value: 'CacheFiles'
+        }, {
+            name: gettextCatalog.getString('Temporary Files'),
+            value: 'TemporaryFiles'
+        }, {
+            name: gettextCatalog.getString('Applications'),
+            value: 'Applications'
         }];
 
         apputils.filterTypeMap = {};

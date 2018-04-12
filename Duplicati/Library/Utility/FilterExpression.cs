@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Utility
 {
@@ -41,7 +42,11 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A list of files described with regular expressions
         /// </summary>
-        Regexp
+        Regexp,
+        /// <summary>
+        /// A built in set of filters
+        /// </summary>
+        Group,
     }
 
     /// <summary>
@@ -65,7 +70,7 @@ namespace Duplicati.Library.Utility
             /// <summary>
             /// The regular expression version of the filter
             /// </summary>
-            public readonly System.Text.RegularExpressions.Regex Regexp;
+            public readonly Regex Regexp;
             
             /// <summary>
             /// The single wildcard character (DOS style)
@@ -79,10 +84,15 @@ namespace Duplicati.Library.Utility
             /// <summary>
             /// The regular expression flags
             /// </summary>
-            private static readonly System.Text.RegularExpressions.RegexOptions REGEXP_OPTIONS =
-                System.Text.RegularExpressions.RegexOptions.Compiled |
-                System.Text.RegularExpressions.RegexOptions.ExplicitCapture |
-                (Library.Utility.Utility.IsFSCaseSensitive ? System.Text.RegularExpressions.RegexOptions.None : System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            private static readonly RegexOptions REGEXP_OPTIONS =
+                RegexOptions.Compiled |
+                RegexOptions.ExplicitCapture |
+                (Utility.IsFSCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase);
+
+            // Since we might need to get the regex for a particular filter group multiple times
+            // (e.g., when combining multiple FilterExpressions together, which discards the existing FilterEntries and recreates them from the Filter representations),
+            // and since they don't change (and compiling them isn't a super cheap operation), we keep a cache of the ones we've built for re-use.
+            private static Dictionary<FilterGroup, Regex> filterGroupRegexCache = new Dictionary<FilterGroup, Regex>();
 
             /// <summary>
             /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.FilterExpression.FilterEntry"/> struct.
@@ -100,13 +110,68 @@ namespace Duplicati.Library.Utility
                 {
                     this.Type = FilterType.Regexp;
                     this.Filter = filter.Substring(1, filter.Length - 2);
-                    this.Regexp = new System.Text.RegularExpressions.Regex(this.Filter, REGEXP_OPTIONS);
+                    this.Regexp = new Regex(this.Filter, REGEXP_OPTIONS);
+                }
+                else if (filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal))
+                {
+                    this.Type = FilterType.Group;
+                    this.Filter = filter.Substring(1, filter.Length - 2);
+                    this.Regexp = GetFilterGroupRegex(this.Filter);
                 }
                 else
                 {
                     this.Type = (filter.Contains(MULTIPLE_WILDCARD) || filter.Contains(SINGLE_WILDCARD)) ? FilterType.Wildcard : FilterType.Simple;
                     this.Filter = (!Utility.IsFSCaseSensitive && this.Type == FilterType.Wildcard) ? filter.ToUpper() : filter;
-                    this.Regexp = new System.Text.RegularExpressions.Regex(Library.Utility.Utility.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
+                    this.Regexp = new Regex(Utility.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
+                }
+            }
+
+            /// <summary>
+            /// Gets the regex that represents the given filter group
+            /// </summary>
+            /// <param name="filterGroupName">Filter group name</param>
+            /// <returns>Group regex</returns>
+            private static Regex GetFilterGroupRegex(string filterGroupName)
+            {
+                FilterGroup filterGroup = FilterGroups.ParseFilterList(filterGroupName, FilterGroup.None);
+                Regex result;
+                if (FilterEntry.filterGroupRegexCache.TryGetValue(filterGroup, out result))
+                {
+                    return result;
+                }
+                else
+                {
+                    // Get the filter strings for this filter group, and convert them to their regex forms
+                    List<string> regexStrings = FilterGroups.GetFilterStrings(filterGroup)
+                    .Select(filterString =>
+                    {
+                        if (filterString.StartsWith("[", StringComparison.Ordinal) && filterString.EndsWith("]", StringComparison.Ordinal))
+                        {
+                            return filterString.Substring(1, filterString.Length - 2);
+                        }
+                        else
+                        {
+                            return Utility.ConvertGlobbingToRegExp(filterString);
+                        }
+                    })
+                    .ToList();
+
+                    string regexString;
+                    if (regexStrings.Count == 1)
+                    {
+                        regexString = regexStrings.Single();
+                    }
+                    else
+                    {
+                        // If there are multiple regex strings, then they need to be merged by wrapping each in parenthesis and ORing them together
+                        regexString = "(" + string.Join(")|(", regexStrings) + ")";
+                    }
+
+                    result = new Regex(regexString, REGEXP_OPTIONS);
+
+                    FilterEntry.filterGroupRegexCache[filterGroup] = result;
+
+                    return result;
                 }
             }
             
@@ -203,10 +268,24 @@ namespace Duplicati.Library.Utility
                     case FilterType.Wildcard:
                         return IsWildcardMatch(!Utility.IsFSCaseSensitive ? path.ToUpper() : path, this.Filter);
                     case FilterType.Regexp:
+                    case FilterType.Group:
                         var m = this.Regexp.Match(path);
                         return m.Success && m.Length == path.Length;
                     default:
                         return false;                            
+                }
+            }
+
+            public override string ToString()
+            {
+                switch (this.Type)
+                {
+                    case FilterType.Regexp:
+                        return "[" + this.Filter + "]";
+                    case FilterType.Group:
+                        return "{" + this.Filter + "}";
+                    default:
+                        return this.Filter;
                 }
             }
         }
@@ -318,11 +397,17 @@ namespace Duplicati.Library.Utility
         {
             if (string.IsNullOrWhiteSpace(filter))
                 return null;
-            
-            if (filter.Length < 2 || (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)))
+
+            if (filter.Length < 2 ||
+                (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)) ||
+                (filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal)))
+            {
                 return new string[] { filter };
+            }
             else
+            {
                 return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            }
         }
         
         private static List<FilterEntry> Compact(IEnumerable<FilterEntry> items)
@@ -333,7 +418,9 @@ namespace Duplicati.Library.Utility
             foreach(var f in items)
                 if (combined == null)
                 {
-                    if (f.Type == FilterType.Simple || f.Type == FilterType.Wildcard)
+                    // Note that even though group filters may include regexes, we don't want to merge them together and compact them,
+                    // since that would make their names much more difficult to interpret on the command line.
+                    if (f.Type == FilterType.Simple || f.Type == FilterType.Wildcard || f.Type == FilterType.Group)
                         r.Add(f);
                     else if (f.Type != FilterType.Empty)
                     {
@@ -343,7 +430,7 @@ namespace Duplicati.Library.Utility
                 }
                 else
                 {
-                    if (f.Type == FilterType.Simple || f.Type == FilterType.Wildcard)
+                    if (f.Type == FilterType.Simple || f.Type == FilterType.Wildcard || f.Type == FilterType.Group)
                     {
                         r.Add(new FilterEntry("[" + combined + "]"));
                         r.Add(f);
@@ -496,7 +583,7 @@ namespace Duplicati.Library.Utility
 
             if (first.Result != second.Result)
                 throw new ArgumentException("Both filters must have the same result property");
-            return new FilterExpression(first.m_filters.Union(second.m_filters).Select(x => x.Type == FilterType.Regexp ? ("[" + x.Filter + "]") : x.Filter), first.Result);
+            return new FilterExpression(first.m_filters.Union(second.m_filters).Select(x => x.ToString()), first.Result);
         }
 
         /// <summary>
@@ -530,7 +617,7 @@ namespace Duplicati.Library.Utility
                 "(" +
                 string.Join(") || (",
                     (from n in m_filters
-                        select n.Type == FilterType.Regexp ? "[" + n.Filter + "]" : n.Filter)
+                        select n.ToString())
                 ) +
                 ")";
         }
@@ -547,11 +634,9 @@ namespace Duplicati.Library.Utility
             return
                 (from n in m_filters
                     select string.Format(
-                        "{0}{1}{2}{3}", 
+                        "{0}{1}", 
                         this.Result ? "+" : "-", 
-                        n.Type == FilterType.Regexp ? "[" : "", 
-                        n.Filter, 
-                        n.Type == FilterType.Regexp ? "]" : ""
+                        n.ToString()
                     )
                 ).ToArray();
         }

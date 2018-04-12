@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
+using FilterGroup = Duplicati.Library.Utility.FilterGroup;
+
 namespace Duplicati.CommandLine
 {
     public static class Help
@@ -105,11 +107,9 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
                 tp = tp.Replace("%DEFAULTCOMPRESSIONMODULE%", opts.CompressionModule);
                 tp = tp.Replace("%GENERICMODULES%", string.Join(", ", Library.DynamicLoader.GenericLoader.Keys));
-                
-                tp = tp.Replace("%COMMON_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Common.OrderBy(x => x)));
-                tp = tp.Replace("%WINDOWS_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Windows.OrderBy(x => x)));
-                tp = tp.Replace("%OSX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.OSX.OrderBy(x => x)));
-                tp = tp.Replace("%LINUX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Linux.OrderBy(x => x)));
+                var metaGroupNames = new[] { nameof(FilterGroup.None), nameof(FilterGroup.DefaultExcludes), nameof(FilterGroup.DefaultIncludes), };
+                tp = tp.Replace("%FILTER_GROUPS_SHORT%", string.Join(Environment.NewLine + "  ", metaGroupNames.Concat(Enum.GetNames(typeof(FilterGroup)).Except(metaGroupNames, StringComparer.OrdinalIgnoreCase).OrderBy(x => x, StringComparer.OrdinalIgnoreCase)).Select(group => "{" + group + "}")));
+                tp = tp.Replace("%FILTER_GROUPS_LONG%", Library.Utility.FilterGroups.GetOptionDescriptions(4, true));
 
                 if (Library.Utility.Utility.IsClientWindows)
                 {
