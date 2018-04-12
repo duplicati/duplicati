@@ -46,14 +46,15 @@ namespace Duplicati.Library.Main.Operation
             var sourcefilter = new Library.Utility.FilterExpression(sources, true);
 
             using(var snapshot = BackupHandler.GetSnapshot(sources, m_options))
+            using(new IsolatedChannelScope())
             {
                 var source = Operation.Backup.FileEnumerationProcess.Run(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, null, m_result.TaskReader);
                 var sink = CoCoL.AutomationExtensions.RunTask(
-                    Operation.Backup.Channels.SourcePaths.ForRead,
-                    async chan => {
+                    new { source = Operation.Backup.Channels.SourcePaths.ForRead },
+                    async self => {
                         while (true)
                         {
-                            var path = await chan.ReadAsync();
+                            var path = await self.source.ReadAsync();
                             var fa = FileAttributes.Normal;
                             try { fa = snapshot.GetAttributes(path); }
                             catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message); }
