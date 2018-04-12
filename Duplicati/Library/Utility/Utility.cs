@@ -36,6 +36,11 @@ namespace Duplicati.Library.Utility
         public static long DEFAULT_BUFFER_SIZE => SystemContextSettings.Buffersize;
 
         /// <summary>
+        /// A cache of the FileSystemCaseSensitive property, which is computed upon the first access.
+        /// </summary>
+        private static bool? CachedIsFSCaseSensitive = null;
+
+        /// <summary>
         /// Gets the hash algorithm used for calculating a hash
         /// </summary>
         public static string HashAlgorithm { get { return "SHA256"; } }
@@ -867,13 +872,19 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                var str = Environment.GetEnvironmentVariable("FILESYSTEM_CASE_SENSITIVE");
+                if (!CachedIsFSCaseSensitive.HasValue)
+                {
+                    var str = Environment.GetEnvironmentVariable("FILESYSTEM_CASE_SENSITIVE");
 
-                // TODO: This should probably be determined by filesystem rather than OS,
-                // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
-                Func<bool> defaultReply = () => Utility.IsClientLinux && !Utility.IsClientOSX;
+                    // TODO: This should probably be determined by filesystem rather than OS,
+                    // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
 
-                return Utility.ParseBool(str, defaultReply);
+                    Func<bool> defaultReply = () => Utility.IsClientLinux && !Utility.IsClientOSX;
+
+                    CachedIsFSCaseSensitive = Utility.ParseBool(str, defaultReply);
+                }
+
+                return CachedIsFSCaseSensitive.Value;
             }
         }
 

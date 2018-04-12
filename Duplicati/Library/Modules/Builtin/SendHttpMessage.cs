@@ -1,5 +1,6 @@
 ﻿using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
@@ -47,13 +48,10 @@ namespace Duplicati.Library.Modules.Builtin {
         /// Option used to specify if reports are sent for other operations than backups
         /// </summary>
         private const string OPTION_SENDALL = "send-http-any-operation";
-
-
         /// <summary>
-        /// Option used to specify if reports are sent as json-serialized files
+        /// Option used to specify what format the result is sent in.
         /// </summary>
-        private const string OPTION_SENDASJSON = "send-http-as-json";
-
+        private const string OPTION_RESULT_FORMAT = "send-http-result-output-format";
         /// <summary>
         /// Option used to set the log level
         /// </summary>
@@ -85,8 +83,6 @@ namespace Duplicati.Library.Modules.Builtin {
         #endregion
 
         #region Private variables
-
-
         /// <summary>
         /// The HTTP report URL
         /// </summary>
@@ -99,10 +95,6 @@ namespace Duplicati.Library.Modules.Builtin {
         /// The message parameter name
         /// </summary>
         private string m_extraParameters;
-        /// <summary>
-        /// Flag indicating if data is sent as JSON body
-        /// </summary>
-        private bool m_asJson;
         /// <summary>
         /// The http verb
         /// </summary>
@@ -151,10 +143,11 @@ namespace Duplicati.Library.Modules.Builtin {
                     new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
 
                     new CommandLineArgument(OPTION_VERB, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.HttpverbShort, Strings.SendHttpMessage.HttpverbLong, "POST"),
-                    new CommandLineArgument(OPTION_SENDASJSON, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendasjsonShort, Strings.SendHttpMessage.SendasjsonLong, "false"),
                     new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
                     new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
                     new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
+
+                    new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
                 });
             }
         }
@@ -166,6 +159,7 @@ namespace Duplicati.Library.Modules.Builtin {
         protected override string LogLevelOptionName => OPTION_LOG_LEVEL;
         protected override string LogFilterOptionName => OPTION_LOG_FILTER;
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
+        protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
 
 		/// <summary>
 		/// This method is the interception where the module can interact with the execution environment and modify the settings.
@@ -183,8 +177,6 @@ namespace Duplicati.Library.Modules.Builtin {
                 m_messageParameterName = DEFAULT_MESSAGE_PARAMETER_NAME;
 
             commandlineOptions.TryGetValue(OPTION_EXTRA_PARAMETERS, out m_extraParameters);
-            m_asJson = Library.Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_SENDASJSON);
-
             commandlineOptions.TryGetValue(OPTION_VERB, out m_verb);
             if (string.IsNullOrWhiteSpace(m_verb))
                 m_verb = "POST";
@@ -192,24 +184,31 @@ namespace Duplicati.Library.Modules.Builtin {
             return true;
         }
 
-        #endregion
+		#endregion
 
+		protected override string ReplaceTemplate(string input, object result, bool subjectline)
+		{
+            // No need to do the expansion as we throw away the result
+            if (subjectline)
+                return string.Empty;
+            return base.ReplaceTemplate(input, result, subjectline);
+		}
 
-        protected override void SendMessage(string subject, string message) {
+        protected override void SendMessage(string subject, string body) {
             Exception ex = null;
 
             byte[] data;
             string contenttype;
 
-            if (m_asJson)
+            if (ExportFormat == ResultExportFormat.Json)
             {
                 contenttype = "application/json";
-                data = Encoding.UTF8.GetBytes(message);
+                data = Encoding.UTF8.GetBytes(body);
             }
             else
             {
                 contenttype = "application/x-www-form-urlencoded";
-                var postData = $"{m_messageParameterName}={System.Uri.EscapeDataString(message)}";
+                var postData = $"{m_messageParameterName}={System.Uri.EscapeDataString(body)}";
                 if (!string.IsNullOrEmpty(m_extraParameters))
                 {
                     postData += $"&{System.Uri.EscapeUriString(m_extraParameters)}";
@@ -261,88 +260,6 @@ namespace Duplicati.Library.Modules.Builtin {
 
             if (ex != null)
                 throw ex;
-        }
-
-        /// <summary>
-        /// Helper method to perform template expansion
-        /// </summary>
-        /// <returns>The expanded template.</returns>
-        /// <param name="input">The input template.</param>
-        /// <param name="result">The result object.</param>
-        /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
-        protected override string ReplaceTemplate(string input, object result, bool subjectline)
-        {
-            if (subjectline)
-                return string.Empty;
-            else
-            {
-                if (m_asJson)
-                    return SerializeAsJson(result, LogLines);
-                else
-                    return base.ReplaceTemplate(input, result, subjectline);
-            }
-        }
-
-        /// <summary>
-        /// Writes the result as a JSON formatted file
-        /// </summary>
-        /// <param name="result">The result object.</param>
-        /// <param name="loglines">The log lines to serialize.</param>
-        public static string SerializeAsJson(object result, IEnumerable<string> loglines)
-        {
-            var settings = new Newtonsoft.Json.JsonSerializerSettings
-            {
-                ContractResolver = new DynamicContractResolver(
-                        nameof(IBasicResults.Warnings),
-                        nameof(IBasicResults.Errors),
-                        nameof(IBasicResults.Messages)
-                ),
-                Formatting = Newtonsoft.Json.Formatting.None,
-                ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore,
-            };
-
-            return Newtonsoft.Json.JsonConvert.SerializeObject(
-                new { 
-                    Data = result, 
-                    LogLines = loglines 
-                },
-                settings
-            );
-        }
-
-
-        /// <summary>
-        /// Helper to filter the result classes properties
-        /// </summary>
-        private class DynamicContractResolver : Newtonsoft.Json.Serialization.DefaultContractResolver
-        {
-            /// <summary>
-            /// List of names to exclude
-            /// </summary>
-            private readonly HashSet<string> m_excludes;
-            /// <summary>
-            /// Initializes a new instance of the
-            /// <see cref="T:Duplicati.Library.Modules.Builtin.SendHttpMessage.DynamicContractResolver"/> class.
-            /// </summary>
-            /// <param name="names">The names to exclude.</param>
-            public DynamicContractResolver(params string[] names)
-            {
-                m_excludes = new HashSet<string>(names);
-            }
-
-            /// <summary>
-            /// Creates a filtered list of properties
-            /// </summary>
-            /// <returns>The filtered properties.</returns>
-            /// <param name="type">The type to create the list for.</param>
-            /// <param name="memberSerialization">Member serialization parameter.</param>
-            protected override IList<Newtonsoft.Json.Serialization.JsonProperty> CreateProperties(Type type, Newtonsoft.Json.MemberSerialization memberSerialization)
-            {
-                return base
-                    .CreateProperties(type, memberSerialization)
-                    .Where(x => !m_excludes.Contains(x.PropertyName))
-                    .ToList();
-            }
         }
     }
 }

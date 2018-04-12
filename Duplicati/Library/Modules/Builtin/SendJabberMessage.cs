@@ -2,13 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
+using System.Net.NetworkInformation;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Modules.Builtin
 {
     public class SendJabberMessage : ReportHelper
     {
-        #region Option names
+        /// <summary>
+        /// The tag used for log messages
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<SendJabberMessage>();
 
+        #region Option names
         /// <summary>
         /// Option used to specify server username
         /// </summary>
@@ -33,6 +40,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// Option used to specify if reports are sent for other operations than backups
         /// </summary>
         private const string OPTION_SENDALL = "send-xmpp-any-operation";
+        /// <summary>
+        /// Option used to specify what format the result is sent in.
+        /// </summary>
+        private const string OPTION_RESULT_FORMAT = "send-xmpp-result-output-format";
 
         /// <summary>
         /// Option used to set the log level
@@ -61,7 +72,6 @@ namespace Duplicati.Library.Modules.Builtin
         #endregion
 
         #region Private variables
-
         /// <summary>
         /// The server username
         /// </summary>
@@ -120,6 +130,8 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
                     new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
                     new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
+
+                    new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
                 });
             }
         }
@@ -131,6 +143,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected override string LogLevelOptionName => OPTION_LOG_LEVEL;
         protected override string LogFilterOptionName => OPTION_LOG_FILTER;
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
+        protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
 
         /// <summary>
         /// This method is the interception where the module can interact with the execution environment and modify the settings.
@@ -151,7 +164,15 @@ namespace Duplicati.Library.Modules.Builtin
 
         #endregion
 
-        protected override void SendMessage(string subject, string message)
+        protected override string ReplaceTemplate(string input, object result, bool subjectline)
+        {
+            // No need to do the expansion as we throw away the result
+            if (subjectline)
+                return string.Empty;
+            return base.ReplaceTemplate(input, result, subjectline);
+        }
+
+        protected override void SendMessage(string subject, string body)
         {
             Exception ex = null;
             var waitEvent = new System.Threading.ManualResetEvent(false);
@@ -173,10 +194,11 @@ namespace Duplicati.Library.Modules.Builtin
                 try
                 {
                     foreach(var recipient in m_to.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
-                        con.Send(new agsXMPP.protocol.client.Message(recipient, agsXMPP.protocol.client.MessageType.chat, message));
+                        con.Send(new agsXMPP.protocol.client.Message(recipient, agsXMPP.protocol.client.MessageType.chat, body));
                 }
                 catch (Exception e)
                 {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "XMPPSendError", e, "Failed to send to XMPP messages: {0}", e.Message);
                     ex = e;
                 }
                 finally
@@ -186,11 +208,15 @@ namespace Duplicati.Library.Modules.Builtin
             };
 
             agsXMPP.ErrorHandler errorHandler = (sender, e) => {
+                Logging.Log.WriteWarningMessage(LOGTAG, "XMPPError", e, "An error ocurred in XMPP: {0}", e.Message);
+
                 ex = e;
                 waitEvent.Set();
             };
 
             agsXMPP.XmppElementHandler loginErroHandler = (sender, e) => {
+                Logging.Log.WriteWarningMessage(LOGTAG, "XMPPLoginError", null, "Failed to login to XMPP: {0}", e);
+
                 ex = new Exception(string.Format("Failed to log in: {0}", e));
                 waitEvent.Set();
             };
@@ -214,29 +240,15 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 con.Close();
             }
-            catch
+            catch (Exception lex)
             {
+                Logging.Log.WriteExplicitMessage(LOGTAG, "CloseConnectionError", lex, "Failed to close XMPP connection: {0}", lex.Message);
             }
 
             if (ex != null)
                 throw ex;
             if (timeout)
                 throw new TimeoutException(Strings.SendJabberMessage.LoginTimeoutError);
-        }
-
-        /// <summary>
-        /// Helper method to perform template expansion
-        /// </summary>
-        /// <returns>The expanded template.</returns>
-        /// <param name="input">The input template.</param>
-        /// <param name="result">The result object.</param>
-        /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
-        protected override string ReplaceTemplate(string input, object result, bool subjectline)
-        {
-            if (subjectline)
-                return string.Empty;
-            else
-                return base.ReplaceTemplate(input, result, subjectline);                
         }
     }
 }

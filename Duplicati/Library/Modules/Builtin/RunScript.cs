@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
 using System.Linq;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -50,6 +51,8 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPTION_LOG_FILTER = "run-script-log-filter";
 
+        private const string RESULT_FORMAT_OPTION = "run-script-result-output-format";
+
         private const string DEFAULT_TIMEOUT = "60s";
 
         private string m_requiredScript = null;
@@ -61,6 +64,7 @@ namespace Duplicati.Library.Modules.Builtin
         private string m_remoteurl;
         private string[] m_localpath;
         private IDictionary<string, string> m_options;
+        private IResultFormatSerializer resultFormatSerializer;
 
         /// <summary>
         /// The log scope that should be disposed
@@ -79,11 +83,23 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(REQUIRED_OPTION, out m_requiredScript);
             commandlineOptions.TryGetValue(FINISH_OPTION, out m_finishScript);
 
+            string tmpResultFormat;
+            ResultExportFormat resultFormat;
+            if (!commandlineOptions.TryGetValue(RESULT_FORMAT_OPTION, out tmpResultFormat)) {
+                resultFormat = ResultExportFormat.Duplicati;
+            }
+            else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat)) {
+                resultFormat = ResultExportFormat.Duplicati;
+            }
+
+            resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
+
             string t;
             if (!commandlineOptions.TryGetValue(TIMEOUT_OPTION, out t))
                 t = DEFAULT_TIMEOUT;
 
             m_timeout = (int)Utility.Timeparser.ParseTimeSpan(t).TotalMilliseconds;
+
             m_options = commandlineOptions;
 
             m_options.TryGetValue(OPTION_LOG_FILTER, out var logfilterstring);
@@ -111,10 +127,18 @@ namespace Duplicati.Library.Modules.Builtin
         {
             get
             {
+                string[] resultOutputFormatOptions = new string[] { ResultExportFormat.Duplicati.ToString(), ResultExportFormat.Json.ToString() };
                 return new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument(STARTUP_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.StartupoptionShort, Strings.RunScript.StartupoptionLong),
                     new Duplicati.Library.Interface.CommandLineArgument(FINISH_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
                     new Duplicati.Library.Interface.CommandLineArgument(REQUIRED_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
+                    new CommandLineArgument(RESULT_FORMAT_OPTION,
+                        CommandLineArgument.ArgumentType.Enumeration,
+                        Strings.RunScript.ResultFormatShort,
+                        Strings.RunScript.ResultFormatLong(resultOutputFormatOptions),
+                        ResultExportFormat.Duplicati.ToString(),
+                        null,
+                        resultOutputFormatOptions),
                     new Duplicati.Library.Interface.CommandLineArgument(TIMEOUT_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
 
                     new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
@@ -163,90 +187,13 @@ namespace Duplicati.Library.Modules.Builtin
 
             using (TempFile tmpfile = new TempFile())
             {
-                SerializeResult(tmpfile, result, m_logstorage);
+                using (var streamWriter = new StreamWriter(tmpfile))
+                    streamWriter.Write(resultFormatSerializer.Serialize(result, m_logstorage));
+
                 Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile, level);
             }
         }
         #endregion
-
-        public static void SerializeResult(string file, object result, IEnumerable<string> loglines)
-        {
-            using(StreamWriter sw = new StreamWriter(file))
-            {
-                if (result == null)
-                {
-                    sw.WriteLine("null?");
-                }
-                else if (result is System.Collections.IEnumerable)
-                {
-                    System.Collections.IEnumerable ie = (System.Collections.IEnumerable)result;
-                    System.Collections.IEnumerator ien = ie.GetEnumerator();
-                    ien.Reset();
-
-                    while (ien.MoveNext())
-                    {
-                        object c = ien.Current;
-                        if (c == null)
-                            continue;
-
-                        if (c.GetType().IsGenericType && !c.GetType().IsGenericTypeDefinition && c.GetType().GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
-                        {
-                            object key = c.GetType().GetProperty("Key").GetValue(c, null);
-                            object value = c.GetType().GetProperty("Value").GetValue(c, null);
-                            sw.WriteLine("{0}: {1}", key, value);
-                        }
-                        else
-                            sw.WriteLine(c);
-                    }
-                }
-                else if (result.GetType().IsArray)
-                {
-                    Array a = (Array)result;
-
-                    for(int i = a.GetLowerBound(0); i <= a.GetUpperBound(0); i++)
-                    {
-                        object c = a.GetValue(i);
-
-                        if (c == null)
-                            continue;
-
-                        if (c.GetType().IsGenericType && !c.GetType().IsGenericTypeDefinition && c.GetType().GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
-                        {
-                            object key = c.GetType().GetProperty("Key").GetValue(c, null);
-                            object value = c.GetType().GetProperty("Value").GetValue(c, null);
-                            sw.WriteLine("{0}: {1}", key, value);
-                        }
-                        else
-                            sw.WriteLine(c);
-                    }
-                }
-                else if (result is Exception)
-                {
-                    //No localization, must be parseable by script
-                    Exception e = (Exception)result;
-                    sw.WriteLine("Failed: {0}", e.Message);
-                    sw.WriteLine("Details: {0}", e);
-                }
-                else
-                {
-                    Utility.Utility.PrintSerializeObject(result, sw, 
-                                                         filter: (p, x) => 
-                    !new[] { 
-                        nameof(IBasicResults.Warnings),
-                        nameof(IBasicResults.Errors),
-                        nameof(IBasicResults.Messages),
-                    }.Contains(p.Name, StringComparer.Ordinal));
-                }
-
-                if (loglines != null)
-                {
-                    sw.WriteLine();
-                    sw.WriteLine("Log data:");
-                    foreach (var n in loglines)
-                        sw.WriteLine(n);
-                }
-            }
-        }
 
         private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, IDictionary<string, string> options, string datafile, ParsedResultType? level)
         {

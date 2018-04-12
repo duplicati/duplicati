@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Modules.Builtin
@@ -70,6 +71,11 @@ namespace Duplicati.Library.Modules.Builtin
         protected abstract string LogLinesOptionName { get; }
 
         /// <summary>
+        /// Name of the option used to the output format
+        /// </summary>
+        protected abstract string ResultFormatOptionName { get; }
+
+        /// <summary>
         /// The default subject or title line
         /// </summary>
         protected virtual string DEFAULT_SUBJECT { get; }= "Duplicati %OPERATIONNAME% report for %backup-name%";
@@ -93,6 +99,11 @@ namespace Duplicati.Library.Modules.Builtin
         protected virtual Logging.LogMessageType DEFAULT_LOG_LEVEL { get; } = Logging.LogMessageType.Warning;
 
         /// <summary>
+        /// The default export format
+        /// </summary>
+        protected virtual ResultExportFormat DEFAULT_EXPORT_FORMAT { get; } = ResultExportFormat.Duplicati;
+
+        /// <summary>
         /// The module key
         /// </summary>
         public abstract string Key { get; }
@@ -112,6 +123,11 @@ namespace Duplicati.Library.Modules.Builtin
         /// The list of supported commands
         /// </summary>
         public abstract IList<ICommandLineArgument> SupportedCommands { get; }
+
+        /// <summary>
+        /// Returns the format used by the serializer
+        /// </summary>
+        protected ResultExportFormat ExportFormat => m_resultFormatSerializer.Format;
 
         /// <summary>
         /// The cached name of the operation
@@ -170,6 +186,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// The log storage
         /// </summary>
         private Utility.FileBackedStringList m_logstorage;
+        /// <summary>
+        /// Serializer to use when serializing the message.
+        /// </summary>
+        private IResultFormatSerializer m_resultFormatSerializer;
 
         /// <summary>
         /// Configures the module
@@ -219,6 +239,14 @@ namespace Duplicati.Library.Modules.Builtin
                     .ToArray();
 
             m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, ActionOnAnyOperationOptionName);
+
+            ResultExportFormat resultFormat;
+            if (!commandlineOptions.TryGetValue(ResultFormatOptionName, out var tmpResultFormat))
+                resultFormat = DEFAULT_EXPORT_FORMAT;
+            else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
+                resultFormat = DEFAULT_EXPORT_FORMAT;
+
+            m_resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
 
             commandlineOptions.TryGetValue(LogLinesOptionName, out var loglinestr);
             if (!int.TryParse(loglinestr, out m_maxmimumLogLines))
@@ -278,11 +306,7 @@ namespace Duplicati.Library.Modules.Builtin
             else
             {
                 if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    using (TempFile tf = new TempFile())
-                    {
-                        RunScript.SerializeResult(tf, result, LogLines);
-                        input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                    }
+                    input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, LogLines), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             }
 
             foreach (KeyValuePair<string, string> kv in m_options)

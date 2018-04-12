@@ -559,7 +559,6 @@ namespace Duplicati.Library.Main
 
                     using (new ProcessController(m_options))
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
-                    using (new Logging.RepeatingLogScope())
                         method(result);
 
                     if (result.EndTime.Ticks == 0)

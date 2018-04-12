@@ -14,6 +14,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using MailKit.Net.Smtp;
 using MimeKit;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -62,6 +63,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// Option used to specify if reports are sent for other operations than backups
         /// </summary>
         private const string OPTION_SENDALL = "send-mail-any-operation";
+        /// <summary>
+        /// Option used to specify what format the result is sent in.
+        /// </summary>
+        private const string OPTION_RESULT_FORMAT = "send-mail-result-output-format";
         /// <summary>
         /// Option used to set the log level for mail reports
         /// </summary>
@@ -146,11 +151,13 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
                     new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string [] { "All" }).ToArray()),
-                    new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionSendallShort, Strings.SendMail.OptionSendallLong),
+                    new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
 
                     new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
                     new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
                     new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
+
+                    new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
                 });
             }
         }
@@ -162,6 +169,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected override string LogLevelOptionName => OPTION_LOG_LEVEL;
         protected override string LogFilterOptionName => OPTION_LOG_FILTER;
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
+        protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
 
 		/// <summary>
 		/// This method is the interception where the module can interact with the execution environment and modify the settings.
@@ -234,7 +242,7 @@ namespace Duplicati.Library.Modules.Builtin
                             if (dnsAddress.AddressFamily == AddressFamily.InterNetwork)
                                 dnslist.Add(dnsAddress.ToString());
                     }
-                    catch { }
+                    catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "DNSServerLookupFailure", ex, "Failed to get DNS servers from network interface"); }
 
                 dnslist = dnslist.Distinct().ToList();
 
