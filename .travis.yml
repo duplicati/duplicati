@@ -48,7 +48,7 @@ script:
 # build duplicati
   - ls -la ~/build/duplicati/duplicati/packages/
   - echo "travis_fold:start:build_duplicati"
-  - msbuild /p:Configuration=Release /maxcpucount:1 Duplicati.sln
+  - msbuild /p:Configuration=Release /maxcpucount:1 /nr:false Duplicati.sln
   - echo "travis_fold:end:build_duplicati"
   - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 # download and extract testdata
