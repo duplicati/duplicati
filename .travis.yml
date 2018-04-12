@@ -43,35 +43,35 @@ before_install:
 script:
 # build duplicati
   - ls -la ~/build/duplicati/duplicati/packages/
-  - echo "travis_fold:start:build_duplicati"
+# - echo "travis_fold:start:build_duplicati"
   - msbuild /p:Configuration=Release /maxcpucount:1 Duplicati.sln
-  - echo "travis_fold:end:build_duplicati"
-  - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+# - echo "travis_fold:end:build_duplicati"
+# - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 # download and extract testdata
-  - echo "travis_fold:start:download_extract_testdata"
-  - ls -la .
-  - if [ ! -d ~/download ]; then mkdir ~/download; fi
-  - if [ ! -f ~/download/DSMCBE.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip" -O ~/download/DSMCBE.zip; fi
-  - if [ ! -f ~/download/data.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip" -O ~/download/data.zip; fi
-  - ls -la .
-  - mkdir ~/testdata
-  - mkdir ~/testdata/data
-  - mkdir ~/testdata/DSMCBE
-  - unzip -q ~/download/DSMCBE.zip -d ~/testdata/
-  - unzip -q ~/download/data.zip -d ~/testdata/
-  - chown -R travis ~/testdata/
-  - chmod -R 755 ~/testdata
-  - ls -la ~/testdata
-  - ls -la ~/testdata/DSMCBE
-  - ls -la ~/testdata/data
-  - echo "travis_fold:end:download_extract_testdata"
+# - echo "travis_fold:start:download_extract_testdata"
+# - ls -la .
+# - if [ ! -d ~/download ]; then mkdir ~/download; fi
+# - if [ ! -f ~/download/DSMCBE.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip" -O ~/download/DSMCBE.zip; fi
+# - if [ ! -f ~/download/data.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip" -O ~/download/data.zip; fi
+# - ls -la .
+# - mkdir ~/testdata
+# - mkdir ~/testdata/data
+# - mkdir ~/testdata/DSMCBE
+# - unzip -q ~/download/DSMCBE.zip -d ~/testdata/
+# - unzip -q ~/download/data.zip -d ~/testdata/
+# - chown -R travis ~/testdata/
+# - chmod -R 755 ~/testdata
+# - ls -la ~/testdata
+# - ls -la ~/testdata/DSMCBE
+# - ls -la ~/testdata/data
+# - echo "travis_fold:end:download_extract_testdata"
 # run unit tests
-  - echo "travis_fold:start:unit_tests_border"
-  - mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat!=BulkData
+# - echo "travis_fold:start:unit_tests_border"
+# - mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat!=BulkData
 # start server and run gui tests
-  - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe & MONO_PID=$!
-  - python guiTests/guiTest.py
-after_script:
-  # Background processes that remain running can caues Travis builds to hang.
-  - test -v MONO_PID && kill -9 $MONO_PID
+# - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe & MONO_PID=$!
+# - python guiTests/guiTest.py
+#fter_script:
+# # Background processes that remain running can caues Travis builds to hang.
+# - test -v MONO_PID && kill -9 $MONO_PID
 
