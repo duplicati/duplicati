@@ -528,10 +528,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                if (m_values.ContainsKey(CONST.HAS_FIXED_INVALID_BACKUPID) && string.IsNullOrWhiteSpace(m_values[CONST.HAS_FIXED_INVALID_BACKUPID]))
-                    return false;
-                else
-                    return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_FIXED_INVALID_BACKUPID);
+                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.HAS_FIXED_INVALID_BACKUPID], false);
             }
             set
             {
