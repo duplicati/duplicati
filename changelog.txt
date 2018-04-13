@@ -1,3 +1,23 @@
+2018-04-13 - 2.0.3.5_canary_2018-04-13
+==========
+* Improved progress bar messsages and layout, thanks @SanduRajapakse
+* Improved icon status images, thanks @dbddhkpde
+* Code and test cleanups, thanks @warwickmm
+* Fixed an issue with rclone backend ignoring options, thanks @Bruceforce
+* Added a fix for browsers with scripting disabled, thanks @Pectojin
+* Added a button to dismiss all messages, thanks @Pectojin
+* Added KeyStone v3 support to OpenStack backend, thanks @epol
+* Updated translations, thanks to all translators!
+* Fixed an issue that caused large log data to accumulate and break sending report/email status
+* Added support for fine-grained control over how log data is reported via email, http and Jabber/XMPP
+* Added support for sending JSON formatted data with the http report module
+* Fixed an issue with MS Graph authentication, thanks @tygill
+* Fixed a performance issue during file scanning, thanks @ltfish
+* Added support for serializing results into json for all report modules and the run-script module as well, thanks @StephenGregory
+* Added filter groups and a UI for it, thanks @tygill
+* Fixed an issue where some paths were not reported via test-filters
+* Fixed some issues with handling internal server settings, thanks @warwickmm
+
 2018-04-02 - 2.0.3.4_canary_2018-04-02
 ==========
 * Added support for setting low IO priority during backups
