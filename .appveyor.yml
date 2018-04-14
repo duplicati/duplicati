@@ -2,6 +2,9 @@ version: 1.0.{build}
 image: Visual Studio 2017
 configuration: Debug
 platform: Any CPU
+branches:
+  except:
+    - test/travis_failures
 environment:
     AUTOUPDATER_Duplicati_SKIP_UPDATE: 1
     UNITTEST_BASEFOLDER: C:\projects\duplicati\testdata
