@@ -2,6 +2,8 @@ version: 1.0.{build}
 image: Visual Studio 2017
 configuration: Debug
 platform: Any CPU
+skip_commits:
+  author: Kenneth Hsu
 environment:
     AUTOUPDATER_Duplicati_SKIP_UPDATE: 1
     UNITTEST_BASEFOLDER: C:\projects\duplicati\testdata
