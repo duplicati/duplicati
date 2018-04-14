@@ -13,7 +13,7 @@ addons:
     project:
       name: "duplicati/duplicati"
       description: "Duplicati Build submitted via Travis CI"
-    notification_email: kenneth@duplicati.com
+      # notification_email: kenneth@duplicati.com
     build_command_prepend: "msbuild /t:Clean"
     build_command:   "msbuild /t:Rebuild"
     branch_pattern: coverity_scan
@@ -47,26 +47,26 @@ script:
   - msbuild /p:Configuration=Release /maxcpucount:1 Duplicati.sln
   - echo "travis_fold:end:build_duplicati"
   - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
-# download and extract testdata
-  - echo "travis_fold:start:download_extract_testdata"
-  - ls -la .
-  - if [ ! -d ~/download ]; then mkdir ~/download; fi
-  - if [ ! -f ~/download/DSMCBE.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip" -O ~/download/DSMCBE.zip; fi
-  - if [ ! -f ~/download/data.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip" -O ~/download/data.zip; fi
-  - ls -la .
-  - mkdir ~/testdata
-  - mkdir ~/testdata/data
-  - mkdir ~/testdata/DSMCBE
-  - unzip -q ~/download/DSMCBE.zip -d ~/testdata/
-  - unzip -q ~/download/data.zip -d ~/testdata/
-  - chown -R travis ~/testdata/
-  - chmod -R 755 ~/testdata
-  - ls -la ~/testdata
-  - ls -la ~/testdata/DSMCBE
-  - ls -la ~/testdata/data
-  - echo "travis_fold:end:download_extract_testdata"
-# run unit tests
-  - mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat!=BulkData
-# start server and run gui tests
-  - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe & MONO_PID=$!
-  - python guiTests/guiTest.py
+# # download and extract testdata
+#   - echo "travis_fold:start:download_extract_testdata"
+#   - ls -la .
+#   - if [ ! -d ~/download ]; then mkdir ~/download; fi
+#   - if [ ! -f ~/download/DSMCBE.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip" -O ~/download/DSMCBE.zip; fi
+#   - if [ ! -f ~/download/data.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip" -O ~/download/data.zip; fi
+#   - ls -la .
+#   - mkdir ~/testdata
+#   - mkdir ~/testdata/data
+#   - mkdir ~/testdata/DSMCBE
+#   - unzip -q ~/download/DSMCBE.zip -d ~/testdata/
+#   - unzip -q ~/download/data.zip -d ~/testdata/
+#   - chown -R travis ~/testdata/
+#   - chmod -R 755 ~/testdata
+#   - ls -la ~/testdata
+#   - ls -la ~/testdata/DSMCBE
+#   - ls -la ~/testdata/data
+#   - echo "travis_fold:end:download_extract_testdata"
+# # run unit tests
+#   - mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat!=BulkData
+# # start server and run gui tests
+#   - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe & MONO_PID=$!
+#   - python guiTests/guiTest.py
