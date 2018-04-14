@@ -70,4 +70,3 @@ script:
 # # start server and run gui tests
 #   - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe & MONO_PID=$!
 #   - python guiTests/guiTest.py
-#
