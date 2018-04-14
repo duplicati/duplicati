@@ -2,4 +2,4 @@ language: csharp
 solution: Duplicati.sln
 install:
   - nuget restore Duplicati.sln
-  - if [ ! -d ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2 ]; then ln -s ~/build/duplicati/duplicati/packages/sharpcompress.0.18.2 ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2; fi
+  - ln -s ~/build/duplicati/duplicati/packages/sharpcompress.0.18.2 ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2
