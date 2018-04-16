@@ -277,7 +277,7 @@ namespace Duplicati.Library.Utility
                 // TODO: The control_dir_v2 might be under a different path for OEM branded instances.
                 // However, the AppName is loaded and controlled by the AutoUpdater assembly, which we can't reference here without an ugly circular dependency or dependency injection.
                 // What is the best way to solve this?
-                yield return FilterGroups.CreateWildcardFilter(@"*/Duplicati/control_dir_v2"); // Duplicati uses this directory to store lock files and communicate with other processes.
+                yield return FilterGroups.CreateWildcardFilter(@"*/Duplicati/control_dir_v2/"); // Duplicati uses this directory to store lock files and communicate with other processes.
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/*cache*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/*LOCK*"); // Chrome appears to lock various files under it's settings folder using files named 'LOCK' or 'lockfile'
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/*Current*"); // 'Current Session' and 'Current Tabs' appear to be locked while running Chrome
@@ -335,18 +335,18 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"?:/Config.Msi*"); // https://github.com/duplicati/duplicati/issues/2886
                 yield return FilterGroups.CreateWildcardFilter(@"*/Recent/");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/autoexec.bat");
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.System);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.Recent);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.System);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.SystemX86);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Recent);
 
-                var windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+                var windir = FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows);
                 if (!string.IsNullOrWhiteSpace(windir))
                 {
                     yield return windir;
 
                     // Also exclude "C:\Windows.old\"
-                    yield return windir.TrimEnd('\\', '/') + ".old";
+                    yield return windir.TrimEnd('\\', '/') + ".old" + System.IO.Path.DirectorySeparatorChar;
                 }
             }
 
@@ -375,9 +375,9 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Temporary Internet Files/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Thumbs.db");
 
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.History);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.InternetCache);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.Cookies);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.History);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.InternetCache);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Cookies);
 
             }
 
@@ -394,12 +394,12 @@ namespace Duplicati.Library.Utility
 
             if (group.HasFlag(FilterGroup.Applications))
             {
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.AdminTools);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFilesX86);
-                yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonAdminTools);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.ProgramFiles);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.ProgramFilesX86);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.AdminTools);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.CommonProgramFiles);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.CommonProgramFilesX86);
+                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.CommonAdminTools);
             }
         }
 
@@ -551,6 +551,35 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"/lib64/");
                 yield return FilterGroups.CreateWildcardFilter(@"/opt/");
                 yield return FilterGroups.CreateWildcardFilter(@"/usr/");
+            }
+        }
+
+        /// <summary>
+        /// Creates a filter for a special folder
+        /// </summary>
+        /// <param name="specialFolder">Special folder</param>
+        /// <returns>Special folder filter</returns>
+        private static string CreateSpecialFolderFilter(Environment.SpecialFolder specialFolder)
+        {
+            string folderPath = FilterGroups.CreateSpecialFolderFilter(specialFolder);
+            if (!string.IsNullOrEmpty(folderPath))
+            {
+                string filter = FilterGroups.CreateWildcardFilter(folderPath);
+
+                // Duplicati matches filters against folder paths exactly.
+                // Meaning a filter for 'C:\Windows' won't match 'C:\Windows\'.
+                // So this makes sure special folder's filter's have a trailing directory separator.
+                // (Alternatively, this could append '*' to all folder filters.)
+                if (filter[filter.Length - 1] != System.IO.Path.DirectorySeparatorChar)
+                {
+                    filter += System.IO.Path.DirectorySeparatorChar;
+                }
+
+                return filter;
+            }
+            else
+            {
+                return null;
             }
         }
 
