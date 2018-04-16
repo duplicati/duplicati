@@ -561,7 +561,7 @@ namespace Duplicati.Library.Utility
         /// <returns>Special folder filter</returns>
         private static string CreateSpecialFolderFilter(Environment.SpecialFolder specialFolder)
         {
-            string folderPath = FilterGroups.CreateSpecialFolderFilter(specialFolder);
+            string folderPath = Environment.GetFolderPath(specialFolder);
             if (!string.IsNullOrEmpty(folderPath))
             {
                 string filter = FilterGroups.CreateWildcardFilter(folderPath);
