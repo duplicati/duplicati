@@ -75,7 +75,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// In addition to the default names from the enums, these alternate / shorter names are also available.
         /// </summary>
-        private static Dictionary<string, FilterGroup> filterGroupAliases = new Dictionary<string, FilterGroup>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, FilterGroup> filterGroupAliases = new Dictionary<string, FilterGroup>(StringComparer.OrdinalIgnoreCase)
             {
                 { "System", FilterGroup.SystemFiles },
                 { "Sys", FilterGroup.SystemFiles },
@@ -106,6 +106,16 @@ namespace Duplicati.Library.Utility
                 { "Include", FilterGroup.DefaultIncludes },
                 { "Inc", FilterGroup.DefaultIncludes },
             };
+
+        /// <summary>
+        /// Regex escaped string for the AltDirectorySeparatorChar
+        /// </summary>
+        private static readonly string RegexEscapedAltDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(System.IO.Path.AltDirectorySeparatorChar.ToString());
+
+        /// <summary>
+        /// Regex escaped string for the DirectorySeparatorChar
+        /// </summary>
+        private static readonly string RegexEscapedDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(System.IO.Path.DirectorySeparatorChar.ToString());
 
         /// <summary>
         /// Gets the list of alternate aliases which can refer to this group.
@@ -600,9 +610,7 @@ namespace Duplicati.Library.Utility
         {
             // Create a filter with the given name.
             // However, in order to match paths correctly, the directory separators need to be normalized to match the system default.
-            string escapedAlt = System.Text.RegularExpressions.Regex.Escape(System.IO.Path.AltDirectorySeparatorChar.ToString());
-            string escaped = System.Text.RegularExpressions.Regex.Escape(System.IO.Path.DirectorySeparatorChar.ToString());
-            return "[" + filter.Replace(escapedAlt, escaped) + "]";
+            return "[" + filter.Replace(FilterGroups.RegexEscapedAltDirectorySeparatorChar, FilterGroups.RegexEscapedDirectorySeparatorChar) + "]";
         }
 
         /// <summary>
