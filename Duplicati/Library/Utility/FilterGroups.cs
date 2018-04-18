@@ -346,7 +346,7 @@ namespace Duplicati.Library.Utility
                     yield return windir;
 
                     // Also exclude "C:\Windows.old\"
-                    yield return windir.TrimEnd('\\', '/') + ".old" + System.IO.Path.DirectorySeparatorChar;
+                    yield return Utility.AppendDirSeparator(windir.TrimEnd('\\', '/') + ".old");
                 }
             }
 
@@ -564,18 +564,14 @@ namespace Duplicati.Library.Utility
             string folderPath = Environment.GetFolderPath(specialFolder);
             if (!string.IsNullOrEmpty(folderPath))
             {
+                // Note that this also replaces alternate directory separators with regular ones
                 string filter = FilterGroups.CreateWildcardFilter(folderPath);
 
                 // Duplicati matches filters against folder paths exactly.
                 // Meaning a filter for 'C:\Windows' won't match 'C:\Windows\'.
                 // So this makes sure special folder's filter's have a trailing directory separator.
                 // (Alternatively, this could append '*' to all folder filters.)
-                if (filter[filter.Length - 1] != System.IO.Path.DirectorySeparatorChar)
-                {
-                    filter += System.IO.Path.DirectorySeparatorChar;
-                }
-
-                return filter;
+                return Utility.AppendDirSeparator(filter);
             }
             else
             {
