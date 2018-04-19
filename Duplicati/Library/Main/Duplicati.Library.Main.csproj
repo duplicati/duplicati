@@ -180,6 +180,7 @@
     <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
     <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
     <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
+    <EmbeddedResource Include="Database\Database schema\8. Add volume USN.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

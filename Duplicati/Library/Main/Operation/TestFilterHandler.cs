@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Operation
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<TestFilterHandler>();
 
         private readonly Options m_options;
-        private TestFilterResults m_result;
+        private readonly TestFilterResults m_result;
         
         public TestFilterHandler(Options options, TestFilterResults results)
         {
@@ -39,12 +39,12 @@ namespace Duplicati.Library.Main.Operation
         
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
-            var storeSymlinks = m_options.SymlinkPolicy == Duplicati.Library.Main.Options.SymlinkStrategy.Store;
+            var storeSymlinks = m_options.SymlinkPolicy == Options.SymlinkStrategy.Store;
             var sourcefilter = new Library.Utility.FilterExpression(sources, true);
 
             using(var snapshot = BackupHandler.GetSnapshot(sources, m_options))
             {
-                foreach(var path in new BackupHandler.FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy).EnumerateFilesAndFolders())
+                foreach(var path in new FilterHandler(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy).EnumerateFilesAndFolders(sources))
                 {
                     var fa = FileAttributes.Normal;
                     try { fa = snapshot.GetAttributes(path); }

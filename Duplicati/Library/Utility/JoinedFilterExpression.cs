@@ -15,7 +15,6 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
 
 namespace Duplicati.Library.Utility
 {
@@ -33,6 +32,16 @@ namespace Duplicati.Library.Utility
         public bool Matches(string entry, out bool result, out IFilter match)
         {
             return First.Matches(entry, out result, out match) || Second.Matches(entry, out result, out match);
+        }
+
+        /// <summary>
+        /// Returns MD5 hash of filter expression
+        /// </summary>
+        /// <returns>MD5 hash of filter expression</returns>
+        public string GetFilterHash()
+        {
+            var hash = MD5HashHelper.GetHash(new[] {First.GetFilterHash(), Second.GetFilterHash()});
+            return MD5HashHelper.GetHashString(hash);
         }
 
         public bool Empty { get { return First.Empty && Second.Empty; } }

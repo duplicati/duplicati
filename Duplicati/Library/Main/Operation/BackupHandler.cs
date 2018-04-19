@@ -1,7 +1,28 @@
-﻿using System;
+﻿#region Disclaimer / License
+
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+
+#endregion
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
-using System.Text;
 using System.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
@@ -18,7 +39,7 @@ namespace Duplicati.Library.Main.Operation
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackupHandler>();
 
         private readonly Options m_options;
-        private string m_backendurl;
+        private readonly string m_backendurl;
 
         private byte[] m_blockbuffer;
         private byte[] m_blocklistbuffer;
@@ -30,16 +51,18 @@ namespace Duplicati.Library.Main.Operation
         private BlockVolumeWriter m_blockvolume;
         private IndexVolumeWriter m_indexvolume;
 
+        // ReSharper disable once InconsistentNaming
         private readonly IMetahash EMPTY_METADATA;
         
         private Library.Utility.IFilter m_filter;
         private Library.Utility.IFilter m_sourceFilter;
 
-        private BackupResults m_result;
+        private readonly BackupResults m_result;
 
-        //To better record what happens with the backend, we flush the log messages regularly
+        // To better record what happens with the backend, we flush the log messages regularly
         // We cannot flush immediately, because that would mess up the transaction, as the uploader
         // is on another thread
+        // ReSharper disable once InconsistentNaming
         private readonly TimeSpan FLUSH_TIMESPAN = TimeSpan.FromSeconds(10);
         private DateTime m_backendLogFlushTimer;
         
@@ -48,7 +71,7 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options.SymlinkStrategy m_symlinkPolicy;
         private int m_blocksize;
         private long m_maxmetadatasize;
-        private long m_lastfilesetid;
+        private long m_prevFilesetId;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
@@ -64,228 +87,50 @@ namespace Duplicati.Library.Main.Operation
             if (options.AllowPassphraseChange)
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
-        
-        
-        public class FilterHandler
-        {
-            private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType<FilterHandler>();
-            private Snapshots.ISnapshotService m_snapshot;
-            private FileAttributes m_attributeFilter;
-            private Duplicati.Library.Utility.IFilter m_enumeratefilter;
-            private Duplicati.Library.Utility.IFilter m_emitfilter;
-            private Options.SymlinkStrategy m_symlinkPolicy;
-            private Options.HardlinkStrategy m_hardlinkPolicy;
-            private Dictionary<string, string> m_hardlinkmap;
-            private Duplicati.Library.Utility.IFilter m_sourcefilter;
-            private Queue<string> m_mixinqueue;
-            
-            public FilterHandler(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter filter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy)
-            {
-                m_snapshot = snapshot;
-                m_attributeFilter = attributeFilter;
-                m_sourcefilter = sourcefilter;
-                m_emitfilter = filter;
-                m_symlinkPolicy = symlinkPolicy;
-                m_hardlinkPolicy = hardlinkPolicy;
-                m_hardlinkmap = new Dictionary<string, string>();
-                m_mixinqueue = new Queue<string>();
-
-                bool includes;
-                bool excludes;
-                Library.Utility.FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
-                if (includes && !excludes)
-                {
-                    m_enumeratefilter = Library.Utility.FilterExpression.Combine(filter, new Duplicati.Library.Utility.FilterExpression("*" + System.IO.Path.DirectorySeparatorChar, true));
-                }
-                else
-                    m_enumeratefilter = m_emitfilter;
-            }
-
-            public void ReportError(string rootpath, string path, Exception ex)
-            {
-                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", path);
-            }
-
-            public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
-            {
-                try
-                {
-                    if (m_snapshot.IsBlockDevice(path))
-                    {
-                        Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingBlockDevice", "Excluding block device: {0}", path);
-                        return false;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
-                    return false;
-                }
-
-                Duplicati.Library.Utility.IFilter sourcematch;
-                bool sourcematches;
-                if (m_sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
-                {
-                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingSourcePath", "Including source path: {0}", path);
-
-                    return true;
-                }
-                
-                if (m_hardlinkPolicy != Options.HardlinkStrategy.All)
-                {
-                    try
-                    {
-                        var id = m_snapshot.HardlinkTargetID(path);
-                        if (id != null)
-                        {
-                            if (m_hardlinkPolicy == Options.HardlinkStrategy.None)
-                            {
-                                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingHardlinkByPolicy", "Excluding hardlink: {0} ({1})", path, id);
-                                return false;
-                            }
-                            else if (m_hardlinkPolicy == Options.HardlinkStrategy.First)
-                            {
-                                string prevPath;
-                                if (m_hardlinkmap.TryGetValue(id, out prevPath))
-                                {
-                                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingDuplicateHardlink", "Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
-                                    return false;
-                                }
-                                else
-                                {
-                                    m_hardlinkmap.Add(id, path);
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
-                        return false;
-                    }                    
-                }
-            
-                if ((m_attributeFilter & attributes) != 0)
-                {
-                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromAttributes", "Excluding path due to attribute filter: {0}", path);
-                    return false;
-                }
-                            
-                Library.Utility.IFilter match;
-                var filtermatch = false;
-                if (!Library.Utility.FilterExpression.Matches(m_enumeratefilter, path, out match))
-                {
-                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromFilter", "Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
-                    return false;
-                }
-                else if (match != null)
-                {
-                    filtermatch = true;
-                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPathFromFilter", "Including path due to filter: {0} => {1}", path, match.ToString());
-                }
-
-                var isSymlink = m_snapshot.IsSymlink(path, attributes);
-                if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Ignore)
-                {
-                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludeSymlink", "Excluding symlink: {0}", path);
-                    return false;
-                }
-
-                if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Store)
-                {
-                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "StoreSymlink", "Storing symlink: {0}", path);
-
-                    m_mixinqueue.Enqueue(path);
-                    return false;
-                }
-                              
-                if (!filtermatch)
-                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPath", "Including path as no filters matched: {0}", path);
-
-                return true;
-            }
-
-            public IEnumerable<string> EnumerateFilesAndFolders()
-            {
-                foreach(var s in m_snapshot.EnumerateFilesAndFolders(this.AttributeFilter, this.ReportError))
-                {
-                    while (m_mixinqueue.Count > 0)
-                        yield return m_mixinqueue.Dequeue();
-
-                    Library.Utility.IFilter m;
-                    if (m_emitfilter != m_enumeratefilter && !Library.Utility.FilterExpression.Matches(m_emitfilter, s, out m))
-                        continue;
-
-                    yield return s;
-                }
-
-                while (m_mixinqueue.Count > 0)
-                    yield return m_mixinqueue.Dequeue();
-            }
-
-            public IEnumerable<string> Mixin(IEnumerable<string> list)
-            {
-                foreach(var s in list.Where(x => {
-                    var fa = FileAttributes.Normal;
-                    try { fa = m_snapshot.GetAttributes(x); }
-                    catch(Exception ex) { Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", x, ex.Message); }
-
-                    return AttributeFilter(null, x, fa);
-                }))
-                {
-                    while (m_mixinqueue.Count > 0)
-                        yield return m_mixinqueue.Dequeue();
-
-                    yield return s;
-                }
-
-                while (m_mixinqueue.Count > 0)
-                    yield return m_mixinqueue.Dequeue();
-            }
-        }
 
 
-        public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options)
+        public static ISnapshotService GetSnapshot(IEnumerable<string> sources, Options options)
         {
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
-                    return Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(sources, options.RawOptions);
+                    return SnapshotUtility.CreateSnapshot(sources, options.RawOptions);
             }
             catch (Exception ex)
             {
-                if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
-                    throw;
-                else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
+                switch (options.SnapShotStrategy)
+                {
+                    case Options.OptimizationStrategy.Required:
+                        throw;
+                    case Options.OptimizationStrategy.On:
+                        Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
+                        break;
+                }
             }
 
-            return Library.Utility.Utility.IsClientLinux ?
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux(sources, options.RawOptions)
-                    :
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
+            return Library.Utility.Utility.IsClientLinux ? new NoSnapshotLinux() : (ISnapshotService) new NoSnapshotWindows();
         }
 
         private void CountFilesThread(object state)
         {
+            // ReSharper disable once InconsistentNaming
             var COUNTER_LOGTAG = LOGTAG + ".Counter";
-            var snapshot = (Snapshots.ISnapshotService)state;
-            var updater = m_result.OperationProgressUpdater;
+            var typedState = (Tuple<ISnapshotService, string[]>) state;
+            var snapshot = typedState.Item1;
+            var sources = typedState.Item2;
             var count = 0L;
             var size = 0L;
-            var followSymlinks = m_options.SymlinkPolicy != Duplicati.Library.Main.Options.SymlinkStrategy.Follow;
+            var followSymlinks = m_options.SymlinkPolicy != Options.SymlinkStrategy.Follow;
             
-            foreach(var path in new FilterHandler(snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy).EnumerateFilesAndFolders())
+            foreach(var path in new FilterHandler(snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy).EnumerateFilesAndFolders(sources))
             {
-                var fa = FileAttributes.Normal;
-                try { fa = snapshot.GetAttributes(path); }
-                catch (Exception ex) { Logging.Log.WriteVerboseMessage(COUNTER_LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message); }
+                var fa = SafeGetFileAttributes(path, snapshot, COUNTER_LOGTAG);
 
                 if (followSymlinks && snapshot.IsSymlink(path, fa))
                     continue;
-                else if ((fa & FileAttributes.Directory) == FileAttributes.Directory)
+                if (fa.HasFlag(FileAttributes.Directory))
                     continue;
-                    
+
                 count++;
                 
                 try { size += snapshot.GetFileSize(path); }
@@ -324,7 +169,6 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var s = 1;
                     var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
-                    var oldFilesetID = incompleteSet.Key;
 
                     // Probe for an unused filename
                     while (s < 60)
@@ -340,14 +184,14 @@ namespace Duplicati.Library.Main.Operation
                     fsw.VolumeID = m_database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
 
                     if (!string.IsNullOrEmpty(m_options.ControlFiles))
-                        foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                        foreach(var p in m_options.ControlFiles.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                             fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 
-                    var newFilesetID = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
-                    m_database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID, trn);
-                    m_database.AppendFilesFromPreviousSet(trn, null, newFilesetID, prevId, fileTime);
+                    var newFilesetId = m_database.CreateFileset(fsw.VolumeID, fileTime, trn);
+                    m_database.LinkFilesetToVolume(newFilesetId, fsw.VolumeID, trn);
+                    m_database.AppendFilesFromPreviousSet(trn, null, newFilesetId, prevId, fileTime);
 
-                    m_database.WriteFileset(fsw, trn, newFilesetID);
+                    m_database.WriteFileset(fsw, trn, newFilesetId);
 
                     if (m_options.Dryrun)
                     {
@@ -367,8 +211,13 @@ namespace Duplicati.Library.Main.Operation
                 finally
                 {
                     if (fsw != null)
+                    {
                         try { fsw.Dispose(); }
-                    catch { fsw = null; }
+                        catch
+                        {
+                            // ignored
+                        }
+                    }
                 }                          
             }
         }
@@ -404,10 +253,10 @@ namespace Duplicati.Library.Main.Operation
                     m_database.AddIndexBlockLink(w.VolumeID, volumeid, null);
 
                     if (m_options.Dryrun)
-                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUpdateIndexFile", "Would upload new index file {0}, with size {1}, previous size {2}", w.RemoteFilename, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(w.Filesize));
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUpdateIndexFile", "Would upload new index file {0}, with size {1}, previous size {2}", w.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(w.Filesize));
                     else
                     {
-                        m_database.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                        m_database.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                         backend.Put(w);
                     }
                 }
@@ -446,58 +295,205 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private void RunMainOperation(Snapshots.ISnapshotService snapshot, BackendManager backend)
+        /// <summary>
+        /// Perform actual backup operation
+        /// </summary>
+        /// <param name="snapshot">Snapshot service to use</param>
+        /// <param name="backend">Storage back-end</param>
+        /// <param name="sources">Sources to back up</param>
+        private void RunMainOperation(ISnapshotService snapshot, BackendManager backend, IEnumerable<string> sources)
         {
             var filterhandler = new FilterHandler(snapshot, m_attributeFilter, m_sourceFilter, m_filter, m_symlinkPolicy, m_options.HardlinkPolicy);
 
             using(new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
-                if (m_options.ChangedFilelist != null && m_options.ChangedFilelist.Length >= 1)
+                if (m_options.ChangedFilelist != null && m_options.ChangedFilelist.Any())
                 {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "UsingChangeList", "Processing supplied change list instead of enumerating filesystem");
-                    m_result.OperationProgressUpdater.UpdatefileCount(m_options.ChangedFilelist.Length, 0, true);
-
-                    foreach(var p in filterhandler.Mixin(m_options.ChangedFilelist))
-                    {
-                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                        {
-                            Logging.Log.WriteInformationMessage(LOGTAG, "StopBackup", "Stopping backup operation on request");
-                            break;
-                        }
-
-                        try
-                        {
-                            this.HandleFilesystemEntry(snapshot, backend, p, snapshot.GetAttributes(p));
-                        }
-                        catch (Exception ex)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedToProcessEntry", ex, "Failed to process element: {0}, message: {1}", p, ex.Message);
-                        }
-                    }
-
-                    m_database.AppendFilesFromPreviousSet(m_transaction, m_options.DeletedFilelist);
+                    BackupUsingChangedFileList(snapshot, backend, m_options.ChangedFilelist, filterhandler);
+                }
+                else if (m_options.UsnStrategy != Options.OptimizationStrategy.Off)
+                {
+                    BackupUsingChangeJournal(snapshot, backend, sources, filterhandler);
                 }
                 else
-                {                                    
-                    foreach(var path in filterhandler.EnumerateFilesAndFolders())
-                    {
-                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                        {
-                            Logging.Log.WriteInformationMessage(LOGTAG, "StopBackup", "Stopping backup operation on request");
-                            break;
-                        }
-
-                        var fa = FileAttributes.Normal;
-                        try { fa = snapshot.GetAttributes(path); }
-                        catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message); }
-
-                        this.HandleFilesystemEntry(snapshot, backend, path, fa);
-                    }
-
+                {
+                    BackupUsingFullScan(snapshot, backend, sources, filterhandler);
                 }
 
                 m_result.OperationProgressUpdater.UpdatefileCount(m_result.ExaminedFiles, m_result.SizeOfExaminedFiles, true);
             }
+        }
+
+        /// <summary>
+        /// Performs backup operation using supplied changed file list
+        /// </summary>
+        /// <param name="snapshot">Snapshot service to use</param>
+        /// <param name="backend">Storage back-end</param>
+        /// <param name="changedFileList">List of changed file / folders</param>
+        /// <param name="filterhandler">Exclusion filter</param>
+        private void BackupUsingChangedFileList(ISnapshotService snapshot, BackendManager backend, IReadOnlyCollection<string> changedFileList, FilterHandler filterhandler)
+        {
+            var existingSources = changedFileList.Where(snapshot.PathExists);
+
+            Logging.Log.WriteVerboseMessage(LOGTAG, "UsingChangeList",
+                "Processing supplied change list instead of enumerating filesystem");
+            m_result.OperationProgressUpdater.UpdatefileCount(changedFileList.Count, 0, true);
+
+            foreach (var p in filterhandler.Mixin(existingSources))
+            {
+                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "StopBackup", "Stopping backup operation on request");
+                    break;
+                }
+
+                try
+                {
+                    HandleFilesystemEntry(snapshot, backend, p, snapshot.GetAttributes(p));
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FailedToProcessEntry", ex,
+                        "Failed to process element: {0}, message: {1}", p, ex.Message);
+                }
+            }
+
+            m_database.AppendFilesFromPreviousSet(m_transaction, m_options.DeletedFilelist);
+        }
+
+        /// <summary>
+        /// Performs backup operation by scanning supplied source list for changes
+        /// </summary>
+        /// <param name="snapshot">Snapshot service to use</param>
+        /// <param name="backend">Storage back-end</param>
+        /// <param name="sources">Sources to back up</param>
+        /// <param name="filterhandler">Exclusion filter</param>
+        private void BackupUsingFullScan(ISnapshotService snapshot, BackendManager backend, IEnumerable<string> sources,
+            FilterHandler filterhandler)
+        {
+            // [DG] I believe that we need to sanitize the sources to ensure that they exist in the *snapshot*.
+            // Controller.ExpandInputSources() only verifies if sources exist in the non-snapshot filesystem, 
+            // which may or may not correspond to their state in the snapshot.
+            var existingSources = sources.Where(snapshot.PathExists);
+
+            foreach (var path in filterhandler.EnumerateFilesAndFolders(existingSources))
+            {
+                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "StopBackup",
+                        "Stopping backup operation on request");
+                    break;
+                }
+
+                var fa = SafeGetFileAttributes(path, snapshot, LOGTAG);
+                HandleFilesystemEntry(snapshot, backend, path, fa);
+            }
+        }
+
+        /// <summary>
+        /// Performs backup operation using USN Journal
+        /// </summary>
+        /// <param name="snapshot">Snapshot service to use</param>
+        /// <param name="backend">Storage back-end</param>
+        /// <param name="sources">Sources to back up</param>
+        /// <param name="filterhandler">Exclusion filter</param>
+        private void BackupUsingChangeJournal(ISnapshotService snapshot, BackendManager backend, IEnumerable<string> sources, FilterHandler filterhandler)
+        {
+            try
+            {
+                var journalService = new UsnJournalService(UsnErrorHandler, () =>
+                {
+                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                        throw new OperationCanceledException();
+                });
+
+                // obtain journal data from previous fileset
+                var journalData = m_database.GetChangeJournalData(m_prevFilesetId);
+
+                // get filter identifying current source filter / sources configuration
+                // ReSharper disable once PossibleMultipleEnumeration
+                var configHash =  m_filter.GetFilterHash() + Library.Utility.MD5HashHelper.GetHashString(Library.Utility.MD5HashHelper.GetHash(sources));
+
+                // filter sources using USN journal, to obtain a sub-set of files / folders that
+                // may have been modified
+                // ReSharper disable once PossibleMultipleEnumeration
+                var modifiedSources = journalService.FilterSources(sources, configHash, journalData);
+
+                // scan modified sources for modifications
+                if (modifiedSources.Files.Any() || modifiedSources.Folders.Any())
+                {
+                    // the modified sources may contain non-existent files / folders, which need to 
+                    // be removed before trying to enumerate them
+                    var existingModifiedSources = modifiedSources.Files.Where(snapshot.FileExists)
+                        .Concat(modifiedSources.Folders.Where(snapshot.FolderExists));
+            
+                    foreach (var path in filterhandler.EnumerateFilesAndFolders(existingModifiedSources))
+                    {
+                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            throw new OperationCanceledException();
+
+                        var fa = SafeGetFileAttributes(path, snapshot, LOGTAG);
+                        HandleFilesystemEntry(snapshot, backend, path, fa);
+                    }
+                    
+                    // append files from previous fileset, unless part of modifiedSources, which we've just scanned
+                    //TODO: we also need to check the original <c>sources</c> and exclude if not contained in those!
+                    m_database.AppendFilesFromPreviousSetWithPredicate(m_transaction, path =>
+                    {
+                        if (modifiedSources.Files.Contains(path))
+                            return true; // do not append from previous set, already scanned
+
+                        foreach (var folder in modifiedSources.Folders)
+                        {
+                            if (path.Equals(folder, Library.Utility.Utility.ClientFilenameStringComparision))
+                                return true; // do not append from previous set, already scanned
+
+                            if (Library.Utility.Utility.IsPathBelowFolder(path, folder))
+                                return true; // do not append from previous set, already scanned
+                        }
+
+                        return false; // append from previous set
+                    });
+                }
+                else
+                {
+                    // add full previous fileset, as nothing has changed
+                    m_database.AppendFilesFromPreviousSet(m_transaction);
+                }
+
+                if (modifiedSources.JournalData.Any())
+                {
+                    // always record change journal data for current fileset (entry may be dropped later if nothing is uploaded)
+                    m_database.CreateChangeJournalData(modifiedSources.JournalData, m_transaction);
+
+                    // update the previous fileset's change journal entry to resume at this point in case nothing was backed up
+                    m_database.UpdateChangeJournalData(modifiedSources.JournalData, m_prevFilesetId, m_transaction);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "StopBackup", "Stopping backup operation on request");
+            }
+        }
+
+        /// <summary>
+        /// Error callback handler
+        /// </summary>
+        /// <param name="volume">Volume name</param>
+        /// <param name="path">Not used</param>
+        /// <param name="ex">Exception message</param>
+        private void UsnErrorHandler(string volume, string path, Exception ex)
+        {
+            if (m_options.UsnStrategy == Options.OptimizationStrategy.Auto)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "FailedToUseChangeJournal", "Failed to use change journal for volume \"{0}\": {1}", volume, ex.Message);
+            }
+            else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", ex, "Failed to use change journal for volume \"{0}\": {1}", volume, ex.Message);
+            }
+            else
+                throw ex;
         }
 
         private long FinalizeRemoteVolumes(BackendManager backend)
@@ -523,7 +519,7 @@ namespace Duplicati.Library.Main.Operation
 
                         m_blockvolume.Dispose();
                         m_blockvolume = null;
-                        m_indexvolume.Dispose();
+                        m_indexvolume?.Dispose();
                         m_indexvolume = null;
                     }
                     else
@@ -564,7 +560,7 @@ namespace Duplicati.Library.Main.Operation
                 using(new Logging.Timer(LOGTAG, "UploadNewFileset", "Uploading a new fileset"))
                 {
                     if (!string.IsNullOrEmpty(m_options.ControlFiles))
-                        foreach(var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                        foreach(var p in m_options.ControlFiles.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                             filesetvolume.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 
                     m_database.WriteFileset(filesetvolume, m_transaction);
@@ -627,7 +623,7 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(m_database, null);
             }
 
-            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Count() > 0)
+            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Any())
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
@@ -658,9 +654,9 @@ namespace Duplicati.Library.Main.Operation
                 // TODO: If we have a BackendManager, we should query through that
                 using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
                 {
-                    if (backend is Library.Interface.IQuotaEnabledBackend)
+                    if (backend is IQuotaEnabledBackend enabledBackend)
                     {
-                        Library.Interface.IQuotaInfo quota = ((Library.Interface.IQuotaEnabledBackend)backend).Quota;
+                        var quota = enabledBackend.Quota;
                         if (quota != null)
                         {
                             m_result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
@@ -670,7 +666,8 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-            m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
+            if (m_result.BackendWriter != null) 
+                m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
         }
 
         public void Run(string[] sources, Library.Utility.IFilter filter)
@@ -685,9 +682,10 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
 
-                var probe_path = m_database.GetFirstPath();
-                if (probe_path != null && Duplicati.Library.Utility.Utility.GuessDirSeparator(probe_path) != System.IO.Path.DirectorySeparatorChar.ToString())
-                    throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"), "CrossOsDatabaseReuseNotSupported");
+                var probePath = m_database.GetFirstPath();
+                if (probePath != null && Library.Utility.Utility.GuessDirSeparator(probePath) != Path.DirectorySeparatorChar.ToString())
+                    throw new UserInformationException(
+                        "The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --no-auto-compact option is set, then run the backup again to re-use the existing data on the remote store.", "CrossOsDatabaseReuseNotSupported");
 
                 if (m_database.PartiallyRecreated)
                     throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
@@ -718,7 +716,7 @@ namespace Duplicati.Library.Main.Operation
                 // If there is no filter, we set an empty filter to simplify the code
                 // If there is a filter, we make sure that the sources are included
                 m_filter = filter ?? new Library.Utility.FilterExpression();
-                m_sourceFilter = new Library.Utility.FilterExpression(sources, true);
+                m_sourceFilter = new Library.Utility.FilterExpression(sources);
                 
                 m_backendLogFlushTimer = DateTime.Now.Add(FLUSH_TIMESPAN);
                 System.Threading.Thread parallelScanner = null;
@@ -745,7 +743,7 @@ namespace Duplicati.Library.Main.Operation
                                         Name = "Read ahead file counter",
                                         IsBackground = true
                                     };
-                                    parallelScanner.Start(snapshot);
+                                    parallelScanner.Start(Tuple.Create(snapshot, sources));
                                 }
                             }
 
@@ -791,9 +789,10 @@ namespace Duplicati.Library.Main.Operation
 
                             var prevfileset = m_database.FilesetTimes.FirstOrDefault();
                             if (prevfileset.Value.ToUniversalTime() > m_database.OperationTimestamp.ToUniversalTime())
-                                throw new UserInformationException(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()), "FilesetIntervalClockIssue");
+                                throw new UserInformationException(
+                                    $"The previous backup has time {prevfileset.Value.ToLocalTime()}, but this backup has time {m_database.OperationTimestamp.ToLocalTime()}. Something is wrong with the clock.", "FilesetIntervalClockIssue");
                             
-                            m_lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
+                            m_prevFilesetId = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
 
                             // Rebuild any index files that are missing
                             RecreateMissingIndexFiles(backend);
@@ -812,7 +811,7 @@ namespace Duplicati.Library.Main.Operation
                             var filesetvolumeid = m_database.RegisterRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                             m_database.CreateFileset(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time, m_transaction);
             
-                            RunMainOperation(snapshot, backend);
+                            RunMainOperation(snapshot, backend, sources);
 
                             //If the scanner is still running for some reason, make sure we kill it now 
                             if (parallelScanner != null && parallelScanner.IsAlive)
@@ -872,7 +871,6 @@ namespace Duplicati.Library.Main.Operation
                             m_database.Vacuum();
                         }
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
-                        return;
                     }
                 }
                 catch (Exception ex)
@@ -897,18 +895,18 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private Dictionary<string, string> GenerateMetadata(Snapshots.ISnapshotService snapshot, string path, System.IO.FileAttributes attributes)
+        private Dictionary<string, string> GenerateMetadata(ISnapshotService snapshot, string path, FileAttributes attributes)
         {
-            string METALOGTAG = LOGTAG + ".Metadata";
+            // ReSharper disable once InconsistentNaming
+            var METALOGTAG = LOGTAG + ".Metadata";
             try
             {
                 Dictionary<string, string> metadata;
 
                 if (m_options.StoreMetadata)
                 {
-                    metadata = snapshot.GetMetadata(path, attributes.HasFlag(System.IO.FileAttributes.ReparsePoint), m_symlinkPolicy == Options.SymlinkStrategy.Follow);
-                    if (metadata == null)
-                        metadata = new Dictionary<string, string>();
+                    metadata = snapshot.GetMetadata(path, attributes.HasFlag(FileAttributes.ReparsePoint), m_symlinkPolicy == Options.SymlinkStrategy.Follow) ??
+                               new Dictionary<string, string>();
 
                     if (!metadata.ContainsKey("CoreAttributes"))
                         metadata["CoreAttributes"] = attributes.ToString();
@@ -951,9 +949,17 @@ namespace Duplicati.Library.Main.Operation
             }
         }
         
-        private bool HandleFilesystemEntry(Snapshots.ISnapshotService snapshot, BackendManager backend, string path, System.IO.FileAttributes attributes)
+        /// <summary>
+        /// Add <c>path</c> to backup if it has been modified, and isn't included by exclusion filters
+        /// </summary>
+        /// <param name="snapshot">Snapshot handler</param>
+        /// <param name="backend">Backend</param>
+        /// <param name="path">File / folder path to add (non-recursively!)</param>
+        /// <param name="attributes">File attributes</param>
+        private void HandleFilesystemEntry(ISnapshotService snapshot, BackendManager backend, string path, FileAttributes attributes)
         {
-            string FILELOGTAG = LOGTAG + ".FileEntry";
+            // ReSharper disable once InconsistentNaming
+            var FILELOGTAG = LOGTAG + ".FileEntry";
 
             // If we lost the connection, there is no point in keeping on processing
             if (backend.HasDied)
@@ -969,7 +975,7 @@ namespace Duplicati.Library.Main.Operation
                     backend.FlushDbMessages(m_database, null);
                 }
 
-                DateTime lastwrite = new DateTime(0, DateTimeKind.Utc);
+                var lastwrite = new DateTime(0, DateTimeKind.Utc);
                 try 
                 { 
                     lastwrite = snapshot.GetLastWriteTimeUtc(path); 
@@ -979,7 +985,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteWarningMessage(FILELOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", path);
                 }
                                             
-                if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                if (attributes.HasFlag(FileAttributes.ReparsePoint))
                 {
                     // Not all reparse points are symlinks.
                     // For example, on Windows 10 Fall Creator's Update, the OneDrive folder (and all subfolders)
@@ -991,7 +997,7 @@ namespace Duplicati.Library.Main.Operation
                         if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
                         {
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "IgnoreSymlink", "Ignoring symlink {0}", path);
-                            return false;
+                            return;
                         }
 
                         if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store)
@@ -1008,7 +1014,7 @@ namespace Duplicati.Library.Main.Operation
 
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "StoreSymlink", "Stored symlink {0}", path);
                             //Do not recurse symlinks
-                            return false;
+                            return;
                         }
                     }
                     else
@@ -1017,22 +1023,13 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
     
-                if ((attributes & FileAttributes.Directory) == FileAttributes.Directory)
+                if (attributes.HasFlag(FileAttributes.Directory))
                 {
-                    IMetahash metahash;
-    
-                    if (m_options.StoreMetadata)
-                    {
-                        metahash = Utility.WrapMetadata(GenerateMetadata(snapshot, path, attributes), m_options);
-                    }
-                    else
-                    {
-                        metahash = EMPTY_METADATA;
-                    }
+                    var metahash = m_options.StoreMetadata ? Utility.WrapMetadata(GenerateMetadata(snapshot, path, attributes), m_options) : EMPTY_METADATA;
     
                     Logging.Log.WriteVerboseMessage(FILELOGTAG, "AddDirectory", "Adding directory {0}", path);
                     AddFolderToOutput(backend, path, lastwrite, metahash);
-                    return true;
+                    return;
                 }
     
                 m_result.OperationProgressUpdater.UpdatefilesProcessed(++m_result.ExaminedFiles, m_result.SizeOfExaminedFiles);
@@ -1057,11 +1054,11 @@ namespace Duplicati.Library.Main.Operation
                     lastFileSize = filestatsize;
                     oldMetahash = metahashandsize.FileHash;
                     oldMetasize = metahashandsize.Blob.Length;
-                    oldId = m_database.GetFileLastModified(path, m_lastfilesetid, out oldModified);
+                    oldId = m_database.GetFileLastModified(path, m_prevFilesetId, out oldModified);
                 }
                 else
                 {
-                    oldId = m_database.GetFileEntry(path, m_lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                    oldId = m_database.GetFileEntry(path, m_prevFilesetId, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
                 }
 
                 var timestampChanged = lastwrite != oldModified || lastwrite.Ticks == 0 || oldModified.Ticks == 0;
@@ -1074,8 +1071,6 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", path, oldId <= 0, timestampChanged, filesizeChanged, metadatachanged, lastwrite, oldModified);
 
                     m_result.OpenedFiles++;
-                    
-                    long filesize = 0;
 
                     var hint = m_options.GetCompressionHintFromFilename(path);
                     var oldHash = oldId < 0 ? null : m_database.GetFileHash(oldId);
@@ -1083,13 +1078,13 @@ namespace Duplicati.Library.Main.Operation
                     using (var blocklisthashes = new Library.Utility.FileBackedStringList())
                     using (var hashcollector = new Library.Utility.FileBackedStringList())
                     {
+                        long filesize;
                         using (var fs = snapshot.OpenRead(path))
                         {
                             try { m_result.OperationProgressUpdater.StartFile(path, fs.Length); }
                             catch (Exception ex) { Logging.Log.WriteWarningMessage(FILELOGTAG, "FileLengthFailure", ex, "Failed to read file length for file {0}", path); }
                             
-                            if ((filesize = ProcessStream(fs, hint, backend, blocklisthashes, hashcollector, false)) < 0)
-                                return false;
+                            if ((filesize = ProcessStream(fs, hint, backend, blocklisthashes, hashcollector, false)) < 0) return;
                         }
 
                         m_result.SizeOfOpenedFiles += filesize;
@@ -1130,7 +1125,6 @@ namespace Duplicati.Library.Main.Operation
                         else
                         {
                             // When we write the file to output, update the last modified time
-                            oldModified = lastwrite;
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "NoFileChanges", "File has not changed {0}", path);
                         }
                     }
@@ -1159,16 +1153,16 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteWarningMessage(FILELOGTAG, "PathProcessingFailed", ex, "Failed to process path: {0}", path);
                 m_result.FilesWithError++;
             }
-
-            return true;
         }
 
-        private long ProcessStream(System.IO.Stream stream, Library.Interface.CompressionHint hint, BackendManager backend, Library.Utility.FileBackedStringList blocklisthashes, Library.Utility.FileBackedStringList hashcollector, bool skipfilehash)
+        private long ProcessStream(Stream stream, CompressionHint hint, BackendManager backend,
+            Library.Utility.FileBackedStringList blocklisthashes, Library.Utility.FileBackedStringList hashcollector,
+            bool skipfilehash)
         {
             int blocklistoffset = 0;
             long filesize = 0;
 
-            using(var fs = new Blockprocessor(stream, m_blockbuffer))
+            using (var fs = new Blockprocessor(stream, m_blockbuffer))
             {
                 m_filehasher.Initialize();
 
@@ -1181,13 +1175,15 @@ namespace Duplicati.Library.Main.Operation
 
                     if (!skipfilehash)
                         m_filehasher.TransformBlock(m_blockbuffer, offset, size, m_blockbuffer, offset);
-                    
+
                     var blockkey = m_blockhasher.ComputeHash(m_blockbuffer, offset, size);
                     if (m_blocklistbuffer.Length - blocklistoffset < blockkey.Length)
                     {
-                        var blkey = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
+                        var blkey = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0,
+                            blocklistoffset));
                         blocklisthashes.Add(blkey);
-                        AddBlockToOutput(backend, blkey, m_blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
+                        AddBlockToOutput(backend, blkey, m_blocklistbuffer, 0, blocklistoffset,
+                            CompressionHint.Noncompressible, true);
                         blocklistoffset = 0;
                     }
 
@@ -1201,7 +1197,7 @@ namespace Duplicati.Library.Main.Operation
 
                     if (!skipfilehash)
                     {
-                        m_result.OperationProgressUpdater.UpdateFileProgress(filesize);                    
+                        m_result.OperationProgressUpdater.UpdateFileProgress(filesize);
                         if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                             return -1;
                     }
@@ -1220,9 +1216,11 @@ namespace Duplicati.Library.Main.Operation
                 //If all fits in a single block, don't bother with blocklists
                 if (hashcollector.Count > 1)
                 {
-                    var blkeyfinal = Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
+                    var blkeyfinal =
+                        Convert.ToBase64String(m_blockhasher.ComputeHash(m_blocklistbuffer, 0, blocklistoffset));
                     blocklisthashes.Add(blkeyfinal);
-                    AddBlockToOutput(backend, blkeyfinal, m_blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
+                    AddBlockToOutput(backend, blkeyfinal, m_blocklistbuffer, 0, blocklistoffset,
+                        CompressionHint.Noncompressible, true);
                 }
             }
 
@@ -1236,13 +1234,15 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Adds the found file data to the output unless the block already exists
         /// </summary>
+        /// <param name="backend"></param>
         /// <param name="key">The block hash</param>
         /// <param name="data">The data matching the hash</param>
-        /// <param name="len">The size of the data</param>
         /// <param name="offset">The offset into the data</param>
+        /// <param name="len">The size of the data</param>
         /// <param name="hint">Hint for compression module</param>
         /// <param name="isBlocklistData">Indicates if the block is list data</param>
-        private bool AddBlockToOutput(BackendManager backend, string key, byte[] data, int offset, int len, CompressionHint hint, bool isBlocklistData)
+        private void AddBlockToOutput(BackendManager backend, string key, byte[] data, int offset, int len,
+            CompressionHint hint, bool isBlocklistData)
         {
             if (m_blockvolume == null)
             {
@@ -1311,11 +1311,7 @@ namespace Duplicati.Library.Main.Operation
                         
                     }
                 }
-
-                return true;
             }
-
-            return false;
         }
 
         private void AddUnmodifiedFile(long oldId, DateTime lastModified)
@@ -1354,6 +1350,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Adds a file to the output, 
         /// </summary>
+        /// <param name="backend"></param>
         /// <param name="filename">The name of the file to record</param>
         /// <param name="lastModified">The value of the lastModified timestamp</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
@@ -1366,6 +1363,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Adds a file to the output, 
         /// </summary>
+        /// <param name="backend">Storage backend manager</param>
         /// <param name="filename">The name of the file to record</param>
         /// <param name="lastModified">The value of the lastModified timestamp</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
@@ -1378,17 +1376,18 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Adds a file to the output, 
         /// </summary>
+        /// <param name="backend">Storage backend manager</param>
         /// <param name="filename">The name of the file to record</param>
         /// <param name="lastmodified">The value of the lastModified timestamp</param>
         /// <param name="hashlist">The list of hashes that make up the file</param>
         /// <param name="size">The size of the file</param>
         /// <param name="metadata">A lookup table with various metadata values describing the file</param>
+        /// <param name="filehash">File hash</param>
+        /// <param name="blocklisthashes"></param>
         private void AddFileToOutput(BackendManager backend, string filename, long size, DateTime lastmodified, IMetahash metadata, IEnumerable<string> hashlist, string filehash, IEnumerable<string> blocklisthashes)
         {
-            long blocksetid;
-
             var metadataid = AddMetadataToOutput(backend, metadata);
-            m_database.AddBlockset(filehash, size, m_blocksize, hashlist, blocklisthashes, out blocksetid, m_transaction);
+            m_database.AddBlockset(filehash, size, m_blocksize, hashlist, blocklisthashes, out var blocksetid, m_transaction);
             m_database.AddFile(filename, lastmodified, blocksetid, metadataid, m_transaction);
         }
 
@@ -1405,6 +1404,22 @@ namespace Duplicati.Library.Main.Operation
 
                 m_database.UpdateRemoteVolume(m_indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
             }
+        }
+
+        internal static FileAttributes SafeGetFileAttributes(string path, ISnapshotService snapshot, string tag)
+        {
+            var fa = FileAttributes.Normal;
+            try
+            {
+                fa = snapshot.GetAttributes(path);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteVerboseMessage(tag, "FailedAttributeRead",
+                    "Failed to read attributes from {0}: {1}", path, ex.Message);
+            }
+
+            return fa;
         }
 
         public void Dispose()
@@ -1425,6 +1440,190 @@ namespace Duplicati.Library.Main.Operation
 
             if (m_result.EndTime.Ticks == 0)
                 m_result.EndTime = DateTime.UtcNow;
+        }
+    }
+
+    internal sealed class FilterHandler
+    {
+        private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType<FilterHandler>();
+        private readonly ISnapshotService m_snapshot;
+        private readonly FileAttributes m_attributeFilter;
+        private readonly Library.Utility.IFilter m_enumeratefilter;
+        private readonly Library.Utility.IFilter m_emitfilter;
+        private readonly Options.SymlinkStrategy m_symlinkPolicy;
+        private readonly Options.HardlinkStrategy m_hardlinkPolicy;
+        private readonly Dictionary<string, string> m_hardlinkmap;
+        private readonly Library.Utility.IFilter m_sourcefilter;
+        private readonly Queue<string> m_mixinqueue;
+
+        public FilterHandler(ISnapshotService snapshot, FileAttributes attributeFilter,
+            Library.Utility.IFilter sourcefilter, Library.Utility.IFilter filter,
+            Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy)
+        {
+            m_snapshot = snapshot;
+            m_attributeFilter = attributeFilter;
+            m_sourcefilter = sourcefilter;
+            m_emitfilter = filter;
+            m_symlinkPolicy = symlinkPolicy;
+            m_hardlinkPolicy = hardlinkPolicy;
+            m_hardlinkmap = new Dictionary<string, string>();
+            m_mixinqueue = new Queue<string>();
+
+            Library.Utility.FilterExpression.AnalyzeFilters(filter, out var includes, out var excludes);
+            if (includes && !excludes)
+            {
+                m_enumeratefilter = Library.Utility.FilterExpression.Combine(filter,
+                    new Library.Utility.FilterExpression("*" + Path.DirectorySeparatorChar));
+            }
+            else
+            {
+                m_enumeratefilter = m_emitfilter;
+            }
+        }
+
+        public void ReportError(string rootpath, string path, Exception ex)
+        {
+            Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", path);
+        }
+
+        public bool AttributeFilter(string rootpath, string path, FileAttributes attributes)
+        {
+            try
+            {
+                if (m_snapshot.IsBlockDevice(path))
+                {
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingBlockDevice", "Excluding block device: {0}", path);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
+                return false;
+            }
+
+            if (m_sourcefilter.Matches(path, out var sourcematches, out _) && sourcematches)
+            {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingSourcePath", "Including source path: {0}", path);
+
+                return true;
+            }
+                
+            if (m_hardlinkPolicy != Options.HardlinkStrategy.All)
+            {
+                try
+                {
+                    var id = m_snapshot.HardlinkTargetID(path);
+                    if (id != null)
+                    {
+                        switch (m_hardlinkPolicy)
+                        {
+                            case Options.HardlinkStrategy.None:
+                                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingHardlinkByPolicy", "Excluding hardlink: {0} ({1})", path, id);
+                                return false;
+
+                            case Options.HardlinkStrategy.First:
+                                if (m_hardlinkmap.TryGetValue(id, out var prevPath))
+                                {
+                                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingDuplicateHardlink", "Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
+                                    return false;
+                                }
+                                else
+                                {
+                                    m_hardlinkmap.Add(id, path);
+                                }
+
+                                break;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
+                    return false;
+                }                    
+            }
+            
+            if ((m_attributeFilter & attributes) != 0)
+            {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromAttributes", "Excluding path due to attribute filter: {0}", path);
+                return false;
+            }
+
+            var filtermatch = false;
+            if (!Library.Utility.FilterExpression.Matches(m_enumeratefilter, path, out var match))
+            {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromFilter", "Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
+                return false;
+            }
+
+            if (match != null)
+            {
+                filtermatch = true;
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPathFromFilter", "Including path due to filter: {0} => {1}", path, match.ToString());
+            }
+
+            var isSymlink = m_snapshot.IsSymlink(path, attributes);
+            if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Ignore)
+            {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludeSymlink", "Excluding symlink: {0}", path);
+                return false;
+            }
+
+            if (isSymlink && m_symlinkPolicy == Options.SymlinkStrategy.Store)
+            {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "StoreSymlink", "Storing symlink: {0}", path);
+
+                m_mixinqueue.Enqueue(path);
+                return false;
+            }
+                              
+            if (!filtermatch)
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPath", "Including path as no filters matched: {0}", path);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Enumerate files and folders (recursively) in <c>sources</c>, according to active attribute and exclusion filters.
+        /// </summary>
+        /// <param name="sources">Sources to enumerate</param>
+        /// <returns></returns>
+        public IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources)
+        {
+            foreach(var s in m_snapshot.EnumerateFilesAndFolders(sources, AttributeFilter, ReportError))
+            {
+                // emit any paths that were added by the enumeration itself (symlink targets, ...)
+                while (m_mixinqueue.Any())
+                    yield return m_mixinqueue.Dequeue();
+
+                if (m_emitfilter != m_enumeratefilter && !Library.Utility.FilterExpression.Matches(m_emitfilter, s, out _))
+                    continue;
+
+                yield return s;
+            }
+
+            // emit any paths that were added by the enumeration itself (symlink targets, ...)
+            while (m_mixinqueue.Any())
+                yield return m_mixinqueue.Dequeue();
+        }
+
+        public IEnumerable<string> Mixin(IEnumerable<string> list)
+        {
+            foreach (var s in list.Where(x =>
+            {
+                var fa = BackupHandler.SafeGetFileAttributes(x, m_snapshot, FILTER_LOGTAG);
+                return AttributeFilter(null, x, fa);
+            }))
+            {
+                while (m_mixinqueue.Count > 0)
+                    yield return m_mixinqueue.Dequeue();
+
+                yield return s;
+            }
+
+            while (m_mixinqueue.Count > 0)
+                yield return m_mixinqueue.Dequeue();
         }
     }
 }

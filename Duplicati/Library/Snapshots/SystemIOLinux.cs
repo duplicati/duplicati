@@ -27,17 +27,17 @@ namespace Duplicati.Library.Snapshots
         #region ISystemIO implementation
         public void DirectoryDelete(string path)
         {
-            Directory.Delete(NoSnapshot.NormalizePath(path));
+            Directory.Delete(SnapshotBase.NormalizePath(path));
         }
 
         public void DirectoryCreate(string path)
         {
-            Directory.CreateDirectory(NoSnapshot.NormalizePath(path));
+            Directory.CreateDirectory(SnapshotBase.NormalizePath(path));
         }
 
         public bool DirectoryExists(string path)
         {
-            return Directory.Exists(NoSnapshot.NormalizePath(path));
+            return Directory.Exists(SnapshotBase.NormalizePath(path));
         }
 
         public void FileDelete(string path)
@@ -92,7 +92,7 @@ namespace Duplicati.Library.Snapshots
 
         public FileAttributes GetFileAttributes(string path)
         {
-            return File.GetAttributes(NoSnapshot.NormalizePath(path));
+            return File.GetAttributes(SnapshotBase.NormalizePath(path));
         }
 
         public void SetFileAttributes(string path, FileAttributes attributes)
@@ -107,12 +107,12 @@ namespace Duplicati.Library.Snapshots
 
         public string GetSymlinkTarget(string path)
         {
-            return UnixSupport.File.GetSymlinkTarget(NoSnapshot.NormalizePath(path));
+            return UnixSupport.File.GetSymlinkTarget(SnapshotBase.NormalizePath(path));
         }
         
         public string PathGetDirectoryName(string path)
         {
-            return Path.GetDirectoryName(NoSnapshot.NormalizePath(path));
+            return Path.GetDirectoryName(SnapshotBase.NormalizePath(path));
         }
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
@@ -137,22 +137,22 @@ namespace Duplicati.Library.Snapshots
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
         {
-            Directory.SetLastWriteTimeUtc(NoSnapshot.NormalizePath(path), time);
+            Directory.SetLastWriteTimeUtc(SnapshotBase.NormalizePath(path), time);
         }
 
         public void DirectorySetCreationTimeUtc(string path, DateTime time)
         {
-            Directory.SetCreationTimeUtc(NoSnapshot.NormalizePath(path), time);
+            Directory.SetCreationTimeUtc(SnapshotBase.NormalizePath(path), time);
         }
 
         public DateTime DirectoryGetLastWriteTimeUtc(string path)
         {
-            return Directory.GetLastWriteTimeUtc(NoSnapshot.NormalizePath(path));
+            return Directory.GetLastWriteTimeUtc(SnapshotBase.NormalizePath(path));
         }
 
         public DateTime DirectoryGetCreationTimeUtc(string path)
         {
-            return Directory.GetCreationTimeUtc(NoSnapshot.NormalizePath(path));
+            return Directory.GetCreationTimeUtc(SnapshotBase.NormalizePath(path));
         }
 
         public void FileMove(string source, string target)
@@ -162,17 +162,17 @@ namespace Duplicati.Library.Snapshots
 
         public long FileLength(string path)
         {
-            return new System.IO.FileInfo(path).Length;
+            return new FileInfo(path).Length;
         }
 
         public void DirectoryDelete(string path, bool recursive)
         {
-            Directory.Delete(NoSnapshot.NormalizePath(path), recursive);
+            Directory.Delete(SnapshotBase.NormalizePath(path), recursive);
         }
 
         public Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
         {
-            var f = NoSnapshot.NormalizePath(file);
+            var f = SnapshotBase.NormalizePath(file);
             var dict = new Dictionary<string, string>();
 
             var n = UnixSupport.File.GetExtendedAttributes(f, isSymlink, followSymlink);
@@ -199,7 +199,7 @@ namespace Duplicati.Library.Snapshots
             if (data == null)
                 return;
 
-            var f = NoSnapshot.NormalizePath(file);
+            var f = SnapshotBase.NormalizePath(file);
 
             foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
                 UnixSupport.File.SetExtendedAttribute(f, x.Key, x.Value);

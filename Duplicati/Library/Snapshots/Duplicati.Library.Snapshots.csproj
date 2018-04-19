@@ -5,7 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <Prefer32Bit>False</Prefer32Bit>    
+    <Prefer32Bit>False</Prefer32Bit>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Snapshots</RootNamespace>
     <AssemblyName>Duplicati.Library.Snapshots</AssemblyName>
@@ -60,15 +60,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DefineDosDevice.cs" />
+    <Compile Include="IChangeJournalService.cs" />
     <Compile Include="MSSQLUtility.cs" />
     <Compile Include="HyperVUtility.cs" />
     <Compile Include="ISnapshotService.cs" />
     <Compile Include="LinuxSnapshot.cs" />
+    <Compile Include="UsnJournalService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="NoSnapshot.cs" />
+    <Compile Include="SnapshotBase.cs" />
     <Compile Include="SnapshotUtility.cs" />
-    <Compile Include="USNHelper.cs" />
+    <Compile Include="USNJournal.cs" />
     <Compile Include="Win32USN.cs" />
     <Compile Include="WindowsSnapshot.cs" />
     <Compile Include="WinNativeMethods.cs" />

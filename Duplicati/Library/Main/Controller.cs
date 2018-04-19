@@ -23,6 +23,7 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Main.Operation;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
@@ -440,7 +441,7 @@ namespace Duplicati.Library.Main
             m_options.RawOptions["dbpath"] = "INVALID!";
 
             // Redirect all messages from the filter to the message sink
-            var filtertag = Logging.Log.LogTagFromType<Operation.BackupHandler.FilterHandler>();
+            var filtertag = Logging.Log.LogTagFromType<FilterHandler>();
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
                 return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>

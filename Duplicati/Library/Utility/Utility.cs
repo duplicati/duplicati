@@ -16,13 +16,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+#endregion
+
+using System;
 using System.Text.RegularExpressions;
 using System.Linq;
-
-
-#endregion
-using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -268,19 +268,7 @@ namespace Duplicati.Library.Utility
         {
             Stack<string> lst = new Stack<string>();
 
-            var isFolder = false;
-            try
-            {
-                if (attributeReader == null)
-                    isFolder = true;
-                else
-                    isFolder = (attributeReader(rootpath) & System.IO.FileAttributes.Directory) == System.IO.FileAttributes.Directory;
-            }
-            catch
-            {
-            }
-
-            if (isFolder)
+            if (IsFolder(rootpath, attributeReader))
             {
                 rootpath = AppendDirSeparator(rootpath);
                 try
@@ -404,6 +392,139 @@ namespace Duplicati.Library.Utility
 
                 yield return rootpath;
             }
+        }
+
+        /// <summary>
+        /// Test if specified path is a folder
+        /// </summary>
+        /// <param name="path">Path to test</param>
+        /// <param name="attributeReader">Function to use for testing path</param>
+        /// <returns>True if path is refers to a folder</returns>
+        public static bool IsFolder(string path, ExtractFileAttributes attributeReader)
+        {
+            if (attributeReader == null)
+                return true;
+
+            try
+            {
+                return attributeReader(path).HasFlag(System.IO.FileAttributes.Directory);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tests if path refers to a file, or folder, below the parent folder
+        /// </summary>
+        /// <param name="fileOrFolderPath">File or folder to test</param>
+        /// <param name="parentFolder">Candidate parent folder</param>
+        /// <returns>True if below parent folder, false otherwise (note that this returns false if the two argument paths are identical!)</returns>
+        public static bool IsPathBelowFolder(string fileOrFolderPath, string parentFolder)
+        {
+            var candidatePath = fileOrFolderPath;
+            parentFolder = AppendDirSeparator(parentFolder);
+
+            while (true)
+            {
+                candidatePath = GetParent(candidatePath, true);
+                if (candidatePath == null)
+                    return false;
+
+                if (candidatePath.Equals(parentFolder, ClientFilenameStringComparision))
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Returns parent folder of path
+        /// </summary>
+        /// <param name="path">Full file or folder path</param>
+        /// <param name="forceTrailingDirectorySeparator">If true, return value always has trailing separator</param>
+        /// <returns>Parent folder of path (containing folder for file paths, parent folder for folder paths)</returns>
+        public static string GetParent(string path, bool forceTrailingDirectorySeparator = false)
+        {
+            var len = path.Length - 1;
+            if (len > 1 && path[len] == Path.DirectorySeparatorChar)
+            {
+                len--;
+            }
+
+            var last = path.LastIndexOf(Path.DirectorySeparatorChar, len);
+            if (last == -1 || last == 0 && len == 0)
+                return null;
+
+            if (last == 0 && !IsClientWindows)
+                return DirectorySeparatorString;
+
+            var parent = path.Substring(0, last);
+
+            if (forceTrailingDirectorySeparator ||
+                IsClientWindows && parent.Length == 2 && parent[1] == ':' && char.IsLetter(parent[0]))
+            {
+                parent += Path.DirectorySeparatorChar;
+            }
+
+            return parent;
+        }
+
+        
+
+        /// <summary>
+        /// Given a collection of unique folders, returns only parent-most folders
+        /// </summary>
+        /// <param name="folders">Collection of unique folders</param>
+        /// <returns>Parent-most folders of input collection</returns>
+        public static IEnumerable<string> SimplifyFolderList(ICollection<string> folders)
+        {
+            if (!folders.Any())
+                return folders;
+
+            var result = new LinkedList<string>();
+            result.AddFirst(folders.First());
+
+            foreach (var folder1 in folders)
+            {
+                bool addFolder = true;
+                LinkedListNode<string> next;
+                for (var node = result.First; node != null; node = next)
+                {
+                    next = node.Next;
+                    var folder2 = node.Value;
+
+                    if (IsPathBelowFolder(folder1, folder2))
+                    {
+                        // higher-level folder already present
+                        addFolder = false;
+                        break;
+                    }
+
+                    if (IsPathBelowFolder(folder2, folder1))
+                    {
+                        // retain folder1
+                        result.Remove(node);
+                    }
+                }
+
+                if (addFolder)
+                {
+                    result.AddFirst(folder1);
+                }
+            }
+
+            return result.Distinct();
+        }
+        
+        /// <summary>
+        /// Given a collection of file paths, return those NOT contained within specified collection of folders
+        /// </summary>
+        /// <param name="files">Collection of files to filter</param>
+        /// <param name="folders">Collection of folders to use as filter</param>
+        /// <returns>Files not in any of specified <c>folders</c></returns>
+        public static IEnumerable<string> GetFilesNotInFolders(IEnumerable<string> files, IEnumerable<string> folders)
+        {
+            return files.Where(x => folders.All(folder => !IsPathBelowFolder(x, folder)));
         }
 
         /// <summary>
