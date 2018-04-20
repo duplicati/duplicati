@@ -408,7 +408,8 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="fileOrFolderPath">File or folder to test</param>
         /// <param name="parentFolder">Candidate parent folder</param>
-        /// <returns>True if below parent folder, false otherwise (note that this returns false if the two argument paths are identical!)</returns>
+        /// <returns>True if below parent folder, false otherwise
+        /// (note that this returns false if the two argument paths are identical!)</returns>
         public static bool IsPathBelowFolder(string fileOrFolderPath, string parentFolder)
         {
             var sanitizedParentFolder = AppendDirSeparator(parentFolder);
