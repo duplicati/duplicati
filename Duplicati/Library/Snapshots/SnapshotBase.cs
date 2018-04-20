@@ -167,6 +167,9 @@ namespace Duplicati.Library.Snapshots
             return FileExists(localFileOrFolderPath) || FolderExists(localFileOrFolderPath);
         }
 
+        /// <inheritdoc />
+        public virtual bool IsSnapshot => false;
+
         #endregion
 
         /// <summary>

@@ -135,5 +135,10 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localFileOrFolderPath">The local path</param>
         /// <returns>True if file or folder exists, false otherwise</returns>
         bool PathExists(string localFileOrFolderPath);
+
+        /// <summary>
+        /// Is true if the actual service is a real snapshot service
+        /// </summary>
+        bool IsSnapshot { get; }
     }
 }

@@ -415,7 +415,10 @@ namespace Duplicati.Library.Snapshots
 
             return Path.Combine(volumePath, localPath.Substring(root.Length));
         }
-        
+
+        /// <inheritdoc />
+        public override bool IsSnapshot => true;
+
         #endregion
 
         /// <inheritdoc />

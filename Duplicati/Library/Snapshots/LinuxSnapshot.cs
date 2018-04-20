@@ -233,7 +233,6 @@ namespace Duplicati.Library.Snapshots
                     var p = Process.Start(inf);
 
                     //Allow up 20 seconds for the execution
-                    Debug.Assert(p != null, nameof(p) + " != null");
                     if (!p.WaitForExit(30 * 1000))
                     {
                         //Attempt to close down semi-nicely
@@ -332,9 +331,9 @@ namespace Duplicati.Library.Snapshots
         {
             var snap = FindSnapshotByLocalPath(localFolderPath);
 
-            var tmp = System.IO.Directory.GetDirectories(ConvertToSnapshotPath(snap, localFolderPath));
+            var tmp = System.IO.Directory.GetDirectories(snap.ConvertToSnapshotPath(localFolderPath));
             for (var i = 0; i < tmp.Length; i++)
-                tmp[i] = ConvertToLocalPath(snap, tmp[i]);
+                tmp[i] = snap.ConvertToLocalPath(tmp[i]);
 
             return tmp;
         }
@@ -350,9 +349,9 @@ namespace Duplicati.Library.Snapshots
         {
             var snap = FindSnapshotByLocalPath(localFolderPath);
 
-            var tmp = System.IO.Directory.GetFiles(ConvertToSnapshotPath(snap, localFolderPath));
+            var tmp = System.IO.Directory.GetFiles(snap.ConvertToSnapshotPath(localFolderPath));
             for (var i = 0; i < tmp.Length; i++)
-                tmp[i] = ConvertToLocalPath(snap, tmp[i]);
+                tmp[i] = snap.ConvertToLocalPath(tmp[i]);
             return tmp;
         }
 
@@ -400,28 +399,6 @@ namespace Duplicati.Library.Snapshots
             }
 
             throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Converts a local path to a snapshot path
-        /// </summary>
-        /// <param name="snap">The snapshot that represents the mapping</param>
-        /// <param name="localPath">The filename to convert</param>
-        /// <returns>The converted path</returns>
-        private static string ConvertToSnapshotPath(SnapShot snap, string localPath)
-        {
-            return snap.ConvertToSnapshotPath(localPath);
-        }
-
-        /// <summary>
-        /// Converts a snapshot path to a local path
-        /// </summary>
-        /// <param name="snap">The snapshot that represents the mapping</param>
-        /// <param name="snapshotPath">The filename to convert</param>
-        /// <returns>The converted path</returns>
-        private static string ConvertToLocalPath(SnapShot snap, string snapshotPath)
-        {
-            return snap.ConvertToLocalPath(snapshotPath);
         }
 
         #endregion
@@ -537,14 +514,17 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public override string ConvertToLocalPath(string snapshotPath)
         {
-            return ConvertToLocalPath(FindSnapshotBySnapshotPath(snapshotPath), snapshotPath);
+            return FindSnapshotBySnapshotPath(snapshotPath).ConvertToLocalPath(snapshotPath);
         }
 
         /// <inheritdoc />
         public override string ConvertToSnapshotPath(string localPath)
         {
-            return ConvertToSnapshotPath(FindSnapshotByLocalPath(localPath), localPath);
+            return FindSnapshotByLocalPath(localPath).ConvertToSnapshotPath(localPath);
         }
+
+        /// <inheritdoc />
+        public override bool IsSnapshot => true;
 
         #endregion
     }

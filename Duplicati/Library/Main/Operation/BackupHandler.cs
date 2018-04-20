@@ -312,7 +312,27 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else if (m_options.UsnStrategy != Options.OptimizationStrategy.Off)
                 {
-                    BackupUsingChangeJournal(snapshot, backend, sources, filterhandler);
+                    if (!snapshot.IsSnapshot)
+                    {
+                        BackupUsingChangeJournal(snapshot, backend, sources, filterhandler);
+                    }
+                    else
+                    {
+                        if (m_options.UsnStrategy == Options.OptimizationStrategy.Auto)
+                        {
+                            Logging.Log.WriteInformationMessage(LOGTAG, "FailedToUseChangeJournal",
+                                "-usn-policy currently incompatible with -snapshot-policy enabled");
+                        }
+                        else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
+                        {
+                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", null,
+                                "-usn-policy currently incompatible with -snapshot-policy enabled");
+                        }
+                        else
+                            throw new Exception("-usn-policy currently incompatible with -snapshot-policy enabled");
+
+                        BackupUsingFullScan(snapshot, backend, sources, filterhandler);
+                    }
                 }
                 else
                 {
@@ -1515,24 +1535,23 @@ namespace Duplicati.Library.Main.Operation
                     var id = m_snapshot.HardlinkTargetID(path);
                     if (id != null)
                     {
-                        switch (m_hardlinkPolicy)
+                        if (m_hardlinkPolicy == Options.HardlinkStrategy.None)
                         {
-                            case Options.HardlinkStrategy.None:
-                                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingHardlinkByPolicy", "Excluding hardlink: {0} ({1})", path, id);
+                            Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingHardlinkByPolicy",
+                                "Excluding hardlink: {0} ({1})", path, id);
+                            return false;
+                        }
+
+                        if (m_hardlinkPolicy == Options.HardlinkStrategy.First)
+                        {
+                            if (m_hardlinkmap.TryGetValue(id, out var prevPath))
+                            {
+                                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingDuplicateHardlink",
+                                    "Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
                                 return false;
+                            }
 
-                            case Options.HardlinkStrategy.First:
-                                if (m_hardlinkmap.TryGetValue(id, out var prevPath))
-                                {
-                                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingDuplicateHardlink", "Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
-                                    return false;
-                                }
-                                else
-                                {
-                                    m_hardlinkmap.Add(id, path);
-                                }
-
-                                break;
+                            m_hardlinkmap.Add(id, path);
                         }
                     }
                 }
