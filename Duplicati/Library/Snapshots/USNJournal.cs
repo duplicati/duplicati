@@ -115,12 +115,7 @@ namespace Duplicati.Library.Snapshots
             }
             catch
             {
-                if (m_volumeHandle != null)
-                {
-                    m_volumeHandle.Dispose();
-                    m_volumeHandle = null;
-                }
-
+                Dispose();
                 throw;
             }
         }
@@ -140,9 +135,20 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="sourceFolder">The folder to find entries for</param>
         /// <param name="minUsn">Minimum USN of entry</param>
+        /// <returns>A list of tuples with changed files and folders and their type</returns>
+        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFolder, long minUsn)
+        {
+            return GetChangedFileSystemEntries(sourceFolder, minUsn, ChangeReason.Any);
+        }
+
+        /// <summary>
+        /// Returns a list of files or folders that have changed since the recorded USN
+        /// </summary>
+        /// <param name="sourceFolder">The folder to find entries for</param>
+        /// <param name="minUsn">Minimum USN of entry</param>
         /// <param name="reason">Filter expression for change reason</param>
         /// <returns>A list of tuples with changed files and folders and their type</returns>
-        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFolder, long minUsn, ChangeReason reason = ChangeReason.Any)
+        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFolder, long minUsn, ChangeReason reason)
         {
             foreach (var r in GetRecords(minUsn))
             {

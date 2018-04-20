@@ -107,18 +107,7 @@ namespace Duplicati.Library.Snapshots
             return res;
         }
 
-        /// <inheritdoc />
-        public override string ConvertToLocalPath(string snapshotPath)
-        {
-            return snapshotPath;
-        }
-
-        /// <inheritdoc />
-        public override string ConvertToSnapshotPath(string localPath)
-        {
-            return localPath;
-        }
-
+        
         /// <summary>
         /// Lists all folders in the given folder
         /// </summary>
@@ -137,7 +126,7 @@ namespace Duplicati.Library.Snapshots
 
             return res;
         }
-        
+
         /// <summary>
         /// Gets the metadata for the given file or folder
         /// </summary>
@@ -148,6 +137,18 @@ namespace Duplicati.Library.Snapshots
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
             return IO_WIN.GetMetadata(localPath, isSymlink, followSymlink);
+        }
+
+        /// <inheritdoc />
+        public override string ConvertToLocalPath(string snapshotPath)
+        {
+            return snapshotPath;
+        }
+
+        /// <inheritdoc />
+        public override string ConvertToSnapshotPath(string localPath)
+        {
+            return localPath;
         }
     }
 }

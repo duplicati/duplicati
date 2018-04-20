@@ -418,69 +418,68 @@ namespace Duplicati.Library.Snapshots
         
         #endregion
 
-        #region IDisposable Members
-        /// <summary>
-        /// Cleans up any resources and closes the backup set
-        /// </summary>
-        public override void Dispose()
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
         {
-            try
+            if (disposing)
             {
-                if (m_mappedDrives != null)
+                try
                 {
-                    foreach (var d in m_mappedDrives)
+                    if (m_mappedDrives != null)
                     {
-                        d.Dispose();
+                        foreach (var d in m_mappedDrives)
+                        {
+                            d.Dispose();
+                        }
+
+                        m_mappedDrives = null;
                     }
-
-                    m_mappedDrives = null;
                 }
-            }
-            catch
-            {
-                // ignored
-            }
+                catch
+                {
+                    // ignored
+                }
 
-            try
-            {
-                m_backup?.BackupComplete();
-            }
-            catch
-            {
-                // ignored
-            }
+                try
+                {
+                    m_backup?.BackupComplete();
+                }
+                catch
+                {
+                    // ignored
+                }
 
-            try
-            {
+                try
+                {
+                    if (m_backup != null)
+                    {
+                        foreach (var g in m_volumes.Values)
+                        {
+                            try
+                            {
+                                m_backup.DeleteSnapshot(g, false);
+                            }
+                            catch
+                            {
+                                // ignored
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignored
+                }
+
                 if (m_backup != null)
                 {
-                    foreach (var g in m_volumes.Values)
-                    {
-                        try
-                        {
-                            m_backup.DeleteSnapshot(g, false);
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-                    }
+                    m_backup.Dispose();
+                    m_backup = null;
                 }
             }
-            catch
-            {
-                // ignored
-            }
 
-            if (m_backup != null)
-            {
-                m_backup.Dispose();
-                m_backup = null;
-            }
-
+            base.Dispose(disposing);
         }
-
-        #endregion
 
     }
 }

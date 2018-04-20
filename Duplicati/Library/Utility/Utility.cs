@@ -424,7 +424,7 @@ namespace Duplicati.Library.Utility
         public static bool IsPathBelowFolder(string fileOrFolderPath, string parentFolder)
         {
             var candidatePath = fileOrFolderPath;
-            parentFolder = AppendDirSeparator(parentFolder);
+            var sanitizedParentFolder = AppendDirSeparator(parentFolder);
 
             while (true)
             {
@@ -432,7 +432,7 @@ namespace Duplicati.Library.Utility
                 if (candidatePath == null)
                     return false;
 
-                if (candidatePath.Equals(parentFolder, ClientFilenameStringComparision))
+                if (candidatePath.Equals(sanitizedParentFolder, ClientFilenameStringComparision))
                     return true;
             }
         }
@@ -443,7 +443,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">Full file or folder path</param>
         /// <param name="forceTrailingDirectorySeparator">If true, return value always has trailing separator</param>
         /// <returns>Parent folder of path (containing folder for file paths, parent folder for folder paths)</returns>
-        public static string GetParent(string path, bool forceTrailingDirectorySeparator = false)
+        public static string GetParent(string path, bool forceTrailingDirectorySeparator)
         {
             var len = path.Length - 1;
             if (len > 1 && path[len] == Path.DirectorySeparatorChar)

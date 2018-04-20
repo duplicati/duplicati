@@ -28,6 +28,17 @@ namespace Duplicati.Library.Snapshots
 {
     public abstract class SnapshotBase : ISnapshotService
     {
+        /// <summary>
+        /// Releases unmanaged resources and performs other cleanup operations before the
+        /// <see cref="SnapshotBase"/> is reclaimed by garbage collection.
+        /// </summary>
+        /// <remarks>We must implement a finalizer to guarantee that our native handle is cleaned up</remarks>
+        ~SnapshotBase()
+        {
+            // Our finalizer should call our Dispose(bool) method with false
+            Dispose(false);
+        }
+
         #region ISnapshotService
     
         /// <summary>
@@ -191,9 +202,23 @@ namespace Duplicati.Library.Snapshots
             return Directory.GetFiles(localFolderPath);
         }
 
-        public virtual void Dispose()
+        /// <inheritdoc />
+        public void Dispose()
         {
+            // We start by calling Dispose(bool) with true
+            Dispose(true);
 
+            // Now suppress finalization for this object, since we've already handled our resource cleanup tasks
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources
+        /// </summary>
+        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            // nothing to dispose of at this level
         }
     }
 }

@@ -21,7 +21,6 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.IO;
 using Duplicati.Library.Main.Database;
@@ -98,13 +97,13 @@ namespace Duplicati.Library.Main.Operation
             }
             catch (Exception ex)
             {
-                switch (options.SnapShotStrategy)
+                if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
+                    throw;
+
+                if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                 {
-                    case Options.OptimizationStrategy.Required:
-                        throw;
-                    case Options.OptimizationStrategy.On:
-                        Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
-                        break;
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex,
+                        Strings.Common.SnapshotFailedError(ex.ToString()));
                 }
             }
 

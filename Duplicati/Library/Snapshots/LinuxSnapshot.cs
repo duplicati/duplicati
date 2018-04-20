@@ -94,34 +94,33 @@ namespace Duplicati.Library.Snapshots
             }
         }
 
-        #region IDisposable Members
-
-        /// <summary>
-        /// Releases any held resources
-        /// </summary>
-        public override void Dispose()
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
         {
+            Exception exs = null;
+
             if (m_snapShots != null)
             {
-                Exception exs = null;
-
-                //Attempt to clean out as many as possible
-                foreach(var s in m_snapShots)
+                if (disposing)
                 {
-                    try { s.Dispose(); }
-                    catch (Exception ex) { exs = ex; }
+                    // Attempt to clean out as many as possible
+                    foreach(var s in m_snapShots)
+                    {
+                        try { s.Dispose(); }
+                        catch (Exception ex) { exs = ex; }
+                    }
                 }
 
-                //Don't try this again
+                // Don't try this again
                 m_snapShots = null;
-
-                //Report errors, if any
-                if (exs != null)
-                    throw exs;
             }
-        }
 
-        #endregion
+            base.Dispose(disposing);
+
+            // Report errors, if any
+            if (exs != null)
+                throw exs;
+        }
 
         /// <summary>
         /// Internal helper class for keeping track of a single snapshot volume
@@ -409,7 +408,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="snap">The snapshot that represents the mapping</param>
         /// <param name="localPath">The filename to convert</param>
         /// <returns>The converted path</returns>
-        private string ConvertToSnapshotPath(SnapShot snap, string localPath)
+        private static string ConvertToSnapshotPath(SnapShot snap, string localPath)
         {
             return snap.ConvertToSnapshotPath(localPath);
         }
@@ -420,7 +419,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="snap">The snapshot that represents the mapping</param>
         /// <param name="snapshotPath">The filename to convert</param>
         /// <returns>The converted path</returns>
-        private string ConvertToLocalPath(SnapShot snap, string snapshotPath)
+        private static string ConvertToLocalPath(SnapShot snap, string snapshotPath)
         {
             return snap.ConvertToLocalPath(snapshotPath);
         }

@@ -41,22 +41,22 @@ namespace Duplicati.Library.Snapshots
     /// <summary>
     /// Filtered sources
     /// </summary>
-    public struct FilterData
+    public class FilterData
     {
         /// <summary>
         /// Set of potentially modified files
         /// </summary>
-        public HashSet<string> Files;
+        public HashSet<string> Files { get; set; }
 
         /// <summary>
         /// Set of folders that are potentially modified, or whose children
         /// are potentially modified
         /// </summary>
-        public List<string> Folders;
+        public List<string> Folders { get; set; }
 
         /// <summary>
         /// Journal data to use for next backup
         /// </summary>
-        public List<USNJournalDataEntry> JournalData;
+        public List<USNJournalDataEntry> JournalData { get; set; }
     }
 }
