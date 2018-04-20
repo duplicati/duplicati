@@ -420,7 +420,7 @@ namespace Duplicati.Library.Main.Operation
         {
             try
             {
-                var journalService = new UsnJournalService(UsnErrorHandler, () =>
+                var journalService = new UsnJournalService(snapshot, UsnErrorHandler, () =>
                 {
                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                         throw new OperationCanceledException();
@@ -436,7 +436,7 @@ namespace Duplicati.Library.Main.Operation
                 // filter sources using USN journal, to obtain a sub-set of files / folders that
                 // may have been modified
                 // ReSharper disable once PossibleMultipleEnumeration
-                var modifiedSources = journalService.FilterSources(sources, configHash, journalData);
+                var modifiedSources = journalService.FilterSources(sources, filterhandler.AttributeFilter, configHash, journalData);
 
                 // scan modified sources for modifications
                 if (modifiedSources.Files.Any() || modifiedSources.Folders.Any())
@@ -477,6 +477,8 @@ namespace Duplicati.Library.Main.Operation
                 else
                 {
                     // add full previous fileset, as nothing has changed
+                    //TODO: possible optimization is to somehow skip this step if compacting is enabled, 
+                    //      as all this informatino will be removed anyway.
                     m_database.AppendFilesFromPreviousSet(m_transaction);
                 }
 

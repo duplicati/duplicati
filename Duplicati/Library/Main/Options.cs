@@ -395,7 +395,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                return System.IO.Path.GetFileNameWithoutExtension(Library.Utility.Utility.getEntryAssembly().Location);
+                return System.IO.Path.GetFileNameWithoutExtension(Library.Utility.Utility.GetEntryAssembly().Location);
             }
         }
 

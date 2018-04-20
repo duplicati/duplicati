@@ -314,7 +314,7 @@ namespace Duplicati.Library.Modules.Builtin
                     if (m_options.ContainsKey("backup-name"))
                         extra["backup-name"] = m_options["backup-name"];
                     else
-                        extra["backup-name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
+                        extra["backup-name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.GetEntryAssembly().Location);
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
@@ -344,7 +344,7 @@ namespace Duplicati.Library.Modules.Builtin
                     input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 if (!m_options.ContainsKey("backup-name"))
-                    input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.GetEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
                 return input;

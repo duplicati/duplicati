@@ -28,21 +28,21 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// Volume of journal
         /// </summary>
-        public string Volume;
+        public string Volume { get; set; }
 
         /// <summary>
         /// Journal ID, as recorded in the journal
         /// </summary>
-        public long JournalId;
+        public long JournalId { get; set; }
 
         /// <summary>
         /// USN to start at for next fileset (backup)
         /// </summary>
-        public long NextUsn;
+        public long NextUsn { get; set; }
 
         /// <summary>
         /// A hash value representing the active exclusion filter
         /// </summary>
-        public string ConfigHash;
+        public string ConfigHash { get; set; }
     }
 }

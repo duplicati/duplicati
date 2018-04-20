@@ -31,7 +31,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The prefix applied to all temporary files
         /// </summary>
-        public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower() + "-";
+        public static string APPLICATION_PREFIX = Utility.GetEntryAssembly().FullName.Substring(0, 3).ToLower() + "-";
         
         private string m_path;
         private bool m_protect;

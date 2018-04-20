@@ -205,6 +205,8 @@ namespace Duplicati.Library.Snapshots
             return Directory.GetFiles(localFolderPath);
         }
 
+        #region IDisposable interface
+
         /// <inheritdoc />
         public void Dispose()
         {
@@ -213,7 +215,9 @@ namespace Duplicati.Library.Snapshots
 
             // Now suppress finalization for this object, since we've already handled our resource cleanup tasks
             GC.SuppressFinalize(this);
-        }
+        }        
+
+        #endregion
 
         /// <summary>
         /// Releases unmanaged and - optionally - managed resources

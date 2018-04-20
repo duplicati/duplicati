@@ -22,7 +22,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
     {
         public void GET(string key, RequestInfo info)
         {
-            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location), "licenses");
+            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.GetEntryAssembly().Location), "licenses");
             info.OutputOK(Duplicati.License.LicenseReader.ReadLicenses(path));
         }
     }

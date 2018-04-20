@@ -210,7 +210,7 @@ namespace Duplicati.Library.Modules.Builtin
                     psi.EnvironmentVariables["DUPLICATI__" + kv.Key.Replace('-', '_')] = kv.Value;
 
                 if (!options.ContainsKey("backup-name"))
-                    psi.EnvironmentVariables["DUPLICATI__backup_name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
+                    psi.EnvironmentVariables["DUPLICATI__backup_name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.GetEntryAssembly().Location);
 
                 psi.EnvironmentVariables["DUPLICATI__EVENTNAME"] = eventname;
                 psi.EnvironmentVariables["DUPLICATI__OPERATIONNAME"] = operationname;

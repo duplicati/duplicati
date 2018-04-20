@@ -32,10 +32,11 @@ namespace Duplicati.Library.Snapshots
         /// change, as specified by <c>journalData</c>.
         /// </summary>
         /// <param name="sources">Sources to filter</param>
+        /// <param name="filter">Filter callback to exclude filtered items</param>
         /// <param name="filterHash">A hash value representing current exclusion filter. A full scan is triggered if hash has changed.</param>
         /// <param name="journalData">The journal data of the previous backup (fileset)</param>
         /// <returns>Filtered sources</returns>
-        FilterData FilterSources(IEnumerable<string> sources, string filterHash, IEnumerable<USNJournalDataEntry> journalData);
+        FilterData FilterSources(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate filter, string filterHash, IEnumerable<USNJournalDataEntry> journalData);
     }
 
     /// <summary>

@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
@@ -35,16 +36,20 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         private static readonly string LOGTAG = Log.LogTagFromType<UsnJournalService>();
 
+        private readonly ISnapshotService m_snapshot;
         private readonly Utility.Utility.ReportAccessError m_errorCallback;
         private readonly Action m_cancelHandler;
 
         /// <summary>
         /// Constructor.
         /// </summary>
+        /// <param name="snapshot"></param>
         /// <param name="errorCallback">Callback for handling errors</param>
         /// <param name="cancelHandler">Callback for aborting operation. Throw OperationCancelledException() to abort.</param>
-        public UsnJournalService(Utility.Utility.ReportAccessError errorCallback, Action cancelHandler)
+        public UsnJournalService(ISnapshotService snapshot, Utility.Utility.ReportAccessError errorCallback,
+            Action cancelHandler)
         {
+            m_snapshot = snapshot;
             m_errorCallback = errorCallback;
             m_cancelHandler = cancelHandler;
         }
@@ -52,7 +57,8 @@ namespace Duplicati.Library.Snapshots
         #region IChangeJournalService Members
 
         /// <inheritdoc />
-        public FilterData FilterSources(IEnumerable<string> sources, string filterHash, IEnumerable<USNJournalDataEntry> journalData)
+        public FilterData FilterSources(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate filter,
+            string filterHash, IEnumerable<USNJournalDataEntry> journalData)
         {
             // create lookup for journal data
             var journalDataDict = journalData.ToDictionary(data => data.Volume);
@@ -100,7 +106,7 @@ namespace Duplicati.Library.Snapshots
                         var changedFiles = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
                         var changedFolders = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
 
-                        // iterate over sources and retrieve *renamed* directories
+                        // obtain changed files and folders, per volume
                         foreach (var source in sourcesPerVolume.Value)
                         {
                             foreach (var entry in journal.GetChangedFileSystemEntries(source, data.NextUsn))
@@ -116,10 +122,38 @@ namespace Duplicati.Library.Snapshots
                             }
                         }
 
-                        var reducedFolderList = Utility.Utility.SimplifyFolderList(changedFolders).ToList();
-                        var reducedFileList = Utility.Utility.GetFilesNotInFolders(changedFiles, reducedFolderList);
-                        result.Folders.AddRange(reducedFolderList);
-                        result.Files.UnionWith(reducedFileList);
+                        // At this point we have:
+                        //  - a list of folders (changedFolders) that were possibly modified 
+                        //  - a list of files (changedFiles) that were possibly modified
+                        //
+                        // With this, we need still need to do the following:
+                        //
+                        //  1. Simplify the folder list, such that it only contains the parent-most entries 
+                        //     (eg. { "C:\A\B\", "C:\A\B\C\", "C:\A\B\D\E\" } => { "C:\A\B\" }
+                        var simplifiedFolders = Utility.Utility.SimplifyFolderList(changedFolders).ToList();
+
+                        // 2. Check the simplified folders, and their parent folders  against the exclusion filter.
+                        // This is needed because the filter may exclude "C:\A\", but this won't match the more
+                        // specific "C:\A\B\" in our list, even though it's meant to be excluded.
+                        // The reason why the filter doesn't exclude it is because during a regular (non-USN) full scan, 
+                        // FilterHandler.EnumerateFilesAndFolders() works top-down, and won't even enumerate child
+                        // folders.
+                        var cache = new HashSet<string>(); // cache to speed up processing
+                        result.Folders.AddRange(FilterExcludedFolders(simplifiedFolders, filter, cache));
+
+                        // 3. Our list of files may contain entries inside one of the simplified folders (from step 1., above).
+                        //    Since that folder is going to be fully scanned, those files can be removed.
+                        //    Note: it would be wrong to use the result from step 2. as the folder list! The entries removed
+                        //          between 1. and 2. are *excluded* folders, and files below them are to be *excluded*, too.
+                        var simplifiedFiles = Utility.Utility.GetFilesNotInFolders(changedFiles, simplifiedFolders);
+
+                        // 4. The simplified file list still needs to be checked against the exclusion filter, as it 
+                        //    may contain entries excluded due to attributes, but also because they are below excluded
+                        //    folders, which themselves aren't in the folder list from step 1.
+                        //    Note that the simplified file list may contain entries that have been deleted! They need to 
+                        //    be kept in the list (unless excluded by the filter) in order for the backup handler to record their 
+                        //    deletion.
+                        result.Files.UnionWith(FilterExcludedFiles(simplifiedFiles, filter, cache));
                     }
                 }
                 catch (UsnJournalSoftFailureException)
@@ -136,6 +170,125 @@ namespace Duplicati.Library.Snapshots
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Filter supplied <c>files</c>, removing any files which itself, or one
+        /// of its parent folders, is excluded by the <c>filter</c>.
+        /// </summary>
+        /// <param name="files">Files to filter</param>
+        /// <param name="filter">Exclusion filter</param>
+        /// <param name="cache">Cache of excluded folders (optional)</param>
+        /// <returns>Filtered files</returns>
+        private IEnumerable<string> FilterExcludedFiles(IEnumerable<string> files,
+            Utility.Utility.EnumerationFilterDelegate filter, ISet<string> cache = null)
+        {
+            var result = new List<string>();
+
+            foreach (var file in files)
+            {                
+                var attr = m_snapshot.FileExists(file) ? m_snapshot.GetAttributes(file) : FileAttributes.Normal;
+                try
+                {
+                    if (!filter(file, file, attr))
+                        continue;
+
+                    if (!IsFolderOrAncestorsExcluded(Utility.Utility.GetParent(file, true), filter, cache))
+                    {
+                        result.Add(file);
+                    }
+                }
+                catch (System.Threading.ThreadAbortException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    m_errorCallback?.Invoke(file, file, ex);
+                    filter(file, file, attr | Utility.Utility.ATTRIBUTE_ERROR);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Filter supplied <c>folders</c>, removing any folder which itself, or one
+        /// of its ancestors, is excluded by the <c>filter</c>.
+        /// </summary>
+        /// <param name="folders">Folder to filter</param>
+        /// <param name="filter">Exclusion filter</param>
+        /// <param name="cache">Cache of excluded folders (optional)</param>
+        /// <returns>Filtered folders</returns>
+        private IEnumerable<string> FilterExcludedFolders(IEnumerable<string> folders,
+            Utility.Utility.EnumerationFilterDelegate filter, ISet<string> cache = null)
+        {
+            var result = new List<string>();
+
+            foreach (var folder in folders)
+            {
+                try
+                {
+                    if (!IsFolderOrAncestorsExcluded(folder, filter, cache))
+                    {
+                        result.Add(folder);
+                    }
+                }
+                catch (System.Threading.ThreadAbortException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    m_errorCallback?.Invoke(folder, folder, ex);
+                    filter(folder, folder, FileAttributes.Directory | Utility.Utility.ATTRIBUTE_ERROR);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Tests if specified folder, or any of its ancestors, is excluded by the filter
+        /// </summary>
+        /// <param name="folder">Folder to test</param>
+        /// <param name="filter">Filter</param>
+        /// <param name="cache">Cache of excluded folders (optional)</param>
+        /// <returns>True if excluded, false otherwise</returns>
+        private bool IsFolderOrAncestorsExcluded(string folder, Utility.Utility.EnumerationFilterDelegate filter, ISet<string> cache = null)
+        {
+            List<string> parents = null;
+            while (folder != null)
+            {
+                // first check cache
+                if (cache != null)
+                {
+                    if (cache.Contains(folder))
+                        break; // hit!
+
+                    // remember folder for cache
+                    if (parents == null)
+                    {
+                        parents = new List<string>(); // create on-demand
+                    }
+                    parents.Add(folder);
+                }
+
+                var attr = m_snapshot.FolderExists(folder) ? m_snapshot.GetAttributes(folder) : FileAttributes.Directory;
+
+                if (!filter(folder, folder, attr))
+                    break; // excluded
+
+                folder = Utility.Utility.GetParent(folder, true);
+            }
+
+            if (folder != null && parents != null)
+            {
+                // update cache
+                cache.UnionWith(parents);
+            }
+ 
+            return folder != null;
         }
 
         /// <summary>
