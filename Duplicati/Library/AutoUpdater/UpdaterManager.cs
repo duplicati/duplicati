@@ -50,7 +50,7 @@ namespace Duplicati.Library.AutoUpdater
 
         private static readonly string INSTALLED_BASE_DIR =
             string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)))
-            ? System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
+            ? System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.GetEntryAssembly().Location)
             : Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
 
         private static readonly bool DISABLE_UPDATE_DOMAIN = !string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)));
@@ -203,7 +203,7 @@ namespace Duplicati.Library.AutoUpdater
             UpdateInfo baseVersion = null;
             try
             {
-                selfVersion = ReadInstalledManifest(System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location));
+                selfVersion = ReadInstalledManifest(System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.GetEntryAssembly().Location));
             }
             catch
             {
