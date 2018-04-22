@@ -367,21 +367,13 @@ namespace Duplicati.Library.Snapshots
             return IO_WIN.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
         }
 
-        /// <summary>
-        /// Gets a value indicating if the path points to a block device
-        /// </summary>
-        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
-        /// <param name="localPath">The file or folder to examine</param>
+        /// <inheritdoc />
         public override bool IsBlockDevice(string localPath)
         {
             return false;
         }
 
-        /// <summary>
-        /// Gets a unique hardlink target ID
-        /// </summary>
-        /// <returns>The hardlink ID</returns>
-        /// <param name="localPath">The file or folder to examine</param>
+        /// <inheritdoc />
         public override string HardlinkTargetID(string localPath)
         {
             return null;
@@ -414,6 +406,17 @@ namespace Duplicati.Library.Snapshots
                 throw new InvalidOperationException();
 
             return Path.Combine(volumePath, localPath.Substring(root.Length));
+        }
+
+        public override bool FileExists(string localFilePath)
+        {
+            return IO_WIN.FileExists(ConvertToSnapshotPath(localFilePath));
+        }
+
+        /// <inheritdoc />
+        public override bool DirectoryExists(string localFolderPath)
+        {
+            return IO_WIN.DirectoryExists(ConvertToSnapshotPath(localFolderPath));
         }
 
         /// <inheritdoc />

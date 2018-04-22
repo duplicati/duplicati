@@ -56,7 +56,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override bool IsBlockDevice(string localPath)
         {
-            var n = UnixSupport.File.GetFileType(NormalizePath(localPath));
+            var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
             switch (n)
             {
                 case UnixSupport.File.FileType.Directory:
@@ -75,11 +75,10 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override string HardlinkTargetID(string localPath)
         {
-            localPath = NormalizePath(localPath);
-            if (UnixSupport.File.GetHardlinkCount(localPath) <= 1)
-                return null;
-            
-            return UnixSupport.File.GetInodeTargetID(localPath);
+            var normalizePath = SystemIOLinux.NormalizePath(localPath);
+            return UnixSupport.File.GetHardlinkCount(normalizePath) <= 1
+                ? null
+                : UnixSupport.File.GetInodeTargetID(normalizePath);
         }
 
         /// <inheritdoc />
@@ -91,7 +90,7 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public override string ConvertToSnapshotPath(string localPath)
         {
-            return localPath;
+            return SystemIOLinux.NormalizePath(localPath);
         }
     }
 }

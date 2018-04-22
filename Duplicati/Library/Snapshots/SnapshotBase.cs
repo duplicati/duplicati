@@ -111,7 +111,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public virtual FileAttributes GetAttributes(string localPath)
         {
-            return File.GetAttributes(NormalizePath(localPath));
+            return File.GetAttributes(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -150,19 +150,19 @@ namespace Duplicati.Library.Snapshots
         public abstract string ConvertToSnapshotPath(string localPath);
 
         /// <inheritdoc />
-        public bool FileExists(string localFilePath)
+        public virtual bool FileExists(string localFilePath)
         {
             return File.Exists(ConvertToSnapshotPath(localFilePath));
         }
 
         /// <inheritdoc />
-        public bool DirectoryExists(string localFolderPath)
+        public virtual bool DirectoryExists(string localFolderPath)
         {
             return Directory.Exists(ConvertToSnapshotPath(localFolderPath));
         }
 
         /// <inheritdoc />
-        public bool PathExists(string localFileOrFolderPath)
+        public virtual bool PathExists(string localFileOrFolderPath)
         {
             return FileExists(localFileOrFolderPath) || DirectoryExists(localFileOrFolderPath);
         }
@@ -171,19 +171,6 @@ namespace Duplicati.Library.Snapshots
         public virtual bool IsSnapshot => false;
 
         #endregion
-
-        /// <summary>
-        /// Normalizes a path before calling system methods
-        /// </summary>
-        /// <returns>The path to normalize.</returns>
-        /// <param name="path">The normalized path.</param>
-        public static string NormalizePath(string path)
-        {
-            var p = Path.GetFullPath(path);
-
-            // This should not be required, but some versions of Mono apperently do not strip the trailing slash
-            return p.Length > 1 && p[p.Length - 1] == Path.DirectorySeparatorChar ? p.Substring(0, p.Length - 1) : p;
-        }
 
         /// <summary>
         /// Lists all folders in the given folder

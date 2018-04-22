@@ -193,7 +193,7 @@ namespace Duplicati.Library.Snapshots
                 if (!localPath.StartsWith(MountPoint, StringComparison.Ordinal))
                     throw new InvalidOperationException();
 
-                return SnapshotPath + localPath.Substring(MountPoint.Length);
+                return SystemIOLinux.NormalizePath(SnapshotPath + localPath.Substring(MountPoint.Length));
             }
 
             /// <summary>
@@ -484,7 +484,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override bool IsBlockDevice(string localPath)
         {
-            var n = UnixSupport.File.GetFileType(NormalizePath(localPath));
+            var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
             switch (n)
             {
                 case UnixSupport.File.FileType.Directory:
@@ -503,7 +503,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override string HardlinkTargetID(string localPath)
         {
-            var snapshotPath = NormalizePath(ConvertToSnapshotPath(localPath));
+            var snapshotPath = ConvertToSnapshotPath(localPath);
             
             if (UnixSupport.File.GetHardlinkCount(snapshotPath) <= 1)
                 return null;
