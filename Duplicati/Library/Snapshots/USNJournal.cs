@@ -133,30 +133,31 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Returns a list of files or folders that have changed since the recorded USN
         /// </summary>
-        /// <param name="sourceFolder">The folder to find entries for</param>
+        /// <param name="sourceFileOrFolder">The file or folder to find entries for</param>
         /// <param name="minUsn">Minimum USN of entry</param>
         /// <returns>A list of tuples with changed files and folders and their type</returns>
-        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFolder, long minUsn)
+        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long minUsn)
         {
-            return GetChangedFileSystemEntries(sourceFolder, minUsn, ChangeReason.Any);
+            return GetChangedFileSystemEntries(sourceFileOrFolder, minUsn, ChangeReason.Any);
         }
 
         /// <summary>
         /// Returns a list of files or folders that have changed since the recorded USN
         /// </summary>
-        /// <param name="sourceFolder">The folder to find entries for</param>
+        /// <param name="sourceFileOrFolder">The file or folder to find entries for</param>
         /// <param name="minUsn">Minimum USN of entry</param>
         /// <param name="reason">Filter expression for change reason</param>
         /// <returns>A list of tuples with changed files and folders and their type</returns>
-        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFolder, long minUsn, ChangeReason reason)
+        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long minUsn, ChangeReason reason)
         {
+            var isFolder = sourceFileOrFolder.EndsWith(Utility.Utility.DirectorySeparatorString, StringComparison.Ordinal);
+
             foreach (var r in GetRecords(minUsn))
             {
                 if (r.UsnRecord.Usn >= minUsn
                     && (reason == ChangeReason.Any || (MapChangeReason(r.UsnRecord.Reason) & reason) != 0)
-                    && (string.IsNullOrEmpty(sourceFolder) || r.FullPath.Equals(sourceFolder,
-                                                               Utility.Utility.ClientFilenameStringComparision)
-                                                           || Utility.Utility.IsPathBelowFolder(r.FullPath, sourceFolder)))
+                    && (r.FullPath.Equals(sourceFileOrFolder, Utility.Utility.ClientFilenameStringComparision)
+                        || isFolder && Utility.Utility.IsPathBelowFolder(r.FullPath, sourceFileOrFolder)))
                 {
                     yield return Tuple.Create(r.FullPath,
                         r.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory)

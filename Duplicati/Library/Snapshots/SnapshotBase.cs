@@ -50,7 +50,7 @@ namespace Duplicati.Library.Snapshots
         public IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
         {
             // Add trailing slashes to folders
-            var sanitizedSources = sources.Select(x => Directory.Exists(x) ? Utility.Utility.AppendDirSeparator(x) : x).ToList();
+            var sanitizedSources = sources.Select(x => DirectoryExists(x) ? Utility.Utility.AppendDirSeparator(x) : x).ToList();
 
             return sanitizedSources.SelectMany(
                 s => Utility.Utility.EnumerateFileSystemEntries(s, callback, ListFolders, ListFiles, GetAttributes, errorCallback)
@@ -152,19 +152,19 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public bool FileExists(string localFilePath)
         {
-            return new FileInfo(ConvertToSnapshotPath(localFilePath)).Exists;
+            return File.Exists(ConvertToSnapshotPath(localFilePath));
         }
 
         /// <inheritdoc />
-        public bool FolderExists(string localFolderPath)
+        public bool DirectoryExists(string localFolderPath)
         {
-            return new DirectoryInfo(ConvertToSnapshotPath(localFolderPath)).Exists;
+            return Directory.Exists(ConvertToSnapshotPath(localFolderPath));
         }
 
         /// <inheritdoc />
         public bool PathExists(string localFileOrFolderPath)
         {
-            return FileExists(localFileOrFolderPath) || FolderExists(localFileOrFolderPath);
+            return FileExists(localFileOrFolderPath) || DirectoryExists(localFileOrFolderPath);
         }
 
         /// <inheritdoc />

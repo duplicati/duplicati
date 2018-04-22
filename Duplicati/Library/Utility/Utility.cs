@@ -254,7 +254,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader, ReportAccessError errorCallback = null)
         {
-            Stack<string> lst = new Stack<string>();
+            var lst = new Stack<string>();
 
             if (IsFolder(rootpath, attributeReader))
             {
@@ -262,7 +262,7 @@ namespace Duplicati.Library.Utility
                 try
                 {
 
-                    FileAttributes attr = attributeReader == null ? FileAttributes.Directory : attributeReader(rootpath);
+                    var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Directory;
                     if (callback(rootpath, rootpath, attr))
                         lst.Push(rootpath);
                 }
@@ -272,25 +272,24 @@ namespace Duplicati.Library.Utility
                 }
                 catch (Exception ex)
                 {
-                    if (errorCallback != null)
-                        errorCallback(rootpath, rootpath, ex);
+                    errorCallback?.Invoke(rootpath, rootpath, ex);
                     callback(rootpath, rootpath, FileAttributes.Directory | ATTRIBUTE_ERROR);
                 }
 
                 while (lst.Count > 0)
                 {
-                    string f = AppendDirSeparator(lst.Pop());
+                    var f = AppendDirSeparator(lst.Pop());
 
                     yield return f;
 
                     try
                     {
-                        foreach (string s in folderList(f))
+                        foreach (var s in folderList(f))
                         {
                             var sf = AppendDirSeparator(s);
                             try
                             {
-                                FileAttributes attr = attributeReader == null ? FileAttributes.Directory : attributeReader(sf);
+                                var attr = attributeReader?.Invoke(sf) ?? FileAttributes.Directory;
                                 if (callback(rootpath, sf, attr))
                                     lst.Push(sf);
                             }
@@ -300,8 +299,7 @@ namespace Duplicati.Library.Utility
                             }
                             catch (Exception ex)
                             {
-                                if (errorCallback != null)
-                                    errorCallback(rootpath, sf, ex);
+                                errorCallback?.Invoke(rootpath, sf, ex);
                                 callback(rootpath, sf, FileAttributes.Directory | ATTRIBUTE_ERROR);
                             }
                         }
@@ -312,13 +310,13 @@ namespace Duplicati.Library.Utility
                     }
                     catch (Exception ex)
                     {
-                        if (errorCallback != null)
-                            errorCallback(rootpath, f, ex);
+                        errorCallback?.Invoke(rootpath, f, ex);
                         callback(rootpath, f, FileAttributes.Directory | ATTRIBUTE_ERROR);
                     }
 
                     string[] files = null;
                     if (fileList != null)
+                    {
                         try
                         {
                             files = fileList(f);
@@ -329,17 +327,18 @@ namespace Duplicati.Library.Utility
                         }
                         catch (Exception ex)
                         {
-                            if (errorCallback != null)
-                                errorCallback(rootpath, f, ex);
+                            errorCallback?.Invoke(rootpath, f, ex);
                             callback(rootpath, f, FileAttributes.Directory | ATTRIBUTE_ERROR);
                         }
+                    }
 
                     if (files != null)
+                    {
                         foreach (var s in files)
                         {
                             try
                             {
-                                FileAttributes attr = attributeReader == null ? FileAttributes.Normal : attributeReader(s);
+                                var attr = attributeReader?.Invoke(s) ?? FileAttributes.Normal;
                                 if (!callback(rootpath, s, attr))
                                     continue;
                             }
@@ -349,20 +348,20 @@ namespace Duplicati.Library.Utility
                             }
                             catch (Exception ex)
                             {
-                                if (errorCallback != null)
-                                    errorCallback(rootpath, s, ex);
+                                errorCallback?.Invoke(rootpath, s, ex);
                                 callback(rootpath, s, ATTRIBUTE_ERROR);
                                 continue;
                             }
                             yield return s;
                         }
+                    }
                 }
             }
             else
             {
                 try
                 {
-                    FileAttributes attr = attributeReader == null ? FileAttributes.Normal : attributeReader(rootpath);
+                    var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Normal;
                     if (!callback(rootpath, rootpath, attr))
                         yield break;
                 }
@@ -372,8 +371,7 @@ namespace Duplicati.Library.Utility
                 }
                 catch (Exception ex)
                 {
-                    if (errorCallback != null)
-                        errorCallback(rootpath, rootpath, ex);
+                    errorCallback?.Invoke(rootpath, rootpath, ex);
                     callback(rootpath, rootpath, ATTRIBUTE_ERROR);
                     yield break;
                 }
@@ -531,9 +529,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The path with the directory separator appended</returns>
         public static string AppendDirSeparator(string path)
         {
-            return !path.EndsWith(DirectorySeparatorString, StringComparison.Ordinal)
-                ? path + DirectorySeparatorString
-                : path;
+            return AppendDirSeparator(path, DirectorySeparatorString);
         }
 
         /// <summary>
@@ -545,7 +541,9 @@ namespace Duplicati.Library.Utility
         /// <returns>The path with the directory separator appended</returns>
         public static string AppendDirSeparator(string path, string separator)
         {
-            return AppendDirSeparator(separator);
+            return !path.EndsWith(DirectorySeparatorString, StringComparison.Ordinal)
+                ? path + separator
+                : path;
         }
 
         /// <summary>

@@ -127,7 +127,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="localFolderPath">The local path</param>
         /// <returns>True if folder exists, false otherwise</returns>
-        bool FolderExists(string localFolderPath);
+        bool DirectoryExists(string localFolderPath);
 
         /// <summary>
         /// Tests if a file or folder exists in the snapshot

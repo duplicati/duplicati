@@ -444,7 +444,7 @@ namespace Duplicati.Library.Main.Operation
                     // the modified sources may contain non-existent files / folders, which need to 
                     // be removed before trying to enumerate them
                     var existingModifiedSources = modifiedSources.Files.Where(snapshot.FileExists)
-                        .Concat(modifiedSources.Folders.Where(snapshot.FolderExists));
+                        .Concat(modifiedSources.Folders.Where(snapshot.DirectoryExists));
             
                     foreach (var path in filterhandler.EnumerateFilesAndFolders(existingModifiedSources))
                     {

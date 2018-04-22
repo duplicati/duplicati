@@ -75,6 +75,7 @@ namespace Duplicati.Library.Snapshots
             foreach (var sourcesPerVolume in SortByVolume(sources))
             {
                 var volume = sourcesPerVolume.Key;
+                var volumeSources = sourcesPerVolume.Value;
 
                 try
                 {
@@ -107,7 +108,7 @@ namespace Duplicati.Library.Snapshots
                         var changedFolders = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
 
                         // obtain changed files and folders, per volume
-                        foreach (var source in sourcesPerVolume.Value)
+                        foreach (var source in volumeSources)
                         {
                             foreach (var entry in journal.GetChangedFileSystemEntries(source, data.NextUsn))
                             {
@@ -121,6 +122,11 @@ namespace Duplicati.Library.Snapshots
                                 }
                             }
                         }
+
+                        // prepare cache for includes (value = true) and excludes (value = false, will be populated
+                        // on-demand)
+                        var cache = new Dictionary<string, bool>();
+                        volumeSources.ForEach(p => cache[p] = true);
 
                         // At this point we have:
                         //  - a list of folders (changedFolders) that were possibly modified 
@@ -137,8 +143,9 @@ namespace Duplicati.Library.Snapshots
                         // specific "C:\A\B\" in our list, even though it's meant to be excluded.
                         // The reason why the filter doesn't exclude it is because during a regular (non-USN) full scan, 
                         // FilterHandler.EnumerateFilesAndFolders() works top-down, and won't even enumerate child
-                        // folders.
-                        var cache = new HashSet<string>(); // cache to speed up processing
+                        // folders. 
+                        // The sources are needed to stop evaluating parent folders above the specified source folders
+
                         result.Folders.AddRange(FilterExcludedFolders(simplifiedFolders, filter, cache));
 
                         // 3. Our list of files may contain entries inside one of the simplified folders (from step 1., above).
@@ -178,10 +185,10 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="files">Files to filter</param>
         /// <param name="filter">Exclusion filter</param>
-        /// <param name="cache">Cache of excluded folders (optional)</param>
+        /// <param name="cache">Cache of included and exculded files / folders</param>
         /// <returns>Filtered files</returns>
         private IEnumerable<string> FilterExcludedFiles(IEnumerable<string> files,
-            Utility.Utility.EnumerationFilterDelegate filter, ISet<string> cache = null)
+            Utility.Utility.EnumerationFilterDelegate filter, IDictionary<string, bool> cache)
         {
             var result = new List<string>();
 
@@ -221,7 +228,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="cache">Cache of excluded folders (optional)</param>
         /// <returns>Filtered folders</returns>
         private IEnumerable<string> FilterExcludedFolders(IEnumerable<string> folders,
-            Utility.Utility.EnumerationFilterDelegate filter, ISet<string> cache = null)
+            Utility.Utility.EnumerationFilterDelegate filter, IDictionary<string, bool> cache)
         {
             var result = new List<string>();
 
@@ -255,26 +262,29 @@ namespace Duplicati.Library.Snapshots
         /// <param name="filter">Filter</param>
         /// <param name="cache">Cache of excluded folders (optional)</param>
         /// <returns>True if excluded, false otherwise</returns>
-        private bool IsFolderOrAncestorsExcluded(string folder, Utility.Utility.EnumerationFilterDelegate filter, ISet<string> cache = null)
+        private bool IsFolderOrAncestorsExcluded(string folder, Utility.Utility.EnumerationFilterDelegate filter, IDictionary<string, bool> cache)
         {
             List<string> parents = null;
             while (folder != null)
             {
                 // first check cache
-                if (cache != null)
+                if (cache.TryGetValue(folder, out var include))
                 {
-                    if (cache.Contains(folder))
-                        break; // hit!
+                    if (include)
+                        return false;
 
-                    // remember folder for cache
-                    if (parents == null)
-                    {
-                        parents = new List<string>(); // create on-demand
-                    }
-                    parents.Add(folder);
+                    break; // hit!
                 }
 
-                var attr = m_snapshot.FolderExists(folder) ? m_snapshot.GetAttributes(folder) : FileAttributes.Directory;
+                // remember folder for cache
+                if (parents == null)
+                {
+                    parents = new List<string>(); // create on-demand
+                }
+                parents.Add(folder);
+
+
+                var attr = m_snapshot.DirectoryExists(folder) ? m_snapshot.GetAttributes(folder) : FileAttributes.Directory;
 
                 if (!filter(folder, folder, attr))
                     break; // excluded
@@ -282,10 +292,10 @@ namespace Duplicati.Library.Snapshots
                 folder = Utility.Utility.GetParent(folder, true);
             }
 
-            if (folder != null && parents != null)
+            if (folder != null)
             {
                 // update cache
-                cache.UnionWith(parents);
+                parents?.ForEach(p => cache[p] = false);
             }
  
             return folder != null;
