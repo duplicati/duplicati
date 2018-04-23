@@ -91,9 +91,15 @@ namespace Duplicati.Server.WebServer.RESTMethods
                                 ipx = Serializer.Deserialize<Serializable.ImportExportStructure>(sr);
                         }
                     }
-                    if (!import_metadata) {
+
+                    if (ipx.Backup == null)
+                        throw new Exception("No backup found in document");
+
+                    if (ipx.Backup.Metadata == null)
+                        ipx.Backup.Metadata = new Dictionary<string, string>();
+
+                    if (!import_metadata) 
                         ipx.Backup.Metadata.Clear();
-                    }
 
                     ipx.Backup.ID = null;
                     ((Database.Backup)ipx.Backup).DBPath = null;

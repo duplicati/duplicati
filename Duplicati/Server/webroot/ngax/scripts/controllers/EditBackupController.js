@@ -41,7 +41,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         else if ((passphrase || '') == '')
             scope.PassphraseScore = '';
         else
-            scope.PassphraseScore = (zxcvbn(passphrase) || {'score': -1}).score;
+            scope.PassphraseScore = (zxcvbn(passphrase.substring(0, 100)) || {'score': -1}).score;
 
         scope.PassphraseScoreString = strengthMap[scope.PassphraseScore];
     }

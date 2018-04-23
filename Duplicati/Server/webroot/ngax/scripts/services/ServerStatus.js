@@ -54,7 +54,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             'Restore_PostRestoreVerify': gettextCatalog.getString('Verifying restored files ...'),
             'Restore_Complete': gettextCatalog.getString('Restore Complete!'),
             'Recreate_Running': gettextCatalog.getString('Recreating database ...'),
-            'Repair_Running': gettextCatalog.getString('Reparing database ...'),
+            'Repair_Running': gettextCatalog.getString('Repairing database ...'),
             'Verify_Running': gettextCatalog.getString('Verifying files...'),
             'BugReport_Running': gettextCatalog.getString('Creating bug report ...'),
             'Delete_Listing': gettextCatalog.getString('Listing remote files ...'),

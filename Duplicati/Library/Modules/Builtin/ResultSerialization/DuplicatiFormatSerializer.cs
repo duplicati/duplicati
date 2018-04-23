@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Modules.Builtin.ResultSerialization
 {
@@ -86,7 +87,13 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
             }
             else
             {
-                Utility.Utility.PrintSerializeObject(result, sb);
+                var ignore = new string[] { 
+                    nameof(IBasicResults.Warnings),
+                    nameof(IBasicResults.Errors),
+                    nameof(IBasicResults.Messages)
+                };
+
+                Utility.Utility.PrintSerializeObject(result, sb, (p, o) => !ignore.Contains(p.Name));
             }
 
             if (additional != null && additional.Count > 0)

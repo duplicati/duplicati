@@ -188,10 +188,6 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                var tp = m_values[CONST.IS_FIRST_RUN];
-                if (string.IsNullOrEmpty(tp))
-                    return true;
-
                 return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.IS_FIRST_RUN);
             }
             set
@@ -202,29 +198,25 @@ namespace Duplicati.Server.Database
             }
         }
 
-		public bool HasAskedForPasswordProtection
-		{
-			get
-			{
-                var tp = m_values[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION];
-				if (string.IsNullOrEmpty(tp))
-					return true;
-
-				return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION);
-			}
-			set
-			{
-				lock (m_connection.m_lock)
-					m_values[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION] = value.ToString();
-				SaveSettings();
-			}
-		}
-
-		public bool UnackedError
+        public bool HasAskedForPasswordProtection
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.UNACKED_ERROR);
+                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION);
+            }
+            set
+            {
+                lock (m_connection.m_lock)
+                    m_values[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION] = value.ToString();
+                SaveSettings();
+            }
+        }
+
+        public bool UnackedError
+        {
+            get
+            {
+                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.UNACKED_ERROR], false);
             }
             set
             {
@@ -238,7 +230,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.UNACKED_WARNING);
+                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.UNACKED_WARNING], false);
             }
             set
             {
@@ -247,11 +239,12 @@ namespace Duplicati.Server.Database
                 SaveSettings();
             }
         }
+
         public bool ServerPortChanged
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.SERVER_PORT_CHANGED);
+                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.SERVER_PORT_CHANGED], false);
             }
             set
             {
@@ -535,10 +528,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                if (m_values.ContainsKey(CONST.HAS_FIXED_INVALID_BACKUPID) && string.IsNullOrWhiteSpace(m_values[CONST.HAS_FIXED_INVALID_BACKUPID]))
-                    return false;
-                else
-                    return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_FIXED_INVALID_BACKUPID);
+                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.HAS_FIXED_INVALID_BACKUPID], false);
             }
             set
             {
