@@ -109,12 +109,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     Logging.Log.WriteVerboseMessage(FILELOGTAG, "WoudlAddChangedFile", "Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
-                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            await database.AddFileAsync(e.Path, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else if (e.MetadataChanged)
                         {
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Path);
-                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            await database.AddFileAsync(e.Path, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else /*if (e.OldId >= 0)*/
                         {

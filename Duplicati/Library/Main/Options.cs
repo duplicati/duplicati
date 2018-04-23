@@ -510,6 +510,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipmetadataShort, Strings.Options.SkipmetadataLong, "false"),
                     new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
                     new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
+                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true"),
                     new CommandLineArgument("use-block-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UseblockcacheShort, Strings.Options.UseblockcacheLong, "false"),
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, Strings.Options.DeletedfilesLong("changed-files")),
@@ -1537,6 +1538,19 @@ namespace Duplicati.Library.Main
         public bool DisableSyntheticFilelist
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-synthetic-filelist"); }
+        }
+
+        /// <summary>
+        /// Flag indicating if the filepath cache is disabled
+        /// </summary>
+        public bool UseFilepathCache
+        {
+            get
+            {
+                string s;
+                m_options.TryGetValue("disable-filepath-cache", out s);
+                return !Library.Utility.Utility.ParseBool(s, true);
+            }
         }
 
         /// <summary>

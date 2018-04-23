@@ -1,16 +1,3 @@
-2018-04-23 - 2.0.3.6_canary_2018-04-23
-==========
-This update adds concurrent processing for the backup. With this update, the backup will now use multiple cores to perform checking and compressing.
-Use the advanced option `--concurrency-max-threads` to toggle how many threads to use.
-The options `--concurrency-block-hashers` and `--concurrency-compressors` can be used to adjust the number of hashers and compressors to use.
-
-Beware that this update contains a lot of new code, and should only be used in test environments.
-
-Other fixes in this build:
-* Fixes for filter groups, thanks @tygill
-* Fixed a backup import issue with empty metadata
-* Added upper bound to password checker, thanks @pectojin
-
 2018-04-13 - 2.0.3.5_canary_2018-04-13
 ==========
 * Improved progress bar messsages and layout, thanks @SanduRajapakse

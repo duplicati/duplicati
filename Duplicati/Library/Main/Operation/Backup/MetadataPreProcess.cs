@@ -38,10 +38,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             // From input
             public string Path;
 
-            // Split
-            public long PathPrefixID;
-            public string Filename;
-
             // From database
             public long OldId;
             public DateTime OldModified;
@@ -70,7 +66,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             async self =>
             {
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-                var prevprefix = new KeyValuePair<string, long>(null, -1);
 
                 while (true)
                 {
@@ -101,25 +96,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         try
                         {
-                            var split = Database.LocalDatabase.SplitIntoPrefixAndName(path);
-
-                            long prefixid;
-                            if (string.Equals(prevprefix.Key, split.Key, StringComparison.Ordinal))
-                                prefixid = prevprefix.Value;
-                            else
-                            {
-                                prefixid = await database.GetOrCreatePathPrefix(split.Key);
-                                prevprefix = new KeyValuePair<string, long>(split.Key, prefixid);
-                            }
-
                             if (options.CheckFiletimeOnly || options.DisableFiletimeCheck)
                             {
-                                var tmp = await database.GetFileLastModifiedAsync(prefixid, split.Value, lastfilesetid);
+                                var tmp = await database.GetFileLastModifiedAsync(path, lastfilesetid);
                                 await self.Output.WriteAsync(new FileEntry() {
                                     OldId = tmp.Key < 0 ? -1 : tmp.Key,
                                     Path = path,
-                                    PathPrefixID = prefixid,
-                                    Filename = split.Value,
                                     Attributes = attributes,
                                     LastWrite = lastwrite,
                                     OldModified = tmp.Key < 0 ? new DateTime(0) : tmp.Value,
@@ -130,12 +112,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
                             else
                             {
-                                var res = await database.GetFileEntryAsync(prefixid, split.Value, lastfilesetid);
+                                var res = await database.GetFileEntryAsync(path, lastfilesetid);
                                 await self.Output.WriteAsync(new FileEntry() {
                                     OldId = res == null ? -1 : res.id,
                                     Path = path,
-                                    PathPrefixID = prefixid,
-                                    Filename = split.Value,
                                     Attributes = attributes,
                                     LastWrite = lastwrite,
                                     OldModified = res == null ? new DateTime(0) : res.modified,
