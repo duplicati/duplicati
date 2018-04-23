@@ -197,6 +197,10 @@
     <EmbeddedResource Include="Database\Database schema\2. Use Lastmodified.sql" />
     <EmbeddedResource Include="Database\Database schema\3. Add grace delete period.sql" />
     <EmbeddedResource Include="Database\Database schema\4. Add index.sql" />
+    <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
+    <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
+    <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
+    <EmbeddedResource Include="Database\Database schema\8. Refactor Paths.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -207,9 +211,6 @@
   </Target>
   -->
   <ItemGroup>
-    <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
-    <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
-    <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
