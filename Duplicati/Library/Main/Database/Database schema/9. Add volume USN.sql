@@ -1,3 +1,5 @@
+DROP TABLE "ChangeJournalData";
+
 CREATE TABLE "ChangeJournalData" (
 	"ID" INTEGER PRIMARY KEY,
 	"FilesetID" INTEGER NOT NULL,		
@@ -7,4 +9,4 @@ CREATE TABLE "ChangeJournalData" (
 	"ConfigHash" TEXT NOT NULL	
 );
 
-UPDATE "Version" SET "Version" = 8;
+UPDATE "Version" SET "Version" = 9;

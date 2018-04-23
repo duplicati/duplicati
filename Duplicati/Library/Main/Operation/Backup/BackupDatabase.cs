@@ -95,18 +95,18 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.AddSymlinkEntry(filename, metadataid, lastModified, m_transaction));
         }
 
-        public Task<KeyValuePair<long, DateTime>> GetFileLastModifiedAsync(string path, long lastfilesetid)
+        public Task<KeyValuePair<long, DateTime>> GetFileLastModifiedAsync(long prefixid, string path, long lastfilesetid)
         {
             return RunOnMain(() =>
             {
                 DateTime lastModified;
-                var id = m_database.GetFileLastModified(path, lastfilesetid, out lastModified, m_transaction);
+                var id = m_database.GetFileLastModified(prefixid, path, lastfilesetid, out lastModified, m_transaction);
 
                 return new KeyValuePair<long, DateTime>(id, lastModified);
             });
 		}
 
-		public Task<FileEntryData> GetFileEntryAsync(string path, long lastfilesetid)
+		public Task<FileEntryData> GetFileEntryAsync(long prefixid, string path, long lastfilesetid)
         {
             return RunOnMain(() => { 
                 DateTime oldModified;
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 string oldMetahash;
                 long oldMetasize;
 
-                var id = m_database.GetFileEntry(path, lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                var id = m_database.GetFileEntry(prefixid, path, lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
                 return
                     id < 0 ?
                     null :
@@ -132,9 +132,14 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-        public Task AddFileAsync(string filename, DateTime lastmodified, long blocksetid, long metadataid)
+        public Task<long> GetOrCreatePathPrefix(string prefix)
         {
-            return RunOnMain(() => m_database.AddFile(filename, lastmodified, blocksetid, metadataid, m_transaction));
+            return RunOnMain(() => m_database.GetOrCreatePathPrefix(prefix, m_transaction));
+        }
+
+        public Task AddFileAsync(long prefixid, string filename, DateTime lastmodified, long blocksetid, long metadataid)
+        {
+            return RunOnMain(() => m_database.AddFile(prefixid, filename, lastmodified, blocksetid, metadataid, m_transaction));
         }
 
         public Task AddUnmodifiedAsync(long fileid, DateTime lastModified)
