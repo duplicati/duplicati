@@ -312,27 +312,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else if (m_options.UsnStrategy != Options.OptimizationStrategy.Off)
                 {
-                    if (!snapshot.IsSnapshot)
-                    {
-                        BackupUsingChangeJournal(snapshot, backend, sources, filterhandler);
-                    }
-                    else
-                    {
-                        if (m_options.UsnStrategy == Options.OptimizationStrategy.Auto)
-                        {
-                            Logging.Log.WriteInformationMessage(LOGTAG, "FailedToUseChangeJournal",
-                                "-usn-policy currently incompatible with -snapshot-policy enabled");
-                        }
-                        else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
-                        {
-                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", null,
-                                "-usn-policy currently incompatible with -snapshot-policy enabled");
-                        }
-                        else
-                            throw new Exception("-usn-policy currently incompatible with -snapshot-policy enabled");
-
-                        BackupUsingFullScan(snapshot, backend, sources, filterhandler);
-                    }
+                    BackupUsingChangeJournal(snapshot, backend, sources, filterhandler);
                 }
                 else
                 {
