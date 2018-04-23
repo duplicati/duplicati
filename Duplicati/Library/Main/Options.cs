@@ -75,6 +75,16 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_LOG_RETENTION = "30D";
 
         /// <summary>
+        /// The default number of compressor instances
+        /// </summary>
+        private readonly int DEFAULT_COMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
+
+        /// <summary>
+        /// The default number of hasher instances
+        /// </summary>
+        private readonly int DEFAULT_BLOCK_HASHERS = Math.Max(1, Environment.ProcessorCount / 2);
+        
+        /// <summary>
         /// The default threshold for warning about coming close to quota
         /// </summary>
         private const int DEFAULT_QUOTA_WARNING_THRESHOLD = 10;
@@ -540,6 +550,10 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
 
+                    new CommandLineArgument("concurrency-max-threads", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencymaxthreadsShort, Strings.Options.ConcurrencymaxthreadsLong, "0"),
+                    new CommandLineArgument("concurrency-block-hashers", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencyblockhashersShort, Strings.Options.ConcurrencyblockhashersLong, DEFAULT_BLOCK_HASHERS.ToString()),
+                    new CommandLineArgument("concurrency-compressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencycompressorsShort, Strings.Options.ConcurrencycompressorsLong, DEFAULT_COMPRESSORS.ToString()),
+                    
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
                     new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
@@ -1883,6 +1897,62 @@ namespace Duplicati.Library.Main
                 return Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true);
             }
         }
+
+
+        /// <summary>
+        /// Gets the number of concurrent threads
+        /// </summary>
+        public int ConcurrencyMaxThreads
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-max-threads", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return 0;
+                else
+                    return int.Parse(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of concurrent block hashers
+        /// </summary>
+        public int ConcurrencyBlockHashers
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-block-hashers", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return DEFAULT_BLOCK_HASHERS;
+                else
+                    return Math.Max(1, int.Parse(value));
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of concurrent block hashers
+        /// </summary>
+        public int ConcurrencyCompressors
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-compressors", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return DEFAULT_COMPRESSORS;
+                else
+                    return Math.Max(1, int.Parse(value));
+            }
+        }
+
         /// <summary>
         /// Gets a lookup table with compression hints, the key is the file extension with the leading period
         /// </summary>
@@ -1892,8 +1962,7 @@ namespace Duplicati.Library.Main
             {
                 if (m_compressionHints == null)
                 {
-                    //Don't try again, if the file does not exist
-                    m_compressionHints = new Dictionary<string, CompressionHint>(Library.Utility.Utility.ClientFilenameStringComparer);
+                    var hints = new Dictionary<string, CompressionHint>(Library.Utility.Utility.ClientFilenameStringComparer);
 
                     string file;
                     if (!m_options.TryGetValue("compression-extension-file", out file))
@@ -1907,8 +1976,11 @@ namespace Duplicati.Library.Main
                             if (lix > 0)
                                 line = line.Substring(0, lix);
                             if (line.Length >= 2 && line[0] == '.')
-                                m_compressionHints[line] = CompressionHint.Noncompressible;
+                                hints[line] = CompressionHint.Noncompressible;
                         }
+
+                    //Don't try again, if the file does not exist
+                    m_compressionHints = hints;
                 }
 
                 return m_compressionHints;

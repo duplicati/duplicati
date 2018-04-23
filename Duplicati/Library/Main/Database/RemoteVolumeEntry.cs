@@ -7,28 +7,25 @@ namespace Duplicati.Library.Main.Database
 {
     public struct RemoteVolumeEntry : IRemoteVolume
     {
-        private readonly string m_name;
-        private readonly string m_hash;
-        private readonly long m_size;
-        private readonly RemoteVolumeType m_type;
-        private readonly RemoteVolumeState m_state;
-        private readonly DateTime m_deleteGracePeriod;
-        
-        public string Name { get { return m_name; } }
-        public string Hash { get { return m_hash; } }
-        public long Size { get { return m_size; } }
-        public RemoteVolumeType Type { get { return m_type; } }
-        public RemoteVolumeState State { get { return m_state; } }
-        public DateTime deleteGracePeriod { get { return m_deleteGracePeriod; } }
+        public long ID { get; private set; }
+        public string Name { get; private set; }
+        public string Hash { get; private set; }
+        public long Size { get; private set; }
+        public RemoteVolumeType Type { get; private set; }
+        public RemoteVolumeState State { get; private set; }
+        public DateTime DeleteGracePeriod { get; private set; }
 
-        public RemoteVolumeEntry(string name, string hash, long size, RemoteVolumeType type, RemoteVolumeState state, DateTime deleteGracePeriod)
+        public static readonly RemoteVolumeEntry Empty = new RemoteVolumeEntry(-1, null, null, -1, (RemoteVolumeType)(-1), (RemoteVolumeState)(-1), default(DateTime));
+
+        public RemoteVolumeEntry(long id, string name, string hash, long size, RemoteVolumeType type, RemoteVolumeState state, DateTime deleteGracePeriod)
         {
-            m_name = name;
-            m_size = size;
-            m_type = type;
-            m_state = state;
-            m_hash = hash;
-            m_deleteGracePeriod = deleteGracePeriod;
+            ID = id;
+            Name = name;
+            Size = size;
+            Type = type;
+            State = state;
+            Hash = hash;
+            DeleteGracePeriod = deleteGracePeriod;
         }
     }
 }

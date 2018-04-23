@@ -16,6 +16,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+using System.Text.RegularExpressions;
+using System.Linq;
+using System.Threading.Tasks;
+
+
 #endregion
 
 using System;
@@ -572,6 +577,29 @@ namespace Duplicati.Library.Utility
             do
             {
                 a = stream.Read(buf, index, count);
+                index += a;
+                count -= a;
+            } while (a != 0 && count > 0);
+
+            return index;
+        }
+
+        /// <summary>
+        /// Some streams can return a number that is less than the requested number of bytes.
+        /// This is usually due to fragmentation, and is solved by issuing a new read.
+        /// This function wraps that functionality.
+        /// </summary>
+        /// <param name="stream">The stream to read.</param>
+        /// <param name="buf">The buffer to read into.</param>
+        /// <param name="count">The amout of bytes to read.</param>
+        /// <returns>The number of bytes read</returns>
+        public static async Task<int> ForceStreamReadAsync(this System.IO.Stream stream, byte[] buf, int count)
+        {
+            int a;
+            int index = 0;
+            do
+            {
+                a = await stream.ReadAsync(buf, index, count);
                 index += a;
                 count -= a;
             } while (a != 0 && count > 0);

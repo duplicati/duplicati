@@ -441,7 +441,7 @@ namespace Duplicati.Library.Main
             m_options.RawOptions["dbpath"] = "INVALID!";
 
             // Redirect all messages from the filter to the message sink
-            var filtertag = Logging.Log.LogTagFromType<FilterHandler>();
+            var filtertag = Logging.Log.LogTagFromType(typeof(Operation.Backup.FileEnumerationProcess));
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
                 return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>
@@ -560,6 +560,8 @@ namespace Duplicati.Library.Main
 
                     using (new ProcessController(m_options))
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
+                    using(new CoCoL.IsolatedChannelScope())
+                    using(m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
                         method(result);
 
                     if (result.EndTime.Ticks == 0)

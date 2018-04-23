@@ -75,7 +75,7 @@ namespace Duplicati.Library.Logging
         /// <summary>
         /// The root scope
         /// </summary>
-        private static readonly LogScope m_root = new LogScope(null, new LogTagFilter(LogMessageType.Error, null, null), null);
+        private static readonly LogScope m_root = new LogScope(null, new LogTagFilter(LogMessageType.Error, null, null), null, true);
 
         /// <summary>
         /// The stored log instances
@@ -317,7 +317,7 @@ namespace Duplicati.Library.Logging
             lock (m_lock)
             {
                 var cs = CurrentScope;
-                while (cs != null)
+                while (cs != null && !cs.IsolatingScope)
                 {
                     cs.WriteMessage(msg);
                     cs = cs.Parent;
@@ -325,6 +325,14 @@ namespace Duplicati.Library.Logging
             }
         }
 
+        /// <summary>
+        /// Starts a new scope, that can be closed by disposing the returned instance
+        /// </summary>
+        /// <returns>The new scope.</returns>
+        public static IDisposable StartIsolatingScope()
+        {
+            return StartScope((ILogDestination)null, null, true);
+        }
 
         /// <summary>
         /// Starts a new scope, that can be closed by disposing the returned instance
@@ -352,9 +360,9 @@ namespace Duplicati.Library.Logging
         /// <param name="log">The log target</param>
         /// <param name="filter">The log filter</param>
         /// <returns>The new scope.</returns>
-        public static IDisposable StartScope(ILogDestination log, ILogFilter filter = null)
+        public static IDisposable StartScope(ILogDestination log, ILogFilter filter = null, bool isolating = false)
         {
-            return new LogScope(log, filter, CurrentScope);
+            return new LogScope(log, filter, CurrentScope, isolating);
         }
 
         /// <summary>
@@ -365,7 +373,7 @@ namespace Duplicati.Library.Logging
         /// <returns>The new scope.</returns>
         public static IDisposable StartScope(Action<LogEntry> log, Func<LogEntry, bool> filter = null)
         {
-            return new LogScope(new FunctionLogDestination(log), filter == null ? null : new FunctionFilter(filter), CurrentScope);
+            return new LogScope(new FunctionLogDestination(log), filter == null ? null : new FunctionFilter(filter), CurrentScope, false);
         }
 
         /// <summary>

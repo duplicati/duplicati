@@ -25,6 +25,7 @@ env:
   general:
     - USAGEREPORTER_Duplicati_LEVEL=none
     - AUTOUPDATER_Duplicati_SKIP_UPDATE=1
+    - TMPDIR=$HOME/tmp
   matrix:
   - JOB=job1
   - JOB=job2
@@ -54,6 +55,7 @@ script:
 # download and extract testdata
   - echo "travis_fold:start:download_extract_testdata"
   - ls -la .
+  - if [ ! -d ~/tmp ]; then mkdir ~/tmp; fi
   - if [ ! -d ~/download ]; then mkdir ~/download; fi
   - if [ ! -f ~/download/DSMCBE.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip" -O ~/download/DSMCBE.zip; fi
   - if [ ! -f ~/download/data.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip" -O ~/download/data.zip; fi

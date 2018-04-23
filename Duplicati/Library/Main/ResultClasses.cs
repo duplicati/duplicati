@@ -355,6 +355,9 @@ namespace Duplicati.Library.Main
         public IEnumerable<string> Warnings { get { return m_parent == null ? m_warnings : m_parent.Warnings; } }
         public IEnumerable<string> Errors { get { return m_parent == null ?  m_errors : m_parent.Errors; } }
 
+        protected Operation.Common.TaskControl m_taskController;
+        public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
+
         protected BasicResults()
         {
             this.BeginTime = DateTime.UtcNow;
@@ -368,6 +371,7 @@ namespace Duplicati.Library.Main
             m_callerThread = System.Threading.Thread.CurrentThread;
             m_backendProgressUpdater = new BackendProgressUpdater();
             m_operationProgressUpdater = new OperationProgressUpdater();
+            m_taskController = new Duplicati.Library.Main.Operation.Common.TaskControl();
         }
 
         protected BasicResults(BasicResults p)

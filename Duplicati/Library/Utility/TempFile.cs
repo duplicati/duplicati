@@ -35,7 +35,7 @@ namespace Duplicati.Library.Utility
         
         private string m_path;
         private bool m_protect;
-                
+
 #if DEBUG
         //In debug mode, we track the creation of temporary files, and encode the generating method into the name
         private static readonly object m_lock = new object();
@@ -72,7 +72,6 @@ namespace Duplicati.Library.Utility
                 m_fileTrace.Add(s, st);
             return s;            
         }
-
 #else
         private static string GenerateUniqueName()
         {
@@ -88,7 +87,7 @@ namespace Duplicati.Library.Utility
         /// Gets all temporary files found in the current tempdir, that matches the application prefix
         /// </summary>
         /// <returns>The application temp files.</returns>
-        public static IEnumerable<string> GetApplicationTempFiles()
+        private static IEnumerable<string> GetApplicationTempFiles()
         {
             return System.IO.Directory.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
         }

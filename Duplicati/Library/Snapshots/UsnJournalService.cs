@@ -29,7 +29,7 @@ using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Snapshots
 {
-    public class UsnJournalService : IChangeJournalService
+    public class UsnJournalService
     {
         /// <summary>
         /// The tag used for logging
@@ -39,33 +39,42 @@ namespace Duplicati.Library.Snapshots
         private readonly ISnapshotService m_snapshot;
         private readonly Utility.Utility.ReportAccessError m_errorCallback;
         private readonly Action m_cancelHandler;
+        private readonly IEnumerable<USNJournalDataEntry> m_prevJournalData;
 
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="snapshot"></param>
+        /// <param name="journalData">Journal-data of previous fileset</param>
         /// <param name="errorCallback">Callback for handling errors</param>
         /// <param name="cancelHandler">Callback for aborting operation. Throw OperationCancelledException() to abort.</param>
-        public UsnJournalService(ISnapshotService snapshot, Utility.Utility.ReportAccessError errorCallback,
+        public UsnJournalService(ISnapshotService snapshot, IEnumerable<USNJournalDataEntry> journalData, Utility.Utility.ReportAccessError errorCallback,
             Action cancelHandler)
         {
             m_snapshot = snapshot;
             m_errorCallback = errorCallback;
             m_cancelHandler = cancelHandler;
+            m_prevJournalData = journalData;
         }
 
-        #region IChangeJournalService Members
+        public FilterData Result { get; private set; }
 
-        /// <inheritdoc />
-        public FilterData FilterSources(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate filter,
-            string filterHash, IEnumerable<USNJournalDataEntry> journalData)
+        /// <summary>
+        /// Filters sources, returning sub-set having been modified since last
+        /// change, as specified by <c>journalData</c>.
+        /// </summary>
+        /// <param name="sources">Sources to filter</param>
+        /// <param name="filter">Filter callback to exclude filtered items</param>
+        /// <param name="filterHash">A hash value representing current exclusion filter. A full scan is triggered if hash has changed.</param>
+        /// <returns>Filtered sources</returns>
+        public void FilterSources(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate filter, string filterHash)
         {
             // create lookup for journal data
-            var journalDataEntries = journalData.ToList();
+            var journalDataEntries = m_prevJournalData.ToList();
             var journalDataDict = journalDataEntries.ToDictionary(data => data.Volume);
 
             // prepare result   
-            var result = new FilterData
+            Result = new FilterData
             {
                 Files = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer),
                 Folders = new List<string>(),
@@ -91,10 +100,10 @@ namespace Duplicati.Library.Snapshots
                     };
 
                     // remove default data
-                    result.JournalData.RemoveAll(e => e.Volume == volume);
+                    Result.JournalData.RemoveAll(e => e.Volume == volume);
 
                     // add new data
-                    result.JournalData.Add(nextData);
+                    Result.JournalData.Add(nextData);
 
                     // only use change journal if:
                     // - journal ID hasn't changed
@@ -105,7 +114,7 @@ namespace Duplicati.Library.Snapshots
                         || data.NextUsn == 0
                         || data.ConfigHash != nextData.ConfigHash)
                     {
-                        ScheduleFullScan(sourcesPerVolume, volume, result);
+                        ScheduleFullScan(sourcesPerVolume, volume);
                     }
                     else
                     {
@@ -151,7 +160,7 @@ namespace Duplicati.Library.Snapshots
                         // folders. 
                         // The sources are needed to stop evaluating parent folders above the specified source folders
 
-                        result.Folders.AddRange(FilterExcludedFolders(simplifiedFolders, filter, cache));
+                        Result.Folders.AddRange(FilterExcludedFolders(simplifiedFolders, filter, cache));
 
                         // 3. Our list of files may contain entries inside one of the simplified folders (from step 1., above).
                         //    Since that folder is going to be fully scanned, those files can be removed.
@@ -165,23 +174,21 @@ namespace Duplicati.Library.Snapshots
                         //    Note that the simplified file list may contain entries that have been deleted! They need to 
                         //    be kept in the list (unless excluded by the filter) in order for the backup handler to record their 
                         //    deletion.
-                        result.Files.UnionWith(FilterExcludedFiles(simplifiedFiles, filter, cache));
+                        Result.Files.UnionWith(FilterExcludedFiles(simplifiedFiles, filter, cache));
                     }
                 }
                 catch (UsnJournalSoftFailureException)
                 {
                     // journal is fine, but we cannot recover gapless changes since last time
                     // => schedule full scan
-                    ScheduleFullScan(sourcesPerVolume, volume, result);
+                    ScheduleFullScan(sourcesPerVolume, volume);
                 }
                 catch (Exception e)
                 {
                     m_errorCallback(volume, volume, e);
-                    ScheduleFullScan(sourcesPerVolume, volume, result);
+                    ScheduleFullScan(sourcesPerVolume, volume);
                 }
             }
-
-            return result;
         }
 
         /// <summary>
@@ -311,18 +318,17 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="sourcesPerVolume">Sources</param>
         /// <param name="volume">Volume</param>
-        /// <param name="result">Result set</param>
-        private static void ScheduleFullScan(KeyValuePair<string, List<string>> sourcesPerVolume, string volume, FilterData result)
+        private void ScheduleFullScan(KeyValuePair<string, List<string>> sourcesPerVolume, string volume)
         {
             foreach (var src in sourcesPerVolume.Value)
             {
                 if (src.EndsWith(Utility.Utility.DirectorySeparatorString, StringComparison.Ordinal))
                 {
-                    result.Folders.Add(src);
+                    Result.Folders.Add(src);
                 }
                 else
                 {
-                    result.Files.Add(src);
+                    Result.Files.Add(src);
                 }
             }
 
@@ -353,8 +359,6 @@ namespace Duplicati.Library.Snapshots
 
             return sourcesByVolume;
         }
-
-        #endregion
 
     }
 }

@@ -50,16 +50,24 @@ namespace Duplicati.Library.Logging
         private bool m_isDisposed = false;
 
         /// <summary>
+        /// A flag indicating if this is an isolating scope
+        /// </summary>
+        public readonly bool IsolatingScope;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Library.Logging.LogWrapper"/> class.
         /// </summary>
         /// <param name="self">The log instance to wrap.</param>
         /// <param name="filter">The log filter to use</param>
-        public LogScope(ILogDestination self, ILogFilter filter, LogScope parent)
+        /// <param name="parent">The parent scope</param>
+        /// <param name="isolatingScope">A flag indicating if the scope is an isolating scope</param>
+        public LogScope(ILogDestination self, ILogFilter filter, LogScope parent, bool isolatingScope)
         {
             Parent = parent;
 
             m_log = self;
             m_filter = filter;
+            IsolatingScope = isolatingScope;
 
             if (parent != null)
                 Logging.Log.StartScope(this);

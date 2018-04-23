@@ -94,14 +94,11 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (res.Value == null || !res.Value.Any())
                             {
-                                string dbhash;
-                                long dbsize;
-                                RemoteVolumeType dbtype;
-                                RemoteVolumeState dbstate;
+                                var rv = db.GetRemoteVolume(vol.Name, null);
 
-                                if (db.GetRemoteVolume(vol.Name, out dbhash, out dbsize, out dbtype, out dbstate))
+                                if (rv.ID < 0)
                                 {
-                                    if (string.IsNullOrWhiteSpace(dbhash) || dbsize <= 0)
+                                    if (string.IsNullOrWhiteSpace(rv.Hash) || rv.Size <= 0)
                                     {
                                         if (m_options.Dryrun)
                                         {

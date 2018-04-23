@@ -486,7 +486,7 @@ namespace Duplicati.Library.Main.Operation
                             throw new UserInformationException(string.Format("Recreated database has missing blocks and {0} broken filelists. Consider using \"{1}\" and \"{2}\" to purge broken data from the remote store and the database.", broken, "list-broken-files", "purge-broken-files"), "DatabaseIsBrokenConsiderPurge");
                     }
 
-                    restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, true);
+                    restoredb.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "RecreateCompleted", "Recreate completed, and consistency checks completed, marking database as complete");
 
