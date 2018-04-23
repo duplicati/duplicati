@@ -61,14 +61,15 @@ namespace Duplicati.Library.Snapshots
             string filterHash, IEnumerable<USNJournalDataEntry> journalData)
         {
             // create lookup for journal data
-            var journalDataDict = journalData.ToDictionary(data => data.Volume);
+            var journalDataEntries = journalData.ToList();
+            var journalDataDict = journalDataEntries.ToDictionary(data => data.Volume);
 
-            // prepare result
+            // prepare result   
             var result = new FilterData
             {
                 Files = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer),
                 Folders = new List<string>(),
-                JournalData = new List<USNJournalDataEntry>()
+                JournalData = journalDataEntries.ConvertAll(p => p) // clone source data as default value
             };
 
             // iterate over volumes
@@ -89,6 +90,10 @@ namespace Duplicati.Library.Snapshots
                         ConfigHash = filterHash
                     };
 
+                    // remove default data
+                    result.JournalData.RemoveAll(e => e.Volume == volume);
+
+                    // add new data
                     result.JournalData.Add(nextData);
 
                     // only use change journal if:
