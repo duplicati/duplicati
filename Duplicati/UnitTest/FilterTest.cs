@@ -75,6 +75,7 @@ namespace Duplicati.UnitTest
             }
 
             // Toggle empty folder excludes, and run a new backup to remove them
+            System.Threading.Thread.Sleep(5000);
             testopts["exclude-empty-folders"] = "true";
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
@@ -93,6 +94,7 @@ namespace Duplicati.UnitTest
             }
 
             // Filter out one file and rerun the backup to exclude the folder
+            System.Threading.Thread.Sleep(5000);
             var excludefilter = new Library.Utility.FilterExpression($"*{System.IO.Path.DirectorySeparatorChar}myfile.txt", false);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null ))
                 c.Backup(new string[] { DATAFOLDER }, excludefilter);
@@ -111,6 +113,7 @@ namespace Duplicati.UnitTest
             }
 
             // Delete the one remaining file and check that we only have the top-level folder in the set
+            System.Threading.Thread.Sleep(5000);
             File.Delete(Path.Combine(source, "toplevel", "normal", "standard.txt"));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER }, excludefilter);
