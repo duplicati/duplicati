@@ -263,6 +263,8 @@ namespace Duplicati.Library.Main.Strings
 
         public static string ExcludeemptyfoldersShort { get { return "Excludes empty folders"; } }
         public static string ExcludeemptyfoldersLong { get { return "Use this option to remove all empty folders from a backup."; } }
+        public static string IgnorefilenamesShort { get { return LC.L("List of filenames that exclude folders"); } }
+        public static string IgnorefilenamesLong { get { return LC.L("Use this option to set a filename, or list of filenames, that indicate exclusion of a folder which contains it. A common use would be to have a file named something like \".nobackup\" and place this file into folders that should not be backed up."); } }
     }
 
     internal static class Common

@@ -99,5 +99,12 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The hardlink ID</returns>
         /// <param name="path">The file or folder to examine</param>
         string HardlinkTargetID(string path);
+
+        /// <summary>
+        /// Gets a value indicating if the file exists
+        /// </summary>
+        /// <returns><c>true</c>, if the file exists, <c>false</c> otherwise.</returns>
+        /// <param name="path">The path to check for existense.</param>
+        bool FileExists(string path);
     }
 }
