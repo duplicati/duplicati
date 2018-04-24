@@ -557,6 +557,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
                     new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
+
+                    new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
                 });
 
                 return lst;
@@ -1514,6 +1516,15 @@ namespace Duplicati.Library.Main
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "skip-metadata"); }
         }
+
+        /// <summary>
+        /// Gets a flag indicating if empty folders should be ignored
+        /// </summary>
+        public bool ExcludeEmptyFolders
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "exclude-empty-folders"); }
+        }
+
 
         /// <summary>
         /// Gets a flag indicating if permissions should be restored

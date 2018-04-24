@@ -260,6 +260,9 @@ namespace Duplicati.Library.Main.Strings
 
         public static string UsebackgroundiopriorityShort { get { return LC.L("Sets the processe to use low IO priority"); } }
         public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructions the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time"); } }
+
+        public static string ExcludeemptyfoldersShort { get { return "Excludes empty folders"; } }
+        public static string ExcludeemptyfoldersLong { get { return "Use this option to remove all empty folders from a backup."; } }
     }
 
     internal static class Common

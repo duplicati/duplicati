@@ -30,17 +30,18 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// applies all filters requested and emits the filtered set of filenames
     /// to its output channel
     /// </summary>
-    internal static class FileEnumerationProcess 
+    internal static class FileEnumerationProcess
     {
         /// <summary>
         /// The log tag to use
         /// </summary>
         private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(FileEnumerationProcess));
 
-        public static Task Run(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, string[] changedfilelist, Common.ITaskReader taskreader)
+        public static Task Run(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] changedfilelist, Common.ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
-            new {
+            new
+            {
                 Output = Backup.Channels.SourcePaths.ForWrite
             },
 
@@ -76,34 +77,131 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 else
                 {
-                    worklist = snapshot.EnumerateFilesAndFolders((root, path, attr) => {
-                        return AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, mixinqueue).WaitForTask().Result;                        
-                    }, (rootpath, path, ex) => {
+                    worklist = snapshot.EnumerateFilesAndFolders((root, path, attr) =>
+                    {
+                        return AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, mixinqueue).WaitForTask().Result;
+                    }, (rootpath, path, ex) =>
+                    {
                         Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", path);
                     });
                 }
 
+                var source = ExpandWorkList(worklist, mixinqueue, emitfilter, enumeratefilter);
+                if (excludeemptyfolders)
+                    source = ExcludeEmptyFolders(source);
 
                 // Process each path, and dequeue the mixins with symlinks as we go
-                foreach(var s in worklist)
+                foreach (var s in source)
                 {
                     if (!await taskreader.ProgressAsync)
                         return;
-                    
-                    while (mixinqueue.Count > 0)
-                        await self.Output.WriteAsync(mixinqueue.Dequeue());
-
-                    Library.Utility.IFilter m;
-                    if (emitfilter != enumeratefilter && !Library.Utility.FilterExpression.Matches(emitfilter, s, out m))
-                        continue;
 
                     await self.Output.WriteAsync(s);
                 }
-
-                // Trailing symlinks are caught here
-                while (mixinqueue.Count > 0)
-                    await self.Output.WriteAsync(mixinqueue.Dequeue());
             });
+        }
+
+        /// <summary>
+        /// A helper class to assist in excluding empty folders
+        /// </summary>
+        private class DirectoryStackEntry
+        {
+            /// <summary>
+            /// The path for the folder
+            /// </summary>
+            public string Path;
+            /// <summary>
+            /// A flag indicating if any items are found in this folder
+            /// </summary>
+            public bool AnyEntries;
+
+        }
+
+        /// <summary>
+        /// Excludes empty folders.
+        /// </summary>
+        /// <returns>The list without empty folders.</returns>
+        /// <param name="source">The list with potential empty folders.</param>
+        private static IEnumerable<string> ExcludeEmptyFolders(IEnumerable<string> source)
+        {
+            var pathstack = new Stack<DirectoryStackEntry>();
+
+            foreach (var s in source)
+            {
+                // Keep track of directories
+                var isDirectory = s[s.Length - 1] == System.IO.Path.DirectorySeparatorChar;
+                if (isDirectory)
+                {
+                    while (pathstack.Count > 0 && !s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparision))
+                    {
+                        var e = pathstack.Pop();
+                        if (e.AnyEntries || pathstack.Count == 0)
+                        {
+                            // Propagate the any-flag upwards
+                            if (pathstack.Count > 0)
+                                pathstack.Peek().AnyEntries = true;
+                                
+                            yield return e.Path;
+                        }
+                        else
+                            Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingEmptyFolder", "Excluding empty folder {0}", e.Path);
+                    }
+
+                    if (pathstack.Count == 0 || s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparision))
+                    {
+                        pathstack.Push(new DirectoryStackEntry() { Path = s });
+                        continue;
+                    }
+                }
+                // Just emit files
+                else 
+                {
+                    if (pathstack.Count != 0)
+                        pathstack.Peek().AnyEntries = true;
+                    yield return s;
+                }
+            }
+
+            while (pathstack.Count > 0)
+            {
+                var e = pathstack.Pop();
+                if (e.AnyEntries|| pathstack.Count == 0)
+                {
+                    // Propagate the any-flag upwards
+                    if (pathstack.Count > 0)
+                        pathstack.Peek().AnyEntries = true;
+
+                    yield return e.Path;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Re-integrates the mixin queue to form a strictly sequential list of results
+        /// </summary>
+        /// <returns>The expanded list.</returns>
+        /// <param name="worklist">The basic enumerable.</param>
+        /// <param name="mixinqueue">The mix in queue.</param>
+        /// <param name="emitfilter">The emitfilter.</param>
+        /// <param name="enumeratefilter">The enumeratefilter.</param>
+        private static IEnumerable<string> ExpandWorkList(IEnumerable<string> worklist, Queue<string> mixinqueue, Library.Utility.IFilter emitfilter, Library.Utility.IFilter enumeratefilter)
+        {
+            // Process each path, and dequeue the mixins with symlinks as we go
+            foreach (var s in worklist)
+            {
+                while (mixinqueue.Count > 0)
+                    yield return mixinqueue.Dequeue();
+
+                Library.Utility.IFilter m;
+                if (emitfilter != enumeratefilter && !Library.Utility.FilterExpression.Matches(emitfilter, s, out m))
+                    continue;
+
+                yield return s;
+            }
+
+            // Trailing symlinks are caught here
+            while (mixinqueue.Count > 0)
+                yield return mixinqueue.Dequeue();
         }
 
   
