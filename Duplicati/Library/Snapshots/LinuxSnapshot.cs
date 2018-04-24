@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -435,6 +435,16 @@ namespace Duplicati.Library.Snapshots
         public long GetFileSize(string file)
         {
             return new System.IO.FileInfo(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file)).Length;
+        }
+
+        /// <summary>
+        /// Gets a value indicating if the file exists
+        /// </summary>
+        /// <returns><c>true</c>, if the file exists, <c>false</c> otherwise.</returns>
+        /// <param name="path">The path to check for existense.</param>
+        public bool FileExists(string path)
+        {
+            return System.IO.File.Exists(ConvertToSnapshotPath(FindSnapShotByLocalPath(path), path));
         }
 
         /// <summary>

@@ -135,6 +135,11 @@ namespace Duplicati.Library.Snapshots
             return Path.ChangeExtension(path, extension);
         }
 
+        public string PathCombine(string path1, string path2)
+        {
+            return Path.Combine(path1, path2);
+        }
+
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
         {
             Directory.SetLastWriteTimeUtc(NoSnapshot.NormalizePath(path), time);

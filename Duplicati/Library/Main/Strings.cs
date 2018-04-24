@@ -260,6 +260,9 @@ namespace Duplicati.Library.Main.Strings
 
         public static string UsebackgroundiopriorityShort { get { return LC.L("Sets the processe to use low IO priority"); } }
         public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructions the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time"); } }
+
+        public static string IgnorefilenamesShort { get { return LC.L("List of filenames that exclude folders"); } }
+        public static string IgnorefilenamesLong { get { return LC.L("Use this option to set a filename, or list of filenames, that indicate exclusion of a folder which contains it. A common use would be to have a file named something like \".nobackup\" and place this file into folders that should not be backed up."); } }
     }
 
     internal static class Common

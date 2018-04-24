@@ -557,6 +557,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
                     new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
+
+                    new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong),
+
                 });
 
                 return lst;
@@ -1645,6 +1648,21 @@ namespace Duplicati.Library.Main
             }
         }
 
+        /// <summary>
+        /// List of filenames that are used to exclude a folder
+        /// </summary>
+        public string[] IgnoreFilenames
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("ignore-filenames", out v);
+                if (string.IsNullOrEmpty(v))
+                    return null;
+
+                return v.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            }
+        }
         /// <summary>
         /// Alternate restore path
         /// </summary>

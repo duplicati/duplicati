@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Operation
             using(var snapshot = BackupHandler.GetSnapshot(sources, m_options))
             using(new IsolatedChannelScope())
             {
-                var source = Operation.Backup.FileEnumerationProcess.Run(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, null, m_result.TaskReader);
+                var source = Operation.Backup.FileEnumerationProcess.Run(snapshot, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_options.IgnoreFilenames, null, m_result.TaskReader);
                 var sink = CoCoL.AutomationExtensions.RunTask(
                     new { source = Operation.Backup.Channels.SourcePaths.ForRead },
                     async self => {
