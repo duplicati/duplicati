@@ -47,6 +47,12 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(Path.Combine(source, "toplevel", "filteredempty"));
             // Folder with contents
             Directory.CreateDirectory(Path.Combine(source, "toplevel", "normal"));
+            // Folder with excludefile
+            Directory.CreateDirectory(Path.Combine(source, "toplevel", "excludefile"));
+
+            // Write a file that we will use for exclude target
+            File.WriteAllLines(Path.Combine(source, "toplevel", "excludefile", "exclude.me"), new string[] { });
+            File.WriteAllLines(Path.Combine(source, "toplevel", "excludefile", "anyfile.txt"), new string[] { "data" });
 
             // Write a file that we will filter
             File.WriteAllLines(Path.Combine(source, "toplevel", "filteredempty", "myfile.txt"), new string[] { "data" });
@@ -61,7 +67,26 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Backup(new string[] { DATAFOLDER });
 
-            // Check that we have 2 files and 6 folders
+            // Check that we have 4 files and 7 folders
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
+            {
+                var r = c.List("*");
+                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+
+                if (folders != 7)
+                    throw new Exception($"Initial condition not satisfied, found {folders} folders, but expected 7");
+                if (files != 4)
+                    throw new Exception($"Initial condition not satisfied, found {files} files, but expected 4");
+            }
+
+            // Toggle the exclude file, and build a new fileset
+            System.Threading.Thread.Sleep(5000);
+            testopts["ignore-filenames"] = "exclude.me";
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                c.Backup(new string[] { DATAFOLDER });
+
+            // Check that we have 2 files and 6 folders after excluding the "excludefile" folder
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
