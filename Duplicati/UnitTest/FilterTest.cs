@@ -32,7 +32,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        [Category("Border")]
+        [Category("Filter")]
         public void TestEmptyFolderExclude()
         {
             var source = DATAFOLDER;
