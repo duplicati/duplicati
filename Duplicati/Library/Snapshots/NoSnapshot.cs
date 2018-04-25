@@ -156,6 +156,16 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
+        /// Gets a value indicating if the file exists
+        /// </summary>
+        /// <returns><c>true</c>, if the file exists, <c>false</c> otherwise.</returns>
+        /// <param name="path">The path to check for existense.</param>
+        public virtual bool FileExists(string path)
+        {
+            return System.IO.File.Exists(path);
+        }
+
+        /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
         /// </summary>
         /// <param name="file">The file or folder to examine</param>

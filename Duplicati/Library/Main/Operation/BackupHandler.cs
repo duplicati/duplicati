@@ -118,7 +118,7 @@ namespace Duplicati.Library.Main.Operation
                             Backup.DataBlockProcessor.Run(database, options, taskreader),
                             Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader),
                             Backup.StreamBlockSplitter.Run(options, database, taskreader),
-                            Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ChangedFilelist, taskreader),
+                            Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, taskreader),
                             Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
                             Backup.MetadataPreProcess.Run(snapshot, options, database, lastfilesetid),
                             Backup.SpillCollectorProcess.Run(options, database, taskreader),
