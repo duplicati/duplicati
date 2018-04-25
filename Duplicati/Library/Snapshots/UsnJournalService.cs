@@ -114,7 +114,7 @@ namespace Duplicati.Library.Snapshots
                         || data.NextUsn == 0
                         || data.ConfigHash != nextData.ConfigHash)
                     {
-                        ScheduleFullScan(sourcesPerVolume, volume);
+                        ScheduleFullScan(sourcesPerVolume.Value, volume, filter);
                     }
                     else
                     {
@@ -181,12 +181,12 @@ namespace Duplicati.Library.Snapshots
                 {
                     // journal is fine, but we cannot recover gapless changes since last time
                     // => schedule full scan
-                    ScheduleFullScan(sourcesPerVolume, volume);
+                    ScheduleFullScan(sourcesPerVolume.Value, volume, filter);
                 }
                 catch (Exception e)
                 {
                     m_errorCallback(volume, volume, e);
-                    ScheduleFullScan(sourcesPerVolume, volume);
+                    ScheduleFullScan(sourcesPerVolume.Value, volume, filter);
                 }
             }
         }
@@ -316,11 +316,19 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Add ALL sources for volume to result set
         /// </summary>
-        /// <param name="sourcesPerVolume">Sources</param>
+        /// <param name="sources">Sources</param>
         /// <param name="volume">Volume</param>
-        private void ScheduleFullScan(KeyValuePair<string, List<string>> sourcesPerVolume, string volume)
+        /// <param name="filter"></param>
+        private void ScheduleFullScan(IEnumerable<string> sources, string volume, Utility.Utility.EnumerationFilterDelegate filter)
         {
-            foreach (var src in sourcesPerVolume.Value)
+            Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume", $"Performing full scan for volume \"{volume}\"");
+
+            var expandedSources = m_snapshot.EnumerateFilesAndFolders(sources, filter, (rootpath, path, ex) =>
+            {
+                Log.WriteWarningMessage(LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", path);
+            });
+
+            foreach (var src in expandedSources)
             {
                 if (src.EndsWith(Utility.Utility.DirectorySeparatorString, StringComparison.Ordinal))
                 {
@@ -331,8 +339,6 @@ namespace Duplicati.Library.Snapshots
                     Result.Files.Add(src);
                 }
             }
-
-            Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume", $"Performing full scan for volume \"{volume}\"");
         }
 
         /// <summary>
