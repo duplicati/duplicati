@@ -408,6 +408,7 @@ namespace Duplicati.Library.Snapshots
             return Path.Combine(volumePath, localPath.Substring(root.Length));
         }
 
+        /// <inheritdoc />
         public override bool FileExists(string localFilePath)
         {
             return IO_WIN.FileExists(ConvertToSnapshotPath(localFilePath));

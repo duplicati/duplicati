@@ -343,6 +343,16 @@ namespace Duplicati.Library.Snapshots
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.ChangeExtension(PrefixWithUNC(path), extension));
         }
 
+        public string PathCombine(string path1, string path2)
+        {
+            if (!IsPathTooLong(path1 + "\\" + path2))
+                try { return System.IO.Path.Combine(path1, path2); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+
+            return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(path1), path2));
+        }
+
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
         {
             if (!IsPathTooLong(path))
