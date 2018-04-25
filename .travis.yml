@@ -44,7 +44,7 @@ jobs:
     - env: CATEGORY=SVNData
       cache:
         directories:
-          - $HOME/download/bulk
+          - $HOME/download/svn
 
     - env: CATEGORY=SVNDataLong
       cache:
