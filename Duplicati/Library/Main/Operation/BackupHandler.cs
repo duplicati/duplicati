@@ -379,7 +379,7 @@ namespace Duplicati.Library.Main.Operation
                             try
                             {
                                 // Start parallel scan, or use the database
-                                if (m_options.DisableFileScanner)
+                                if (m_options.DisableFileScanner || m_options.UsnStrategy != Options.OptimizationStrategy.Off)
                                 {
                                     var d = m_database.GetLastBackupFileCountAndSize();
                                     m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);
