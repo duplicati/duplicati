@@ -265,12 +265,12 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.GetRemoteVolumeFromID(fileid, m_transaction));
         }
 
-        public Task CreateChangeJournalDataAsync(List<USNJournalDataEntry> journalData)
+        public Task CreateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData)
         {
             return RunOnMain(() => m_database.CreateChangeJournalData(journalData, m_transaction));
         }
 
-        public Task UpdateChangeJournalDataAsync(List<USNJournalDataEntry> journalData, long lastfilesetid)
+        public Task UpdateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData, long lastfilesetid)
         {
             return RunOnMain(() => m_database.UpdateChangeJournalData(journalData, lastfilesetid, m_transaction));
         }

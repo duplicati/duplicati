@@ -80,40 +80,17 @@ namespace Duplicati.Library.Main.Operation.Backup
                         return AttributeFilterAsync(null, x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
                     });
                 }
-                else if (journalService != null)
-                {
-                    // use USN journal
-                    try
-                    {
-                        // get filter identifying current source filter / sources configuration
-                        // ReSharper disable once PossibleMultipleEnumeration
-                        var configHash =  emitfilter.GetFilterHash() + Library.Utility.MD5HashHelper.GetHashString(Library.Utility.MD5HashHelper.GetHash(sources));
-
-                        // filter sources using USN journal, to obtain a sub-set of files / folders that
-                        // may have been modified
-                        journalService.FilterSources(sources,
-                            (root, path, attr) => AttributeFilterAsync(root, path, attr, snapshot, sourcefilter,
-                                hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter,
-                                ignorenames,
-                                mixinqueue).WaitForTask().Result, configHash);
-
-                        // scan modified sources for modifications:
-                        // the modified sources may contain non-existent files / folders, which need to 
-                        // be removed before trying to enumerate them
-                        worklist = journalService.Result.Files.Where(snapshot.FileExists)
-                            .Concat(journalService.Result.Folders.Where(snapshot.DirectoryExists));
-                    }
-                    catch (CancelException)
-                    {
-                        return;
-                    }
-                }
                 else
                 {
-                    worklist = snapshot.EnumerateFilesAndFolders(sources, (root, path, attr) =>
+                    bool AttributeFilter(string root, string path, FileAttributes attr) => AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
+
+                    if (journalService != null)
                     {
-                        return AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
-                    }, (rootpath, path, ex) =>
+                        // filter sources using USN journal, to obtain a sub-set of files / folders that may have been modified
+                        sources = journalService.GetModifiedSources(AttributeFilter);
+                    }
+
+                    worklist = snapshot.EnumerateFilesAndFolders(sources, AttributeFilter, (rootpath, path, ex) =>
                     {
                         Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", path);
                     });

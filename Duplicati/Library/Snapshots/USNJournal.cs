@@ -34,8 +34,6 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public sealed class USNJournal : IDisposable
     {
-        private readonly Action m_cancelHandler;
-
         [Flags]
         public enum ChangeReason
         {
@@ -89,13 +87,11 @@ namespace Duplicati.Library.Snapshots
         /// Constructs a new USN helper instance
         /// </summary>
         /// <param name="volumeRoot">The root volume where the USN lookup is performed</param>
-        /// <param name="cancelHandler">Callback for aborting lengthy operations. Throw OperationCancelledException() to abort.</param>
-        internal USNJournal(string volumeRoot, Action cancelHandler)
+        internal USNJournal(string volumeRoot)
         {
             if (Utility.Utility.IsClientLinux)
                 throw new Interface.UserInformationException(Strings.USNHelper.LinuxNotSupportedError, "UsnOnLinuxNotSupported");
 
-            m_cancelHandler = cancelHandler;
             m_volume = Utility.Utility.AppendDirSeparator(volumeRoot);
 
             try
@@ -303,9 +299,6 @@ namespace Duplicati.Library.Snapshots
             var bufferSize = 4096; // larger buffer returns more record, but pervents user from cancelling operation for a longer time
             while (readData.StartUsn < m_journal.NextUsn)
             {
-                // permit cancellation
-                m_cancelHandler();
-
                 if (!Win32USN.ControlWithInput(m_volumeHandle, Win32USN.FsCtl.ReadUSNJournal,
                     ref readData, bufferSize, out var entryData))
                 {

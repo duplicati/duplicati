@@ -89,6 +89,50 @@ namespace Duplicati.Library.Main.Operation
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows();
         }
 
+        /// <summary>
+        /// Create instance of USN journal service
+        /// </summary>
+        /// <param name="sources"></param>
+        /// <param name="snapshot"></param>
+        /// <param name="filter"></param>
+        /// <param name="lastfilesetid"></param>
+        /// <returns></returns>
+        private UsnJournalService GetJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter filter, long lastfilesetid)
+        {
+            if (m_options.UsnStrategy == Options.OptimizationStrategy.Off) return null;
+            var journalData = m_database.GetChangeJournalData(lastfilesetid);
+            var service = new UsnJournalService(sources, snapshot, filter, journalData);
+
+            foreach (var volumeData in service.VolumeDataList)
+            {
+                if (volumeData.IsFullScan)
+                {
+                    if (volumeData.Exception == null || volumeData.Exception is UsnJournalSoftFailureException)
+                    {
+                        // soft fail
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume", $"Performing full scan for volume \"{volumeData.Volume}\"");
+                    }
+                    else
+                    {
+                        if (m_options.UsnStrategy == Options.OptimizationStrategy.Auto)
+                        {
+                            Logging.Log.WriteInformationMessage(LOGTAG, "FailedToUseChangeJournal",
+                                "Failed to use change journal for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception.Message);
+                        }
+                        else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
+                        {
+                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
+                                "Failed to use change journal for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception.Message);
+                        }
+                        else
+                            throw volumeData.Exception;
+                    }
+                }
+            }
+
+            return service;
+        }
+
         private void PreBackupVerify(BackendManager backend, string protectedfile)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
@@ -165,41 +209,18 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else if (journalService != null)
                 {
-                    if (journalService.Result.Files.Any() || journalService.Result.Folders.Any())
-                    {
-                        // append files from previous fileset, unless part of modifiedSources, which we've just scanned
-                        await database.AppendFilesFromPreviousSetWithPredicateAsync(path =>
-                        {
-                            if (journalService.Result.Files.Contains(path))
-                                return true; // do not append from previous set, already scanned
+                    // append files from previous fileset, unless part of modifiedSources, which we've just scanned
+                    await database.AppendFilesFromPreviousSetWithPredicateAsync(journalService.IsPathEnumerated);
 
-                            foreach (var folder in journalService.Result.Folders)
-                            {
-                                if (path.Equals(folder, Library.Utility.Utility.ClientFilenameStringComparision))
-                                    return true; // do not append from previous set, already scanned
-
-                                if (Library.Utility.Utility.IsPathBelowFolder(path, folder))
-                                    return true; // do not append from previous set, already scanned
-                            }
-
-                            return false; // append from previous set
-                        });
-                    }
-                    else
-                    {
-                        // add full previous fileset, as nothing has changed
-                        //TODO: possible optimization is to somehow skip this step if compacting is enabled, 
-                        //      as all this informatino will be removed anyway.
-                        await database.AppendFilesFromPreviousSetAsync();                        
-                    }
-
-                    if (journalService.Result.JournalData.Any())
+                    // store journal data in database
+                    var data = journalService.VolumeDataList.Where(p => p.JournalData != null).Select(p => p.JournalData).ToList();
+                    if (data.Any())
                     {
                         // always record change journal data for current fileset (entry may be dropped later if nothing is uploaded)
-                        await database.CreateChangeJournalDataAsync(journalService.Result.JournalData);
+                        await database.CreateChangeJournalDataAsync(data);
 
                         // update the previous fileset's change journal entry to resume at this point in case nothing was backed up
-                        await database.UpdateChangeJournalDataAsync(journalService.Result.JournalData, lastfilesetid);
+                        await database.UpdateChangeJournalDataAsync(data, lastfilesetid);
                     }
                 }
                 
@@ -379,7 +400,7 @@ namespace Duplicati.Library.Main.Operation
                             try
                             {
                                 // Start parallel scan, or use the database
-                                if (m_options.DisableFileScanner || m_options.UsnStrategy != Options.OptimizationStrategy.Off)
+                                if (m_options.DisableFileScanner)
                                 {
                                     var d = m_database.GetLastBackupFileCountAndSize();
                                     m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);
@@ -441,29 +462,8 @@ namespace Duplicati.Library.Main.Operation
                                 var filesetvolumeid = await db.RegisterRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
                                 filesetid = await db.CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time);
 
-                                // craete USN-based scanner if enabled
-                                UsnJournalService journalService = null;
-                                if (m_options.UsnStrategy != Options.OptimizationStrategy.Off)
-                                {
-                                    var journalData = m_database.GetChangeJournalData(lastfilesetid);
-                                    journalService = new UsnJournalService(snapshot, journalData, (rootpath, path, ex) =>
-                                    {
-                                        if (m_options.UsnStrategy == Options.OptimizationStrategy.Auto)
-                                        {
-                                            Logging.Log.WriteInformationMessage(LOGTAG, "FailedToUseChangeJournal", "Failed to use change journal for volume \"{0}\": {1}", rootpath, ex.Message);
-                                        }
-                                        else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
-                                        {
-                                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", ex, "Failed to use change journal for volume \"{0}\": {1}", rootpath, ex.Message);
-                                        }
-                                        else
-                                            throw ex;
-                                    },  () =>
-                                    {
-                                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                                            throw new CancelException();
-                                    });
-                                }
+                                // create USN-based scanner if enabled
+                                var journalService = GetJournalService(sources, snapshot, filter, lastfilesetid);
 
                                 // Run the backup operation
                                 if (await m_result.TaskReader.ProgressAsync)

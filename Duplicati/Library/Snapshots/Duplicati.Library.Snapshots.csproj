@@ -60,7 +60,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DefineDosDevice.cs" />
-    <Compile Include="FilterData.cs" />
     <Compile Include="MSSQLUtility.cs" />
     <Compile Include="HyperVUtility.cs" />
     <Compile Include="ISnapshotService.cs" />
