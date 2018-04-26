@@ -1281,7 +1281,7 @@ namespace Duplicati.Library.Utility
         // so this layer of indirection is necessary
         // </summary>
         // <returns>entry assembly or reasonable approximation</returns>
-        public static System.Reflection.Assembly GetEntryAssembly()
+        public static System.Reflection.Assembly getEntryAssembly()
         {
             return System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
         }

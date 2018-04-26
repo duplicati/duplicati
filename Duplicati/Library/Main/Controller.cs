@@ -23,7 +23,6 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Duplicati.Library.Main.Operation;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
