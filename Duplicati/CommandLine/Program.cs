@@ -113,148 +113,135 @@ namespace Duplicati.CommandLine
 
         public static IEnumerable<string> SupportedCommands { get { return CommandMap.Keys; } }
 
-        public static int RunCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, string[] args)
-        {
+        public static int ShowChangeLog(TextWriter outwriter) {
+            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
+            outwriter.WriteLine(System.IO.File.ReadAllText(path));
+            return 0;
+        }
 
-            bool verboseErrors = false;
-            bool verbose = false;
-            try
+        public static void CheckForUpdates(TextWriter outwriter){
+            var update = Library.AutoUpdater.UpdaterManager.LastUpdateCheckVersion;
+            if (update == null)
+                update = Library.AutoUpdater.UpdaterManager.CheckForUpdate();
+
+            if (update != null && update.Version != Library.AutoUpdater.UpdaterManager.SelfVersion.Version)
             {
-                List<string> cargs = new List<string>(args);
-
-                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
-                var options = tmpparsed.Item1;
-                var filter = tmpparsed.Item2;
-
-                verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
-
-                if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.OrdinalIgnoreCase))
+                outwriter.WriteLine("Found update \"{0}\", downloading ...", update.Displayname);
+                long lastpg = 0;
+                Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(update, f =>
                 {
-                    var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
-                    outwriter.WriteLine(System.IO.File.ReadAllText(path));
-                    return 0;
+                    var npg = (long)(f * 100);
+                    if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
+                    {
+                        lastpg = npg;
+                        outwriter.WriteLine("Downloading {0}% ...", npg);
+                    }
+                });
+                outwriter.WriteLine("Update \"{0}\" ({1}) installed, using on next launch", update.Displayname, update.Version);
+            }
+        }
+
+        public static int ParseCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args) {
+            List<string> cargs = new List<string>(args);
+
+            var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
+            var options = tmpparsed.Item1;
+            var filter = tmpparsed.Item2;
+
+            verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
+
+            if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.OrdinalIgnoreCase))
+            {
+                return ShowChangeLog(outwriter);
+            }
+
+            foreach (string internaloption in Library.Main.Options.InternalOptions)
+                if (options.ContainsKey(internaloption))
+                {
+                    outwriter.WriteLine(Strings.Program.InternalOptionUsedError(internaloption));
+                    return 200;
                 }
 
-                foreach (string internaloption in Library.Main.Options.InternalOptions)
-                    if (options.ContainsKey(internaloption))
-                    {
-                        outwriter.WriteLine(Strings.Program.InternalOptionUsedError(internaloption));
-                        return 200;
-                    }
+            // Probe for "help" to avoid extra processing
+            bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase));
 
-                // Probe for "help" to avoid extra processing
-                bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase));
-                if (!isHelp && ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile"))))
+            if (isHelp) 
+            {
+                return Commands.Help(outwriter, setup, cargs, options, filter);
+            }
+
+            if ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile")))
+            {
+                string filename;
+                if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file"))
                 {
-                    string filename;
-                    if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file"))
-                    {
-                        filename = options["parameters-file"];
-                        options.Remove("parameters-file");
-                    }
-                    else if (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file"))
-                    {
-                        filename = options["parameter-file"];
-                        options.Remove("parameter-file");
-                    }
-                    else
-                    {
-                        filename = options["parameterfile"];
-                        options.Remove("parameterfile");
-                    }
-
-                    if (!ReadOptionsFromFile(outwriter, filename, ref filter, cargs, options))
-                        return 100;
+                    filename = options["parameters-file"];
+                    options.Remove("parameters-file");
                 }
-
-                string command;
-                if (cargs.Count > 0)
+                else if (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file"))
                 {
-                    command = cargs[0];
-                    cargs.RemoveAt(0);
+                    filename = options["parameter-file"];
+                    options.Remove("parameter-file");
                 }
                 else
-                    command = "help";
-
-                // Update probe for help
-                isHelp = string.Equals(command, "help", StringComparison.OrdinalIgnoreCase);
-
-                // Skip the env read if the command is help, otherwise we may report weirdness
-                if (!isHelp)
                 {
-                    if (!options.ContainsKey("passphrase"))
-                        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
-                            options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
-
-                    if (!options.ContainsKey("auth-password"))
-                        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
-                            options["auth-password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
-
-                    if (!options.ContainsKey("auth-username"))
-                        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
-                            options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
+                    filename = options["parameterfile"];
+                    options.Remove("parameterfile");
                 }
 
-                var knownCommands = CommandMap;
+                if (!ReadOptionsFromFile(outwriter, filename, ref filter, cargs, options))
+                    return 100;
+            }
 
-                if (!isHelp && verbose)
-                {
-                    outwriter.WriteLine("Input command: {0}", command);
+            if (!options.ContainsKey("passphrase"))
+                if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
+                    options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
 
-                    outwriter.WriteLine("Input arguments: ");
-                    foreach (var a in cargs)
-                        outwriter.WriteLine("\t{0}", a);
-                    outwriter.WriteLine();
+            if (!options.ContainsKey("auth-password"))
+                if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
+                    options["auth-password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
 
-                    outwriter.WriteLine("Input options: ");
-                    foreach (var n in options)
-                        outwriter.WriteLine("{0}: {1}", n.Key, n.Value);
-                    outwriter.WriteLine();
-                }
+            if (!options.ContainsKey("auth-username"))
+                if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
+                    options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
+            
+            var showDeletionErrors = verboseErrors;
+            Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
+            {
+                if (showDeletionErrors)
+                    outwriter.WriteLine(string.Format("Failed to delete temp file: {0}", path));
+            });
 
-                Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
-                {
-                    if (verbose)
-                        outwriter.WriteLine(string.Format("Failed to delete temp file: {0}", path));
-                });
+            string command = cargs[0];
+            cargs.RemoveAt(0);
 
+            if (CommandMap.ContainsKey(command))
+            {
                 var autoupdate = Library.Utility.Utility.ParseBoolOption(options, "auto-update");
                 options.Remove("auto-update");
 
-                if (knownCommands.ContainsKey(command))
+                var res = CommandMap[command](outwriter, setup, cargs, options, filter);
+
+                if (autoupdate && FROM_COMMANDLINE)
                 {
-                    var res = knownCommands[command](outwriter, setup, cargs, options, filter);
-
-                    if (autoupdate && FROM_COMMANDLINE)
-                    {
-                        var update = Library.AutoUpdater.UpdaterManager.LastUpdateCheckVersion;
-                        if (update == null)
-                            update = Library.AutoUpdater.UpdaterManager.CheckForUpdate();
-
-                        if (update != null && update.Version != Library.AutoUpdater.UpdaterManager.SelfVersion.Version)
-                        {
-                            outwriter.WriteLine("Found update \"{0}\", downloading ...", update.Displayname);
-                            long lastpg = 0;
-                            Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(update, f =>
-                            {
-                                var npg = (long)(f * 100);
-                                if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
-                                {
-                                    lastpg = npg;
-                                    outwriter.WriteLine("Downloading {0}% ...", npg);
-                                }
-                            });
-                            outwriter.WriteLine("Update \"{0}\" ({1}) installed, using on next launch", update.Displayname, update.Version);
-                        }
-                    }
-
-                    return res;
+                    CheckForUpdates(outwriter);
                 }
-                else
-                {
-                    Commands.PrintInvalidCommand(outwriter, command, cargs);
-                    return 200;
-                }
+
+                return res;
+            }
+            else
+            {
+                Commands.PrintInvalidCommand(outwriter, command, cargs);
+                return 200;
+            }
+        }
+
+        public static int RunCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, string[] args)
+        {
+            bool verboseErrors = false;
+            try
+            {
+                return ParseCommandLine(outwriter, errwriter, setup, ref verboseErrors, args);
             }
             catch (Exception ex)
             {
@@ -285,14 +272,6 @@ namespace Duplicati.CommandLine
                     }
                 }
 
-                /*if (ex is Duplicati.Library.Interface.UserInformationException)
-                {
-                    errwriter.WriteLine(Strings.Program.YouMayGetMoreHelpHere(
-                        Library.Logging.Log.CreateHelpLink(null, null, ((Library.Interface.UserInformationException)(ex)).HelpID, true)
-                    ));
-                }*/
-
-                //Error = 100
                 return 100;
             }
         }
