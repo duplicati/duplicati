@@ -113,13 +113,13 @@ namespace Duplicati.CommandLine
 
         public static IEnumerable<string> SupportedCommands { get { return CommandMap.Keys; } }
 
-        public static int ShowChangeLog(TextWriter outwriter) {
+        private static int ShowChangeLog(TextWriter outwriter) {
             var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
             outwriter.WriteLine(System.IO.File.ReadAllText(path));
             return 0;
         }
 
-        public static void CheckForUpdates(TextWriter outwriter){
+        private static void CheckForUpdates(TextWriter outwriter){
             var update = Library.AutoUpdater.UpdaterManager.LastUpdateCheckVersion;
             if (update == null)
                 update = Library.AutoUpdater.UpdaterManager.CheckForUpdate();
@@ -141,7 +141,7 @@ namespace Duplicati.CommandLine
             }
         }
 
-        public static int ParseCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args) {
+        private static int ParseCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args) {
             List<string> cargs = new List<string>(args);
 
             var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
