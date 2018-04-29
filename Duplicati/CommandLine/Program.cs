@@ -141,7 +141,7 @@ namespace Duplicati.CommandLine
             }
         }
 
-        private static int ParseCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args) {
+        private static int ParseCommandLine(TextWriter outwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args) {
             List<string> cargs = new List<string>(args);
 
             var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
@@ -241,7 +241,7 @@ namespace Duplicati.CommandLine
             bool verboseErrors = false;
             try
             {
-                return ParseCommandLine(outwriter, errwriter, setup, ref verboseErrors, args);
+                return ParseCommandLine(outwriter, setup, ref verboseErrors, args);
             }
             catch (Exception ex)
             {
