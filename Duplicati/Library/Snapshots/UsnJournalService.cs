@@ -100,55 +100,59 @@ namespace Duplicati.Library.Snapshots
                     // - journal ID hasn't changed
                     // - nextUsn isn't zero (we use this as magic value to force a rescan)
                     // - the exclude filter hash hasn't changed
-                    if (journalDataDict.TryGetValue(volume, out var prevData)
-                        && prevData.JournalId == nextData.JournalId
-                        && prevData.NextUsn != 0
-                        && prevData.ConfigHash == nextData.ConfigHash)
+                    if (!journalDataDict.TryGetValue(volume, out var prevData) ||
+                        prevData.JournalId != nextData.JournalId || prevData.NextUsn == 0 ||
+                        prevData.ConfigHash != nextData.ConfigHash)
                     {
-                        var changedFiles = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
-                        var changedFolders = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
+                        throw new UsnJournalSoftFailureException();
+                    }
 
-                        // obtain changed files and folders, per volume
-                        foreach (var source in volumeSources)
+                    var changedFiles = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
+                    var changedFolders = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
+
+                    // obtain changed files and folders, per volume
+                    foreach (var source in volumeSources)
+                    {
+                        foreach (var entry in journal.GetChangedFileSystemEntries(source, prevData.NextUsn))
                         {
-                            foreach (var entry in journal.GetChangedFileSystemEntries(source, prevData.NextUsn))
+                            if (entry.Item2.HasFlag(USNJournal.EntryType.File))
                             {
-                                if (entry.Item2.HasFlag(USNJournal.EntryType.File))
-                                {
-                                    changedFiles.Add(entry.Item1);
-                                }
-                                else
-                                {
-                                    changedFolders.Add(Utility.Utility.AppendDirSeparator(entry.Item1));
-                                }
+                                changedFiles.Add(entry.Item1);
+                            }
+                            else
+                            {
+                                changedFolders.Add(Utility.Utility.AppendDirSeparator(entry.Item1));
                             }
                         }
-
-                        // At this point we have:
-                        //  - a list of folders (changedFolders) that were possibly modified 
-                        //  - a list of files (changedFiles) that were possibly modified
-                        //
-                        // With this, we need still need to do the following:
-                        //
-                        // 1. Simplify the folder list, such that it only contains the parent-most entries 
-                        //     (eg. { "C:\A\B\", "C:\A\B\C\", "C:\A\B\D\E\" } => { "C:\A\B\" }
-                        volumeData.Folders = Utility.Utility.SimplifyFolderList(changedFolders).ToList();
-
-                        // 2. Our list of files may contain entries inside one of the simplified folders (from step 1., above).
-                        //    Since that folder is going to be fully scanned, those files can be removed.
-                        //    Note: it would be wrong to use the result from step 2. as the folder list! The entries removed
-                        //          between 1. and 2. are *excluded* folders, and files below them are to be *excluded*, too.
-                        volumeData.Files = new HashSet<string>(Utility.Utility.GetFilesNotInFolders(changedFiles, volumeData.Folders));
-
-                        // Record success for volume
-                        volumeData.IsFullScan = false;
                     }
+
+                    // At this point we have:
+                    //  - a list of folders (changedFolders) that were possibly modified 
+                    //  - a list of files (changedFiles) that were possibly modified
+                    //
+                    // With this, we need still need to do the following:
+                    //
+                    // 1. Simplify the folder list, such that it only contains the parent-most entries 
+                    //     (eg. { "C:\A\B\", "C:\A\B\C\", "C:\A\B\D\E\" } => { "C:\A\B\" }
+                    volumeData.Folders = Utility.Utility.SimplifyFolderList(changedFolders).ToList();
+
+                    // 2. Our list of files may contain entries inside one of the simplified folders (from step 1., above).
+                    //    Since that folder is going to be fully scanned, those files can be removed.
+                    //    Note: it would be wrong to use the result from step 2. as the folder list! The entries removed
+                    //          between 1. and 2. are *excluded* folders, and files below them are to be *excluded*, too.
+                    volumeData.Files =
+                        new HashSet<string>(Utility.Utility.GetFilesNotInFolders(changedFiles, volumeData.Folders));
+
+                    // Record success for volume
+                    volumeData.IsFullScan = false;
                 }
                 catch (Exception e)
                 {
                     // full scan is required this time (eg. due to missing journal entries)
                     volumeData.Exception = e;
                     volumeData.IsFullScan = true;
+                    volumeData.Folders = new List<string>();
+                    volumeData.Files = new HashSet<string>();
 
                     // use original sources
                     foreach (var path in volumeSources)
@@ -195,8 +199,11 @@ namespace Duplicati.Library.Snapshots
                 // FilterHandler.EnumerateFilesAndFolders() works top-down, and won't even enumerate child
                 // folders. 
                 // The sources are needed to stop evaluating parent folders above the specified source folders
-                foreach (var folder in FilterExcludedFolders(volumeData.Value.Folders, filter, cache).Where(m_snapshot.DirectoryExists))
-                    yield return folder;
+                if (volumeData.Value.Folders != null)
+                {
+                    foreach (var folder in FilterExcludedFolders(volumeData.Value.Folders, filter, cache).Where(m_snapshot.DirectoryExists))
+                        yield return folder;
+                }
 
                 // The simplified file list also needs to be checked against the exclusion filter, as it 
                 // may contain entries excluded due to attributes, but also because they are below excluded
@@ -204,8 +211,11 @@ namespace Duplicati.Library.Snapshots
                 // Note that the simplified file list may contain entries that have been deleted! They need to 
                 // be kept in the list (unless excluded by the filter) in order for the backup handler to record their 
                 // deletion.
-                foreach (var files in FilterExcludedFiles(volumeData.Value.Files, filter, cache).Where(m_snapshot.FileExists))
-                    yield return files;
+                if (volumeData.Value.Files != null)
+                {
+                    foreach (var files in FilterExcludedFiles(volumeData.Value.Files, filter, cache).Where(m_snapshot.FileExists))
+                        yield return files;
+                }
             }
         }
 
