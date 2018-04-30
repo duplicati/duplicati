@@ -44,7 +44,11 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
+                var noIndexFiles = options.IndexfilePolicy == Options.IndexFileStrategy.None;
+                var fullIndexFiles = options.IndexfilePolicy == Options.IndexFileStrategy.Full;
+
                 BlockVolumeWriter blockvolume = null;
+                TemporaryIndexVolume indexvolume = null;
 
                 try
                 {
@@ -68,6 +72,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             blockvolume = new BlockVolumeWriter(options);
                             blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
+
+                            indexvolume = noIndexFiles ? null : new TemporaryIndexVolume();
                         }
 
                         var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);
@@ -76,6 +82,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (newBlock)
                         {
                             blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
+                            if (indexvolume != null)
+                            {
+                                indexvolume.AddBlock(b.HashKey, b.Size);
+                                if (b.IsBlocklistHashes && fullIndexFiles)
+                                    indexvolume.AddBlockListHash(b.HashKey, b.Size, b.Data);
+                            }
 
                             // If the volume is full, send to upload
                             if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
@@ -88,8 +100,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
-                                await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, true));
+                                await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, indexvolume));
                                 blockvolume = null;
+                                indexvolume = null;
                             }
 
                         }
@@ -105,7 +118,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         // If we have collected data, merge all pending volumes into a single volume
                         if (blockvolume != null && blockvolume.SourceSize > 0)
                         {
-                            await self.SpillPickup.WriteAsync(new VolumeUploadRequest(blockvolume, true));
+                            await self.SpillPickup.WriteAsync(new VolumeUploadRequest(blockvolume, indexvolume));
                         }
                     }
 
