@@ -110,9 +110,9 @@ namespace Duplicati.Library.Backend.GoogleDrive
             if (entries != null)
                 return entries;
 
-            var list = ListFolder(CurrentFolderId, false, remotename).ToArray();
+            entries = ListFolder(CurrentFolderId, false, remotename).ToArray();
 
-            if (list == null || list.Length == 0)
+            if (entries == null || entries.Length == 0)
             {
                 if (throwMissingException)
                     throw new FileMissingException();
@@ -120,7 +120,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     return null;
             }
                     
-            return m_filecache[remotename] = list;
+            return m_filecache[remotename] = entries;
         }
 
         private static string EscapeTitleEntries(string title)
