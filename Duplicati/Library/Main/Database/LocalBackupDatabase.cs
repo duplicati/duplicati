@@ -735,7 +735,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="transaction">Transaction</param>
         /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
-        public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction, Predicate<string> exclusionPredicate)
+        public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction, Func<string, long, bool> exclusionPredicate)
         {
             AppendFilesFromPreviousSetWithPredicate(transaction, exclusionPredicate, m_filesetId, -1, OperationTimestamp);
         }
@@ -751,7 +751,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="prevFileSetId">Source fileset ID</param>
         /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset</param>
         public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction,
-            Predicate<string> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
+            Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
         {
             if (exclusionPredicate == null)
             {
@@ -777,7 +777,7 @@ namespace Duplicati.Library.Main.Database
                 cmd.Transaction = tr.Parent;
                 foreach (var row in cmd.ExecuteReaderEnumerable(
                     @"SELECT
-	                      f.""Path"", fs.""FileID"", fs.""Lastmodified""
+	                      f.""Path"", fs.""FileID"", fs.""Lastmodified"", COALESCE(bs.""Length"", -1)
                       FROM (  SELECT DISTINCT ""FileID"", ""Lastmodified""
 		                      FROM ""FilesetEntry""
 		                      WHERE ""FilesetID"" = ?
@@ -786,10 +786,13 @@ namespace Duplicati.Library.Main.Database
 			                      FROM ""FilesetEntry""
 			                      WHERE ""FilesetID"" = ?
 		                      )) AS fs
-                      LEFT JOIN ""File"" AS f ON fs.""FileID"" = f.""ID"";",
+                      LEFT JOIN ""File"" AS f ON fs.""FileID"" = f.""ID""
+                      LEFT JOIN ""Blockset"" AS bs ON f.""BlocksetID"" = bs.""ID"";",
                     lastFilesetId, fileSetId))
                 {
-                    if (!exclusionPredicate(row.GetString(0)))
+                    var path = row.GetString(0);
+                    var size = row.GetInt64(3);
+                    if (!exclusionPredicate(path, size))
                     {
                         cmdAdd.SetParameterValue(1, row.GetInt64(1));
                         cmdAdd.SetParameterValue(2, row.GetInt64(2));

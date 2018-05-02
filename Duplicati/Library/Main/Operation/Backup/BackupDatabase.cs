@@ -196,7 +196,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// predicate.
         /// </summary>
         /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
-        public Task AppendFilesFromPreviousSetWithPredicateAsync(Predicate<string> exclusionPredicate)
+        public Task AppendFilesFromPreviousSetWithPredicateAsync(Func<string, long, bool> exclusionPredicate)
         {
             return RunOnMain(() => m_database.AppendFilesFromPreviousSetWithPredicate(m_transaction, exclusionPredicate));
         }
@@ -210,7 +210,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="fileSetId">Current fileset ID</param>
         /// <param name="prevFileSetId">Source fileset ID</param>
         /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset</param>
-        public Task AppendFilesFromPreviousSetWithPredicateAsync(Predicate<string> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
+        public Task AppendFilesFromPreviousSetWithPredicateAsync(Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
         {
             return RunOnMain(() => m_database.AppendFilesFromPreviousSetWithPredicate(m_transaction, exclusionPredicate, fileSetId, prevFileSetId, timestamp));
         }

@@ -210,7 +210,17 @@ namespace Duplicati.Library.Main.Operation
                 else if (journalService != null)
                 {
                     // append files from previous fileset, unless part of modifiedSources, which we've just scanned
-                    await database.AppendFilesFromPreviousSetWithPredicateAsync(journalService.IsPathEnumerated);
+                    await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
+                    {
+                        if (journalService.IsPathEnumerated(path))
+                            return true;
+
+                        if (fileSize >= 0)
+                        {
+                            stats.AddExaminedFile(fileSize);
+                        }
+                        return false;
+                    });
 
                     // store journal data in database
                     var data = journalService.VolumeDataList.Where(p => p.JournalData != null).Select(p => p.JournalData).ToList();
