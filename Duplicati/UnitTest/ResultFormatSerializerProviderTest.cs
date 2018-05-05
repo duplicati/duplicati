@@ -8,6 +8,7 @@ namespace Duplicati.UnitTest
     public class ResultFormatSerializerProviderTest
     {
         [Test]
+        [Category("Serialization")]
         public void TestGetSerializerGivenDuplicatiReturnsDuplicatiSerializer()
         {
             IResultFormatSerializer serializer = ResultFormatSerializerProvider.GetSerializer(ResultExportFormat.Duplicati);
@@ -15,6 +16,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Serialization")]
         public void TestGetSerializerGivenJsonReturnsJsonSerializer()
         {
             IResultFormatSerializer serializer = ResultFormatSerializerProvider.GetSerializer(ResultExportFormat.Json);
