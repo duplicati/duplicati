@@ -49,6 +49,7 @@
     <Compile Include="CompressionTests.cs" />
     <Compile Include="UtilityTests.cs" />
     <Compile Include="FilterTest.cs" />
+    <Compile Include="ResultFormatSerializerProviderTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
