@@ -10,7 +10,7 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
     /// <summary>
     /// Provides a human-readable output for result data
     /// </summary>
-    class DuplicatiFormatSerializer : IResultFormatSerializer
+    public class DuplicatiFormatSerializer : IResultFormatSerializer
     {
         /// <summary>
         /// Serialize the specified result and logLines.
