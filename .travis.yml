@@ -5,7 +5,7 @@ install:
   - nuget restore Duplicati.sln
   - nuget install NUnit.Runners -Version 3.5.0 -OutputDirectory testrunner
   - sudo pip install selenium
-  - if [ ! -d ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2 ]; then ln -s ~/build/duplicati/duplicati/packages/sharpcompress.0.18.2 ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2; fi
+  - if [ ! -d "${TRAVIS_BUILD_DIR}"/packages/SharpCompress.0.18.2 ]; then ln -s "${TRAVIS_BUILD_DIR}"/packages/sharpcompress.0.18.2 "${TRAVIS_BUILD_DIR}"/packages/SharpCompress.0.18.2; fi
 addons:
   coverity_scan:
     project:
@@ -53,6 +53,8 @@ jobs:
 
     - env: CATEGORY=Targeted
     - env: CATEGORY=Purge
+    - env: CATEGORY=Serialization
+    - env: CATEGORY=Utility
 
     - env: CATEGORY=GUI
       addons:
@@ -65,7 +67,7 @@ before_install:
 
 script:
 # build duplicati
-  - ls -la ~/build/duplicati/duplicati/packages/
+  - ls -la "${TRAVIS_BUILD_DIR}"/packages/
   - echo "travis_fold:start:build_duplicati"
   - msbuild /p:Configuration=Release Duplicati.sln
   - echo "travis_fold:end:build_duplicati"

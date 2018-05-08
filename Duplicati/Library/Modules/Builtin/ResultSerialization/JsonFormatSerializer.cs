@@ -11,7 +11,7 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
     /// <summary>
     /// Implements serialization of results to JSON
     /// </summary>
-    class JsonFormatSerializer : IResultFormatSerializer
+    public class JsonFormatSerializer : IResultFormatSerializer
     {
         /// <summary>
         /// Helper to filter the result classes properties
