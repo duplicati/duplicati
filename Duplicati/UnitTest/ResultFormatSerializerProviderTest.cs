@@ -1,12 +1,14 @@
-﻿using Duplicati.Library.Modules.Builtin.ResultSerialization;
+﻿using Duplicati.Library.Modules.Builtin;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using NUnit.Framework;
 
-namespace Duplicati.Library.Modules.Builtin.UnitTest
+namespace Duplicati.UnitTest
 {
     [TestFixture]
     public class ResultFormatSerializerProviderTest
     {
         [Test]
+        [Category("Serialization")]
         public void TestGetSerializerGivenDuplicatiReturnsDuplicatiSerializer()
         {
             IResultFormatSerializer serializer = ResultFormatSerializerProvider.GetSerializer(ResultExportFormat.Duplicati);
@@ -14,6 +16,7 @@ namespace Duplicati.Library.Modules.Builtin.UnitTest
         }
 
         [Test]
+        [Category("Serialization")]
         public void TestGetSerializerGivenJsonReturnsJsonSerializer()
         {
             IResultFormatSerializer serializer = ResultFormatSerializerProvider.GetSerializer(ResultExportFormat.Json);
