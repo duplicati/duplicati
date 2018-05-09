@@ -19,6 +19,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -232,34 +233,102 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
+        /// Explicit implementation of the EnumerateRecords method,
+        /// as it currently crashes the Mono compiler ....
+        /// </summary>
+        private class RecordEnumerator : IEnumerable<Record>
+        {
+            private class RecordEnumeratorImpl : IEnumerator<Record>
+            {
+                private readonly IReadOnlyCollection<byte> m_entryData;
+                private GCHandle m_bufferHandle;
+                private IntPtr m_bufferPointer;
+                private long m_offset;
+
+                public RecordEnumeratorImpl(IReadOnlyCollection<byte> entryData)
+                {
+                    m_entryData = entryData;
+                    m_bufferHandle = GCHandle.Alloc(entryData, GCHandleType.Pinned);
+                    m_bufferPointer = m_bufferHandle.AddrOfPinnedObject();
+                    m_offset = sizeof(long);
+                }
+
+                public Record Current { get; set; }
+
+                object IEnumerator.Current => this.Current;
+
+                public void Dispose()
+                {
+                    m_bufferHandle.Free();
+                }
+
+                public bool MoveNext()
+                {
+                    if (m_offset >= m_entryData.Count)
+                        return false;
+                    
+                    var entry = GetBufferedEntry(m_bufferPointer, m_offset, out var fileName);
+                    Current = new Record(entry, fileName);
+                    m_offset += entry.RecordLength;
+
+                    return true;
+                }
+
+                public void Reset()
+                {
+                    m_offset = sizeof(long);
+                }
+            }
+
+            private readonly IReadOnlyCollection<byte> m_entryData;
+
+            public RecordEnumerator(IReadOnlyCollection<byte> entryData)
+            {
+                m_entryData = entryData;
+            }
+
+            public IEnumerator<Record> GetEnumerator()
+            {
+                return new RecordEnumeratorImpl(m_entryData);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return this.GetEnumerator();
+            }
+        }
+
+        /// <summary>
         /// Enumerates all USN records in a raw data block
         /// </summary>
         /// <param name="entryData">Data block</param>
         /// <returns>Entries</returns>
         private static IEnumerable<Record> EnumerateRecords(IReadOnlyCollection<byte> entryData)
         {
-            if (entryData.Count <= sizeof(long)) 
-                yield break;
+            return new RecordEnumerator(entryData);
 
-            var bufferHandle = GCHandle.Alloc(entryData, GCHandleType.Pinned);
-            try
-            {
-                var bufferPointer = bufferHandle.AddrOfPinnedObject();
+            //if (entryData.Count <= sizeof(long)) 
+            //    yield break;
 
-                long offset = sizeof(long);               
-                while (offset < entryData.Count)
-                {
-                    var entry = GetBufferedEntry(bufferPointer, offset, out var fileName);
+            //var bufferHandle = GCHandle.Alloc(entryData, GCHandleType.Pinned);
+            //try
+            //{
+            //    var bufferPointer = bufferHandle.AddrOfPinnedObject();
 
-                    yield return new Record(entry, fileName);
+            //    long offset = sizeof(long);               
+            //    while (offset < entryData.Count)
+            //    {
+            //        var entry = GetBufferedEntry(bufferPointer, offset, out var fileName);
 
-                    offset += entry.RecordLength;
-                }
-            }
-            finally
-            {
-                bufferHandle.Free();                    
-            }
+            //        yield return new Record(entry, fileName);
+
+            //        offset += entry.RecordLength;
+            //    }
+            //}
+            //finally
+            //{
+            //    bufferHandle.Free();                    
+            //}
         }
 
         /// <summary>
