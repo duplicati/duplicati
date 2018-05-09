@@ -1464,16 +1464,24 @@ namespace Duplicati.Library.Main
                 return (int)blocksize;
             }
         }
+        
+		/// <summary>
+        /// Cache for the block hash size value, to avoid creating new hash instances just to get the size
+        /// </summary>
+		private KeyValuePair<string, int> m_cachedBlockHashSize;
 
         /// <summary>
-        /// Gets the size of the blockhash.
+        /// Gets the size of the blockhash in bytes.
         /// </summary>
         /// <value>The size of the blockhash.</value>
         public int BlockhashSize
         {
             get
             {
-                return Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8;
+				if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
+					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
+				
+				return m_cachedBlockHashSize.Value;
             }
         }
 
