@@ -238,11 +238,11 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         private class RecordEnumerator : IEnumerable<Record>
         {
-            private class RecordEnumeratorImpl : IEnumerator<Record>
+            private sealed class RecordEnumeratorImpl : IEnumerator<Record>
             {
                 private readonly IReadOnlyCollection<byte> m_entryData;
+                private readonly IntPtr m_bufferPointer;
                 private GCHandle m_bufferHandle;
-                private IntPtr m_bufferPointer;
                 private long m_offset;
 
                 public RecordEnumeratorImpl(IReadOnlyCollection<byte> entryData)
@@ -250,12 +250,12 @@ namespace Duplicati.Library.Snapshots
                     m_entryData = entryData;
                     m_bufferHandle = GCHandle.Alloc(entryData, GCHandleType.Pinned);
                     m_bufferPointer = m_bufferHandle.AddrOfPinnedObject();
-                    m_offset = sizeof(long);
+                    Reset();
                 }
 
-                public Record Current { get; set; }
+                public Record Current { get; private set; }
 
-                object IEnumerator.Current => this.Current;
+                object IEnumerator.Current => Current;
 
                 public void Dispose()
                 {
@@ -264,6 +264,9 @@ namespace Duplicati.Library.Snapshots
 
                 public bool MoveNext()
                 {
+                    if (m_entryData.Count <= sizeof(long))
+                        return false;
+
                     if (m_offset >= m_entryData.Count)
                         return false;
                     
@@ -294,7 +297,7 @@ namespace Duplicati.Library.Snapshots
 
             IEnumerator IEnumerable.GetEnumerator()
             {
-                return this.GetEnumerator();
+                return GetEnumerator();
             }
         }
 
