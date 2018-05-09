@@ -351,6 +351,7 @@ namespace Duplicati.Library.Main.Operation
                                             if (volumeID < 0)
                                                 volumeID = ProbeForMatchingFilename(ref filename, restoredb);
 
+											var missing = false;                                            
                                             // Still broken, register a missing item
                                             if (volumeID < 0)
                                             {
@@ -358,14 +359,15 @@ namespace Duplicati.Library.Main.Operation
                                                 if (p == null)
                                                     throw new Exception(string.Format("Unable to parse filename: {0}", filename));
     											Logging.Log.WriteErrorMessage(LOGTAG, "MissingFileDetected", null, "Remote file referenced as {0} by {1}, but not found in list, registering a missing remote file", filename, sf.Name);
-                                                volumeID = restoredb.RegisterRemoteVolume(filename, p.FileType, RemoteVolumeState.Verified, tr);
+												missing = true;
+											    volumeID = restoredb.RegisterRemoteVolume(filename, p.FileType, RemoteVolumeState.Temporary, tr);
                                             }
                                             
                                             //Add all block/volume mappings
                                             foreach(var b in a.Blocks)
                                                 restoredb.UpdateBlock(b.Key, b.Value, volumeID, tr);
 
-                                            restoredb.UpdateRemoteVolume(filename, RemoteVolumeState.Verified, a.Length, a.Hash, tr);
+										    restoredb.UpdateRemoteVolume(filename, missing ? RemoteVolumeState.Temporary : RemoteVolumeState.Verified, a.Length, a.Hash, tr);
                                             restoredb.AddIndexBlockLink(restoredb.GetRemoteVolumeID(sf.Name), volumeID, tr);
                                         }
                                 
@@ -463,8 +465,11 @@ namespace Duplicati.Library.Main.Operation
                             }
                     }
                 }
-                
+
                 backend.WaitForComplete(restoredb, null);
+
+				// In some cases we have a stale reference from an index file to a deleted block file
+				restoredb.RemoveUnusedTemporaryVolumes();
 
                 if (m_options.RepairOnlyPaths)
                 {
