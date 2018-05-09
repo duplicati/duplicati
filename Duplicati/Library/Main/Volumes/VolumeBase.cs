@@ -149,12 +149,14 @@ namespace Duplicati.Library.Main.Volumes
         protected readonly long m_blocksize;
         protected readonly string m_blockhash;
         protected readonly string m_filehash;
+		protected readonly long m_blockhashsize;
 
         protected VolumeBase(Options options)
         {
             m_blocksize = options.Blocksize;
             m_blockhash = options.BlockHashAlgorithm;
             m_filehash = options.FileHashAlgorithm;
+			m_blockhashsize = options.BlockhashSize;
         }
     }
 }
