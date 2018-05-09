@@ -255,7 +255,7 @@ namespace Duplicati.Library.Snapshots
 
                 public Record Current { get; private set; }
 
-                object IEnumerator.Current => Current;
+                object IEnumerator.Current => this.Current;
 
                 public void Dispose()
                 {
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Snapshots
 
             IEnumerator IEnumerable.GetEnumerator()
             {
-                return GetEnumerator();
+                return this.GetEnumerator();
             }
         }
 
