@@ -42,7 +42,7 @@ namespace Duplicati.Library.Snapshots
             Deleted = 4,
             RenamedFrom = 8,
             RenamedTo = 16,
-            Any = Modified|Created|Deleted|RenamedFrom|RenamedTo
+            Any = Modified | Created | Deleted | RenamedFrom | RenamedTo
         }
 
         [Flags]
@@ -50,7 +50,7 @@ namespace Duplicati.Library.Snapshots
         {
             Directory = 1,
             File = 2,
-            Any = Directory|File
+            Any = Directory | File
         }
 
         /// <summary>
@@ -206,7 +206,7 @@ namespace Duplicati.Library.Snapshots
                     throw new Win32Exception(Marshal.GetLastWin32Error());
             }
 
-            return ((ulong) fileInfo.FileIndexHigh << 32) | fileInfo.FileIndexLow;
+            return ((ulong)fileInfo.FileIndexHigh << 32) | fileInfo.FileIndexLow;
         }
 
 
@@ -220,12 +220,12 @@ namespace Duplicati.Library.Snapshots
         private static Win32USN.USN_RECORD_V2 GetBufferedEntry(IntPtr bufferPointer, long offset, out string fileName)
         {
             var entryPointer = new IntPtr(bufferPointer.ToInt64() + offset);
-            var nativeEntry = (Win32USN.USN_RECORD_V2) Marshal.PtrToStructure(entryPointer, typeof(Win32USN.USN_RECORD_V2));
+            var nativeEntry = (Win32USN.USN_RECORD_V2)Marshal.PtrToStructure(entryPointer, typeof(Win32USN.USN_RECORD_V2));
 
             //TODO: add support for V3 records
             if (nativeEntry.MajorVersion != 2)
                 throw new Exception(Strings.USNHelper.UnsupportedUsnVersion);
-            
+
             var filenamePointer = new IntPtr(bufferPointer.ToInt64() + offset + nativeEntry.FileNameOffset);
             fileName = Marshal.PtrToStringUni(filenamePointer, nativeEntry.FileNameLength / sizeof(char));
             return nativeEntry;
@@ -547,7 +547,7 @@ namespace Duplicati.Library.Snapshots
         }
     }
 
-	[Serializable]
+    [Serializable]
     public class UsnJournalSoftFailureException : Exception
     {
         public UsnJournalSoftFailureException()
