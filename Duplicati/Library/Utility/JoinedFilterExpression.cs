@@ -41,7 +41,7 @@ namespace Duplicati.Library.Utility
         public string GetFilterHash()
         {
             var hash = MD5HashHelper.GetHash(new[] {First.GetFilterHash(), Second.GetFilterHash()});
-            return MD5HashHelper.GetHashString(hash);
+			return Utility.ByteArrayAsHexString(hash);
         }
 
         public bool Empty { get { return First.Empty && Second.Empty; } }

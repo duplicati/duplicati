@@ -18,20 +18,34 @@
 // 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Duplicati.Library.Utility
 {
+    /// <summary>
+    /// Helper class to compute MD5 hashes
+    /// </summary>
     public static class MD5HashHelper
     {
+		/// <summary>
+        /// Computes the MD5 hash of the input string
+        /// </summary>
+        /// <returns>The MD5 hash.</returns>
+        /// <param name="inputString">The input string.</param>
         public static byte[] GetHash(string inputString)
         {
-            HashAlgorithm algorithm = MD5.Create(); //or use SHA256.Create();
-            return algorithm.ComputeHash(Encoding.UTF8.GetBytes(inputString));
+            using(var algorithm = MD5.Create()) //or use SHA256.Create();
+                return algorithm.ComputeHash(Encoding.UTF8.GetBytes(inputString));
         }
 
+		/// <summary>
+        /// Computes the MD5 hash of the input strings
+        /// </summary>
+        /// <returns>The MD5 hash.</returns>
+        /// <param name="inputStrings">The input strings.</param>
         public static byte[] GetHash(IEnumerable<string> inputStrings)
         {
             using (var md5 = MD5.Create())
@@ -45,15 +59,6 @@ namespace Duplicati.Library.Utility
                 md5.TransformFinalBlock(new byte[0], 0, 0);
                 return md5.Hash;
             }
-        }
-
-        public static string GetHashString(byte[] hash)
-        {
-            var sb = new StringBuilder();
-            foreach (var b in hash)
-                sb.Append(b.ToString("X2"));
-
-            return sb.ToString();
         }
     }
 }

@@ -34,6 +34,14 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public sealed class LinuxSnapshot : SnapshotBase
     {
+		/// <summary>
+        /// The tag used for logging messages
+        /// </summary>
+        public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
+
+        /// <summary>
+        /// Helper to have access to the System.IO calls without the interface layer
+        /// </summary>
         private static SystemIOLinux SYS_IO = new SystemIOLinux();
 
         /// <summary>
@@ -85,9 +93,9 @@ namespace Duplicati.Library.Snapshots
                 {
                     Dispose();
                 }
-                catch
+				catch (Exception ex)
                 {
-                    // ignored
+					Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCleanupError", ex, "Failed to clean up after error");
                 }
 
                 throw;
@@ -97,8 +105,6 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            Exception exs = null;
-
             if (m_snapShots != null)
             {
                 if (disposing)
@@ -107,7 +113,7 @@ namespace Duplicati.Library.Snapshots
                     foreach(var s in m_snapShots)
                     {
                         try { s.Dispose(); }
-                        catch (Exception ex) { exs = ex; }
+						catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCloseError", ex, "Failed to close a snapshot"); }
                     }
                 }
 
@@ -116,10 +122,6 @@ namespace Duplicati.Library.Snapshots
             }
 
             base.Dispose(disposing);
-
-            // Report errors, if any
-            if (exs != null)
-                throw exs;
         }
 
         /// <summary>

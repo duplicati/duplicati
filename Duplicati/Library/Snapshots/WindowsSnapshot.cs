@@ -37,6 +37,11 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public sealed class WindowsSnapshot : SnapshotBase
     {
+		/// <summary>
+        /// The tag used for logging messages
+        /// </summary>
+		public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
+
         /// <summary>
         /// The main reference to the backup controller
         /// </summary>
@@ -161,9 +166,9 @@ namespace Duplicati.Library.Snapshots
                             m_mappedDrives.Add(d = new DefineDosDevice(m_volumeMap[k]));
                             m_volumeMap[k] = Utility.Utility.AppendDirSeparator(d.Drive);
                         }
-                        catch
+						catch(Exception ex)
                         {
-                            // ignored
+							Logging.Log.WriteVerboseMessage(LOGTAG, "SubstMappingfailed", ex, "Failed to map VSS path {0} to drive", k);
                         }
                     }
                 }
@@ -175,9 +180,9 @@ namespace Duplicati.Library.Snapshots
                 {
                     Dispose();
                 }
-                catch
+				catch(Exception ex)
                 {
-                    // ignored
+					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSCleanupOnError", ex, "Failed during VSS error cleanup");
                 }
 
                 throw;
@@ -387,7 +392,7 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var kvp in m_volumeReverseMap)
             {
-                if (snapshotPath.StartsWith(kvp.Key))
+				if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparision))
                     return Path.Combine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
             }
 
@@ -442,19 +447,19 @@ namespace Duplicati.Library.Snapshots
                         m_mappedDrives = null;
                     }
                 }
-                catch
+				catch (Exception ex)
                 {
-                    // ignored
+					Logging.Log.WriteVerboseMessage(LOGTAG, "MappedDriveCleanupError", ex, "Failed during VSS mapped drive unmapping");
                 }
 
-                try
-                {
-                    m_backup?.BackupComplete();
-                }
-                catch
-                {
-                    // ignored
-                }
+				try
+				{
+					m_backup?.BackupComplete();
+				}
+				catch (Exception ex)
+				{
+					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSTerminateError", ex, "Failed to signal VSS completion");
+				}
 
                 try
                 {
@@ -462,20 +467,20 @@ namespace Duplicati.Library.Snapshots
                     {
                         foreach (var g in m_volumes.Values)
                         {
-                            try
-                            {
-                                m_backup.DeleteSnapshot(g, false);
-                            }
-                            catch
-                            {
-                                // ignored
-                            }
+							try
+							{
+								m_backup.DeleteSnapshot(g, false);
+							}
+							catch (Exception ex)
+							{
+								Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteError", ex, "Failed to close VSS snapshot");
+							}
                         }
                     }
                 }
-                catch
+				catch (Exception ex)
                 {
-                    // ignored
+					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteCleanError", ex, "Failed during VSS esnapshot closing");
                 }
 
                 if (m_backup != null)

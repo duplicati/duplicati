@@ -547,6 +547,7 @@ namespace Duplicati.Library.Snapshots
         }
     }
 
+	[Serializable]
     public class UsnJournalSoftFailureException : Exception
     {
         public UsnJournalSoftFailureException()

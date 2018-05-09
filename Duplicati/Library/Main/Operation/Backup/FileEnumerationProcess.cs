@@ -82,7 +82,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 else
                 {
-                    bool AttributeFilter(string root, string path, FileAttributes attr) => AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
+					Library.Utility.Utility.EnumerationFilterDelegate AttributeFilter = (root, path, attr) =>
+					    AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
 
                     if (journalService != null)
                     {
@@ -90,9 +91,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                         sources = journalService.GetModifiedSources(AttributeFilter);
                     }
 
-                    worklist = snapshot.EnumerateFilesAndFolders(sources, AttributeFilter, (rootpath, path, ex) =>
+                    worklist = snapshot.EnumerateFilesAndFolders(sources, AttributeFilter, (rootpath, errorpath, ex) =>
                     {
-                        Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", path);
+                        Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", errorpath);
                     });
                 }
 

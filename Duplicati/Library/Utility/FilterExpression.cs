@@ -352,7 +352,7 @@ namespace Duplicati.Library.Utility
         public string GetFilterHash()
         {
             var hash = MD5HashHelper.GetHash(m_filters.Select(x => x.Filter));
-            return MD5HashHelper.GetHashString(hash);
+			return Utility.ByteArrayAsHexString(hash);
         }
 
         /// <summary>
