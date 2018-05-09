@@ -37,6 +37,21 @@ namespace Duplicati.Library.Main.Operation.Common
         private readonly Library.Utility.FileBackedStringList blockListHashes = new Library.Utility.FileBackedStringList();
 
         /// <summary>
+        /// Cached copy of the blocklist hash size
+        /// </summary>
+		private readonly int m_blockhashsize;
+
+        /// <summary>
+        /// Initializes a new instance of the
+        /// <see cref="T:Duplicati.Library.Main.Operation.Common.TemporaryIndexVolume"/> class.
+        /// </summary>
+        /// <param name="options">The options used in this run.</param>
+		public TemporaryIndexVolume(Options options)
+		{
+			m_blockhashsize = options.BlockhashSize;
+		}
+
+        /// <summary>
         /// Creates an index volume with the temporary contents
         /// </summary>
         /// <returns>The index volume.</returns>
@@ -105,6 +120,8 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="data">The block contents.</param>
         public void AddBlockListHash(string hash, long size, byte[] data)
         {
+			if (size % m_blockhashsize != 0)
+				throw new ArgumentException($"The {nameof(size)} value is {size}, but it must be evenly divisible by the blockhash size ({m_blockhashsize})", nameof(size));
             blockListHashes.Add(hash);
             blockListHashes.Add(Convert.ToBase64String(data, 0, (int)size));
         }

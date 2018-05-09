@@ -85,7 +85,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 if (lst.Count == 0)
                                 {
                                     // No more targets, make one
-                                    target = new VolumeUploadRequest(new BlockVolumeWriter(options), source.IndexVolume == null ? null : new TemporaryIndexVolume());
+									target = new VolumeUploadRequest(new BlockVolumeWriter(options), source.IndexVolume == null ? null : new TemporaryIndexVolume(options));
                                     target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
                                 }
                                 else
