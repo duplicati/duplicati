@@ -488,7 +488,7 @@ namespace Duplicati.Library.Utility
         /// <param name="baseUrl">Base URL, containing schema, host, port.</param>
         /// <param name="basePath">Base path.</param>
         /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
-        public static string UrlBuilder(string baseUrl, string basePath, NameValueCollection query)
+        public static string UriBuilder(string baseUrl, string basePath, NameValueCollection query = null)
         {
             var builder = new UriBuilder(baseUrl)
             {

@@ -50,7 +50,7 @@
     <Compile Include="UtilityTests.cs" />
     <Compile Include="FilterTest.cs" />
     <Compile Include="ResultFormatSerializerProviderTest.cs" />
-    <Compile Include="UrlUtilityTests.cs" />
+    <Compile Include="UriUtilityTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

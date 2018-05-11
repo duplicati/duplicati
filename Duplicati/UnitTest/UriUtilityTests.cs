@@ -20,7 +20,7 @@ using System.Collections.Specialized;
 
 namespace Duplicati.UnitTest
 {
-    public class UrlUtilityTests
+    public class UriUtilityTests
     {
         [Test]
         [Category("UrlUtility")]
@@ -41,7 +41,7 @@ namespace Duplicati.UnitTest
             var baseUrl = "http://localhost";
             var path = "files";
             var query = new NameValueCollection { { "a", "b" }, { "c", "d" } };
-            var url = Library.Utility.Uri.UrlBuilder(baseUrl, path, query);
+            var url = Library.Utility.Uri.UriBuilder(baseUrl, path, query);
             Assert.AreEqual(baseUrl + "/" + path + "?a=b&c=d", url);
         }
     }
