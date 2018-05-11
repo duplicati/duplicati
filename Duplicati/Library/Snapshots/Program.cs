@@ -78,88 +78,53 @@ Where <test-folder> is the folder where files will be locked/created etc");
                     return;
                 }
 
-                if (Library.Utility.Utility.ParseBoolOption(options, "usn-test"))
+                if (!System.IO.Directory.Exists(args[0]))
+                    System.IO.Directory.CreateDirectory(args[0]);
+
+                string filename = System.IO.Path.Combine(args[0], "testfile.bin");
+
+                Console.WriteLine(string.Format("Creating file {0}", filename));
+
+                using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                 {
-                    using (USNHelper usn = new USNHelper(args[0]))
+                    Console.WriteLine(string.Format("Attempting to read locked file {0}", filename));
+
+                    try
                     {
-                        Console.WriteLine("Current USN JournalID: " + usn.JournalID);
-                        Console.WriteLine("Current USN no: " + usn.USN);
+                        using (System.IO.FileStream fs2 = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                        { }
 
-                        if (options.ContainsKey("last-usn"))
-                        {
-                            Console.WriteLine("Changed entries ...");
-                            foreach (string s in usn.GetChangedFileSystemEntries(args[0], long.Parse(options["last-usn"])))
-                                Console.WriteLine(s + ", " + usn.GetChangeFlags(s));
-
-                            Console.WriteLine();
-                            Console.WriteLine("Renamed entries ...");
-                            foreach (string s in usn.GetRenamedFileSystemEntries(args[0], long.Parse(options["last-usn"])))
-                                Console.WriteLine(s);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Files ...");
-                            foreach (string s in usn.Files)
-                                Console.WriteLine(s);
-
-                            Console.WriteLine();
-                            Console.WriteLine("Folders ...");
-
-                            foreach (string s in usn.Folders)
-                                Console.WriteLine(s);
-                        }
+                        Console.WriteLine(string.Format("Could open locked file {0}, cannot test", filename));
+                        Console.WriteLine("* Test failed");
+                        return;
                     }
-                }
-                else
-                {
-                    if (!System.IO.Directory.Exists(args[0]))
-                        System.IO.Directory.CreateDirectory(args[0]);
-
-                    string filename = System.IO.Path.Combine(args[0], "testfile.bin");
-
-                    Console.WriteLine(string.Format("Creating file {0}", filename));
-
-                    using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                    catch (Exception ex)
                     {
-                        Console.WriteLine(string.Format("Attempting to read locked file {0}", filename));
+                        Console.WriteLine(string.Format("The file {0} was correctly locked, message: {1}", filename, ex.Message));
+                    }
 
+                    Console.WriteLine("Creating snapshot for folder: {0}", args[0]);
+                    Console.WriteLine("If this fails, try to run as " + (Utility.Utility.IsClientLinux ? "root" : "Administrator"));
+                    using (ISnapshotService snapshot = SnapshotUtility.CreateSnapshot(new[] { args[0] }, options))
+                    {
+                        Console.WriteLine("Attempting to read locked file via snapshot");
                         try
                         {
-                            using (System.IO.FileStream fs2 = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                            using (System.IO.Stream s = snapshot.OpenRead(filename))
                             { }
 
-                            Console.WriteLine(string.Format("Could open locked file {0}, cannot test", filename));
-                            Console.WriteLine("* Test failed");
-                            return;
+                            Console.WriteLine(string.Format("Could open locked file {0}, through snapshot", filename));
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(string.Format("The file {0} was correctly locked, message: {1}", filename, ex.Message));
-                        }
-
-                        Console.WriteLine("Creating snapshot for folder: {0}", args[0]);
-                        Console.WriteLine("If this fails, try to run as " + (Utility.Utility.IsClientLinux ? "root" : "Administrator"));
-                        using (ISnapshotService snapshot = SnapshotUtility.CreateSnapshot(new string[] { args[0] }, options))
-                        {
-                            Console.WriteLine("Attempting to read locked file via snapshot");
-                            try
-                            {
-                                using (System.IO.Stream s = snapshot.OpenRead(filename))
-                                { }
-
-                                Console.WriteLine(string.Format("Could open locked file {0}, through snapshot", filename));
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(string.Format("The file {0} was locked even through snapshot, message: {1}", filename, ex));
-                                Console.WriteLine("* Test failed");
-                                return;
-                            }
+                            Console.WriteLine(string.Format("The file {0} was locked even through snapshot, message: {1}", filename, ex));
+                            Console.WriteLine("* Test failed");
+                            return;
                         }
                     }
-
-                    Console.WriteLine("* Test passed");
                 }
+
+                Console.WriteLine("* Test passed");
             }
             catch (Exception ex)
             {

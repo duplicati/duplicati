@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Linq.Expressions;
 
 
 namespace Duplicati.Library.Main.Database
 {
+
     internal class LocalBackupDatabase : LocalDatabase
     {
         /// <summary>
@@ -677,11 +679,26 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted)
+        /// <summary>
+        /// Populates FilesetEntry table with files from previous fileset, which aren't 
+        /// yet part of the new fileset, and which aren't on the (optional) list of <c>deleted</c> paths.
+        /// </summary>
+        /// <param name="transaction">Transaction</param>
+        /// <param name="deleted">List of deleted paths, or null</param>
+        public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted = null)
         {
             AppendFilesFromPreviousSet(transaction, deleted, m_filesetId, -1, OperationTimestamp);
         }
 
+        /// <summary>
+        /// Populates FilesetEntry table with files from previous fileset, which aren't 
+        /// yet part of the new fileset, and which aren't on the (optional) list of <c>deleted</c> paths.
+        /// </summary>
+        /// <param name="transaction">Transaction</param>
+        /// <param name="deleted">List of deleted paths, or null</param>
+        /// <param name="filesetid">Current file-set ID</param>
+        /// <param name="prevId">Source file-set ID</param>
+        /// <param name="timestamp">If <c>filesetid</c> == -1, used to locate previous file-set</param>
         public void AppendFilesFromPreviousSet(System.Data.IDbTransaction transaction, IEnumerable<string> deleted, long filesetid, long prevId, DateTime timestamp)
         {
             using(var cmd = m_connection.CreateCommand())
@@ -710,7 +727,84 @@ namespace Duplicati.Library.Main.Database
                 tr.Commit();
             }
         }
-    
+
+        /// <summary>
+        /// Populates FilesetEntry table with files from previous fileset, which aren't 
+        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion 
+        /// predicate.
+        /// </summary>
+        /// <param name="transaction">Transaction</param>
+        /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
+        public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction, Func<string, long, bool> exclusionPredicate)
+        {
+            AppendFilesFromPreviousSetWithPredicate(transaction, exclusionPredicate, m_filesetId, -1, OperationTimestamp);
+        }
+
+        /// <summary>
+        /// Populates FilesetEntry table with files from previous fileset, which aren't 
+        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion 
+        /// predicate.
+        /// </summary>
+        /// <param name="transaction">Transaction</param>
+        /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
+        /// <param name="fileSetId">Current fileset ID</param>
+        /// <param name="prevFileSetId">Source fileset ID</param>
+        /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset</param>
+        public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction,
+            Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
+        {
+            if (exclusionPredicate == null)
+            {
+                AppendFilesFromPreviousSet(transaction, null, fileSetId, prevFileSetId, timestamp);
+                return;
+            }
+
+            using (var cmd = m_connection.CreateCommand())
+            using (var cmdAdd = m_connection.CreateCommand())
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            {
+                var lastFilesetId =
+                    prevFileSetId < 0 ? GetPreviousFilesetID(cmd, timestamp, fileSetId) : prevFileSetId;
+
+                // prepare command for adding new entries
+                cmdAdd.Transaction = tr.Parent;
+                cmdAdd.CommandText =
+                    @"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (?, ?, ?)";
+                cmdAdd.AddParameters(3);
+                cmdAdd.SetParameterValue(0, fileSetId);
+
+                // enumerate files from previous set
+                cmd.Transaction = tr.Parent;
+                foreach (var row in cmd.ExecuteReaderEnumerable(
+                    @"SELECT
+	                      f.""Path"", fs.""FileID"", fs.""Lastmodified"", COALESCE(bs.""Length"", -1)
+                      FROM (  SELECT DISTINCT ""FileID"", ""Lastmodified""
+		                      FROM ""FilesetEntry""
+		                      WHERE ""FilesetID"" = ?
+		                      AND ""FileID"" NOT IN (
+			                      SELECT ""FileID""
+			                      FROM ""FilesetEntry""
+			                      WHERE ""FilesetID"" = ?
+		                      )) AS fs
+                      LEFT JOIN ""File"" AS f ON fs.""FileID"" = f.""ID""
+                      LEFT JOIN ""Blockset"" AS bs ON f.""BlocksetID"" = bs.""ID"";",
+                    lastFilesetId, fileSetId))
+                {
+                    var path = row.GetString(0);
+                    var size = row.GetInt64(3);
+                    if (!exclusionPredicate(path, size))
+                    {
+                        cmdAdd.SetParameterValue(1, row.GetInt64(1));
+                        cmdAdd.SetParameterValue(2, row.GetInt64(2));
+                        cmdAdd.ExecuteNonQuery();
+                    }
+                }
+
+                tr.Commit();
+            }
+        }
+
+
         /// <summary>
         /// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
         /// </summary>
@@ -833,6 +927,87 @@ namespace Duplicati.Library.Main.Database
                     return null;
 
                 return v0.ToString();
+            }
+        }
+        /// <summary>
+        /// Retrieves change journal data for file set
+        /// </summary>
+        /// <param name="fileSetId">Fileset-ID</param>
+        public IEnumerable<Interface.USNJournalDataEntry> GetChangeJournalData(long fileSetId)
+        {
+            var data = new List<Interface.USNJournalDataEntry>();
+
+            using (var cmd = m_connection.CreateCommand())
+            using (var rd =
+                cmd.ExecuteReader(
+                    @"SELECT ""VolumeName"", ""JournalID"", ""NextUSN"", ""ConfigHash"" FROM ""ChangeJournalData"" WHERE ""FilesetID"" = ?",
+                    fileSetId))
+            {
+                while (rd.Read())
+                {
+                    data.Add(new Interface.USNJournalDataEntry
+                    {
+                        Volume = rd.ConvertValueToString(0),
+                        JournalId = rd.ConvertValueToInt64(1),
+                        NextUsn = rd.ConvertValueToInt64(2),
+                        ConfigHash = rd.ConvertValueToString(3)
+                    });
+                }
+
+            }
+
+            return data;
+        }
+
+        /// <summary>
+        /// Adds NTFS change journal data for file set and volume
+        /// </summary>
+        /// <param name="data">Data to add</param>
+        /// <param name="transaction">An optional external transaction</param>
+        public void CreateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, System.Data.IDbTransaction transaction = null)
+        {
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            {
+                foreach (var entry in data)
+                {
+                    using(var cmd = m_connection.CreateCommand())
+                    {
+                        cmd.Transaction = tr.Parent;
+                        var c = cmd.ExecuteNonQuery(
+                            @"INSERT INTO ""ChangeJournalData"" (""FilesetID"", ""VolumeName"", ""JournalID"", ""NextUSN"", ""ConfigHash"") VALUES (?, ?, ?, ?, ?);",
+                            m_filesetId, entry.Volume, entry.JournalId, entry.NextUsn, entry.ConfigHash);
+
+                        if (c != 1)
+                            throw new Exception("Unable to add change journal entry");
+                    }            
+                }
+
+                tr.Commit();
+            }
+        }
+
+        /// <summary>
+        /// Adds NTFS change journal data for file set and volume
+        /// </summary>
+        /// <param name="data">Data to add</param>
+        /// <param name="fileSetId">Existing file set to update</param>
+        /// <param name="transaction">An optional external transaction</param>
+        public void UpdateChangeJournalData(IEnumerable<Interface.USNJournalDataEntry> data, long fileSetId, System.Data.IDbTransaction transaction = null)
+        {
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            {
+                foreach (var entry in data)
+                {
+                    using(var cmd = m_connection.CreateCommand())
+                    {
+                        cmd.Transaction = tr.Parent;
+                        cmd.ExecuteNonQuery(
+                            @"UPDATE ""ChangeJournalData"" SET ""NextUSN"" = ? WHERE ""FilesetID"" = ? AND ""VolumeName"" = ? AND ""JournalID"" = ?;",
+                            entry.NextUsn, fileSetId, entry.Volume, entry.JournalId);
+                    }            
+                }
+
+                tr.Commit();
             }
         }
     }

@@ -16,12 +16,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
-using System.Linq;
-
-
 #endregion
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Duplicati.Library.Snapshots
@@ -33,35 +32,107 @@ namespace Duplicati.Library.Snapshots
     /// The class presents all files and folders with their regular filenames to the caller,
     /// and internally handles the conversion to the snapshot path.
     /// </summary>
-    public class LinuxSnapshot : ISnapshotService
+    public sealed class LinuxSnapshot : SnapshotBase
     {
-        protected readonly SystemIOLinux _sysIO = new SystemIOLinux();
-        
+		/// <summary>
+        /// The tag used for logging messages
+        /// </summary>
+        public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
+
+        /// <summary>
+        /// Helper to have access to the System.IO calls without the interface layer
+        /// </summary>
+        private static SystemIOLinux SYS_IO = new SystemIOLinux();
+
+        /// <summary>
+        /// This is a lookup, mapping each source folder to the corresponding snapshot
+        /// </summary>
+        private readonly List<KeyValuePair<string, SnapShot>> m_entries;
+
+        /// <summary>
+        /// This is the list of the snapshots we have created, which must be disposed
+        /// </summary>
+        private List<SnapShot> m_snapShots;
+
+        /// <summary>
+        /// Constructs a new snapshot module using LVM
+        /// </summary>
+        /// <param name="sources">The list of folders to create snapshots for</param>
+        public LinuxSnapshot(IEnumerable<string> sources)
+        {
+            try
+            {
+                m_entries = new List<KeyValuePair<string, SnapShot>>();
+
+                // Make sure we do not create more snapshots than we have to
+                var snaps = new Dictionary<string, SnapShot>();
+                foreach (var path in sources)
+                {
+                    var tmp = new SnapShot(path);
+                    if (!snaps.TryGetValue(tmp.DeviceName, out var snap))
+                    {
+                        snaps.Add(tmp.DeviceName, tmp);
+                        snap = tmp;
+                    }
+
+                    m_entries.Add(new KeyValuePair<string, SnapShot>(path, snap));
+                }
+
+                m_snapShots = new List<SnapShot>(snaps.Values);
+
+                // We have all the snapshots that we need, lets activate them
+                foreach (var snap in m_snapShots)
+                {
+                    snap.CreateSnapshotVolume();
+                }
+            }
+            catch
+            {
+                // If something goes wrong, try to clean up
+                try
+                {
+                    Dispose();
+                }
+				catch (Exception ex)
+                {
+					Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCleanupError", ex, "Failed to clean up after error");
+                }
+
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
+        {
+            if (m_snapShots != null)
+            {
+                if (disposing)
+                {
+                    // Attempt to clean out as many as possible
+                    foreach(var s in m_snapShots)
+                    {
+                        try { s.Dispose(); }
+						catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCloseError", ex, "Failed to close a snapshot"); }
+                    }
+                }
+
+                // Don't try this again
+                m_snapShots = null;
+            }
+
+            base.Dispose(disposing);
+        }
+
         /// <summary>
         /// Internal helper class for keeping track of a single snapshot volume
         /// </summary>
-        private class SnapShot : IDisposable
+        private sealed class SnapShot : IDisposable
         {
             /// <summary>
             /// The unique id of the snapshot
             /// </summary>
-            private string m_name;
-            /// <summary>
-            /// The directory that the snapshot represents
-            /// </summary>
-            private string m_realDir;
-            /// <summary>
-            /// The temporary folder that the snapshot is mounted to
-            /// </summary>
-            private string m_tmpDir;
-            /// <summary>
-            /// The temporary folder that corresponds to the original folder
-            /// </summary>
-            private string m_mountPoint;
-            /// <summary>
-            /// The device name for the entry, used to prevent duplicate entries
-            /// </summary>
-            private string m_device;
+            private readonly string m_name;
 
             /// <summary>
             /// Constructs a new snapshot for the given folder
@@ -69,55 +140,75 @@ namespace Duplicati.Library.Snapshots
             /// <param name="path"></param>
             public SnapShot(string path)
             {
-                m_name = string.Format("duplicati-{0}", Guid.NewGuid().ToString());
-                m_realDir = System.IO.Directory.Exists(path) ? Utility.Utility.AppendDirSeparator(path) : path;
-                GetVolumeName(m_realDir);
+                m_name = $"duplicati-{Guid.NewGuid().ToString()}";
+                LocalPath = System.IO.Directory.Exists(path) ? Utility.Utility.AppendDirSeparator(path) : path;
+                Initialize(LocalPath);
             }
 
             /// <summary>
             /// Gets the path of the folder that this snapshot represents
             /// </summary>
-            public string LocalPath { get { return m_realDir; } }
+            public string LocalPath { get; }
 
             /// <summary>
             /// Gets a value representing the volume on which the folder resides
             /// </summary>
-            public string DeviceName { get { return m_device; } }
+            public string DeviceName { get; private set; }
 
             /// <summary>
             /// Gets the path where the snapshot is mounted
             /// </summary>
-            public string SnapshotPath { get { return m_tmpDir; } }
+            public string SnapshotPath { get; private set; }
 
             /// <summary>
             /// Gets the path the source disk is originally mounted
             /// </summary>
-            public string MountPoint { get { return m_mountPoint; } }
+            public string MountPoint { get; private set; }
+
+            #region IDisposable Members
 
             /// <summary>
-            /// Converts a snapshot path to a local path
+            /// Cleanup any used resources
             /// </summary>
-            /// <param name="path">The snapshot path</param>
-            /// <returns>The local path</returns>
-            public string ConvertToLocalPath(string path)
+            public void Dispose()
             {
-                if (!path.StartsWith(m_mountPoint, StringComparison.Ordinal))
-                    throw new InvalidOperationException();
+                if (SnapshotPath != null && System.IO.Directory.Exists(SnapshotPath))
+                {
+                    var output = ExecuteCommand("remove-lvm-snapshot.sh", $"\"{m_name}\" \"{DeviceName}\" \"{SnapshotPath}\"", 0);
+                    if (System.IO.Directory.Exists(SnapshotPath))
+                        throw new Exception(Strings.LinuxSnapshot.MountFolderNotRemovedError(SnapshotPath, output));
 
-                return m_tmpDir + path.Substring(m_mountPoint.Length);
+                    SnapshotPath = null;
+                    DeviceName = null;
+                }
             }
+
+            #endregion
 
             /// <summary>
             /// Converts a local path to a snapshot path
             /// </summary>
-            /// <param name="path">The local path</param>
+            /// <param name="localPath">The local path</param>
             /// <returns>The snapshot path</returns>
-            public string ConvertToSnapshotPath(string path)
+            public string ConvertToSnapshotPath(string localPath)
             {
-                if (!path.StartsWith(m_tmpDir, StringComparison.Ordinal))
+                if (!localPath.StartsWith(MountPoint, StringComparison.Ordinal))
                     throw new InvalidOperationException();
 
-                return m_mountPoint + path.Substring(m_tmpDir.Length);
+                return SystemIOLinux.NormalizePath(SnapshotPath + localPath.Substring(MountPoint.Length));
+            }
+
+            /// <summary>
+            /// Converts a snapshot path to a local path
+            /// </summary>
+            /// <param name="snapshotPath">The snapshot path</param>
+            /// <returns>The local path</returns>
+            public string ConvertToLocalPath(string snapshotPath)
+            {
+                if (!snapshotPath.StartsWith(SnapshotPath, StringComparison.Ordinal))
+                    throw new InvalidOperationException();
+
+                return MountPoint + snapshotPath.Substring(SnapshotPath.Length);
             }
 
             /// <summary>
@@ -129,17 +220,19 @@ namespace Duplicati.Library.Snapshots
             /// <returns>A string with the combined output of the stdout and stderr</returns>
             private static string ExecuteCommand(string program, string commandline, int expectedExitCode)
             {
-                program = System.IO.Path.Combine(System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "lvm-scripts"), program);
-                System.Diagnostics.ProcessStartInfo inf = new System.Diagnostics.ProcessStartInfo(program, commandline);
-                inf.CreateNoWindow = true;
-                inf.RedirectStandardError = true;
-                inf.RedirectStandardOutput = true;
-                inf.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-                inf.UseShellExecute = false;
+                program = System.IO.Path.Combine(System.IO.Path.Combine(AutoUpdater.UpdaterManager.InstalledBaseDir, "lvm-scripts"), program);
+                var inf = new ProcessStartInfo(program, commandline)
+                {
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    UseShellExecute = false
+                };
 
                 try
                 {
-                    System.Diagnostics.Process p = System.Diagnostics.Process.Start(inf);
+                    var p = Process.Start(inf);
 
                     //Allow up 20 seconds for the execution
                     if (!p.WaitForExit(30 * 1000))
@@ -148,15 +241,15 @@ namespace Duplicati.Library.Snapshots
                         p.Kill();
                         p.WaitForExit(5 * 1000); //This should work, and if it does, prevents a race with any cleanup invocations
 
-                        throw new Duplicati.Library.Interface.UserInformationException(Strings.LinuxSnapshot.ExternalProgramTimeoutError(program, commandline), "LvmScriptTimeout");
+                        throw new Interface.UserInformationException(Strings.LinuxSnapshot.ExternalProgramTimeoutError(program, commandline), "LvmScriptTimeout");
                     }
 
                     //Build the output string. Since the process has exited, these cannot block
-                    string output = string.Format("Exit code: {1}{0}{2}{0}{3}", Environment.NewLine, p.ExitCode, p.StandardOutput.ReadToEnd(), p.StandardError.ReadToEnd());
+                    var output = string.Format("Exit code: {1}{0}{2}{0}{3}", Environment.NewLine, p.ExitCode, p.StandardOutput.ReadToEnd(), p.StandardError.ReadToEnd());
 
                     //Throw an exception if something went wrong
                     if (p.ExitCode != expectedExitCode)
-                        throw new Duplicati.Library.Interface.UserInformationException(Strings.LinuxSnapshot.ScriptExitCodeError(p.ExitCode, expectedExitCode, output), "LvmScriptWrongExitCode");
+                        throw new Interface.UserInformationException(Strings.LinuxSnapshot.ScriptExitCodeError(p.ExitCode, expectedExitCode, output), "LvmScriptWrongExitCode");
 
                     return output;
                 }
@@ -169,20 +262,20 @@ namespace Duplicati.Library.Snapshots
             /// <summary>
             /// Finds the LVM id of the volume id where the folder is placed
             /// </summary>
-            private void GetVolumeName(string folder)
+            private void Initialize(string folder)
             {
                 //Figure out what logical volume the path is located on
-                string output = ExecuteCommand("find-volume.sh", string.Format("\"{0}\"", folder), 0);
+                var output = ExecuteCommand("find-volume.sh", $"\"{folder}\"", 0);
 
-                System.Text.RegularExpressions.Regex rex = new System.Text.RegularExpressions.Regex("device=\"(?<device>[^\"]+)\"");
-                System.Text.RegularExpressions.Match m = rex.Match(output);
+                var rex = new System.Text.RegularExpressions.Regex("device=\"(?<device>[^\"]+)\"");
+                var m = rex.Match(output);
 
                 if (!m.Success)
                     throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("device", output));
 
-                m_device = rex.Match(output).Groups["device"].Value;
+                DeviceName = rex.Match(output).Groups["device"].Value;
 
-                if (string.IsNullOrEmpty(m_device) || m_device.Trim().Length == 0)
+                if (string.IsNullOrEmpty(DeviceName) || DeviceName.Trim().Length == 0)
                     throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("device", output));
 
                 rex = new System.Text.RegularExpressions.Regex("mountpoint=\"(?<mountpoint>[^\"]+)\"");
@@ -191,12 +284,12 @@ namespace Duplicati.Library.Snapshots
                 if (!m.Success)
                     throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("mountpoint", output));
 
-                m_mountPoint = rex.Match(output).Groups["mountpoint"].Value;
+                MountPoint = rex.Match(output).Groups["mountpoint"].Value;
 
-                if (string.IsNullOrEmpty(m_mountPoint) || m_mountPoint.Trim().Length == 0)
+                if (string.IsNullOrEmpty(MountPoint) || MountPoint.Trim().Length == 0)
                     throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("mountpoint", output));
 
-                m_mountPoint = Utility.Utility.AppendDirSeparator(m_mountPoint);
+                MountPoint = Utility.Utility.AppendDirSeparator(MountPoint);
             }
 
             /// <summary>
@@ -205,94 +298,26 @@ namespace Duplicati.Library.Snapshots
             /// </summary>
             public void CreateSnapshotVolume()
             {
-                if (m_device == null)
+                if (DeviceName == null)
                     throw new InvalidOperationException();
-                if (m_tmpDir != null)
+                if (SnapshotPath != null)
                     throw new InvalidOperationException();
 
                 //Create the snapshot volume
-                string output = ExecuteCommand("create-lvm-snapshot.sh", string.Format("\"{0}\" \"{1}\" \"{2}\"", m_name, m_device, Utility.Utility.AppendDirSeparator(Utility.TempFolder.SystemTempPath)), 0);
+                var output = ExecuteCommand("create-lvm-snapshot.sh", $"\"{m_name}\" \"{DeviceName}\" \"{Utility.Utility.AppendDirSeparator(Utility.TempFolder.SystemTempPath)}\"", 0);
 
-                System.Text.RegularExpressions.Regex rex = new System.Text.RegularExpressions.Regex("tmpdir=\"(?<tmpdir>[^\"]+)\"");
-                System.Text.RegularExpressions.Match m = rex.Match(output);
+                var rex = new System.Text.RegularExpressions.Regex("tmpdir=\"(?<tmpdir>[^\"]+)\"");
+                var m = rex.Match(output);
 
                 if (!m.Success)
                     throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("tmpdir", output));
 
-                m_tmpDir = rex.Match(output).Groups["tmpdir"].Value;
+                SnapshotPath = rex.Match(output).Groups["tmpdir"].Value;
 
-                if (!System.IO.Directory.Exists(m_tmpDir))
-                    throw new Exception(Strings.LinuxSnapshot.MountFolderMissingError(m_tmpDir, output));
+                if (!System.IO.Directory.Exists(SnapshotPath))
+                    throw new Exception(Strings.LinuxSnapshot.MountFolderMissingError(SnapshotPath, output));
 
-                m_tmpDir = Utility.Utility.AppendDirSeparator(m_tmpDir);
-            }
-
-            #region IDisposable Members
-
-            /// <summary>
-            /// Cleanup any used resources
-            /// </summary>
-            public void Dispose()
-            {
-                if (m_tmpDir != null && System.IO.Directory.Exists(m_tmpDir))
-                {
-                    string output = ExecuteCommand("remove-lvm-snapshot.sh", string.Format("\"{0}\" \"{1}\" \"{2}\"", m_name, m_device, m_tmpDir), 0);
-                    if (System.IO.Directory.Exists(m_tmpDir))
-                        throw new Exception(Strings.LinuxSnapshot.MountFolderNotRemovedError(m_tmpDir, output));
-
-                    m_tmpDir = null;
-                    m_device = null;
-                }
-            }
-
-            #endregion
-        }
-
-        /// <summary>
-        /// This is the list of the snapshots we have created, which must be disposed
-        /// </summary>
-        private List<SnapShot> m_activeSnapShots;
-
-        /// <summary>
-        /// This is a looup, mapping each source folder to the corresponding snapshot
-        /// </summary>
-        private List<KeyValuePair<string, SnapShot>> m_entries;
-
-        /// <summary>
-        /// Constructs a new snapshot module using LVM
-        /// </summary>
-        /// <param name="sources">The list of folders to create snapshots for</param>
-        /// <param name="options">A set of commandline options</param>
-        public LinuxSnapshot(string[] sources, Dictionary<string, string> options)
-        {
-            try
-            {
-                m_entries = new List<KeyValuePair<string,SnapShot>>();
-
-                //Make sure we do not create more snapshots than we have to
-                Dictionary<string, SnapShot> snaps = new Dictionary<string, SnapShot>();
-                foreach (string s in sources)
-                {
-                    SnapShot sn = new SnapShot(s);
-                    if (!snaps.ContainsKey(sn.DeviceName))
-                        snaps.Add(sn.DeviceName, sn);
-
-                    m_entries.Add(new KeyValuePair<string, SnapShot>(s, snaps[sn.DeviceName]));
-                }
-
-                m_activeSnapShots = new List<SnapShot>(snaps.Values);
-
-                //We have all the snapshots that we need, lets activate them
-                foreach (SnapShot s in m_activeSnapShots)
-                    s.CreateSnapshotVolume();
-            }
-            catch
-            {
-                //If something goes wrong, try to clean up
-                try { Dispose(); }
-                catch { }
-
-                throw;
+                SnapshotPath = Utility.Utility.AppendDirSeparator(SnapshotPath);
             }
         }
 
@@ -302,15 +327,15 @@ namespace Duplicati.Library.Snapshots
         /// A callback function that takes a non-snapshot path to a folder,
         /// and returns all folders found in a non-snapshot path format.
         /// </summary>
-        /// <param name="folder">The non-snapshot path of the folder to list</param>
+        /// <param name="localFolderPath">The non-snapshot path of the folder to list</param>
         /// <returns>A list of non-snapshot paths</returns>
-        private string[] ListFolders(string folder)
+        protected override string[] ListFolders(string localFolderPath)
         {
-            KeyValuePair<string, SnapShot> snap = FindSnapShotByLocalPath(folder);
+            var snap = FindSnapshotByLocalPath(localFolderPath);
 
-            string[] tmp = System.IO.Directory.GetDirectories(ConvertToSnapshotPath(snap, folder));
-            for (int i = 0; i < tmp.Length; i++)
-                tmp[i] = ConvertToLocalPath(snap, tmp[i]);
+            var tmp = System.IO.Directory.GetDirectories(snap.ConvertToSnapshotPath(localFolderPath));
+            for (var i = 0; i < tmp.Length; i++)
+                tmp[i] = snap.ConvertToLocalPath(tmp[i]);
 
             return tmp;
         }
@@ -320,65 +345,62 @@ namespace Duplicati.Library.Snapshots
         /// A callback function that takes a non-snapshot path to a folder,
         /// and returns all files found in a non-snapshot path format.
         /// </summary>
-        /// <param name="folder">The non-snapshot path of the folder to list</param>
+        /// <param name="localFolderPath">The non-snapshot path of the folder to list</param>
         /// <returns>A list of non-snapshot paths</returns>
-        private string[] ListFiles(string folder)
+        protected override string[] ListFiles(string localFolderPath)
         {
-            KeyValuePair<string, SnapShot> snap = FindSnapShotByLocalPath(folder);
+            var snap = FindSnapshotByLocalPath(localFolderPath);
 
-            string[] tmp = System.IO.Directory.GetFiles(ConvertToSnapshotPath(snap, folder));
-            for (int i = 0; i < tmp.Length; i++)
-                tmp[i] = ConvertToLocalPath(snap, tmp[i]);
+            var tmp = System.IO.Directory.GetFiles(snap.ConvertToSnapshotPath(localFolderPath));
+            for (var i = 0; i < tmp.Length; i++)
+                tmp[i] = snap.ConvertToLocalPath(tmp[i]);
             return tmp;
         }
 
         /// <summary>
         /// Locates the snapshot instance that maps the path
         /// </summary>
-        /// <param name="name">The file or folder name to match</param>
+        /// <param name="localPath">The file or folder name to match</param>
         /// <returns>The matching snapshot</returns>
-        private KeyValuePair<string, SnapShot> FindSnapShotByLocalPath(string name)
+        private SnapShot FindSnapshotByLocalPath(string localPath)
         {
             KeyValuePair<string, SnapShot>? best = null;
-
-            foreach (KeyValuePair<string, SnapShot> s in m_entries)
-                if (name.StartsWith(s.Key, StringComparison.Ordinal) && (best == null || s.Key.Length > best.Value.Key.Length))
-                    best = s;
-
-            if (best == null)
+            foreach (var s in m_entries)
             {
-                StringBuilder sb = new StringBuilder();
-                sb.Append(Environment.NewLine);
-
-                foreach (KeyValuePair<string, SnapShot> s in m_entries)
-                    sb.AppendFormat("{0} ({1} -> {2}){3}", s.Key, s.Value.MountPoint, s.Value.SnapshotPath, Environment.NewLine);
-
-                throw new InvalidOperationException(Strings.LinuxSnapshot.InvalidFilePathError(name, sb.ToString()));
+                if (localPath.StartsWith(s.Key, StringComparison.Ordinal) && (best == null || s.Key.Length > best.Value.Key.Length))
+                {
+                    best = s;
+                }
             }
 
-            return best.Value;
+            if (best != null)
+                return best.Value.Value;
+
+            var sb = new StringBuilder();
+            sb.Append(Environment.NewLine);
+
+            foreach (var s in m_entries)
+            {
+                sb.Append($"{s.Key} ({s.Value.MountPoint} -> {s.Value.SnapshotPath}){Environment.NewLine}");
+            }
+
+            throw new InvalidOperationException(Strings.LinuxSnapshot.InvalidFilePathError(localPath, sb.ToString()));
         }
 
         /// <summary>
-        /// Converts a local path to a snapshot path
+        /// Locates the snapshot containing the snapshot path
         /// </summary>
-        /// <param name="snap">The snapshot that represents the mapping</param>
-        /// <param name="file">The filename to convert</param>
-        /// <returns>The converted path</returns>
-        private string ConvertToSnapshotPath(KeyValuePair<string, SnapShot> snap, string file)
+        /// <param name="snapshotPath"></param>
+        /// <returns>Snapshot containing snapshotPath</returns>
+        private SnapShot FindSnapshotBySnapshotPath(string snapshotPath)
         {
-            return snap.Value.SnapshotPath + file.Substring(snap.Value.MountPoint.Length);
-        }
+            foreach (var snap in m_snapShots)
+            {
+                if (snapshotPath.StartsWith(snap.SnapshotPath, StringComparison.Ordinal))
+                    return snap;
+            }
 
-        /// <summary>
-        /// Converts a snapshot path to a local path
-        /// </summary>
-        /// <param name="snap">The snapshot that represents the mapping</param>
-        /// <param name="file">The filename to convert</param>
-        /// <returns>The converted path</returns>
-        private string ConvertToLocalPath(KeyValuePair<string, SnapShot> snap, string file)
-        {
-            return snap.Value.MountPoint + file.Substring(snap.Value.SnapshotPath.Length);
+            throw new InvalidOperationException();
         }
 
         #endregion
@@ -386,109 +408,85 @@ namespace Duplicati.Library.Snapshots
         #region ISnapshotService Members
 
         /// <summary>
-        /// Enumerates all files and folders in the snapshot
-        /// </summary>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        /// <param name="errorCallback">The callback used to report errors</param>
-        public IEnumerable<string> EnumerateFilesAndFolders(Duplicati.Library.Utility.Utility.EnumerationFilterDelegate callback, Duplicati.Library.Utility.Utility.ReportAccessError errorCallback)
-        {
-            return m_entries.SelectMany(
-                s => Utility.Utility.EnumerateFileSystemEntries(s.Key, callback, this.ListFolders, this.ListFiles, this.GetAttributes, errorCallback)
-            );
-        }
-        
-        /// <summary>
         /// Gets the last write time of a given file in UTC
         /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
-        public DateTime GetLastWriteTimeUtc(string file)
+        public override DateTime GetLastWriteTimeUtc(string localPath)
         {
-            return System.IO.File.GetLastWriteTimeUtc(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
+            return System.IO.File.GetLastWriteTimeUtc(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
         /// Gets the creation time of a given file in UTC
         /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
-        public DateTime GetCreationTimeUtc(string file)
+        public override DateTime GetCreationTimeUtc(string localPath)
         {
-            return System.IO.File.GetLastWriteTimeUtc(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
+            return System.IO.File.GetLastWriteTimeUtc(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
         /// Opens a file for reading
         /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>An open filestream that can be read</returns>
-        public System.IO.Stream OpenRead(string file)
+        public override System.IO.Stream OpenRead(string localPath)
         {
-            return System.IO.File.OpenRead(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
+            return System.IO.File.OpenRead(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
         /// Returns the size of a file
         /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The lenth of the file</returns>
-        public long GetFileSize(string file)
+        public override long GetFileSize(string localPath)
         {
-            return new System.IO.FileInfo(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file)).Length;
-        }
-
-        /// <summary>
-        /// Gets a value indicating if the file exists
-        /// </summary>
-        /// <returns><c>true</c>, if the file exists, <c>false</c> otherwise.</returns>
-        /// <param name="path">The path to check for existense.</param>
-        public bool FileExists(string path)
-        {
-            return System.IO.File.Exists(ConvertToSnapshotPath(FindSnapShotByLocalPath(path), path));
+            return new System.IO.FileInfo(ConvertToSnapshotPath(localPath)).Length;
         }
 
         /// <summary>
         /// Gets the attributes for the given file or folder
         /// </summary>
         /// <returns>The file attributes</returns>
-        /// <param name="file">The file or folder to examine</param>
-        public System.IO.FileAttributes GetAttributes(string file)
+        /// <param name="localPath">The file or folder to examine</param>
+        public override System.IO.FileAttributes GetAttributes(string localPath)
         {
-            return System.IO.File.GetAttributes(ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file));
+            return System.IO.File.GetAttributes(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
         /// </summary>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="localPath">The file or folder to examine</param>
         /// <returns>The symlink target</returns>
-        public string GetSymlinkTarget(string file)
+        public override string GetSymlinkTarget(string localPath)
         {
-            var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
-            return _sysIO.GetSymlinkTarget(local);
+            return SYS_IO.GetSymlinkTarget(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
         /// Gets the metadata for the given file or folder
         /// </summary>
         /// <returns>The metadata for the given file or folder</returns>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
-        public Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
+        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(file), file);
-            return _sysIO.GetMetadata(local, isSymlink, followSymlink);
+            return SYS_IO.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
         }
-        
+
         /// <summary>
         /// Gets a value indicating if the path points to a block device
         /// </summary>
         /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
-        /// <param name="file">The file or folder to examine</param>
-        public bool IsBlockDevice(string file)
+        /// <param name="localPath">The file or folder to examine</param>
+        public override bool IsBlockDevice(string localPath)
         {
-            var n = UnixSupport.File.GetFileType(NoSnapshot.NormalizePath(file));
+            var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
             switch (n)
             {
                 case UnixSupport.File.FileType.Directory:
@@ -498,49 +496,37 @@ namespace Duplicati.Library.Snapshots
                 default:
                     return true;
             }
-        }    
+        }
 
         /// <summary>
         /// Gets a unique hardlink target ID
         /// </summary>
         /// <returns>The hardlink ID</returns>
-        /// <param name="path">The file or folder to examine</param>
-        public string HardlinkTargetID(string path)
+        /// <param name="localPath">The file or folder to examine</param>
+        public override string HardlinkTargetID(string localPath)
         {
-            var local = ConvertToSnapshotPath(FindSnapShotByLocalPath(path), path);
-            local = NoSnapshot.NormalizePath(local);
+            var snapshotPath = ConvertToSnapshotPath(localPath);
             
-            if (UnixSupport.File.GetHardlinkCount(local) <= 1)
+            if (UnixSupport.File.GetHardlinkCount(snapshotPath) <= 1)
                 return null;
             
-            return UnixSupport.File.GetInodeTargetID(local);
+            return UnixSupport.File.GetInodeTargetID(snapshotPath);
         }
-        #endregion
 
-        #region IDisposable Members
-
-        /// <summary>
-        /// Releases any held resources
-        /// </summary>
-        public void Dispose()
+        /// <inheritdoc />
+        public override string ConvertToLocalPath(string snapshotPath)
         {
-            if (m_activeSnapShots != null)
-            {
-                Exception exs = null;
-
-                //Attempt to clean out as many as possible
-                foreach(SnapShot s in m_activeSnapShots)
-                    try { s.Dispose(); }
-                    catch (Exception ex) { exs = ex; }
-
-                //Don't try this again
-                m_activeSnapShots = null;
-
-                //Report errors, if any
-                if (exs != null)
-                    throw exs;
-            }
+            return FindSnapshotBySnapshotPath(snapshotPath).ConvertToLocalPath(snapshotPath);
         }
+
+        /// <inheritdoc />
+        public override string ConvertToSnapshotPath(string localPath)
+        {
+            return FindSnapshotByLocalPath(localPath).ConvertToSnapshotPath(localPath);
+        }
+
+        /// <inheritdoc />
+        public override bool IsSnapshot => true;
 
         #endregion
     }

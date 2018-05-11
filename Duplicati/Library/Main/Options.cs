@@ -1166,7 +1166,7 @@ namespace Duplicati.Library.Main
             }
         }
         /// <summary>
-        /// Gets the snapshot strategy to use
+        /// Gets the update sequence number (USN) strategy to use
         /// </summary>
         public OptimizationStrategy UsnStrategy
         {

@@ -18,8 +18,6 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
@@ -33,24 +31,64 @@ namespace Duplicati.Library.Snapshots
     internal static class Win32USN
     {
         public const int ERROR_HANDLE_EOF = 38;
+        public const int ERROR_INSUFFICIENT_BUFFER = 122;
         public const int ERROR_SUCCESS = 0;
+        public const int ERROR_JOURNAL_ENTRY_DELETED = 1181;
 
         #region Structures
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct USN_JOURNAL_DATA
+        public struct USN_JOURNAL_DATA_V0
         {
-            public long UsnJournalID;       //DWORDLONG UsnJournalID
-            public long FirstUsn;       //USN FirstUsn
-            public long NextUsn;        //USN NextUsn
-            public long LowestValidUsn;     //USN LowestValidUsn
-            public long MaxUsn;         //USN MaxUsn
-            public long MaximumSize;    //DWORDLONG MaximumSize
+            /// <summary>
+            /// The current journal identifier. A journal is assigned a new identifier on creation and can be 
+            /// stamped with a new identifier in the course of its existence. 
+            /// The NTFS file system uses this identifier for an integrity check.
+            /// </summary>
+            public long UsnJournalID;
+
+            /// <summary>
+            /// The number of first record that can be read from the journal.
+            /// </summary>
+            public long FirstUsn;
+
+            /// <summary>
+            /// The number of next record to be written to the journal.
+            /// </summary>
+            public long NextUsn;
+
+            /// <summary>
+            /// The first record that was written into the journal for this journal instance. 
+            /// Enumerating the files or directories on a volume can return a USN lower than this value 
+            /// (in other words, a FirstUsn member value less than the LowestValidUsn member value). 
+            /// If it does, the journal has been stamped with a new identifier since the last USN was written. 
+            /// In this case, LowestValidUsn may indicate a discontinuity in the journal, in which changes 
+            /// to some or all files or directories on the volume may have occurred that are not recorded in the change journal.
+            /// </summary>
+            public long LowestValidUsn;
+
+            /// <summary>
+            /// The largest USN that the change journal supports. An administrator must delete 
+            /// the change journal as the value of NextUsn approaches this value.
+            /// </summary>
+            public long MaxUsn;
+
+            /// <summary>
+            /// The target maximum size for the change journal, in bytes. The change journal can grow larger 
+            /// than this value, but it is then truncated at the next NTFS file system checkpoint to less than this value.
+            /// </summary>
+            public long MaximumSize;
+
+            /// <summary>
+            /// The number of bytes of disk memory added to the end and removed from the beginning of the change 
+            /// journal each time memory is allocated or deallocated. In other words, allocation and deallocation
+            /// take place in units of this size. An integer multiple of a cluster size is a reasonable value for this member.
+            /// </summary>
             public long AllocationDelta;    //DWORDLONG AllocationDelta
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct READ_USN_JOURNAL_DATA
+        public struct READ_USN_JOURNAL_DATA_V0
         {
             public long StartUsn;
             public USNReason ReasonMask;
@@ -61,7 +99,7 @@ namespace Duplicati.Library.Snapshots
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct USN_RECORD
+        public struct USN_RECORD_V2
         {
             public uint RecordLength;
             public ushort MajorVersion;
@@ -73,7 +111,7 @@ namespace Duplicati.Library.Snapshots
             public USNReason Reason;
             public uint SourceInfo;
             public uint SecurityId;
-            public EFileAttributes FileAttributes;
+            public FileAttributes FileAttributes;
             public ushort FileNameLength;
             public ushort FileNameOffset;
             // immediately after the FileNameOffset comes an array of WCHARs containing the FileName
@@ -114,217 +152,29 @@ namespace Duplicati.Library.Snapshots
         }
 
         [Flags]
-        public enum EFileDevice : uint
+        public enum FsCtl : uint
         {
-            Beep = 0x00000001,
-            CDRom = 0x00000002,
-            CDRomFileSytem = 0x00000003,
-            Controller = 0x00000004,
-            Datalink = 0x00000005,
-            Dfs = 0x00000006,
-            Disk = 0x00000007,
-            DiskFileSystem = 0x00000008,
-            FileSystem = 0x00000009,
-            InPortPort = 0x0000000a,
-            Keyboard = 0x0000000b,
-            Mailslot = 0x0000000c,
-            MidiIn = 0x0000000d,
-            MidiOut = 0x0000000e,
-            Mouse = 0x0000000f,
-            MultiUncProvider = 0x00000010,
-            NamedPipe = 0x00000011,
-            Network = 0x00000012,
-            NetworkBrowser = 0x00000013,
-            NetworkFileSystem = 0x00000014,
-            Null = 0x00000015,
-            ParellelPort = 0x00000016,
-            PhysicalNetcard = 0x00000017,
-            Printer = 0x00000018,
-            Scanner = 0x00000019,
-            SerialMousePort = 0x0000001a,
-            SerialPort = 0x0000001b,
-            Screen = 0x0000001c,
-            Sound = 0x0000001d,
-            Streams = 0x0000001e,
-            Tape = 0x0000001f,
-            TapeFileSystem = 0x00000020,
-            Transport = 0x00000021,
-            Unknown = 0x00000022,
-            Video = 0x00000023,
-            VirtualDisk = 0x00000024,
-            WaveIn = 0x00000025,
-            WaveOut = 0x00000026,
-            Port8042 = 0x00000027,
-            NetworkRedirector = 0x00000028,
-            Battery = 0x00000029,
-            BusExtender = 0x0000002a,
-            Modem = 0x0000002b,
-            Vdm = 0x0000002c,
-            MassStorage = 0x0000002d,
-            Smb = 0x0000002e,
-            Ks = 0x0000002f,
-            Changer = 0x00000030,
-            Smartcard = 0x00000031,
-            Acpi = 0x00000032,
-            Dvd = 0x00000033,
-            FullscreenVideo = 0x00000034,
-            DfsFileSystem = 0x00000035,
-            DfsVolume = 0x00000036,
-            Serenum = 0x00000037,
-            Termsrv = 0x00000038,
-            Ksec = 0x00000039
+            /// <summary>
+            /// Causes a journal to be queried when used with DeviceIoControl
+            /// </summary>
+            /// <remarks>FSCTL_QUERY_USN_JOURNAL</remarks>
+            QueryUSNJournal = 0x000900f4,
+
+            /// <summary>
+            /// Causes a journal to be read when used with DeviceIoControl
+            /// </summary>
+            /// <remarks>FSCTL_READ_USN_JOURNAL</remarks>
+            ReadUSNJournal = 0x000900bb,
+
+            /// <summary>
+            /// Enumerates the update sequence number (USN) data between two specified boundaries to obtain master file table (MFT) records.
+            /// </summary>
+            /// <remarks>FSCTL_ENUM_USN_DATA</remarks>
+            EnumUSNData = 0x000900b3
         }
 
         [Flags]
-        public enum EIOControlCode : uint
-        {
-            // STORAGE
-            StorageBase = EFileDevice.MassStorage,
-            StorageCheckVerify = (StorageBase << 16) | (0x0200 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            StorageCheckVerify2 = (StorageBase << 16) | (0x0200 << 2) | EMethod.Buffered | (0 << 14), // FileAccess.Any
-            StorageMediaRemoval = (StorageBase << 16) | (0x0201 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            StorageEjectMedia = (StorageBase << 16) | (0x0202 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            StorageLoadMedia = (StorageBase << 16) | (0x0203 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            StorageLoadMedia2 = (StorageBase << 16) | (0x0203 << 2) | EMethod.Buffered | (0 << 14),
-            StorageReserve = (StorageBase << 16) | (0x0204 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            StorageRelease = (StorageBase << 16) | (0x0205 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            StorageFindNewDevices = (StorageBase << 16) | (0x0206 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            StorageEjectionControl = (StorageBase << 16) | (0x0250 << 2) | EMethod.Buffered | (0 << 14),
-            StorageMcnControl = (StorageBase << 16) | (0x0251 << 2) | EMethod.Buffered | (0 << 14),
-            StorageGetMediaTypes = (StorageBase << 16) | (0x0300 << 2) | EMethod.Buffered | (0 << 14),
-            StorageGetMediaTypesEx = (StorageBase << 16) | (0x0301 << 2) | EMethod.Buffered | (0 << 14),
-            StorageResetBus = (StorageBase << 16) | (0x0400 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            StorageResetDevice = (StorageBase << 16) | (0x0401 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            StorageGetDeviceNumber = (StorageBase << 16) | (0x0420 << 2) | EMethod.Buffered | (0 << 14),
-            StoragePredictFailure = (StorageBase << 16) | (0x0440 << 2) | EMethod.Buffered | (0 << 14),
-            StorageObsoleteResetBus = (StorageBase << 16) | (0x0400 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            StorageObsoleteResetDevice = (StorageBase << 16) | (0x0401 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            // DISK
-            DiskBase = EFileDevice.Disk,
-            DiskGetDriveGeometry = (DiskBase << 16) | (0x0000 << 2) | EMethod.Buffered | (0 << 14),
-            DiskGetPartitionInfo = (DiskBase << 16) | (0x0001 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskSetPartitionInfo = (DiskBase << 16) | (0x0002 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskGetDriveLayout = (DiskBase << 16) | (0x0003 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskSetDriveLayout = (DiskBase << 16) | (0x0004 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskVerify = (DiskBase << 16) | (0x0005 << 2) | EMethod.Buffered | (0 << 14),
-            DiskFormatTracks = (DiskBase << 16) | (0x0006 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskReassignBlocks = (DiskBase << 16) | (0x0007 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskPerformance = (DiskBase << 16) | (0x0008 << 2) | EMethod.Buffered | (0 << 14),
-            DiskIsWritable = (DiskBase << 16) | (0x0009 << 2) | EMethod.Buffered | (0 << 14),
-            DiskLogging = (DiskBase << 16) | (0x000a << 2) | EMethod.Buffered | (0 << 14),
-            DiskFormatTracksEx = (DiskBase << 16) | (0x000b << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskHistogramStructure = (DiskBase << 16) | (0x000c << 2) | EMethod.Buffered | (0 << 14),
-            DiskHistogramData = (DiskBase << 16) | (0x000d << 2) | EMethod.Buffered | (0 << 14),
-            DiskHistogramReset = (DiskBase << 16) | (0x000e << 2) | EMethod.Buffered | (0 << 14),
-            DiskRequestStructure = (DiskBase << 16) | (0x000f << 2) | EMethod.Buffered | (0 << 14),
-            DiskRequestData = (DiskBase << 16) | (0x0010 << 2) | EMethod.Buffered | (0 << 14),
-            DiskControllerNumber = (DiskBase << 16) | (0x0011 << 2) | EMethod.Buffered | (0 << 14),
-            DiskSmartGetVersion = (DiskBase << 16) | (0x0020 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskSmartSendDriveCommand = (DiskBase << 16) | (0x0021 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskSmartRcvDriveData = (DiskBase << 16) | (0x0022 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskUpdateDriveSize = (DiskBase << 16) | (0x0032 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskGrowPartition = (DiskBase << 16) | (0x0034 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskGetCacheInformation = (DiskBase << 16) | (0x0035 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskSetCacheInformation = (DiskBase << 16) | (0x0036 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskDeleteDriveLayout = (DiskBase << 16) | (0x0040 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskFormatDrive = (DiskBase << 16) | (0x00f3 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            DiskSenseDevice = (DiskBase << 16) | (0x00f8 << 2) | EMethod.Buffered | (0 << 14),
-            DiskCheckVerify = (DiskBase << 16) | (0x0200 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskMediaRemoval = (DiskBase << 16) | (0x0201 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskEjectMedia = (DiskBase << 16) | (0x0202 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskLoadMedia = (DiskBase << 16) | (0x0203 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskReserve = (DiskBase << 16) | (0x0204 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskRelease = (DiskBase << 16) | (0x0205 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskFindNewDevices = (DiskBase << 16) | (0x0206 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            DiskGetMediaTypes = (DiskBase << 16) | (0x0300 << 2) | EMethod.Buffered | (0 << 14),
-            // CHANGER
-            ChangerBase = EFileDevice.Changer,
-            ChangerGetParameters = (ChangerBase << 16) | (0x0000 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            ChangerGetStatus = (ChangerBase << 16) | (0x0001 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            ChangerGetProductData = (ChangerBase << 16) | (0x0002 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            ChangerSetAccess = (ChangerBase << 16) | (0x0004 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            ChangerGetElementStatus = (ChangerBase << 16) | (0x0005 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            ChangerInitializeElementStatus = (ChangerBase << 16) | (0x0006 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            ChangerSetPosition = (ChangerBase << 16) | (0x0007 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            ChangerExchangeMedium = (ChangerBase << 16) | (0x0008 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            ChangerMoveMedium = (ChangerBase << 16) | (0x0009 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            ChangerReinitializeTarget = (ChangerBase << 16) | (0x000A << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            ChangerQueryVolumeTags = (ChangerBase << 16) | (0x000B << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            // FILESYSTEM
-            FsctlRequestOplockLevel1 = (EFileDevice.FileSystem << 16) | (0 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlRequestOplockLevel2 = (EFileDevice.FileSystem << 16) | (1 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlRequestBatchOplock = (EFileDevice.FileSystem << 16) | (2 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlOplockBreakAcknowledge = (EFileDevice.FileSystem << 16) | (3 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlOpBatchAckClosePending = (EFileDevice.FileSystem << 16) | (4 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlOplockBreakNotify = (EFileDevice.FileSystem << 16) | (5 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlLockVolume = (EFileDevice.FileSystem << 16) | (6 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlUnlockVolume = (EFileDevice.FileSystem << 16) | (7 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlDismountVolume = (EFileDevice.FileSystem << 16) | (8 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlIsVolumeMounted = (EFileDevice.FileSystem << 16) | (10 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlIsPathnameValid = (EFileDevice.FileSystem << 16) | (11 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlMarkVolumeDirty = (EFileDevice.FileSystem << 16) | (12 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlQueryRetrievalPointers = (EFileDevice.FileSystem << 16) | (14 << 2) | EMethod.Neither | (0 << 14),
-            FsctlGetCompression = (EFileDevice.FileSystem << 16) | (15 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlSetCompression = (EFileDevice.FileSystem << 16) | (16 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            FsctlMarkAsSystemHive = (EFileDevice.FileSystem << 16) | (19 << 2) | EMethod.Neither | (0 << 14),
-            FsctlOplockBreakAckNo2 = (EFileDevice.FileSystem << 16) | (20 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlInvalidateVolumes = (EFileDevice.FileSystem << 16) | (21 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlQueryFatBpb = (EFileDevice.FileSystem << 16) | (22 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlRequestFilterOplock = (EFileDevice.FileSystem << 16) | (23 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlFileSystemGetStatistics = (EFileDevice.FileSystem << 16) | (24 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlGetNtfsVolumeData = (EFileDevice.FileSystem << 16) | (25 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlGetNtfsFileRecord = (EFileDevice.FileSystem << 16) | (26 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlGetVolumeBitmap = (EFileDevice.FileSystem << 16) | (27 << 2) | EMethod.Neither | (0 << 14),
-            FsctlGetRetrievalPointers = (EFileDevice.FileSystem << 16) | (28 << 2) | EMethod.Neither | (0 << 14),
-            FsctlMoveFile = (EFileDevice.FileSystem << 16) | (29 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlIsVolumeDirty = (EFileDevice.FileSystem << 16) | (30 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlGetHfsInformation = (EFileDevice.FileSystem << 16) | (31 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlAllowExtendedDasdIo = (EFileDevice.FileSystem << 16) | (32 << 2) | EMethod.Neither | (0 << 14),
-            FsctlReadPropertyData = (EFileDevice.FileSystem << 16) | (33 << 2) | EMethod.Neither | (0 << 14),
-            FsctlWritePropertyData = (EFileDevice.FileSystem << 16) | (34 << 2) | EMethod.Neither | (0 << 14),
-            FsctlFindFilesBySid = (EFileDevice.FileSystem << 16) | (35 << 2) | EMethod.Neither | (0 << 14),
-            FsctlDumpPropertyData = (EFileDevice.FileSystem << 16) | (37 << 2) | EMethod.Neither | (0 << 14),
-            FsctlSetObjectId = (EFileDevice.FileSystem << 16) | (38 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlGetObjectId = (EFileDevice.FileSystem << 16) | (39 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlDeleteObjectId = (EFileDevice.FileSystem << 16) | (40 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlSetReparsePoint = (EFileDevice.FileSystem << 16) | (41 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlGetReparsePoint = (EFileDevice.FileSystem << 16) | (42 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlDeleteReparsePoint = (EFileDevice.FileSystem << 16) | (43 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlEnumUsnData = (EFileDevice.FileSystem << 16) | (44 << 2) | EMethod.Neither | (0 << 14),
-            FsctlSecurityIdCheck = (EFileDevice.FileSystem << 16) | (45 << 2) | EMethod.Neither | (EFileAccess.GenericRead << 14),
-            FsctlReadUsnJournal = (EFileDevice.FileSystem << 16) | (46 << 2) | EMethod.Neither | (0 << 14),
-            FsctlSetObjectIdExtended = (EFileDevice.FileSystem << 16) | (47 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlCreateOrGetObjectId = (EFileDevice.FileSystem << 16) | (48 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlSetSparse = (EFileDevice.FileSystem << 16) | (49 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlSetZeroData = (EFileDevice.FileSystem << 16) | (50 << 2) | EMethod.Buffered | (EFileAccess.GenericWrite << 14),
-            FsctlQueryAllocatedRanges = (EFileDevice.FileSystem << 16) | (51 << 2) | EMethod.Neither | (EFileAccess.GenericRead << 14),
-            FsctlEnableUpgrade = (EFileDevice.FileSystem << 16) | (52 << 2) | EMethod.Buffered | (EFileAccess.GenericWrite << 14),
-            FsctlSetEncryption = (EFileDevice.FileSystem << 16) | (53 << 2) | EMethod.Neither | (0 << 14),
-            FsctlEncryptionFsctlIo = (EFileDevice.FileSystem << 16) | (54 << 2) | EMethod.Neither | (0 << 14),
-            FsctlWriteRawEncrypted = (EFileDevice.FileSystem << 16) | (55 << 2) | EMethod.Neither | (0 << 14),
-            FsctlReadRawEncrypted = (EFileDevice.FileSystem << 16) | (56 << 2) | EMethod.Neither | (0 << 14),
-            FsctlCreateUsnJournal = (EFileDevice.FileSystem << 16) | (57 << 2) | EMethod.Neither | (0 << 14),
-            FsctlReadFileUsnData = (EFileDevice.FileSystem << 16) | (58 << 2) | EMethod.Neither | (0 << 14),
-            FsctlWriteUsnCloseRecord = (EFileDevice.FileSystem << 16) | (59 << 2) | EMethod.Neither | (0 << 14),
-            FsctlExtendVolume = (EFileDevice.FileSystem << 16) | (60 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlQueryUsnJournal = (EFileDevice.FileSystem << 16) | (61 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlDeleteUsnJournal = (EFileDevice.FileSystem << 16) | (62 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlMarkHandle = (EFileDevice.FileSystem << 16) | (63 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlSisCopyFile = (EFileDevice.FileSystem << 16) | (64 << 2) | EMethod.Buffered | (0 << 14),
-            FsctlSisLinkFiles = (EFileDevice.FileSystem << 16) | (65 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            FsctlHsmMsg = (EFileDevice.FileSystem << 16) | (66 << 2) | EMethod.Buffered | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            FsctlNssControl = (EFileDevice.FileSystem << 16) | (67 << 2) | EMethod.Buffered | (EFileAccess.GenericWrite << 14),
-            FsctlHsmData = (EFileDevice.FileSystem << 16) | (68 << 2) | EMethod.Neither | ((EFileAccess.GenericRead | EFileAccess.GenericWrite) << 14),
-            FsctlRecallFile = (EFileDevice.FileSystem << 16) | (69 << 2) | EMethod.Neither | (0 << 14),
-            FsctlNssRcontrol = (EFileDevice.FileSystem << 16) | (70 << 2) | EMethod.Buffered | (EFileAccess.GenericRead << 14),
-            // VIDEO
-            VideoQuerySupportedBrightness = (EFileDevice.Video << 16) | (0x0125 << 2) | EMethod.Buffered | (0 << 14),
-            VideoQueryDisplayBrightness = (EFileDevice.Video << 16) | (0x0126 << 2) | EMethod.Buffered | (0 << 14),
-            VideoSetDisplayBrightness = (EFileDevice.Video << 16) | (0x0127 << 2) | EMethod.Buffered | (0 << 14)
-        }
-
-        [Flags]
-        public enum EFileAccess : uint
+        public enum FileAccess : uint
         {
             /// <summary>
             /// 
@@ -345,7 +195,7 @@ namespace Duplicati.Library.Snapshots
         }
 
         [Flags]
-        public enum EFileShare : uint
+        public enum FileShare : uint
         {
             /// <summary>
             /// 
@@ -379,7 +229,7 @@ namespace Duplicati.Library.Snapshots
             All = None | Read | Write
         }
 
-        public enum ECreationDisposition : uint
+        public enum CreationDisposition : uint
         {
             /// <summary>
             /// Creates a new file. The function fails if a specified file exists.
@@ -408,7 +258,7 @@ namespace Duplicati.Library.Snapshots
         }
 
         [Flags]
-        public enum EFileAttributes : uint
+        public enum FileAttributes : uint
         {
             None = 0x0,
             Readonly = 0x00000001,
@@ -425,7 +275,7 @@ namespace Duplicati.Library.Snapshots
             Offline = 0x00001000,
             NotContentIndexed = 0x00002000,
             Encrypted = 0x00004000,
-            Write_Through = 0x80000000,
+            WriteThrough = 0x80000000,
             Overlapped = 0x40000000,
             NoBuffering = 0x20000000,
             RandomAccess = 0x10000000,
@@ -514,11 +364,11 @@ namespace Duplicati.Library.Snapshots
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
         public static extern SafeFileHandle CreateFile(
               string lpFileName,
-              EFileAccess dwDesiredAccess,
-              EFileShare dwShareMode,
+              FileAccess dwDesiredAccess,
+              FileShare dwShareMode,
               IntPtr SecurityAttributes,
-              ECreationDisposition dwCreationDisposition,
-              EFileAttributes dwFlagsAndAttributes,
+              CreationDisposition dwCreationDisposition,
+              FileAttributes dwFlagsAndAttributes,
               IntPtr hTemplateFile
               );
 
@@ -537,8 +387,8 @@ namespace Duplicati.Library.Snapshots
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool DeviceIoControl(
             SafeFileHandle hDevice,
-            EIOControlCode IoControlCode,
-            [In] READ_USN_JOURNAL_DATA InBuffer,
+            FsCtl IoControlCode,
+            [In] READ_USN_JOURNAL_DATA_V0 InBuffer,
             uint nInBufferSize,
             [In] IntPtr OutBuffer,
             uint nOutBufferSize,
@@ -561,7 +411,7 @@ namespace Duplicati.Library.Snapshots
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool DeviceIoControl(
             SafeFileHandle hDevice,
-            EIOControlCode IoControlCode,
+            FsCtl IoControlCode,
             [In] ref MFT_ENUM_DATA InBuffer,
             uint nInBufferSize,
             [In] IntPtr OutBuffer,
@@ -574,10 +424,10 @@ namespace Duplicati.Library.Snapshots
         /// Sends the dwIoControlCode to the device specified by hDevice.
         /// </summary>
         /// <param name="hDevice">Safe handle to the device </param>
-        /// <param name="IoControlCode">Device IO Control Code to send</param>
-        /// <param name="InBuffer">Input buffer if required</param>
+        /// <param name="dwIoControlCode">Device IO Control Code to send</param>
+        /// <param name="lpInBuffer">Input buffer if required</param>
         /// <param name="nInBufferSize">Size of input buffer</param>
-        /// <param name="OutBuffer">Output buffer if required</param>
+        /// <param name="lpOutBuffer">Output buffer if required</param>
         /// <param name="nOutBufferSize">Size of output buffer</param>
         /// <param name="pBytesReturned">Number of bytes returned in output buffer</param>
         /// <param name="overlapped">IntPtr to an 'OVERLAPPED' structure</param>
@@ -585,14 +435,13 @@ namespace Duplicati.Library.Snapshots
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool DeviceIoControl(
             SafeFileHandle hDevice,
-            EIOControlCode IoControlCode,
-            [MarshalAs(UnmanagedType.AsAny)]
-            [In] object InBuffer,
+            uint dwIoControlCode,
+            IntPtr lpInBuffer,
             uint nInBufferSize,
-            [Out] out USN_JOURNAL_DATA OutBuffer,
+            IntPtr lpOutBuffer,
             uint nOutBufferSize,
-            ref uint pBytesReturned,
-            [In] IntPtr overlapped //[In] ref System.Threading.NativeOverlapped Overlapped
+            out uint pBytesReturned,
+            IntPtr overlapped
         );
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -602,5 +451,87 @@ namespace Duplicati.Library.Snapshots
         );
 
         #endregion
+
+        /// <summary>
+        /// Sends the control code to the device specified by handle.
+        /// </summary>
+        /// <typeparam name="TStructure"></typeparam>
+        /// <param name="handle"></param>
+        /// <param name="code"></param>
+        /// <param name="structure"></param>
+        /// <param name="bufferSize">Maximum size of returned buffer</param>
+        /// <returns></returns>
+        public static bool ControlWithInput<TStructure>(
+            SafeFileHandle handle, FsCtl code,
+            ref TStructure structure, int bufferSize, out byte[] buffer)
+            where TStructure : struct
+        {
+            uint datalen;
+            bool controlResult;
+
+            buffer = new byte[bufferSize];
+            var bufferHandle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+            var structureHandle = GCHandle.Alloc(structure, GCHandleType.Pinned);
+            var bufferPointer = bufferHandle.AddrOfPinnedObject();
+            var structurePointer = structureHandle.AddrOfPinnedObject();
+
+            try
+            {
+                controlResult =
+                    DeviceIoControl(handle, (uint)code,
+                    structurePointer, (uint)Marshal.SizeOf(structure),
+                    bufferPointer, (uint)buffer.Length,
+                    out datalen, IntPtr.Zero);
+            }
+            finally
+            {
+                structureHandle.Free();
+                bufferHandle.Free();
+            }
+
+            Array.Resize(ref buffer, (int)datalen);
+
+            return controlResult;
+        }
+
+        /// <summary>
+        /// Sends the control code to the device specified by handle.
+        /// </summary>
+        /// <typeparam name="TStructure"></typeparam>
+        /// <param name="handle"></param>
+        /// <param name="code"></param>
+        /// <param name="structure"></param>
+        internal static bool ControlWithOutput<TStructure>(
+            SafeFileHandle handle, FsCtl code, ref TStructure structure)
+            where TStructure : struct
+        {
+            bool controlResult;
+
+            //get our object pointer
+            var structureHandle = GCHandle.Alloc(structure, GCHandleType.Pinned);
+            var structurePointer = structureHandle.AddrOfPinnedObject();
+
+            try
+            {
+                controlResult =
+                    DeviceIoControl(handle, (uint)code,
+                    IntPtr.Zero, 0, structurePointer,
+                    (uint)Marshal.SizeOf(structure),
+                    out _, IntPtr.Zero);
+            }
+            finally
+            {
+                // always release GH handle
+                structureHandle.Free();
+            }
+
+            if (controlResult)
+            {
+                structure = (TStructure)Marshal.PtrToStructure(structurePointer, typeof(TStructure));
+            }
+
+            return controlResult;
+
+        }
     }
 }
