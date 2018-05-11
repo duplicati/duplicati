@@ -497,7 +497,6 @@ namespace Duplicati.Library.Utility
             };
             return builder.Uri.AbsoluteUri;
         }
-
     }
 }
 
