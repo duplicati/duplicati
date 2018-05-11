@@ -17,6 +17,8 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Specialized;
+using System.Linq;
+using System.Text;
 using System.Web;
 
 namespace Duplicati.Library.Utility
@@ -454,7 +456,48 @@ namespace Duplicati.Library.Utility
                 result.Add(UrlDecode(m.Groups["key"].Value), UrlDecode(m.Groups["value"].Success ? m.Groups["value"].Value : ""));
             
             return result;            
-        }        
+        }
+
+        /// <summary>
+        /// Build the querystring to be used in a URL
+        /// </summary>
+        /// <returns>The generated querystring</returns>
+        /// <param name="query">A collection of name value pairs to be translated into a query string</param>
+        /// <param name="delimiter">The delimiter to separate key value pairs in the query string</param>
+        public static string BuildUriQuery(NameValueCollection query, string delimiter = "&") {
+
+            if (query == null)
+                throw new ArgumentNullException(nameof(query));
+
+            StringBuilder builder = new StringBuilder();
+            foreach (var key in query.Cast<string>().Where(key => !string.IsNullOrEmpty(query[key])))
+            {
+                builder.Append(builder.Length == 0 ? "?" : delimiter)
+                       .Append(key)
+                       .Append("=")
+                       .Append(query[key]);
+            }
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Builds a URL together using a base URL, a path and a query.
+        /// </summary>
+        /// <returns>The built together URL.</returns>
+        /// <param name="baseUrl">Base URL, containing schema, host, port.</param>
+        /// <param name="basePath">Base path.</param>
+        /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
+        public static string UrlBuilder(string baseUrl, string basePath, NameValueCollection query)
+        {
+            var builder = new UriBuilder(baseUrl)
+            {
+                Path = basePath,
+                Query = query != null ? BuildUriQuery(query) : null
+            };
+            return builder.Uri.AbsoluteUri;
+        }
+
     }
 }
 
