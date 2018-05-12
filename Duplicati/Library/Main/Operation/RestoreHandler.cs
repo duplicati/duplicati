@@ -448,7 +448,9 @@ namespace Duplicati.Library.Main.Operation
                 // Restore empty files. They might not have any blocks so don't appear in any volume.
                 foreach (var file in database.GetFilesToRestore(true).Where(item => item.Length == 0)) {
                     // Just create the file and close it right away, empty statement is intentional.
-                    using (m_systemIO.FileCreate(file.Path)) ;
+                    using (m_systemIO.FileCreate(file.Path))
+                    {
+                    }
                 }
 
                 // Enforcing the length of files is now already done during ScanForExistingTargetBlocks

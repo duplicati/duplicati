@@ -1,4 +1,25 @@
-﻿using System;
+﻿#region Disclaimer / License
+
+// Copyright (C) 2015, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+
+#endregion
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +30,7 @@ using Duplicati.Library.Interface;
 using System.Threading.Tasks;
 using CoCoL;
 using System.Threading;
+using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -62,9 +84,53 @@ namespace Duplicati.Library.Main.Operation
             }
 
             return Library.Utility.Utility.IsClientLinux ?
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux(sources, options.RawOptions)
+                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux()
                     :
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows(sources, options.RawOptions);
+                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows();
+        }
+
+        /// <summary>
+        /// Create instance of USN journal service
+        /// </summary>
+        /// <param name="sources"></param>
+        /// <param name="snapshot"></param>
+        /// <param name="filter"></param>
+        /// <param name="lastfilesetid"></param>
+        /// <returns></returns>
+        private UsnJournalService GetJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter filter, long lastfilesetid)
+        {
+            if (m_options.UsnStrategy == Options.OptimizationStrategy.Off) return null;
+            var journalData = m_database.GetChangeJournalData(lastfilesetid);
+            var service = new UsnJournalService(sources, snapshot, filter, journalData);
+
+            foreach (var volumeData in service.VolumeDataList)
+            {
+                if (volumeData.IsFullScan)
+                {
+                    if (volumeData.Exception == null || volumeData.Exception is UsnJournalSoftFailureException)
+                    {
+                        // soft fail
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume", $"Performing full scan for volume \"{volumeData.Volume}\"");
+                    }
+                    else
+                    {
+                        if (m_options.UsnStrategy == Options.OptimizationStrategy.Auto)
+                        {
+                            Logging.Log.WriteInformationMessage(LOGTAG, "FailedToUseChangeJournal",
+                                "Failed to use change journal for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception.Message);
+                        }
+                        else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
+                        {
+                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
+                                "Failed to use change journal for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception.Message);
+                        }
+                        else
+                            throw volumeData.Exception;
+                    }
+                }
+            }
+
+            return service;
         }
 
         private void PreBackupVerify(BackendManager backend, string protectedfile)
@@ -102,7 +168,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperation(Snapshots.ISnapshotService snapshot, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader, long lastfilesetid)
+        private static async Task RunMainOperation(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader, long lastfilesetid)
         {
             using(new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
@@ -118,7 +184,7 @@ namespace Duplicati.Library.Main.Operation
                             Backup.DataBlockProcessor.Run(database, options, taskreader),
                             Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader),
                             Backup.StreamBlockSplitter.Run(options, database, taskreader),
-                            Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, taskreader),
+                            Backup.FileEnumerationProcess.Run(sources, snapshot, journalService, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, taskreader),
                             Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
                             Backup.MetadataPreProcess.Run(snapshot, options, database, lastfilesetid),
                             Backup.SpillCollectorProcess.Run(options, database, taskreader),
@@ -138,7 +204,35 @@ namespace Duplicati.Library.Main.Operation
                 await all;
 
                 if (options.ChangedFilelist != null && options.ChangedFilelist.Length >= 1)
+                {
                     await database.AppendFilesFromPreviousSetAsync(options.DeletedFilelist);
+                }
+                else if (journalService != null)
+                {
+                    // append files from previous fileset, unless part of modifiedSources, which we've just scanned
+                    await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
+                    {
+                        if (journalService.IsPathEnumerated(path))
+                            return true;
+
+                        if (fileSize >= 0)
+                        {
+                            stats.AddExaminedFile(fileSize);
+                        }
+                        return false;
+                    });
+
+                    // store journal data in database
+                    var data = journalService.VolumeDataList.Where(p => p.JournalData != null).Select(p => p.JournalData).ToList();
+                    if (data.Any())
+                    {
+                        // always record change journal data for current fileset (entry may be dropped later if nothing is uploaded)
+                        await database.CreateChangeJournalDataAsync(data);
+
+                        // update the previous fileset's change journal entry to resume at this point in case nothing was backed up
+                        await database.UpdateChangeJournalDataAsync(data, lastfilesetid);
+                    }
+                }
                 
                 result.OperationProgressUpdater.UpdatefileCount(result.ExaminedFiles, result.SizeOfExaminedFiles, true);
             }
@@ -323,7 +417,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                                 else
                                 {
-                                    parallelScanner = Backup.CountFilesHandler.Run(snapshot, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
+                                    parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
                                 }
 
                                 // Make sure the database is sane
@@ -378,9 +472,12 @@ namespace Duplicati.Library.Main.Operation
                                 var filesetvolumeid = await db.RegisterRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
                                 filesetid = await db.CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time);
 
+                                // create USN-based scanner if enabled
+                                var journalService = GetJournalService(sources, snapshot, filter, lastfilesetid);
+
                                 // Run the backup operation
                                 if (await m_result.TaskReader.ProgressAsync)
-                                    await RunMainOperation(snapshot, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid);
+                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid);
                             }
                             finally
                             {

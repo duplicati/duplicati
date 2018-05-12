@@ -17,10 +17,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-using System;
+
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -35,7 +34,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="folders">The list of folders to create snapshots of</param>
         /// <param name="options">A set of commandline options</param>
         /// <returns>The ISnapshotService implementation</returns>
-        public static ISnapshotService CreateSnapshot(string[] folders, Dictionary<string, string> options)
+        public static ISnapshotService CreateSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
             return
                 Utility.Utility.IsClientLinux
@@ -55,9 +54,9 @@ namespace Duplicati.Library.Snapshots
         /// <param name="options">A set of commandline options</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static ISnapshotService CreateLinuxSnapshot(string[] folders, Dictionary<string, string> options)
+        private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
-            return new LinuxSnapshot(folders, options);
+            return new LinuxSnapshot(folders);
         }
 
         /// <summary>
@@ -67,7 +66,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="options">A set of commandline options</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static ISnapshotService CreateWindowsSnapshot(string[] folders, Dictionary<string, string> options)
+        private static ISnapshotService CreateWindowsSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
             return new WindowsSnapshot(folders, options);
         }
