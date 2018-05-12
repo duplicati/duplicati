@@ -506,7 +506,6 @@ namespace Duplicati.Library.Snapshots
             where TStructure : struct
         {
             bool controlResult;
-
             //get our object pointer
             var structureHandle = GCHandle.Alloc(structure, GCHandleType.Pinned);
             var structurePointer = structureHandle.AddrOfPinnedObject();
@@ -517,7 +516,7 @@ namespace Duplicati.Library.Snapshots
                     DeviceIoControl(handle, (uint)code,
                     IntPtr.Zero, 0, structurePointer,
                     (uint)Marshal.SizeOf(structure),
-                    out _, IntPtr.Zero);
+                    out var _, IntPtr.Zero);
             }
             finally
             {
