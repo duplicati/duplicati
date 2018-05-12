@@ -35,10 +35,10 @@ namespace Duplicati.Library.Backend.GoogleDrive
         private const string DRIVE_API_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v2";
         private const string DRIVE_API_URL = "https://www.googleapis.com/drive/v2";
 
-        private string m_path;
+        private readonly string m_path;
         private bool m_useTeamDrive = true;
 
-        private OAuthHelper m_oauth;
+        private readonly OAuthHelper m_oauth;
         private string m_currentFolderId;
         private Dictionary<string, GoogleDriveFolderItem[]> m_filecache;
 
@@ -120,7 +120,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 else
                     return null;
             }
-                    
+
             return m_filecache[remotename] = entries;
         }
 
@@ -153,7 +153,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                 var isUpdate = !string.IsNullOrWhiteSpace(fileId);
 
-                var values = new NameValueCollection { { GoogleDriveApiStrings.UploadTypeParam, "resumable" } };
+                var values = new NameValueCollection { { GoogleDriveApiStrings.UploadTypeParam, GoogleDriveApiStrings.UploadTypeResumableValue } };
                 PrepareFileUploadUrl(Library.Utility.Uri.UrlPathEncode(fileId), values);
 
                 var url = isUpdate ?
@@ -187,7 +187,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             var fileId = GetFileEntries(remotename).OrderByDescending(x => x.createdDate).First().id;
 
             var url = PrepareFileQueryUrl(fileId, new NameValueCollection{
-                { "alt", "media"} 
+                { GoogleDriveApiStrings.AltParam, GoogleDriveApiStrings.AltMediaValue }
             });
             var req = m_oauth.CreateRequest(url);
             var areq = new AsyncHttpRequest(req);
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 }
             }
         }
-        
+
         public void Put(string remotename, string filename)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
@@ -319,8 +319,14 @@ namespace Duplicati.Library.Backend.GoogleDrive
         {
             get {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleDrive.AuthidShort, Strings.GoogleDrive.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("googledrive"))),
-                    new CommandLineArgument(DISABLE_TEAMDRIVE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.GoogleDrive.DisableTeamDriveShort, Strings.GoogleDrive.DisableTeamDriveLong),
+                    new CommandLineArgument(AUTHID_OPTION,
+                                            CommandLineArgument.ArgumentType.Password,
+                                            Strings.GoogleDrive.AuthidShort,
+                                            Strings.GoogleDrive.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("googledrive"))),
+                    new CommandLineArgument(DISABLE_TEAMDRIVE_OPTION,
+                                            CommandLineArgument.ArgumentType.Boolean,
+                                            Strings.GoogleDrive.DisableTeamDriveShort,
+                                            Strings.GoogleDrive.DisableTeamDriveLong),
                 });
             }
         }
@@ -408,22 +414,28 @@ namespace Duplicati.Library.Backend.GoogleDrive
         private static class GoogleDriveApiStrings
         {
             public static string FilePath { get { return "files"; } }
+            public static string FileQueryParam { get { return "q"; } }
             public static string AboutPath { get { return "about"; } }
             public static string SupportsTeamDriveParam { get { return "supportsTeamDrives"; } }
             public static string IncludeTeamDriveParam { get { return "includeTeamDriveItems"; } }
+            public static string True { get { return "true"; } }
+            public static string False { get { return "false"; } }
+            public static string PageTokenParam { get { return "pageToken"; } }
             public static string UploadTypeParam { get { return "uploadType"; } }
-            public static string pageTokenParam { get { return "uploadType"; } }
+            public static string UploadTypeResumableValue { get { return "resumable"; } }
+            public static string AltParam { get { return "alt"; } }
+            public static string AltMediaValue { get { return "media"; } }
         }
 
 
         private NameValueCollection SupportsTeamDriveParam()
         {
-            return m_useTeamDrive? new NameValueCollection { { GoogleDriveApiStrings.SupportsTeamDriveParam, "true"}} : null;
+            return m_useTeamDrive? new NameValueCollection { { GoogleDriveApiStrings.SupportsTeamDriveParam, GoogleDriveApiStrings.True }} : null;
         }
 
         private NameValueCollection IncludeTeamDriveParam()
         {
-            return m_useTeamDrive ? new NameValueCollection { { GoogleDriveApiStrings.IncludeTeamDriveParam, "true" } } : null;
+            return m_useTeamDrive ? new NameValueCollection { { GoogleDriveApiStrings.IncludeTeamDriveParam, GoogleDriveApiStrings.True } } : null;
         }
 
         private string PrepareFileQueryUrl(NameValueCollection values)
@@ -521,7 +533,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         private IEnumerable<GoogleDriveFolderItem> ListFolder(string parentfolder, bool? onlyFolders = null, string name = null)
         {
-            var p = new string[] {
+            var fileQuery = new string[] {
                 string.IsNullOrEmpty(name) ? null : string.Format("title = '{0}'", EscapeTitleEntries(name)),
                 onlyFolders == null ? null : string.Format("mimeType {0}= '{1}'", onlyFolders.Value ? "" : "!", FOLDER_MIMETYPE),
                 string.Format("'{0}' in parents", EscapeTitleEntries(parentfolder))
@@ -529,7 +541,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             var queryParams = new NameValueCollection
             {
-                {"q", Library.Utility.Uri.UrlEncode(string.Join(" and ", p.Where(x => x != null)))},
+                {GoogleDriveApiStrings.FileQueryParam, Library.Utility.Uri.UrlEncode(string.Join(" and ", fileQuery.Where(x => x != null)))},
             };
             queryParams.Add(SupportsTeamDriveParam());
             queryParams.Add(IncludeTeamDriveParam());
@@ -545,7 +557,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 if (string.IsNullOrWhiteSpace(token))
                     break;
 
-                queryParams.Set(GoogleDriveApiStrings.pageTokenParam, token);
+                queryParams.Set(GoogleDriveApiStrings.PageTokenParam, token);
             }
         }
 
