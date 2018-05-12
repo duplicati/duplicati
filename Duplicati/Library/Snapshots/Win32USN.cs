@@ -516,7 +516,7 @@ namespace Duplicati.Library.Snapshots
                     DeviceIoControl(handle, (uint)code,
                     IntPtr.Zero, 0, structurePointer,
                     (uint)Marshal.SizeOf(structure),
-                    out uint _, IntPtr.Zero);
+                    out var _, IntPtr.Zero);
             }
             finally
             {

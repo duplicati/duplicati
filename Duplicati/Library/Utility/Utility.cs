@@ -191,7 +191,7 @@ namespace Duplicati.Library.Utility
         {
             filter = filter ?? new FilterExpression();
             return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => {
-                if (!filter.Matches(path, out var result, out IFilter _))
+                if (!filter.Matches(path, out var result, out var _))
                     result = true;
 
                 return result;
