@@ -64,11 +64,6 @@ namespace Duplicati.Server.WebServer
         private readonly ConcurrentDictionary<string, DateTime> m_logincache = new ConcurrentDictionary<string, DateTime>();
 
         /// <summary>
-        /// The loca guarding the login cache
-        /// </summary>
-        private object m_lock = new object();
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Server.WebServer.SynologyAuthenticationHandler"/> class.
         /// </summary>
         public SynologyAuthenticationHandler()
