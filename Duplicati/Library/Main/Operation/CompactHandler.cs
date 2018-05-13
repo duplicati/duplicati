@@ -143,74 +143,76 @@ namespace Duplicati.Library.Main.Operation
                         
                         using(var q = db.CreateBlockQueryHelper(m_options, transaction))
                         {
-                            foreach(var entry in new AsyncDownloader(volumesToDownload, backend))
-                            using(var tmpfile = entry.TempFile)
+                            foreach (var entry in new AsyncDownloader(volumesToDownload, backend))
                             {
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                using (var tmpfile = entry.TempFile)
                                 {
-                                    backend.WaitForComplete(db, transaction);
-                                    return false;
-                                }
-                                    
-                                downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Name, entry.Size));
-                                var inst = VolumeBase.ParseFilename(entry.Name);
-                                using(var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))
-                                {
-                                    foreach(var e in f.Blocks)
+                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
-                                        if (q.UseBlock(e.Key, e.Value, transaction))
+                                        backend.WaitForComplete(db, transaction);
+                                        return false;
+                                    }
+
+                                    downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Name, entry.Size));
+                                    var inst = VolumeBase.ParseFilename(entry.Name);
+                                    using (var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))
+                                    {
+                                        foreach (var e in f.Blocks)
                                         {
-                                            //TODO: How do we get the compression hint? Reverse query for filename in db?
-                                            var s = f.ReadBlock(e.Key, buffer);
-                                            if (s != e.Value)
-                                                throw new Exception(string.Format("Size mismatch problem for block {0}, {1} vs {2}", e.Key, s, e.Value));
-                                                
-                                            newvol.AddBlock(e.Key, buffer, 0, s, Duplicati.Library.Interface.CompressionHint.Compressible);
-                                            if (newvolindex != null)
-                                                newvolindex.AddBlock(e.Key, e.Value);
-                                                
-                                            db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID, transaction);
-                                            blocksInVolume++;
-                                            
-                                            if (newvol.Filesize > m_options.VolumeSize)
+                                            if (q.UseBlock(e.Key, e.Value, transaction))
                                             {
-                                                uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
+                                                //TODO: How do we get the compression hint? Reverse query for filename in db?
+                                                var s = f.ReadBlock(e.Key, buffer);
+                                                if (s != e.Value)
+                                                    throw new Exception(string.Format("Size mismatch problem for block {0}, {1} vs {2}", e.Key, s, e.Value));
+
+                                                newvol.AddBlock(e.Key, buffer, 0, s, Duplicati.Library.Interface.CompressionHint.Compressible);
                                                 if (newvolindex != null)
-                                                    uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
-    
-                                                if (!m_options.Dryrun)
-                                                    backend.Put(newvol, newvolindex);
-                                                else
-                                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
-                                                
-                                                
-                                                newvol = new BlockVolumeWriter(m_options);
-                                                newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
-                
-                                                if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                                                    newvolindex.AddBlock(e.Key, e.Value);
+
+                                                db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID, transaction);
+                                                blocksInVolume++;
+
+                                                if (newvol.Filesize > m_options.VolumeSize)
                                                 {
-                                                    newvolindex = new IndexVolumeWriter(m_options);
-                                                    newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
-                                                    db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
-                                                    newvolindex.StartVolume(newvol.RemoteFilename);
+                                                    uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
+                                                    if (newvolindex != null)
+                                                        uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
+
+                                                    if (!m_options.Dryrun)
+                                                        backend.Put(newvol, newvolindex);
+                                                    else
+                                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
+
+
+                                                    newvol = new BlockVolumeWriter(m_options);
+                                                    newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
+
+                                                    if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                                                    {
+                                                        newvolindex = new IndexVolumeWriter(m_options);
+                                                        newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
+                                                        db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
+                                                        newvolindex.StartVolume(newvol.RemoteFilename);
+                                                    }
+
+                                                    blocksInVolume = 0;
+
+                                                    //After we upload this volume, we can delete all previous encountered volumes
+                                                    deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
+                                                    deleteableVolumes = new List<IRemoteVolume>();
                                                 }
-                                                
-                                                blocksInVolume = 0;
-                                                
-                                                //After we upload this volume, we can delete all previous encountered volumes
-                                                deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
-                                                deleteableVolumes = new List<IRemoteVolume>();
+                                            }
+                                            else
+                                            {
+                                                discardedBlocks++;
+                                                discardedSize += e.Value;
                                             }
                                         }
-                                        else
-                                        {
-                                            discardedBlocks++;
-                                            discardedSize += e.Value;
-                                        }
                                     }
+
+                                    deleteableVolumes.Add(entry);
                                 }
-    
-                                deleteableVolumes.Add(entry);
                             }
                             
                             if (blocksInVolume > 0)

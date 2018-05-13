@@ -179,15 +179,17 @@ namespace Duplicati.Library.Main
         private static string[] GetSupportedHashes()
         {
             var r = new List<string>();
-            foreach(var h in new string[] {"SHA1", "MD5", "SHA256", "SHA384", "SHA512"})
-            try 
+            foreach (var h in new string[] { "SHA1", "MD5", "SHA256", "SHA384", "SHA512" })
             {
-                var p = System.Security.Cryptography.HashAlgorithm.Create(h);
-                if (p != null)
-                    r.Add(h);
-            }
-            catch
-            {
+                try
+                {
+                    var p = System.Security.Cryptography.HashAlgorithm.Create(h);
+                    if (p != null)
+                        r.Add(h);
+                }
+                catch
+                {
+                }
             }
             
             return r.ToArray();
