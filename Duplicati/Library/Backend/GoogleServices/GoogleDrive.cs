@@ -15,14 +15,16 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
+using System.Net;
+
+using Newtonsoft.Json;
+
+using Duplicati.Library.Backend.GoogleServices;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-using System.Collections.Generic;
-using System.Net;
-using Newtonsoft.Json;
-using Duplicati.Library.Backend.GoogleServices;
-using System.Collections.Specialized;
 
 namespace Duplicati.Library.Backend.GoogleDrive
 {
