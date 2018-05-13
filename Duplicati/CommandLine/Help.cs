@@ -409,10 +409,10 @@ namespace Duplicati.CommandLine
 
                 string c = s;
 
-                string leadingSpaces = "";
+                StringBuilder leadingSpaces = new StringBuilder();
                 while (c.Length > 0 && c.StartsWith(" ", StringComparison.Ordinal))
                 {
-                    leadingSpaces += " ";
+                    leadingSpaces.Append(" ");
                     c = c.Remove(0, 1);
                 }
 
@@ -434,7 +434,7 @@ namespace Duplicati.CommandLine
                     if (extraIndent)
                     {
                         extraIndent = false;
-                        leadingSpaces += "  ";
+                        leadingSpaces.Append("  ");
                     }
                 }
             }
