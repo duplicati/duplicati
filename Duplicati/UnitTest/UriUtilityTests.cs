@@ -24,7 +24,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("UrlUtility")]
-        public void TestBuildUriQuery()
+        public static void TestBuildUriQuery()
         {
             var query = new NameValueCollection { { "a", "b" } };
             var queryUrl = Library.Utility.Uri.BuildUriQuery(query);
@@ -36,13 +36,34 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("UrlUtility")]
-        public void TestUrlBuilder()
+        public static void TestUrlBuilder()
         {
             var baseUrl = "http://localhost";
             var path = "files";
             var query = new NameValueCollection { { "a", "b" }, { "c", "d" } };
             var url = Library.Utility.Uri.UriBuilder(baseUrl, path, query);
             Assert.AreEqual(baseUrl + "/" + path + "?a=b&c=d", url);
+        }
+
+        [Test]
+        [Category("UrlUtility")]
+        public static void TestExtractPath()
+        {
+            var url = "http://localhost/a/b";
+            var path = Library.Utility.Uri.ExtractPath(url);
+            Assert.AreEqual("a/b", path);
+        }
+
+
+        [Test]
+        [Category("UrlUtility")]
+        public static void TestConcatPaths()
+        {
+            var path1 = "/a";
+            var path2 = "b/";
+            Assert.AreEqual("/a/b/", Library.Utility.Uri.ConcatPaths(path1, path2));
+            Assert.AreEqual("/a", Library.Utility.Uri.ConcatPaths(path1, null));
+            Assert.AreEqual("/b/", Library.Utility.Uri.ConcatPaths(string.Empty, path2));
         }
     }
 }

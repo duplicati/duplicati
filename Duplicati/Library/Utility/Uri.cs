@@ -499,28 +499,55 @@ namespace Duplicati.Library.Utility
         /// Builds a URL together using a base URL, a path and a query.
         /// </summary>
         /// <returns>The built together URL.</returns>
-        /// <param name="baseUrl">Base URL, containing schema, host, port.</param>
-        /// <param name="basePath">Base path.</param>
+        /// <param name="url">Base URL, containing schema, host, port.</param>
+        /// <param name="path">Base path.</param>
         /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
-        public static string UriBuilder(string baseUrl, string basePath, NameValueCollection query)
+        public static string UriBuilder(string url, string path, NameValueCollection query)
         {
-            var builder = new UriBuilder(baseUrl)
+            var builder = new UriBuilder(url)
             {
-                Path = basePath,
+                Path = ConcatPaths(ExtractPath(url), path),
                 Query = query != null ? BuildUriQuery(query) : null
             };
             return builder.Uri.AbsoluteUri;
         }
 
         /// <summary>
+        /// Concats paths of URIs.
+        /// </summary>
+        /// <returns>The concatenated paths.</returns>
+        /// <param name="path1">Path1.</param>
+        /// <param name="path2">Path2.</param>
+        public static string ConcatPaths(string path1, string path2)
+        {
+            if (string.IsNullOrEmpty(path2))
+            {
+                return path1;
+            }
+
+            return path1.TrimEnd('/') + '/' + path2;
+        }
+
+        /// <summary>
+        /// Grab path part of a URI.
+        /// At the moment, simple implementation does not remove fragments.
+        /// </summary>
+        /// <returns>The path.</returns>
+        /// <param name="url">URL.</param>
+        public static string ExtractPath(string url)
+        {
+            return (new Uri(url)).Path;
+        }
+
+        /// <summary>
         /// Builds a URL together using a base URL and path.
         /// </summary>
         /// <returns>The built together URL.</returns>
-        /// <param name="baseUrl">Base URL, containing schema, host, port.</param>
-        /// <param name="basePath">Base path.</param>
-        public static string UriBuilder(string baseUrl, string basePath)
+        /// <param name="url">Base URL, containing schema, host, port.</param>
+        /// <param name="path">Base path.</param>
+        public static string UriBuilder(string url, string path)
         {
-            return UriBuilder(baseUrl, basePath, null);
+            return UriBuilder(url, path, null);
         }
     }
 }
