@@ -22,6 +22,8 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class CheckMonoSSL : Duplicati.Library.Interface.IGenericModule, Duplicati.Library.Interface.IWebModule
     {
+		private static readonly string LOGTAG = Logging.Log.LogTagFromType<CheckMonoSSL>();
+
         public CheckMonoSSL()
         {
         }
@@ -91,8 +93,8 @@ namespace Duplicati.Library.Modules.Builtin
             if (!commandlineOptions.ContainsKey("main-action") || !Library.Utility.Utility.IsMono)
                 return;
 
-            if (CheckForInstalledCerts() == 0)
-                Console.WriteLine(Strings.CheckMonoSSL.ErrorMessage);
+			if (CheckForInstalledCerts() == 0)
+				Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "MissingCerts", null, Strings.CheckMonoSSL.ErrorMessage);
         }
 #endregion
 

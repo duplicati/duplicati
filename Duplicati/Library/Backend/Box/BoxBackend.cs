@@ -25,6 +25,8 @@ namespace Duplicati.Library.Backend.Box
 {
     public class BoxBackend : IBackend, IStreamingBackend
     {
+		private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
+
         private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
 
@@ -76,7 +78,7 @@ namespace Duplicati.Library.Backend.Box
                 }
                 catch(Exception ex2)
                 {
-                    Console.WriteLine(ex2);
+					Library.Logging.Log.WriteWarningMessage(LOGTAG, "BoxErrorParser", ex2, "Failed to parse error from Box");
                 }
 
                 if (newex != null)
