@@ -161,7 +161,6 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 var values = new NameValueCollection {
                     { WebApi.GoogleDrive.QueryParam.UploadType,
                         WebApi.GoogleDrive.QueryValue.Resumable } };
-                WebApi.GoogleDrive.FileUploadUrl(Library.Utility.Uri.UrlPathEncode(fileId), values);
 
                 var url = isUpdate ?
                     WebApi.GoogleDrive.FileUploadUrl(Library.Utility.Uri.UrlPathEncode(fileId), values) :
