@@ -56,12 +56,12 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string FileQueryUrl(string fileId, NameValueCollection values = null)
         {
-            return Library.Utility.Uri.UriBuilder(Url.DRIVE, Path.File + '/' + fileId + fileId, values);
+            return Library.Utility.Uri.UriBuilder(Url.DRIVE, Library.Utility.Uri.ConcatPaths(Path.File, fileId), values);
         }
 
         public static string FileUploadUrl(string fileId, NameValueCollection values)
         {
-            return Library.Utility.Uri.UriBuilder(Url.UPLOAD, Path.File + '/' + fileId + fileId, values);
+            return Library.Utility.Uri.UriBuilder(Url.UPLOAD, Library.Utility.Uri.ConcatPaths(Path.File, fileId), values);
         }
 
         public static string FileUploadUrl(NameValueCollection values)
