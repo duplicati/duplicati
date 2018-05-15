@@ -9,6 +9,8 @@ namespace Duplicati.Library.Backend
 {
     public class OneDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
+		private static readonly string LOGTAG = Logging.Log.LogTagFromType<OneDrive>();
+
         private const string SERVICES_AGREEMENT = "https://www.microsoft.com/en-us/servicesagreement";
         private const string PRIVACY_STATEMENT = "https://privacy.microsoft.com/en-us/privacystatement";
 
@@ -279,7 +281,7 @@ namespace Duplicati.Library.Backend
                         count = res.data.Length;
 
                         // log
-                        Console.WriteLine("Iteration: {0:D} Offset: {1:D} Count: {2:D} TotalOK: {3:D} TotalRep: {4:D} TotalFiles: {5:D}", iteration, offset, count, filesOk, filesRepeated, numFiles);
+						Library.Logging.Log.WriteProfilingMessage(LOGTAG, "OneDriveListStats", "Iteration: {0:D} Offset: {1:D} Count: {2:D} TotalOK: {3:D} TotalRep: {4:D} TotalFiles: {5:D}", iteration, offset, count, filesOk, filesRepeated, numFiles);
 
                         foreach (var r in res.data)
                         {

@@ -10,6 +10,7 @@ namespace Duplicati.GUI.TrayIcon
 {
     public class HttpServerConnection : IDisposable
     {
+		private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<HttpServerConnection>();
         private const string LOGIN_SCRIPT = "login.cgi";
         private const string STATUS_WINDOW = "index.html";
 
@@ -148,7 +149,7 @@ namespace Duplicati.GUI.TrayIcon
                 catch (Exception ex)
                 {
                     System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
-                    Console.WriteLine("Request error: " + ex.Message);
+					Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconRequestError", ex, "Failed to get response");
                 }
             }
         }
@@ -186,7 +187,7 @@ namespace Duplicati.GUI.TrayIcon
                 catch (Exception ex)
                 {
                     System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
-                    Console.WriteLine("Request error: " + ex.Message);
+					Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconRequestError", ex, "Failed to get response");
                 }
             }
         }
