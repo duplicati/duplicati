@@ -475,7 +475,7 @@ namespace Duplicati.Library.Utility
             StringBuilder builder = new StringBuilder();
             foreach (var key in query.Cast<string>().Where(key => !string.IsNullOrEmpty(query[key])))
             {
-                builder.Append(builder.Length == 0 ? "?" : delimiter)
+                builder.Append(builder.Length == 0 ? string.Empty : delimiter)
                        .Append(key)
                        .Append("=")
                        .Append(query[key]);

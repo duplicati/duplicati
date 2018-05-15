@@ -28,10 +28,10 @@ namespace Duplicati.UnitTest
         {
             var query = new NameValueCollection { { "a", "b" } };
             var queryUrl = Library.Utility.Uri.BuildUriQuery(query);
-            Assert.AreEqual("?a=b", queryUrl);
+            Assert.AreEqual("a=b", queryUrl);
             query.Add(new NameValueCollection { { "c", "d" } });
             queryUrl = Library.Utility.Uri.BuildUriQuery(query);
-            Assert.AreEqual("?a=b&c=d", queryUrl);
+            Assert.AreEqual("a=b&c=d", queryUrl);
         }
 
         [Test]
