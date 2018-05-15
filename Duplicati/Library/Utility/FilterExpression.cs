@@ -422,7 +422,8 @@ namespace Duplicati.Library.Utility
             var r = new List<FilterEntry>();
             string combined = null;
             bool first = false;
-            foreach(var f in items)
+            foreach (var f in items)
+            {
                 if (combined == null)
                 {
                     // Note that even though group filters may include regexes, we don't want to merge them together and compact them,
@@ -450,10 +451,11 @@ namespace Duplicati.Library.Utility
                             combined = "(" + combined + ")";
                             first = false;
                         }
-                        
+
                         combined += "|(" + f.Regexp + ")";
                     }
                 }
+            }
                 
             if (combined != null)
                 r.Add(new FilterEntry("[" + combined + "]"));

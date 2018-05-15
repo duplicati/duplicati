@@ -230,8 +230,9 @@ namespace Duplicati.Library.Main.Database
                 if (versions != null && versions.Length > 0)
                 {
                     var qs = "";
-                    
-                    foreach(var v in versions)
+
+                    foreach (var v in versions)
+                    {
                         if (v >= 0 && v < filesets.Length)
                         {
                             args.Add(filesets[v].Key);
@@ -239,7 +240,7 @@ namespace Duplicati.Library.Main.Database
                         }
                         else
                             Logging.Log.WriteWarningMessage(LOGTAG, "SkipInvalidVersion", null, "Skipping invalid version: {0}", v);
-                            
+                    }
                         
                     if (qs.Length > 0)
                     {
