@@ -170,7 +170,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     m_fileprogtable = null;
                     m_totalprogtable = null;
-                    Console.WriteLine(ex);
+					Logging.Log.WriteWarningMessage(LOGTAG, "ProgressTrackerSetupError", ex, "Failed to set up progress tracking tables");
                     throw;
                 }
             }
