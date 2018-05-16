@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using HttpServer.HttpModules;
-using System.IO;
-using Duplicati.Server.Serialization;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Server.WebServer
