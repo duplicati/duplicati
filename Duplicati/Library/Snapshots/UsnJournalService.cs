@@ -387,7 +387,7 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var folder in volumeData.Folders)
             {
-                if (path.Equals(folder, Utility.Utility.ClientFilenameStringComparision))
+                if (path.Equals(folder, Utility.Utility.ClientFilenameStringComparison))
                     return true; // do not append from previous set, already scanned
 
                 if (Utility.Utility.IsPathBelowFolder(path, folder))

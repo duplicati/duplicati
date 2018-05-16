@@ -392,7 +392,7 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var kvp in m_volumeReverseMap)
             {
-				if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparision))
+				if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparison))
                     return Path.Combine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
             }
 

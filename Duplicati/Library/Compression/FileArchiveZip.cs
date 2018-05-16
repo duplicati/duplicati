@@ -306,9 +306,9 @@ namespace Duplicati.Library.Compression
             var q = m_entryDict.Values.AsEnumerable();
             if (!string.IsNullOrEmpty(prefix))
                 q = q.Where(x =>
-                            x.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                            x.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparison)
                             ||
-                            x.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                            x.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparison)
                            );
 
             return q.Select(x => new KeyValuePair<string, long>(x.Key, x.Size)).ToArray();

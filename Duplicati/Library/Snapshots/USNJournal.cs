@@ -153,7 +153,7 @@ namespace Duplicati.Library.Snapshots
             {
                 if (r.UsnRecord.Usn >= minUsn
                     && (reason == ChangeReason.Any || (MapChangeReason(r.UsnRecord.Reason) & reason) != 0)
-                    && (r.FullPath.Equals(sourceFileOrFolder, Utility.Utility.ClientFilenameStringComparision)
+                    && (r.FullPath.Equals(sourceFileOrFolder, Utility.Utility.ClientFilenameStringComparison)
                         || isFolder && Utility.Utility.IsPathBelowFolder(r.FullPath, sourceFileOrFolder)))
                 {
                     yield return Tuple.Create(r.FullPath,

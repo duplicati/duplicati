@@ -416,8 +416,8 @@ namespace Duplicati.Library.Utility
         public static bool IsPathBelowFolder(string fileOrFolderPath, string parentFolder)
         {
             var sanitizedParentFolder = AppendDirSeparator(parentFolder);
-            return fileOrFolderPath.StartsWith(sanitizedParentFolder, ClientFilenameStringComparision) && 
-                   !fileOrFolderPath.Equals(sanitizedParentFolder, ClientFilenameStringComparision);
+            return fileOrFolderPath.StartsWith(sanitizedParentFolder, ClientFilenameStringComparison) && 
+                   !fileOrFolderPath.Equals(sanitizedParentFolder, ClientFilenameStringComparison);
         }
 
         /// <summary>
@@ -1066,7 +1066,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Gets the string comparision that matches the client filesystems case sensitivity
         /// </summary>
-        public static StringComparison ClientFilenameStringComparision => IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase;
+        public static StringComparison ClientFilenameStringComparison => IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase;
 
         /// <summary>
         /// Searches the system paths for the file specified
