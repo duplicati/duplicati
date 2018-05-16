@@ -23,7 +23,7 @@ namespace Duplicati.UnitTest
     public class UriUtilityTests
     {
         [Test]
-        [Category("UrlUtility")]
+        [Category("UriUtility")]
         public static void TestBuildUriQuery()
         {
             var query = new NameValueCollection { { "a", "b" } };
@@ -35,7 +35,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        [Category("UrlUtility")]
+        [Category("UriUtility")]
         public static void TestUrlBuilder()
         {
             var baseUrl = "http://localhost";
@@ -46,7 +46,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        [Category("UrlUtility")]
+        [Category("UriUtility")]
         public static void TestExtractPath()
         {
             var url = "http://localhost/a/b";
@@ -56,7 +56,7 @@ namespace Duplicati.UnitTest
 
 
         [Test]
-        [Category("UrlUtility")]
+        [Category("UriUtility")]
         public static void TestConcatPaths()
         {
             var path1 = "/a";
