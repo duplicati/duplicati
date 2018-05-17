@@ -30,7 +30,11 @@ UNION
 )
 WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN 
   (
-    SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" NOT IN (SELECT ""ID"" FROM ""Block"")
+    SELECT DISTINCT ""BlocksetID"" FROM (
+      SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" NOT IN (SELECT ""ID"" FROM ""Block"")
+    UNION
+      SELECT ""A"".""ID"" AS ""BlocksetID"" FROM ""Blockset"" A LEFT JOIN ""BlocksetEntry"" B ON ""A"".""ID"" = ""B"".""BlocksetID"" WHERE ""B"".""BlocksetID"" IS NULL
+    )
   )
 ";
         private const string BROKEN_FILE_SETS = @"SELECT DISTINCT ""B"".""Timestamp"", ""A"".""FilesetID"", COUNT(""A"".""FileID"") AS ""FileCount"" FROM ""FilesetEntry"" A, ""Fileset"" B WHERE ""A"".""FilesetID"" = ""B"".""ID"" AND ""A"".""FileID"" IN (" + BROKEN_FILE_IDS + @")";
