@@ -61,7 +61,7 @@
     <Compile Include="TempFolder.cs" />
     <Compile Include="ThrottledStream.cs" />
     <Compile Include="Timeparser.cs" />
-    <Compile Include="UrlUtillity.cs" />
+    <Compile Include="UrlUtility.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="Win32.cs" />
     <Compile Include="WorkerThread.cs" />

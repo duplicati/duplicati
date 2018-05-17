@@ -55,6 +55,7 @@ jobs:
     - env: CATEGORY=Purge
     - env: CATEGORY=Serialization
     - env: CATEGORY=Utility
+    - env: CATEGORY=UriUtility
 
     - env: CATEGORY=GUI
       addons:

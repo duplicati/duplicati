@@ -17,6 +17,8 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Specialized;
+using System.Linq;
+using System.Text;
 using System.Web;
 
 namespace Duplicati.Library.Utility
@@ -63,17 +65,17 @@ namespace Duplicati.Library.Utility
         /// The password, if any
         /// </summary>
         public readonly string Password;
-        
+
         /// <summary>
         /// The original URI.
         /// </summary>
         public readonly string OriginalUri;
-        
+
         /// <summary>
         /// Cache for the query parameters.
         /// </summary>
         private NameValueCollection m_queryParams;
-        
+
         /// <summary>
         /// Gets the paramters in the query string
         /// </summary>
@@ -89,11 +91,11 @@ namespace Duplicati.Library.Utility
                     else
                         m_queryParams = ParseQueryString(Query);
                 }
-                
+
                 return m_queryParams;
             }
         }
-        
+
         /// <summary>
         /// Gets the host and path.
         /// </summary>
@@ -110,7 +112,7 @@ namespace Duplicati.Library.Utility
                     return Host + (Path == null ? "" : "/" + Path);
             }
         }
-        
+
         /// <summary>
         /// Gets the path and query.
         /// </summary>
@@ -119,10 +121,10 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                return (Path ?? "") + (Query == null ? "" : "?" + Query);            
+                return (Path ?? "") + (Query == null ? "" : "?" + Query);
             }
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.Uri"/> struct.
         /// </summary>
@@ -131,7 +133,7 @@ namespace Duplicati.Library.Utility
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
-            
+
             m_queryParams = null;
             this.OriginalUri = url;
 
@@ -160,7 +162,7 @@ namespace Duplicati.Library.Utility
                     }
                 throw new ArgumentException(Strings.Uri.UriParseError(url), nameof(url));
             }
-                
+
             this.Scheme = m.Groups["scheme"].Value;
             var h = m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "";
 
@@ -186,7 +188,7 @@ namespace Duplicati.Library.Utility
             else
                 this.Port = -1;
         }
-        
+
         /// <summary>
         /// Constructs a free-form URI from components
         /// </summary>
@@ -209,12 +211,12 @@ namespace Duplicati.Library.Utility
             Port = port;
             OriginalUri = AsString(scheme, host, path, query, username, password, port);
         }
-        
+
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Utility.Uri"/>.
         /// </summary>
         /// <returns>A <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Utility.Uri"/>.</returns>
-        public override string ToString ()
+        public override string ToString()
         {
             return AsString(Scheme, Host, Path, Query, Username, Password, Port);
         }
@@ -227,7 +229,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrEmpty(Host))
                 throw new ArgumentException(Strings.Uri.NoHostname(OriginalUri));
         }
-        
+
         /// <summary>
         /// Constructs an url-like string from components.
         /// </summary>
@@ -244,20 +246,20 @@ namespace Duplicati.Library.Utility
             var s = scheme + "://";
             if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
             {
-                
+
                 s += UrlEncode(username ?? "");
                 s += ":";
                 s += UrlEncode(password ?? "");
                 s += "@";
             }
-            
+
             if (!string.IsNullOrEmpty(host))
             {
                 s += host;
                 if (port != -1)
                     s += ":" + port.ToString();
             }
-            
+
             if (!string.IsNullOrEmpty(path))
             {
                 if (!string.IsNullOrEmpty(host) && !path.StartsWith("/", StringComparison.Ordinal))
@@ -267,9 +269,9 @@ namespace Duplicati.Library.Utility
             if (!string.IsNullOrEmpty(query))
                 s += "?" + query;
 
-            return s;             
+            return s;
         }
-        
+
         /// <summary>
         /// Creates a new instance with another scheme
         /// </summary>
@@ -279,7 +281,7 @@ namespace Duplicati.Library.Utility
         {
             return new Uri(scheme, Host, Path, Query, Username, Password, Port);
         }
-        
+
         /// <summary>
         /// Creates a new instance with another host
         /// </summary>
@@ -289,7 +291,7 @@ namespace Duplicati.Library.Utility
         {
             return new Uri(Scheme, host, Path, Query, Username, Password, Port);
         }
-        
+
         /// <summary>
         /// Creates a new instance with another path
         /// </summary>
@@ -299,7 +301,7 @@ namespace Duplicati.Library.Utility
         {
             return new Uri(Scheme, Host, path, Query, Username, Password, Port);
         }
-        
+
         /// <summary>
         /// Creates a new instance with another query
         /// </summary>
@@ -320,7 +322,7 @@ namespace Duplicati.Library.Utility
         {
             return new Uri(Scheme, Host, Path, Query, username, password, Port);
         }
-        
+
         /// <summary>
         /// Creates a new instance with another port
         /// </summary>
@@ -330,12 +332,12 @@ namespace Duplicati.Library.Utility
         {
             return new Uri(Scheme, Host, Path, Query, Username, Password, port);
         }
-        
+
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
         private static System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z\-_]", System.Text.RegularExpressions.RegexOptions.Compiled);
-        
+
         /// <summary>
         /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
         /// </summary>
@@ -346,43 +348,44 @@ namespace Duplicati.Library.Utility
         {
             return UrlEncode(value, encoding, "%20");
         }
-        
+
         /// <summary>
         /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
         /// </summary>
         /// <returns>The encoded URL</returns>
         /// <param name="value">The URL fragment to encode</param>
         /// <param name="encoding">The encoding to use</param>
-        public static string UrlEncode(string value, System.Text.Encoding encoding = null, string spacevalue = "+") 
+        public static string UrlEncode(string value, System.Text.Encoding encoding = null, string spacevalue = "+")
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
-                
+
             encoding = encoding ?? System.Text.Encoding.UTF8;
 
             var encoder = encoding.GetEncoder();
-            var inbuf = new char[1];               
+            var inbuf = new char[1];
             var outbuf = new byte[4];
 
-            return RE_ESCAPECHAR.Replace(value, (m) => {
+            return RE_ESCAPECHAR.Replace(value, (m) =>
+            {
                 if (m.Value == " ")
                     return spacevalue;
-                    
+
                 inbuf[0] = m.Value[0];
-                
-                try 
+
+                try
                 {
                     var len = encoder.GetBytes(inbuf, 0, 1, outbuf, 0, true);
                     return "%" + BitConverter.ToString(outbuf, 0, len).Replace("-", "%");
                 }
                 catch
                 {
-                } 
-                
+                }
+
                 //Fallback
                 return m.Value;
             });
-            
+
         }
 
         /// <summary>
@@ -400,14 +403,15 @@ namespace Duplicati.Library.Utility
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
-                
+
             encoding = encoding ?? System.Text.Encoding.UTF8;
-                
+
             var decoder = encoding.GetDecoder();
             var inbuf = new byte[8];
             var outbuf = new char[8];
 
-            return RE_NUMBER.Replace(value, (m) => {
+            return RE_NUMBER.Replace(value, (m) =>
+            {
                 if (m.Value == "+")
                     return " ";
 
@@ -416,24 +420,24 @@ namespace Duplicati.Library.Utility
                     var hex = m.Groups["number"].Value;
                     var bytelen = hex.Length / 2;
                     Utility.HexStringAsByteArray(hex, inbuf);
-                    var c = decoder.GetChars(inbuf, 0, bytelen, outbuf, 0); 
+                    var c = decoder.GetChars(inbuf, 0, bytelen, outbuf, 0);
                     return new string(outbuf, 0, c);
                 }
                 catch
                 {
                 }
-                
+
                 //Fallback
                 return m.Value;
             });
-            
+
         }
-        
+
         /// <summary>
         /// The regular expression that matches a=b type values in a querystring
         /// </summary>
         private static System.Text.RegularExpressions.Regex RE_URLPARAM = new System.Text.RegularExpressions.Regex(@"(?<key>[^\=\&]+)(\=(?<value>[^\&]*))?", System.Text.RegularExpressions.RegexOptions.Compiled);
-        
+
         /// <summary>
         /// Parses the query string.
         /// This is a duplicate of the System.Web.HttpUtility.ParseQueryString that does not work well on Mono
@@ -448,13 +452,103 @@ namespace Duplicati.Library.Utility
                 query = query.Substring(1);
             if (string.IsNullOrEmpty(query))
                 return new NameValueCollection(StringComparer.OrdinalIgnoreCase);
-                
+
             var result = new NameValueCollection(StringComparer.OrdinalIgnoreCase);
-            foreach(System.Text.RegularExpressions.Match m in RE_URLPARAM.Matches(query))
+            foreach (System.Text.RegularExpressions.Match m in RE_URLPARAM.Matches(query))
                 result.Add(UrlDecode(m.Groups["key"].Value), UrlDecode(m.Groups["value"].Success ? m.Groups["value"].Value : ""));
-            
-            return result;            
-        }        
+
+            return result;
+        }
+
+        /// <summary>
+        /// Build the querystring to be used in a URL
+        /// </summary>
+        /// <returns>The generated querystring</returns>
+        /// <param name="query">A collection of name value pairs to be translated into a query string</param>
+        /// <param name="delimiter">The delimiter to separate key value pairs in the query string</param>
+        public static string BuildUriQuery(NameValueCollection query, string delimiter)
+        {
+
+            if (query == null)
+                throw new ArgumentNullException(nameof(query));
+
+            StringBuilder builder = new StringBuilder();
+            foreach (var key in query.Cast<string>().Where(key => !string.IsNullOrEmpty(query[key])))
+            {
+                builder.Append(builder.Length == 0 ? string.Empty : delimiter)
+                       .Append(key)
+                       .Append("=")
+                       .Append(query[key]);
+            }
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Build the querystring to be used in a URL
+        /// </summary>
+        /// <returns>The generated querystring</returns>
+        /// <param name="query">A collection of name value pairs to be translated into a query string that is
+        /// ampsersand delimited.</param>
+        public static string BuildUriQuery(NameValueCollection query)
+        {
+            return BuildUriQuery(query, "&");
+        }
+
+        /// <summary>
+        /// Builds a URL together using a base URL, a path and a query.
+        /// </summary>
+        /// <returns>The built together URL.</returns>
+        /// <param name="url">Base URL, containing schema, host, port.</param>
+        /// <param name="path">Base path.</param>
+        /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
+        public static string UriBuilder(string url, string path, NameValueCollection query)
+        {
+            var builder = new UriBuilder(url)
+            {
+                Path = ConcatPaths(ExtractPath(url), path),
+                Query = query != null ? BuildUriQuery(query) : null
+            };
+            return builder.Uri.AbsoluteUri;
+        }
+
+        /// <summary>
+        /// Concats paths of URIs.
+        /// </summary>
+        /// <returns>The concatenated paths.</returns>
+        /// <param name="path1">Path1.</param>
+        /// <param name="path2">Path2.</param>
+        public static string ConcatPaths(string path1, string path2)
+        {
+            if (string.IsNullOrEmpty(path2))
+            {
+                return path1;
+            }
+
+            return path1.TrimEnd('/') + '/' + path2;
+        }
+
+        /// <summary>
+        /// Grab path part of a URI.
+        /// At the moment, simple implementation does not remove fragments.
+        /// </summary>
+        /// <returns>The path.</returns>
+        /// <param name="url">URL.</param>
+        public static string ExtractPath(string url)
+        {
+            return (new Uri(url)).Path;
+        }
+
+        /// <summary>
+        /// Builds a URL together using a base URL and path.
+        /// </summary>
+        /// <returns>The built together URL.</returns>
+        /// <param name="url">Base URL, containing schema, host, port.</param>
+        /// <param name="path">Base path.</param>
+        public static string UriBuilder(string url, string path)
+        {
+            return UriBuilder(url, path, null);
+        }
     }
 }
 
