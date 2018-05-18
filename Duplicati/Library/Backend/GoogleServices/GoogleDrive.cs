@@ -19,13 +19,13 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
+using System.Text;
 
 using Newtonsoft.Json;
 
 using Duplicati.Library.Backend.GoogleServices;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-using System.Text;
 
 namespace Duplicati.Library.Backend.GoogleDrive
 {

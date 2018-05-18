@@ -15,14 +15,18 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using Duplicati.Library.Interface;
 using System.Collections.Generic;
-using System.Net;
-using Duplicati.Library.Utility;
-using Newtonsoft.Json;
-using System.Text;
-using Duplicati.Library.Backend.GoogleServices;
 using System.Collections.Specialized;
+using System.Net;
+using System.Text;
+
+using Newtonsoft.Json;
+
+using Duplicati.Library.Backend.GoogleServices;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+
+
 
 namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
@@ -34,36 +38,10 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         private const string LOCATION_OPTION = "gcs-location";
         private const string STORAGECLASS_OPTION = "gcs-storage-class";
 
-
-        // From: https://cloud.google.com/storage/docs/bucket-locations
-        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_LOCATIONS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("(default)", null),
-            new KeyValuePair<string, string>("Europe", "EU"),
-            new KeyValuePair<string, string>("United States", "US"),
-            new KeyValuePair<string, string>("Asia", "ASIA"),
-
-            //Regional buckets: https://cloud.google.com/storage/docs/regional-buckets
-            new KeyValuePair<string, string>("Eastern Asia-Pacific", "ASIA-EAST1"),
-            new KeyValuePair<string, string>("Central United States 1", "US-CENTRAL1"),
-            new KeyValuePair<string, string>("Central United States 2", "US-CENTRAL2"),
-            new KeyValuePair<string, string>("Eastern United States 1", "US-EAST1"),
-            new KeyValuePair<string, string>("Eastern United States 2", "US-EAST2"),
-            new KeyValuePair<string, string>("Eastern United States 3", "US-EAST3"),
-            new KeyValuePair<string, string>("Western United States", "US-WEST1"),
-        };
-
-
-        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_STORAGE_CLASSES = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("(default)", null),
-            new KeyValuePair<string, string>("Standard", "STANDARD"),
-            new KeyValuePair<string, string>("Durable Reduced Availability (DRA)", "DURABLE_REDUCED_AVAILABILITY"),
-            new KeyValuePair<string, string>("Nearline", "NEARLINE"),
-        };
-
         private string m_bucket;
         private string m_prefix;
         private string m_project;
-        private OAuthHelper m_oauth;
+        private readonly OAuthHelper m_oauth;
 
         private string m_location;
         private string m_storage_class;
@@ -250,9 +228,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 StringBuilder locations = new StringBuilder();
                 StringBuilder storageClasses = new StringBuilder();
 
-                foreach (KeyValuePair<string, string> s in KNOWN_GCS_LOCATIONS)
+                foreach (KeyValuePair<string, string> s in WebApi.GoogleCloudServices.KNOWN_GCS_LOCATIONS)
                     locations.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
-                foreach (KeyValuePair<string, string> s in KNOWN_GCS_STORAGE_CLASSES)
+                foreach (KeyValuePair<string, string> s in WebApi.GoogleCloudServices.KNOWN_GCS_STORAGE_CLASSES)
                     storageClasses.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {

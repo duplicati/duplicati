@@ -14,6 +14,7 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using System.Collections.Generic;
 using System.Collections.Specialized;
 
 namespace Duplicati.Library.Backend.WebApi
@@ -40,6 +41,33 @@ namespace Duplicati.Library.Backend.WebApi
 
     class GoogleCloudServices : Google
     {
+
+
+        // From: https://cloud.google.com/storage/docs/bucket-locations
+        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_LOCATIONS = new KeyValuePair<string, string>[] {
+            new KeyValuePair<string, string>("(default)", null),
+            new KeyValuePair<string, string>("Europe", "EU"),
+            new KeyValuePair<string, string>("United States", "US"),
+            new KeyValuePair<string, string>("Asia", "ASIA"),
+
+            //Regional buckets: https://cloud.google.com/storage/docs/regional-buckets
+            new KeyValuePair<string, string>("Eastern Asia-Pacific", "ASIA-EAST1"),
+            new KeyValuePair<string, string>("Central United States 1", "US-CENTRAL1"),
+            new KeyValuePair<string, string>("Central United States 2", "US-CENTRAL2"),
+            new KeyValuePair<string, string>("Eastern United States 1", "US-EAST1"),
+            new KeyValuePair<string, string>("Eastern United States 2", "US-EAST2"),
+            new KeyValuePair<string, string>("Eastern United States 3", "US-EAST3"),
+            new KeyValuePair<string, string>("Western United States", "US-WEST1"),
+        };
+
+
+        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_STORAGE_CLASSES = new KeyValuePair<string, string>[] {
+            new KeyValuePair<string, string>("(default)", null),
+            new KeyValuePair<string, string>("Standard", "STANDARD"),
+            new KeyValuePair<string, string>("Durable Reduced Availability (DRA)", "DURABLE_REDUCED_AVAILABILITY"),
+            new KeyValuePair<string, string>("Nearline", "NEARLINE"),
+        };
+
         public static class Url {
             public const string API = "https://www.googleapis.com/storage/v1";
             public const string UPLOAD = "https://www.googleapis.com/upload/storage/v1";    
