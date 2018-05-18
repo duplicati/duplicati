@@ -85,6 +85,7 @@
     <Compile Include="Power\LinuxPowerSupplyState.cs" />
     <Compile Include="Power\WindowsPowerSupplyState.cs" />
     <Compile Include="Power\MacOSPowerSupplyState.cs" />
+    <Compile Include="UrlPath.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

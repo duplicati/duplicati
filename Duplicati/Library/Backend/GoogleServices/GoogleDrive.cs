@@ -159,7 +159,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 var isUpdate = !string.IsNullOrWhiteSpace(fileId);
 
                 var values = new NameValueCollection {
-                    { WebApi.GoogleDrive.QueryParam.UploadType,
+                    { WebApi.Google.QueryParam.UploadType,
                         WebApi.GoogleDrive.QueryValue.Resumable } };
 
                 var url = isUpdate ?
@@ -194,7 +194,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             var fileId = GetFileEntries(remotename).OrderByDescending(x => x.createdDate).First().id;
 
             var url = WebApi.GoogleDrive.FileQueryUrl(fileId, new NameValueCollection{
-                { WebApi.GoogleDrive.QueryParam.Alt, WebApi.GoogleDrive.QueryValue.Media }
+                { WebApi.Google.QueryParam.Alt, WebApi.GoogleDrive.QueryValue.Media }
             });
             var req = m_oauth.CreateRequest(url);
             var areq = new AsyncHttpRequest(req);
@@ -508,7 +508,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             var queryParams = new NameValueCollection
             {
-                {WebApi.GoogleDrive.QueryParam.File,
+                {WebApi.Google.QueryParam.File,
                     Library.Utility.Uri.UrlEncode(string.Join(" and ", fileQuery.Where(x => x != null)))},
             };
             queryParams.Add(SupportsTeamDriveParam());
@@ -525,7 +525,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 if (string.IsNullOrWhiteSpace(token))
                     break;
 
-                queryParams.Set(WebApi.GoogleDrive.QueryParam.PageToken, token);
+                queryParams.Set(WebApi.Google.QueryParam.PageToken, token);
             }
         }
 

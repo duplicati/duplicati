@@ -18,7 +18,49 @@ using System.Collections.Specialized;
 
 namespace Duplicati.Library.Backend.WebApi
 {
-    static class GoogleDrive
+    class Google
+    {
+
+        public class QueryParam
+        {
+            public const string File = "q";
+            public const string PageToken = "pageToken";
+            public const string UploadType = "uploadType";
+            public const string Alt = "alt";
+        }
+
+        public class QueryValue
+        {
+            public const string True = "true";
+            public const string Resumable = "resumable";
+            public const string Media = "media";
+        }
+    }
+
+
+    class GoogleCloudServices : Google
+    {
+        public static class Url {
+            public const string API = "https://www.googleapis.com/storage/v1";
+            public const string UPLOAD = "https://www.googleapis.com/upload/storage/v1";    
+        }
+
+        public new class QueryParam : Google.QueryParam
+        {
+            public const string Project = "project";
+            public const string Prefix = "prefix";                        
+        }
+
+        public static class Path
+        {
+            public const string Bucket = "b";
+            public const string Object = "o";
+        }
+
+
+    }
+
+    class GoogleDrive : Google
     {
         public static class Url
         {
@@ -32,21 +74,10 @@ namespace Duplicati.Library.Backend.WebApi
             public const string About = "about";
         }
 
-        public static class QueryParam
+        public new class QueryParam : Google.QueryParam
         {
-            public const string File = "q";
             public const string SupportsTeamDrive = "supportsTeamDrives";
             public const string IncludeTeamDrive = "includeTeamDriveItems";
-            public const string PageToken = "pageToken";
-            public const string UploadType = "uploadType";
-            public const string Alt = "alt";
-        }
-
-        public static class QueryValue
-        {
-            public const string True = "true";
-            public const string Resumable = "resumable";
-            public const string Media = "media";
         }
 
         public static string FileQueryUrl(NameValueCollection values)
@@ -56,12 +87,16 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string FileQueryUrl(string fileId, NameValueCollection values = null)
         {
-            return Library.Utility.Uri.UriBuilder(Url.DRIVE, Library.Utility.Uri.ConcatPaths(Path.File, fileId), values);
+            return Library.Utility.Uri.UriBuilder(Url.DRIVE,
+                                                  Library.Utility.UrlPath.Create(Path.File).Append(fileId).ToString(),
+                                                  values);
         }
 
         public static string FileUploadUrl(string fileId, NameValueCollection values)
         {
-            return Library.Utility.Uri.UriBuilder(Url.UPLOAD, Library.Utility.Uri.ConcatPaths(Path.File, fileId), values);
+            return Library.Utility.Uri.UriBuilder(Url.UPLOAD, 
+                                                  Library.Utility.UrlPath.Create(Path.File).Append(fileId).ToString(),
+                                                  values);
         }
 
         public static string FileUploadUrl(NameValueCollection values)
