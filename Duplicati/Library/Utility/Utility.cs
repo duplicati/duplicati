@@ -1,4 +1,3 @@
-#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -15,21 +14,13 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-using System.Text.RegularExpressions;
-using System.Linq;
-using System.Threading.Tasks;
-
-
-#endregion
-
 using System;
-using System.Text.RegularExpressions;
-using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Utility
 {
