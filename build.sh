@@ -1,3 +1,5 @@
+#!/bin/bash
+
 quit_on_error() {
     echo "Error on line $1, stopping build."
     exit 1
