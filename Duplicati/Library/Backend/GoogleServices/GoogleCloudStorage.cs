@@ -196,7 +196,11 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 storageClass = m_storage_class
             }));
 
-            var url = string.Format("{0}/b?" + WebApi.GoogleCloudServices.QueryParam.Project + "={1}", WebApi.GoogleCloudServices.Url.API, m_project);
+			var queryParams = new NameValueCollection
+			{
+				{ WebApi.GoogleCloudServices.QueryParam.Project, m_project }
+			};
+            var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudServices.Url.API, WebApi.GoogleCloudServices.Path.Bucket, queryParams);
 
             var req = m_oauth.CreateRequest(url);
             req.Method = "POST";
@@ -256,20 +260,26 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            var url = string.Format("{0}/b/{1}/o?uploadType=resumable", WebApi.GoogleCloudServices.Url.UPLOAD, m_bucket);
-            var item = new BucketResourceItem() { name = m_prefix + remotename };
+			var queryParams = new NameValueCollection
+            {
+				{ WebApi.Google.QueryParam.UploadType, WebApi.Google.QueryValue.Resumable }
+            };
+			var path = UrlPath.Create(WebApi.GoogleCloudServices.Path.Bucket).Append(m_bucket).ToString();
+			var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudServices.Url.UPLOAD, path, queryParams);
+
+			var item = new BucketResourceItem() { name = m_prefix + remotename };
 
             var res = GoogleCommon.ChunckedUploadWithResume<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");
-
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
             try
             {
+				
                 var url = string.Format("{0}/b/{1}/o/{2}?alt=media", WebApi.GoogleCloudServices.Url.API, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
                 var req = m_oauth.CreateRequest(url);
                 var areq = new AsyncHttpRequest(req);
