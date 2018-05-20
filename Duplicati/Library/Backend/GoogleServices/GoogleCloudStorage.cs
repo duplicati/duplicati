@@ -128,13 +128,11 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                     { WebApi.GoogleCloudStorage.QueryParam.Prefix, Library.Utility.Uri.UrlEncode(m_prefix) }
                 };
 
-            var path = new Utility.UrlPath(WebApi.GoogleCloudStorage.Path.Bucket).
-                  Append(m_bucket).
-                  Append(WebApi.GoogleCloudStorage.Path.Object);
+            var path = WebApi.GoogleCloudStorage.BucketObjectPath(m_bucket);
 
             while (true)
             {
-                var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path.ToString(), queryParams);
+                var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path, queryParams);
 
                 var resp = HandleListExceptions(() => m_oauth.ReadJSONResponse<ListBucketResponse>(url));
 
@@ -287,10 +285,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                     { WebApi.Google.QueryParam.Alt
                             , WebApi.Google.QueryValue.Media }
                 };
-				var path = UrlPath.Create(WebApi.GoogleCloudStorage.Path.Bucket)
-                                  .Append(m_bucket)
-                                  .Append(WebApi.GoogleCloudStorage.Path.Object)
-                                  .Append(Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)).ToString();
+                var path = WebApi.GoogleCloudStorage.BucketObjectPath(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
 
                 var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path, queryParams);
 
@@ -318,11 +313,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 name = m_prefix + newname,
             }));
 
-            var path = UrlPath.Create(WebApi.GoogleCloudStorage.Path.Bucket)
-                              .Append(m_bucket)
-                              .Append(WebApi.GoogleCloudStorage.Path.Object)
-                              .Append(Library.Utility.Uri.UrlPathEncode(m_prefix + oldname)).ToString();
-
+            var path = WebApi.GoogleCloudStorage.BucketObjectPath(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + oldname));
             var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path);
 
             var req = m_oauth.CreateRequest(url);
