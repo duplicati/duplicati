@@ -170,24 +170,11 @@ namespace Duplicati.CommandLine
                 return Commands.Help(outwriter, setup, cargs, options, filter);
             }
 
-            if ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile")))
+            if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty(options["parameters-file"]))
             {
                 string filename;
-                if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file"))
-                {
-                    filename = options["parameters-file"];
-                    options.Remove("parameters-file");
-                }
-                else if (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file"))
-                {
-                    filename = options["parameter-file"];
-                    options.Remove("parameter-file");
-                }
-                else
-                {
-                    filename = options["parameterfile"];
-                    options.Remove("parameterfile");
-                }
+                filename = options["parameters-file"];
+                options.Remove("parameters-file");
 
                 if (!ReadOptionsFromFile(outwriter, filename, ref filter, cargs, options))
                     return 100;
