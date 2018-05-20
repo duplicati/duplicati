@@ -318,7 +318,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 name = m_prefix + newname,
             }));
 
-            var url = string.Format("{0}/b/{1}/o/{2}", WebApi.GoogleCloudStorage.Url.API, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + oldname));
+            var path = UrlPath.Create(WebApi.GoogleCloudStorage.Path.Bucket)
+                              .Append(m_bucket)
+                              .Append(WebApi.GoogleCloudStorage.Path.Object)
+                              .Append(Library.Utility.Uri.UrlPathEncode(m_prefix + oldname)).ToString();
+
+            var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path);
+
             var req = m_oauth.CreateRequest(url);
             req.Method = "PATCH";
             req.ContentLength = data.Length;
