@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.WebApi
     }
 
 
-    class GoogleCloudServices : Google
+    class GoogleCloudStorage : Google
     {
 
 
