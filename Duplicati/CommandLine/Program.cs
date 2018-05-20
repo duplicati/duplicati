@@ -163,9 +163,7 @@ namespace Duplicati.CommandLine
                 }
 
             // Probe for "help" to avoid extra processing
-            bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase));
-
-            if (isHelp) 
+            if (cargs.Count == 0 || (string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase))) 
             {
                 return Commands.Help(outwriter, setup, cargs, options, filter);
             }
@@ -191,7 +189,7 @@ namespace Duplicati.CommandLine
             if (!options.ContainsKey("auth-username"))
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
                     options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
-            
+
             var showDeletionErrors = verboseErrors;
             Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
             {

@@ -20,7 +20,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -739,8 +738,8 @@ namespace Duplicati.Library.Main
             {
                 if (!m_options.ContainsKey("tempdir") || string.IsNullOrEmpty(m_options["tempdir"]))
                     return System.IO.Path.GetTempPath();
-                else
-                    return m_options["tempdir"];
+                
+                return m_options["tempdir"];
             }
         }
 
