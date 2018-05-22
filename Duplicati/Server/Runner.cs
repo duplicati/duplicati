@@ -397,9 +397,10 @@ namespace Duplicati.Server
                  where !string.IsNullOrWhiteSpace(p)
                  select p).ToArray();
 
-            var parts = new List<string>();
-
-            parts.Add(backup.TargetURL);
+            var parts = new List<string>
+            {
+                backup.TargetURL
+            };
             parts.AddRange(sources);
 
             foreach (var opt in options)
@@ -438,7 +439,7 @@ namespace Duplicati.Server
 
 
             var backup = data.Backup;
-            Duplicati.Library.Utility.TempFolder tempfolder = null;
+            Duplicati.Library.Utility.TempFolder tempfolder = new Duplicati.Library.Utility.TempFolder();
 
             if (backup.Metadata == null)
                 backup.Metadata = new Dictionary<string, string>();
@@ -467,9 +468,6 @@ namespace Duplicati.Server
 
                     if (all_tasks || this_task)
                     {
-                        if (tempfolder == null)
-                            tempfolder = new Duplicati.Library.Utility.TempFolder();
-
                         var temppath = System.IO.Path.Combine(tempfolder, "task-setup.json");
                         using(var tempfile = Duplicati.Library.Utility.TempFile.WrapExistingFile(temppath))
                         {

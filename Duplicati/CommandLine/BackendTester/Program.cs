@@ -87,7 +87,7 @@ namespace Duplicati.CommandLine.BackendTester
                     options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                    Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
+                    Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
 
                 if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
                 {

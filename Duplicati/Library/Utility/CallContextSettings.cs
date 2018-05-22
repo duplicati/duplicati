@@ -23,18 +23,34 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Utility
 {
-    internal static class SystemContextSettings
+    public static class SystemContextSettings
     {
+        private static string defaultTempPath = null;
+
         private struct SystemSettings
         {
             public string Tempdir;
             public long Buffersize;
         }
 
+        public static string DefaultTempPath
+        {
+            get
+            {
+                return defaultTempPath?? System.IO.Path.GetTempPath();
+            }
+            set
+            {
+                if (!System.IO.Directory.Exists(value))
+                    throw new Exception(Strings.TempFolder.TempFolderDoesNotExistError(value));
+                defaultTempPath = value;
+            }
+        }
+
         public static IDisposable StartSession(string tempdir = null, long buffersize = 0)
         {
             if (string.IsNullOrWhiteSpace(tempdir))
-                tempdir = System.IO.Path.GetTempPath();
+                tempdir = DefaultTempPath;
 
             if (buffersize < 1024)
                 buffersize = 64 * 1024;
@@ -51,8 +67,11 @@ namespace Duplicati.Library.Utility
             get 
             {
                 var tf = CallContextSettings<SystemSettings>.Settings.Tempdir;
+
                 if (string.IsNullOrWhiteSpace(tf))
-                    tf = System.IO.Path.GetTempPath();
+                {
+                    tf = DefaultTempPath;
+                }
                 return tf;
             }
             set
@@ -209,7 +228,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The settings that are stored in the call context, which are not serializable
         /// </summary>
-        private static Dictionary<string, T> _setttings = new Dictionary<string, T>();
+        private static Dictionary<string, T> _settings = new Dictionary<string, T>();
 
         /// <summary>
         /// Lock for protecting the dictionary
@@ -222,7 +241,7 @@ namespace Duplicati.Library.Utility
         internal static T[] GetAllInstances()
         {
             lock (_lock)
-                return _setttings.Values.ToArray();
+                return _settings.Values.ToArray();
         }
 
         /// <summary>
@@ -238,9 +257,9 @@ namespace Duplicati.Library.Utility
                 if (string.IsNullOrWhiteSpace(key))
                     return default(T);
 
-                if (!_setttings.TryGetValue(key, out res))
+                if (!_settings.TryGetValue(key, out res))
                     lock (_lock)
-                        if (!_setttings.TryGetValue(key, out res))
+                        if (!_settings.TryGetValue(key, out res))
                             return default(T);
 
                 return res;
@@ -250,7 +269,7 @@ namespace Duplicati.Library.Utility
 				var key = ContextID;
                 if (!string.IsNullOrWhiteSpace(key))
                     lock (_lock)
-                        _setttings[key] = value;
+                        _settings[key] = value;
             }
         }
 
@@ -290,7 +309,7 @@ namespace Duplicati.Library.Utility
                 lock (_lock)
                 {
                     // Release the resources, if any
-                    _setttings.Remove(ID);
+                    _settings.Remove(ID);
                 }
 
                 CallContext.LogicalSetData(SETTINGS_KEY_NAME, null);

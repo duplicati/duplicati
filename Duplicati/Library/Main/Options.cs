@@ -738,7 +738,7 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("tempdir") || string.IsNullOrEmpty(m_options["tempdir"]))
-                    return System.IO.Path.GetTempPath();
+                    return Duplicati.Library.Utility.TempFolder.SystemTempPath;
                 else
                     return m_options["tempdir"];
             }
