@@ -1075,7 +1075,7 @@ namespace Duplicati.Library.AutoUpdater
         public static int RunFromMostRecentSpawn(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
             // If the update is disabled, go straight in
-            //if (DISABLE_UPDATE_DOMAIN)
+            if (DISABLE_UPDATE_DOMAIN)
                 return RunMethod(method, cmdargs);
 
             // If we are not the primary entry, just execute
