@@ -168,27 +168,17 @@ namespace Duplicati.CommandLine
                 return Commands.Help(outwriter, setup, cargs, options, filter);
             }
 
-            if ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile")))
+            // try and parse all parameter file aliases
+            foreach (string parameterOption in new []{ "parameters-file", "parameters-file", "parameterfile"} )
             {
-                string filename;
-                if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file"))
+                if (options.ContainsKey(parameterOption) && !string.IsNullOrEmpty(options[parameterOption]))
                 {
-                    filename = options["parameters-file"];
-                    options.Remove("parameters-file");
-                }
-                else if (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file"))
-                {
-                    filename = options["parameter-file"];
-                    options.Remove("parameter-file");
-                }
-                else
-                {
-                    filename = options["parameterfile"];
-                    options.Remove("parameterfile");
-                }
-
-                if (!ReadOptionsFromFile(outwriter, filename, ref filter, cargs, options))
-                    return 100;
+                    string filename = options[parameterOption];
+                    options.Remove(parameterOption);
+                    if (!ReadOptionsFromFile(outwriter, filename, ref filter, cargs, options))
+                        return 100;
+                    break;
+                }  
             }
 
             if (!options.ContainsKey("passphrase"))
