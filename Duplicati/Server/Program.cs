@@ -214,17 +214,17 @@ namespace Duplicati.Server
             // Check if a parameters-file was provided. Skip if help was already specified
             if (!commandlineOptions.ContainsKey("help"))
             {
-                string filename = null;
-                if (commandlineOptions.ContainsKey("parameters-file"))
+                // try and parse all parameter file aliases
+                foreach (string parameterOption in new[] { "parameters-file", "parameters-file", "parameterfile" })
                 {
-                    filename = commandlineOptions["parameters-file"];
-                    commandlineOptions.Remove("parameters-file");
-                }
-
-                if (!string.IsNullOrEmpty(filename))
-                {
-                    // Check the parameters-file and add provided arguments (overriding commandline arguments)
-                    ReadOptionsFromFile(filename, ref filter, args, commandlineOptions);
+                    if (commandlineOptions.ContainsKey(parameterOption) && !string.IsNullOrEmpty(commandlineOptions[parameterOption]))
+                    {
+                        string filename = commandlineOptions[parameterOption];
+                        commandlineOptions.Remove(parameterOption);
+                        if (!ReadOptionsFromFile(filename, ref filter, args, commandlineOptions))
+                            return 100;
+                        break;
+                    }
                 }
             }
 
