@@ -589,7 +589,7 @@ namespace Duplicati.Server
                                     var r = controller.CreateLogDatabase(tf);
                                     var tempid = Program.DataConnection.RegisterTempFile("create-bug-report", r.TargetPath, DateTime.Now.AddDays(3));
 
-                                    if (string.Equals(tf, r.TargetPath, Library.Utility.Utility.ClientFilenameStringComparision))
+                                    if (string.Equals(tf, r.TargetPath, Library.Utility.Utility.ClientFilenameStringComparison))
                                         tf.Protected = true;
 
                                     Program.DataConnection.RegisterNotification(

@@ -264,7 +264,7 @@ namespace Duplicati.Library.Utility
                 switch (this.Type)
                 {
                     case FilterType.Simple:
-                        return string.Equals(this.Filter, path, Library.Utility.Utility.ClientFilenameStringComparision);
+                        return string.Equals(this.Filter, path, Library.Utility.Utility.ClientFilenameStringComparison);
                     case FilterType.Wildcard:
                         return IsWildcardMatch(!Utility.IsFSCaseSensitive ? path.ToUpper() : path, this.Filter);
                     case FilterType.Regexp:

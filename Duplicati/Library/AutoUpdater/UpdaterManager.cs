@@ -616,7 +616,7 @@ namespace Duplicati.Library.AutoUpdater
                     if (string.IsNullOrWhiteSpace(relpath))
                         continue;
 
-                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparison))
                         continue;
 
                     FileEntry fe;
@@ -624,7 +624,7 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         var ignore = false;
                         foreach (var c in ignores)
-                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparision))
+                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparison))
                                 break;
 
                         if (ignore)
@@ -654,7 +654,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 var filteredpaths = paths
                     .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal))
-                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparison))
                     .Select(p => p.Key)
                     .ToList();
 

@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var isDirectory = s[s.Length - 1] == System.IO.Path.DirectorySeparatorChar;
                 if (isDirectory)
                 {
-                    while (pathstack.Count > 0 && !s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparision))
+                    while (pathstack.Count > 0 && !s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         var e = pathstack.Pop();
                         if (e.AnyEntries || pathstack.Count == 0)
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingEmptyFolder", "Excluding empty folder {0}", e.Path);
                     }
 
-                    if (pathstack.Count == 0 || s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparision))
+                    if (pathstack.Count == 0 || s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         pathstack.Push(new DirectoryStackEntry() { Path = s });
                         continue;

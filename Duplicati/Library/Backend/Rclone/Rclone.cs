@@ -185,7 +185,6 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
-            JArray files;
             String str_result;
 
             try
