@@ -202,12 +202,13 @@ namespace Duplicati.Library.Main
         
         public static string GenerateRandomName()
         {
-            var backupname = "";
             var rnd = new Random();
-            for(var i = 0; i < 10; i++)
-                backupname += (char)rnd.Next('A', 'Z' + 1);
-                
-            return backupname;
+
+            System.Text.StringBuilder backupName = new System.Text.StringBuilder();
+            for (var i = 0; i < 10; i++)
+                backupName.Append(rnd.Next('A', 'Z' + 1));
+
+            return backupName.ToString();
         }
 
         public static bool IsDatabasePathInUse(string path)
@@ -220,7 +221,7 @@ namespace Duplicati.Library.Main
             if (!System.IO.File.Exists(file))
                 return false;
 
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8)).Any(x => string.Equals(path, x.Databasepath, Library.Utility.Utility.ClientFilenameStringComparision));
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8)).Any(x => string.Equals(path, x.Databasepath, Library.Utility.Utility.ClientFilenameStringComparison));
         }
     }
 }
