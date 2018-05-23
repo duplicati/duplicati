@@ -69,12 +69,7 @@ namespace Duplicati.Library.Main.Database
             {
                 cmd.Transaction = transaction;
 
-                var q = "";
-                foreach(var n in toDelete)
-                    if (q.Length == 0)
-                        q = "?";
-                    else
-                        q += ",?";
+                string q = String.Join(",", Enumerable.Repeat("?", toDelete.Length));
                         
                 //First we remove unwanted entries
                 var deleted = cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @") ", toDelete.Select(x => NormalizeDateTimeToEpochSeconds(x)).Cast<object>().ToArray());

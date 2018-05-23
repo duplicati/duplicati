@@ -211,7 +211,7 @@ namespace Duplicati.Library.Main.Database
         public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null, bool singleTimeMatch = false)
         {
             var filesets = (filesetslist ?? this.FilesetTimes).ToArray();
-            string query = "";
+            StringBuilder query = new StringBuilder();
             var args = new List<object>();
             if (time.Ticks > 0 || (versions != null && versions.Length > 0))
             {
@@ -220,45 +220,44 @@ namespace Duplicati.Library.Main.Database
                 {
                     if (time.Kind == DateTimeKind.Unspecified)
                         throw new Exception("Invalid DateTime given, must be either local or UTC");
-            
-                    query += singleTimeMatch ? @" ""Timestamp"" = ?" : @" ""Timestamp"" <= ?";
+
+                    query.Append(singleTimeMatch ? @" ""Timestamp"" = ?" : @" ""Timestamp"" <= ?");
                     // Make sure the resolution is the same (i.e. no milliseconds)
                     args.Add(NormalizeDateTimeToEpochSeconds(time));
                     hasTime = true;
                 }
-                
+
                 if (versions != null && versions.Length > 0)
                 {
-                    var qs = "";
+                    StringBuilder qs = new StringBuilder();
 
                     foreach (var v in versions)
                     {
                         if (v >= 0 && v < filesets.Length)
                         {
                             args.Add(filesets[v].Key);
-                            qs += "?,";
+                            qs.Append("?,");
                         }
                         else
                             Logging.Log.WriteWarningMessage(LOGTAG, "SkipInvalidVersion", null, "Skipping invalid version: {0}", v);
                     }
-                        
+
                     if (qs.Length > 0)
                     {
-                        qs = qs.Substring(0, qs.Length - 1);
-                        
                         if (hasTime)
-                            query += " OR ";
-                                            
-                        query += @" ""ID"" IN (" + qs + ")";
+                            query.Append(" OR ");
+
+                        query.Append(@" ""ID"" IN (" + qs.ToString(0, qs.Length - 1) + ")");
                     }
                 }
-                
-                if (!string.IsNullOrEmpty(query))
-                    query = " WHERE " + query;
 
+                if (query.Length > 0)
+                {
+                    query.Insert(0, " WHERE ");
+                }
             }
             
-            return new Tuple<string, object[]>(query, args.ToArray());
+            return new Tuple<string, object[]>(query.ToString(), args.ToArray());
         }
 
         public long GetRemoteVolumeID(string file, System.Data.IDbTransaction transaction = null)

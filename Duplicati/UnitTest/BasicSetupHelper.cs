@@ -18,7 +18,6 @@ using System;
 using NUnit.Framework;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Duplicati.UnitTest
 {
@@ -29,7 +28,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         protected static readonly string BASEFOLDER =
             string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
-            ? Path.Combine(Library.Utility.Utility.HOME_PATH, "testdata")
+            ? Path.Combine(Library.Utility.Utility.HOME_PATH, "duplicati_testdata")
             : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER");
 
         /// <summary>

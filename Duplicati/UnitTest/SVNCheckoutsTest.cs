@@ -302,7 +302,7 @@ namespace Duplicati.UnitTest
                                         {
                                             string f = testfiles[j];
 
-                                            if (!f.StartsWith(usingFHWithRestore ? fhtempsource : folders[i], Utility.ClientFilenameStringComparision))
+                                            if (!f.StartsWith(usingFHWithRestore ? fhtempsource : folders[i], Utility.ClientFilenameStringComparison))
                                                 throw new Exception(string.Format("Unexpected file found: {0}, path is not a subfolder for {1}", f, folders[i]));
 
                                             f = f.Substring(Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]).Length);

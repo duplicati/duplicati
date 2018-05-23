@@ -666,12 +666,14 @@ namespace Duplicati.Library.Backend
                 string[] folderNames = m_serverRelPath.Substring(0, m_serverRelPath.Length - 1).Split('/');
                 folderNames = Array.ConvertAll(folderNames, fold => System.Net.WebUtility.UrlDecode(fold));
                 var spfolders = new SP.Folder[folderNames.Length];
-                string folderRelPath = "";
+                StringBuilder relativePathBuilder = new StringBuilder();
                 int fi = 0;
                 for (; fi < folderNames.Length; fi++)
                 {
-                    folderRelPath += System.Web.HttpUtility.UrlPathEncode(folderNames[fi]) + "/";
+                    relativePathBuilder.Append(System.Web.HttpUtility.UrlPathEncode(folderNames[fi])).Append("/");
                     if (fi < pathLengthToWeb) continue;
+
+                    string folderRelPath = relativePathBuilder.ToString();
                     var folder = ctx.Web.GetFolderByServerRelativeUrl(folderRelPath);
                     spfolders[fi] = folder;
                     ctx.Load(folder, f => f.Exists);
