@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend.WebApi
 {
@@ -39,7 +40,7 @@ namespace Duplicati.Library.Backend.WebApi
     }
 
 
-    class GoogleCloudServices : Google
+    class GoogleCloudStorage : Google
     {
 
 
@@ -68,15 +69,16 @@ namespace Duplicati.Library.Backend.WebApi
             new KeyValuePair<string, string>("Nearline", "NEARLINE"),
         };
 
-        public static class Url {
+        public static class Url
+        {
             public const string API = "https://www.googleapis.com/storage/v1";
-            public const string UPLOAD = "https://www.googleapis.com/upload/storage/v1";    
+            public const string UPLOAD = "https://www.googleapis.com/upload/storage/v1";
         }
 
         public new class QueryParam : Google.QueryParam
         {
             public const string Project = "project";
-            public const string Prefix = "prefix";                        
+            public const string Prefix = "prefix";
         }
 
         public static class Path
@@ -85,7 +87,13 @@ namespace Duplicati.Library.Backend.WebApi
             public const string Object = "o";
         }
 
-
+        public static string BucketObjectPath(string bucketId, string objectId = null)
+        {
+            return UrlPath.Create(WebApi.GoogleCloudStorage.Path.Bucket)
+                          .Append(bucketId)
+                          .Append(WebApi.GoogleCloudStorage.Path.Object)
+                          .Append(objectId).ToString();
+        }
     }
 
     class GoogleDrive : Google
@@ -122,7 +130,7 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string FileUploadUrl(string fileId, NameValueCollection values)
         {
-            return Library.Utility.Uri.UriBuilder(Url.UPLOAD, 
+            return Library.Utility.Uri.UriBuilder(Url.UPLOAD,
                                                   Library.Utility.UrlPath.Create(Path.File).Append(fileId).ToString(),
                                                   values);
         }

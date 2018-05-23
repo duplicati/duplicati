@@ -125,16 +125,14 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         public IEnumerable<IFileEntry> List()
         {
             var queryParams = new NameValueCollection{
-                    { WebApi.GoogleCloudServices.QueryParam.Prefix, Library.Utility.Uri.UrlEncode(m_prefix) }
+                    { WebApi.GoogleCloudStorage.QueryParam.Prefix, Library.Utility.Uri.UrlEncode(m_prefix) }
                 };
 
-            var path = new Utility.UrlPath(WebApi.GoogleCloudServices.Path.Bucket).
-                  Append(m_bucket).
-                  Append(WebApi.GoogleCloudServices.Path.Object);
+            var path = WebApi.GoogleCloudStorage.BucketObjectPath(m_bucket);
 
             while (true)
             {
-                var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudServices.Url.API, path.ToString(), queryParams);
+                var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path, queryParams);
 
                 var resp = HandleListExceptions(() => m_oauth.ReadJSONResponse<ListBucketResponse>(url));
 
@@ -172,7 +170,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         }
         public void Delete(string remotename)
         {
-            var url = string.Format("{0}/b/{1}/o/{2}", WebApi.GoogleCloudServices.Url.API, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
+            var url = string.Format("{0}/b/{1}/o/{2}", WebApi.GoogleCloudStorage.Url.API, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
             var req = m_oauth.CreateRequest(url);
             req.Method = "DELETE";
 
@@ -196,7 +194,11 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 storageClass = m_storage_class
             }));
 
-            var url = string.Format("{0}/b?" + WebApi.GoogleCloudServices.QueryParam.Project + "={1}", WebApi.GoogleCloudServices.Url.API, m_project);
+            var queryParams = new NameValueCollection
+            {
+                { WebApi.GoogleCloudStorage.QueryParam.Project, m_project }
+            };
+            var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, WebApi.GoogleCloudStorage.Path.Bucket, queryParams);
 
             var req = m_oauth.CreateRequest(url);
             req.Method = "POST";
@@ -228,9 +230,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 StringBuilder locations = new StringBuilder();
                 StringBuilder storageClasses = new StringBuilder();
 
-                foreach (KeyValuePair<string, string> s in WebApi.GoogleCloudServices.KNOWN_GCS_LOCATIONS)
+                foreach (KeyValuePair<string, string> s in WebApi.GoogleCloudStorage.KNOWN_GCS_LOCATIONS)
                     locations.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
-                foreach (KeyValuePair<string, string> s in WebApi.GoogleCloudServices.KNOWN_GCS_STORAGE_CLASSES)
+                foreach (KeyValuePair<string, string> s in WebApi.GoogleCloudStorage.KNOWN_GCS_STORAGE_CLASSES)
                     storageClasses.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
@@ -248,29 +250,45 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public string[] DNSName
         {
-            get { return new string[] { new System.Uri(WebApi.GoogleCloudServices.Url.UPLOAD).Host, 
-                    new System.Uri(WebApi.GoogleCloudServices.Url.API).Host }; }
+            get
+            {
+                return new string[] { new System.Uri(WebApi.GoogleCloudStorage.Url.UPLOAD).Host,
+                    new System.Uri(WebApi.GoogleCloudStorage.Url.API).Host };
+            }
         }
 
         #endregion
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            var url = string.Format("{0}/b/{1}/o?uploadType=resumable", WebApi.GoogleCloudServices.Url.UPLOAD, m_bucket);
+            var queryParams = new NameValueCollection
+            {
+                { WebApi.Google.QueryParam.UploadType, WebApi.Google.QueryValue.Resumable }
+            };
+            var path = UrlPath.Create(WebApi.GoogleCloudStorage.Path.Bucket).Append(m_bucket).ToString();
+            var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.UPLOAD, path, queryParams);
+
             var item = new BucketResourceItem() { name = m_prefix + remotename };
 
             var res = GoogleCommon.ChunckedUploadWithResume<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");
-
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
             try
             {
-                var url = string.Format("{0}/b/{1}/o/{2}?alt=media", WebApi.GoogleCloudServices.Url.API, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
+                var queryParams = new NameValueCollection
+                {
+                    { WebApi.Google.QueryParam.Alt
+                            , WebApi.Google.QueryValue.Media }
+                };
+                var path = WebApi.GoogleCloudStorage.BucketObjectPath(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
+
+                var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path, queryParams);
+
                 var req = m_oauth.CreateRequest(url);
                 var areq = new AsyncHttpRequest(req);
 
@@ -295,7 +313,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 name = m_prefix + newname,
             }));
 
-            var url = string.Format("{0}/b/{1}/o/{2}", WebApi.GoogleCloudServices.Url.API, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + oldname));
+            var path = WebApi.GoogleCloudStorage.BucketObjectPath(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + oldname));
+            var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path);
+
             var req = m_oauth.CreateRequest(url);
             req.Method = "PATCH";
             req.ContentLength = data.Length;
