@@ -420,11 +420,11 @@ namespace Duplicati.Library.Utility
         private static List<FilterEntry> Compact(IEnumerable<FilterEntry> items)
         {
             var r = new List<FilterEntry>();
-            string combined = null;
+            System.Text.StringBuilder combined = new System.Text.StringBuilder();
             bool first = false;
             foreach (var f in items)
             {
-                if (combined == null)
+                if (combined.Length == 0)
                 {
                     // Note that even though group filters may include regexes, we don't want to merge them together and compact them,
                     // since that would make their names much more difficult to interpret on the command line.
@@ -432,7 +432,7 @@ namespace Duplicati.Library.Utility
                         r.Add(f);
                     else if (f.Type != FilterType.Empty)
                     {
-                        combined = f.Regexp.ToString();
+                        combined.Append(f.Regexp.ToString());
                         first = true;
                     }
                 }
@@ -440,25 +440,25 @@ namespace Duplicati.Library.Utility
                 {
                     if (f.Type == FilterType.Simple || f.Type == FilterType.Wildcard || f.Type == FilterType.Group)
                     {
-                        r.Add(new FilterEntry("[" + combined + "]"));
+                        r.Add(new FilterEntry("[" + combined.Append("]")));
                         r.Add(f);
-                        combined = null;
+                        combined.Clear();
                     }
                     else if (f.Type != FilterType.Empty)
                     {
                         if (first)
                         {
-                            combined = "(" + combined + ")";
+                            combined.Insert(0, "(").Append(")");
                             first = false;
                         }
 
-                        combined += "|(" + f.Regexp + ")";
+                        combined.Append("|(" + f.Regexp + ")");
                     }
                 }
             }
-                
-            if (combined != null)
-                r.Add(new FilterEntry("[" + combined + "]"));
+
+            if (combined.Length > 0)
+                r.Add(new FilterEntry("[" + combined.Append("]")));
 
             return r;                    
         }
