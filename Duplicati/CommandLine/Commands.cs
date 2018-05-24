@@ -133,11 +133,7 @@ namespace Duplicati.CommandLine
     
         public static int Help(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            if (args.Count < 1)
-                Duplicati.CommandLine.Help.PrintUsage(outwriter, "help", options);
-            else
-                Duplicati.CommandLine.Help.PrintUsage(outwriter, args[0], options);
-                
+            Duplicati.CommandLine.Help.PrintUsage(outwriter, args.Count > 1? args[1]  : "help", options);
             return 0;
         }
 
