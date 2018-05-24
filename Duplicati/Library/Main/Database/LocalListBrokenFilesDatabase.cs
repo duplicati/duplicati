@@ -29,6 +29,7 @@ namespace Duplicati.Library.Main.Database
         //   - Invalid blocks include those that appear to be in non-Blocks volumes (e.g., are listed as being in an Index or Files volume) or that appear in an unknown volume (-1)
         // - Have BlocklistHash entries with unknown/invalid blocks (meaning the data which defines the list of hashes that makes up the blockset isn't available)
         // - Are defined in the Blockset table but have no entries in the BlocksetEntries table (this can happen during recreate if Files volumes reference blocksets that are not found in any Index files)
+        // However, blocksets with a length of 0 are excluded from this check, as the corresponding blocks for these are not needed.
         private const string BROKEN_FILE_IDS = @"
 SELECT DISTINCT ""ID"" FROM (
   SELECT ""ID"" AS ""ID"", ""BlocksetID"" AS ""BlocksetID"" FROM ""File"" WHERE ""BlocksetID"" != {0} AND ""BlocksetID"" != {1}
@@ -37,17 +38,19 @@ UNION
 )
 WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN 
   (
-    SELECT DISTINCT ""BlocksetID"" FROM (
+    SELECT DISTINCT ""BlocksetID"" FROM
+    (
       SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" NOT IN
         (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN
           (" + BLOCK_VOLUME_IDS + @"))
-    UNION
+        UNION
       SELECT ""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Hash"" NOT IN
         (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" IN
           (" + BLOCK_VOLUME_IDS + @"))
-    UNION
-      SELECT ""A"".""ID"" AS ""BlocksetID"" FROM ""Blockset"" A LEFT JOIN ""BlocksetEntry"" B ON ""A"".""ID"" = ""B"".""BlocksetID"" WHERE ""B"".""BlocksetID"" IS NULL
+        UNION
+      SELECT ""A"".""ID"" AS ""BlocksetID"" FROM ""Blockset"" A LEFT JOIN ""BlocksetEntry"" B ON ""A"".""ID"" = ""B"".""BlocksetID"" WHERE ""A"".""Length"" > 0 AND ""B"".""BlocksetID"" IS NULL
     )
+    WHERE ""BlocksetID"" NOT IN (SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" == 0)
   )
 ";
         private const string BROKEN_FILE_SETS = @"SELECT DISTINCT ""B"".""Timestamp"", ""A"".""FilesetID"", COUNT(""A"".""FileID"") AS ""FileCount"" FROM ""FilesetEntry"" A, ""Fileset"" B WHERE ""A"".""FilesetID"" = ""B"".""ID"" AND ""A"".""FileID"" IN (" + BROKEN_FILE_IDS + @")";
