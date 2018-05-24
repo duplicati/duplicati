@@ -156,13 +156,13 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
 
-        private DatabaseCommon m_database;
+        private readonly DatabaseCommon m_database;
         private IBackend m_backend;
-        private Options m_options;
-        private string m_backendurl;
+        private readonly Options m_options;
+        private readonly string m_backendurl;
         private bool m_uploadSuccess;
-        private StatsCollector m_stats;
-        private ITaskReader m_taskreader;
+        private readonly StatsCollector m_stats;
+        private readonly ITaskReader m_taskreader;
 
         public BackendHandler(Options options, string backendUrl, DatabaseCommon database, StatsCollector stats, ITaskReader taskreader)
             : base()

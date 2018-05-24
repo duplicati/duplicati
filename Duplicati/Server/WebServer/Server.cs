@@ -56,7 +56,7 @@ namespace Duplicati.Server.WebServer
         /// <summary>
         /// The single webserver instance
         /// </summary>
-        private HttpServer.HttpServer m_server;
+        private readonly HttpServer.HttpServer m_server;
         
         /// <summary>
         /// The webserver listening port

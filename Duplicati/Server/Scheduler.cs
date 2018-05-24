@@ -39,7 +39,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The thread that runs the scheduler
         /// </summary>
-        private Thread m_thread;
+        private readonly Thread m_thread;
         /// <summary>
         /// A termination flag
         /// </summary>
@@ -47,11 +47,11 @@ namespace Duplicati.Server
         /// <summary>
         /// The worker thread that is invoked to do work
         /// </summary>
-        private WorkerThread<Runner.IRunnerData> m_worker;
+        private readonly WorkerThread<Runner.IRunnerData> m_worker;
         /// <summary>
         /// The wait event
         /// </summary>
-        private AutoResetEvent m_event;
+        private readonly AutoResetEvent m_event;
         /// <summary>
         /// The data syncronization lock
         /// </summary>
@@ -70,7 +70,7 @@ namespace Duplicati.Server
         /// <summary>
         /// List of update tasks, used to set the timestamp on the schedule once completed
         /// </summary>
-        private Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
+        private readonly Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
 
         /// <summary>
         /// Constructs a new scheduler

@@ -24,11 +24,11 @@ namespace Duplicati.Library.Backend.Mega
 {
     public class MegaBackend: IBackend, IStreamingBackend
     {
-        private string m_username = null;
-        private string m_password = null;
+        private readonly string m_username = null;
+        private readonly string m_password = null;
         private Dictionary<string, List<INode>> m_filecache;
         private INode m_currentFolder = null;
-        private string m_prefix = null;
+        private readonly string m_prefix = null;
 
         private MegaApiClient m_client;
 

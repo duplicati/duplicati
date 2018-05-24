@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main.Database
             private readonly System.Data.IDbConnection m_connection;
             private readonly System.Data.IDbTransaction m_transaction;
             private readonly string m_tablename;
-            private LocalPurgeDatabase m_parentdb;
+            private readonly LocalPurgeDatabase m_parentdb;
 
             public long ParentID { get; private set; }
             public long RemovedFileCount { get; private set; }

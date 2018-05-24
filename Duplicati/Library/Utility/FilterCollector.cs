@@ -22,7 +22,7 @@ namespace Duplicati.Library.Utility
 {
     public class FilterCollector
     {
-        private List<Library.Utility.IFilter> m_filters = new List<Library.Utility.IFilter>();
+        private readonly List<Library.Utility.IFilter> m_filters = new List<Library.Utility.IFilter>();
         private Library.Utility.IFilter Filter
         {
             get

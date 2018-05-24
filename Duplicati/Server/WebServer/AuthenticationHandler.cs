@@ -41,11 +41,11 @@ namespace Duplicati.Server.WebServer
         private const int XSRF_TIMEOUT_MINUTES = 10;
         private const int AUTH_TIMEOUT_MINUTES = 10;
 
-        private ConcurrentDictionary<string, DateTime> m_activeTokens = new ConcurrentDictionary<string, DateTime>();
-        private ConcurrentDictionary<string, Tuple<DateTime, string>> m_activeNonces = new ConcurrentDictionary<string, Tuple<DateTime, string>>();
-        private ConcurrentDictionary<string, DateTime> m_activexsrf = new ConcurrentDictionary<string, DateTime>();
+        private readonly ConcurrentDictionary<string, DateTime> m_activeTokens = new ConcurrentDictionary<string, DateTime>();
+        private readonly ConcurrentDictionary<string, Tuple<DateTime, string>> m_activeNonces = new ConcurrentDictionary<string, Tuple<DateTime, string>>();
+        private readonly ConcurrentDictionary<string, DateTime> m_activexsrf = new ConcurrentDictionary<string, DateTime>();
 
-        System.Security.Cryptography.RandomNumberGenerator m_prng = System.Security.Cryptography.RNGCryptoServiceProvider.Create();
+        readonly System.Security.Cryptography.RandomNumberGenerator m_prng = System.Security.Cryptography.RNGCryptoServiceProvider.Create();
 
         private string FindXSRFToken(HttpServer.IHttpRequest request)
         {

@@ -15,11 +15,11 @@ namespace Duplicati.Library.Backend.Sia
         private const string SIA_TARGETPATH = "sia-targetpath";
         private const string SIA_REDUNDANCY = "sia-redundancy";
 
-        private string m_apihost;
-        private int m_apiport;
-        private string m_targetpath;
-        private float m_redundancy;
-        private System.Net.NetworkCredential m_user;
+        private readonly string m_apihost;
+        private readonly int m_apiport;
+        private readonly string m_targetpath;
+        private readonly float m_redundancy;
+        private readonly System.Net.NetworkCredential m_user;
 
         public Sia() {
 

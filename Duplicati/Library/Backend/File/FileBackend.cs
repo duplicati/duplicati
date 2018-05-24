@@ -32,12 +32,12 @@ namespace Duplicati.Library.Backend
         private const string OPTION_MOVE_FILE = "use-move-for-put";
         private const string OPTION_FORCE_REAUTH = "force-smb-authentication";
 
-        private string m_path;
+        private readonly string m_path;
         private string m_username;
         private string m_password;
-        private bool m_moveFile;
+        private readonly bool m_moveFile;
         private bool m_hasAutenticated;
-        private bool m_forceReauth;
+        private readonly bool m_forceReauth;
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 

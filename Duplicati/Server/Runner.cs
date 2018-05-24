@@ -261,7 +261,7 @@ namespace Duplicati.Server
                 #endregion
             }
                         
-            private ProgressState m_state;
+            private readonly ProgressState m_state;
             private Duplicati.Library.Main.IBackendProgress m_backendProgress;
             private Duplicati.Library.Main.IOperationProgress m_operationProgress;
             private readonly object m_lock = new object();

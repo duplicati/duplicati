@@ -14,9 +14,9 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RecreateDatabaseHandler>();
 
-        private string m_backendurl;
-        private Options m_options;
-        private RecreateDatabaseResults m_result;
+        private readonly string m_backendurl;
+        private readonly Options m_options;
+        private readonly RecreateDatabaseResults m_result;
 
         public delegate IEnumerable<KeyValuePair<long, IParsedVolume>> NumberedFilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
         public delegate void BlockVolumePostProcessor(string volumename,BlockVolumeReader reader);

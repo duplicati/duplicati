@@ -242,7 +242,7 @@ namespace Duplicati.Library.Snapshots
             {
                 private readonly IReadOnlyCollection<byte> m_entryData;
                 private readonly IntPtr m_bufferPointer;
-                private GCHandle m_bufferHandle;
+                private readonly GCHandle m_bufferHandle;
                 private long m_offset;
 
                 public RecordEnumeratorImpl(IReadOnlyCollection<byte> entryData)

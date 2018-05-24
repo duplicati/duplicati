@@ -27,7 +27,7 @@ namespace DnsLib
         private string name;
         private ArrayList dnsServers;
         private static int DNS_PORT = 53;
-        Encoding ASCII = Encoding.ASCII;
+        readonly Encoding ASCII = Encoding.ASCII;
         public DnsLite()
         {
             id = DateTime.Now.Millisecond * 60;

@@ -94,17 +94,17 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// The PGP program to use, should be with absolute path
         /// </summary>
-        private string m_programpath = "gpg";
+        private readonly string m_programpath = "gpg";
 
         /// <summary>
         /// Commandline switches for encryption
         /// </summary>
-        private string m_encryption_args;
+        private readonly string m_encryption_args;
 
         /// <summary>
         /// Commandline switches for decryption
         /// </summary>
-        private string m_decryption_args;
+        private readonly string m_decryption_args;
 
         /// <summary>
         /// The key used for cryptographic operations

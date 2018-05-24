@@ -536,7 +536,7 @@ namespace Duplicati.Library.Main.Database
 
         private class ExistingFile : IExistingFile
         {
-            private System.Data.IDataReader m_reader;
+            private readonly System.Data.IDataReader m_reader;
 
             public ExistingFile(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
 
@@ -549,7 +549,7 @@ namespace Duplicati.Library.Main.Database
 
             private class ExistingFileBlock : IExistingFileBlock
             {
-                private System.Data.IDataReader m_reader;
+                private readonly System.Data.IDataReader m_reader;
 
                 public ExistingFileBlock(System.Data.IDataReader rd) { m_reader = rd; }
 
@@ -606,7 +606,7 @@ namespace Duplicati.Library.Main.Database
             {
                 private class BlockSource : IBlockSource
                 {
-                    private System.Data.IDataReader m_reader;
+                    private readonly System.Data.IDataReader m_reader;
                     public BlockSource(System.Data.IDataReader rd) { m_reader = rd; }
 
                     public string Path { get { return m_reader.ConvertValueToString(6); } }
@@ -615,7 +615,7 @@ namespace Duplicati.Library.Main.Database
                     public bool IsMetadata { get { return false; } }
                 }
 
-                private System.Data.IDataReader m_reader;
+                private readonly System.Data.IDataReader m_reader;
                 public BlockDescriptor(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
 
                 private string TargetPath { get { return m_reader.ConvertValueToString(0); } }
@@ -645,7 +645,7 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            private System.Data.IDataReader m_reader;
+            private readonly System.Data.IDataReader m_reader;
             public LocalBlockSource(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
@@ -756,12 +756,12 @@ namespace Duplicati.Library.Main.Database
 
         private class FilesAndMetadata : IFilesAndMetadata
         {
-            private string m_tmptable;
-            private string m_filetablename;
-            private string m_blocktablename;
-            private long m_blocksize;
+            private readonly string m_tmptable;
+            private readonly string m_filetablename;
+            private readonly string m_blocktablename;
+            private readonly long m_blocksize;
 
-            private System.Data.IDbConnection m_connection;
+            private readonly System.Data.IDbConnection m_connection;
 
             public FilesAndMetadata(System.Data.IDbConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
             {
@@ -805,7 +805,7 @@ namespace Duplicati.Library.Main.Database
             {
                 private class PatchBlock : IPatchBlock
                 {
-                    private System.Data.IDataReader m_reader;
+                    private readonly System.Data.IDataReader m_reader;
                     public PatchBlock(System.Data.IDataReader rd) { m_reader = rd; }
 
                     public long Offset { get { return m_reader.ConvertValueToInt64(2); } }
@@ -813,7 +813,7 @@ namespace Duplicati.Library.Main.Database
                     public string Key { get { return m_reader.ConvertValueToString(4); } }
                 }
 
-                private System.Data.IDataReader m_reader;
+                private readonly System.Data.IDataReader m_reader;
                 public VolumePatch(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
 
                 public string Path { get { return m_reader.ConvertValueToString(0); } }
@@ -1017,8 +1017,8 @@ namespace Duplicati.Library.Main.Database
             private System.Data.IDbCommand m_statUpdateCommand;
             private bool m_hasUpdates = false;
 
-            private string m_blocktablename;
-            private string m_filetablename;
+            private readonly string m_blocktablename;
+            private readonly string m_filetablename;
 
             public System.Data.IDbTransaction Transaction { get { return m_insertblockCommand.Transaction; } }
 
@@ -1212,17 +1212,17 @@ namespace Duplicati.Library.Main.Database
         {
             private class BlockEntry : IBlockEntry
             {
-                private System.Data.IDataReader m_rd;
-                private long m_blocksize;
+                private readonly System.Data.IDataReader m_rd;
+                private readonly long m_blocksize;
                 public BlockEntry(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
                 public long Offset { get { return m_rd.GetInt64(3) * m_blocksize; } }
                 public long Index { get { return m_rd.GetInt64(3); } }
                 public long Size { get { return m_rd.GetInt64(5); } }
                 public string Hash { get { return m_rd.GetString(4); } }
             }
-        
-            private System.Data.IDataReader m_rd;
-            private long m_blocksize;
+
+            private readonly System.Data.IDataReader m_rd;
+            private readonly long m_blocksize;
             public FastSource(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
             public bool MoreData { get; private set; }
             public string TargetPath { get { return m_rd.GetValue(0).ToString(); } }

@@ -35,12 +35,12 @@ namespace Duplicati.Library.Backend.Backblaze
 
         private const int DEFAULT_PAGE_SIZE = 500;
 
-        private string m_bucketname;
-        private string m_prefix;
-        private string m_urlencodedprefix;
-        private string m_bucketType;
-        private int m_pagesize;
-        private B2AuthHelper m_helper;
+        private readonly string m_bucketname;
+        private readonly string m_prefix;
+        private readonly string m_urlencodedprefix;
+        private readonly string m_bucketType;
+        private readonly int m_pagesize;
+        private readonly B2AuthHelper m_helper;
         private UploadUrlResponse m_uploadUrl;
 
         private Dictionary<string, List<FileEntity>> m_filecache;

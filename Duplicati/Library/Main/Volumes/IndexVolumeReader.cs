@@ -28,7 +28,7 @@ namespace Duplicati.Library.Main.Volumes
 
         private class IndexBlockVolumeEnumerable : IEnumerable<IIndexBlockVolume>
         {
-            private ICompression m_compression;
+            private readonly ICompression m_compression;
 
             public IndexBlockVolumeEnumerable(ICompression compression)
             {
@@ -41,8 +41,8 @@ namespace Duplicati.Library.Main.Volumes
                 {
                     private class BlockEnumerator : IEnumerator<KeyValuePair<string, long>>
                     {
-                        private ICompression m_compression;
-                        private string m_filename;
+                        private readonly ICompression m_compression;
+                        private readonly string m_filename;
                         private KeyValuePair<string, long>? m_current;
                         private System.IO.StreamReader m_stream;
                         private JsonReader m_reader;
@@ -139,8 +139,8 @@ namespace Duplicati.Library.Main.Volumes
                         }
                     }
 
-                    private ICompression m_compression;
-                    private string m_filename;
+                    private readonly ICompression m_compression;
+                    private readonly string m_filename;
                     private BlockEnumerator m_enumerator;
 
                     public BlockEnumerable(ICompression compression, string filename)
@@ -173,8 +173,8 @@ namespace Duplicati.Library.Main.Volumes
 
                 private class IndexBlockVolume : IIndexBlockVolume
                 {
-                    private ICompression m_compression;
-                    private string m_filename;
+                    private readonly ICompression m_compression;
+                    private readonly string m_filename;
                     private long? m_length;
                     private string m_hash;
                     private BlockEnumerable m_blocks;
@@ -231,7 +231,7 @@ namespace Duplicati.Library.Main.Volumes
                     }
                 }
 
-                private ICompression m_compression;
+                private readonly ICompression m_compression;
                 private IndexBlockVolume m_current;
                 private string[] m_files;
                 private long m_index;
@@ -284,8 +284,8 @@ namespace Duplicati.Library.Main.Volumes
 
         private class IndexBlocklistEnumerable : IEnumerable<IIndexBlocklist>
         {
-            private ICompression m_compression;
-            private long m_hashsize;
+            private readonly ICompression m_compression;
+            private readonly long m_hashsize;
 
             public IndexBlocklistEnumerable(ICompression compression, long hashsize)
             {
@@ -297,10 +297,10 @@ namespace Duplicati.Library.Main.Volumes
             {
                 private class IndexBlocklist : IIndexBlocklist
                 {
-                    private ICompression m_compression;
-                    private string m_filename;
-                    private long m_size;
-                    private long m_hashsize;
+                    private readonly ICompression m_compression;
+                    private readonly string m_filename;
+                    private readonly long m_size;
+                    private readonly long m_hashsize;
 
                     public IndexBlocklist(ICompression compression, string filename, long size, long hashsize)
                     {
@@ -333,11 +333,11 @@ namespace Duplicati.Library.Main.Volumes
                     }
                 }
 
-                private ICompression m_compression;
+                private readonly ICompression m_compression;
                 private long m_index;
                 private KeyValuePair<string, long>[] m_files;
                 private IndexBlocklist m_current;
-                private long m_hashsize;
+                private readonly long m_hashsize;
 
                 public IndexBlocklistEnumerator(ICompression compression, long hashsize)
                 {
@@ -386,7 +386,7 @@ namespace Duplicati.Library.Main.Volumes
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
         }
 
-        private long m_hashsize;
+        private readonly long m_hashsize;
 
         public IndexVolumeReader(ICompression compression, Options options, long hashsize)
             : base(compression, options)

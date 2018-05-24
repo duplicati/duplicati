@@ -33,7 +33,7 @@ namespace Duplicati.Library.Logging
         /// </summary>
         private static readonly string LOGTAG = "Timer";
 
-        private DateTime m_begin;
+        private readonly DateTime m_begin;
         private string m_operation;
         private readonly string m_logtag;
         private readonly string m_logid;

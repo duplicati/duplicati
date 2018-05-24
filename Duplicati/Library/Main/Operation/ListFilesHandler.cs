@@ -13,9 +13,9 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<ListFilesHandler>();
 
-        private string m_backendurl;
-        private Options m_options;
-        private ListResults m_result;
+        private readonly string m_backendurl;
+        private readonly Options m_options;
+        private readonly ListResults m_result;
 
         public ListFilesHandler(string backend, Options options, ListResults result)
         {

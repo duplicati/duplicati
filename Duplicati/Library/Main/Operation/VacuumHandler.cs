@@ -8,8 +8,8 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class VacuumHandler
     {
-        private Options m_options;
-        private VacuumResult m_result;
+        private readonly Options m_options;
+        private readonly VacuumResult m_result;
 
         public VacuumHandler(Options options, VacuumResult result)
         {
