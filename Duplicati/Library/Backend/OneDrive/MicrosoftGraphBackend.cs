@@ -414,7 +414,14 @@ namespace Duplicati.Library.Backend
         public void Delete(string remotename)
         {
             var response = this.m_client.DeleteAsync(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename))).Await();
-            this.CheckResponse(response);
+            try
+            {
+                this.CheckResponse(response);
+            }
+            catch (DriveItemNotFoundException)
+            {
+                // If the item doesn't exist, then attempting to delete it shouldn't fail.
+            }
         }
 
         public void Test()
