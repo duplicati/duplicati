@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Volumes
                                 return false;
 
                             if (!m_reader.Read())
-                                throw new InvalidDataException(string.Format("Invalid JSON, EOF found while reading hashes"));
+                                throw new InvalidDataException("Invalid JSON, EOF found while reading hashes");
 
                             if (m_reader.TokenType == JsonToken.EndArray)
                             {

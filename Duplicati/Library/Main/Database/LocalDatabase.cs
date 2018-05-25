@@ -810,7 +810,7 @@ ON
                             var expandedCmd = string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS);
                         var expandedlist = cmd2.ExecuteScalarInt64(expandedCmd, 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, filesetid);
                         //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
-                        var storedlist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?"), 0, filesetid);
+                        var storedlist = cmd2.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?", 0, filesetid);
 
                         if (expandedlist != storedlist)
                             throw new Exception(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetid, expandedlist, storedlist));
