@@ -86,7 +86,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             if (blocksize <= 0)
             {
-                Console.WriteLine("Invalid blocksize: {0}, try setting --blocksize manually");
+                Console.WriteLine("Invalid blocksize: {0}, try setting --blocksize manually", blocksize);
                 return 100;
             }
 
