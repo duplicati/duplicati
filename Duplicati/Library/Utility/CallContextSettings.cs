@@ -49,15 +49,12 @@ namespace Duplicati.Library.Utility
 
         public static IDisposable StartSession(string tempdir = null, long buffersize = 0)
         {
-            if (string.IsNullOrWhiteSpace(tempdir))
-                tempdir = DefaultTempPath;
-
             if (buffersize < 1024)
                 buffersize = 64 * 1024;
 
             var systemSettings = new SystemSettings
             {
-                Tempdir = tempdir,
+                Tempdir = string.IsNullOrWhiteSpace(tempdir) ? DefaultTempPath : tempdir,
                 Buffersize = buffersize
             };
             return CallContextSettings<SystemSettings>.StartContext(systemSettings);
