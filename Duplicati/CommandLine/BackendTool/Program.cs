@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.CommandLine.BackendTool
