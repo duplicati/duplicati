@@ -23,7 +23,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Utility
 {
-    public static class SystemContextSettings
+    public class SystemContextSettings
     {
         private static string defaultTempPath = null;
 
@@ -37,7 +37,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                return defaultTempPath?? System.IO.Path.GetTempPath();
+                return defaultTempPath ?? System.IO.Path.GetTempPath();
             }
             set
             {
@@ -55,16 +55,17 @@ namespace Duplicati.Library.Utility
             if (buffersize < 1024)
                 buffersize = 64 * 1024;
 
-            return CallContextSettings<SystemSettings>.StartContext(new SystemSettings()
+            var systemSettings = new SystemSettings
             {
                 Tempdir = tempdir,
                 Buffersize = buffersize
-            });
+            };
+            return CallContextSettings<SystemSettings>.StartContext(systemSettings);
         }
 
         public static string Tempdir
         {
-            get 
+            get
             {
                 var tf = CallContextSettings<SystemSettings>.Settings.Tempdir;
 
@@ -85,17 +86,17 @@ namespace Duplicati.Library.Utility
             }
         }
 
-        public static long Buffersize 
+        public static long Buffersize
         {
             get
             {
                 var bs = CallContextSettings<SystemSettings>.Settings.Buffersize;
                 if (bs < 1024)
-					bs = 64 * 1024;
+                    bs = 64 * 1024;
                 return bs;
-			}
+            }
         }
-	}
+    }
 
 
     /// <summary>
@@ -140,9 +141,9 @@ namespace Duplicati.Library.Utility
         public static IDisposable StartSession(TimeSpan operationTimeout = default(TimeSpan), TimeSpan readwriteTimeout = default(TimeSpan), bool bufferRequests = false, bool acceptAnyCertificate = false, string[] allowedCertificates = null)
         {
             // Make sure we always use our own version of the callback
-			System.Net.ServicePointManager.ServerCertificateValidationCallback = ServicePointManagerCertificateCallback;
+            System.Net.ServicePointManager.ServerCertificateValidationCallback = ServicePointManagerCertificateCallback;
 
-            return CallContextSettings<HttpSettings>.StartContext(new HttpSettings()
+            var httpSettings = new HttpSettings
             {
                 OperationTimeout = operationTimeout,
                 ReadWriteTimeout = readwriteTimeout,
@@ -150,7 +151,9 @@ namespace Duplicati.Library.Utility
                 CertificateValidator = acceptAnyCertificate || (allowedCertificates != null)
                     ? new SslCertificateValidator(acceptAnyCertificate, allowedCertificates)
                     : null
-            });
+            };
+
+            return CallContextSettings<HttpSettings>.StartContext(httpSettings);
         }
 
         /// <summary>
@@ -167,8 +170,8 @@ namespace Duplicati.Library.Utility
             if (HttpContextSettings.CertificateValidator != null)
                 return CertificateValidator.ValidateServerCertficate(sender, certificate, chain, sslPolicyErrors);
 
-			// Default is to only approve certificates without errors
-			var result = sslPolicyErrors == SslPolicyErrors.None;
+            // Default is to only approve certificates without errors
+            var result = sslPolicyErrors == SslPolicyErrors.None;
 
             // Hack: If we have no validator, see if the context is all messed up
             // This is not the right way, but ServicePointManager is not designed right for this
@@ -176,8 +179,8 @@ namespace Duplicati.Library.Utility
             foreach (var v in CallContextSettings<HttpSettings>.GetAllInstances())
                 if (v.CertificateValidator != null)
                 {
-					var t = v.CertificateValidator.ValidateServerCertficate(sender, certificate, chain, sslPolicyErrors);
-                    
+                    var t = v.CertificateValidator.ValidateServerCertficate(sender, certificate, chain, sslPolicyErrors);
+
                     // First instance overrides framework result
                     if (!any)
                         result = t;
@@ -185,7 +188,7 @@ namespace Duplicati.Library.Utility
                     // If there are more, we see if anyone will accept it
                     else
                         result |= t;
-                
+
                     any = true;
                 }
 
@@ -213,7 +216,7 @@ namespace Duplicati.Library.Utility
         /// <value>The certificate validator.</value>
         public static SslCertificateValidator CertificateValidator => CallContextSettings<HttpSettings>.Settings.CertificateValidator;
 
-	}
+    }
 
     /// <summary>
     /// Help class for providing settings in the current call context
@@ -221,28 +224,20 @@ namespace Duplicati.Library.Utility
     public static class CallContextSettings<T>
     {
         /// <summary>
-        /// Shared key for storing a value in the call context
-        /// </summary>
-        private const string SETTINGS_KEY_NAME = "duplicati-session-settings";
-
-        /// <summary>
         /// The settings that are stored in the call context, which are not serializable
         /// </summary>
         private static Dictionary<string, T> _settings = new Dictionary<string, T>();
 
         /// <summary>
+        /// The context setting types that are used and need their private setting key
+        /// to prevent overwriting each others settings.
+        /// </summary>
+        private static string contextSettingsType;
+
+        /// <summary>
         /// Lock for protecting the dictionary
         /// </summary>
         public static readonly object _lock = new object();
-
-        /// <summary>
-        /// Gets all instances currently registered
-        /// </summary>
-        internal static T[] GetAllInstances()
-        {
-            lock (_lock)
-                return _settings.Values.ToArray();
-        }
 
         /// <summary>
         /// Gets or sets the values in the current call context
@@ -257,8 +252,9 @@ namespace Duplicati.Library.Utility
                 if (string.IsNullOrWhiteSpace(key))
                     return default(T);
 
+
                 if (!_settings.TryGetValue(key, out res))
-                    lock (_lock)
+                    lock (_lock) // if not present but context id is not null, wait
                         if (!_settings.TryGetValue(key, out res))
                             return default(T);
 
@@ -266,11 +262,43 @@ namespace Duplicati.Library.Utility
             }
             set
             {
-				var key = ContextID;
+                var key = ContextID;
                 if (!string.IsNullOrWhiteSpace(key))
                     lock (_lock)
                         _settings[key] = value;
             }
+        }
+
+        /// <summary>
+        /// Starts the context wit a default value.
+        /// </summary>
+        /// <returns>The disposable handle for the context.</returns>
+        /// <param name="initial">The initial value.</param>
+        public static IDisposable StartContext(string settingsKey, T initial = default(T))
+        {
+            contextSettingsType = settingsKey;
+            var res = new ContextGuard();
+            Settings = initial;
+            return res;
+        }
+
+        /// <summary>
+        /// Starts the context wit a default value.
+        /// </summary>
+        /// <returns>The disposable handle for the context.</returns>
+        /// <param name="initial">The initial value.</param>
+        public static IDisposable StartContext(T initial = default(T))
+        {
+            return StartContext(typeof(T).ToString(), initial);
+        }
+
+        /// <summary>
+        /// Gets all instances currently registered
+        /// </summary>
+        internal static T[] GetAllInstances()
+        {
+            lock (_lock)
+                return _settings.Values.ToArray();
         }
 
         /// <summary>
@@ -290,8 +318,9 @@ namespace Duplicati.Library.Utility
             /// </summary>
             public ContextGuard()
             {
-				CallContext.LogicalSetData(SETTINGS_KEY_NAME, ID);
-			}
+
+                CallContext.LogicalSetData(contextSettingsType, ID);
+            }
 
             /// <summary>
             /// Releases all resource used by the
@@ -312,21 +341,9 @@ namespace Duplicati.Library.Utility
                     _settings.Remove(ID);
                 }
 
-                CallContext.LogicalSetData(SETTINGS_KEY_NAME, null);
+                CallContext.LogicalSetData(contextSettingsType, null);
             }
         }
-
-        /// <summary>
-        /// Starts the context wit a default value.
-        /// </summary>
-        /// <returns>The disposable handle for the context.</returns>
-        /// <param name="initial">The initial value.</param>
-        public static IDisposable StartContext(T initial = default(T))
-        {
-            var res = new ContextGuard();
-            Settings = initial;
-            return res;
-		}
 
         /// <summary>
         /// Gets the context ID for this call.
@@ -336,9 +353,8 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                return CallContext.LogicalGetData(SETTINGS_KEY_NAME) as string;
+                return CallContext.LogicalGetData(contextSettingsType) as string;
             }
         }
-
     }
 }
