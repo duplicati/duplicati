@@ -246,13 +246,12 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                T res;
                 var key = ContextID;
                 if (string.IsNullOrWhiteSpace(key))
                     return default(T);
 
 
-                if (!_settings.TryGetValue(key, out res))
+                if (!_settings.TryGetValue(key, out T res))
                     lock (_lock) // if not present but context id is not null, wait
                         if (!_settings.TryGetValue(key, out res))
                             return default(T);
