@@ -14,11 +14,43 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
     public interface IRESTMethod
-    {    }    public interface IRESTMethodDocumented    {        string Description { get; }        IEnumerable<KeyValuePair<string, Type>> Types { get; }    }    public interface IRESTMethodGET : IRESTMethod    {        void GET(string key, RequestInfo info);    }
-    public interface IRESTMethodPUT : IRESTMethod    {        void PUT(string key, RequestInfo info);    }    public interface IRESTMethodPOST : IRESTMethod    {        void POST(string key, RequestInfo info);    }    public interface IRESTMethodDELETE : IRESTMethod    {        void DELETE(string key, RequestInfo info);    }    public interface IRESTMethodPATCH : IRESTMethod    {        void PATCH(string key, RequestInfo info);    }}
+    {
+    }
+
+    public interface IRESTMethodDocumented
+    {
+        string Description { get; }
+        IEnumerable<KeyValuePair<string, Type>> Types { get; }
+    }
+
+    public interface IRESTMethodGET : IRESTMethod
+    {
+        void GET(string key, RequestInfo info);
+    }
+    public interface IRESTMethodPUT : IRESTMethod
+    {
+        void PUT(string key, RequestInfo info);
+    }
+
+    public interface IRESTMethodPOST : IRESTMethod
+    {
+        void POST(string key, RequestInfo info);
+    }
+
+    public interface IRESTMethodDELETE : IRESTMethod
+    {
+        void DELETE(string key, RequestInfo info);
+    }
+
+    public interface IRESTMethodPATCH : IRESTMethod
+    {
+        void PATCH(string key, RequestInfo info);
+    }
+}
 
