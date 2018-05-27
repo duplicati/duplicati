@@ -21,6 +21,8 @@ using System.Net.Security;
 using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography.X509Certificates;
 
+using Duplicati.Library.Interface;
+
 namespace Duplicati.Library.Utility
 {
     public class SystemContextSettings
@@ -42,7 +44,7 @@ namespace Duplicati.Library.Utility
             set
             {
                 if (!System.IO.Directory.Exists(value))
-                    throw new Exception(Strings.TempFolder.TempFolderDoesNotExistError(value));
+                    throw new FolderMissingException(Strings.TempFolder.TempFolderDoesNotExistError(value));
                 defaultTempPath = value;
             }
         }
