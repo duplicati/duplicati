@@ -172,13 +172,13 @@ namespace Duplicati.Library.Backend
 
             if (errorBuilder.ToString().Contains(RCLONE_ERROR_CONFIG_NOT_FOUND))
             {
-                throw new Exception(String.Format("Missing config file? {0}", errorBuilder.ToString()));
+                throw new Exception(String.Format("Missing config file? {0}", errorBuilder));
             }
 
             if (errorBuilder.Length > 0) {
                 throw new Exception(errorBuilder.ToString());
             }
-            Console.Error.WriteLine(errorBuilder.ToString());
+            Console.Error.WriteLine(errorBuilder);
             return outputBuilder.ToString();
         }
 
@@ -208,7 +208,7 @@ namespace Duplicati.Library.Backend
                 foreach (JObject item in array)
                 {
 #if DEBUG
-                    Console.Error.WriteLine(item.ToString());
+                    Console.Error.WriteLine(item);
 #endif
                     FileEntry fe = new FileEntry(
                         item.GetValue("Name").Value<string>(),

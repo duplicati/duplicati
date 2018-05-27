@@ -41,7 +41,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 }
 
 
-                var data = Encoding.UTF8.GetBytes(string.Format(TEMPLATE, "API Information", "", sb.ToString()));
+                var data = Encoding.UTF8.GetBytes(string.Format(TEMPLATE, "API Information", "", sb));
 
                 info.Response.ContentType = "text/html";
                 info.Response.ContentLength = data.Length;
@@ -68,7 +68,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             sb.AppendFormat(METHOD_TEMPLATE, t.Key, JsonConvert.SerializeObject(t.Value)); //TODO: Format the type
                     }
 
-                    var data = Encoding.UTF8.GetBytes(string.Format(TEMPLATE, m.GetType().Name, desc, sb.ToString()));
+                    var data = Encoding.UTF8.GetBytes(string.Format(TEMPLATE, m.GetType().Name, desc, sb));
 
                     info.Response.ContentType = "text/html";
                     info.Response.ContentLength = data.Length;
