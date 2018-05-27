@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Utility
 {
-    public class SystemContextSettings
+    public static class SystemContextSettings
     {
         private static string defaultTempPath = null;
 
