@@ -229,7 +229,7 @@ namespace Duplicati.Library.Utility
         /// The context setting types that are used and need their private setting key
         /// to prevent overwriting each others settings.
         /// </summary>
-        private static string contextSettingsType;
+        private static string contextSettingsType = null;
 
         /// <summary>
         /// Lock for protecting the dictionary
@@ -350,7 +350,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                return CallContext.LogicalGetData(contextSettingsType) as string;
+                return contextSettingsType != null ? CallContext.LogicalGetData(contextSettingsType) as string : null;
             }
         }
     }
