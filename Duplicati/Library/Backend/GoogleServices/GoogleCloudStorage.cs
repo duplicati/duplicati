@@ -124,16 +124,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         #region IBackend implementation
         public IEnumerable<IFileEntry> List()
         {
-            var queryParams = new NameValueCollection{
-                    { WebApi.GoogleCloudStorage.QueryParam.Prefix, Library.Utility.Uri.UrlEncode(m_prefix) }
-                };
-
-            var path = WebApi.GoogleCloudStorage.BucketObjectPath(m_bucket);
-
+            var url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix));
             while (true)
             {
-                var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path, queryParams);
-
                 var resp = HandleListExceptions(() => m_oauth.ReadJSONResponse<ListBucketResponse>(url));
 
                 if (resp.items != null)
@@ -153,7 +146,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 var token = resp.nextPageToken;
                 if (string.IsNullOrWhiteSpace(token))
                     break;
-                queryParams.Set(WebApi.Google.QueryParam.PageToken, token);
+                url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix), token);
             };
         }
 
@@ -170,8 +163,8 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         }
         public void Delete(string remotename)
         {
-            var url = string.Format("{0}/b/{1}/o/{2}", WebApi.GoogleCloudStorage.Url.API, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
-            var req = m_oauth.CreateRequest(url);
+
+            var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.DeleteUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)));
             req.Method = "DELETE";
 
             m_oauth.ReadJSONResponse<object>(req);
@@ -194,13 +187,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 storageClass = m_storage_class
             }));
 
-            var queryParams = new NameValueCollection
-            {
-                { WebApi.GoogleCloudStorage.QueryParam.Project, m_project }
-            };
-            var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, WebApi.GoogleCloudStorage.Path.Bucket, queryParams);
-
-            var req = m_oauth.CreateRequest(url);
+            var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.CreateFolderUrl(m_project));
             req.Method = "POST";
             req.ContentLength = data.Length;
             req.ContentType = "application/json; charset=UTF-8";
@@ -313,10 +300,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 name = m_prefix + newname,
             }));
 
-            var path = WebApi.GoogleCloudStorage.BucketObjectPath(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + oldname));
-            var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path);
-
-            var req = m_oauth.CreateRequest(url);
+            var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.RenameUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + oldname)));
             req.Method = "PATCH";
             req.ContentLength = data.Length;
             req.ContentType = "application/json; charset=UTF-8";

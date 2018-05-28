@@ -69,19 +69,19 @@ namespace Duplicati.Library.Backend.WebApi
             new KeyValuePair<string, string>("Nearline", "NEARLINE"),
         };
 
-        public static class Url
+        private static class Url
         {
             public const string API = "https://www.googleapis.com/storage/v1";
             public const string UPLOAD = "https://www.googleapis.com/upload/storage/v1";
         }
 
-        public new class QueryParam : Google.QueryParam
+        private new class QueryParam : Google.QueryParam
         {
             public const string Project = "project";
             public const string Prefix = "prefix";
         }
 
-        public static class Path
+        private static class Path
         {
             public const string Bucket = "b";
             public const string Object = "o";
@@ -89,10 +89,52 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string BucketObjectPath(string bucketId, string objectId = null)
         {
-            return UrlPath.Create(WebApi.GoogleCloudStorage.Path.Bucket)
+            return UrlPath.Create(Path.Bucket)
                           .Append(bucketId)
-                          .Append(WebApi.GoogleCloudStorage.Path.Object)
+                          .Append(Path.Object)
                           .Append(objectId).ToString();
+        }
+
+        public static string DeleteUrl(string bucketId, string objectId)
+        {
+            var path = BucketObjectPath(bucketId, objectId);
+
+            return Uri.UriBuilder(Url.API, path);
+        }
+
+        public static string CreateFolderUrl(string projectId)
+        {
+
+            var queryParams = new NameValueCollection
+            {
+                { QueryParam.Project, projectId }
+            };
+
+            return Uri.UriBuilder(Url.API, Path.Bucket, queryParams);
+        }
+
+        public static string RenameUrl(string bucketId, string objectId)
+        {
+            return Uri.UriBuilder(Url.API, BucketObjectPath(bucketId, objectId));
+        }
+
+        public static string ListUrl(string bucketId, string prefix)
+        {
+            return ListUrl(bucketId, prefix, null);   
+        }
+
+        public static string ListUrl(string bucketId, string prefix, string token)
+        {
+            var queryParams = new NameValueCollection {
+                    { QueryParam.Prefix, prefix }
+                };
+
+            if (token != null)
+            {
+                queryParams.Set(Google.QueryParam.PageToken, token);
+            }
+
+            return Uri.UriBuilder(Url.API, BucketObjectPath(bucketId), queryParams);
         }
     }
 
