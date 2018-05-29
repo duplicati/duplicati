@@ -16,7 +16,6 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Net;
 using System.Text;
 
@@ -30,7 +29,7 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
-    public class GoogleCloudStorage : IBackend, IStreamingBackend, IRenameEnabledBackend
+    class GoogleCloudStorage : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
         private const string PROJECT_OPTION = "gcs-project";
@@ -239,8 +238,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         {
             get
             {
-                return new string[] { new System.Uri(WebApi.GoogleCloudStorage.Url.UPLOAD).Host,
-                    new System.Uri(WebApi.GoogleCloudStorage.Url.API).Host };
+                return WebApi.GoogleCloudStorage.Hosts();
             }
         }
 
@@ -248,15 +246,10 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            var queryParams = new NameValueCollection
-            {
-                { WebApi.Google.QueryParam.UploadType, WebApi.Google.QueryValue.Resumable }
-            };
-            var path = UrlPath.Create(WebApi.GoogleCloudStorage.Path.Bucket).Append(m_bucket).ToString();
-            var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.UPLOAD, path, queryParams);
 
-            var item = new BucketResourceItem() { name = m_prefix + remotename };
+            var item = new BucketResourceItem { name = m_prefix + remotename };
 
+            var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
             var res = GoogleCommon.ChunckedUploadWithResume<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream);
 
             if (res == null)
@@ -267,15 +260,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         {
             try
             {
-                var queryParams = new NameValueCollection
-                {
-                    { WebApi.Google.QueryParam.Alt
-                            , WebApi.Google.QueryValue.Media }
-                };
-                var path = WebApi.GoogleCloudStorage.BucketObjectPath(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
-
-                var url = Utility.Uri.UriBuilder(WebApi.GoogleCloudStorage.Url.API, path, queryParams);
-
+                var url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)); 
                 var req = m_oauth.CreateRequest(url);
                 var areq = new AsyncHttpRequest(req);
 
@@ -290,7 +275,6 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 else
                     throw;
             }
-
         }
 
         public void Rename(string oldname, string newname)

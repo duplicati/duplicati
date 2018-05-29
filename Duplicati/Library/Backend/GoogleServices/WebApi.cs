@@ -20,9 +20,8 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend.WebApi
 {
-    class Google
+    public class Google
     {
-
         public class QueryParam
         {
             public const string File = "q";
@@ -40,12 +39,10 @@ namespace Duplicati.Library.Backend.WebApi
     }
 
 
-    class GoogleCloudStorage : Google
+    public class GoogleCloudStorage : Google
     {
-
-
         // From: https://cloud.google.com/storage/docs/bucket-locations
-        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_LOCATIONS = new KeyValuePair<string, string>[] {
+        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_LOCATIONS = {
             new KeyValuePair<string, string>("(default)", null),
             new KeyValuePair<string, string>("Europe", "EU"),
             new KeyValuePair<string, string>("United States", "US"),
@@ -62,7 +59,7 @@ namespace Duplicati.Library.Backend.WebApi
         };
 
 
-        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_STORAGE_CLASSES = new KeyValuePair<string, string>[] {
+        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_STORAGE_CLASSES = {
             new KeyValuePair<string, string>("(default)", null),
             new KeyValuePair<string, string>("Standard", "STANDARD"),
             new KeyValuePair<string, string>("Durable Reduced Availability (DRA)", "DURABLE_REDUCED_AVAILABILITY"),
@@ -87,6 +84,12 @@ namespace Duplicati.Library.Backend.WebApi
             public const string Object = "o";
         }
 
+        public static string[] Hosts()
+        {
+            return new string[] { new System.Uri(Url.UPLOAD).Host,
+                new System.Uri(Url.API).Host };
+        }
+
         public static string BucketObjectPath(string bucketId, string objectId = null)
         {
             return UrlPath.Create(Path.Bucket)
@@ -104,7 +107,6 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string CreateFolderUrl(string projectId)
         {
-
             var queryParams = new NameValueCollection
             {
                 { QueryParam.Project, projectId }
@@ -120,7 +122,7 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string ListUrl(string bucketId, string prefix)
         {
-            return ListUrl(bucketId, prefix, null);   
+            return ListUrl(bucketId, prefix, null);
         }
 
         public static string ListUrl(string bucketId, string prefix, string token)
@@ -136,9 +138,31 @@ namespace Duplicati.Library.Backend.WebApi
 
             return Uri.UriBuilder(Url.API, BucketObjectPath(bucketId), queryParams);
         }
+
+        public static string PutUrl(string bucketId)
+        {
+            var queryParams = new NameValueCollection
+            {
+                { Google.QueryParam.UploadType, QueryValue.Resumable }
+            };
+            var path = UrlPath.Create(Path.Bucket).Append(bucketId).ToString();
+            return Uri.UriBuilder(Url.UPLOAD, path, queryParams);
+        }
+
+        public static string GetUrl(string bucketId, string objectId)
+        {
+            var queryParams = new NameValueCollection
+                {
+                    { Google.QueryParam.Alt
+                            , QueryValue.Media }
+                };
+            var path = BucketObjectPath(bucketId, objectId);
+
+            return Uri.UriBuilder(Url.API, path, queryParams);
+        }
     }
 
-    class GoogleDrive : Google
+    public class GoogleDrive : Google
     {
         public static class Url
         {
@@ -160,26 +184,24 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string FileQueryUrl(NameValueCollection values)
         {
-            return Library.Utility.Uri.UriBuilder(Url.DRIVE, Path.File, values);
+            return Uri.UriBuilder(Url.DRIVE, Path.File, values);
         }
 
         public static string FileQueryUrl(string fileId, NameValueCollection values = null)
         {
-            return Library.Utility.Uri.UriBuilder(Url.DRIVE,
-                                                  Library.Utility.UrlPath.Create(Path.File).Append(fileId).ToString(),
-                                                  values);
+            return Uri.UriBuilder(Url.DRIVE, UrlPath.Create(Path.File).Append(fileId).ToString(),
+                                  values);
         }
 
         public static string FileUploadUrl(string fileId, NameValueCollection values)
         {
-            return Library.Utility.Uri.UriBuilder(Url.UPLOAD,
-                                                  Library.Utility.UrlPath.Create(Path.File).Append(fileId).ToString(),
-                                                  values);
+            return Uri.UriBuilder(Url.UPLOAD, UrlPath.Create(Path.File).Append(fileId).ToString(),
+                                  values);
         }
 
         public static string FileUploadUrl(NameValueCollection values)
         {
-            return Library.Utility.Uri.UriBuilder(Url.UPLOAD, Path.File, values);
+            return Uri.UriBuilder(Url.UPLOAD, Path.File, values);
         }
     }
 }
