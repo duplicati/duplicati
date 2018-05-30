@@ -203,5 +203,17 @@ namespace Duplicati.Library.Backend.WebApi
         {
             return Uri.UriBuilder(Url.UPLOAD, Path.File, values);
         }
+
+        public static string GetUrl(string fileId)
+        {
+            return FileQueryUrl(fileId, new NameValueCollection{
+                { Google.QueryParam.Alt, QueryValue.Media }
+            });
+        }
+
+        public static string RenameUrl(string fileId)
+        {
+            return FileQueryUrl(Uri.UrlPathEncode(fileId);
+        }
     }
 }

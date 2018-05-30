@@ -193,10 +193,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             var fileId = GetFileEntries(remotename).OrderByDescending(x => x.createdDate).First().id;
 
-            var url = WebApi.GoogleDrive.FileQueryUrl(fileId, new NameValueCollection{
-                { WebApi.Google.QueryParam.Alt, WebApi.GoogleDrive.QueryValue.Media }
-            });
-            var req = m_oauth.CreateRequest(url);
+            var req = m_oauth.CreateRequest(WebApi.GoogleDrive.GetUrl(fileId));
             var areq = new AsyncHttpRequest(req);
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
@@ -375,16 +372,16 @@ namespace Duplicati.Library.Backend.GoogleDrive
             {
                 var files = GetFileEntries(oldname, true);
                 if (files.Length > 1)
-                    throw new UserInformationException(string.Format(Strings.GoogleDrive.MultipleEntries(oldname, m_path)), "GoogleDriveMultipleEntries");
+                    throw new UserInformationException(string.Format(Strings.GoogleDrive.MultipleEntries(oldname, m_path)),
+                                                       "GoogleDriveMultipleEntries");
 
                 var newfile = JsonConvert.DeserializeObject<GoogleDriveFolderItem>(JsonConvert.SerializeObject(files[0]));
                 newfile.title = newname;
                 newfile.parents = new GoogleDriveParentReference[] { new GoogleDriveParentReference { id = CurrentFolderId } };
 
-                var url = WebApi.GoogleDrive.FileQueryUrl(Library.Utility.Uri.UrlPathEncode(files[0].id));
                 var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(newfile));
 
-                var nf = m_oauth.GetJSONData<GoogleDriveFolderItem>(url, x =>
+                var nf = m_oauth.GetJSONData<GoogleDriveFolderItem>(WebApi.GoogleDrive.GetUrl(files[0].id) , x =>
                 {
                     x.Method = "PUT";
                     x.ContentLength = data.Length;
