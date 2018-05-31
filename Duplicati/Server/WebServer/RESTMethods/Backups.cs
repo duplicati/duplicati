@@ -74,7 +74,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     var buf = new byte[3];
                     using(var fs = System.IO.File.OpenRead(file.Filename))
                     {
-                        fs.Read(buf, 0, buf.Length);
+                        Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
 
                         fs.Position = 0;
                         if (buf[0] == 'A' && buf[1] == 'E' && buf[2] == 'S')

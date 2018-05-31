@@ -610,8 +610,8 @@ namespace Duplicati.Library.Main.Operation
                                             if (sourcestream.Length > block.Offset)
                                             {
                                                 sourcestream.Position = block.Offset;
-                                                
-                                                var size = sourcestream.Read(blockbuffer, 0, blockbuffer.Length);
+
+                                                int size = Library.Utility.Utility.ForceStreamRead(sourcestream, blockbuffer, blockbuffer.Length);
                                                 if (size == block.Size)
                                                 {
                                                     var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
@@ -720,7 +720,7 @@ namespace Duplicati.Library.Main.Operation
                                                 using (var sourcefile = m_systemIO.FileOpenRead(source.Path))
                                                 {
                                                     sourcefile.Position = source.Offset;
-                                                    var size = sourcefile.Read(blockbuffer, 0, blockbuffer.Length);
+                                                    int size = Library.Utility.Utility.ForceStreamRead(sourcefile, blockbuffer, blockbuffer.Length);
                                                     if (size == targetblock.Size)
                                                     {
                                                         var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));

@@ -64,17 +64,12 @@ namespace Duplicati.Library.Main.Operation
             m_entries++;
         }
 
-        private void CheckedRead(byte[] buffer, int offset, int count)
+        private void CheckedRead(byte[] buffer, int bytesToRead)
         {
-            int r;
-            while (count > 0 && (r = m_stream.Read(buffer, offset, count)) > 0)
+            if (Duplicati.Library.Utility.Utility.ForceStreamRead(m_stream, buffer, bytesToRead) != bytesToRead)
             {
-                offset += r;
-                count -= r;
-            }
-
-            if (count != 0)
                 throw new Exception("Bad file read");
+            }
         }
 
         public IEnumerable<KeyValuePair<string, Stream>> Records
@@ -91,20 +86,20 @@ namespace Duplicati.Library.Main.Operation
                     for(var e = 0L; e < m_entries; e++)
                     {
                         m_stream.Position = pos;
-                        CheckedRead(bf, 0, bf.Length);
+                        CheckedRead(bf, bf.Length);
                         var stringlen = BitConverter.ToInt64(bf, 0);
 
                         var strbuf = stringlen > buf.Length ? new byte[stringlen] : buf;
-                        CheckedRead(strbuf, 0, (int)stringlen);
+                        CheckedRead(strbuf, (int)stringlen);
                         var path = System.Text.Encoding.UTF8.GetString(strbuf, 0, (int)stringlen);
 
-                        CheckedRead(bf, 0, bf.Length);
+                        CheckedRead(bf, bf.Length);
                         var datalen = BitConverter.ToInt64(bf, 0);
                         if (datalen > Int32.MaxValue)
                             throw new ArgumentOutOfRangeException(nameof(datalen), "Metadata is larger than int32");
 
                         var databuf = datalen > buf.Length ? new byte[datalen] : buf;
-                        CheckedRead(databuf, 0, (int)datalen);
+                        CheckedRead(databuf, (int)datalen);
 
                         pos += datalen + stringlen + bf.Length + bf.Length;
 
