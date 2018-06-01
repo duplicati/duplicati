@@ -86,7 +86,7 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string[] Hosts()
         {
-            return new string[] { new System.Uri(Url.UPLOAD).Host,
+            return new [] { new System.Uri(Url.UPLOAD).Host,
                 new System.Uri(Url.API).Host };
         }
 
@@ -164,44 +164,65 @@ namespace Duplicati.Library.Backend.WebApi
 
     public class GoogleDrive : Google
     {
-        public static class Url
+        private static class Url
         {
             public const string DRIVE = "https://www.googleapis.com/drive/v2";
             public const string UPLOAD = "https://www.googleapis.com/upload/drive/v2";
         }
 
-        public static class Path
+        private  class Path
         {
             public const string File = "files";
             public const string About = "about";
         }
 
-        public new class QueryParam : Google.QueryParam
+        private new class QueryParam : Google.QueryParam
         {
             public const string SupportsTeamDrive = "supportsTeamDrives";
             public const string IncludeTeamDrive = "includeTeamDriveItems";
         }
 
-        public static string FileQueryUrl(NameValueCollection values)
+        private static string FileQueryUrl(NameValueCollection values)
         {
             return Uri.UriBuilder(Url.DRIVE, Path.File, values);
         }
 
-        public static string FileQueryUrl(string fileId, NameValueCollection values = null)
+        private static string FileQueryUrl(string fileId, NameValueCollection values = null)
         {
             return Uri.UriBuilder(Url.DRIVE, UrlPath.Create(Path.File).Append(fileId).ToString(),
                                   values);
         }
 
-        public static string FileUploadUrl(string fileId, NameValueCollection values)
+        private static string FileUploadUrl(string fileId, NameValueCollection values)
         {
             return Uri.UriBuilder(Url.UPLOAD, UrlPath.Create(Path.File).Append(fileId).ToString(),
                                   values);
         }
 
-        public static string FileUploadUrl(NameValueCollection values)
+        private static string FileUploadUrl(NameValueCollection values)
         {
             return Uri.UriBuilder(Url.UPLOAD, Path.File, values);
+        }
+
+        private static NameValueCollection SupportsTeamDriveParam(bool useTeamDrive)
+        {
+            return useTeamDrive ? new NameValueCollection {
+                { WebApi.GoogleDrive.QueryParam.SupportsTeamDrive,
+                    WebApi.GoogleDrive.QueryValue.True }
+            } : null;
+        }
+
+        private static NameValueCollection IncludeTeamDriveParam(bool useTeamDrive)
+        {
+            return useTeamDrive ? new NameValueCollection {
+                { QueryParam.IncludeTeamDrive,
+                    QueryValue.True } } : null;
+        }
+
+        public static string[] Hosts()
+        {
+            return new [] { new System.Uri(Url.DRIVE).Host, new System.Uri(Url.UPLOAD).Host };
+
         }
 
         public static string GetUrl(string fileId)
@@ -213,7 +234,43 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string RenameUrl(string fileId)
         {
-            return FileQueryUrl(Uri.UrlPathEncode(fileId);
+            return FileQueryUrl(Uri.UrlPathEncode(fileId));
+        }
+
+        public static string DeleteUrl(string fileId, bool useTeamDrive)
+        {
+            return FileQueryUrl(Uri.UrlPathEncode(fileId), SupportsTeamDriveParam(useTeamDrive));
+        }
+
+        public static string PutUrl(string fileId)
+        {
+            var queryParams = new NameValueCollection {
+                { Google.QueryParam.UploadType,
+                    QueryValue.Resumable } };
+ 
+            return !string.IsNullOrWhiteSpace(fileId) ?
+                FileUploadUrl(Uri.UrlPathEncode(fileId), queryParams) :
+                      FileUploadUrl(queryParams);
+        }
+
+        public static string ListUrl(string fileQuery, bool useTeamDrive, string token=null)
+        {
+            var queryParams = new NameValueCollection
+            {
+                { Google.QueryParam.File,
+                    fileQuery},
+            };
+
+            queryParams.Add(SupportsTeamDriveParam(useTeamDrive));
+            queryParams.Add(IncludeTeamDriveParam(useTeamDrive));
+
+            if (token != null)
+            {
+                queryParams.Set(Google.QueryParam.PageToken, token);
+            }
+
+            return FileQueryUrl(queryParams);
+
         }
     }
 }
