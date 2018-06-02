@@ -307,7 +307,7 @@ namespace Duplicati.Server
                             }
                             
                             Server.Runner.IRunnerData lastJob = jobsToRun.LastOrDefault();
-                            if (lastJob != null && lastJob != null)
+                            if (lastJob != null)
                                 lock(m_lock)
                                     m_updateTasks[lastJob] = new Tuple<ISchedule, DateTime, DateTime>(sc, start, DateTime.UtcNow);
                             
