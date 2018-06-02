@@ -294,17 +294,33 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, Stream stream)
         {
-            var response = this.m_client.GetAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename))).Await();
-            this.CheckResponse(response);
-            using (Stream responseStream = response.Content.ReadAsStreamAsync().Await())
+            try
             {
-                responseStream.CopyTo(stream);
+                var response = this.m_client.GetAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename))).Await();
+                this.CheckResponse(response);
+                using (Stream responseStream = response.Content.ReadAsStreamAsync().Await())
+                {
+                    responseStream.CopyTo(stream);
+                }
+            }
+            catch (DriveItemNotFoundException ex)
+            {
+                // If the item wasn't found, wrap the exception so normal handling can occur.
+                throw new FileMissingException(ex);
             }
         }
 
         public void Rename(string oldname, string newname)
         {
-            this.Patch(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.m_path, NormalizeSlashes(oldname)), new DriveItem() { Name = newname });
+            try
+            {
+                this.Patch(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.m_path, NormalizeSlashes(oldname)), new DriveItem() { Name = newname });
+            }
+            catch (DriveItemNotFoundException ex)
+            {
+                // If the item wasn't found, wrap the exception so normal handling can occur.
+                throw new FileMissingException(ex);
+            }
         }
 
         public void Put(string remotename, string filename)
@@ -418,9 +434,10 @@ namespace Duplicati.Library.Backend
             {
                 this.CheckResponse(response);
             }
-            catch (DriveItemNotFoundException)
+            catch (DriveItemNotFoundException ex)
             {
-                // If the item doesn't exist, then attempting to delete it shouldn't fail.
+                // Wrap the existing item not found error in a 'FolderMissingException'
+                throw new FileMissingException(ex);
             }
         }
 
