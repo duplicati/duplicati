@@ -170,20 +170,20 @@ namespace Duplicati.Library.Main.Database
         
         private class CompactReport : ICompactReport
         {
-            private IEnumerable<VolumeUsage> m_report;
-            private IEnumerable<VolumeUsage> m_cleandelete;
-            private IEnumerable<VolumeUsage> m_wastevolumes;
-            private IEnumerable<VolumeUsage> m_smallvolumes;
+            private readonly IEnumerable<VolumeUsage> m_report;
+            private readonly IEnumerable<VolumeUsage> m_cleandelete;
+            private readonly IEnumerable<VolumeUsage> m_wastevolumes;
+            private readonly IEnumerable<VolumeUsage> m_smallvolumes;
+
+            private readonly long m_deletablevolumes;
+            private readonly long m_wastedspace;
+            private readonly long m_smallspace;
+            private readonly long m_fullsize;
+            private readonly long m_smallvolumecount;
             
-            private long m_deletablevolumes;
-            private long m_wastedspace;
-            private long m_smallspace;
-            private long m_fullsize;
-            private long m_smallvolumecount;
-            
-            private long m_wastethreshold;
-            private long m_volsize;
-            private long m_maxsmallfilecount;
+            private readonly long m_wastethreshold;
+            private readonly long m_volsize;
+            private readonly long m_maxsmallfilecount;
             
             public CompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, IEnumerable<VolumeUsage> report)
             {

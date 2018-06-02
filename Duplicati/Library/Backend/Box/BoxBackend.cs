@@ -35,9 +35,9 @@ namespace Duplicati.Library.Backend.Box
 
         private const int PAGE_SIZE = 200;
 
-        private BoxHelper m_oauth;
-        private string m_path;
-        private bool m_deleteFromTrash;
+        private readonly BoxHelper m_oauth;
+        private readonly string m_path;
+        private readonly bool m_deleteFromTrash;
 
         private string m_currentfolder;
         private Dictionary<string, string> m_filecache;

@@ -27,7 +27,7 @@ namespace Duplicati.Library.Localization.Short
         /// <summary>
         /// The instance for translation
         /// </summary>
-        private static ILocalizationService LS = LocalizationService.Invariant;
+        private static readonly ILocalizationService LS = LocalizationService.Invariant;
 
         /// <summary>
         /// Localizes the string similar to how string.Format works
@@ -172,7 +172,7 @@ namespace Duplicati.Library.Localization.Short
         /// <summary>
         /// The instance for translation
         /// </summary>
-        private static ILocalizationService LS = LocalizationService.Installed;
+        private static readonly ILocalizationService LS = LocalizationService.Installed;
 
         /// <summary>
         /// Localizes the string similar to how string.Format works

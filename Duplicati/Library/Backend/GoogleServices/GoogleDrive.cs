@@ -41,7 +41,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         private readonly OAuthHelper m_oauth;
         private string m_currentFolderId;
-        private Dictionary<string, GoogleDriveFolderItem[]> m_filecache;
+        private readonly Dictionary<string, GoogleDriveFolderItem[]> m_filecache;
 
         public GoogleDrive()
         {

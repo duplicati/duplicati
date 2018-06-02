@@ -100,12 +100,12 @@ namespace Duplicati.Server
         /// <summary>
         /// The folder where control files are placed
         /// </summary>
-        private string m_controldir;
-        
+        private readonly string m_controldir;
+
         /// <summary>
         /// The full path to the locking file
         /// </summary>
-        private string m_lockfilename;
+        private readonly string m_lockfilename;
 
         /// <summary>
         /// The watcher that allows interprocess communication

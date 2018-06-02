@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal class BackupDatabase : DatabaseCommon
     {
-        private LocalBackupDatabase m_database;
+        private readonly LocalBackupDatabase m_database;
 
         public class FileEntryData
         {

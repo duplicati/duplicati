@@ -22,8 +22,8 @@ namespace Duplicati.Server.WebServer
 {
     public class BodyWriter : System.IO.StreamWriter, IDisposable
     {
-        private HttpServer.IHttpResponse m_resp;
-        private string m_jsonp;
+        private readonly HttpServer.IHttpResponse m_resp;
+        private readonly string m_jsonp;
         private static object SUCCESS_RESPONSE = new { Status = "OK" };
 
         // We override the format provider so all JSON output uses US format

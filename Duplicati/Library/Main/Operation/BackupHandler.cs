@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Operation
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackupHandler>();
 
         private readonly Options m_options;
-        private string m_backendurl;
+        private readonly string m_backendurl;
 
         private LocalBackupDatabase m_database;
         private System.Data.IDbTransaction m_transaction;
@@ -56,7 +56,7 @@ namespace Duplicati.Library.Main.Operation
         private Library.Utility.IFilter m_filter;
         private Library.Utility.IFilter m_sourceFilter;
 
-        private BackupResults m_result;
+        private readonly BackupResults m_result;
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {

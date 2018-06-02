@@ -37,7 +37,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The wait event
         /// </summary>
-        private AutoResetEvent m_event;
+        private readonly AutoResetEvent m_event;
         /// <summary>
         /// The internal list of tasks to perform
         /// </summary>
@@ -63,7 +63,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A callback that performs the actual work on the item
         /// </summary>
-        private Action<Tx> m_delegate;
+        private readonly Action<Tx> m_delegate;
 
         /// <summary>
         /// An event that is raised when the runner state changes

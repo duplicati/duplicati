@@ -561,8 +561,8 @@ namespace Duplicati.Library.Main.Database
 
         protected class TemporaryTransactionWrapper : IDisposable
         {
-            private System.Data.IDbTransaction m_parent;
-            private bool m_isTemporary;
+            private readonly System.Data.IDbTransaction m_parent;
+            private readonly bool m_isTemporary;
 
             public TemporaryTransactionWrapper(System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
             {
@@ -604,7 +604,7 @@ namespace Duplicati.Library.Main.Database
         
         private class LocalFileEntry : ILocalFileEntry
         {
-            private System.Data.IDataReader m_reader;
+            private readonly System.Data.IDataReader m_reader;
             public LocalFileEntry(System.Data.IDataReader reader)
             {
                 m_reader = reader;
@@ -849,8 +849,8 @@ ON
         {
             private class BlocklistHashEnumerator : IEnumerator<string>
             {
-                private System.Data.IDataReader m_reader;
-                private BlocklistHashEnumerable m_parent;
+                private readonly System.Data.IDataReader m_reader;
+                private readonly BlocklistHashEnumerable m_parent;
                 private string m_path = null;
                 private bool m_first = true;
                 private string m_current = null;
@@ -912,7 +912,7 @@ ON
                 }
             }
 
-            private System.Data.IDataReader m_reader;
+            private readonly System.Data.IDataReader m_reader;
 
             public BlocklistHashEnumerable(System.Data.IDataReader reader)
             {
@@ -1142,8 +1142,8 @@ ORDER BY
         public class FilteredFilenameTable : IDisposable
         {
             public string Tablename { get; private set; }
-            private System.Data.IDbConnection m_connection;
-            
+            private readonly System.Data.IDbConnection m_connection;
+
             public FilteredFilenameTable(System.Data.IDbConnection connection, Library.Utility.IFilter filter, System.Data.IDbTransaction transaction)
             {
                 m_connection = connection;

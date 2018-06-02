@@ -14,9 +14,9 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RepairHandler>();
-        private string m_backendurl;
-        private Options m_options;
-        private RepairResults m_result;
+        private readonly string m_backendurl;
+        private readonly Options m_options;
+        private readonly RepairResults m_result;
 
         public RepairHandler(string backend, Options options, RepairResults result)
         {

@@ -31,16 +31,16 @@ namespace Duplicati.License
         /// <summary>
         /// The regular expression used to find url files
         /// </summary>
-        private static System.Text.RegularExpressions.Regex URL_FILENAME = new System.Text.RegularExpressions.Regex("(homepage.txt)|(download.txt)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        private static readonly System.Text.RegularExpressions.Regex URL_FILENAME = new System.Text.RegularExpressions.Regex("(homepage.txt)|(download.txt)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         /// <summary>
         /// The regular expression used to find license files
         /// </summary>
-        private static System.Text.RegularExpressions.Regex LICENSE_FILENAME = new System.Text.RegularExpressions.Regex("license.txt", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        private static readonly System.Text.RegularExpressions.Regex LICENSE_FILENAME = new System.Text.RegularExpressions.Regex("license.txt", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         /// <summary>
         /// The regular expression used to find licensedata files
         /// </summary>
-        private static System.Text.RegularExpressions.Regex LICENSEDATA_FILENAME = new System.Text.RegularExpressions.Regex("licensedata.json", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        
+        private static readonly System.Text.RegularExpressions.Regex LICENSEDATA_FILENAME = new System.Text.RegularExpressions.Regex("licensedata.json", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
         /// <summary>
         /// Reads all license files in the given base folder
         /// </summary>
