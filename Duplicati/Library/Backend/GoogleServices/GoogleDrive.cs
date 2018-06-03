@@ -501,14 +501,11 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         private GoogleDriveAboutResponse GetAboutInfo()
         {
-            var url = Library.Utility.Uri.UriBuilder(WebApi.GoogleDrive.Url.DRIVE, WebApi.GoogleDrive.Path.About);
-            return m_oauth.GetJSONData<GoogleDriveAboutResponse>(url);
+            return m_oauth.GetJSONData<GoogleDriveAboutResponse>(WebApi.GoogleDrive.AboutInfoUrl());
         }
 
         private GoogleDriveFolderItem CreateFolder(string name, string parent)
         {
-            var url = WebApi.GoogleDrive.FileQueryUrl(SupportsTeamDriveParam());
-
             var folder = new GoogleDriveFolderItem()
             {
                 title = name,
@@ -520,7 +517,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(folder));
 
-            return m_oauth.GetJSONData<GoogleDriveFolderItem>(url, x =>
+            return m_oauth.GetJSONData<GoogleDriveFolderItem>(WebApi.GoogleDrive.CreateFolderUrl(m_useTeamDrive), x =>
             {
                 x.Method = "POST";
                 x.ContentType = "application/json; charset=UTF-8";

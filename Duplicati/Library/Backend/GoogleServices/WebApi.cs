@@ -270,7 +270,16 @@ namespace Duplicati.Library.Backend.WebApi
             }
 
             return FileQueryUrl(queryParams);
+        }
 
+        public static string CreateFolderUrl(bool useTeamDrive)
+        {
+            return FileQueryUrl(SupportsTeamDriveParam(useTeamDrive));
+        }
+
+        public static string AboutInfoUrl()
+        {
+            return Uri.UriBuilder(Url.DRIVE, Path.About);
         }
     }
 }
