@@ -904,7 +904,7 @@ namespace Duplicati.Library.Main.Database
             }            
         }
 
-        public IEnumerable<string> GetBlocklistHashes(string name, System.Data.IDbTransaction transaction)
+        public string[] GetBlocklistHashes(string name, System.Data.IDbTransaction transaction)
         {
             var volumeid = GetRemoteVolumeID(name, transaction);
             using(var cmd = m_connection.CreateCommand(transaction))

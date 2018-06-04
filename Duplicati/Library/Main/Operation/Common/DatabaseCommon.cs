@@ -104,10 +104,11 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain(() => m_db.LogRemoteOperation(operation, path, data, m_transaction));
         }
 
-        public Task<IEnumerable<LocalDatabase.IBlock>> GetBlocksAsync(long volumeid)
+        public Task<LocalDatabase.IBlock[]> GetBlocksAsync(long volumeid)
         {
-            // TODO: How does the IEnumerable work with RunOnMain ?
-            return RunOnMain(() => m_db.GetBlocks(volumeid, m_transaction).ToArray().AsEnumerable());
+            // TODO: Figure out how to return the enumerable, while keeping the lock
+            // and not creating the entire result in memory
+            return RunOnMain(() => m_db.GetBlocks(volumeid, m_transaction).ToArray());
         }
 
         public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename)
@@ -115,10 +116,11 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain(() => m_db.GetRemoteVolume(remotename, m_transaction));
         }
 
-        public Task<IEnumerable<Tuple<string, byte[], int>>> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
+        public Task<Tuple<string, byte[], int>[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
         {
-            // TODO: How does the IEnumerable work with RunOnMain ?
-            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize, m_transaction));
+            // TODO: Figure out how to return the enumerable, while keeping the lock
+            // and not creating the entire result in memory
+            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize, m_transaction).ToArray());
         }
 
         public Task<long> GetRemoteVolumeIDAsync(string remotename)
