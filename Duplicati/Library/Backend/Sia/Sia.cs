@@ -135,7 +135,7 @@ namespace Duplicati.Library.Backend.Sia
         private SiaFileList GetFiles()
         {
             var fl = new SiaFileList();
-            string endpoint = string.Format("/renter/files");
+            string endpoint = "/renter/files";
 
             try
             {
@@ -189,7 +189,7 @@ namespace Duplicati.Library.Backend.Sia
         private SiaDownloadList GetDownloads()
         {
             var fl = new SiaDownloadList();
-            string endpoint = string.Format("/renter/downloads");
+            string endpoint = "/renter/downloads";
 
             try
             {

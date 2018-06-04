@@ -112,11 +112,7 @@ namespace Duplicati.Library.Backend
         public void CreateFolder()
         {
             CreateConnection();
-            //Bugfix, some SSH servers do not like a trailing slash
-            string p = m_path;
-            if (p.EndsWith("/", StringComparison.Ordinal))
-                p.Substring(0, p.Length - 1);
-            m_con.CreateDirectory(p);
+            m_con.CreateDirectory(m_path);
         }
 
         public string DisplayName
