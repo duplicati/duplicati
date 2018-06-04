@@ -261,7 +261,7 @@ namespace Duplicati.Server
                 #endregion
             }
                         
-            private ProgressState m_state;
+            private readonly ProgressState m_state;
             private Duplicati.Library.Main.IBackendProgress m_backendProgress;
             private Duplicati.Library.Main.IOperationProgress m_operationProgress;
             private readonly object m_lock = new object();
@@ -589,7 +589,7 @@ namespace Duplicati.Server
                                     var r = controller.CreateLogDatabase(tf);
                                     var tempid = Program.DataConnection.RegisterTempFile("create-bug-report", r.TargetPath, DateTime.Now.AddDays(3));
 
-                                    if (string.Equals(tf, r.TargetPath, Library.Utility.Utility.ClientFilenameStringComparision))
+                                    if (string.Equals(tf, r.TargetPath, Library.Utility.Utility.ClientFilenameStringComparison))
                                         tf.Protected = true;
 
                                     Program.DataConnection.RegisterNotification(

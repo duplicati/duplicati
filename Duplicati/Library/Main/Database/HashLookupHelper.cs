@@ -28,7 +28,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The lookup table
         /// </summary>
-        private SortedList<string, T>[] m_lookup;
+        private readonly SortedList<string, T>[] m_lookup;
         /// <summary>
         /// The number of entries in the table
         /// </summary>

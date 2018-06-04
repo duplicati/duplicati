@@ -27,8 +27,8 @@ namespace Duplicati.GUI.TrayIcon.Windows
     {
         private class MenuItemWrapper : IMenuItem
         {
-            private ToolStripItem m_menu;
-            private Action m_callback;
+            private readonly ToolStripItem m_menu;
+            private readonly Action m_callback;
 
             public ToolStripItem MenuItem { get { return m_menu; } }
             

@@ -54,15 +54,15 @@ namespace Duplicati.Library.Backend
         #region [Variables and constants declarations]
 
         /// <summary> Auth-stripped HTTPS-URI as passed to constructor. </summary>
-        private Utility.Uri m_orgUrl;
+        private readonly Utility.Uri m_orgUrl;
         /// <summary> Server relative path to backup folder. </summary>
-        private string m_serverRelPath;
+        private readonly string m_serverRelPath;
         /// <summary> User's credentials to create client context </summary>
         private System.Net.ICredentials m_userInfo;
         /// <summary> Flag indicating to move files to recycler on deletion. </summary>
-        private bool m_deleteToRecycler = false;
+        private readonly bool m_deleteToRecycler = false;
         /// <summary> Flag indicating to use UploadBinaryDirect. </summary>
-        private bool m_useBinaryDirectMode = false;
+        private readonly bool m_useBinaryDirectMode = false;
 
         /// <summary> URL to SharePoint web. Will be determined from m_orgUri on first use. </summary>
         private string m_spWebUrl;
@@ -70,10 +70,10 @@ namespace Duplicati.Library.Backend
         private SP.ClientContext m_spContext;
 
         /// <summary> The chunk size for uploading files. </summary>
-        private int m_fileChunkSize = 4 << 20; // Default: 4MB
+        private readonly int m_fileChunkSize = 4 << 20; // Default: 4MB
 
         /// <summary> The chunk size for uploading files. </summary>
-        private int m_useContextTimeoutMs = -1; // default: do not touch original setting
+        private readonly int m_useContextTimeoutMs = -1; // default: do not touch original setting
 
         #endregion
 
@@ -666,12 +666,14 @@ namespace Duplicati.Library.Backend
                 string[] folderNames = m_serverRelPath.Substring(0, m_serverRelPath.Length - 1).Split('/');
                 folderNames = Array.ConvertAll(folderNames, fold => System.Net.WebUtility.UrlDecode(fold));
                 var spfolders = new SP.Folder[folderNames.Length];
-                string folderRelPath = "";
+                StringBuilder relativePathBuilder = new StringBuilder();
                 int fi = 0;
                 for (; fi < folderNames.Length; fi++)
                 {
-                    folderRelPath += System.Web.HttpUtility.UrlPathEncode(folderNames[fi]) + "/";
+                    relativePathBuilder.Append(System.Web.HttpUtility.UrlPathEncode(folderNames[fi])).Append("/");
                     if (fi < pathLengthToWeb) continue;
+
+                    string folderRelPath = relativePathBuilder.ToString();
                     var folder = ctx.Web.GetFolderByServerRelativeUrl(folderRelPath);
                     spfolders[fi] = folder;
                     ctx.Load(folder, f => f.Exists);

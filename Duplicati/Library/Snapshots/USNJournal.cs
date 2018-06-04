@@ -153,7 +153,7 @@ namespace Duplicati.Library.Snapshots
             {
                 if (r.UsnRecord.Usn >= minUsn
                     && (reason == ChangeReason.Any || (MapChangeReason(r.UsnRecord.Reason) & reason) != 0)
-                    && (r.FullPath.Equals(sourceFileOrFolder, Utility.Utility.ClientFilenameStringComparision)
+                    && (r.FullPath.Equals(sourceFileOrFolder, Utility.Utility.ClientFilenameStringComparison)
                         || isFolder && Utility.Utility.IsPathBelowFolder(r.FullPath, sourceFileOrFolder)))
                 {
                     yield return Tuple.Create(r.FullPath,
@@ -242,7 +242,7 @@ namespace Duplicati.Library.Snapshots
             {
                 private readonly IReadOnlyCollection<byte> m_entryData;
                 private readonly IntPtr m_bufferPointer;
-                private GCHandle m_bufferHandle;
+                private readonly GCHandle m_bufferHandle;
                 private long m_offset;
 
                 public RecordEnumeratorImpl(IReadOnlyCollection<byte> entryData)

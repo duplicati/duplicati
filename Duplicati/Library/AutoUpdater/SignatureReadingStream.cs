@@ -30,7 +30,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// The stream to read from
         /// </summary>
-        private System.IO.Stream m_stream;
+        private readonly System.IO.Stream m_stream;
 
         protected SignatureReadingStream()
         {

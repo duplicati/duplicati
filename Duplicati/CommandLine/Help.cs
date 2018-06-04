@@ -409,10 +409,10 @@ namespace Duplicati.CommandLine
 
                 string c = s;
 
-                string leadingSpaces = "";
+                StringBuilder leadingSpaces = new StringBuilder();
                 while (c.Length > 0 && c.StartsWith(" ", StringComparison.Ordinal))
                 {
-                    leadingSpaces += " ";
+                    leadingSpaces.Append(" ");
                     c = c.Remove(0, 1);
                 }
 
@@ -434,7 +434,7 @@ namespace Duplicati.CommandLine
                     if (extraIndent)
                     {
                         extraIndent = false;
-                        leadingSpaces += "  ";
+                        leadingSpaces.Append("  ");
                     }
                 }
             }
@@ -442,13 +442,15 @@ namespace Duplicati.CommandLine
 
         private class Matcher
         {
-            Dictionary<string, Library.Interface.ICommandLineArgument> args = new Dictionary<string, Library.Interface.ICommandLineArgument>(StringComparer.OrdinalIgnoreCase);
+            readonly Dictionary<string, Library.Interface.ICommandLineArgument> args = new Dictionary<string, Library.Interface.ICommandLineArgument>(StringComparer.OrdinalIgnoreCase);
 
             public Matcher()
             {
-                List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>();
-                foundArgs.Add(new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
-                foundArgs.Add(Program.SupportedOptions);
+                List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>
+                {
+                    new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands,
+                    Program.SupportedOptions
+                };
 
                 foreach (Duplicati.Library.Interface.IBackend backend in Library.DynamicLoader.BackendLoader.Backends)
                     if (backend.SupportedCommands != null)

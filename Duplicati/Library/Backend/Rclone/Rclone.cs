@@ -40,11 +40,11 @@ namespace Duplicati.Library.Backend
         private const string RCLONE_ERROR_DIRECTORY_NOT_FOUND = "directory not found";
         private const string RCLONE_ERROR_CONFIG_NOT_FOUND = "didn't find section in config file";
 
-        private string local_repo;
-        private string remote_repo;
-        private string remote_path;
-        private string opt_rclone;
-        private string rclone_executable;
+        private readonly string local_repo;
+        private readonly string remote_repo;
+        private readonly string remote_path;
+        private readonly string opt_rclone;
+        private readonly string rclone_executable;
 
         public Rclone()
         {
@@ -185,7 +185,6 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
-            JArray files;
             String str_result;
 
             try
@@ -284,10 +283,14 @@ namespace Duplicati.Library.Backend
             }
         }
 
+
+
         public string[] DNSName
         {
             get { return new string[] { remote_repo }; }
         }
+
+
 
         public void Test()
         {

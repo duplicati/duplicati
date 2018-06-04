@@ -33,11 +33,11 @@ namespace Duplicati.Library.Utility
         private class StreamEnumerator : IEnumerator<T>, System.Collections.IEnumerator
         {
             private Stream m_stream;
-            private Func<Stream, long, T> m_deserialize;
+            private readonly Func<Stream, long, T> m_deserialize;
             private long m_position;
             private readonly byte[] m_sizebuffer;
-            private long m_expectedCount;
-            private FileBackedList<T> m_parent;
+            private readonly long m_expectedCount;
+            private readonly FileBackedList<T> m_parent;
             private T m_current;
 
             public StreamEnumerator(Stream stream, Func<Stream, long, T> deserialize, FileBackedList<T> parent)

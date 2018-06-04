@@ -29,7 +29,7 @@ namespace Duplicati.CommandLine
 {
     public class Program
     {
-        private static string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
 
         public static bool FROM_COMMANDLINE = false;
 
@@ -163,34 +163,22 @@ namespace Duplicati.CommandLine
                 }
 
             // Probe for "help" to avoid extra processing
-            bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase));
-
-            if (isHelp) 
+            if (cargs.Count == 0 || (string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase))) 
             {
                 return Commands.Help(outwriter, setup, cargs, options, filter);
             }
 
-            if ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile")))
+            // try and parse all parameter file aliases
+            foreach (string parameterOption in new []{ "parameters-file", "parameters-file", "parameterfile"} )
             {
-                string filename;
-                if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file"))
+                if (options.ContainsKey(parameterOption) && !string.IsNullOrEmpty(options[parameterOption]))
                 {
-                    filename = options["parameters-file"];
-                    options.Remove("parameters-file");
-                }
-                else if (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file"))
-                {
-                    filename = options["parameter-file"];
-                    options.Remove("parameter-file");
-                }
-                else
-                {
-                    filename = options["parameterfile"];
-                    options.Remove("parameterfile");
-                }
-
-                if (!ReadOptionsFromFile(outwriter, filename, ref filter, cargs, options))
-                    return 100;
+                    string filename = options[parameterOption];
+                    options.Remove(parameterOption);
+                    if (!ReadOptionsFromFile(outwriter, filename, ref filter, cargs, options))
+                        return 100;
+                    break;
+                }  
             }
 
             if (!options.ContainsKey("passphrase"))
@@ -204,7 +192,7 @@ namespace Duplicati.CommandLine
             if (!options.ContainsKey("auth-username"))
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
                     options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
-            
+
             var showDeletionErrors = verboseErrors;
             Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
             {

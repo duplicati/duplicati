@@ -24,8 +24,8 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class ListAffected
     {
-        private Options m_options;
-        private ListAffectedResults m_result;
+        private readonly Options m_options;
+        private readonly ListAffectedResults m_result;
 
         public ListAffected(Options options, ListAffectedResults result)
         {

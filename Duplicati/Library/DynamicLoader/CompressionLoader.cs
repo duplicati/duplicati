@@ -103,7 +103,7 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// The static instance used to access compression module information
         /// </summary>
-        private static CompressionLoaderSub _compressionLoader = new CompressionLoaderSub();
+        private static readonly CompressionLoaderSub _compressionLoader = new CompressionLoaderSub();
 
         #region Public static API
 

@@ -26,18 +26,18 @@ namespace Duplicati.Library.Backend
 {
     public class WEBDAV : IBackend, IStreamingBackend
     {
-        private System.Net.NetworkCredential m_userInfo;
-        private string m_url;
-        private string m_path;
-        private string m_sanitizedUrl;
-        private string m_reverseProtocolUrl;
-        private string m_rawurl;
-        private string m_rawurlPort;
-        private string m_dnsName;
-        private bool m_useIntegratedAuthentication = false;
-        private bool m_forceDigestAuthentication = false;
-        private bool m_useSSL = false;
-        private string m_debugPropfindFile = null;
+        private readonly System.Net.NetworkCredential m_userInfo;
+        private readonly string m_url;
+        private readonly string m_path;
+        private readonly string m_sanitizedUrl;
+        private readonly string m_reverseProtocolUrl;
+        private readonly string m_rawurl;
+        private readonly string m_rawurlPort;
+        private readonly string m_dnsName;
+        private readonly bool m_useIntegratedAuthentication = false;
+        private readonly bool m_forceDigestAuthentication = false;
+        private readonly bool m_useSSL = false;
+        private readonly string m_debugPropfindFile = null;
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         /// <summary>

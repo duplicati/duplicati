@@ -49,23 +49,23 @@ namespace Duplicati.Library.Main.Database
             }
         }
         
-        private System.Data.IDbCommand m_insertFileCommand;
-        private System.Data.IDbCommand m_insertFilesetEntryCommand;
-        private System.Data.IDbCommand m_insertMetadatasetCommand;
-        private System.Data.IDbCommand m_insertBlocksetCommand;
-        private System.Data.IDbCommand m_insertBlocklistHashCommand;
-        private System.Data.IDbCommand m_updateBlockVolumeCommand;
-        private System.Data.IDbCommand m_insertBlockset;
-        private System.Data.IDbCommand m_insertSmallBlockset;
-        private System.Data.IDbCommand m_findBlocksetCommand;
-        private System.Data.IDbCommand m_findMetadatasetCommand;
-        private System.Data.IDbCommand m_findFilesetCommand;
-        private System.Data.IDbCommand m_findblocklisthashCommand;
-        private System.Data.IDbCommand m_findHashBlockCommand;
-        private System.Data.IDbCommand m_insertBlockCommand;
-        private System.Data.IDbCommand m_insertDuplicateBlockCommand;
+        private readonly System.Data.IDbCommand m_insertFileCommand;
+        private readonly System.Data.IDbCommand m_insertFilesetEntryCommand;
+        private readonly System.Data.IDbCommand m_insertMetadatasetCommand;
+        private readonly System.Data.IDbCommand m_insertBlocksetCommand;
+        private readonly System.Data.IDbCommand m_insertBlocklistHashCommand;
+        private readonly System.Data.IDbCommand m_updateBlockVolumeCommand;
+        private readonly System.Data.IDbCommand m_insertBlockset;
+        private readonly System.Data.IDbCommand m_insertSmallBlockset;
+        private readonly System.Data.IDbCommand m_findBlocksetCommand;
+        private readonly System.Data.IDbCommand m_findMetadatasetCommand;
+        private readonly System.Data.IDbCommand m_findFilesetCommand;
+        private readonly System.Data.IDbCommand m_findblocklisthashCommand;
+        private readonly System.Data.IDbCommand m_findHashBlockCommand;
+        private readonly System.Data.IDbCommand m_insertBlockCommand;
+        private readonly System.Data.IDbCommand m_insertDuplicateBlockCommand;
         
-        private PathLookupHelper<PathEntryKeeper> m_filesetLookup;
+        private readonly PathLookupHelper<PathEntryKeeper> m_filesetLookup;
         
         private string m_tempblocklist;
         private string m_tempsmalllist;
