@@ -416,7 +416,7 @@ namespace Duplicati.Server
 
             return parts.ToArray();
         }
-        
+
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
             if (data is CustomRunnerTask)
@@ -437,9 +437,7 @@ namespace Duplicati.Server
                 return null;
             }
 
-
             var backup = data.Backup;
-            Duplicati.Library.Utility.TempFolder tempfolder = new Duplicati.Library.Utility.TempFolder();
 
             if (backup.Metadata == null)
                 backup.Metadata = new Dictionary<string, string>();
@@ -461,39 +459,7 @@ namespace Duplicati.Server
                 // Pack in the system or task config for easy restore
                 if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
                 {
-                    var all_tasks = string.Equals(options["store-task-config"], "all", StringComparison.OrdinalIgnoreCase) || string.Equals(options["store-task-config"], "*", StringComparison.OrdinalIgnoreCase);
-                    var this_task = Duplicati.Library.Utility.Utility.ParseBool(options["store-task-config"], false);
-
-                    options.Remove("store-task-config");
-
-                    if (all_tasks || this_task)
-                    {
-                        var temppath = System.IO.Path.Combine(tempfolder, "task-setup.json");
-                        using(var tempfile = Duplicati.Library.Utility.TempFile.WrapExistingFile(temppath))
-                        {
-                            object taskdata = null;
-                            if (all_tasks)
-                                taskdata = Program.DataConnection.Backups.Where(x => !x.IsTemporary).Select(x => Program.DataConnection.PrepareBackupForExport(Program.DataConnection.GetBackup(x.ID)));
-                            else
-                                taskdata = new [] { Program.DataConnection.PrepareBackupForExport(data.Backup) };
-
-                            using(var fs = System.IO.File.OpenWrite(tempfile))
-                            using(var sw = new System.IO.StreamWriter(fs, System.Text.Encoding.UTF8))
-                                Serializer.SerializeJson(sw, taskdata, true);
-
-                            tempfile.Protected = true;
-
-                            string controlfiles = null;
-                            options.TryGetValue("control-files", out controlfiles);
-
-                            if (string.IsNullOrWhiteSpace(controlfiles))
-                                controlfiles = tempfile;
-                            else
-                                controlfiles += System.IO.Path.PathSeparator + tempfile;
-
-                            options["control-files"] = controlfiles;
-                        }
-                    }
+                    StoreTaskConfig(data, options);
                 }
 
                 // Attach a log scope that tags all messages to relay the TaskID and BackupID
@@ -501,7 +467,7 @@ namespace Duplicati.Server
                     log[LogWriteHandler.LOG_EXTRA_TASKID] = data.TaskID.ToString(); 
                     log[LogWriteHandler.LOG_EXTRA_BACKUPID] = data.BackupID; 
                 }))
-                using (tempfolder)
+
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
                     try 
@@ -572,14 +538,12 @@ namespace Duplicati.Server
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
-
                         case DuplicatiOperation.Compact:
                             {
                             var r = controller.Compact();
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
-
                         case DuplicatiOperation.CreateReport:
                             {
                                 using(var tf = new Duplicati.Library.Utility.TempFile())
@@ -657,6 +621,43 @@ namespace Duplicati.Server
             finally
             {
                 ((RunnerData)data).Controller = null;
+            }
+        }
+
+        private static void StoreTaskConfig(IRunnerData data, Dictionary<string, string> options)
+        {
+            var all_tasks = string.Equals(options["store-task-config"], "all", StringComparison.OrdinalIgnoreCase) || string.Equals(options["store-task-config"], "*", StringComparison.OrdinalIgnoreCase);
+            var this_task = Duplicati.Library.Utility.Utility.ParseBool(options["store-task-config"], false);
+
+            options.Remove("store-task-config");
+
+            if (all_tasks || this_task)
+            {
+                var tempfolder = new Duplicati.Library.Utility.TempFolder();
+                var temppath = System.IO.Path.Combine(tempfolder, "task-setup.json");
+                using (var tempfile = Duplicati.Library.Utility.TempFile.WrapExistingFile(temppath))
+                {
+                    object taskdata = null;
+                    if (all_tasks)
+                        taskdata = Program.DataConnection.Backups.Where(x => !x.IsTemporary).Select(x => Program.DataConnection.PrepareBackupForExport(Program.DataConnection.GetBackup(x.ID)));
+                    else
+                        taskdata = new[] { Program.DataConnection.PrepareBackupForExport(data.Backup) };
+
+                    using (var fs = System.IO.File.OpenWrite(tempfile))
+                    using (var sw = new System.IO.StreamWriter(fs, System.Text.Encoding.UTF8))
+                        Serializer.SerializeJson(sw, taskdata, true);
+
+                    tempfile.Protected = true;
+
+                    options.TryGetValue("control-files", out string controlfiles);
+
+                    if (string.IsNullOrWhiteSpace(controlfiles))
+                        controlfiles = tempfile;
+                    else
+                        controlfiles += System.IO.Path.PathSeparator + tempfile;
+
+                    options["control-files"] = controlfiles;
+                }
             }
         }
         
