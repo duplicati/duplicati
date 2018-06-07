@@ -265,6 +265,8 @@ namespace Duplicati.Library.Main.Strings
         public static string ExcludeemptyfoldersLong { get { return "Use this option to remove all empty folders from a backup."; } }
         public static string IgnorefilenamesShort { get { return LC.L("List of filenames that exclude folders"); } }
         public static string IgnorefilenamesLong { get { return LC.L("Use this option to set a filename, or list of filenames, that indicate exclusion of a folder which contains it. A common use would be to have a file named something like \".nobackup\" and place this file into folders that should not be backed up."); } }
+        public static string RestoresymlinkmetadataShort { get { return "Apply metadata to symlinks"; } }
+        public static string RestoresymlinkmetadataLong { get { return "If symlink metadata is applied, it will usually mean changing the symlink target, instead of the symlink itself. For this reason, metadata is not applied to symlinks, but this option can be used to override this, such that metadata is applied to symlinks as well."; } }
     }
 
     internal static class Common

@@ -328,7 +328,7 @@ namespace Duplicati.Library.Main.Operation
                             m_systemIO.DirectoryCreate(folderpath);
                         }
 
-                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.Dryrun);
+                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
                     }
                     catch (Exception ex)
                     {
@@ -523,7 +523,7 @@ namespace Duplicati.Library.Main.Operation
             result.EndTime = DateTime.UtcNow;
         }
 
-        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool dryrun)
+        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool restoreSymlinkMetadata, bool dryrun)
         {
             using(var tr = new System.IO.StreamReader(stream))
             using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
@@ -546,6 +546,13 @@ namespace Duplicati.Library.Main.Operation
                 // If the target is a folder, make sure we create it first
                 else if (isDirTarget && !m_systemIO.DirectoryExists(targetpath))
                     m_systemIO.DirectoryCreate(targetpath);
+
+                // Avoid setting restoring symlink metadata, as that writes the symlink target, not the symlink itself
+                if (!restoreSymlinkMetadata && Snapshots.SnapshotUtility.IsSymlink(m_systemIO, targetpath))
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "no-symlink-metadata-restored", "Not applying metadata to symlink: {0}", targetpath);
+                    return;
+                }
 
                 if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
                 {
