@@ -37,18 +37,18 @@ namespace Duplicati.Library.Backend
         public const string SSH_TIMEOUT_OPTION = "ssh-operation-timeout";
         public const string SSH_KEEPALIVE_OPTION = "ssh-keepalive";
 
-        Dictionary<string, string> m_options;
+        readonly Dictionary<string, string> m_options;
 
-        private string m_server;
-        private string m_path;
-        private string m_username;
-        private string m_password;
-        private string m_fingerprint;
-        private bool m_fingerprintallowall;
-        private TimeSpan m_operationtimeout;
-        private TimeSpan m_keepaliveinterval;
+        private readonly string m_server;
+        private readonly string m_path;
+        private readonly string m_username;
+        private readonly string m_password;
+        private readonly string m_fingerprint;
+        private readonly bool m_fingerprintallowall;
+        private readonly TimeSpan m_operationtimeout;
+        private readonly TimeSpan m_keepaliveinterval;
 
-        private int m_port = 22;
+        private readonly int m_port = 22;
 
         private SftpClient m_con;
 
@@ -112,11 +112,7 @@ namespace Duplicati.Library.Backend
         public void CreateFolder()
         {
             CreateConnection();
-            //Bugfix, some SSH servers do not like a trailing slash
-            string p = m_path;
-            if (p.EndsWith("/", StringComparison.Ordinal))
-                p.Substring(0, p.Length - 1);
-            m_con.CreateDirectory(p);
+            m_con.CreateDirectory(m_path);
         }
 
         public string DisplayName

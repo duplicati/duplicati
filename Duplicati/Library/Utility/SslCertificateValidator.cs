@@ -30,8 +30,8 @@ namespace Duplicati.Library.Utility
         [Serializable]
         public class InvalidCertificateException : Exception
         {
-            private string m_certificate = null;
-            private SslPolicyErrors m_errors = SslPolicyErrors.None;
+            private readonly string m_certificate = null;
+            private readonly SslPolicyErrors m_errors = SslPolicyErrors.None;
 
             public string Certificate { get { return m_certificate; } }
             public SslPolicyErrors SslError { get { return m_errors; } }
@@ -50,8 +50,8 @@ namespace Duplicati.Library.Utility
             m_validHashes = validHashes;
         }
 
-        private bool m_acceptAll = false;
-        private string[] m_validHashes = null;
+        private readonly bool m_acceptAll = false;
+        private readonly string[] m_validHashes = null;
         private Exception m_uncastException = null;
 
         public bool ValidateServerCertficate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)

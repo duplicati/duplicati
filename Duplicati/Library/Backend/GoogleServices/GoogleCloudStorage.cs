@@ -61,13 +61,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             new KeyValuePair<string, string>("Nearline", "NEARLINE"),
         };
 
-        private string m_bucket;
-        private string m_prefix;
-        private string m_project;
-        private OAuthHelper m_oauth;
+        private readonly string m_bucket;
+        private readonly string m_prefix;
+        private readonly string m_project;
+        private readonly OAuthHelper m_oauth;
 
-        private string m_location;
-        private string m_storage_class;
+        private readonly string m_location;
+        private readonly string m_storage_class;
         public GoogleCloudStorage()
         {
         }

@@ -28,8 +28,8 @@ namespace Duplicati.GUI.TrayIcon
     {        
         private class MenuItemWrapper : Duplicati.GUI.TrayIcon.IMenuItem
         {
-            private NSMenuItem m_item;
-            private Action m_callback;
+            private readonly NSMenuItem m_item;
+            private readonly Action m_callback;
             
             public NSMenuItem MenuItem { get { return m_item; } }
             
@@ -93,11 +93,11 @@ namespace Duplicati.GUI.TrayIcon
         private static readonly string ICON_ERROR = ICON_PATH + "normal-error.png";
         
         private NSStatusItem m_statusItem;
-        private Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, NSImage> m_images = new Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, NSImage>();
+        private readonly Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, NSImage> m_images = new Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, NSImage>();
         private NSApplication m_app;
 
         // We need to keep the items around, otherwise the GC will destroy them and crash the app
-        private List<Duplicati.GUI.TrayIcon.IMenuItem> m_keeper = new List<Duplicati.GUI.TrayIcon.IMenuItem>();
+        private readonly List<Duplicati.GUI.TrayIcon.IMenuItem> m_keeper = new List<Duplicati.GUI.TrayIcon.IMenuItem>();
 
         public override void Init(string[] args)
         {

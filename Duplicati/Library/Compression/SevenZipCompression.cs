@@ -222,8 +222,8 @@ namespace Duplicati.Library.Compression
 
         private sealed class WriterEntry : ManagedLzma.LZMA.Master.SevenZip.IArchiveWriterEntry
         {
-            private string mName;
-            private DateTime? mTimestamp;
+            private readonly string mName;
+            private readonly DateTime? mTimestamp;
 
             internal WriterEntry(string name, DateTime? timestamp)
             {

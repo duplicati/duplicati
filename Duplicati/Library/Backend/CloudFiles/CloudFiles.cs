@@ -39,13 +39,13 @@ namespace Duplicati.Library.Backend
 
 
         private const int ITEM_LIST_LIMIT = 1000;
-        private string m_username;
-        private string m_password;
-        private string m_path;
+        private readonly string m_username;
+        private readonly string m_password;
+        private readonly string m_path;
 
         private string m_storageUrl = null;
         private string m_authToken = null;
-        private string m_authUrl;
+        private readonly string m_authUrl;
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 

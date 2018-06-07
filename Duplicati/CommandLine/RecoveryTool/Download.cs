@@ -137,7 +137,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Download complete, of {0} remote files, {1} were downloaded with {2} errors", lst.Count, downloaded, errors);
                 if (needspass > 0)
-                    Console.WriteLine("Additonally {0} remote files were skipped because of encryption, supply --passphrase to download those");
+                    Console.WriteLine("Additonally {0} remote files were skipped because of encryption, supply --passphrase to download those", needspass);
 
                 if (errors > 0)
                     return 200;

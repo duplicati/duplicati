@@ -15,10 +15,10 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RestoreHandler>();
 
-        private string m_backendurl;
-        private Options m_options;
+        private readonly string m_backendurl;
+        private readonly Options m_options;
         private byte[] m_blockbuffer;
-        private RestoreResults m_result;
+        private readonly RestoreResults m_result;
         private static readonly Snapshots.ISystemIO m_systemIO = Duplicati.Library.Utility.Utility.IsClientLinux ? (Snapshots.ISystemIO)new Snapshots.SystemIOLinux() : (Snapshots.ISystemIO)new Snapshots.SystemIOWindows();
         private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
 
@@ -610,8 +610,8 @@ namespace Duplicati.Library.Main.Operation
                                             if (sourcestream.Length > block.Offset)
                                             {
                                                 sourcestream.Position = block.Offset;
-                                                
-                                                var size = sourcestream.Read(blockbuffer, 0, blockbuffer.Length);
+
+                                                int size = Library.Utility.Utility.ForceStreamRead(sourcestream, blockbuffer, blockbuffer.Length);
                                                 if (size == block.Size)
                                                 {
                                                     var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
@@ -720,7 +720,7 @@ namespace Duplicati.Library.Main.Operation
                                                 using (var sourcefile = m_systemIO.FileOpenRead(source.Path))
                                                 {
                                                     sourcefile.Position = source.Offset;
-                                                    var size = sourcefile.Read(blockbuffer, 0, blockbuffer.Length);
+                                                    int size = Library.Utility.Utility.ForceStreamRead(sourcefile, blockbuffer, blockbuffer.Length);
                                                     if (size == targetblock.Size)
                                                     {
                                                         var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));

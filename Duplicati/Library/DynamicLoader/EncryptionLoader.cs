@@ -104,7 +104,7 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// The static instance used to access encryption module information
         /// </summary>
-        private static EncryptionLoaderSub _encryptionLoader = new EncryptionLoaderSub();
+        private static readonly EncryptionLoaderSub _encryptionLoader = new EncryptionLoaderSub();
 
         #region Public static API
 

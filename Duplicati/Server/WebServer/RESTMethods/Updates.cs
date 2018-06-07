@@ -19,7 +19,38 @@ using System;
 namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class Updates : IRESTMethodPOST
-    {        public void POST(string key, RequestInfo info)        {            switch ((key ?? "").ToLowerInvariant())            {                case "check":                    Program.UpdatePoller.CheckNow();                    info.OutputOK();                    return;                case "install":                    Program.UpdatePoller.InstallUpdate();                    info.OutputOK();                    return;                case "activate":                    if (Program.WorkThread.CurrentTask != null || Program.WorkThread.CurrentTasks.Count != 0)                    {                        info.ReportServerError("Cannot activate update while task is running or scheduled");                    }                    else                    {                        Program.UpdatePoller.ActivateUpdate();                        info.OutputOK();                    }                    return;                                default:                    info.ReportClientError("No such action", System.Net.HttpStatusCode.NotFound);                    return;            }        }
+    {
+        public void POST(string key, RequestInfo info)
+        {
+            switch ((key ?? "").ToLowerInvariant())
+            {
+                case "check":
+                    Program.UpdatePoller.CheckNow();
+                    info.OutputOK();
+                    return;
+
+                case "install":
+                    Program.UpdatePoller.InstallUpdate();
+                    info.OutputOK();
+                    return;
+
+                case "activate":
+                    if (Program.WorkThread.CurrentTask != null || Program.WorkThread.CurrentTasks.Count != 0)
+                    {
+                        info.ReportServerError("Cannot activate update while task is running or scheduled");
+                    }
+                    else
+                    {
+                        Program.UpdatePoller.ActivateUpdate();
+                        info.OutputOK();
+                    }
+                    return;
+                
+                default:
+                    info.ReportClientError("No such action", System.Net.HttpStatusCode.NotFound);
+                    return;
+            }
+        }
     }
 }
 

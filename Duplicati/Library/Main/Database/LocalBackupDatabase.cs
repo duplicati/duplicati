@@ -226,7 +226,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         using(new Logging.Timer(LOGTAG, "BuildPathTable", "Build path lookup table"))
-                        using (var rd = cmd.ExecuteReader(string.Format(@" SELECT ""Path"", ""BlocksetID"", ""MetadataID"", ""ID"" FROM ""File"" ")))
+                        using (var rd = cmd.ExecuteReader(@" SELECT ""Path"", ""BlocksetID"", ""MetadataID"", ""ID"" FROM ""File"" "))
                             while (rd.Read())
                             {
                                 var path = rd.GetValue(0).ToString();
@@ -921,7 +921,7 @@ namespace Duplicati.Library.Main.Database
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""File"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
+                cmd.CommandText = @"SELECT ""Path"" FROM ""File"" ORDER BY LENGTH(""Path"") DESC LIMIT 1";
                 var v0 = cmd.ExecuteScalar();
                 if (v0 == null || v0 == DBNull.Value)
                     return null;

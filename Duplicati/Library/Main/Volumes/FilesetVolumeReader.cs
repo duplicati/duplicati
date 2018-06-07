@@ -20,7 +20,7 @@ namespace Duplicati.Library.Main.Volumes
                     {
                         private class BlocklistHashEnumerator : IEnumerator<string>
                         {
-                            private JsonReader m_reader;
+                            private readonly JsonReader m_reader;
                             private string m_current;
                             private bool m_firstReset = true;
                             private bool m_done = false;
@@ -73,7 +73,7 @@ namespace Duplicati.Library.Main.Volumes
                             }
                         }
 
-                        private JsonReader m_reader;
+                        private readonly JsonReader m_reader;
                         public BlocklistHashEnumerable(JsonReader reader)
                         {
                             m_reader = reader;
@@ -103,7 +103,7 @@ namespace Duplicati.Library.Main.Volumes
                     public long Blocksize { get; private set; }
                     public IEnumerable<string> BlocklistHashes { get; private set; }
                     public IEnumerable<string> MetaBlocklistHashes { get; private set; }
-                    private JsonReader m_reader;
+                    private readonly JsonReader m_reader;
 
                     public FileEntry(JsonReader reader)
                     {
@@ -221,7 +221,7 @@ namespace Duplicati.Library.Main.Volumes
                     }
                 }
 
-                private ICompression m_compression;
+                private readonly ICompression m_compression;
                 private FileEntry m_current;
                 private StreamReader m_stream;
                 private JsonReader m_reader;
@@ -271,7 +271,7 @@ namespace Duplicati.Library.Main.Volumes
                     }
 
                     if (!m_reader.Read())
-                        throw new InvalidDataException(string.Format("Invalid JSON, EOF found while reading hashes"));
+                        throw new InvalidDataException("Invalid JSON, EOF found while reading hashes");
 
                     if (m_reader.TokenType == JsonToken.EndArray)
                     {
@@ -302,7 +302,7 @@ namespace Duplicati.Library.Main.Volumes
                 }
             }
 
-            private ICompression m_compression;
+            private readonly ICompression m_compression;
             public FileEntryEnumerable(ICompression compression)
             {
                 m_compression = compression;
@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main.Volumes
         {
             private class ControlFileEnumerator : IEnumerator<KeyValuePair<string, Stream>>
             {
-                private ICompression m_compression;
+                private readonly ICompression m_compression;
                 private string[] m_files;
                 private long m_index;
                 private KeyValuePair<string, Stream>? m_current;
@@ -365,7 +365,7 @@ namespace Duplicati.Library.Main.Volumes
                 }
             }
 
-            private ICompression m_compression;
+            private readonly ICompression m_compression;
             public ControlFileEnumerable(ICompression compression)
             {
                 m_compression = compression;

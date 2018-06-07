@@ -53,9 +53,9 @@ namespace Duplicati.Server.Database
             public const string USAGE_REPORTER_LEVEL = "usage-reporter-level";
 			public const string HAS_ASKED_FOR_PASSWORD_PROTECTION = "has-asked-for-password-protection";
 		}
-        
-        private Dictionary<string, string> m_values;
-        private Database.Connection m_connection;
+
+        private readonly Dictionary<string, string> m_values;
+        private readonly Database.Connection m_connection;
         private Library.AutoUpdater.UpdateInfo m_latestUpdate;
 
         internal ServerSettings(Connection con)

@@ -14,12 +14,31 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;using System.Collections.Generic;using Duplicati.Library.Interface;
+using System;
+using System.Collections.Generic;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class SystemWideSettings : IRESTMethodGET, IRESTMethodDocumented
     {
-        public void GET(string key, RequestInfo info)        {            info.OutputOK(new Duplicati.Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);        }        public string Description { get { return "Return a list of settings that can be applied to all backups on a system-wide basis"; } }        public IEnumerable<KeyValuePair<string, Type>> Types        {            get            {                return new KeyValuePair<string, Type>[] {                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(ICommandLineArgument[]))                };            }        }    }
+        public void GET(string key, RequestInfo info)
+        {
+            info.OutputOK(new Duplicati.Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
+        }
+
+        public string Description { get { return "Return a list of settings that can be applied to all backups on a system-wide basis"; } }
+
+        public IEnumerable<KeyValuePair<string, Type>> Types
+        {
+            get
+            {
+                return new KeyValuePair<string, Type>[] {
+                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(ICommandLineArgument[]))
+                };
+            }
+        }
+
+    }
 }
 

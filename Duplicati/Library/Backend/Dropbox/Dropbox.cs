@@ -10,8 +10,9 @@ namespace Duplicati.Library.Backend
         private const string AUTHID_OPTION = "authid";
         private const int MAX_FILE_LIST = 10000;
 
-        private string m_path,m_accesToken;
-        private DropboxHelper dbx;
+        private readonly string m_accesToken;
+        private readonly string m_path;
+        private readonly DropboxHelper dbx;
 
         public Dropbox()
         {

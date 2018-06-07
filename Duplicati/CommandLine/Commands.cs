@@ -27,12 +27,12 @@ namespace Duplicati.CommandLine
         private class PeriodicOutput : IDisposable
         {
             public event Action<float, long, long, bool> WriteOutput;
-            
-            private System.Threading.ManualResetEvent m_readyEvent;
-            private System.Threading.ManualResetEvent m_finishEvent;
-            private ConsoleOutput m_output;
+
+            private readonly System.Threading.ManualResetEvent m_readyEvent;
+            private readonly System.Threading.ManualResetEvent m_finishEvent;
+            private readonly ConsoleOutput m_output;
             private System.Threading.Thread m_thread;
-            private TimeSpan m_updateFrequency;
+            private readonly TimeSpan m_updateFrequency;
             
             public PeriodicOutput(ConsoleOutput messageSink, TimeSpan updateFrequency)
             {

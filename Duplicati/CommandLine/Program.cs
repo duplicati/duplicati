@@ -29,7 +29,7 @@ namespace Duplicati.CommandLine
 {
     public class Program
     {
-        private static string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
 
         public static bool FROM_COMMANDLINE = false;
 

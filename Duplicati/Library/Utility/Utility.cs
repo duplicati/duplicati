@@ -680,7 +680,9 @@ namespace Duplicati.Library.Utility
             // So we read the first 4096 bytes and try to decode them as UTF8. 
             var buffer = new byte[4096];
             using (var file = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                file.Read(buffer, 0, 4096);
+            {
+                Utility.ForceStreamRead(file, buffer, 4096);
+            }
 
             var enc = Encoding.UTF8;
             try

@@ -33,11 +33,11 @@ namespace Duplicati.Library.Utility
         private class StreamEnumerator : IEnumerator<T>, System.Collections.IEnumerator
         {
             private Stream m_stream;
-            private Func<Stream, long, T> m_deserialize;
+            private readonly Func<Stream, long, T> m_deserialize;
             private long m_position;
             private readonly byte[] m_sizebuffer;
-            private long m_expectedCount;
-            private FileBackedList<T> m_parent;
+            private readonly long m_expectedCount;
+            private readonly FileBackedList<T> m_parent;
             private T m_current;
 
             public StreamEnumerator(Stream stream, Func<Stream, long, T> deserialize, FileBackedList<T> parent)
@@ -82,7 +82,7 @@ namespace Duplicati.Library.Utility
                     throw new Exception("Collection modified");
                     
                 m_stream.Position = m_position;
-                if (m_stream.Read(m_sizebuffer, 0, m_sizebuffer.Length) != m_sizebuffer.Length)
+                if (Utility.ForceStreamRead(m_stream, m_sizebuffer, m_sizebuffer.Length) != m_sizebuffer.Length)
                     throw new IOException("Unexpected EOS");
                 var len = BitConverter.ToInt64(m_sizebuffer, 0);
                 m_current = m_deserialize(m_stream, len);

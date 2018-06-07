@@ -29,7 +29,7 @@ namespace Duplicati.GUI.TrayIcon
         private class MenuItemWrapper : Duplicati.GUI.TrayIcon.IMenuItem
         {
 
-            private RumpsRunner m_parent;
+            private readonly RumpsRunner m_parent;
 
             private string m_text;
             private MenuIcons m_icon;
@@ -115,7 +115,7 @@ namespace Duplicati.GUI.TrayIcon
         private static readonly string ICON_RUNNING = ICON_PATH + "normal-running.png";
         private static readonly string ICON_ERROR = ICON_PATH + "normal-error.png";
 
-        private Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, string> m_images = new Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, string>();
+        private readonly Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, string> m_images = new Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, string>();
 
         private System.Diagnostics.Process m_rumpsProcess;
 

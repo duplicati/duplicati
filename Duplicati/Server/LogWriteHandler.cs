@@ -226,7 +226,7 @@ namespace Duplicati.Server
             public int Size { get { return m_buffer.Length; } }
         }
 
-        private DateTime[] m_timeouts;
+        private readonly DateTime[] m_timeouts;
         private readonly object m_lock = new object();
         private volatile bool m_anytimeouts = false;
         private RingBuffer<LogEntry> m_buffer;

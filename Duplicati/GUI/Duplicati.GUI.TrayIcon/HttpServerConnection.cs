@@ -38,10 +38,10 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
 
-        private string m_apiUri;
-        private string m_baseUri;
+        private readonly string m_apiUri;
+        private readonly string m_baseUri;
         private string m_password;
-        private bool m_saltedpassword;
+        private readonly bool m_saltedpassword;
         private string m_authtoken;
         private string m_xsrftoken;
         private static readonly System.Text.Encoding ENCODING = System.Text.Encoding.GetEncoding("utf-8");
@@ -59,7 +59,7 @@ namespace Duplicati.GUI.TrayIcon
         private volatile bool m_shutdown = false;
         private volatile System.Threading.Thread m_requestThread;
         private volatile System.Threading.Thread m_pollThread;
-        private System.Threading.AutoResetEvent m_waitLock;
+        private readonly System.Threading.AutoResetEvent m_waitLock;
 
         private readonly Dictionary<string, string> m_updateRequest;
         private readonly Dictionary<string, string> m_options;
@@ -69,7 +69,7 @@ namespace Duplicati.GUI.TrayIcon
         public IServerStatus Status { get { return m_status; } }
 
         private readonly object m_lock = new object();
-        private Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
+        private readonly Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
 
         public HttpServerConnection(Uri server, string password, bool saltedpassword, Program.PasswordSource passwordSource, Dictionary<string, string> options)
         {
