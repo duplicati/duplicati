@@ -431,7 +431,7 @@ namespace Duplicati.Library.Backend
             {
                 var req = m_parent.CreateWebRequestExecutor(context, requestUrl);
                 if (string.IsNullOrWhiteSpace(req.WebRequest.UserAgent))
-                    req.WebRequest.UserAgent = "Duplicati OD4B v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                    req.WebRequest.UserAgent = "Duplicati OD4B v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                 return req;
             }
         }
