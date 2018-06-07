@@ -36,19 +36,19 @@ namespace Duplicati.Server
             void UpdateThrottleSpeed();
             void SetController(Duplicati.Library.Main.Controller controller);
         }
-        
+
         private class RunnerData : IRunnerData
         {
             private static long RunnerTaskID = 1;
-            
+
             public Duplicati.Server.Serialization.DuplicatiOperation Operation { get; internal set; }
             public Duplicati.Server.Serialization.Interface.IBackup Backup { get; internal set; }
             public IDictionary<string, string> ExtraOptions { get; internal set; }
             public string[] FilterStrings { get; internal set; }
-            
+
             public string BackupID { get { return Backup.ID; } }
             public long TaskID { get { return m_taskID; } }
-            
+
             internal Duplicati.Library.Main.Controller Controller { get; set; }
 
             public void SetController(Duplicati.Library.Main.Controller controller)
@@ -127,7 +127,7 @@ namespace Duplicati.Server
             }
 
             private readonly long m_taskID;
-            
+
             public RunnerData()
             {
                 m_taskID = System.Threading.Interlocked.Increment(ref RunnerTaskID);
@@ -153,7 +153,7 @@ namespace Duplicati.Server
         {
             return new CustomRunnerTask(runner);
         }
-        
+
         public static IRunnerData CreateTask(Duplicati.Server.Serialization.DuplicatiOperation operation, Duplicati.Server.Serialization.Interface.IBackup backup, IDictionary<string, string> extraOptions = null, string[] filterStrings = null)
         {
             return new RunnerData() {
@@ -163,7 +163,7 @@ namespace Duplicati.Server
                 FilterStrings = filterStrings
             };
         }
-        
+
         public static IRunnerData CreateListTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, bool onlyPrefix, bool allVersions, bool folderContents, DateTime time)
         {
             var dict = new Dictionary<string, string>();
@@ -175,7 +175,7 @@ namespace Duplicati.Server
                 dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
             if (folderContents)
                 dict["list-folder-contents"] = "true";
-            
+
             return CreateTask(
                 DuplicatiOperation.List,
                 backup,
@@ -195,31 +195,31 @@ namespace Duplicati.Server
                 dict["restore-permissions"] = "true";
             if (skip_metadata)
                 dict["skip-metadata"] = "true";
-            
+
             return CreateTask(
                 DuplicatiOperation.Restore,
                 backup,
                 dict,
-                filters);            
-        }        
+                filters);
+        }
         private class MessageSink : Duplicati.Library.Main.IMessageSink
         {
             private class ProgressState : Server.Serialization.Interface.IProgressEventData
             {
                 private readonly string m_backupID;
                 private readonly long m_taskID;
-                
+
                 internal Duplicati.Library.Main.BackendActionType m_backendAction;
                 internal string m_backendPath;
                 internal long m_backendFileSize;
                 internal long m_backendFileProgress;
                 internal long m_backendSpeed;
                 internal bool m_backendIsBlocking;
-                
+
                 internal string m_currentFilename;
                 internal long m_currentFilesize;
                 internal long m_currentFileoffset;
-                
+
                 internal Duplicati.Library.Main.OperationPhase m_phase;
                 internal float m_overallProgress;
                 internal long m_processedFileCount;
@@ -227,13 +227,13 @@ namespace Duplicati.Server
                 internal long m_totalFileCount;
                 internal long m_totalFileSize;
                 internal bool m_stillCounting;
-                
+
                 public ProgressState(long taskId, string backupId)
                 {
                     m_backupID = backupId;
                     m_taskID = taskId;
                 }
-                
+
                 internal ProgressState Clone()
                 {
                     return (ProgressState)this.MemberwiseClone();
@@ -260,17 +260,17 @@ namespace Duplicati.Server
                 public bool StillCounting { get { return m_stillCounting; } }
                 #endregion
             }
-                        
+
             private ProgressState m_state;
             private Duplicati.Library.Main.IBackendProgress m_backendProgress;
             private Duplicati.Library.Main.IOperationProgress m_operationProgress;
             private readonly object m_lock = new object();
-            
+
             public MessageSink(long taskId, string backupId)
             {
                 m_state = new ProgressState(taskId, backupId);
             }
-            
+
             public Server.Serialization.Interface.IProgressEventData Copy()
             {
                 lock(m_lock)
@@ -282,11 +282,11 @@ namespace Duplicati.Server
                         m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset);
                         m_operationProgress.UpdateOverall(out m_state.m_phase, out m_state.m_overallProgress, out m_state.m_processedFileCount, out m_state.m_processedFileSize, out m_state.m_totalFileCount, out m_state.m_totalFileSize, out m_state.m_stillCounting);
                     }
-                        
+
                     return m_state.Clone();
                 }
             }
-            
+
             #region IMessageSink implementation
             public void BackendEvent(Duplicati.Library.Main.BackendActionType action, Duplicati.Library.Main.BackendEventType type, string path, long size)
             {
@@ -321,7 +321,7 @@ namespace Duplicati.Server
             public Duplicati.Library.Main.IOperationProgress OperationProgress
             {
                 set
-                {                    
+                {
                     lock(m_lock)
                         m_operationProgress = value;
                 }
@@ -341,13 +341,13 @@ namespace Duplicati.Server
             var cf = Program.DataConnection.Filters;
             var bf = backup.Filters;
 
-            var sources = 
+            var sources =
                 (from n in backup.Sources
                     let p = SpecialFolders.ExpandEnvironmentVariables(n)
                     where !string.IsNullOrWhiteSpace(p)
                     select p).ToArray();
-            
-            var exe = 
+
+            var exe =
                 System.IO.Path.Combine(
                     Library.AutoUpdater.UpdaterManager.InstalledBaseDir,
                         System.IO.Path.GetFileName(
@@ -367,7 +367,7 @@ namespace Duplicati.Server
             // TODO: We should check each option to see if it is a path, and allow expansion on that
             foreach(var opt in options)
                 cmd.AppendFormat(" --{0}={1}", opt.Key, Library.Utility.Utility.WrapCommandLineElement(opt.Value, false));
-            
+
             if (cf != null)
                 foreach(var f in cf)
                     cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", Library.Utility.Utility.WrapCommandLineElement(f.Expression, true));
@@ -438,39 +438,43 @@ namespace Duplicati.Server
             }
 
             var backup = data.Backup;
-
             if (backup.Metadata == null)
+            {
                 backup.Metadata = new Dictionary<string, string>();
-            
+            }
+
+            Duplicati.Library.Utility.TempFolder tempfolder = null;
+
             try
-            {                
+            {
                 var sink = new MessageSink(data.TaskID, backup.ID);
                 if (fromQueue)
                 {
                     Program.GenerateProgressState = () => sink.Copy();
-                    Program.StatusEventNotifyer.SignalNewEvent();            
+                    Program.StatusEventNotifyer.SignalNewEvent();
                 }
 
-                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));                
+                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
-                        options[k.Key] = k.Value;                
+                        options[k.Key] = k.Value;
 
                 // Pack in the system or task config for easy restore
                 if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
                 {
-                    StoreTaskConfig(data, options);
+                    tempfolder = StoreTaskConfigAndGetTempFolder(data, options);
                 }
 
                 // Attach a log scope that tags all messages to relay the TaskID and BackupID
-                using (Library.Logging.Log.StartScope(log => { 
-                    log[LogWriteHandler.LOG_EXTRA_TASKID] = data.TaskID.ToString(); 
-                    log[LogWriteHandler.LOG_EXTRA_BACKUPID] = data.BackupID; 
+                using (Library.Logging.Log.StartScope(log => {
+                    log[LogWriteHandler.LOG_EXTRA_TASKID] = data.TaskID.ToString();
+                    log[LogWriteHandler.LOG_EXTRA_BACKUPID] = data.BackupID;
                 }))
 
+                using(tempfolder)
                 using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
-                    try 
+                    try
                     {
                         if (options.ContainsKey("throttle-upload"))
                             ((RunnerData)data).OriginalUploadSpeed = Duplicati.Library.Utility.Sizeparser.ParseSize(options["throttle-upload"], "kb");
@@ -492,7 +496,7 @@ namespace Duplicati.Server
                         case DuplicatiOperation.Backup:
                             {
                                 var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation));
-                                var sources = 
+                                var sources =
                                     (from n in backup.Sources
                                         let p = SpecialFolders.ExpandEnvironmentVariables(n)
                                         where !string.IsNullOrWhiteSpace(p)
@@ -501,7 +505,7 @@ namespace Duplicati.Server
                                 var r = controller.Backup(sources, filter);
                                 UpdateMetadata(backup, r);
                                 return r;
-                            }                          
+                            }
                         case DuplicatiOperation.List:
                             {
                                 var r = controller.List(data.FilterStrings);
@@ -612,10 +616,10 @@ namespace Duplicati.Server
                 Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing \"{0}\" with id: {1}", data.Operation, data.Backup.ID), ex);
                 UpdateMetadataError(data.Backup, ex);
                 Library.UsageReporter.Reporter.Report(ex);
-                
+
                 if (!fromQueue)
                     throw;
-                
+
                 return null;
             }
             finally
@@ -624,16 +628,17 @@ namespace Duplicati.Server
             }
         }
 
-        private static void StoreTaskConfig(IRunnerData data, Dictionary<string, string> options)
+        private static Duplicati.Library.Utility.TempFolder StoreTaskConfigAndGetTempFolder(IRunnerData data, Dictionary<string, string> options)
         {
             var all_tasks = string.Equals(options["store-task-config"], "all", StringComparison.OrdinalIgnoreCase) || string.Equals(options["store-task-config"], "*", StringComparison.OrdinalIgnoreCase);
             var this_task = Duplicati.Library.Utility.Utility.ParseBool(options["store-task-config"], false);
 
             options.Remove("store-task-config");
 
+            Duplicati.Library.Utility.TempFolder tempfolder = null;
             if (all_tasks || this_task)
             {
-                var tempfolder = new Duplicati.Library.Utility.TempFolder();
+                tempfolder = new Duplicati.Library.Utility.TempFolder();
                 var temppath = System.IO.Path.Combine(tempfolder, "task-setup.json");
                 using (var tempfile = Duplicati.Library.Utility.TempFile.WrapExistingFile(temppath))
                 {
@@ -659,8 +664,9 @@ namespace Duplicati.Server
                     options["control-files"] = controlfiles;
                 }
             }
+            return tempfolder;
         }
-        
+
         private static void UpdateMetadataError(Duplicati.Server.Serialization.Interface.IBackup backup, Exception ex)
         {
             backup.Metadata["LastErrorDate"] = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
@@ -675,8 +681,8 @@ namespace Duplicati.Server
 
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.DataConnection.RegisterNotification(
-                NotificationType.Error, 
-                backup.IsTemporary ? 
+                NotificationType.Error,
+                backup.IsTemporary ?
                     "Error" : string.Format("Error while running {0}", backup.Name),
                 ex.Message,
                 ex,
@@ -690,7 +696,7 @@ namespace Duplicati.Server
                 }
             );
         }
-        
+
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IParsedBackendStatistics r)
         {
             if (r != null)
@@ -700,13 +706,13 @@ namespace Duplicati.Server
                 backup.Metadata["TotalQuotaSpace"] = r.TotalQuotaSpace.ToString();
                 backup.Metadata["FreeQuotaSpace"] = r.FreeQuotaSpace.ToString();
                 backup.Metadata["AssignedQuotaSpace"] = r.AssignedQuotaSpace.ToString();
-                
+
                 backup.Metadata["TargetFilesSize"] = r.KnownFileSize.ToString();
                 backup.Metadata["TargetFilesCount"] = r.KnownFileCount.ToString();
                 backup.Metadata["TargetSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.KnownFileSize);
             }
-        }        
-        
+        }
+
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, object o)
         {
             if (o is Duplicati.Library.Interface.IBasicResults)
@@ -716,7 +722,7 @@ namespace Duplicati.Server
                 backup.Metadata["LastStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
                 backup.Metadata["LastFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
             }
-            
+
             if (o is Duplicati.Library.Interface.IParsedBackendStatistics)
             {
                 var r = (Duplicati.Library.Interface.IParsedBackendStatistics)o;
@@ -755,7 +761,7 @@ namespace Duplicati.Server
                         null,
                         backup.ID,
                         "backup:show-log",
-                        null, 
+                        null,
                         null,
                         null,
                         (n, a) =>
@@ -803,43 +809,43 @@ namespace Duplicati.Server
                         "backup:show-log",
                         (n, a) => n
                     );
-                }                
+                }
             }
-            
+
             if (!backup.IsTemporary)
                 Program.DataConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
-            
+
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.StatusEventNotifyer.SignalNewEvent();
         }
-        
+
         private static bool TestIfOptionApplies(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, string filter)
         {
             //TODO: Implement to avoid warnings
             return true;
         }
-        
+
         private static void DisableModule(string module, Dictionary<string, string> options)
         {
             string disabledModules;
             string enabledModules;
-            
+
             if (options.TryGetValue("enable-module", out enabledModules))
             {
                 var emods = (enabledModules ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                 options["enable-module"] = string.Join(",", emods.Where(x => module.Equals(x, StringComparison.OrdinalIgnoreCase)));
             }
-            
+
             options.TryGetValue("disable-module", out disabledModules);
             var mods = (disabledModules ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.OrdinalIgnoreCase));
         }
-        
+
         internal static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
         {
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
-            
+
             // Apply normal options
             foreach(var o in backup.Settings)
                 if (!o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
@@ -849,11 +855,11 @@ namespace Duplicati.Server
             foreach(var o in backup.Settings)
                 if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
                     options[o.Name.Substring(2)] = o.Value;
-            
-            
+
+
             // The server hangs if the module is enabled as there is no console attached
             DisableModule("console-password-input", options);
-            
+
             return options;
         }
 
@@ -880,27 +886,25 @@ namespace Duplicati.Server
 
         internal static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
         {
-            return 
+            return
                 (from n in Program.DataConnection.Settings
                  where TestIfOptionApplies(backup, mode, n.Filter)
                  select n).ToDictionary(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value);
         }
-        
+
         private static Duplicati.Library.Utility.IFilter GetCommonFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
         {
             var filters = Program.DataConnection.Filters;
             if (filters == null || filters.Length == 0)
                 return null;
-            
-           return   
+
+           return
                 (from n in filters
                 orderby n.Order
                 let exp = Library.Utility.Utility.ExpandEnvironmentVariables(n.Expression)
                 select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }
-
-
     }
 }
 
