@@ -251,7 +251,8 @@ namespace Duplicati.Library.Snapshots
         {
             if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
                 throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
-            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(target, PrefixWithUNC(symlinkfile), asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File);
+            string combinedTarget = Path.Combine(Directory.GetParent(symlinkfile).FullName, target);
+            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile), combinedTarget, asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File);
 
             //Sadly we do not get a notification if the creation fails :(
             System.IO.FileAttributes attr = 0;
