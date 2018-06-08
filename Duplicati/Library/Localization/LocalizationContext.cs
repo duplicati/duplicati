@@ -25,7 +25,7 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// The previous context
         /// </summary>
-        private object m_prev;
+        private readonly object m_prev;
 
         /// <summary>
         /// Flag to prevent double dispose

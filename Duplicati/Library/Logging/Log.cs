@@ -214,6 +214,19 @@ namespace Duplicati.Library.Logging
             WriteMessage(LogMessageType.Verbose, tag, id, null, message, arguments);
         }
 
+		/// <summary>
+        /// Writes a verbose message to the current log destination
+        /// </summary>
+        /// <param name="message">The message to write</param>
+        /// <param name="tag">The tag-type for this message</param>
+        /// <param name="id">The message id</param>
+		/// <param name="ex">The exception to log</param>
+        /// <param name="arguments">The message format arguments</param>
+		public static void WriteVerboseMessage(string tag, string id, Exception ex, string message, params object[] arguments)
+        {
+            WriteMessage(LogMessageType.Verbose, tag, id, ex, message, arguments);
+        }
+
         /// <summary>
         /// Writes a profiling message to the current log destination
         /// </summary>
@@ -414,7 +427,7 @@ namespace Duplicati.Library.Logging
                     
                     LogScope sc;
                     if (!m_log_instances.TryGetValue(cur, out sc))
-                        throw new Exception(string.Format("Unable to find log in lookup table, this may be caused by attempting to transport call contexts between AppDomains (eg. with remoting calls)"));
+                        throw new Exception("Unable to find log in lookup table, this may be caused by attempting to transport call contexts between AppDomains (eg. with remoting calls)");
 
                     return sc;
                 }

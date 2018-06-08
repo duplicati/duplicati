@@ -25,7 +25,7 @@ namespace Duplicati.Server.WebServer
 {
     internal class IndexHtmlHandler : HttpModule
     {
-        private string m_webroot;
+        private readonly string m_webroot;
 
         private static readonly string[] ForbiddenChars = new string[] {"\\", "..", ":"}.Union(from n in System.IO.Path.GetInvalidPathChars() select n.ToString()).Distinct().ToArray();
         private static readonly string DirSep = System.IO.Path.DirectorySeparatorChar.ToString();

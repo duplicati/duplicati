@@ -268,7 +268,7 @@ namespace Duplicati.Library.Utility
 
                 if (n.Length > 2 && char.IsLetter(n[0]) && n[1] == ':' && wildcardRootWindowsPaths.Contains(n.Substring(2)))
                     continue;
-                else if (prev != null && prev.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) && n.StartsWith(prev, Utility.ClientFilenameStringComparision))
+                else if (prev != null && prev.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) && n.StartsWith(prev, Utility.ClientFilenameStringComparison))
                     continue;
                 else
                     yield return prev = n;

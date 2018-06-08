@@ -292,8 +292,10 @@ Duplicati provides information for debugging and logging purposes. By default, a
     If something needs to be retried (e.g. upload failed) this will cause an entry in the log file.
   --log-file = <path>
     The path to the log file e.g. "D:\duplicati\log.txt".
-  --log-level = Profiling | Information | Warning | Error 
-    Specifies the log level.
+  --log-file-log-level = Profiling | Verbose | Information | Warning | Error 
+    Specifies the log level to use for the log file.
+  --console-log-level = Profiling | Verbose | Information | Warning | Error 
+    Specifies the log level to use for the console log.
 
     
 # =============================================================================

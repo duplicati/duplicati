@@ -28,7 +28,7 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class ProgressReportingStream : OverrideableStream
     {
-        private Action<long> m_progress;
+        private readonly Action<long> m_progress;
         private long m_streamOffset;
 
         public ProgressReportingStream(System.IO.Stream basestream, long expectedSize, Action<long> progress)

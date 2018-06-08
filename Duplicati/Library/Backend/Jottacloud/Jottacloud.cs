@@ -44,7 +44,7 @@ namespace Duplicati.Library.Backend
         private readonly string m_url_device;
         private readonly string m_url;
         private readonly string m_url_upload;
-        private System.Net.NetworkCredential m_userInfo;
+        private readonly System.Net.NetworkCredential m_userInfo;
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         public Jottacloud()

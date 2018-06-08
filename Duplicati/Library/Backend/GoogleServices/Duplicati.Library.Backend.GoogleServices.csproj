@@ -41,6 +41,7 @@
     <Compile Include="GoogleCommon.cs" />
     <Compile Include="GoogleDrive.cs" />
     <Compile Include="GCSConfig.cs" />
+    <Compile Include="WebApi.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

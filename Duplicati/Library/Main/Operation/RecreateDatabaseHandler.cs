@@ -14,9 +14,9 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RecreateDatabaseHandler>();
 
-        private string m_backendurl;
-        private Options m_options;
-        private RecreateDatabaseResults m_result;
+        private readonly string m_backendurl;
+        private readonly Options m_options;
+        private readonly RecreateDatabaseResults m_result;
 
         public delegate IEnumerable<KeyValuePair<long, IParsedVolume>> NumberedFilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
         public delegate void BlockVolumePostProcessor(string volumename,BlockVolumeReader reader);
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.SetDatabase(db);
 
                 if (db.FindMatchingFilesets(m_options.Time, m_options.Version).Any())
-                    throw new UserInformationException(string.Format("The version(s) being updated to, already exists"), "UpdateVersionAlreadyExists");
+                    throw new UserInformationException("The version(s) being updated to, already exists", "UpdateVersionAlreadyExists");
 
                 // Mark as incomplete
                 db.PartiallyRecreated = true;
@@ -140,13 +140,13 @@ namespace Duplicati.Library.Main.Operation
                     select n;
 
                 if (filelists.Count() <= 0)
-                    throw new UserInformationException(string.Format("No filelists found on the remote destination"), "EmptyRemoteLocation");
+                    throw new UserInformationException("No filelists found on the remote destination", "EmptyRemoteLocation");
                 
                 if (filelistfilter != null)
                     filelists = filelistfilter(filelists).Select(x => x.Value).ToArray();
 
                 if (filelists.Count() <= 0)
-                    throw new UserInformationException(string.Format("No filelists"), "NoMatchingRemoteFilelists");
+                    throw new UserInformationException("No filelists", "NoMatchingRemoteFilelists");
 
                 // If we are updating, all files should be accounted for
                 foreach(var fl in remotefiles)

@@ -202,7 +202,7 @@ namespace Duplicati.Library.Main
         protected Queue<DbMessage> m_dbqueue;
 
         private TaskControlState m_controlState = TaskControlState.Run;
-        private System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
+        private readonly System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
 
         public virtual ParsedResultType ParsedResult
         {
@@ -217,6 +217,7 @@ namespace Duplicati.Library.Main
             }
         }
 
+        public string Version { get { return string.Format("{0} ({1})", AutoUpdater.UpdaterManager.SelfVersion.Version, AutoUpdater.UpdaterManager.SelfVersion.Displayname); } }
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
         public TimeSpan Duration { get { return EndTime.Ticks == 0 ? new TimeSpan(0) : EndTime - BeginTime; } }
@@ -862,7 +863,7 @@ namespace Duplicati.Library.Main
 
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
-        private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        private readonly List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
 
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {

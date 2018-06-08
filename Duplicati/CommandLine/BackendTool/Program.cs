@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.CommandLine.BackendTool
@@ -52,7 +51,7 @@ namespace Duplicati.CommandLine.BackendTool
                     options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                    Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
+                    Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
 
                 debugoutput = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "debug-output");
 

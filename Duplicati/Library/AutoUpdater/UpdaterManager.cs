@@ -423,7 +423,7 @@ namespace Duplicati.Library.AutoUpdater
 
             var updates = version.RemoteURLS.ToList();
 
-            // If alternate update URLs are specified, 
+            // If alternate update URLs are specified,
             // we look for packages there as well
             if (AutoUpdateSettings.UsesAlternateURLs)
             {
@@ -616,7 +616,7 @@ namespace Duplicati.Library.AutoUpdater
                     if (string.IsNullOrWhiteSpace(relpath))
                         continue;
 
-                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparison))
                         continue;
 
                     FileEntry fe;
@@ -624,7 +624,7 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         var ignore = false;
                         foreach (var c in ignores)
-                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparision))
+                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparison))
                                 break;
 
                         if (ignore)
@@ -654,7 +654,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 var filteredpaths = paths
                     .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal))
-                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparison))
                     .Select(p => p.Key)
                     .ToList();
 
@@ -1068,8 +1068,8 @@ namespace Duplicati.Library.AutoUpdater
         {
             if (Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("AUTOUPDATER_USE_APPDOMAIN"), false))
                 return RunFromMostRecentAppDomain(method, cmdargs, defaultstrategy);
-            else
-                return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
+
+            return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
         }
 
         public static int RunFromMostRecentSpawn(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
@@ -1191,7 +1191,7 @@ namespace Duplicati.Library.AutoUpdater
 
             var folder = best.Key;
 
-            // Basic idea with the loop is that the running AppDomain can use 
+            // Basic idea with the loop is that the running AppDomain can use
             // RUN_UPDATED_ENVNAME_TEMPLATE to signal that a new version is ready
             // when the caller exits, the new update is executed
             //
@@ -1241,7 +1241,7 @@ namespace Duplicati.Library.AutoUpdater
                                 app = System.IO.Path.Combine(InstalledBaseDir, app);
 
 
-                            // Re-launch but give the OS a little time to fully unload all open handles, etc.                        
+                            // Re-launch but give the OS a little time to fully unload all open handles, etc.
                             var si = new System.Diagnostics.ProcessStartInfo(app, args);
                             si.UseShellExecute = false;
                             si.EnvironmentVariables.Add(string.Format(SLEEP_ENVNAME_TEMPLATE, APPNAME), "1");

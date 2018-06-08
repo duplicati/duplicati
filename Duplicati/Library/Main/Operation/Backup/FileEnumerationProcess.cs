@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Snapshots;
 
@@ -37,7 +38,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(FileEnumerationProcess));
 
-        public static Task Run(Snapshots.ISnapshotService snapshot, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, string[] changedfilelist, Common.ITaskReader taskreader)
+        public static Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, string[] changedfilelist, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -81,12 +82,18 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 else
                 {
-                    worklist = snapshot.EnumerateFilesAndFolders((root, path, attr) =>
+					Library.Utility.Utility.EnumerationFilterDelegate AttributeFilter = (root, path, attr) =>
+					    AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
+
+                    if (journalService != null)
                     {
-                        return AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
-                    }, (rootpath, path, ex) =>
+                        // filter sources using USN journal, to obtain a sub-set of files / folders that may have been modified
+                        sources = journalService.GetModifiedSources(AttributeFilter);
+                    }
+
+                    worklist = snapshot.EnumerateFilesAndFolders(sources, AttributeFilter, (rootpath, errorpath, ex) =>
                     {
-                        Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", path);
+                        Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", errorpath);
                     });
                 }
 
@@ -136,7 +143,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var isDirectory = s[s.Length - 1] == System.IO.Path.DirectorySeparatorChar;
                 if (isDirectory)
                 {
-                    while (pathstack.Count > 0 && !s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparision))
+                    while (pathstack.Count > 0 && !s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         var e = pathstack.Pop();
                         if (e.AnyEntries || pathstack.Count == 0)
@@ -151,7 +158,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingEmptyFolder", "Excluding empty folder {0}", e.Path);
                     }
 
-                    if (pathstack.Count == 0 || s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparision))
+                    if (pathstack.Count == 0 || s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         pathstack.Push(new DirectoryStackEntry() { Path = s });
                         continue;
@@ -208,7 +215,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                 yield return mixinqueue.Dequeue();
         }
 
-  
         /// <summary>
         /// Plugin filter for enumerating a list of files.
         /// </summary>

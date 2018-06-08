@@ -22,13 +22,13 @@ namespace Duplicati.Service
 {
     public class Runner : IDisposable
     {
-        private System.Threading.Thread m_thread;
+        private readonly System.Threading.Thread m_thread;
         private volatile bool m_terminate = false;
         private volatile bool m_softstop = false;
         private System.Diagnostics.Process m_process;
-        private Action m_onStartedAction;
-        private Action m_onStoppedAction;
-        private Action<string, bool> m_reportMessage;
+        private readonly Action m_onStartedAction;
+        private readonly Action m_onStoppedAction;
+        private readonly Action<string, bool> m_reportMessage;
 
         private readonly object m_writelock = new object();
         private readonly string[] m_cmdargs;

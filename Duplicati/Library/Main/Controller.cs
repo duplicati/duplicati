@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The parsed type-safe version of the commandline options
         /// </summary>
-        private Options m_options;
+        private readonly Options m_options;
         /// <summary>
         /// The destination for all output messages during execution
         /// </summary>
@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Holds various keys that need to be reset after running the task
         /// </summary>
-        private Dictionary<string, string> m_resetKeys = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> m_resetKeys = new Dictionary<string, string>();
 
         /// <summary>
         /// The thread priority to reset to
@@ -222,7 +222,7 @@ namespace Duplicati.Library.Main
             //Sanity check for multiple inclusions of the same folder
             for (int i = 0; i < sources.Count; i++)
                 for (int j = 0; j < sources.Count; j++)
-                    if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparision) && sources[i].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), Library.Utility.Utility.ClientFilenameStringComparision))
+                    if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparison) && sources[i].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         if (filter != null)
                         {

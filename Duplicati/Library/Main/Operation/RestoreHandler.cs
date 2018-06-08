@@ -15,10 +15,10 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RestoreHandler>();
 
-        private string m_backendurl;
-        private Options m_options;
+        private readonly string m_backendurl;
+        private readonly Options m_options;
         private byte[] m_blockbuffer;
-        private RestoreResults m_result;
+        private readonly RestoreResults m_result;
         private static readonly Snapshots.ISystemIO m_systemIO = Duplicati.Library.Utility.Utility.IsClientLinux ? (Snapshots.ISystemIO)new Snapshots.SystemIOLinux() : (Snapshots.ISystemIO)new Snapshots.SystemIOWindows();
         private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
 
@@ -328,7 +328,7 @@ namespace Duplicati.Library.Main.Operation
                             m_systemIO.DirectoryCreate(folderpath);
                         }
 
-                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.Dryrun);
+                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
                     }
                     catch (Exception ex)
                     {
@@ -448,7 +448,9 @@ namespace Duplicati.Library.Main.Operation
                 // Restore empty files. They might not have any blocks so don't appear in any volume.
                 foreach (var file in database.GetFilesToRestore(true).Where(item => item.Length == 0)) {
                     // Just create the file and close it right away, empty statement is intentional.
-                    using (m_systemIO.FileCreate(file.Path)) ;
+                    using (m_systemIO.FileCreate(file.Path))
+                    {
+                    }
                 }
 
                 // Enforcing the length of files is now already done during ScanForExistingTargetBlocks
@@ -521,7 +523,7 @@ namespace Duplicati.Library.Main.Operation
             result.EndTime = DateTime.UtcNow;
         }
 
-        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool dryrun)
+        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool restoreSymlinkMetadata, bool dryrun)
         {
             using(var tr = new System.IO.StreamReader(stream))
             using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
@@ -544,6 +546,13 @@ namespace Duplicati.Library.Main.Operation
                 // If the target is a folder, make sure we create it first
                 else if (isDirTarget && !m_systemIO.DirectoryExists(targetpath))
                     m_systemIO.DirectoryCreate(targetpath);
+
+                // Avoid setting restoring symlink metadata, as that writes the symlink target, not the symlink itself
+                if (!restoreSymlinkMetadata && Snapshots.SnapshotUtility.IsSymlink(m_systemIO, targetpath))
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "no-symlink-metadata-restored", "Not applying metadata to symlink: {0}", targetpath);
+                    return;
+                }
 
                 if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
                 {
@@ -608,8 +617,8 @@ namespace Duplicati.Library.Main.Operation
                                             if (sourcestream.Length > block.Offset)
                                             {
                                                 sourcestream.Position = block.Offset;
-                                                
-                                                var size = sourcestream.Read(blockbuffer, 0, blockbuffer.Length);
+
+                                                int size = Library.Utility.Utility.ForceStreamRead(sourcestream, blockbuffer, blockbuffer.Length);
                                                 if (size == block.Size)
                                                 {
                                                     var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));
@@ -718,7 +727,7 @@ namespace Duplicati.Library.Main.Operation
                                                 using (var sourcefile = m_systemIO.FileOpenRead(source.Path))
                                                 {
                                                     sourcefile.Position = source.Offset;
-                                                    var size = sourcefile.Read(blockbuffer, 0, blockbuffer.Length);
+                                                    int size = Library.Utility.Utility.ForceStreamRead(sourcefile, blockbuffer, blockbuffer.Length);
                                                     if (size == targetblock.Size)
                                                     {
                                                         var key = Convert.ToBase64String(hasher.ComputeHash(blockbuffer, 0, size));

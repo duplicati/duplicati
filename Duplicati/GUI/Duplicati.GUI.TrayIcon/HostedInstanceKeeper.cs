@@ -10,7 +10,7 @@ namespace Duplicati.GUI.TrayIcon
     /// </summary>
     internal class HostedInstanceKeeper : IDisposable
     {
-        private System.Threading.Thread m_runner;
+        private readonly System.Threading.Thread m_runner;
         private System.Exception m_runnerException = null;
         public event Action InstanceShutdown;
 

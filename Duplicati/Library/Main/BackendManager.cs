@@ -126,7 +126,7 @@ namespace Duplicati.Library.Main
             /// <summary>
             /// The event that is signaled once the operation is complete or has failed
             /// </summary>
-            private System.Threading.ManualResetEvent DoneEvent;
+            private readonly System.Threading.ManualResetEvent DoneEvent;
 
             public FileEntryItem(OperationType operation, string remotefilename, Tuple<IndexVolumeWriter, FileEntryItem> indexfile = null)
             {
@@ -245,10 +245,10 @@ namespace Duplicati.Library.Main
         private class DatabaseCollector
         {
             private readonly object m_dbqueuelock = new object();
-            private LocalDatabase m_database;
-            private System.Threading.Thread m_callerThread;
+            private readonly LocalDatabase m_database;
+            private readonly System.Threading.Thread m_callerThread;
             private List<IDbEntry> m_dbqueue;
-            private IBackendWriter m_stats;
+            private readonly IBackendWriter m_stats;
 
             private interface IDbEntry { }
 
@@ -349,15 +349,15 @@ namespace Duplicati.Library.Main
         }
 
         private readonly BlockingQueue<FileEntryItem> m_queue;
-        private Options m_options;
+        private readonly Options m_options;
         private volatile Exception m_lastException;
-        private Library.Interface.IEncryption m_encryption;
+        private readonly Library.Interface.IEncryption m_encryption;
         private readonly object m_encryptionLock = new object();
         private Library.Interface.IBackend m_backend;
-        private string m_backendurl;
-        private IBackendWriter m_statwriter;
+        private readonly string m_backendurl;
+        private readonly IBackendWriter m_statwriter;
         private System.Threading.Thread m_thread;
-        private BasicResults m_taskControl;
+        private readonly BasicResults m_taskControl;
         private readonly DatabaseCollector m_db;
 
         // Cache these

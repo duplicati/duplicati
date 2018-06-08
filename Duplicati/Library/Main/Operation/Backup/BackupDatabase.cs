@@ -22,6 +22,7 @@ using Duplicati.Library.Main.Operation.Common;
 using System.Collections.Generic;
 using Duplicati.Library.Main.Volumes;
 using System.Linq;
+using Duplicati.Library.Interface;
 
 
 namespace Duplicati.Library.Main.Operation.Backup
@@ -32,7 +33,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal class BackupDatabase : DatabaseCommon
     {
-        private LocalBackupDatabase m_database;
+        private readonly LocalBackupDatabase m_database;
 
         public class FileEntryData
         {
@@ -152,7 +153,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.SafeDeleteRemoteVolume(remotename, m_transaction));
         }
 
-        public Task<IEnumerable<string>> GetBlocklistHashesAsync(string remotename)
+        public Task<string[]> GetBlocklistHashesAsync(string remotename)
         {
             return RunOnMain(() => Task.FromResult(m_database.GetBlocklistHashes(remotename, m_transaction)));
         }
@@ -174,6 +175,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
+        public Task AppendFilesFromPreviousSetAsync()
+        {
+            return RunOnMain(() => m_database.AppendFilesFromPreviousSet(m_transaction));
+        }
+
         public Task AppendFilesFromPreviousSetAsync(string[] deletedFilelist)
         {
             return RunOnMain(() => m_database.AppendFilesFromPreviousSet(m_transaction, deletedFilelist));
@@ -184,14 +190,39 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.AppendFilesFromPreviousSet(m_transaction, deletedFilelist, filesetid, prevId, timestamp));
         }
 
+        /// <summary>
+        /// Populates FilesetEntry table with files from previous fileset, which aren't 
+        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion 
+        /// predicate.
+        /// </summary>
+        /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
+        public Task AppendFilesFromPreviousSetWithPredicateAsync(Func<string, long, bool> exclusionPredicate)
+        {
+            return RunOnMain(() => m_database.AppendFilesFromPreviousSetWithPredicate(m_transaction, exclusionPredicate));
+        }
+
+        /// <summary>
+        /// Populates FilesetEntry table with files from previous fileset, which aren't 
+        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion 
+        /// predicate.
+        /// </summary>
+        /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file)</param>
+        /// <param name="fileSetId">Current fileset ID</param>
+        /// <param name="prevFileSetId">Source fileset ID</param>
+        /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset</param>
+        public Task AppendFilesFromPreviousSetWithPredicateAsync(Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
+        {
+            return RunOnMain(() => m_database.AppendFilesFromPreviousSetWithPredicate(m_transaction, exclusionPredicate, fileSetId, prevFileSetId, timestamp));
+        }
+
         public Task<KeyValuePair<long, DateTime>[]> GetIncompleteFilesetsAsync()
         {
             return RunOnMain(() => m_database.GetIncompleteFilesets(m_transaction).OrderBy(x => x.Value).ToArray());
         }
 
-        public Task<IEnumerable<KeyValuePair<long, DateTime>>> GetFilesetTimesAsync()
+        public Task<KeyValuePair<long, DateTime>[]> GetFilesetTimesAsync()
         {
-            return RunOnMain(() => m_database.FilesetTimes);
+            return RunOnMain(() => m_database.FilesetTimes.ToArray());
         }
 
         public Task<long> CreateFilesetAsync(long volumeID, DateTime fileTime)
@@ -209,9 +240,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.WriteFileset(fsw, filesetid, m_transaction));
         }
 
-        public Task<IEnumerable<string>> GetMissingIndexFilesAsync()
+        public Task<string[]> GetMissingIndexFilesAsync()
         {
-            return RunOnMain(() => m_database.GetMissingIndexFiles(m_transaction));
+            return RunOnMain(() => m_database.GetMissingIndexFiles(m_transaction).ToArray());
         }
 
         public Task UpdateChangeStatisticsAsync(BackupResults result)
@@ -232,6 +263,16 @@ namespace Duplicati.Library.Main.Operation.Backup
         public Task<RemoteVolumeEntry> GetRemoteVolumeFromIDAsync(long fileid)
         {
             return RunOnMain(() => m_database.GetRemoteVolumeFromID(fileid, m_transaction));
+        }
+
+        public Task CreateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData)
+        {
+            return RunOnMain(() => m_database.CreateChangeJournalData(journalData, m_transaction));
+        }
+
+        public Task UpdateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData, long lastfilesetid)
+        {
+            return RunOnMain(() => m_database.UpdateChangeJournalData(journalData, lastfilesetid, m_transaction));
         }
     }
 }

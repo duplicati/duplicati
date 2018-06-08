@@ -20,7 +20,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -179,15 +178,17 @@ namespace Duplicati.Library.Main
         private static string[] GetSupportedHashes()
         {
             var r = new List<string>();
-            foreach(var h in new string[] {"SHA1", "MD5", "SHA256", "SHA384", "SHA512"})
-            try 
+            foreach (var h in new string[] { "SHA1", "MD5", "SHA256", "SHA384", "SHA512" })
             {
-                var p = System.Security.Cryptography.HashAlgorithm.Create(h);
-                if (p != null)
-                    r.Add(h);
-            }
-            catch
-            {
+                try
+                {
+                    var p = System.Security.Cryptography.HashAlgorithm.Create(h);
+                    if (p != null)
+                        r.Add(h);
+                }
+                catch
+                {
+                }
             }
             
             return r.ToArray();
@@ -560,6 +561,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
                     new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong),
+                    new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
                 });
 
                 return lst;
@@ -736,9 +738,11 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("tempdir") || string.IsNullOrEmpty(m_options["tempdir"]))
-                    return System.IO.Path.GetTempPath();
-                else
-                    return m_options["tempdir"];
+                {
+                    return Duplicati.Library.Utility.TempFolder.SystemTempPath;
+                }
+
+                return m_options["tempdir"];
             }
         }
 
@@ -1166,7 +1170,7 @@ namespace Duplicati.Library.Main
             }
         }
         /// <summary>
-        /// Gets the snapshot strategy to use
+        /// Gets the update sequence number (USN) strategy to use
         /// </summary>
         public OptimizationStrategy UsnStrategy
         {
@@ -1534,6 +1538,13 @@ namespace Duplicati.Library.Main
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "exclude-empty-folders"); }
         }
 
+        /// <summary>
+        /// Gets a flag indicating if empty folders should be ignored
+        /// </summary>
+        public bool RestoreSymlinkMetadata
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-symlink-metadata"); }
+        }
 
         /// <summary>
         /// Gets a flag indicating if permissions should be restored

@@ -25,6 +25,11 @@ namespace Duplicati.Library.SQLiteHelper
 {
     public static class SQLiteLoader
     {
+		/// <summary>
+        /// The tag used for logging
+        /// </summary>
+		private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
+
         /// <summary>
         /// A cached copy of the type
         /// </summary>
@@ -155,7 +160,7 @@ namespace Duplicati.Library.SQLiteHelper
                                 }
                             }
 
-                            Console.WriteLine("Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
+							Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadSQLite", "Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
                         }
                     }
 

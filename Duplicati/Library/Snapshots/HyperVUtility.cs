@@ -89,7 +89,7 @@ namespace Duplicati.Library.Snapshots
         /// Enumerated Hyper-V guests
         /// </summary>
         public List<HyperVGuest> Guests { get { return m_Guests; } }
-        private List<HyperVGuest> m_Guests;
+        private readonly List<HyperVGuest> m_Guests;
 
         public HyperVUtility()
         {

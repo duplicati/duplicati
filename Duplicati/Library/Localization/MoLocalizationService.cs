@@ -33,7 +33,7 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// The catalog containing the translations
         /// </summary>
-        private ICatalog catalog = new Catalog();
+        private readonly ICatalog catalog = new Catalog();
 
         /// <summary>
         /// The environment variable used to locate MO files

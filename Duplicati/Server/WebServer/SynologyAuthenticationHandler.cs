@@ -15,6 +15,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -60,12 +61,7 @@ namespace Duplicati.Server.WebServer
         /// <summary>
         /// A cache of previously authenticated logins
         /// </summary>
-        private readonly Dictionary<string, DateTime> m_logincache = new Dictionary<string, DateTime>();
-
-        /// <summary>
-        /// The loca guarding the login cache
-        /// </summary>
-        private object m_lock = new object();
+        private readonly ConcurrentDictionary<string, DateTime> m_logincache = new ConcurrentDictionary<string, DateTime>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Server.WebServer.SynologyAuthenticationHandler"/> class.

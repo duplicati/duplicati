@@ -12,9 +12,14 @@ Command: {1} {2}", message, executable, arguments); }
         public static string ScriptOutputError(string parameter, string message) { return LC.L(@"Script returned successfully, but the output was missing the {0} parameter: {1}", parameter, message); }
     }
     internal static class USNHelper {
+        public static string PathResolveError { get { return LC.L(@"Unable to determine full file path for USN entry"); } }
+        public static string JournalEntriesDeleted { get { return LC.L(@"USN journal entries were purged since last scan"); } }
         public static string EmptyResponseError { get { return LC.L(@"Unexpected empty response while enumerating"); } }
         public static string LinuxNotSupportedError { get { return LC.L(@"USN is not supported on Linux"); } }
         public static string SafeGuardError { get { return LC.L(@"The number of files returned by USN was zero. This is likely an error. To remedy this, USN has been disabled."); } }
+        public static string UnexpectedPathFormat { get { return LC.L(@"Unexpected path format encountered"); } }
+        public static string UnsupportedUsnVersion { get { return LC.L(@"Unsupported USN journal version."); } }
+
     }
     internal static class WinNativeMethod {
         public static string MissingBackupPrivilegeError { get { return LC.L(@"Calling process does not have the backup privilege"); } }

@@ -133,7 +133,7 @@ namespace Duplicati.UnitTest
         /// <param name='m'>The string to find</param>
         private static int IndexOf(List<string> lst, string m)
         {
-            StringComparison sc = Duplicati.Library.Utility.Utility.ClientFilenameStringComparision;
+            StringComparison sc = Duplicati.Library.Utility.Utility.ClientFilenameStringComparison;
             for(int i = 0; i < lst.Count; i++)
                 if (lst[i].Equals(m, sc))
                     return i;

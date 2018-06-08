@@ -69,12 +69,7 @@ namespace Duplicati.Library.Main.Database
             {
                 cmd.Transaction = transaction;
 
-                var q = "";
-                foreach(var n in toDelete)
-                    if (q.Length == 0)
-                        q = "?";
-                    else
-                        q += ",?";
+                string q = String.Join(",", Enumerable.Repeat("?", toDelete.Length));
                         
                 //First we remove unwanted entries
                 var deleted = cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @") ", toDelete.Select(x => NormalizeDateTimeToEpochSeconds(x)).Cast<object>().ToArray());
@@ -84,6 +79,7 @@ namespace Duplicati.Library.Main.Database
     
                 //Then we delete anything that is no longer being referenced
                 cmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Fileset"")");
+                cmd.ExecuteNonQuery(@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Fileset"")");
                 cmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"") ");
                 cmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""MetadataID"" FROM ""File"") ");
                 cmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""BlocksetID"" FROM ""File"" UNION SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") ");
@@ -174,20 +170,20 @@ namespace Duplicati.Library.Main.Database
         
         private class CompactReport : ICompactReport
         {
-            private IEnumerable<VolumeUsage> m_report;
-            private IEnumerable<VolumeUsage> m_cleandelete;
-            private IEnumerable<VolumeUsage> m_wastevolumes;
-            private IEnumerable<VolumeUsage> m_smallvolumes;
+            private readonly IEnumerable<VolumeUsage> m_report;
+            private readonly IEnumerable<VolumeUsage> m_cleandelete;
+            private readonly IEnumerable<VolumeUsage> m_wastevolumes;
+            private readonly IEnumerable<VolumeUsage> m_smallvolumes;
+
+            private readonly long m_deletablevolumes;
+            private readonly long m_wastedspace;
+            private readonly long m_smallspace;
+            private readonly long m_fullsize;
+            private readonly long m_smallvolumecount;
             
-            private long m_deletablevolumes;
-            private long m_wastedspace;
-            private long m_smallspace;
-            private long m_fullsize;
-            private long m_smallvolumecount;
-            
-            private long m_wastethreshold;
-            private long m_volsize;
-            private long m_maxsmallfilecount;
+            private readonly long m_wastethreshold;
+            private readonly long m_volsize;
+            private readonly long m_maxsmallfilecount;
             
             public CompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, IEnumerable<VolumeUsage> report)
             {

@@ -27,17 +27,17 @@ namespace Duplicati.Library.Snapshots
         #region ISystemIO implementation
         public void DirectoryDelete(string path)
         {
-            Directory.Delete(NoSnapshot.NormalizePath(path));
+            Directory.Delete(NormalizePath(path));
         }
 
         public void DirectoryCreate(string path)
         {
-            Directory.CreateDirectory(NoSnapshot.NormalizePath(path));
+            Directory.CreateDirectory(NormalizePath(path));
         }
 
         public bool DirectoryExists(string path)
         {
-            return Directory.Exists(NoSnapshot.NormalizePath(path));
+            return Directory.Exists(NormalizePath(path));
         }
 
         public void FileDelete(string path)
@@ -92,7 +92,7 @@ namespace Duplicati.Library.Snapshots
 
         public FileAttributes GetFileAttributes(string path)
         {
-            return File.GetAttributes(NoSnapshot.NormalizePath(path));
+            return File.GetAttributes(NormalizePath(path));
         }
 
         public void SetFileAttributes(string path, FileAttributes attributes)
@@ -107,12 +107,12 @@ namespace Duplicati.Library.Snapshots
 
         public string GetSymlinkTarget(string path)
         {
-            return UnixSupport.File.GetSymlinkTarget(NoSnapshot.NormalizePath(path));
+            return UnixSupport.File.GetSymlinkTarget(NormalizePath(path));
         }
         
         public string PathGetDirectoryName(string path)
         {
-            return Path.GetDirectoryName(NoSnapshot.NormalizePath(path));
+            return Path.GetDirectoryName(NormalizePath(path));
         }
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
@@ -142,22 +142,22 @@ namespace Duplicati.Library.Snapshots
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
         {
-            Directory.SetLastWriteTimeUtc(NoSnapshot.NormalizePath(path), time);
+            Directory.SetLastWriteTimeUtc(NormalizePath(path), time);
         }
 
         public void DirectorySetCreationTimeUtc(string path, DateTime time)
         {
-            Directory.SetCreationTimeUtc(NoSnapshot.NormalizePath(path), time);
+            Directory.SetCreationTimeUtc(NormalizePath(path), time);
         }
 
         public DateTime DirectoryGetLastWriteTimeUtc(string path)
         {
-            return Directory.GetLastWriteTimeUtc(NoSnapshot.NormalizePath(path));
+            return Directory.GetLastWriteTimeUtc(NormalizePath(path));
         }
 
         public DateTime DirectoryGetCreationTimeUtc(string path)
         {
-            return Directory.GetCreationTimeUtc(NoSnapshot.NormalizePath(path));
+            return Directory.GetCreationTimeUtc(NormalizePath(path));
         }
 
         public void FileMove(string source, string target)
@@ -167,17 +167,17 @@ namespace Duplicati.Library.Snapshots
 
         public long FileLength(string path)
         {
-            return new System.IO.FileInfo(path).Length;
+            return new FileInfo(path).Length;
         }
 
         public void DirectoryDelete(string path, bool recursive)
         {
-            Directory.Delete(NoSnapshot.NormalizePath(path), recursive);
+            Directory.Delete(NormalizePath(path), recursive);
         }
 
         public Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
         {
-            var f = NoSnapshot.NormalizePath(file);
+            var f = NormalizePath(file);
             var dict = new Dictionary<string, string>();
 
             var n = UnixSupport.File.GetExtendedAttributes(f, isSymlink, followSymlink);
@@ -204,7 +204,7 @@ namespace Duplicati.Library.Snapshots
             if (data == null)
                 return;
 
-            var f = NoSnapshot.NormalizePath(file);
+            var f = NormalizePath(file);
 
             foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
                 UnixSupport.File.SetExtendedAttribute(f, x.Key, x.Value);
@@ -235,7 +235,18 @@ namespace Duplicati.Library.Snapshots
         }
         #endregion
 
+        /// <summary>
+        /// Normalizes a path, by removing any trailing slash, before calling system methods
+        /// </summary>
+        /// <returns>The path to normalize.</returns>
+        /// <param name="path">The normalized path.</param>
+        public static string NormalizePath(string path)
+        {
+            var p = Path.GetFullPath(path);
 
+            // This should not be required, but some versions of Mono apperently do not strip the trailing slash
+            return p.Length > 1 && p[p.Length - 1] == Path.DirectorySeparatorChar ? p.Substring(0, p.Length - 1) : p;
+        }
     }
 
 }

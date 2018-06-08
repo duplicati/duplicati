@@ -23,9 +23,9 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class ListControlFilesHandler
     {
-        private Options m_options;
-        private string m_backendurl;
-        private ListResults m_result;
+        private readonly Options m_options;
+        private readonly string m_backendurl;
+        private readonly ListResults m_result;
         
         public ListControlFilesHandler(string backendurl, Options options, ListResults result)
         {

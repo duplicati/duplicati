@@ -211,7 +211,7 @@ namespace Duplicati.Library.Main.Database
         public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null, bool singleTimeMatch = false)
         {
             var filesets = (filesetslist ?? this.FilesetTimes).ToArray();
-            string query = "";
+            StringBuilder query = new StringBuilder();
             var args = new List<object>();
             if (time.Ticks > 0 || (versions != null && versions.Length > 0))
             {
@@ -220,44 +220,44 @@ namespace Duplicati.Library.Main.Database
                 {
                     if (time.Kind == DateTimeKind.Unspecified)
                         throw new Exception("Invalid DateTime given, must be either local or UTC");
-            
-                    query += singleTimeMatch ? @" ""Timestamp"" = ?" : @" ""Timestamp"" <= ?";
+
+                    query.Append(singleTimeMatch ? @" ""Timestamp"" = ?" : @" ""Timestamp"" <= ?");
                     // Make sure the resolution is the same (i.e. no milliseconds)
                     args.Add(NormalizeDateTimeToEpochSeconds(time));
                     hasTime = true;
                 }
-                
+
                 if (versions != null && versions.Length > 0)
                 {
-                    var qs = "";
-                    
-                    foreach(var v in versions)
+                    StringBuilder qs = new StringBuilder();
+
+                    foreach (var v in versions)
+                    {
                         if (v >= 0 && v < filesets.Length)
                         {
                             args.Add(filesets[v].Key);
-                            qs += "?,";
+                            qs.Append("?,");
                         }
                         else
                             Logging.Log.WriteWarningMessage(LOGTAG, "SkipInvalidVersion", null, "Skipping invalid version: {0}", v);
-                            
-                        
+                    }
+
                     if (qs.Length > 0)
                     {
-                        qs = qs.Substring(0, qs.Length - 1);
-                        
                         if (hasTime)
-                            query += " OR ";
-                                            
-                        query += @" ""ID"" IN (" + qs + ")";
+                            query.Append(" OR ");
+
+                        query.Append(@" ""ID"" IN (" + qs.ToString(0, qs.Length - 1) + ")");
                     }
                 }
-                
-                if (!string.IsNullOrEmpty(query))
-                    query = " WHERE " + query;
 
+                if (query.Length > 0)
+                {
+                    query.Insert(0, " WHERE ");
+                }
             }
             
-            return new Tuple<string, object[]>(query, args.ToArray());
+            return new Tuple<string, object[]>(query.ToString(), args.ToArray());
         }
 
         public long GetRemoteVolumeID(string file, System.Data.IDbTransaction transaction = null)
@@ -401,6 +401,7 @@ namespace Duplicati.Library.Main.Database
                 
                 // If the volume is a fileset, this will remove the fileset, otherwise nothing will happen
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({0}))", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({0}))", volIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Fileset"" WHERE ""VolumeID""  IN ({0})", volIdsSubQuery));
                                                 
                 var bsIdsSubQuery = string.Format(
@@ -560,8 +561,8 @@ namespace Duplicati.Library.Main.Database
 
         protected class TemporaryTransactionWrapper : IDisposable
         {
-            private System.Data.IDbTransaction m_parent;
-            private bool m_isTemporary;
+            private readonly System.Data.IDbTransaction m_parent;
+            private readonly bool m_isTemporary;
 
             public TemporaryTransactionWrapper(System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
             {
@@ -603,7 +604,7 @@ namespace Duplicati.Library.Main.Database
         
         private class LocalFileEntry : ILocalFileEntry
         {
-            private System.Data.IDataReader m_reader;
+            private readonly System.Data.IDataReader m_reader;
             public LocalFileEntry(System.Data.IDataReader reader)
             {
                 m_reader = reader;
@@ -809,7 +810,7 @@ ON
                             var expandedCmd = string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS);
                         var expandedlist = cmd2.ExecuteScalarInt64(expandedCmd, 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, filesetid);
                         //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
-                        var storedlist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?"), 0, filesetid);
+                        var storedlist = cmd2.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?", 0, filesetid);
 
                         if (expandedlist != storedlist)
                             throw new Exception(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetid, expandedlist, storedlist));
@@ -848,8 +849,8 @@ ON
         {
             private class BlocklistHashEnumerator : IEnumerator<string>
             {
-                private System.Data.IDataReader m_reader;
-                private BlocklistHashEnumerable m_parent;
+                private readonly System.Data.IDataReader m_reader;
+                private readonly BlocklistHashEnumerable m_parent;
                 private string m_path = null;
                 private bool m_first = true;
                 private string m_current = null;
@@ -911,7 +912,7 @@ ON
                 }
             }
 
-            private System.Data.IDataReader m_reader;
+            private readonly System.Data.IDataReader m_reader;
 
             public BlocklistHashEnumerable(System.Data.IDataReader reader)
             {
@@ -1141,8 +1142,8 @@ ORDER BY
         public class FilteredFilenameTable : IDisposable
         {
             public string Tablename { get; private set; }
-            private System.Data.IDbConnection m_connection;
-            
+            private readonly System.Data.IDbConnection m_connection;
+
             public FilteredFilenameTable(System.Data.IDbConnection connection, Library.Utility.IFilter filter, System.Data.IDbTransaction transaction)
             {
                 m_connection = connection;
@@ -1299,6 +1300,7 @@ ORDER BY
                         if ((blockhash != curHash && curHash != null) || index + hashsize > buffer.Length)
                         {
                             yield return new Tuple<string, byte[], int>(curHash, buffer, index);
+                            buffer = new byte[blocksize];
                             curHash = null;
                             index = 0;
                         }
@@ -1311,8 +1313,6 @@ ORDER BY
 
                 if (curHash != null)
                     yield return new Tuple<string, byte[], int>(curHash, buffer, index);
-
-
             }
         }
 

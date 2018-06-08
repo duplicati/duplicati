@@ -15,23 +15,25 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using System.Threading;
 using CoCoL;
+using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class CountFilesHandler
     {
-        public static Task Run(Snapshots.ISnapshotService snapshot, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, Common.ITaskReader taskreader, System.Threading.CancellationToken token)
+        public static Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, Common.ITaskReader taskreader, System.Threading.CancellationToken token)
         {
             // Make sure we create the enumeration process in a seperate scope,
             // but keep the log channel from the parent scope
             using(Logging.Log.StartIsolatingScope())
             using(new IsolatedChannelScope())
             {
-                var enumeratorTask = Backup.FileEnumerationProcess.Run(snapshot, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, taskreader);
+                var enumeratorTask = Backup.FileEnumerationProcess.Run(sources, snapshot, null, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, taskreader);
                 var counterTask = AutomationExtensions.RunTask(new 
                 {
                     Input = Backup.Channels.SourcePaths.ForRead

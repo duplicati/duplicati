@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Database
             var hotIx = Math.Min(m_lookup.Count, paths.Length) - 1;
             while (hotIx >= 0)
             {
-                if (path.StartsWith(m_lookup[hotIx].Key, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                if (path.StartsWith(m_lookup[hotIx].Key, Duplicati.Library.Utility.Utility.ClientFilenameStringComparison))
                 {
                     c = m_lookup[hotIx].Value;
                     
