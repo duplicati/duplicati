@@ -82,7 +82,7 @@ namespace Duplicati.Library.Utility
                     throw new Exception("Collection modified");
                     
                 m_stream.Position = m_position;
-                if (m_stream.Read(m_sizebuffer, 0, m_sizebuffer.Length) != m_sizebuffer.Length)
+                if (Utility.ForceStreamRead(m_stream, m_sizebuffer, m_sizebuffer.Length) != m_sizebuffer.Length)
                     throw new IOException("Unexpected EOS");
                 var len = BitConverter.ToInt64(m_sizebuffer, 0);
                 m_current = m_deserialize(m_stream, len);

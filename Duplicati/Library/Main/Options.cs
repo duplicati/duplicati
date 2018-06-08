@@ -561,6 +561,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
                     new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong),
+                    new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
                 });
 
                 return lst;
@@ -737,8 +738,10 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("tempdir") || string.IsNullOrEmpty(m_options["tempdir"]))
-                    return System.IO.Path.GetTempPath();
-                
+                {
+                    return Duplicati.Library.Utility.TempFolder.SystemTempPath;
+                }
+
                 return m_options["tempdir"];
             }
         }
@@ -1527,6 +1530,13 @@ namespace Duplicati.Library.Main
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "exclude-empty-folders"); }
         }
 
+        /// <summary>
+        /// Gets a flag indicating if empty folders should be ignored
+        /// </summary>
+        public bool RestoreSymlinkMetadata
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-symlink-metadata"); }
+        }
 
         /// <summary>
         /// Gets a flag indicating if permissions should be restored

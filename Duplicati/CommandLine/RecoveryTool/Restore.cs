@@ -398,7 +398,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         using (var fs = m_cache.ReadBlock(v.Value, hash))
                         {
                             var buf = new byte[m_blocksize];
-                            var l = fs.Read(buf, 0, buf.Length);
+                            var l = Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
                             Array.Resize(ref buf, l);
 
                             return buf;

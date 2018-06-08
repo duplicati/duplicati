@@ -1300,6 +1300,7 @@ ORDER BY
                         if ((blockhash != curHash && curHash != null) || index + hashsize > buffer.Length)
                         {
                             yield return new Tuple<string, byte[], int>(curHash, buffer, index);
+                            buffer = new byte[blocksize];
                             curHash = null;
                             index = 0;
                         }
@@ -1312,8 +1313,6 @@ ORDER BY
 
                 if (curHash != null)
                     yield return new Tuple<string, byte[], int>(curHash, buffer, index);
-
-
             }
         }
 

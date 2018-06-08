@@ -39,7 +39,9 @@ Error message: {0}", error); }
         public static string ServerdatafolderLong(string envname) { return LC.L(@"Duplicati needs to store a small database with all settings. Use this option to choose where the settings are stored. This option can also be set with the environment variable {0}.", envname); }
         public static string ServerencryptionkeyShort { get { return LC.L(@"Sets the database encryption key"); } }
         public static string ServerencryptionkeyLong(string envname, string decryptionoption) { return LC.L(@"This option sets the encryption key used to scramble the local settings database. This option can also be set with the environment variable {0}. Use the option --{1} to disable the database scrambling.", envname, decryptionoption); }
-    }
+        public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
+        public static string TempdirLong { get { return LC.L(@"Duplicati will use the system default temporary folder. This option can be used to supply an alternative folder for temporary storage. Note that SQLite will always put temporary files in the system default temporary folder. Consider using the TMPDIR environment variable on Linux to set the temporary folder for both Duplicati and SQLite."); } }
+}
     internal static class Scheduler {
         public static string InvalidTimeSetupError(System.DateTime startdate, string interval, string alloweddays) { return LC.L(@"Unable to find a valid date, given the start date {0}, the repetition interval {1} and the allowed days {2}", startdate, interval, alloweddays); }
     }
