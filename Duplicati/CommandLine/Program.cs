@@ -1,21 +1,21 @@
 #region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
+//
 #endregion
 using System;
 using System.Collections.Generic;
@@ -163,7 +163,7 @@ namespace Duplicati.CommandLine
                 }
 
             // Probe for "help" to avoid extra processing
-            if (cargs.Count == 0 || (string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase))) 
+            if (cargs.Count == 0 || (string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase)))
             {
                 return Commands.Help(outwriter, setup, cargs, options, filter);
             }
@@ -178,7 +178,7 @@ namespace Duplicati.CommandLine
                     if (!ReadOptionsFromFile(outwriter, filename, ref filter, cargs, options))
                         return 100;
                     break;
-                }  
+                }
             }
 
             if (!options.ContainsKey("passphrase"))
@@ -263,7 +263,7 @@ namespace Duplicati.CommandLine
                 return 100;
             }
         }
-            
+
         public static IList<Library.Interface.ICommandLineArgument> SupportedOptions
         {
             get
@@ -319,7 +319,7 @@ namespace Duplicati.CommandLine
 
                     return true;
                 });
-                
+
                 var opt = tmpparsed.Item1;
                 var newfilter = tmpparsed.Item2;
 
@@ -342,7 +342,7 @@ namespace Duplicati.CommandLine
 
                 foreach (KeyValuePair<String, String> keyvalue in opt)
                     options[keyvalue.Key] = keyvalue.Value;
-                    
+
                 if (!string.IsNullOrEmpty(newtarget))
                    {
                        if (cargs.Count <= 1)
