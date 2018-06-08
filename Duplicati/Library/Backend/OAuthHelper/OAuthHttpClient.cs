@@ -91,7 +91,7 @@ namespace Duplicati.Library
             OAuthHttpMessageHandler handler = new OAuthHttpMessageHandler(authid, protocolKey);
 
             // Set the read/write timeout
-            if (HttpContextSettings.OperationTimeout > TimeSpan.Zero)
+            if (HttpContextSettings.ReadWriteTimeout > TimeSpan.Zero)
             {
                 handler.ReadWriteTimeout = (int)HttpContextSettings.ReadWriteTimeout.TotalMilliseconds;
             }
