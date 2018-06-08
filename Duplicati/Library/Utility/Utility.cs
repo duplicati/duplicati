@@ -65,9 +65,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="source">The stream to read from</param>
         /// <param name="target">The stream to write to</param>
-        public static void CopyStream(Stream source, Stream target)
+        public static long CopyStream(Stream source, Stream target)
         {
-            CopyStream(source, target, true);
+            return CopyStream(source, target, true);
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Utility
         /// <param name="target">The stream to write to</param>
         /// <param name="tryRewindSource">True if an attempt should be made to rewind the source stream, false otherwise</param>
         /// <param name="buf">Temporary buffer to use (optional)</param>
-        public static void CopyStream(Stream source, Stream target, bool tryRewindSource, byte[] buf = null)
+        public static long CopyStream(Stream source, Stream target, bool tryRewindSource, byte[] buf = null)
         {
             if (tryRewindSource && source.CanSeek)
                 try { source.Position = 0; }
@@ -95,6 +95,8 @@ namespace Duplicati.Library.Utility
 				target.Write(buf, 0, read);
 				total += read;
 			}
+
+			return total;
         }
 
         /// <summary>
