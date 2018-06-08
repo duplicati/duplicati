@@ -48,7 +48,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             stream.Position = 0;
             var signature = new byte[SIGNED_HASH_SIZE];
-            if (stream.Read(signature, 0, signature.Length) != signature.Length)
+            if (Duplicati.Library.Utility.Utility.ForceStreamRead(stream, signature, signature.Length) != signature.Length)
                 throw new System.IO.InvalidDataException("Unexpected end-of-stream while reading signature");
             var sha256 = System.Security.Cryptography.SHA256.Create();
             sha256.Initialize();

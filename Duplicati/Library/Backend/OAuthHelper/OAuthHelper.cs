@@ -44,7 +44,7 @@ namespace Duplicati.Library
 		/// <param name="serverurl">The url to use for the server.</param>
 		public static IDisposable StartSession(string serverurl)
 		{
-			return CallContextSettings<OAuthSettings>.StartContext(new OAuthSettings() { ServerURL = serverurl });
+            return CallContextSettings<OAuthSettings>.StartContext(new OAuthSettings { ServerURL = serverurl });
 		}
 
 		/// <summary>
