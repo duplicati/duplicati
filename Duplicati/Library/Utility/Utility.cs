@@ -67,7 +67,7 @@ namespace Duplicati.Library.Utility
         /// <param name="target">The stream to write to</param>
         public static void CopyStream(Stream source, Stream target)
         {
-            return CopyStream(source, target, true);
+            CopyStream(source, target, true);
         }
 
         /// <summary>
@@ -95,8 +95,6 @@ namespace Duplicati.Library.Utility
 				target.Write(buf, 0, read);
 				total += read;
 			}
-
-			return total;
         }
 
         /// <summary>
