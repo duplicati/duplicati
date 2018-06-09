@@ -20,7 +20,7 @@ using Duplicati.Library.Backend.WebApi;
 namespace Duplicati.UnitTest
 {
 
-    public class WebApiTests
+    public class WebApiUrlTests
     {
         [Test]
         [Category("WebApi")]
@@ -41,5 +41,12 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(url, GoogleDrive.CreateFolderUrl(true));
         }
 
+        [Test]
+        [Category("WebApi")]
+        public void AboutInfoUrl()
+        {
+            var url = "https://www.googleapis.com/drive/v2/about";
+            Assert.AreEqual(url, GoogleDrive.AboutInfoUrl());
+        }
     }
 }
