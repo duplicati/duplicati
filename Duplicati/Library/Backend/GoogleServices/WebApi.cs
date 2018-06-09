@@ -84,18 +84,18 @@ namespace Duplicati.Library.Backend.WebApi
             public const string Object = "o";
         }
 
-        public static string[] Hosts()
-        {
-            return new [] { new System.Uri(Url.UPLOAD).Host,
-                new System.Uri(Url.API).Host };
-        }
-
-        public static string BucketObjectPath(string bucketId, string objectId = null)
+        private static string BucketObjectPath(string bucketId, string objectId = null)
         {
             return UrlPath.Create(Path.Bucket)
                           .Append(bucketId)
                           .Append(Path.Object)
                           .Append(objectId).ToString();
+        }
+
+        public static string[] Hosts()
+        {
+            return new [] { new System.Uri(Url.UPLOAD).Host,
+                new System.Uri(Url.API).Host };
         }
 
         public static string DeleteUrl(string bucketId, string objectId)
