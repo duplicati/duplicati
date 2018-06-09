@@ -32,15 +32,14 @@ namespace Duplicati.Library.Backend.GoogleDrive
     {
         private const string AUTHID_OPTION = "authid";
         private const string DISABLE_TEAMDRIVE_OPTION = "googledrive-disable-teamdrive";
-
         private const string FOLDER_MIMETYPE = "application/vnd.google-apps.folder";
 
         private readonly string m_path;
         private readonly bool m_useTeamDrive = true;
-
         private readonly OAuthHelper m_oauth;
-        private string m_currentFolderId;
         private readonly Dictionary<string, GoogleDriveFolderItem[]> m_filecache;
+
+        private string m_currentFolderId;
 
         public GoogleDrive()
         {

@@ -44,6 +44,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         private readonly string m_location;
         private readonly string m_storage_class;
+
         public GoogleCloudStorage()
         {
         }
