@@ -31,8 +31,8 @@ namespace Duplicati.Library.Main.Operation
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<TestHandler>();
 
         private readonly Options m_options;
-        private string m_backendurl;
-        private TestResults m_results;
+        private readonly string m_backendurl;
+        private readonly TestResults m_results;
         
         public TestHandler(string backendurl, Options options, TestResults results)
         {

@@ -875,6 +875,30 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('B2 Cloud Storage Account ID')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('B2 Cloud Storage Application Key'));
 
+        if (res) {
+            var re = new RegExp('[^A-Za-z0-9-]');
+            var bucketname = scope['Server'] || '';            
+            var ix = bucketname.search(/[^A-Za-z0-9-]/g);
+
+            if (ix >= 0) {
+                EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The \'{{fieldname}}\' field contains an invalid character: {{character}} (value: {{value}}, index: {{pos}})', { value: bucketname[ix].charCodeAt(), pos: ix, character: bucketname[ix], fieldname: gettextCatalog.getString('Bucket Name') }));
+                res = false;
+            }
+        }
+
+        if (res) {
+            var pathname = scope['Path'] || '';
+            for (var i = pathname.length - 1; i >= 0; i--) {
+                var char = pathname.charCodeAt(i);
+
+                if (char == '\\'.charCodeAt(0) || char == 127 || char < 32) {
+                    EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The \'{{fieldname}}\' field contains an invalid character: {{character}} (value: {{value}}, index: {{pos}})', { value: char, pos: i, character: pathname[i], fieldname: gettextCatalog.getString('Path') }));
+                    res = false;
+                    break;
+                }
+            }
+        }
+
         if (res)
             continuation();
     };

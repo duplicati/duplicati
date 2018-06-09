@@ -37,13 +37,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         private const string LOCATION_OPTION = "gcs-location";
         private const string STORAGECLASS_OPTION = "gcs-storage-class";
 
-        private string m_bucket;
-        private string m_prefix;
-        private string m_project;
+        private readonly string m_bucket;
+        private readonly string m_prefix;
+        private readonly string m_project;
         private readonly OAuthHelper m_oauth;
 
-        private string m_location;
-        private string m_storage_class;
+        private readonly string m_location;
+        private readonly string m_storage_class;
         public GoogleCloudStorage()
         {
         }

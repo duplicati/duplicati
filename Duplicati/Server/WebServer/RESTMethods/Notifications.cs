@@ -19,7 +19,11 @@ using System;
 namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class Notifications : IRESTMethodGET
-    {        public void GET(string key, RequestInfo info)        {            info.OutputOK(Program.DataConnection.GetNotifications());        }
+    {
+        public void GET(string key, RequestInfo info)
+        {
+            info.OutputOK(Program.DataConnection.GetNotifications());
+        }
     }
 }
 

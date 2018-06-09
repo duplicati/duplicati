@@ -561,8 +561,8 @@ namespace Duplicati.Library.Main.Database
 
         protected class TemporaryTransactionWrapper : IDisposable
         {
-            private System.Data.IDbTransaction m_parent;
-            private bool m_isTemporary;
+            private readonly System.Data.IDbTransaction m_parent;
+            private readonly bool m_isTemporary;
 
             public TemporaryTransactionWrapper(System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
             {
@@ -604,7 +604,7 @@ namespace Duplicati.Library.Main.Database
         
         private class LocalFileEntry : ILocalFileEntry
         {
-            private System.Data.IDataReader m_reader;
+            private readonly System.Data.IDataReader m_reader;
             public LocalFileEntry(System.Data.IDataReader reader)
             {
                 m_reader = reader;
@@ -810,7 +810,7 @@ ON
                             var expandedCmd = string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS);
                         var expandedlist = cmd2.ExecuteScalarInt64(expandedCmd, 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, filesetid);
                         //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
-                        var storedlist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?"), 0, filesetid);
+                        var storedlist = cmd2.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?", 0, filesetid);
 
                         if (expandedlist != storedlist)
                             throw new Exception(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetid, expandedlist, storedlist));
@@ -849,8 +849,8 @@ ON
         {
             private class BlocklistHashEnumerator : IEnumerator<string>
             {
-                private System.Data.IDataReader m_reader;
-                private BlocklistHashEnumerable m_parent;
+                private readonly System.Data.IDataReader m_reader;
+                private readonly BlocklistHashEnumerable m_parent;
                 private string m_path = null;
                 private bool m_first = true;
                 private string m_current = null;
@@ -912,7 +912,7 @@ ON
                 }
             }
 
-            private System.Data.IDataReader m_reader;
+            private readonly System.Data.IDataReader m_reader;
 
             public BlocklistHashEnumerable(System.Data.IDataReader reader)
             {
@@ -1142,8 +1142,8 @@ ORDER BY
         public class FilteredFilenameTable : IDisposable
         {
             public string Tablename { get; private set; }
-            private System.Data.IDbConnection m_connection;
-            
+            private readonly System.Data.IDbConnection m_connection;
+
             public FilteredFilenameTable(System.Data.IDbConnection connection, Library.Utility.IFilter filter, System.Data.IDbTransaction transaction)
             {
                 m_connection = connection;
@@ -1300,6 +1300,7 @@ ORDER BY
                         if ((blockhash != curHash && curHash != null) || index + hashsize > buffer.Length)
                         {
                             yield return new Tuple<string, byte[], int>(curHash, buffer, index);
+                            buffer = new byte[blocksize];
                             curHash = null;
                             index = 0;
                         }
@@ -1312,8 +1313,6 @@ ORDER BY
 
                 if (curHash != null)
                     yield return new Tuple<string, byte[], int>(curHash, buffer, index);
-
-
             }
         }
 

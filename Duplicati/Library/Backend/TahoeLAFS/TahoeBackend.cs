@@ -29,8 +29,8 @@ namespace Duplicati.Library.Backend
 {
     public class TahoeBackend : IBackend, IStreamingBackend
     {
-        private string m_url;
-        private bool m_useSSL = false;
+        private readonly string m_url;
+        private readonly bool m_useSSL = false;
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         private class TahoeEl

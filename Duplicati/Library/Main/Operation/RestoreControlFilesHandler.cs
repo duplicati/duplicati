@@ -7,9 +7,9 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class RestoreControlFilesHandler
     {
-        private Options m_options;
-        private string m_backendurl;
-        private RestoreControlFilesResults m_result;
+        private readonly Options m_options;
+        private readonly string m_backendurl;
+        private readonly RestoreControlFilesResults m_result;
 
         public RestoreControlFilesHandler(string backendurl, Options options, RestoreControlFilesResults result)
         {

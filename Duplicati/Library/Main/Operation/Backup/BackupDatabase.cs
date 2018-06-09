@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal class BackupDatabase : DatabaseCommon
     {
-        private LocalBackupDatabase m_database;
+        private readonly LocalBackupDatabase m_database;
 
         public class FileEntryData
         {
@@ -153,7 +153,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.SafeDeleteRemoteVolume(remotename, m_transaction));
         }
 
-        public Task<IEnumerable<string>> GetBlocklistHashesAsync(string remotename)
+        public Task<string[]> GetBlocklistHashesAsync(string remotename)
         {
             return RunOnMain(() => Task.FromResult(m_database.GetBlocklistHashes(remotename, m_transaction)));
         }
@@ -220,9 +220,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.GetIncompleteFilesets(m_transaction).OrderBy(x => x.Value).ToArray());
         }
 
-        public Task<IEnumerable<KeyValuePair<long, DateTime>>> GetFilesetTimesAsync()
+        public Task<KeyValuePair<long, DateTime>[]> GetFilesetTimesAsync()
         {
-            return RunOnMain(() => m_database.FilesetTimes);
+            return RunOnMain(() => m_database.FilesetTimes.ToArray());
         }
 
         public Task<long> CreateFilesetAsync(long volumeID, DateTime fileTime)
@@ -240,9 +240,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.WriteFileset(fsw, filesetid, m_transaction));
         }
 
-        public Task<IEnumerable<string>> GetMissingIndexFilesAsync()
+        public Task<string[]> GetMissingIndexFilesAsync()
         {
-            return RunOnMain(() => m_database.GetMissingIndexFiles(m_transaction));
+            return RunOnMain(() => m_database.GetMissingIndexFiles(m_transaction).ToArray());
         }
 
         public Task UpdateChangeStatisticsAsync(BackupResults result)

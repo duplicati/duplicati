@@ -442,13 +442,15 @@ namespace Duplicati.CommandLine
 
         private class Matcher
         {
-            Dictionary<string, Library.Interface.ICommandLineArgument> args = new Dictionary<string, Library.Interface.ICommandLineArgument>(StringComparer.OrdinalIgnoreCase);
+            readonly Dictionary<string, Library.Interface.ICommandLineArgument> args = new Dictionary<string, Library.Interface.ICommandLineArgument>(StringComparer.OrdinalIgnoreCase);
 
             public Matcher()
             {
-                List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>();
-                foundArgs.Add(new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
-                foundArgs.Add(Program.SupportedOptions);
+                List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>
+                {
+                    new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands,
+                    Program.SupportedOptions
+                };
 
                 foreach (Duplicati.Library.Interface.IBackend backend in Library.DynamicLoader.BackendLoader.Backends)
                     if (backend.SupportedCommands != null)

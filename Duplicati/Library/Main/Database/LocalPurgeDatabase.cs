@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.Database
         public string GetRemoteVolumeNameForFileset(long id, System.Data.IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""B"".""Name"" FROM ""Fileset"" A, ""RemoteVolume"" B WHERE ""A"".""VolumeID"" = ""B"".""ID"" AND ""A"".""ID"" = ? "), id))
+            using (var rd = cmd.ExecuteReader(@"SELECT ""B"".""Name"" FROM ""Fileset"" A, ""RemoteVolume"" B WHERE ""A"".""VolumeID"" = ""B"".""ID"" AND ""A"".""ID"" = ? ", id))
                 if (!rd.Read())
                     throw new Exception(string.Format("No remote volume found for fileset with id {0}", id));
                 else
@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main.Database
             private readonly System.Data.IDbConnection m_connection;
             private readonly System.Data.IDbTransaction m_transaction;
             private readonly string m_tablename;
-            private LocalPurgeDatabase m_parentdb;
+            private readonly LocalPurgeDatabase m_parentdb;
 
             public long ParentID { get; private set; }
             public long RemovedFileCount { get; private set; }

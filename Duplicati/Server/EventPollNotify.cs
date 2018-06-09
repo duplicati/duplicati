@@ -21,7 +21,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The list of subscribed waiting threads
         /// </summary>
-        private Queue<System.Threading.ManualResetEvent> m_waitQueue = new Queue<System.Threading.ManualResetEvent>();
+        private readonly Queue<System.Threading.ManualResetEvent> m_waitQueue = new Queue<System.Threading.ManualResetEvent>();
 
         /// <summary>
         /// An eventhandler for subscribing to event updates without blocking

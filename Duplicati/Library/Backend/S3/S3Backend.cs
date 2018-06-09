@@ -126,8 +126,8 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        private string m_bucket;
-        private string m_prefix;
+        private readonly string m_bucket;
+        private readonly string m_prefix;
 
         public const string DEFAULT_S3_HOST  = "s3.amazonaws.com";
         public const string S3_EU_REGION_NAME = "eu-west-1";

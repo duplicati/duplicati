@@ -26,7 +26,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal class BackupStatsCollector : StatsCollector
     {
-        private BackupResults m_res;
+        private readonly BackupResults m_res;
 
         public BackupStatsCollector(BackupResults res)
             : base(res.BackendWriter)

@@ -89,7 +89,7 @@ namespace Duplicati.Library.Main.Database
         
         private class StorageHelper : IStorageHelper
         {
-            private System.Data.IDbConnection m_connection;
+            private readonly System.Data.IDbConnection m_connection;
             private System.Data.IDbTransaction m_transaction;
             
             private System.Data.IDbCommand m_insertPreviousElementCommand;

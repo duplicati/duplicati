@@ -56,8 +56,8 @@ namespace Duplicati.Library.Utility
 
         private class BlockingQueueEnumerator : IEnumerator<T>
         {
-            private BlockingQueue<T> m_queue;
-            private bool m_first = true;
+            private readonly BlockingQueue<T> m_queue;
+            private readonly bool m_first = true;
             private T m_current;
 
             public BlockingQueueEnumerator(BlockingQueue<T> queue)
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The queue storing the elements produced
         /// </summary>
-        private Queue<T> m_queue = new Queue<T>();
+        private readonly Queue<T> m_queue = new Queue<T>();
         /// <summary>
         /// A flag indicating if the queue is now empty forever
         /// </summary>
@@ -127,15 +127,15 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The event that signals that items have been produced (consumers wait for this)
         /// </summary>
-        private System.Threading.ManualResetEvent m_itemsProduced = new System.Threading.ManualResetEvent(false);
+        private readonly System.Threading.ManualResetEvent m_itemsProduced = new System.Threading.ManualResetEvent(false);
         /// <summary>
         /// The event that signals that items have been consumed (producers wait for this)
         /// </summary>
-        private System.Threading.ManualResetEvent m_itemsConsumed = new System.Threading.ManualResetEvent(false);
+        private readonly System.Threading.ManualResetEvent m_itemsConsumed = new System.Threading.ManualResetEvent(false);
         /// <summary>
         /// The maximum capacity of the queue, the producers will be blocked if more elements are put into the queue
         /// </summary>
-        private long m_maxCapacity = 100;
+        private readonly long m_maxCapacity = 100;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.BlockingQueue{T}"/> class with the default capacity
