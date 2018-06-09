@@ -22,7 +22,7 @@ namespace Duplicati.Library.Backend.WebApi
 {
     public class Google
     {
-        public class QueryParam
+        protected class QueryParam
         {
             public const string File = "q";
             public const string PageToken = "pageToken";
@@ -30,7 +30,7 @@ namespace Duplicati.Library.Backend.WebApi
             public const string Alt = "alt";
         }
 
-        public class QueryValue
+        protected class QueryValue
         {
             public const string True = "true";
             public const string Resumable = "resumable";

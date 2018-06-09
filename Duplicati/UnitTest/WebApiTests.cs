@@ -24,7 +24,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("WebApi")]
-        public void GoogleCloudPutUrl()
+        public static void GoogleCloudPutUrl()
         {
             string bucketId = "my_bucket";
 
@@ -35,7 +35,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("WebApi")]
-        public void CreateFolderUrl()
+        public static void CreateFolderUrl()
         {
             var url = "https://www.googleapis.com/drive/v2/files?supportsTeamDrives=true";
             Assert.AreEqual(url, GoogleDrive.CreateFolderUrl(true));
@@ -43,7 +43,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("WebApi")]
-        public void AboutInfoUrl()
+        public static void AboutInfoUrl()
         {
             var url = "https://www.googleapis.com/drive/v2/about";
             Assert.AreEqual(url, GoogleDrive.AboutInfoUrl());

@@ -21,13 +21,7 @@ namespace Duplicati.Library.Utility
 {
     public class UrlPath
     {
-        /// <summary>
-        /// Concats paths of URIs.
-        /// </summary>
-        /// <returns>The concatenated paths.</returns>
-        /// <param name="path">Path1.</param>
-
-        StringBuilder paths;
+        readonly StringBuilder paths;
         bool trailingSlash = false;
 
         public UrlPath(string path)
