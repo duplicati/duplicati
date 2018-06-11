@@ -70,7 +70,7 @@ namespace Duplicati.Library.Main.Strings
         public static string SkipfileslargerthanLong { get { return LC.L(@"This option allows you to exclude files that are larger than the given value. Use this to prevent backups becoming extremely large."); } }
         public static string SkipfileslargerthanShort { get { return LC.L(@"Limit the size of files being backed up"); } }
         public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
-        public static string TempdirLong { get { return LC.L(@"Duplicati will use the system default temporary folder. This option can be used to supply an alternative folder for temporary storage. Note that SQLite will always put temporary files in the system default temporary folder. Consider using the TMPDIR environment variable on Linux to set the temporary folder for both Duplicati and SQLite."); } }
+        public static string TempdirLong { get { return LC.L(@"This option can be used to supply an alternative folder for temporary storage. By default the system default temporary folder is used. Note that also SQLite will put temporary files in this temporary folder."); } }
         public static string ThreadpriorityLong { get { return LC.L(@"Selects another thread priority for the process. Use this to set Duplicati to be more or less CPU intensive."); } }
         public static string ThreadpriorityShort { get { return LC.L(@"Thread priority"); } }
         public static string DblocksizeLong { get { return LC.L(@"This option can change the maximum size of dblock files. Changing the size can be useful if the backend has a limit on the size of each individual file"); } }

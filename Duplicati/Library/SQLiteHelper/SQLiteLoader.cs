@@ -40,19 +40,15 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         /// <returns>The SQLite connection instance.</returns>
         /// <param name="targetpath">The optional path to the database.</param>
-        /// <param name="tempdir">The optional tempdir to set.</param>
-        public static System.Data.IDbConnection LoadConnection(string targetpath = null, string tempdir = null)
+        public static System.Data.IDbConnection LoadConnection(string targetpath = null)
         {
-            if (string.IsNullOrWhiteSpace(tempdir))
-                tempdir = Library.Utility.TempFolder.SystemTempPath;
-
             var prev = System.Environment.GetEnvironmentVariable("SQLITE_TMPDIR");
 
             System.Data.IDbConnection con = null;
 
             try
             {
-                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", tempdir);
+                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Library.Utility.TempFolder.SystemTempPath);
                 con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
                 if (!string.IsNullOrWhiteSpace(targetpath))
                 {
@@ -60,19 +56,16 @@ namespace Duplicati.Library.SQLiteHelper
                     con.Open();
 
                     // Try to set the temp_dir even tough it is deprecated
-                    if (!string.IsNullOrWhiteSpace(tempdir))
+                    try
                     {
-                        try
+                        using (var cmd = con.CreateCommand())
                         {
-                            using (var cmd = con.CreateCommand())
-                            {
-                                cmd.CommandText = string.Format("PRAGMA temp_store_directory = '{0}'", tempdir);
-                                cmd.ExecuteNonQuery();
-                            }
+                            cmd.CommandText = string.Format("PRAGMA temp_store_directory = '{0}'", Library.Utility.TempFolder.SystemTempPath);
+                            cmd.ExecuteNonQuery();
                         }
-                        catch
-                        {
-                        }
+                    }
+                    catch
+                    {
                     }
                 }
 
@@ -85,11 +78,6 @@ namespace Duplicati.Library.SQLiteHelper
 
                 throw;
             }
-            finally
-            {
-                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", prev);
-            }
-
             
             return con;
         }
