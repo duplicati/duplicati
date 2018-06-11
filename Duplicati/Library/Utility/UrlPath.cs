@@ -49,7 +49,7 @@ namespace Duplicati.Library.Utility
 
         public override string ToString() 
         {
-            return paths.ToString() + (trailingSlash ? "/" : string.Empty);
+            return paths + (trailingSlash ? "/" : string.Empty);
         }
     }
 }

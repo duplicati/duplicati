@@ -20,26 +20,7 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend.WebApi
 {
-    public class Google
-    {
-        protected class QueryParam
-        {
-            public const string File = "q";
-            public const string PageToken = "pageToken";
-            public const string UploadType = "uploadType";
-            public const string Alt = "alt";
-        }
-
-        protected class QueryValue
-        {
-            public const string True = "true";
-            public const string Resumable = "resumable";
-            public const string Media = "media";
-        }
-    }
-
-
-    public class GoogleCloudStorage : Google
+    public static class GoogleCloudStorage
     {
         // From: https://cloud.google.com/storage/docs/bucket-locations
         public static readonly KeyValuePair<string, string>[] KNOWN_GCS_LOCATIONS = {
@@ -107,7 +88,7 @@ namespace Duplicati.Library.Backend.WebApi
 
             if (token != null)
             {
-                queryParams.Set(Google.QueryParam.PageToken, token);
+                queryParams.Set(QueryParam.PageToken, token);
             }
 
             return Uri.UriBuilder(Url.API, BucketObjectPath(bucketId), queryParams);
@@ -117,7 +98,7 @@ namespace Duplicati.Library.Backend.WebApi
         {
             var queryParams = new NameValueCollection
             {
-                { Google.QueryParam.UploadType, QueryValue.Resumable }
+                { QueryParam.UploadType, QueryValue.Resumable }
             };
             var path = UrlPath.Create(Path.Bucket).Append(bucketId).ToString();
             return Uri.UriBuilder(Url.UPLOAD, path, queryParams);
@@ -127,7 +108,7 @@ namespace Duplicati.Library.Backend.WebApi
         {
             var queryParams = new NameValueCollection
                 {
-                    { Google.QueryParam.Alt
+                    { QueryParam.Alt
                             , QueryValue.Media }
                 };
             var path = BucketObjectPath(bucketId, objectId);
@@ -141,10 +122,19 @@ namespace Duplicati.Library.Backend.WebApi
             public const string UPLOAD = "https://www.googleapis.com/upload/storage/v1";
         }
 
-        private new class QueryParam : Google.QueryParam
+        private static class QueryParam
         {
             public const string Project = "project";
             public const string Prefix = "prefix";
+            public const string PageToken = "pageToken";
+            public const string UploadType = "uploadType";
+            public const string Alt = "alt";
+        }
+
+        private static class QueryValue
+        {
+            public const string Resumable = "resumable";
+            public const string Media = "media";
         }
 
         private static class Path
@@ -162,7 +152,7 @@ namespace Duplicati.Library.Backend.WebApi
         }
     }
 
-    public class GoogleDrive : Google
+    public static class GoogleDrive
     {
         public static string[] Hosts()
         {
@@ -173,7 +163,7 @@ namespace Duplicati.Library.Backend.WebApi
         public static string GetUrl(string fileId)
         {
             return FileQueryUrl(fileId, new NameValueCollection{
-                { Google.QueryParam.Alt, QueryValue.Media }
+                { QueryParam.Alt, QueryValue.Media }
             });
         }
 
@@ -190,7 +180,7 @@ namespace Duplicati.Library.Backend.WebApi
         public static string PutUrl(string fileId)
         {
             var queryParams = new NameValueCollection {
-                { Google.QueryParam.UploadType,
+                { QueryParam.UploadType,
                     QueryValue.Resumable } };
  
             return !string.IsNullOrWhiteSpace(fileId) ?
@@ -202,8 +192,8 @@ namespace Duplicati.Library.Backend.WebApi
         {
             var queryParams = new NameValueCollection
             {
-                { Google.QueryParam.File,
-                    fileQuery},
+                { QueryParam.File,
+                    fileQuery }
             };
 
             queryParams.Add(SupportsTeamDriveParam(useTeamDrive));
@@ -211,7 +201,7 @@ namespace Duplicati.Library.Backend.WebApi
 
             if (token != null)
             {
-                queryParams.Set(Google.QueryParam.PageToken, token);
+                queryParams.Set(QueryParam.PageToken, token);
             }
 
             return FileQueryUrl(queryParams);
@@ -239,10 +229,21 @@ namespace Duplicati.Library.Backend.WebApi
             public const string About = "about";
         }
 
-        private new class QueryParam : Google.QueryParam
+        private static class QueryParam
         {
             public const string SupportsTeamDrive = "supportsTeamDrives";
             public const string IncludeTeamDrive = "includeTeamDriveItems";
+            public const string File = "q";
+            public const string PageToken = "pageToken";
+            public const string UploadType = "uploadType";
+            public const string Alt = "alt";
+        }
+
+        private static class QueryValue
+        {
+            public const string True = "true";
+            public const string Resumable = "resumable";
+            public const string Media = "media";
         }
 
         private static string FileQueryUrl(NameValueCollection values)

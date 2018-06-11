@@ -20,7 +20,7 @@ using Duplicati.Library.Backend.WebApi;
 namespace Duplicati.UnitTest
 {
 
-    public class WebApiUrlTests
+    public static class WebApiUrlTests
     {
         [Test]
         [Category("WebApi")]
