@@ -22,7 +22,6 @@ using System.Linq;
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
@@ -55,11 +54,6 @@ namespace Duplicati.Library.Main
         /// The thread running the current task
         /// </summary>
         private System.Threading.Thread m_currentTaskThread = null;
-
-        /// <summary>
-        /// Holds various keys that need to be reset after running the task
-        /// </summary>
-        private readonly Dictionary<string, string> m_resetKeys = new Dictionary<string, string>();
 
         /// <summary>
         /// The thread priority to reset to
@@ -647,21 +641,6 @@ namespace Duplicati.Library.Main
                 m_resetLocaleUI = null;
             }
 
-            if (m_resetKeys != null)
-            {
-                var keys = m_resetKeys.Keys.ToArray();
-                foreach(var k in keys)
-                {
-                    try
-                    {
-                        Environment.SetEnvironmentVariable(k, m_resetKeys[k]);
-                    }
-                    catch { }
-
-                    m_resetKeys.Remove(k);
-                }
-            }
-
             if (m_logTarget != null)
             {
                 m_logTarget.Dispose();
@@ -763,18 +742,6 @@ namespace Duplicati.Library.Main
             if (m_options.HasTempDir)
             {
                 Library.Utility.TempFolder.SystemTempPath = m_options.TempDir;
-                if (Library.Utility.Utility.IsClientLinux)
-                {
-                    m_resetKeys["TMPDIR"] = Environment.GetEnvironmentVariable("TMPDIR");
-                    Environment.SetEnvironmentVariable("TMPDIR", m_options.TempDir);
-                }
-                else
-                {
-                    m_resetKeys["TMP"] = Environment.GetEnvironmentVariable("TMP");
-                    m_resetKeys["TEMP"] = Environment.GetEnvironmentVariable("TEMP");
-                    Environment.SetEnvironmentVariable("TMP", m_options.TempDir);
-                    Environment.SetEnvironmentVariable("TEMP", m_options.TempDir);
-                }
             }
 
             if (m_options.HasForcedLocale)
