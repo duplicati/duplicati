@@ -126,61 +126,62 @@ namespace Duplicati.Library.Main
             System.IO.DriveInfo[] drives = null;
 
             //Make sure they all have the same format and exist
-            for (int i = 0; i < inputsources.Length; i++)
+            foreach(var inputsource in inputsources)
             {
                 List<string> expandedSources = new List<string>();
 
-                if (Library.Utility.Utility.IsClientWindows && (inputsources[i].StartsWith("*:", StringComparison.Ordinal) || inputsources[i].StartsWith("?:", StringComparison.Ordinal)))
+                if (Library.Utility.Utility.IsClientWindows && (inputsource.StartsWith("*:", StringComparison.Ordinal) || inputsource.StartsWith("?:", StringComparison.Ordinal)))
                 {
                     // *: drive paths are only supported on Windows clients
                     // Lazily load the drive info
                     drives = drives ?? System.IO.DriveInfo.GetDrives();
 
                     // Replace the drive letter with each available drive
-                    string sourcePath = inputsources[i].Substring(1);
+                    string sourcePath = inputsource.Substring(1);
                     foreach (System.IO.DriveInfo drive in drives)
                     {
                         string expandedSource = drive.Name[0] + sourcePath;
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "AddingSourcePathFromWildcard", @"Adding source path ""{0}"" due to wildcard source path ""{1}""", expandedSource, inputsources[i]);
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "AddingSourcePathFromWildcard", @"Adding source path ""{0}"" due to wildcard source path ""{1}""", expandedSource, inputsource);
                         expandedSources.Add(expandedSource);
                     }
                 }
-                else if (Library.Utility.Utility.IsClientWindows && inputsources[i].StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
+                else if (Library.Utility.Utility.IsClientWindows && inputsource.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
                 {
                     // In order to specify a drive by it's volume name, adopt the volume guid path syntax:
                     //   \\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
                     // The volume guid can be found using the 'mountvol' commandline tool.
                     // However, instead of using this path with Windows APIs directory, it is adapted here to a standard path.
                     Guid volumeGuid;
-                    if (Guid.TryParse(inputsources[i].Substring(@"\\?\Volume{".Length, @"XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".Length), out volumeGuid))
+                    if (Guid.TryParse(inputsource.Substring(@"\\?\Volume{".Length, @"XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".Length), out volumeGuid))
                     {
                         string driveLetter = Library.Utility.Utility.GetDriveLetterFromVolumeGuid(volumeGuid);
                         if (!string.IsNullOrEmpty(driveLetter))
                         {
-                            string expandedSource = driveLetter + inputsources[i].Substring(@"\\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}".Length);
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "AddingSourceFromGuid", @"Adding source path ""{0}"" in place of volume guid source path ""{1}""", expandedSource, inputsources[i]);
+                            string expandedSource = driveLetter + inputsource.Substring(@"\\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}".Length);
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "AddingSourceFromGuid", @"Adding source path ""{0}"" in place of volume guid source path ""{1}""", expandedSource, inputsource);
                             expandedSources.Add(expandedSource);
                         }
                         else
                         {
                             // If we aren't allow to have missing sources, throw an exception indicating we couldn't find a drive where this volume is mounted
                             if (!m_options.AllowMissingSource)
-                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameNotFoundError(inputsources[i], volumeGuid), "MissingSourceFolder");
+                                throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameNotFoundError(inputsource, volumeGuid), "MissingSourceFolder");
                         }
                     }
                     else
                     {
                         // If we aren't allow to have missing sources, throw an exception indicating we couldn't find this volume
                         if (!m_options.AllowMissingSource)
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameInvalidError(inputsources[i]), "SourceVolumeNameInvalid");
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.SourceVolumeNameInvalidError(inputsource), "SourceVolumeNameInvalid");
                     }
                 }
                 else
                 {
-                    expandedSources.Add(inputsources[i]);
+                    expandedSources.Add(inputsource);
                 }
 
                 bool foundAnyPaths = false;
+                bool insufficientPermissions = false;
                 foreach (string expandedSource in expandedSources)
                 {
                     string source;
@@ -204,12 +205,29 @@ namespace Duplicati.Library.Main
                             source = Library.Utility.Utility.AppendDirSeparator(source);
 
                         sources.Add(source);
+                    } else {
+                        try
+                        {
+                            // Try to get attributes. Returns -1 if source doesn't exist, otherwise throws an exception.
+                            // In this case, it is irrelevant to use fileinfo or directoryinfo to retrieve attributes.
+                            var attributes = fi.Attributes;
+                        } catch (UnauthorizedAccessException ex) {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "AddingSourceFolder", 
+                                                            ex, @"Insufficient permissions to read ""{0}"", skipping", expandedSource);
+                            insufficientPermissions = true;
+                        }
                     }
                 }
 
                 // If no paths were found, and we aren't allowed to have missing sources, throw an error
                 if (!foundAnyPaths && !m_options.AllowMissingSource)
-                    throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(inputsources[i]));
+                {
+                    if (insufficientPermissions) {
+                        throw new System.IO.IOException(Strings.Controller.SourceUnauthorizedError(inputsource));
+                    }
+
+                    throw new System.IO.IOException(Strings.Controller.SourceIsMissingError(inputsource));
+                }
             }
 
             //Sanity check for duplicate files/folders
