@@ -894,7 +894,7 @@ namespace Duplicati.Library.Main
                 }
 
                 bool foundAnyPaths = false;
-                bool insufficientPermissions = false;
+                bool unauthorized = false;
                 foreach (string expandedSource in expandedSources)
                 {
                     string source;
@@ -931,7 +931,7 @@ namespace Duplicati.Library.Main
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "AddingSourceFolder",
                                                             ex, @"Insufficient permissions to read ""{0}"", skipping", expandedSource);
-                            insufficientPermissions = true;
+                            unauthorized = true;
                         }
                     }
                 }
@@ -939,7 +939,7 @@ namespace Duplicati.Library.Main
                 // If no paths were found, and we aren't allowed to have missing sources, throw an error
                 if (!foundAnyPaths && !m_options.AllowMissingSource)
                 {
-                    if (insufficientPermissions)
+                    if (unauthorized)
                     {
                         throw new System.IO.IOException(Strings.Controller.SourceUnauthorizedError(inputsource));
                     }
