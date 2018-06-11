@@ -49,8 +49,9 @@ namespace Duplicati.Library.SQLiteHelper
             {
                 con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
             }
-            catch
+            catch (Exception ex)
             {
+                Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, "Failed to load connection.");
                 if (con != null)
                     try { con.Dispose(); }
                     catch { }
@@ -92,8 +93,9 @@ namespace Duplicati.Library.SQLiteHelper
                 }
 
             }
-            catch
+            catch (Exception ex)
             {
+                Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, @"Failed to load connection with path '{0}'.", targetpath);
                 if (con != null)
                     try { con.Dispose(); }
                     catch { }
