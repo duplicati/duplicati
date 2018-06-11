@@ -42,8 +42,6 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="targetpath">The optional path to the database.</param>
         public static System.Data.IDbConnection LoadConnection(string targetpath = null)
         {
-            var prev = System.Environment.GetEnvironmentVariable("SQLITE_TMPDIR");
-
             System.Data.IDbConnection con = null;
 
             try
