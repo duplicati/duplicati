@@ -616,8 +616,10 @@ DROP TABLE ""{0}"";
 DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ""{4}"" AND ""State"" = ""{2}"" AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
 DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ""Blocks"" AND ""State"" = ""{2}"" AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
 DELETE FROM ""RemoteVolume"" WHERE ""Type"" = ""{4}"" AND ""State"" = ""{2}"" AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block"");
-UPDATE ""RemoteVolume"" SET ""State"" = ""{3}"" WHERE ""Type"" = ""{5}"" AND ""ID"" NOT IN (SELECT ""IndexVolumeID"" FROM ""IndexBlockLink"");
 ", tablename, RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Deleting.ToString(), RemoteVolumeType.Blocks.ToString(), RemoteVolumeType.Index.ToString());
+
+// We could delete these, but we don't have to, so we keep them around until the next compact is done
+// UPDATE ""RemoteVolume"" SET ""State"" = ""{3}"" WHERE ""Type"" = ""{5}"" AND ""ID"" NOT IN (SELECT ""IndexVolumeID"" FROM ""IndexBlockLink"");
 
 			var countsql = @"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""State"" = ""Temporary"" AND ""Type"" = ""Blocks"" ";
 
