@@ -36,18 +36,42 @@ namespace Duplicati.Library.SQLiteHelper
         private static Type m_type = null;
 
         /// <summary>
-        /// Loads an SQLite connection instance, optionally setting the tempfolder and opening the the database
+        /// Loads an SQLite connection instance and opening the database
         /// </summary>
         /// <returns>The SQLite connection instance.</returns>
-        /// <param name="targetpath">The optional path to the database.</param>
-        public static System.Data.IDbConnection LoadConnection(string targetpath = null)
+        public static System.Data.IDbConnection LoadConnection()
         {
             System.Data.IDbConnection con = null;
 
+            System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Library.Utility.TempFolder.SystemTempPath);
+
             try
             {
-                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Library.Utility.TempFolder.SystemTempPath);
                 con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+            }
+            catch
+            {
+                if (con != null)
+                    try { con.Dispose(); }
+                    catch { }
+
+                throw;
+            }
+
+            return con;
+        }
+
+        /// <summary>
+        /// Loads an SQLite connection instance and opening the database
+        /// </summary>
+        /// <returns>The SQLite connection instance.</returns>
+        /// <param name="targetpath">The optional path to the database.</param>
+        public static System.Data.IDbConnection LoadConnection(string targetpath)
+        {
+            System.Data.IDbConnection con = LoadConnection();
+
+            try
+            {
                 if (!string.IsNullOrWhiteSpace(targetpath))
                 {
                     con.ConnectionString = "Data Source=" + targetpath;
@@ -76,7 +100,7 @@ namespace Duplicati.Library.SQLiteHelper
 
                 throw;
             }
-            
+
             return con;
         }
 
