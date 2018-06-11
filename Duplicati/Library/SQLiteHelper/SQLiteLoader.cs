@@ -50,9 +50,7 @@ namespace Duplicati.Library.SQLiteHelper
             catch (Exception ex)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, "Failed to load connection.");
-                if (con != null)
-                    try { con.Dispose(); }
-                    catch { }
+                DisposeConnection(con);
 
                 throw;
             }
@@ -75,28 +73,13 @@ namespace Duplicati.Library.SQLiteHelper
                 {
                     con.ConnectionString = "Data Source=" + targetpath;
                     con.Open();
-
-                    // Try to set the temp_dir even tough it is deprecated
-                    try
-                    {
-                        using (var cmd = con.CreateCommand())
-                        {
-                            cmd.CommandText = string.Format("PRAGMA temp_store_directory = '{0}'", Library.Utility.TempFolder.SystemTempPath);
-                            cmd.ExecuteNonQuery();
-                        }
-                    }
-                    catch
-                    {
-                    }
                 }
 
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, @"Failed to load connection with path '{0}'.", targetpath);
-                if (con != null)
-                    try { con.Dispose(); }
-                    catch { }
+                DisposeConnection(con);
 
                 throw;
             }
@@ -165,7 +148,6 @@ namespace Duplicati.Library.SQLiteHelper
                                             return m_type;
                                         }
                                     }
-                                    
                                 } catch {
                                 }
                             }
@@ -179,6 +161,14 @@ namespace Duplicati.Library.SQLiteHelper
 
                 return m_type;
             }
+        }
+
+
+        private static void DisposeConnection(System.Data.IDbConnection con)
+        {
+            if (con != null)
+                try { con.Dispose(); }
+                catch { }
         }
     }
 
