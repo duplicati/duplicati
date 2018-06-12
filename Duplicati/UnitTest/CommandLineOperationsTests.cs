@@ -134,7 +134,7 @@ namespace Duplicati.UnitTest
                     Duplicati.CommandLine.Program.RealMain(backupargs);                
             }
 
-            ProgressWriteLine("CompactingData", "Compacting data ...");
+            ProgressWriteLine("Compacting data ...");
             using(new Library.Logging.Timer(LOGTAG, "Compacting", "Compacting"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "compact", target, "--small-file-max-count=2" }.Union(opts)).ToArray());
 

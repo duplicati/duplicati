@@ -70,7 +70,7 @@ namespace Duplicati.UnitTest
         {
             if (!DEBUG_OUTPUT)
                 TestContext.Progress.WriteLine(msg, args);
-            Console.WriteLine(msg, args);
+            Console.WriteLine("==> " + msg, args);
         }
 
         [OneTimeSetUp]
