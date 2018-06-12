@@ -293,6 +293,10 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.EndTime = DateTime.UtcNow;
                                 throw;
                             }
+
+                            if (m_options.UnittestMode)
+                                throw;
+
                         }
 
                     //Make sure we write the config
@@ -386,6 +390,9 @@ namespace Duplicati.Library.Main.Operation
                                     m_result.EndTime = DateTime.UtcNow;
                                     throw;
                                 }
+
+                                if (m_options.UnittestMode)
+                                    throw;
                             }
 
                         using(new Logging.Timer(LOGTAG, "CommitRecreateDb", "CommitRecreatedDb"))
@@ -396,7 +403,8 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                     // In some cases we have a stale reference from an index file to a deleted block file
-                    restoredb.CleanupMissingVolumes();
+                    if (!m_options.UnittestMode)
+                        restoredb.CleanupMissingVolumes();
 
                     // We have now grabbed as much information as possible,
                     // if we are still missing data, we must now fetch block files
@@ -472,6 +480,8 @@ namespace Duplicati.Library.Main.Operation
                             catch (Exception ex)
                             {
                                 Logging.Log.WriteWarningMessage(LOGTAG, "FailedRebuildingWithFile", ex, "Failed to use information from {0} to rebuild database: {1}", sf.Name, ex.Message);
+                                if (m_options.UnittestMode)
+                                    throw;
                             }
                         }
                     }
@@ -480,7 +490,8 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(restoredb, null);
 
 				// In some cases we have a stale reference from an index file to a deleted block file
-				restoredb.CleanupMissingVolumes();
+                if (!m_options.UnittestMode)
+    				restoredb.CleanupMissingVolumes();
 
                 if (m_options.RepairOnlyPaths)
                 {

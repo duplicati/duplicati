@@ -263,6 +263,8 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "PatchFailed", ex, "Failed to patch file: \"{0}\", message: {1}, message: {1}", targetpath, ex.Message);
+                            if (options.UnittestMode)
+                                throw;
                         }
                     }
                 }
@@ -298,6 +300,8 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "MetatdataRecordFailed", ex, "Failed to record metadata for file: \"{0}\", message: {1}", targetpath, ex.Message);
+                            if (options.UnittestMode)
+                                throw;
                         }
                     }
                 }
@@ -333,6 +337,8 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "MetadataWriteFailed", ex, "Failed to apply metadata to file: \"{0}\", message: {1}", targetpath, ex.Message);
+                        if (options.UnittestMode)
+                            throw;
                     }
                 }
             }
@@ -664,6 +670,8 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message);
                         if (ex is System.Threading.ThreadAbortException)
                             throw;
+                        if (options.UnittestMode)
+                            throw;
                     }
                     
                     if (patched)
@@ -768,6 +776,8 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message);
+                        if (options.UnittestMode)
+                            throw;
                     }
                     
                     if (patched)
@@ -856,6 +866,8 @@ namespace Duplicati.Library.Main.Operation
                 catch (Exception ex)
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "FolderCreateFailed", ex, "Failed to create folder: \"{0}\", message: {1}", folder, ex.Message);
+                    if (options.UnittestMode)
+                        throw;
                 }
             }
         }
@@ -1003,6 +1015,8 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteWarningMessage(LOGTAG, "TargetFileReadError", ex, "Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message);
                             if (ex is System.Threading.ThreadAbortException)
                                 throw;
+                            if (options.UnittestMode)
+                                throw;
                         }                        
                     }
                     else
@@ -1046,6 +1060,8 @@ namespace Duplicati.Library.Main.Operation
                             catch(Exception ex)
                             {
                                 Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadRestoreTarget", ex, "Failed to read candidate restore target {0}", tr);
+                                if (options.UnittestMode)
+                                    throw;
                             }
                             tr = newname + " (" + (c++).ToString() + ")" + ext;
                         }

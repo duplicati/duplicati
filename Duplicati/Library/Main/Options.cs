@@ -420,6 +420,7 @@ namespace Duplicati.Library.Main
                 var lst = new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("dblock-size", CommandLineArgument.ArgumentType.Size, Strings.Options.DblocksizeShort, Strings.Options.DblocksizeLong, DEFAULT_VOLUME_SIZE),
                     new CommandLineArgument("auto-cleanup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong, "false"),
+                    new CommandLineArgument("unittest-mode", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UnittestmodeShort, Strings.Options.UnittestmodeLong, "false"),
 
                     new CommandLineArgument("control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ControlfilesShort, Strings.Options.ControlfilesLong),
                     new CommandLineArgument("skip-file-hash-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipfilehashchecksShort, Strings.Options.SkipfilehashchecksLong, "false"),
@@ -615,6 +616,12 @@ namespace Duplicati.Library.Main
         /// A value indicating if orphan files are deleted automatically
         /// </summary>
         public bool AutoCleanup { get { return GetBool("auto-cleanup"); } }
+
+        /// <summary>
+        /// A value indicating if we are running in unittest mode
+        /// </summary>
+        public bool UnittestMode { get { return GetBool("unittest-mode"); } }
+
 
         /// <summary>
         /// Gets a list of files to add to the signature volumes
