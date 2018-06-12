@@ -596,7 +596,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-		public void RemoveUnusedTemporaryVolumes()
+		public void CleanupMissingVolumes()
 		{
 			var tablename = "SwapBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());            
 

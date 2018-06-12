@@ -395,6 +395,9 @@ namespace Duplicati.Library.Main.Operation
                         // if we are lucky and pick the right ones
                     }
 
+                    // In some cases we have a stale reference from an index file to a deleted block file
+                    restoredb.CleanupMissingVolumes();
+
                     // We have now grabbed as much information as possible,
                     // if we are still missing data, we must now fetch block files
                     restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, null);
@@ -477,7 +480,7 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(restoredb, null);
 
 				// In some cases we have a stale reference from an index file to a deleted block file
-				restoredb.RemoveUnusedTemporaryVolumes();
+				restoredb.CleanupMissingVolumes();
 
                 if (m_options.RepairOnlyPaths)
                 {
