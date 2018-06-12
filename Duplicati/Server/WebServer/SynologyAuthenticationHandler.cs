@@ -237,7 +237,8 @@ namespace Duplicati.Server.WebServer
                 Arguments = shell ? null : args,
                 UseShellExecute = false,
                 RedirectStandardInput = shell,
-                RedirectStandardOutput = true
+                RedirectStandardOutput = true,
+                RedirectStandardError = false
             };
 
             if (env != null)
