@@ -158,6 +158,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
                 w.Close();
 
+                // Register that the index file is tracking the block file
                 await database.AddIndexBlockLinkAsync(w.VolumeID, blockvolume.ID);
 
                 return w;
