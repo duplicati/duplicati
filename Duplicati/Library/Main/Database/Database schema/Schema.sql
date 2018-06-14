@@ -262,4 +262,16 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
+/*
+USN tracking table
+*/
+CREATE TABLE "ChangeJournalData" (
+    "ID" INTEGER PRIMARY KEY,
+    "FilesetID" INTEGER NOT NULL,       
+    "VolumeName" TEXT NOT NULL,         
+    "JournalID" INTEGER NOT NULL,       
+    "NextUsn" INTEGER NOT NULL,         
+    "ConfigHash" TEXT NOT NULL  
+);
+
 INSERT INTO "Version" ("Version") VALUES (9);
