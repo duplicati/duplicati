@@ -44,11 +44,11 @@ namespace Duplicati.Library.SQLiteHelper
             // From SQLite's documentation, SQLITE_TMPDIR is used for unix-like systems.
             // For Windows, TMP and TEMP environment variables are used.
             System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Library.Utility.TempFolder.SystemTempPath);
-
             var tmpdir = Environment.GetEnvironmentVariable("TMP");
             var tempdir = Environment.GetEnvironmentVariable("TEMP");
             System.Environment.SetEnvironmentVariable("TMP", Library.Utility.TempFolder.SystemTempPath);
             System.Environment.SetEnvironmentVariable("TEMP", Library.Utility.TempFolder.SystemTempPath);
+
             try
             {
                 con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
@@ -118,6 +118,7 @@ namespace Duplicati.Library.SQLiteHelper
 
                 //Default is to use the pinvoke version which requires a native .dll/.so
                 var assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
+                var loadMixedModeAssembly = false;
 
                 if (!Duplicati.Library.Utility.Utility.IsMono)
                 {
@@ -125,22 +126,27 @@ namespace Duplicati.Library.SQLiteHelper
                     if (Environment.Is64BitProcess)
                     {
                         if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
+                        {
                             assemblyPath = System.IO.Path.Combine(basePath, "win64");
+                            loadMixedModeAssembly = true;
+                        }
                     }
                     else
                     {
                         if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
+                        {
                             assemblyPath = System.IO.Path.Combine(basePath, "win32");
+                            loadMixedModeAssembly = true;
+                        }
                     }
 
                     // If we have a new path, try to force load the mixed-mode assembly for the current architecture
                     // This can be avoided if the preload in SQLite works, but it is easy to do it here as well
-                    if (assemblyPath != System.IO.Path.Combine(basePath, "pinvoke"))
+                    if (loadMixedModeAssembly)
                     {
                         try { PInvoke.LoadLibraryEx(System.IO.Path.Combine(basePath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
                         catch { }
                     }
-
                 }
                 else
                 {
@@ -150,7 +156,7 @@ namespace Duplicati.Library.SQLiteHelper
                     var envvalue = System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE");
                     if (!Utility.Utility.ParseBool(envvalue, envvalue != null))
                     {
-                        foreach (var asmversion in new string[] { "4.0.0.0", "2.0.0.0" })
+                        foreach (var asmversion in new[] { "4.0.0.0", "2.0.0.0" })
                         {
                             try
                             {
@@ -175,7 +181,6 @@ namespace Duplicati.Library.SQLiteHelper
                 }
 
                 m_type = System.Reflection.Assembly.LoadFile(System.IO.Path.Combine(assemblyPath, filename)).GetType("System.Data.SQLite.SQLiteConnection");
-
 
                 return m_type;
             }
