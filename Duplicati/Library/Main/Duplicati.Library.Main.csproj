@@ -200,9 +200,6 @@
     <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
     <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
     <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
-    <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
-    <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
-    <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
     <EmbeddedResource Include="Database\Database schema\8. Add volume USN.sql" />
     <EmbeddedResource Include="Database\Database schema\9. Refactor Paths.sql" />
   </ItemGroup>
