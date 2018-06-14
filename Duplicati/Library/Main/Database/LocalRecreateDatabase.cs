@@ -534,8 +534,8 @@ namespace Duplicati.Library.Main.Database
                 var countMissingInformation = string.Format(
                     @"SELECT COUNT(*) FROM (SELECT DISTINCT ""VolumeID"" FROM ({0} UNION {1}))",
                     missingBlockInfo,
-                    missingBlocklistEntries);
-                        
+                    missingBlocklistVolumes);
+
                 if (passNo == 0)
                 {
                     // On the first pass, we select all the volumes we know we need,
