@@ -41,8 +41,14 @@ namespace Duplicati.Library.SQLiteHelper
         {
             System.Data.IDbConnection con = null;
 
+            // From SQLite's documentation, SQLITE_TMPDIR is used for unix-like systems.
+            // For Windows, TMP and TEMP environment variables are used.
             System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Library.Utility.TempFolder.SystemTempPath);
 
+            var tmpdir = Environment.GetEnvironmentVariable("TMP");
+            var tempdir = Environment.GetEnvironmentVariable("TEMP");
+            System.Environment.SetEnvironmentVariable("TMP", Library.Utility.TempFolder.SystemTempPath);
+            System.Environment.SetEnvironmentVariable("TEMP", Library.Utility.TempFolder.SystemTempPath);
             try
             {
                 con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
@@ -53,6 +59,11 @@ namespace Duplicati.Library.SQLiteHelper
                 DisposeConnection(con);
 
                 throw;
+            }
+            finally
+            {
+                System.Environment.SetEnvironmentVariable("TMP", tmpdir);
+                System.Environment.SetEnvironmentVariable("TEMP", tempdir);
             }
 
             return con;
