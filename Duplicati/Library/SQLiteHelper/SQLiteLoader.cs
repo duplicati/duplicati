@@ -23,10 +23,10 @@ namespace Duplicati.Library.SQLiteHelper
 {
     public static class SQLiteLoader
     {
-		/// <summary>
+        /// <summary>
         /// The tag used for logging
         /// </summary>
-		private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
 
         /// <summary>
         /// A cached copy of the type
@@ -105,70 +105,77 @@ namespace Duplicati.Library.SQLiteHelper
         {
             get
             {
-                if (m_type == null)
+                if (m_type != null)
                 {
-                    var filename = "System.Data.SQLite.dll";
-                    var basePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
+                    return m_type;
+                }
 
-                    // Set this to make SQLite preload automatically
-                    Environment.SetEnvironmentVariable("PreLoadSQLite_BaseDirectory", basePath);
+                var filename = "System.Data.SQLite.dll";
+                var basePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
 
-                    //Default is to use the pinvoke version which requires a native .dll/.so
-                    var assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
+                // Set this to make SQLite preload automatically
+                Environment.SetEnvironmentVariable("PreLoadSQLite_BaseDirectory", basePath);
 
-                    if (!Duplicati.Library.Utility.Utility.IsMono)
+                //Default is to use the pinvoke version which requires a native .dll/.so
+                var assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
+
+                if (!Duplicati.Library.Utility.Utility.IsMono)
+                {
+                    //If we run with MS.Net we can use the mixed mode assemblies
+                    if (Environment.Is64BitProcess)
                     {
-                        //If we run with MS.Net we can use the mixed mode assemblies
-                        if (Environment.Is64BitProcess)
-                        {
-                            if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
-                                assemblyPath = System.IO.Path.Combine(basePath, "win64");
-                        }
-                        else
-                        {
-                            if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
-                                assemblyPath = System.IO.Path.Combine(basePath, "win32");
-                        }
-
-                        // If we have a new path, try to force load the mixed-mode assembly for the current architecture
-                        // This can be avoided if the preload in SQLite works, but it is easy to do it here as well
-                        if (assemblyPath != System.IO.Path.Combine(basePath, "pinvoke"))
-                        {
-                            try { PInvoke.LoadLibraryEx(System.IO.Path.Combine(basePath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
-                            catch { }
-                        }
-
-                    } else {
-                        //On Mono, we try to find the Mono version of SQLite
-                        
-                        //This secret environment variable can be used to support older installations
-                        var envvalue = System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE");
-                        if (!Utility.Utility.ParseBool(envvalue, envvalue != null))
-                        {
-                            foreach(var asmversion in new string[] {"4.0.0.0", "2.0.0.0"})
-                            {
-                                try 
-                                {
-                                    Type t = System.Reflection.Assembly.Load(string.Format("Mono.Data.Sqlite, Version={0}, Culture=neutral, PublicKeyToken=0738eb9f132ed756", asmversion)).GetType("Mono.Data.Sqlite.SqliteConnection");
-                                    if (t != null && t.GetInterface("System.Data.IDbConnection", false) != null)
-                                    {
-                                        Version v = new Version((string)t.GetProperty("SQLiteVersion").GetValue(null, null));
-                                        if (v >= new Version(3, 6, 3))
-                                        {
-                                            m_type = t;
-                                            return m_type;
-                                        }
-                                    }
-                                } catch {
-                                }
-                            }
-
-							Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadSQLite", "Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
-                        }
+                        if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
+                            assemblyPath = System.IO.Path.Combine(basePath, "win64");
+                    }
+                    else
+                    {
+                        if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
+                            assemblyPath = System.IO.Path.Combine(basePath, "win32");
                     }
 
-                    m_type = System.Reflection.Assembly.LoadFile(System.IO.Path.Combine(assemblyPath, filename)).GetType("System.Data.SQLite.SQLiteConnection");
+                    // If we have a new path, try to force load the mixed-mode assembly for the current architecture
+                    // This can be avoided if the preload in SQLite works, but it is easy to do it here as well
+                    if (assemblyPath != System.IO.Path.Combine(basePath, "pinvoke"))
+                    {
+                        try { PInvoke.LoadLibraryEx(System.IO.Path.Combine(basePath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
+                        catch { }
+                    }
+
                 }
+                else
+                {
+                    //On Mono, we try to find the Mono version of SQLite
+
+                    //This secret environment variable can be used to support older installations
+                    var envvalue = System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE");
+                    if (!Utility.Utility.ParseBool(envvalue, envvalue != null))
+                    {
+                        foreach (var asmversion in new string[] { "4.0.0.0", "2.0.0.0" })
+                        {
+                            try
+                            {
+                                Type t = System.Reflection.Assembly.Load(string.Format("Mono.Data.Sqlite, Version={0}, Culture=neutral, PublicKeyToken=0738eb9f132ed756", asmversion)).GetType("Mono.Data.Sqlite.SqliteConnection");
+                                if (t != null && t.GetInterface("System.Data.IDbConnection", false) != null)
+                                {
+                                    Version v = new Version((string)t.GetProperty("SQLiteVersion").GetValue(null, null));
+                                    if (v >= new Version(3, 6, 3))
+                                    {
+                                        m_type = t;
+                                        return m_type;
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                            }
+                        }
+
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadSQLite", "Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
+                    }
+                }
+
+                m_type = System.Reflection.Assembly.LoadFile(System.IO.Path.Combine(assemblyPath, filename)).GetType("System.Data.SQLite.SQLiteConnection");
+
 
                 return m_type;
             }
