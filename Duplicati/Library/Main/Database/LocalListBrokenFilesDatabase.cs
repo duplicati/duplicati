@@ -24,9 +24,9 @@ namespace Duplicati.Library.Main.Database
     {
         private const string BROKEN_FILE_IDS = @"
 SELECT DISTINCT ""ID"" FROM (
-  SELECT ""ID"" AS ""ID"", ""BlocksetID"" AS ""BlocksetID"" FROM ""File"" WHERE ""BlocksetID"" != {0} AND ""BlocksetID"" != {1}
+  SELECT ""ID"" AS ""ID"", ""BlocksetID"" AS ""BlocksetID"" FROM ""FileLookup"" WHERE ""BlocksetID"" != {0} AND ""BlocksetID"" != {1}
 UNION
-  SELECT ""A"".""ID"" AS ""ID"", ""B"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A LEFT JOIN ""Metadataset"" B ON ""A"".""MetadataID"" = ""B"".""ID""
+  SELECT ""A"".""ID"" AS ""ID"", ""B"".""BlocksetID"" AS ""BlocksetID"" FROM ""FileLookup"" A LEFT JOIN ""Metadataset"" B ON ""A"".""MetadataID"" = ""B"".""ID""
 )
 WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN 
   (
