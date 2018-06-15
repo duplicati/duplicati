@@ -1106,10 +1106,7 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    ErrorDialog = false,
+                    ErrorDialog = false
                 };
                 pi.EnvironmentVariables.Clear();
 
@@ -1122,14 +1119,7 @@ namespace Duplicati.Library.AutoUpdater
                 pi.EnvironmentVariables["LOCALIZATION_FOLDER"] = InstalledBaseDir;
 
                 var proc = System.Diagnostics.Process.Start(pi);
-                var tasks = Task.WhenAll(
-                    Console.OpenStandardInput().CopyToAsync(proc.StandardInput.BaseStream),
-                    proc.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput()),
-                    proc.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError())
-                );
-
                 proc.WaitForExit();
-                tasks.Wait(1000);
 
                 if (proc.ExitCode != MAGIC_EXIT_CODE)
                     return proc.ExitCode;

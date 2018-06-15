@@ -115,9 +115,13 @@ namespace Duplicati.Library.Main
                 try
                 {
                     // -s prevents sleep on AC, -i prevents sleep generally
-                    var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s");
-                    psi.RedirectStandardInput = true;
-                    psi.UseShellExecute = false;
+                    var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s")
+                    {
+                        RedirectStandardInput = true,
+                        RedirectStandardError = false,
+                        RedirectStandardOutput = false,
+                        UseShellExecute = false
+                    };
                     m_caffeinate = System.Diagnostics.Process.Start(psi);
                     m_runningSleepPrevention = true;
                 }
@@ -380,10 +384,13 @@ namespace Duplicati.Library.Main
         /// <param name="arguments">The commandline arguments.</param>
         private static Tuple<int, string, string> RunProcessAndGetResult(string filename, string arguments)
         {
-            var psi = new System.Diagnostics.ProcessStartInfo(filename, arguments);
-            psi.RedirectStandardOutput = true;
-            psi.RedirectStandardError = true;
-            psi.UseShellExecute = false;
+            var psi = new System.Diagnostics.ProcessStartInfo(filename, arguments)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = false,
+                UseShellExecute = false
+            };
 
             Logging.Log.WriteExplicitMessage(LOGTAG, "RunningCommand", null, "Running: {0} {1}", filename, arguments);
 

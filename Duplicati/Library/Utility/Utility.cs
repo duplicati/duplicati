@@ -878,9 +878,13 @@ namespace Duplicati.Library.Utility
 
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo("which", appname);
-                psi.RedirectStandardOutput = true;
-                psi.UseShellExecute = false;
+                var psi = new System.Diagnostics.ProcessStartInfo("which", appname)
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = false,
+                    RedirectStandardInput = false,
+                    UseShellExecute = false
+                };
 
                 var pi = System.Diagnostics.Process.Start(psi);
                 pi.WaitForExit(5000);
@@ -918,6 +922,8 @@ namespace Duplicati.Library.Utility
                         var psi = new System.Diagnostics.ProcessStartInfo("uname")
                         {
                             RedirectStandardOutput = true,
+                            RedirectStandardInput = false,
+                            RedirectStandardError = false,
                             UseShellExecute = false
                         };
 
@@ -947,9 +953,13 @@ namespace Duplicati.Library.Utility
 
                 try
                 {
-                    var psi = new System.Diagnostics.ProcessStartInfo("uname", "-a");
-                    psi.RedirectStandardOutput = true;
-                    psi.UseShellExecute = false;
+                    var psi = new System.Diagnostics.ProcessStartInfo("uname", "-a")
+                    {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = false,
+                        RedirectStandardInput = false,
+                        UseShellExecute = false
+                    };
 
                     var pi = System.Diagnostics.Process.Start(psi);
                     pi.WaitForExit(5000);

@@ -226,6 +226,7 @@ namespace Duplicati.Library.Snapshots
                     CreateNoWindow = true,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
+                    RedirectStandardInput = false,
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false
                 };
