@@ -54,6 +54,9 @@ namespace Duplicati.GUI.TrayIcon
         public delegate void NewNotificationDelegate(INotification notification);
         public event NewNotificationDelegate OnNotification;
 
+        private long m_lastDataUpdateId = -1;
+        private bool m_disableTrayIconLogin;
+
         private volatile IServerStatus m_status;
 
         private volatile bool m_shutdown = false;
@@ -71,13 +74,15 @@ namespace Duplicati.GUI.TrayIcon
         private readonly object m_lock = new object();
         private readonly Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
 
-        public HttpServerConnection(Uri server, string password, bool saltedpassword, Program.PasswordSource passwordSource, Dictionary<string, string> options)
+        public HttpServerConnection(Uri server, string password, bool saltedpassword, Program.PasswordSource passwordSource, bool disableTrayIconLogin, Dictionary<string, string> options)
         {
             m_baseUri = server.ToString();
             if (!m_baseUri.EndsWith("/", StringComparison.Ordinal))
                 m_baseUri += "/";
 
             m_apiUri = m_baseUri + "api/v1";
+
+            m_disableTrayIconLogin = disableTrayIconLogin;
 
             m_firstNotificationTime = DateTime.Now;
 
@@ -121,6 +126,12 @@ namespace Duplicati.GUI.TrayIcon
                 m_lastNotificationId = m_status.LastNotificationUpdateID;
                 UpdateNotifications();
             }
+
+            if (m_lastDataUpdateId != m_status.LastDataUpdateID)
+            {
+                m_lastDataUpdateId = m_status.LastDataUpdateID;
+                UpdateApplicationSettings();
+            }
         }
 
         private void UpdateNotifications()
@@ -136,6 +147,14 @@ namespace Duplicati.GUI.TrayIcon
                 if (notifications.Any())
                     m_firstNotificationTime = notifications.Select(x => x.Timestamp).Max();
             }
+        }
+
+        private void UpdateApplicationSettings()
+        {
+            var req = new Dictionary<string, string>();
+            var settings = PerformRequest<Dictionary<string, string>>("GET", "/serversettings", req);
+            if (settings != null && settings.TryGetValue("disable-tray-icon-login", out var str))
+                m_disableTrayIconLogin = Library.Utility.Utility.ParseBool(str, false);
         }
 
         private void LongPollRunner()
@@ -513,7 +532,7 @@ namespace Duplicati.GUI.TrayIcon
             get 
             { 
                 if (m_authtoken != null)
-                    return m_baseUri + STATUS_WINDOW + "?auth-token=" + GetAuthToken();
+                    return m_baseUri + STATUS_WINDOW + (m_disableTrayIconLogin ? string.Empty : "?auth-token=" + GetAuthToken());
                 
                 return m_baseUri + STATUS_WINDOW; 
             }
