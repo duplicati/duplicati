@@ -325,7 +325,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteVerboseMessage(LOGTAG, "PatchingMetadata", "Patching metadata with remote data: {0}", targetpath);
                     try
                     {
-                        var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+                        var folderpath = Duplicati.Library.Utility.Utility.GetParent(targetpath, false);
                         if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for target {1}", folderpath, targetpath);
