@@ -106,11 +106,17 @@ IF EXIST "..\..\..\oem-update-installid.txt" (
 rmdir /s /q obj
 rmdir /s /q bin
 
+copy UpgradeData.wxi UpgradeData.wxi.orig
+UpdateVersion.exe Duplicati\Duplicati.GUI.TrayIcon.exe UpgradeData.wxi
+
 msbuild /property:Configuration=Release /property:Platform=x64
 move bin\x64\Release\Duplicati.msi Duplicati.msi
 
 msbuild /property:Configuration=Release /property:Platform=x86
 move bin\x86\Release\Duplicati.msi Duplicati-32bit.msi
+
+copy UpgradeData.wxi.orig UpgradeData.wxi
+del UpgradeData.wxi.orig
 
 rmdir /s /q Duplicati
 
