@@ -1,3 +1,43 @@
+2018-06-17 - 2.0.3.7_canary_2018-06-17
+==========
+* Added option to exclude empty folders
+* Added option to exclude folders based on the existence of a marker file
+* Changed the generation of index files to avoid pulling them from a database query
+* Fixed an issue that would create large index files
+* Improved the recreate logic to work if some files are missing, but the data exists in other files
+* Fixed spacing in the status bar UI, thanks @SanduRajapakse
+* Optimized unittests for serialization, thanks @warwickmm
+* Improved commandline parsing, thanks @verhoek
+* Added support for using the USN numbers for faster backups on NTFS drives, thanks @dgehri
+* Added Duplicati program version in status results, thanks @drwtsn32x
+* Added thread safe collections to the Synology auth handler, thanks @warwickmm
+* Improved code readability, thanks @warwickmm
+* Removed all calls to `Console.WriteLine` as it could lock up the console on Windows
+* Added Memset Cloud Storage to OpenStack providers, thanks @tnwhitwell
+* Refactored GoogleDrive backend, thanks @verhoek
+* Improved unittest scripts, thanks @verhoek
+* Optimized some string operations, thanks @warwickmm
+* Fixed a few issues with the commandline interface, thanks @verhoek
+* Updated built-in help for the new `--log-level` options, thanks @tygill
+* Code cleanup and standardization, thanks @warwickmm
+* Fixed issue on OneDrive (MSGraph) that would fail when trying to delete a missing file, thanks @tygill
+* Added additional help text for the dblock size picker UI
+* Added UI validation for B2 paths
+* No longer restoring metadata on symlinks by default, as that updated the targets
+* Fixed an issue with OAuth timeouts, thanks @tygill
+* Fixed an issue with overriding the temporary folder, thanks @verhoek
+* Fixed an issue with clearing callcontext settings, thanks @verhoek
+* Fixed an issue with shared buffers causing validation errors when running multiple index file generators
+* Improved the repair and broken file detection, thanks @tygill
+* Refactored the Google Cloud Storage backend, thanks @verhoek
+* Improved error message and handling for source folders with permission issues, thanks @verhoek
+* Fixed a problem with recreating symlinks on Windows, thanks @snamds
+* Improved handling of the console input/output, thanks @verhoek
+* Fixed a race in the webserver when decoding locale, thanks @verhoek
+* Added an option to disable automatic login from the tray icon
+* Fixed some incorrect status reports being generated during backup
+* Fixed an null-error in the box.com backend, thanks @warwickmm
+
 2018-04-23 - 2.0.3.6_canary_2018-04-23
 ==========
 This update adds concurrent processing for the backup. With this update, the backup will now use multiple cores to perform checking and compressing.
