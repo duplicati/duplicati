@@ -22,11 +22,12 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         var max = this.formatSizes.length;
         for(var i = 0; i < this.formatSizes.length; i++) {
             var m = Math.pow(1024, max - i);
-            if (val > m)
+            if (val > m) {
                 return (val / m).toFixed(2) + ' ' + this.formatSizes[i];
+            }
         }
 
-        return val + ' ' + bytes;
+        return val + ' bytes';
     };
 
     this.watch = function(scope, m) {
