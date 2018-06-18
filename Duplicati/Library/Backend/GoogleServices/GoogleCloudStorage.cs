@@ -29,7 +29,7 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
-    class GoogleCloudStorage : IBackend, IStreamingBackend, IRenameEnabledBackend
+    public class GoogleCloudStorage : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
         private const string PROJECT_OPTION = "gcs-project";
