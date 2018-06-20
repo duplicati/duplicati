@@ -46,6 +46,12 @@ namespace Duplicati.Library.Main.Operation.Common
             if (m_bw.BackendProgressUpdater != null)
                 m_bw.BackendProgressUpdater.SetBlocking(isBlocked);
         }
+
+        public void SetQueueSize(long count, long size)
+        {
+            if (m_bw.BackendProgressUpdater != null)
+                m_bw.BackendProgressUpdater.SetQueueSize(count, size);
+        }
     }
 }
 

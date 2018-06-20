@@ -69,13 +69,46 @@ namespace Duplicati.Library.Main.Operation.Backup
             IndexVolume = indexvolume;
         }
     }
-   
+
     /// <summary>
     /// This class encapsulates all requests to the backend
     /// and ensures that the <code>AsynchronousUploadLimit</code> is honored
     /// </summary>
     internal static class BackendUploader
     {
+        /// <summary>
+        /// Structure for keeping queue data
+        /// </summary>
+        private struct TaskEntry
+        {
+            /// <summary>
+            /// The number of items in this entry
+            /// </summary>
+            public int Items;
+            /// <summary>
+            /// The size of the items in this entry
+            /// </summary>
+            public long Size;
+            /// <summary>
+            /// The task to await for completion
+            /// </summary>
+            public Task Task;
+
+            /// <summary>
+            /// Initializes a new instance of the
+            /// <see cref="T:Duplicati.Library.Main.Operation.Backup.BackendUploader.TaskEntry"/> struct.
+            /// </summary>
+            /// <param name="items">The number of items.</param>
+            /// <param name="size">The size of the items.</param>
+            /// <param name="task">The task.</param>
+            public TaskEntry(int items, long size, Task task)
+            {
+                Items = items;
+                Size = size;
+                Task = task;
+            }
+        }
+
         public static Task Run(Common.BackendHandler backend, Options options, Common.DatabaseCommon database, BackupResults results, Common.ITaskReader taskreader, StatsCollector stats)
         {
             return AutomationExtensions.RunTask(new
@@ -85,53 +118,67 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-                var inProgress = new Queue<KeyValuePair<int, Task>>();
+                var inProgress = new Queue<TaskEntry>();
                 var max_pending = options.AsynchronousUploadLimit == 0 ? long.MaxValue : options.AsynchronousUploadLimit;
                 var noIndexFiles = options.IndexfilePolicy == Options.IndexFileStrategy.None;
                 var active = 0;
-                var lastSize = -1L;
-                
-                while(!await self.Input.IsRetiredAsync && await taskreader.ProgressAsync)
+                var queueSize = 0L;
+
+                while (!await self.Input.IsRetiredAsync && await taskreader.ProgressAsync)
                 {
                     try
                     {
                         var req = await self.Input.ReadAsync();
-
                         if (!await taskreader.ProgressAsync)
                             continue;
-                        
-                        var task = default(KeyValuePair<int, Task>);
+
+                        var task = default(TaskEntry);
                         if (req is VolumeUploadRequest)
                         {
-                            lastSize = ((VolumeUploadRequest)req).BlockVolume.SourceSize;
-
-                            if (noIndexFiles || ((VolumeUploadRequest)req).IndexVolume == null)
-                                task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, null));
+                            var r = (VolumeUploadRequest)req;
+                            if (noIndexFiles || r.IndexVolume == null)
+                                task = new TaskEntry(1, r.BlockVolume.Filesize, backend.UploadFileAsync(r.BlockVolume, null));
                             else
-                                task = new KeyValuePair<int, Task>(2, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, name => ((VolumeUploadRequest)req).IndexVolume.CreateVolume(name, options, database)));
+                                task = new TaskEntry(2, r.BlockVolume.Filesize, backend.UploadFileAsync(r.BlockVolume, name => r.IndexVolume.CreateVolume(name, options, database)));
                         }
                         else if (req is FilesetUploadRequest)
-                            task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((FilesetUploadRequest)req).Fileset));
+                        {
+                            task = new TaskEntry(1, ((FilesetUploadRequest)req).Fileset.Filesize, backend.UploadFileAsync(((FilesetUploadRequest) req).Fileset));
+                        }
                         else if (req is IndexVolumeUploadRequest)
-                            task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((IndexVolumeUploadRequest)req).IndexVolume));
+                        {
+                            task = new TaskEntry(1, ((IndexVolumeUploadRequest)req).IndexVolume.Filesize, backend.UploadFileAsync(((IndexVolumeUploadRequest)req).IndexVolume));
+                        }
                         else if (req is FlushRequest)
                         {
+                            var flushed = 0L;
                             try
                             {
-                                while(inProgress.Count > 0)
-                                    await inProgress.Dequeue().Value;
-                                active = 0;
+                                stats.SetBlocking(true);
+                                while (inProgress.Count > 0)
+                                {
+                                    await inProgress.Peek().Task;
+                                    var t = inProgress.Dequeue();
+
+                                    flushed += t.Size;
+                                    active -= t.Items;
+                                    queueSize -= t.Size;
+                                    stats.SetQueueSize(active, queueSize);
+                                }
                             }
                             finally
                             {
-                                ((FlushRequest)req).SetFlushed(lastSize);
+                                stats.SetBlocking(false);
+                                ((FlushRequest)req).SetFlushed(flushed);
                             }
                         }
 
-                        if (task.Value != null)
+                        if (task.Task != null)
                         {
                             inProgress.Enqueue(task);
-                            active += task.Key;
+                            active += task.Items;
+                            queueSize += task.Size;
+                            stats.SetQueueSize(active, queueSize);
                         }
                     }
                     catch(Exception ex)
@@ -140,17 +187,18 @@ namespace Duplicati.Library.Main.Operation.Backup
                             throw;
                     }
 
+
                     while(active >= max_pending)
                     {
                         var top = inProgress.Dequeue();
 
                         // See if we are done
-                        if (await Task.WhenAny(top.Value, Task.Delay(500)) != top.Value)
+                        if (await Task.WhenAny(top.Task, Task.Delay(500)) != top.Task)
                         {
                             try
                             {
                                 stats.SetBlocking(true);
-                                await top.Value;
+                                await top.Task;
                             }
                             finally
                             {
@@ -158,7 +206,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
                         }
 
-						active -= top.Key;
+                        active -= top.Items;
+                        queueSize -= top.Size;
+                        stats.SetQueueSize(active, queueSize);
                     }
                 }
 
@@ -168,7 +218,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     stats.SetBlocking(true);
                     while (inProgress.Count > 0)
-                        await inProgress.Dequeue().Value;
+                    {
+                        var t = inProgress.Dequeue();
+                        await t.Task;
+
+                        active -= t.Items;
+                        queueSize -= t.Size;
+                        stats.SetQueueSize(active, queueSize);
+                    }
                 }
                 finally
                 {

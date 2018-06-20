@@ -1,5 +1,4 @@
 //  Copyright (C) 2013, Duplicati Team
-
 //  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
@@ -131,7 +130,9 @@ namespace Duplicati.Library.Main
         /// <param name="progress">The current number of transferred bytes</param>
         /// <param name="bytes_pr_second">Transfer speed in bytes pr second, -1 for unknown</param>
         /// <param name="isBlocking">A value indicating if the backend is blocking operation progress</param>
-        void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second, out bool isBlocking);
+        /// <param name="queueCount">The number of items in the queue</param>
+        /// <param name="queueSize">The size of the items in the queue</param>
+        void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second, out bool isBlocking, out long queueCount, out long queueSize);
     }
     
     /// <summary>
@@ -156,6 +157,14 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="isBlocking">If set to <c>true</c> the backend is blocking.</param>
         void SetBlocking(bool isBlocking);
+
+        /// <summary>
+        /// Sets the size of the queue.
+        /// </summary>
+        /// <param name="count">Count.</param>
+        /// <param name="size">Size.</param>
+        void SetQueueSize(long count, long size);
+
     }
     
     /// <summary>
@@ -198,6 +207,14 @@ namespace Duplicati.Library.Main
         /// A value indicating when the last blocking was done
         /// </summary>
         private DateTime m_blockingSince;
+        /// <summary>
+        /// The size of files in the queue
+        /// </summary>
+        private long m_queueSize;
+        /// <summary>
+        /// The number of files in the queue
+        /// </summary>
+        private long m_queueCount;
         
         /// <summary>
         /// Register the start of a new action
@@ -236,7 +253,9 @@ namespace Duplicati.Library.Main
         /// <param name="progress">The current number of transferred bytes</param>
         /// <param name="bytes_pr_second">Transfer speed in bytes pr second, -1 for unknown</param>
         /// <param name="isBlocking">A value indicating if the backend is blocking operation progress</param>
-        public void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second, out bool isBlocking)
+        /// <param name="queueCount">The number of items in the queue</param>
+        /// <param name="queueSize">The size of the items in the queue</param>
+        public void Update(out BackendActionType action, out string path, out long size, out long progress, out long bytes_pr_second, out bool isBlocking, out long queueCount, out long queueSize)
         {
             lock(m_lock)
             {
@@ -245,6 +264,8 @@ namespace Duplicati.Library.Main
                 size = m_size;
                 progress = m_progress;
                 isBlocking = m_blockingSince.Ticks > 0 && (DateTime.Now - m_blockingSince).TotalSeconds > 1;
+                queueCount = m_queueCount;
+                queueSize = m_queueSize;
                     
                 //TODO: The speed should be more dynamic,
                 // so we need a sample window instead of always 
@@ -264,6 +285,20 @@ namespace Duplicati.Library.Main
         {
             lock (m_lock)
                 m_blockingSince = isBlocking ? DateTime.Now : new DateTime(0);
+        }
+
+        /// <summary>
+        /// Sets the size of the queue.
+        /// </summary>
+        /// <param name="count">Count.</param>
+        /// <param name="size">Size.</param>
+        public void SetQueueSize(long count, long size)
+        {
+            lock (m_lock)
+            {
+                m_queueCount = count;
+                m_queueSize = size;
+            }
         }
     }
     
