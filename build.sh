@@ -12,9 +12,15 @@ list_dir() {
 
 trap 'quit_on_error $LINENO' ERR
 
-TRAVIS_BUILD_DIR=$1
-CATEGORY=$2
-TESTUSER=travis
+CATEGORY=$1
+TRAVIS_BUILD_DIR=${2:-.}
+
+if id travis &> /dev/null
+then
+  TESTUSER=travis
+else
+  TESTUSER=`whoami`
+fi
 
 echo "Build script starting with parameters TRAVIS_BUILD_DIR=$TRAVIS_BUILD_DIR and CATEGORY=$CATEGORY"
 
@@ -69,7 +75,7 @@ echo "travis_fold:end:download_extract_testdata"
 
 # run unit tests
 echo "travis_fold:start:unit_test"
-if [[ "$CATEGORY" != "GUI" ]]; then
+if [[ "$CATEGORY" != "GUI"  && "$CATEGORY" != "" ]]; then
     mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe \
     ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==$CATEGORY --workers=1
 fi
@@ -77,8 +83,8 @@ echo "travis_fold:end:unit_test"
 
 # start server and run gui tests
 echo "travis_fold:start:gui_unit_test"
-mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
 if [[ "$CATEGORY" == "GUI" ]]; then
+    mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
     python guiTests/guiTest.py
 fi
 echo "travis_fold:end:gui_unit_test"
