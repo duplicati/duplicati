@@ -136,18 +136,27 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (req is VolumeUploadRequest)
                         {
                             var r = (VolumeUploadRequest)req;
+                            var fi = new System.IO.FileInfo(r.BlockVolume.LocalFilename);
+
+
                             if (noIndexFiles || r.IndexVolume == null)
-                                task = new TaskEntry(1, r.BlockVolume.Filesize, backend.UploadFileAsync(r.BlockVolume, null));
+                                task = new TaskEntry(1, fi.Exists ? fi.Length : 0L, backend.UploadFileAsync(r.BlockVolume, null));
                             else
-                                task = new TaskEntry(2, r.BlockVolume.Filesize, backend.UploadFileAsync(r.BlockVolume, name => r.IndexVolume.CreateVolume(name, options, database)));
+                                task = new TaskEntry(2, fi.Exists ? fi.Length : 0L, backend.UploadFileAsync(r.BlockVolume, name => r.IndexVolume.CreateVolume(name, options, database)));
                         }
                         else if (req is FilesetUploadRequest)
                         {
-                            task = new TaskEntry(1, ((FilesetUploadRequest)req).Fileset.Filesize, backend.UploadFileAsync(((FilesetUploadRequest) req).Fileset));
+                            var r = (FilesetUploadRequest)req;
+                            var fi = new System.IO.FileInfo(r.Fileset.LocalFilename);
+
+                            task = new TaskEntry(1, fi.Exists ? fi.Length : 0L, backend.UploadFileAsync(((FilesetUploadRequest) req).Fileset));
                         }
                         else if (req is IndexVolumeUploadRequest)
                         {
-                            task = new TaskEntry(1, ((IndexVolumeUploadRequest)req).IndexVolume.Filesize, backend.UploadFileAsync(((IndexVolumeUploadRequest)req).IndexVolume));
+                            var r = (IndexVolumeUploadRequest)req;
+                            var fi = new System.IO.FileInfo(r.IndexVolume.LocalFilename);
+
+                            task = new TaskEntry(1, fi.Exists ? fi.Length : 0L, backend.UploadFileAsync(((IndexVolumeUploadRequest)req).IndexVolume));
                         }
                         else if (req is FlushRequest)
                         {
