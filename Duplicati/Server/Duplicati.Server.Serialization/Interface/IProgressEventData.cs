@@ -32,6 +32,8 @@ namespace Duplicati.Server.Serialization.Interface
         bool StillCounting { get; }
 
         DateTime OperationStarted { get; }
+        long ErrorCount { get; }
+        long WarningCount { get; }
 
     }
 }

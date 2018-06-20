@@ -230,6 +230,8 @@ namespace Duplicati.Server
                 internal long m_totalFileSize;
                 internal bool m_stillCounting;
                 internal DateTime m_startedTime;
+                internal long m_errorCount;
+                internal long m_warningCount;
 
                 public ProgressState(long taskId, string backupId)
                 {
@@ -265,6 +267,8 @@ namespace Duplicati.Server
                 public long QueueCount { get { return m_queueCount; } }
                 public long QueueSize { get { return m_queueSize; } }
                 public DateTime OperationStarted { get { return m_startedTime; } }
+                public long ErrorCount { get { return m_errorCount; } }
+                public long WarningCount { get { return m_warningCount; } }
                 #endregion
             }
 

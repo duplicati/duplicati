@@ -323,7 +323,9 @@ namespace Duplicati.Library.Main
         /// <param name="filecount">Filecount.</param>
         /// <param name="filesize">Filesize.</param>
         /// <param name="countingfiles">True if the filecount and filesize is incomplete, false otherwise</param>
-        void UpdateOverall(out OperationPhase phase, out float progress, out long filesprocessed, out long filesizeprocessed, out long filecount, out long filesize, out bool countingfiles);
+        /// <param name="errorCount">The number of error messages</param>
+        /// <param name="warningCount">The number of warning messages</param>
+        void UpdateOverall(out OperationPhase phase, out float progress, out long filesprocessed, out long filesizeprocessed, out long filecount, out long filesize, out bool countingfiles, out long errorCount, out long warningCount);
         
         /// <summary>
         /// Update the filename, filesize, and fileoffset.
@@ -350,6 +352,8 @@ namespace Duplicati.Library.Main
         void UpdateFileProgress(long offset);
         void UpdatefileCount(long filecount, long filesize, bool done);
         void UpdatefilesProcessed(long count, long size);
+        void RegisterError();
+        void RegisterWarning();
     }
     
     internal interface IOperationProgressUpdaterAndReporter : IOperationProgressUpdater, IOperationProgress
@@ -372,6 +376,9 @@ namespace Duplicati.Library.Main
         private long m_filesize;
         
         private bool m_countingFiles;
+
+        private long m_errorCount;
+        private long m_warningCount;
         
         public event PhaseChangedDelegate PhaseChanged;
         
@@ -431,7 +438,17 @@ namespace Duplicati.Library.Main
                 m_filesizeprocessed = size;
             }
         }
-        
+
+        public void RegisterError()
+        {
+            System.Threading.Interlocked.Increment(ref m_errorCount);
+        }
+
+        public void RegisterWarning()
+        {
+            System.Threading.Interlocked.Increment(ref m_warningCount);
+        }
+
         /// <summary>
         /// Update the phase, progress, filesprocessed, filesizeprocessed, filecount, filesize and countingfiles.
         /// </summary>
@@ -442,7 +459,9 @@ namespace Duplicati.Library.Main
         /// <param name="filecount">Filecount.</param>
         /// <param name="filesize">Filesize.</param>
         /// <param name="countingfiles">True if the filecount and filesize is incomplete, false otherwise</param>
-        public void UpdateOverall(out OperationPhase phase, out float progress, out long filesprocessed, out long filesizeprocessed, out long filecount, out long filesize, out bool countingfiles)
+        /// <param name="errorCount">The number of error messages</param>
+        /// <param name="warningCount">The number of warning messages</param>
+        public void UpdateOverall(out OperationPhase phase, out float progress, out long filesprocessed, out long filesizeprocessed, out long filecount, out long filesize, out bool countingfiles, out long errorCount, out long warningCount)
         {
             lock(m_lock)
             {
@@ -453,6 +472,8 @@ namespace Duplicati.Library.Main
                 filesizeprocessed = m_filesizeprocessed;
                 filecount = m_filecount;
                 countingfiles = m_countingFiles;
+                errorCount = m_errorCount;
+                warningCount = m_warningCount;
             }
         }
         

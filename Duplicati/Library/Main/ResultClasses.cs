@@ -546,9 +546,11 @@ namespace Duplicati.Library.Main
                 {
                     case LogMessageType.Error:
                         m_errors.Add(entry.AsString(false));
+                        OperationProgressUpdater.RegisterError();
                         break;
                     case LogMessageType.Warning:
                         m_warnings.Add(entry.AsString(false));
+                        OperationProgressUpdater.RegisterWarning();
                         break;
                     case LogMessageType.Information:
                         m_messages.Add(entry.AsString(false));
