@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     using(var enc = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions))
                         enc.Encrypt(this.LocalFilename, tempfile);
 
-                    await this.DeleteLocalFile();
+                    this.DeleteLocalFile();
 
                     this.LocalTempfile = tempfile;
                     this.Hash = null;
@@ -146,12 +146,18 @@ namespace Duplicati.Library.Main.Operation.Common
                 return false;
             }
 
-            public async Task DeleteLocalFile()
+            public void DeleteLocalFile()
             {
                 if (this.LocalTempfile != null)
-                    try { this.LocalTempfile.Dispose(); }
-                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
-                finally { this.LocalTempfile = null; }
+                {
+                    try 
+                    {
+                        this.LocalTempfile.Protected = false;
+                        this.LocalTempfile.Dispose(); 
+                    }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
+                    finally { this.LocalTempfile = null; }
+                }
             }
         }
 
@@ -439,7 +445,7 @@ namespace Duplicati.Library.Main.Operation.Common
             if (m_options.Dryrun)
             {
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadVolume", "Would upload volume: {0}, size: {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(item.LocalFilename).Length));
-                await item.DeleteLocalFile();
+                item.DeleteLocalFile();
                 return true;
             }
             
@@ -475,7 +481,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
             }
                 
-            await item.DeleteLocalFile();
+            item.DeleteLocalFile();
             await m_database.CommitTransactionAsync("CommitAfterUpload");
 
             return true;
