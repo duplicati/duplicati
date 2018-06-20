@@ -229,11 +229,13 @@ namespace Duplicati.Server
                 internal long m_totalFileCount;
                 internal long m_totalFileSize;
                 internal bool m_stillCounting;
+                internal DateTime m_startedTime;
 
                 public ProgressState(long taskId, string backupId)
                 {
                     m_backupID = backupId;
                     m_taskID = taskId;
+                    m_startedTime = DateTime.UtcNow;
                 }
 
                 internal ProgressState Clone()
@@ -262,6 +264,7 @@ namespace Duplicati.Server
                 public bool StillCounting { get { return m_stillCounting; } }
                 public long QueueCount { get { return m_queueCount; } }
                 public long QueueSize { get { return m_queueSize; } }
+                public DateTime OperationStarted { get { return m_startedTime; } }
                 #endregion
             }
 

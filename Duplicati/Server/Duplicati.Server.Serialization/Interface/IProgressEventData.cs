@@ -31,5 +31,7 @@ namespace Duplicati.Server.Serialization.Interface
         long TotalFileSize { get; }
         bool StillCounting { get; }
 
+        DateTime OperationStarted { get; }
+
     }
 }
