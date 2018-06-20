@@ -708,24 +708,24 @@ namespace Duplicati.CommandLine
                         if (changecount == 0)
                         {
                             if (fullResults)
-                                Console.WriteLine("{0}: No errors", n.Key);
+                                outwriter.WriteLine("{0}: No errors", n.Key);
                         }
                         else
                         {
-                            Console.WriteLine("{0}: {1} errors", n.Key, changecount);
+                            outwriter.WriteLine("{0}: {1} errors", n.Key, changecount);
                             var count = 0;
                             foreach (var c in n.Value)
                             {
                                 count++;
-                                Console.WriteLine("\t{0}: {1}", c.Key, c.Value);
+                                outwriter.WriteLine("\t{0}: {1}", c.Key, c.Value);
                                 if (!fullResults && count == 10 && changecount > 10)
                                 {
-                                    Console.WriteLine("\t... and {0} more", changecount - count);
+                                    outwriter.WriteLine("\t... and {0} more", changecount - count);
                                     break;
                                 }
                             }
 
-                            Console.WriteLine();
+                            outwriter.WriteLine();
                         }
                     }
 
