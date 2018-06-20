@@ -715,12 +715,12 @@ namespace Duplicati.Server
 
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, object o)
         {
-            if (o is Duplicati.Library.Interface.IBasicResults)
+            if (o is Duplicati.Library.Interface.IRestoreResults)
             {
-                var r = (Duplicati.Library.Interface.IBasicResults)o;
-                backup.Metadata["LastDuration"] = r.Duration.ToString();
-                backup.Metadata["LastStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
-                backup.Metadata["LastFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
+                var r = (Duplicati.Library.Interface.IRestoreResults)o;
+                backup.Metadata["LastRestoreDuration"] = r.Duration.ToString();
+                backup.Metadata["LastRestoreStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
+                backup.Metadata["LastRestoreFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
             }
 
             if (o is Duplicati.Library.Interface.IParsedBackendStatistics)
@@ -744,6 +744,7 @@ namespace Duplicati.Server
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
                 backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
                 backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
+                backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
