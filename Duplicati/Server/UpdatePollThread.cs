@@ -104,10 +104,10 @@ namespace Duplicati.Server
                     UpdateLogger.Log("Executing updates script. Wait a few seconds for script to finish running");
                     Thread.Sleep(5000);
                 }
-                // If we are on Linux
-                else if (Library.Utility.Utility.IsClientLinux)
+                // If we are on OSX
+                else if (Library.Utility.Utility.IsClientOSX)
                 {
-                    UpdateLogger.Log("Execute linux updates script.");
+                    UpdateLogger.Log("Execute OSX updates script.");
                     var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
                     UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
 
@@ -121,13 +121,13 @@ namespace Duplicati.Server
                     }
 
                     // Wait a few seconds for script to finish running
-                    UpdateLogger.Log("Executing linux updates script. Wait a few seconds for script to finish running");
+                    UpdateLogger.Log("Executing OSX updates script. Wait a few seconds for script to finish running");
                     Thread.Sleep(5000);
                 }
-                // If we are on OSX
-                else if (Library.Utility.Utility.IsClientOSX)
+                // If we are on Linux
+                else if (Library.Utility.Utility.IsClientLinux)
                 {
-                    UpdateLogger.Log("Execute OSX updates script.");
+                    UpdateLogger.Log("Execute linux updates script.");
                     var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
                     UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
 
@@ -141,7 +141,7 @@ namespace Duplicati.Server
                     }
 
                     // Wait a few seconds for script to finish running
-                    UpdateLogger.Log("Executing OSX updates script. Wait a few seconds for script to finish running");
+                    UpdateLogger.Log("Executing linux updates script. Wait a few seconds for script to finish running");
                     Thread.Sleep(5000);
                 }
 
