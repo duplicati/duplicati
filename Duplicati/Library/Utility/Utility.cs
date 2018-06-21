@@ -1596,14 +1596,14 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="folderLocation"></param>
         /// <param name="commandFile"></param>
-        public static void ExecuteCommand(string folderLocation, string commandFile)
+        public static Exception ExecuteCommand(string folderLocation, string commandFile)
         {
             string commandFilePath = folderLocation + "\\" + commandFile;
 
             try
             {
                 if (!File.Exists(commandFilePath))
-                    return;
+                    return new Exception($"Command '{commandFilePath}' does not exists.");
 
                 var processInfo = new ProcessStartInfo(commandFilePath)
                 {
@@ -1617,14 +1617,26 @@ namespace Duplicati.Library.Utility
                 var process = Process.Start(processInfo);
                 if (process != null)
                 {
-                    process.WaitForExit();
-                    process.Close();
+                    try
+                    {
+                        process.WaitForExit();
+                        if (0 != process.ExitCode)
+                        {
+                            return new Exception($"Command '{commandFilePath}' returned {process.ExitCode} exit code.");
+                        }
+                    }
+                    finally 
+                    {
+                        process.Close();
+                    }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // ignored
+                return ex;
             }
+
+            return null;
         }
 
         #endregion

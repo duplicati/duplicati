@@ -94,7 +94,11 @@ namespace Duplicati.Server
                     var runUpdateScriptBat = "run-update-script.bat";
 
                     // On Windows, execute script file from the Last updates folder location
-                    Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    if (null != ex)
+                    {
+                        UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
+                    }
 
                     // Wait a few seconds for script to finish running
                     UpdateLogger.Log("Executing updates script. Wait a few seconds for script to finish running");
@@ -110,7 +114,11 @@ namespace Duplicati.Server
                     var runUpdateScriptBat = "run-update-script_linux.sh";
 
                     // Execute script file from the Last updates folder location
-                    Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    if (null != ex)
+                    {
+                        UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
+                    }
 
                     // Wait a few seconds for script to finish running
                     UpdateLogger.Log("Executing linux updates script. Wait a few seconds for script to finish running");
@@ -126,7 +134,11 @@ namespace Duplicati.Server
                     var runUpdateScriptBat = "run-update-script_osx.sh";
 
                     // Execute script file from the Last updates folder location
-                    Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    if (null != ex)
+                    {
+                        UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
+                    }
 
                     // Wait a few seconds for script to finish running
                     UpdateLogger.Log("Executing OSX updates script. Wait a few seconds for script to finish running");
