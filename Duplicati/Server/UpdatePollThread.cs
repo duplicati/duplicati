@@ -104,26 +104,6 @@ namespace Duplicati.Server
                     UpdateLogger.Log("Executing updates script. Wait a few seconds for script to finish running");
                     Thread.Sleep(5000);
                 }
-                // If we are on Linux
-                else if (Library.Utility.Utility.IsClientLinux)
-                {
-                    UpdateLogger.Log("Execute linux updates script.");
-                    var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
-                    UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
-
-                    var runUpdateScriptBat = "run-update-script_linux.sh";
-
-                    // Execute script file from the Last updates folder location
-                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
-                    if (null != ex)
-                    {
-                        UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
-                    }
-
-                    // Wait a few seconds for script to finish running
-                    UpdateLogger.Log("Executing linux updates script. Wait a few seconds for script to finish running");
-                    Thread.Sleep(5000);
-                }
                 // If we are on OSX
                 else if (Library.Utility.Utility.IsClientOSX)
                 {
@@ -142,6 +122,26 @@ namespace Duplicati.Server
 
                     // Wait a few seconds for script to finish running
                     UpdateLogger.Log("Executing OSX updates script. Wait a few seconds for script to finish running");
+                    Thread.Sleep(5000);
+                }
+                // If we are on Linux
+                else if (Library.Utility.Utility.IsClientLinux)
+                {
+                    UpdateLogger.Log("Execute linux updates script.");
+                    var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
+                    UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
+
+                    var runUpdateScriptBat = "run-update-script_linux.sh";
+
+                    // Execute script file from the Last updates folder location
+                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    if (null != ex)
+                    {
+                        UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
+                    }
+
+                    // Wait a few seconds for script to finish running
+                    UpdateLogger.Log("Executing linux updates script. Wait a few seconds for script to finish running");
                     Thread.Sleep(5000);
                 }
 
