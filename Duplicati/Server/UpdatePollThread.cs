@@ -110,8 +110,8 @@ namespace Duplicati.Server
                     UpdateLogger.Log("Execute OSX updates script.");
                     var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
                     UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
+                    var runUpdateScript = "run-update-script_osx.sh";
 
-                    var runUpdateScript = "run-update-script_linux.sh";
 
                     // Execute script file from the Last updates folder location
                     var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScript, true);
@@ -130,8 +130,7 @@ namespace Duplicati.Server
                     UpdateLogger.Log("Execute linux updates script.");
                     var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
                     UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
-
-                    var runUpdateScript = "run-update-script_osx.sh";
+                    var runUpdateScript = "run-update-script_linux.sh";
 
                     // Execute script file from the Last updates folder location
                     var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScript, true);
