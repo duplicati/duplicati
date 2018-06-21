@@ -1596,7 +1596,8 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="folderLocation"></param>
         /// <param name="commandFile"></param>
-        public static Exception ExecuteCommand(string folderLocation, string commandFile)
+        /// <param name="runWithBash"></param>
+        public static Exception ExecuteCommand(string folderLocation, string commandFile, bool runWithBash = false)
         {
             string commandFilePath = folderLocation + "\\" + commandFile;
 
@@ -1605,16 +1606,32 @@ namespace Duplicati.Library.Utility
                 if (!File.Exists(commandFilePath))
                     return new Exception($"Command '{commandFilePath}' does not exists.");
 
-                var processInfo = new ProcessStartInfo(commandFilePath)
+                ProcessStartInfo processInfo;
+                if (runWithBash)
                 {
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardError = true,
-                    RedirectStandardOutput = true,
-                    WorkingDirectory = folderLocation,
-                };
+                    processInfo = new ProcessStartInfo("/bin/bash")
+                                    {
+                                        CreateNoWindow = true,
+                                        UseShellExecute = false,
+                                        RedirectStandardError = true,
+                                        RedirectStandardOutput = true,
+                                        WorkingDirectory = folderLocation,
+                                        Arguments = commandFile
+                    };
+                }
+                else
+                {
+                    processInfo = new ProcessStartInfo(commandFilePath)
+                    {
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                        WorkingDirectory = folderLocation,
+                    };
+                }
 
-                var process = Process.Start(processInfo);
+                var  process = Process.Start(processInfo);
                 if (process != null)
                 {
                     try

@@ -111,10 +111,10 @@ namespace Duplicati.Server
                     var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
                     UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
 
-                    var runUpdateScriptBat = "run-update-script_linux.sh";
+                    var runUpdateScript = "run-update-script_linux.sh";
 
                     // Execute script file from the Last updates folder location
-                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScript, true);
                     if (null != ex)
                     {
                         UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
@@ -131,10 +131,10 @@ namespace Duplicati.Server
                     var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
                     UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
 
-                    var runUpdateScriptBat = "run-update-script_osx.sh";
+                    var runUpdateScript = "run-update-script_osx.sh";
 
                     // Execute script file from the Last updates folder location
-                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScript, true);
                     if (null != ex)
                     {
                         UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
