@@ -506,26 +506,10 @@ namespace Duplicati.Library.Utility
         {
             var builder = new UriBuilder(url)
             {
-                Path = ConcatPaths(ExtractPath(url), path),
+                Path = (new UrlPath(ExtractPath(url)).Append(path)).ToString(),
                 Query = query != null ? BuildUriQuery(query) : null
             };
             return builder.Uri.AbsoluteUri;
-        }
-
-        /// <summary>
-        /// Concats paths of URIs.
-        /// </summary>
-        /// <returns>The concatenated paths.</returns>
-        /// <param name="path1">Path1.</param>
-        /// <param name="path2">Path2.</param>
-        public static string ConcatPaths(string path1, string path2)
-        {
-            if (string.IsNullOrEmpty(path2))
-            {
-                return path1;
-            }
-
-            return path1.TrimEnd('/') + '/' + path2;
         }
 
         /// <summary>

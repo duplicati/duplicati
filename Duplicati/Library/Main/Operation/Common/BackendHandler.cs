@@ -247,7 +247,16 @@ namespace Duplicati.Library.Main.Operation.Common
                             if (indexFile.IsRetry)
                                 await RenameFileAfterErrorAsync(indexFile);
 
-                            return await DoPut(indexFile);
+                            var res = await DoPut(indexFile);
+
+                            // Register that the index file is tracking the block file
+                            await m_database.AddIndexBlockLinkAsync(
+                                ix.VolumeID,
+                                await m_database.GetRemoteVolumeIDAsync(fe.RemoteFilename)
+                            );
+
+
+                            return res;
                         });
                     }
 

@@ -85,7 +85,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 if (lst.Count == 0)
                                 {
                                     // No more targets, make one
-                                    target = new VolumeUploadRequest(new BlockVolumeWriter(options), true);
+									target = new VolumeUploadRequest(new BlockVolumeWriter(options), source.IndexVolume == null ? null : new TemporaryIndexVolume(options));
                                     target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
                                 }
                                 else
@@ -94,12 +94,19 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     target = lst[0];
                                     lst.RemoveAt(0);
                                 }
-                            }
 
+                                // We copy all the blocklisthashes, which may create duplicates
+                                // but otherwise we need to query all hashes to see if they are blocklisthashes
+                                if (source.IndexVolume != null)
+                                    source.IndexVolume.CopyTo(target.IndexVolume, true);
+                            }
 
                             var len = rd.ReadBlock(file.Key, buffer);
                             target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);
                             await database.MoveBlockToVolumeAsync(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID);
+
+                            if (target.IndexVolume != null)
+                                target.IndexVolume.AddBlock(file.Key, len);
 
                             if (target.BlockVolume.Filesize > options.VolumeSize - options.Blocksize)
                             {
@@ -117,7 +124,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                     // Re-inject the target if it has content
                     if (target != null)
                         lst.Insert(lst.Count == 0 ? 0 : 1, target);
-
                 }
 
                 foreach(var n in lst)

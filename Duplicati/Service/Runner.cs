@@ -80,11 +80,14 @@ namespace Duplicati.Service
 
                         m_reportMessage(string.Format("Starting process {0} with cmd args {1}", exec, cmdargs), false);
 
-                        var pr = new System.Diagnostics.ProcessStartInfo(exec, cmdargs);
-                        pr.UseShellExecute = false;
-                        pr.RedirectStandardInput = true;
-                        pr.RedirectStandardOutput = true;
-                        pr.WorkingDirectory = path;
+                        var pr = new System.Diagnostics.ProcessStartInfo(exec, cmdargs)
+                        {
+                            UseShellExecute = false,
+                            RedirectStandardInput = true,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = false,
+                            WorkingDirectory = path
+                        };
 
                         if (!m_terminate)
                             m_process = System.Diagnostics.Process.Start(pr);

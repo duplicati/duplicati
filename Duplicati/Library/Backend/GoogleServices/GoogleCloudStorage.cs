@@ -15,13 +15,17 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using System.Net;
-using Duplicati.Library.Utility;
-using Newtonsoft.Json;
 using System.Text;
+
+using Newtonsoft.Json;
+
 using Duplicati.Library.Backend.GoogleServices;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+
+
 
 namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
@@ -33,34 +37,6 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         private const string LOCATION_OPTION = "gcs-location";
         private const string STORAGECLASS_OPTION = "gcs-storage-class";
 
-        private const string API_URL = "https://www.googleapis.com/storage/v1";
-        private const string UPLOAD_API_URL = "https://www.googleapis.com/upload/storage/v1";
-
-        // From: https://cloud.google.com/storage/docs/bucket-locations
-        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_LOCATIONS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("(default)", null),
-            new KeyValuePair<string, string>("Europe", "EU"),
-            new KeyValuePair<string, string>("United States", "US"),
-            new KeyValuePair<string, string>("Asia", "ASIA"),
-
-            //Regional buckets: https://cloud.google.com/storage/docs/regional-buckets
-            new KeyValuePair<string, string>("Eastern Asia-Pacific", "ASIA-EAST1"),
-            new KeyValuePair<string, string>("Central United States 1", "US-CENTRAL1"),
-            new KeyValuePair<string, string>("Central United States 2", "US-CENTRAL2"),
-            new KeyValuePair<string, string>("Eastern United States 1", "US-EAST1"),
-            new KeyValuePair<string, string>("Eastern United States 2", "US-EAST2"),
-            new KeyValuePair<string, string>("Eastern United States 3", "US-EAST3"),
-            new KeyValuePair<string, string>("Western United States", "US-WEST1"),
-        };
-
-
-        public static readonly KeyValuePair<string, string>[] KNOWN_GCS_STORAGE_CLASSES = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("(default)", null),
-            new KeyValuePair<string, string>("Standard", "STANDARD"),
-            new KeyValuePair<string, string>("Durable Reduced Availability (DRA)", "DURABLE_REDUCED_AVAILABILITY"),
-            new KeyValuePair<string, string>("Nearline", "NEARLINE"),
-        };
-
         private readonly string m_bucket;
         private readonly string m_prefix;
         private readonly string m_project;
@@ -68,6 +44,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         private readonly string m_location;
         private readonly string m_storage_class;
+
         public GoogleCloudStorage()
         {
         }
@@ -147,12 +124,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         #region IBackend implementation
         public IEnumerable<IFileEntry> List()
         {
-            string token = null;
-            do
+            var url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix));
+            while (true)
             {
-                var url = string.Format("{0}/b/{1}/o?prefix={2}", API_URL, m_bucket, Library.Utility.Uri.UrlEncode(m_prefix));
-                if (!string.IsNullOrEmpty(token))
-                    url += string.Format("&pageToken={0}", token);
                 var resp = HandleListExceptions(() => m_oauth.ReadJSONResponse<ListBucketResponse>(url));
 
                 if (resp.items != null)
@@ -169,9 +143,11 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                             yield return new FileEntry(name, f.size.Value, f.updated.Value, f.updated.Value);
                     }
 
-                token = resp.nextPageToken;
-
-            } while (!string.IsNullOrEmpty(token));
+                var token = resp.nextPageToken;
+                if (string.IsNullOrWhiteSpace(token))
+                    break;
+                url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix), token);
+            };
         }
 
         public void Put(string remotename, string filename)
@@ -187,8 +163,8 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         }
         public void Delete(string remotename)
         {
-            var url = string.Format("{0}/b/{1}/o/{2}", API_URL, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
-            var req = m_oauth.CreateRequest(url);
+
+            var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.DeleteUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)));
             req.Method = "DELETE";
 
             m_oauth.ReadJSONResponse<object>(req);
@@ -211,9 +187,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 storageClass = m_storage_class
             }));
 
-            var url = string.Format("{0}/b?project={1}", API_URL, m_project);
-
-            var req = m_oauth.CreateRequest(url);
+            var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.CreateFolderUrl(m_project));
             req.Method = "POST";
             req.ContentLength = data.Length;
             req.ContentType = "application/json; charset=UTF-8";
@@ -243,9 +217,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 StringBuilder locations = new StringBuilder();
                 StringBuilder storageClasses = new StringBuilder();
 
-                foreach (KeyValuePair<string, string> s in KNOWN_GCS_LOCATIONS)
+                foreach (KeyValuePair<string, string> s in WebApi.GoogleCloudStorage.KNOWN_GCS_LOCATIONS)
                     locations.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
-                foreach (KeyValuePair<string, string> s in KNOWN_GCS_STORAGE_CLASSES)
+                foreach (KeyValuePair<string, string> s in WebApi.GoogleCloudStorage.KNOWN_GCS_STORAGE_CLASSES)
                     storageClasses.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
@@ -263,28 +237,31 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public string[] DNSName
         {
-            get { return new string[] { new System.Uri(UPLOAD_API_URL).Host, new System.Uri(API_URL).Host }; }
+            get
+            {
+                return WebApi.GoogleCloudStorage.Hosts();
+            }
         }
 
         #endregion
 
         public void Put(string remotename, System.IO.Stream stream)
         {
-            var url = string.Format("{0}/b/{1}/o?uploadType=resumable", UPLOAD_API_URL, m_bucket);
-            var item = new BucketResourceItem() { name = m_prefix + remotename };
 
+            var item = new BucketResourceItem { name = m_prefix + remotename };
+
+            var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
             var res = GoogleCommon.ChunckedUploadWithResume<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");
-
         }
 
         public void Get(string remotename, System.IO.Stream stream)
         {
             try
             {
-                var url = string.Format("{0}/b/{1}/o/{2}?alt=media", API_URL, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
+                var url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)); 
                 var req = m_oauth.CreateRequest(url);
                 var areq = new AsyncHttpRequest(req);
 
@@ -299,7 +276,6 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 else
                     throw;
             }
-
         }
 
         public void Rename(string oldname, string newname)
@@ -309,8 +285,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 name = m_prefix + newname,
             }));
 
-            var url = string.Format("{0}/b/{1}/o/{2}", API_URL, m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + oldname));
-            var req = m_oauth.CreateRequest(url);
+            var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.RenameUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + oldname)));
             req.Method = "PATCH";
             req.ContentLength = data.Length;
             req.ContentType = "application/json; charset=UTF-8";

@@ -109,11 +109,13 @@ namespace Duplicati.Library.Main.Volumes
             using (var fs = compression.OpenRead(filename))
             {
                 int s;
+				var read = 0L;
                 while ((s = Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length)) != 0)
                 {
                     if (s != buffer.Length)
-                        throw new InvalidDataException("Premature End-of-stream encountered while reading blocklist hashes");
+						throw new InvalidDataException($"Premature End-of-stream encountered while reading blocklist hashes for {filename}. Got {s} bytes of {buffer.Length} at offset {read * buffer.Length}");
 
+					read++;
                     yield return Convert.ToBase64String(buffer);
                 }
 

@@ -70,7 +70,7 @@ namespace Duplicati.UnitTest
         {
             if (!DEBUG_OUTPUT)
                 TestContext.Progress.WriteLine(msg, args);
-            Console.WriteLine(msg, args);
+            Console.WriteLine("==> " + msg, args);
         }
 
         [OneTimeSetUp]
@@ -100,10 +100,10 @@ namespace Duplicati.UnitTest
                 //opts["blockhash-lookup-memory"] = "0";
                 //opts["filehash-lookup-memory"] = "0";
                 //opts["metadatahash-lookup-memory"] = "0";
-                //opts["disable-filepath-cache"] = "";
+                //opts["disable-filepath-cache"] = "true";
 
                 opts["passphrase"] = "123456";
-                opts["debug-output"] = "";
+                opts["debug-output"] = "true";
                 opts["log-file-log-level"] = nameof(Library.Logging.LogMessageType.Profiling);
                 opts["log-file"] = LOGFILE;
                 opts["dblock-size"] = "10mb";
@@ -111,6 +111,7 @@ namespace Duplicati.UnitTest
                 opts["blocksize"] = "10kb";
                 opts["backup-test-samples"] = "0";
                 opts["keep-versions"] = "100";
+                opts["unittest-mode"] = "true";
 
                 return opts;
             }

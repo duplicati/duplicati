@@ -65,9 +65,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="source">The stream to read from</param>
         /// <param name="target">The stream to write to</param>
-        public static void CopyStream(Stream source, Stream target)
+        public static long CopyStream(Stream source, Stream target)
         {
-            CopyStream(source, target, true);
+            return CopyStream(source, target, true);
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Utility
         /// <param name="target">The stream to write to</param>
         /// <param name="tryRewindSource">True if an attempt should be made to rewind the source stream, false otherwise</param>
         /// <param name="buf">Temporary buffer to use (optional)</param>
-        public static void CopyStream(Stream source, Stream target, bool tryRewindSource, byte[] buf = null)
+        public static long CopyStream(Stream source, Stream target, bool tryRewindSource, byte[] buf = null)
         {
             if (tryRewindSource && source.CanSeek)
                 try { source.Position = 0; }
@@ -89,8 +89,14 @@ namespace Duplicati.Library.Utility
             buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
 
             int read;
-            while ((read = source.Read(buf, 0, buf.Length)) != 0)
-                target.Write(buf, 0, read);
+			long total = 0;
+			while ((read = source.Read(buf, 0, buf.Length)) != 0)
+			{
+				target.Write(buf, 0, read);
+				total += read;
+			}
+
+			return total;
         }
 
         /// <summary>
@@ -872,9 +878,13 @@ namespace Duplicati.Library.Utility
 
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo("which", appname);
-                psi.RedirectStandardOutput = true;
-                psi.UseShellExecute = false;
+                var psi = new System.Diagnostics.ProcessStartInfo("which", appname)
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = false,
+                    RedirectStandardInput = false,
+                    UseShellExecute = false
+                };
 
                 var pi = System.Diagnostics.Process.Start(psi);
                 pi.WaitForExit(5000);
@@ -912,6 +922,8 @@ namespace Duplicati.Library.Utility
                         var psi = new System.Diagnostics.ProcessStartInfo("uname")
                         {
                             RedirectStandardOutput = true,
+                            RedirectStandardInput = false,
+                            RedirectStandardError = false,
                             UseShellExecute = false
                         };
 
@@ -941,9 +953,13 @@ namespace Duplicati.Library.Utility
 
                 try
                 {
-                    var psi = new System.Diagnostics.ProcessStartInfo("uname", "-a");
-                    psi.RedirectStandardOutput = true;
-                    psi.UseShellExecute = false;
+                    var psi = new System.Diagnostics.ProcessStartInfo("uname", "-a")
+                    {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = false,
+                        RedirectStandardInput = false,
+                        UseShellExecute = false
+                    };
 
                     var pi = System.Diagnostics.Process.Start(psi);
                     pi.WaitForExit(5000);

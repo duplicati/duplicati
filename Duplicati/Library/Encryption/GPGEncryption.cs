@@ -224,15 +224,17 @@ namespace Duplicati.Library.Encryption
         /// <param name="input">The input stream</param>
         private System.IO.Stream Execute(string args, System.IO.Stream input, bool encrypt)
         {
-            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-            psi.Arguments = args;
-            psi.CreateNoWindow = true;
-            psi.FileName = m_programpath;
-            psi.RedirectStandardError = true;
-            psi.RedirectStandardInput = true;
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                Arguments = args,
+                CreateNoWindow = true,
+                FileName = m_programpath,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+            };
 
 #if DEBUG
             psi.CreateNoWindow = false;

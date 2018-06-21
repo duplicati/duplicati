@@ -61,12 +61,12 @@ namespace Duplicati.Library.Main.Operation.Backup
     internal class VolumeUploadRequest : IUploadRequest
     {
         public BlockVolumeWriter BlockVolume { get; private set; }
-        public bool CreateIndexVolume { get; private set; }
+        public TemporaryIndexVolume IndexVolume { get; private set;}
 
-        public VolumeUploadRequest(BlockVolumeWriter blockvolume, bool createindexvolume)
+        public VolumeUploadRequest(BlockVolumeWriter blockvolume, TemporaryIndexVolume indexvolume)
         {
             BlockVolume = blockvolume;
-            CreateIndexVolume = createindexvolume;
+            IndexVolume = indexvolume;
         }
     }
    
@@ -100,15 +100,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (!await taskreader.ProgressAsync)
                             continue;
                         
-                        KeyValuePair<int, Task> task = default(KeyValuePair<int, Task>);
+                        var task = default(KeyValuePair<int, Task>);
                         if (req is VolumeUploadRequest)
                         {
                             lastSize = ((VolumeUploadRequest)req).BlockVolume.SourceSize;
 
-                            if (noIndexFiles || !((VolumeUploadRequest)req).CreateIndexVolume)
+                            if (noIndexFiles || ((VolumeUploadRequest)req).IndexVolume == null)
                                 task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, null));
                             else
-                                task = new KeyValuePair<int, Task>(2, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, name => IndexVolumeCreator.CreateIndexVolume(name, options, database)));
+                                task = new KeyValuePair<int, Task>(2, backend.UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, name => ((VolumeUploadRequest)req).IndexVolume.CreateVolume(name, options, database)));
                         }
                         else if (req is FilesetUploadRequest)
                             task = new KeyValuePair<int, Task>(1, backend.UploadFileAsync(((FilesetUploadRequest)req).Fileset));

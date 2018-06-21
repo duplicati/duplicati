@@ -87,6 +87,11 @@ namespace Duplicati.UnitTest
                 ProgressWriteLine("Running backup with {0} data added ...", Duplicati.Library.Utility.Utility.FormatSizeString(size));
                 using(new Library.Logging.Timer(LOGTAG, "BackupWithDataAdded", string.Format("Backup with {0} data added", Duplicati.Library.Utility.Utility.FormatSizeString(size))))
                     Duplicati.CommandLine.Program.RealMain(backupargs);
+
+                ProgressWriteLine("Testing data ...");
+                using (new Library.Logging.Timer(LOGTAG, "TestRemoteData", "Test remote data"))
+                    if (Duplicati.CommandLine.Program.RealMain((new string[] { "test", target, "all" }.Union(opts)).ToArray()) != 0)
+                        throw new Exception("Failed during remote verification");
             }
 
             ProgressWriteLine("Running unchanged backup ...");
@@ -134,7 +139,7 @@ namespace Duplicati.UnitTest
                     Duplicati.CommandLine.Program.RealMain(backupargs);                
             }
 
-            ProgressWriteLine(LOGTAG, "CompactingData", "Compacting data ...");
+            ProgressWriteLine("Compacting data ...");
             using(new Library.Logging.Timer(LOGTAG, "Compacting", "Compacting"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "compact", target, "--small-file-max-count=2" }.Union(opts)).ToArray());
 

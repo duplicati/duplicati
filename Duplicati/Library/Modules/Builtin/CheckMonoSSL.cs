@@ -129,8 +129,10 @@ namespace Duplicati.Library.Modules.Builtin
                     try
                     {
                         var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "mozroots.exe");
-                        var pi = new System.Diagnostics.ProcessStartInfo(path, "--import --sync --quiet");
-                        pi.UseShellExecute = false;
+                        var pi = new System.Diagnostics.ProcessStartInfo(path, "--import --sync --quiet")
+                        {
+                            UseShellExecute = false
+                        };
                         var p = System.Diagnostics.Process.Start(pi);
                         p.WaitForExit((int)TimeSpan.FromMinutes(5).TotalMilliseconds);
                     }

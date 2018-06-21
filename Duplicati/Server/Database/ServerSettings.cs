@@ -52,6 +52,7 @@ namespace Duplicati.Server.Database
             public const string UPDATE_CHANNEL = "update-channel";
             public const string USAGE_REPORTER_LEVEL = "usage-reporter-level";
 			public const string HAS_ASKED_FOR_PASSWORD_PROTECTION = "has-asked-for-password-protection";
+            public const string DISABLE_TRAY_ICON_LOGIN = "disable-tray-icon-login";
 		}
 
         private readonly Dictionary<string, string> m_values;
@@ -250,6 +251,20 @@ namespace Duplicati.Server.Database
             {
                 lock(m_connection.m_lock)
                     m_values[CONST.SERVER_PORT_CHANGED] = value.ToString();
+                SaveSettings();
+            }
+        }
+
+        public bool DisableTrayIconLogin
+        {
+            get
+            {
+                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.DISABLE_TRAY_ICON_LOGIN], false);
+            }
+            set
+            {
+                lock (m_connection.m_lock)
+                    m_values[CONST.DISABLE_TRAY_ICON_LOGIN] = value.ToString();
                 SaveSettings();
             }
         }

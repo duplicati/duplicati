@@ -61,9 +61,9 @@ namespace Duplicati.UnitTest
         {
             var path1 = "/a";
             var path2 = "b/";
-            Assert.AreEqual("/a/b/", Library.Utility.Uri.ConcatPaths(path1, path2));
-            Assert.AreEqual("/a", Library.Utility.Uri.ConcatPaths(path1, null));
-            Assert.AreEqual("/b/", Library.Utility.Uri.ConcatPaths(string.Empty, path2));
+            Assert.AreEqual("/a/b/", Library.Utility.UrlPath.Create(path1).Append(path2).ToString());
+            Assert.AreEqual("/a", Library.Utility.UrlPath.Create(path1).Append(null).ToString());
+            Assert.AreEqual("/b/", Library.Utility.UrlPath.Create(string.Empty).Append(path2).ToString());
         }
     }
 }

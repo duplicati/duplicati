@@ -199,14 +199,17 @@ namespace Duplicati.Library.Modules.Builtin
         {
             try
             {
-                System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo(scriptpath);
-                psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-                psi.CreateNoWindow = true;
-                psi.UseShellExecute = false;
-                psi.RedirectStandardOutput = true;
-                psi.RedirectStandardError = true;
+                System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo(scriptpath)
+                {
+                    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    RedirectStandardInput = false
+                };
 
-                foreach(KeyValuePair<string, string> kv in options)
+                foreach (KeyValuePair<string, string> kv in options)
                     psi.EnvironmentVariables["DUPLICATI__" + kv.Key.Replace('-', '_')] = kv.Value;
 
                 if (!options.ContainsKey("backup-name"))
