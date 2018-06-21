@@ -596,10 +596,9 @@ namespace Duplicati.Server
 #else
                 var useDatabaseEncryption = !commandlineOptions.ContainsKey("unencrypted-database") || !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
 #endif
-                con.ConnectionString = "Data Source=" + DatabasePath;
 
                 //Attempt to open the database, handling any encryption present
-                Duplicati.Library.SQLiteHelper.SQLiteLoader.OpenDatabase(con, useDatabaseEncryption, dbPassword);
+                Duplicati.Library.SQLiteHelper.SQLiteLoader.OpenDatabase(con, DatabasePath, useDatabaseEncryption, dbPassword);
 
                 Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Database.Connection));
             }

@@ -39,9 +39,10 @@ namespace Duplicati.Library.SQLiteHelper
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>
         /// <param name="con">The SQLite connection object</param>
+        /// <param name="DatabasePath">The location of Duplicati's database.</param>
         /// <param name="useDatabaseEncryption">Specify if database is encrypted</param>
         /// <param name="password">Encryption password</param>
-        public static void OpenDatabase(System.Data.IDbConnection con, bool useDatabaseEncryption, string password)
+        public static void OpenDatabase(System.Data.IDbConnection con, string DatabasePath, bool useDatabaseEncryption, string password)
         {
             System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new Type[] { typeof(string) });
             string attemptedPassword;
@@ -57,14 +58,9 @@ namespace Duplicati.Library.SQLiteHelper
             try
             {
                 //Attempt to open in preferred state
-                con.Open();
+                OpenSQLiteFile(con, DatabasePath);
 
-                // Do a dummy query to make sure we have a working db
-                using (var cmd = con.CreateCommand())
-                {
-                    cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
-                    cmd.ExecuteScalar();
-                }
+                TestSQLiteFile(con);
             }
             catch
             {
@@ -80,14 +76,9 @@ namespace Duplicati.Library.SQLiteHelper
                     con.Close();
                     if (setPwdMethod != null)
                         setPwdMethod.Invoke(con, new object[] { attemptedPassword });
-                    con.Open();
+                    OpenSQLiteFile(con, DatabasePath);
 
-                    // Do a dummy query to make sure we have a working db
-                    using (var cmd = con.CreateCommand())
-                    {
-                        cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
-                        cmd.ExecuteScalar();
-                    }
+                    TestSQLiteFile(con);
                 }
                 catch
                 {
@@ -126,8 +117,7 @@ namespace Duplicati.Library.SQLiteHelper
                 con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
                 if (!string.IsNullOrWhiteSpace(targetpath))
                 {
-                    con.ConnectionString = "Data Source=" + targetpath;
-                    con.Open();
+                    OpenSQLiteFile(con, targetpath);
 
                     // Try to set the temp_dir even tough it is deprecated
                     if (!string.IsNullOrWhiteSpace(tempdir))
@@ -238,6 +228,31 @@ namespace Duplicati.Library.SQLiteHelper
                 }
 
                 return m_type;
+            }
+        }
+
+        private static void OpenSQLiteFile(System.Data.IDbConnection con, string path)
+        {
+            con.ConnectionString = "Data Source=" + path;
+            con.Open();
+            SecureDatabasePermissions(path);
+        }
+
+        private static void SecureDatabasePermissions(string path)
+        {
+            if (!Library.Utility.Utility.IsClientWindows)
+            {
+                Mono.Unix.Native.Syscall.chmod(path, Mono.Unix.Native.FilePermissions.S_IRUSR | Mono.Unix.Native.FilePermissions.S_IWUSR);
+            }
+        }
+
+        private static void TestSQLiteFile(System.Data.IDbConnection con)
+        {
+            // Do a dummy query to make sure we have a working db
+            using (var cmd = con.CreateCommand())
+            {
+                cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
+                cmd.ExecuteScalar();
             }
         }
     }
