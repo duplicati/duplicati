@@ -66,7 +66,7 @@ namespace Duplicati.Library.Logging
             var remainingTime = m_maxIdleTime;
             while (!m_completed)
             {
-                await Task.Delay(new TimeSpan(Math.Max(TimeSpan.FromMilliseconds(500).Ticks, remainingTime)));
+                await Task.Delay(new TimeSpan(Math.Max(TimeSpan.FromMilliseconds(500).Ticks, remainingTime))).ConfigureAwait(false);
                 if (m_completed)
                     return;
                 if (m_lastEntry == null)
