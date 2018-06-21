@@ -155,15 +155,16 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         {
             lock (m_waitUntilLock)
             {
+                DateTime oldValue;
+
                 if (!string.IsNullOrEmpty(remotename))
                 {
-                    DateTime oldValue;
-                    if (m_waitUntilRemotename.TryGetValue(remotename, out oldValue) && oldValue > value)
-                        return;
-                    m_waitUntilRemotename[remotename] = value;
+                    if (!m_waitUntilRemotename.TryGetValue(remotename, out oldValue) || value > oldValue)
+                        m_waitUntilRemotename[remotename] = value;
                 }
 
-                m_waitUntilAuthId[m_authid] = value;
+                if (!m_waitUntilAuthId.TryGetValue(m_authid, out oldValue) || value > oldValue)
+                    m_waitUntilAuthId[m_authid] = value;
             }
         }
 
