@@ -1599,7 +1599,7 @@ namespace Duplicati.Library.Utility
         /// <param name="runWithBash"></param>
         public static Exception ExecuteCommand(string folderLocation, string commandFile, bool runWithBash = false)
         {
-            string commandFilePath = folderLocation + "\\" + commandFile;
+            string commandFilePath = Path.Combine(folderLocation, commandFile);
 
             try
             {
