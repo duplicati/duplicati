@@ -33,7 +33,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
-    <DefineConstants>_NOTWINDOWS</DefineConstants>
+    <DefineConstants>_NOT_WINDOWS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Duplicati.Library.SQLiteHelper
@@ -34,6 +35,9 @@ namespace Duplicati.Library.SQLiteHelper
         /// A cached copy of the type
         /// </summary>
         private static Type m_type = null;
+
+
+        private const string SQLiteAssembly = "System.Data.SQLite.dll";
 
         /// <summary>
         /// Helper method with logic to handle opening a database in possibly encrypted format
@@ -163,7 +167,6 @@ namespace Duplicati.Library.SQLiteHelper
             {
                 if (m_type == null)
                 {
-                    var filename = "System.Data.SQLite.dll";
                     var basePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
 
                     // Set this to make SQLite preload automatically
@@ -177,12 +180,12 @@ namespace Duplicati.Library.SQLiteHelper
                         //If we run with MS.Net we can use the mixed mode assemblies
                         if (Environment.Is64BitProcess)
                         {
-                            if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
+                            if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), SQLiteAssembly)))
                                 assemblyPath = System.IO.Path.Combine(basePath, "win64");
                         }
                         else
                         {
-                            if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
+                            if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), SQLiteAssembly)))
                                 assemblyPath = System.IO.Path.Combine(basePath, "win32");
                         }
 
@@ -228,7 +231,7 @@ namespace Duplicati.Library.SQLiteHelper
                         }
                     }
 
-                    m_type = System.Reflection.Assembly.LoadFile(System.IO.Path.Combine(assemblyPath, filename)).GetType("System.Data.SQLite.SQLiteConnection");
+                    m_type = System.Reflection.Assembly.LoadFile(System.IO.Path.Combine(assemblyPath, SQLiteAssembly)).GetType("System.Data.SQLite.SQLiteConnection");
                 }
 
                 return m_type;
@@ -237,11 +240,21 @@ namespace Duplicati.Library.SQLiteHelper
 
         private static void OpenSQLiteFile(System.Data.IDbConnection con, string path)
         {
+            // Check if SQLite database exists before opening a connection to it.
+            // This information is used to 'fix' permissions on a newly created file.
+            #if _NOT_WINDOWS
+            bool fileExists = false;
+            if (!Library.Utility.Utility.IsClientWindows)
+            {
+                fileExists = File.Exists(path);
+            }
+            #endif
+
             con.ConnectionString = "Data Source=" + path;
             con.Open();
 
-            #if _NOTWINDOWS
-            if (!Library.Utility.Utility.IsClientWindows)
+            #if _NOT_WINDOWS
+            if (!Library.Utility.Utility.IsClientWindows && !fileExists)
             {
                 Mono.Unix.Native.Syscall.chmod(path, Mono.Unix.Native.FilePermissions.S_IRUSR | Mono.Unix.Native.FilePermissions.S_IWUSR);
             }
