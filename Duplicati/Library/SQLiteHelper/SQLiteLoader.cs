@@ -44,7 +44,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="password">Encryption password</param>
         public static void OpenDatabase(System.Data.IDbConnection con, string DatabasePath, bool useDatabaseEncryption, string password)
         {
-            System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new Type[] { typeof(string) });
+            System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new [] { typeof(string) });
             string attemptedPassword;
 
             if (!useDatabaseEncryption || string.IsNullOrEmpty(password))
@@ -91,7 +91,7 @@ namespace Duplicati.Library.SQLiteHelper
                     throw; //Report original error
 
                 //The open method succeeded with the non-default method, now change the password
-                System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new Type[] { typeof(string) });
+                System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new [] { typeof(string) });
                 changePwdMethod.Invoke(con, new object[] { useDatabaseEncryption ? password : null });
             }
         }
