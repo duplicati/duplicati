@@ -55,7 +55,6 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         private readonly TimeSpan m_delayTimeSpan;
 
         private static readonly object m_waitUntilLock;
-        private static bool m_waitUntilIsFirst;
         private static Dictionary<string, DateTime> m_waitUntilAuthId;
         private static Dictionary<string, DateTime> m_waitUntilRemotename;
 
@@ -96,13 +95,6 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                 m_delayTimeSpan = new TimeSpan(0);
             else
                 m_delayTimeSpan = Library.Utility.Timeparser.ParseTimeSpan(delay);
-
-            lock (m_waitUntilLock)
-            {
-                if (m_waitUntilIsFirst)
-                    SetWaitUntil(null, DateTime.Now + m_delayTimeSpan);
-                m_waitUntilIsFirst = false;
-            }
 
             m_oauth = new OAuthHelper(m_authid, this.ProtocolKey) { AutoAuthHeader = true };
             m_userid = m_authid.Split(new string[] {":"}, StringSplitOptions.RemoveEmptyEntries).First();
