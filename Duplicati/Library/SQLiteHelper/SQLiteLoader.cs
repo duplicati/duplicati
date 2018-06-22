@@ -25,10 +25,10 @@ namespace Duplicati.Library.SQLiteHelper
 {
     public static class SQLiteLoader
     {
-		/// <summary>
+        /// <summary>
         /// The tag used for logging
         /// </summary>
-		private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
 
         /// <summary>
         /// A cached copy of the type
@@ -44,7 +44,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="password">Encryption password</param>
         public static void OpenDatabase(System.Data.IDbConnection con, string DatabasePath, bool useDatabaseEncryption, string password)
         {
-            System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new [] { typeof(string) });
+            System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new[] { typeof(string) });
             string attemptedPassword;
 
             if (!useDatabaseEncryption || string.IsNullOrEmpty(password))
@@ -91,7 +91,7 @@ namespace Duplicati.Library.SQLiteHelper
                     throw; //Report original error
 
                 //The open method succeeded with the non-default method, now change the password
-                System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new [] { typeof(string) });
+                System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new[] { typeof(string) });
                 changePwdMethod.Invoke(con, new object[] { useDatabaseEncryption ? password : null });
             }
         }
@@ -150,7 +150,7 @@ namespace Duplicati.Library.SQLiteHelper
                 System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", prev);
             }
 
-            
+
             return con;
         }
 
@@ -194,16 +194,18 @@ namespace Duplicati.Library.SQLiteHelper
                             catch { }
                         }
 
-                    } else {
+                    }
+                    else
+                    {
                         //On Mono, we try to find the Mono version of SQLite
-                        
+
                         //This secret environment variable can be used to support older installations
                         var envvalue = System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE");
                         if (!Utility.Utility.ParseBool(envvalue, envvalue != null))
                         {
-                            foreach(var asmversion in new string[] {"4.0.0.0", "2.0.0.0"})
+                            foreach (var asmversion in new string[] { "4.0.0.0", "2.0.0.0" })
                             {
-                                try 
+                                try
                                 {
                                     Type t = System.Reflection.Assembly.Load(string.Format("Mono.Data.Sqlite, Version={0}, Culture=neutral, PublicKeyToken=0738eb9f132ed756", asmversion)).GetType("Mono.Data.Sqlite.SqliteConnection");
                                     if (t != null && t.GetInterface("System.Data.IDbConnection", false) != null)
@@ -215,12 +217,14 @@ namespace Duplicati.Library.SQLiteHelper
                                             return m_type;
                                         }
                                     }
-                                    
-                                } catch {
+
+                                }
+                                catch
+                                {
                                 }
                             }
 
-							Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadSQLite", "Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadSQLite", "Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
                         }
                     }
 
@@ -235,15 +239,13 @@ namespace Duplicati.Library.SQLiteHelper
         {
             con.ConnectionString = "Data Source=" + path;
             con.Open();
-            SecureDatabasePermissions(path);
-        }
 
-        private static void SecureDatabasePermissions(string path)
-        {
+            #if _NOTWINDOWS
             if (!Library.Utility.Utility.IsClientWindows)
             {
                 Mono.Unix.Native.Syscall.chmod(path, Mono.Unix.Native.FilePermissions.S_IRUSR | Mono.Unix.Native.FilePermissions.S_IWUSR);
             }
+            #endif
         }
 
         private static void TestSQLiteFile(System.Data.IDbConnection con)

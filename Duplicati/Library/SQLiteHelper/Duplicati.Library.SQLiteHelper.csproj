@@ -32,9 +32,14 @@
     <ConsolePause>false</ConsolePause>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
+    <DefineConstants>_NOTWINDOWS</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(OS)' != 'Windows_NT' ">
     <Reference Include="Mono.Posix" />
   </ItemGroup>
   <ItemGroup>
