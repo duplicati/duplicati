@@ -59,11 +59,10 @@ namespace Duplicati.Library.Backend
         public FolderMetadata CreateFolder(string path)
         {
             var pa = new PathArg() { path = path };
-            var url = string.Format("{0}/files/create_folder", API_URL);
 
             try
             {
-                return PostAndGetJSONData<FolderMetadata>(url, pa);
+                return PostAndGetJSONData<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), pa);
             }
             catch (Exception ex)
             {
