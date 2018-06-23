@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, false);
+                HandleDropboxException(ex, false);
                 throw;
             }
         }
@@ -51,7 +51,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, false);
+                HandleDropboxException(ex, false);
                 throw;
             }
         }
@@ -67,7 +67,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, false);
+                HandleDropboxException(ex, false);
                 throw;
             }
         }
@@ -167,7 +167,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, true);
+                HandleDropboxException(ex, true);
                 throw;
             }
         }
@@ -186,7 +186,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, true);
+                HandleDropboxException(ex, true);
                 throw;
             }
         }
@@ -203,12 +203,12 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, true);
+                HandleDropboxException(ex, true);
                 throw;
             }
         }
 
-        private void handleDropboxException(Exception ex, bool filerequest)
+        private void HandleDropboxException(Exception ex, bool filerequest)
         {
             if (ex is WebException)
             {
