@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library
 {
-    public class OAuthHttpMessageHandler : WebRequestHandler
+    public class OAuthHttpMessageHandler : HttpClientHandler
     {
         /// <summary>
         /// Requests which contain a property with this name (in 'request.Properties') will not have the authentication header automatically added.

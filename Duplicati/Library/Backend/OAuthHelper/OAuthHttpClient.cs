@@ -90,6 +90,7 @@ namespace Duplicati.Library
         {
             OAuthHttpMessageHandler handler = new OAuthHttpMessageHandler(authid, protocolKey);
 
+            /* TODO-DNC - not supported https://github.com/dotnet/corefx/issues/26223
             // Set the read/write timeout
             if (HttpContextSettings.ReadWriteTimeout > TimeSpan.Zero)
             {
@@ -101,7 +102,7 @@ namespace Duplicati.Library
             {
                 handler.ServerCertificateValidationCallback = HttpContextSettings.CertificateValidator.ValidateServerCertficate;
             }
-
+            */
             return handler;
         }
     }
