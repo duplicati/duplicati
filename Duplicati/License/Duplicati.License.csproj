@@ -1,53 +1,20 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.License</RootNamespace>
-    <AssemblyName>Duplicati.License</AssemblyName>
-    <FileAlignment>512</FileAlignment>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <UpgradeBackupLocation />
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
-    <UseMSBuildEngine>false</UseMSBuildEngine>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>2.0.0.7</Version>
     <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
+    <Product>Duplicati.License</Product>
+    <Company>Duplicati Team</Company>
+    <Authors>Duplicati Team</Authors>
+    <Description>A license text reader for Duplicati</Description>
+    <PackageId>License</PackageId>
+    <AssemblyName>Duplicati.License</AssemblyName>
+    <RootNamespace>Duplicati.License</RootNamespace>
   </PropertyGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  
   <ItemGroup>
     <Content Include="..\..\thirdparty\alphavss\Homepage.txt">
       <Link>licenses\alphavss\Homepage.txt</Link>
@@ -395,28 +362,14 @@
       <Link>licenses\FasterHashing\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="LicenseEntry.cs" />
-    <Compile Include="LicenseReader.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VersionNumbers.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Duplicati.snk" />
-    <None Include="..\..\thirdparty\SharpCompress\licensedata.json">
+	<Content Include="..\..\thirdparty\SharpCompress\licensedata.json">
       <Link>licenses\SharpCompress\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="licenses\System.Net.FtpClient\" />
-  </ItemGroup>
+  
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
-  <ItemGroup />
+
 </Project>

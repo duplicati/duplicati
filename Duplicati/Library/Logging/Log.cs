@@ -421,6 +421,7 @@ namespace Duplicati.Library.Logging
             {
                 lock (m_lock)
                 {
+                    /* TODO-DNC - No supported Remoting - https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md
                     var cur = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LOGICAL_CONTEXT_KEY) as string;
                     if (cur == null || cur == m_root.InstanceID)
                         return m_root;
@@ -430,10 +431,15 @@ namespace Duplicati.Library.Logging
                         throw new Exception("Unable to find log in lookup table, this may be caused by attempting to transport call contexts between AppDomains (eg. with remoting calls)");
 
                     return sc;
+                    */
+                    throw new NotImplementedException();
                 }
             }
             private set
             {
+                throw new NotImplementedException();
+                /* TODO-DNC - No supported Remoting - https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md
+                    
                 lock (m_lock)
                 {
                     if (value != null)
@@ -447,7 +453,9 @@ namespace Duplicati.Library.Logging
                     }
                         
                 }
+                */
             }
         }
+    
     }
 }
