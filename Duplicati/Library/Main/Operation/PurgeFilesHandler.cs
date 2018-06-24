@@ -82,7 +82,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (filtercommand == null)
                 {
-                    db.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, false);
+                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false, null);
 
                     if (m_options.NoBackendverification)
                         FilelistProcessor.VerifyLocalList(backend, m_options, db, m_result.BackendWriter);
@@ -156,7 +156,7 @@ namespace Duplicati.Library.Main.Operation
 
                                     Logging.Log.WriteInformationMessage(LOGTAG, "ReplacingFileset", "Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize));
 
-                                    db.WriteFileset(vol, tr, newids.Item2);
+                                    db.WriteFileset(vol, newids.Item2, tr);
 
                                     m_result.RemovedFileSize += tempset.RemovedFileSize;
                                     m_result.RemovedFileCount += tempset.RemovedFileCount;

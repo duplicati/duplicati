@@ -14,9 +14,9 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RecreateDatabaseHandler>();
 
-        private string m_backendurl;
-        private Options m_options;
-        private RecreateDatabaseResults m_result;
+        private readonly string m_backendurl;
+        private readonly Options m_options;
+        private readonly RecreateDatabaseResults m_result;
 
         public delegate IEnumerable<KeyValuePair<long, IParsedVolume>> NumberedFilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
         public delegate void BlockVolumePostProcessor(string volumename,BlockVolumeReader reader);
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.SetDatabase(db);
 
                 if (db.FindMatchingFilesets(m_options.Time, m_options.Version).Any())
-                    throw new UserInformationException(string.Format("The version(s) being updated to, already exists"), "UpdateVersionAlreadyExists");
+                    throw new UserInformationException("The version(s) being updated to, already exists", "UpdateVersionAlreadyExists");
 
                 // Mark as incomplete
                 db.PartiallyRecreated = true;
@@ -140,13 +140,13 @@ namespace Duplicati.Library.Main.Operation
                     select n;
 
                 if (filelists.Count() <= 0)
-                    throw new UserInformationException(string.Format("No filelists found on the remote destination"), "EmptyRemoteLocation");
+                    throw new UserInformationException("No filelists found on the remote destination", "EmptyRemoteLocation");
                 
                 if (filelistfilter != null)
                     filelists = filelistfilter(filelists).Select(x => x.Value).ToArray();
 
                 if (filelists.Count() <= 0)
-                    throw new UserInformationException(string.Format("No filelists"), "NoMatchingRemoteFilelists");
+                    throw new UserInformationException("No filelists", "NoMatchingRemoteFilelists");
 
                 // If we are updating, all files should be accounted for
                 foreach(var fl in remotefiles)
@@ -293,6 +293,10 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.EndTime = DateTime.UtcNow;
                                 throw;
                             }
+
+                            if (m_options.UnittestMode)
+                                throw;
+
                         }
 
                     //Make sure we write the config
@@ -351,21 +355,23 @@ namespace Duplicati.Library.Main.Operation
                                             if (volumeID < 0)
                                                 volumeID = ProbeForMatchingFilename(ref filename, restoredb);
 
+											var missing = false;                                            
                                             // Still broken, register a missing item
                                             if (volumeID < 0)
                                             {
                                                 var p = VolumeBase.ParseFilename(filename);
                                                 if (p == null)
                                                     throw new Exception(string.Format("Unable to parse filename: {0}", filename));
-                                                Logging.Log.WriteErrorMessage(LOGTAG, "MissingFileDetected", null, "Remote file referenced as {0}, but not found in list, registering a missing remote file", filename);
-                                                volumeID = restoredb.RegisterRemoteVolume(filename, p.FileType, RemoteVolumeState.Verified, tr);
+    											Logging.Log.WriteErrorMessage(LOGTAG, "MissingFileDetected", null, "Remote file referenced as {0} by {1}, but not found in list, registering a missing remote file", filename, sf.Name);
+												missing = true;
+											    volumeID = restoredb.RegisterRemoteVolume(filename, p.FileType, RemoteVolumeState.Temporary, tr);
                                             }
                                             
                                             //Add all block/volume mappings
                                             foreach(var b in a.Blocks)
                                                 restoredb.UpdateBlock(b.Key, b.Value, volumeID, tr);
 
-                                            restoredb.UpdateRemoteVolume(filename, RemoteVolumeState.Verified, a.Length, a.Hash, tr);
+										    restoredb.UpdateRemoteVolume(filename, missing ? RemoteVolumeState.Temporary : RemoteVolumeState.Verified, a.Length, a.Hash, tr);
                                             restoredb.AddIndexBlockLink(restoredb.GetRemoteVolumeID(sf.Name), volumeID, tr);
                                         }
                                 
@@ -384,6 +390,9 @@ namespace Duplicati.Library.Main.Operation
                                     m_result.EndTime = DateTime.UtcNow;
                                     throw;
                                 }
+
+                                if (m_options.UnittestMode)
+                                    throw;
                             }
 
                         using(new Logging.Timer(LOGTAG, "CommitRecreateDb", "CommitRecreatedDb"))
@@ -392,6 +401,10 @@ namespace Duplicati.Library.Main.Operation
                         // TODO: In some cases, we can avoid downloading all index files, 
                         // if we are lucky and pick the right ones
                     }
+
+                    // In some cases we have a stale reference from an index file to a deleted block file
+                    if (!m_options.UnittestMode)
+                        restoredb.CleanupMissingVolumes();
 
                     // We have now grabbed as much information as possible,
                     // if we are still missing data, we must now fetch block files
@@ -406,8 +419,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             var fullist = ": " + string.Join(", ", lst.Select(x => x.Name));
                             switch (i)
-                            {
-                                
+                            {                                
                                 case 0:
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingRequiredBlocklistVolumes", "Processing required {0} blocklist volumes{1}", lst.Count, fullist);
                                     Logging.Log.WriteInformationMessage(LOGTAG, "ProcessingRequiredBlocklistVolumes", "Processing required {0} blocklist volumes{1}", lst.Count, m_options.FullResult ? fullist : string.Empty);
@@ -424,47 +436,62 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         var progress = 0;
-                        foreach(var sf in new AsyncDownloader(lst, backend))
-                            using(var tmpfile = sf.TempFile)
-                            using(var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
-                            using(var tr = restoredb.BeginTransaction())
+                        foreach (var sf in new AsyncDownloader(lst, backend))
+                        {
+                            try
                             {
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                using (var tmpfile = sf.TempFile)
+                                using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
+                                using (var tr = restoredb.BeginTransaction())
                                 {
-                                    backend.WaitForComplete(restoredb, null);
-                                    m_result.EndTime = DateTime.UtcNow;
-                                    return;
-                                }    
-                            
-                                progress++;
-                                m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
+                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    {
+                                        backend.WaitForComplete(restoredb, null);
+                                        m_result.EndTime = DateTime.UtcNow;
+                                        return;
+                                    }
 
-                                var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
+                                    progress++;
+                                    m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
 
-                                restoredb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Uploaded, sf.Size, sf.Hash, tr);
-                            
-                                // Update the block table so we know about the block/volume map
-                                foreach(var h in rd.Blocks)
-                                    restoredb.UpdateBlock(h.Key, h.Value, volumeid, tr);
-                            
-                                // Grab all known blocklists from the volume
-                                foreach(var blocklisthash in restoredb.GetBlockLists(volumeid))
-                                    restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr);
-    
-                                // Update tables so we know if we are done
-                                restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
-                        
-                                using(new Logging.Timer(LOGTAG, "CommitRestoredBlocklist", "CommitRestoredBlocklist"))
-                                    tr.Commit();
-    
-                                //At this point we can patch files with data from the block volume
-                                if (blockprocessor != null)
-                                    blockprocessor(sf.Name, rd);
+                                    var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
+
+                                    restoredb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Uploaded, sf.Size, sf.Hash, tr);
+
+                                    // Update the block table so we know about the block/volume map
+                                    foreach (var h in rd.Blocks)
+                                        restoredb.UpdateBlock(h.Key, h.Value, volumeid, tr);
+
+                                    // Grab all known blocklists from the volume
+                                    foreach (var blocklisthash in restoredb.GetBlockLists(volumeid))
+                                        restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr);
+
+                                    // Update tables so we know if we are done
+                                    restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
+
+                                    using (new Logging.Timer(LOGTAG, "CommitRestoredBlocklist", "CommitRestoredBlocklist"))
+                                        tr.Commit();
+
+                                    //At this point we can patch files with data from the block volume
+                                    if (blockprocessor != null)
+                                        blockprocessor(sf.Name, rd);
+                                }
                             }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "FailedRebuildingWithFile", ex, "Failed to use information from {0} to rebuild database: {1}", sf.Name, ex.Message);
+                                if (m_options.UnittestMode)
+                                    throw;
+                            }
+                        }
                     }
                 }
-                
+
                 backend.WaitForComplete(restoredb, null);
+
+				// In some cases we have a stale reference from an index file to a deleted block file
+                if (!m_options.UnittestMode)
+    				restoredb.CleanupMissingVolumes();
 
                 if (m_options.RepairOnlyPaths)
                 {
@@ -486,7 +513,7 @@ namespace Duplicati.Library.Main.Operation
                             throw new UserInformationException(string.Format("Recreated database has missing blocks and {0} broken filelists. Consider using \"{1}\" and \"{2}\" to purge broken data from the remote store and the database.", broken, "list-broken-files", "purge-broken-files"), "DatabaseIsBrokenConsiderPurge");
                     }
 
-                    restoredb.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, true);
+                    restoredb.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "RecreateCompleted", "Recreate completed, and consistency checks completed, marking database as complete");
 

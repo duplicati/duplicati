@@ -36,6 +36,12 @@ namespace Duplicati.Library.Utility
         /// <param name="result">The match result</param>
         /// <param name="match">The filter that matched</param>
         bool Matches(string entry, out bool result, out IFilter match);
+
+        /// <summary>
+        /// Returns a MD5 hash string representing the filter
+        /// </summary>
+        /// <returns></returns>
+        string GetFilterHash();
     }
 }
 

@@ -20,7 +20,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -74,6 +73,16 @@ namespace Duplicati.Library.Main
         /// </summary>
         private const string DEFAULT_LOG_RETENTION = "30D";
 
+        /// <summary>
+        /// The default number of compressor instances
+        /// </summary>
+        private readonly int DEFAULT_COMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
+
+        /// <summary>
+        /// The default number of hasher instances
+        /// </summary>
+        private readonly int DEFAULT_BLOCK_HASHERS = Math.Max(1, Environment.ProcessorCount / 2);
+        
         /// <summary>
         /// The default threshold for warning about coming close to quota
         /// </summary>
@@ -169,15 +178,17 @@ namespace Duplicati.Library.Main
         private static string[] GetSupportedHashes()
         {
             var r = new List<string>();
-            foreach(var h in new string[] {"SHA1", "MD5", "SHA256", "SHA384", "SHA512"})
-            try 
+            foreach (var h in new string[] { "SHA1", "MD5", "SHA256", "SHA384", "SHA512" })
             {
-                var p = System.Security.Cryptography.HashAlgorithm.Create(h);
-                if (p != null)
-                    r.Add(h);
-            }
-            catch
-            {
+                try
+                {
+                    var p = System.Security.Cryptography.HashAlgorithm.Create(h);
+                    if (p != null)
+                        r.Add(h);
+                }
+                catch
+                {
+                }
             }
             
             return r.ToArray();
@@ -409,6 +420,7 @@ namespace Duplicati.Library.Main
                 var lst = new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("dblock-size", CommandLineArgument.ArgumentType.Size, Strings.Options.DblocksizeShort, Strings.Options.DblocksizeLong, DEFAULT_VOLUME_SIZE),
                     new CommandLineArgument("auto-cleanup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong, "false"),
+                    new CommandLineArgument("unittest-mode", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UnittestmodeShort, Strings.Options.UnittestmodeLong, "false"),
 
                     new CommandLineArgument("control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ControlfilesShort, Strings.Options.ControlfilesLong),
                     new CommandLineArgument("skip-file-hash-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipfilehashchecksShort, Strings.Options.SkipfilehashchecksLong, "false"),
@@ -482,8 +494,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
                     new CommandLineArgument("quota-warning-threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.QuotaWarningThresholdShort, Strings.Options.QuotaWarningThresholdLong, DEFAULT_QUOTA_WARNING_THRESHOLD.ToString()),
 
-                    new CommandLineArgument("default-filters", CommandLineArgument.ArgumentType.String, Strings.Options.DefaultFiltersShort, Strings.Options.DefaultFiltersLong(DefaultFilterSet.Windows.ToString(), DefaultFilterSet.OSX.ToString(), DefaultFilterSet.Linux.ToString(), DefaultFilterSet.All.ToString()), string.Empty, new[] { "default-filter" }),
-
                     new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, Strings.Options.SymlinkpolicyLong("store", "ignore", "follow"), Enum.GetName(typeof(SymlinkStrategy), SymlinkStrategy.Store), null, Enum.GetNames(typeof(SymlinkStrategy))),
                     new CommandLineArgument("hardlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.HardlinkpolicyShort, Strings.Options.HardlinkpolicyLong("first", "all", "none"), Enum.GetName(typeof(HardlinkStrategy), HardlinkStrategy.All), null, Enum.GetNames(typeof(HardlinkStrategy))),
                     new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, Strings.Options.ExcludefilesattributesLong(Enum.GetNames(typeof(System.IO.FileAttributes)))),
@@ -542,9 +552,17 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
 
+                    new CommandLineArgument("concurrency-max-threads", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencymaxthreadsShort, Strings.Options.ConcurrencymaxthreadsLong, "0"),
+                    new CommandLineArgument("concurrency-block-hashers", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencyblockhashersShort, Strings.Options.ConcurrencyblockhashersLong, DEFAULT_BLOCK_HASHERS.ToString()),
+                    new CommandLineArgument("concurrency-compressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencycompressorsShort, Strings.Options.ConcurrencycompressorsLong, DEFAULT_COMPRESSORS.ToString()),
+                    
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
                     new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
+
+                    new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
+                    new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong),
+                    new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
                 });
 
                 return lst;
@@ -598,6 +616,12 @@ namespace Duplicati.Library.Main
         /// A value indicating if orphan files are deleted automatically
         /// </summary>
         public bool AutoCleanup { get { return GetBool("auto-cleanup"); } }
+
+        /// <summary>
+        /// A value indicating if we are running in unittest mode
+        /// </summary>
+        public bool UnittestMode { get { return GetBool("unittest-mode"); } }
+
 
         /// <summary>
         /// Gets a list of files to add to the signature volumes
@@ -721,9 +745,11 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("tempdir") || string.IsNullOrEmpty(m_options["tempdir"]))
-                    return System.IO.Path.GetTempPath();
-                else
-                    return m_options["tempdir"];
+                {
+                    return Duplicati.Library.Utility.TempFolder.SystemTempPath;
+                }
+
+                return m_options["tempdir"];
             }
         }
 
@@ -1151,7 +1177,7 @@ namespace Duplicati.Library.Main
             }
         }
         /// <summary>
-        /// Gets the snapshot strategy to use
+        /// Gets the update sequence number (USN) strategy to use
         /// </summary>
         public OptimizationStrategy UsnStrategy
         {
@@ -1248,37 +1274,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        /// <summary>
-        /// Helper method to support filters with either a + or - prefix
-        /// </summary>
-        /// <returns>The IFilter instance.</returns>
-        /// <param name="msg">The filter string to parse.</param>
-        private static IFilter StringToIFilter(string msg)
-        {
-            if (string.IsNullOrWhiteSpace(msg))
-                return new FilterExpression();
-            if (msg[0] == '+')
-                return new FilterExpression(msg.Substring(1), true);
-            if (msg[0] == '-')
-                return new FilterExpression(msg.Substring(1), false);
-            return new FilterExpression(msg, true);
-        }
 
-        /// <summary>
-        /// Parses a log filter string, and returns the filter instance
-        /// </summary>
-        /// <returns>The log filter.</returns>
-        /// <param name="value">The filter string to parse.</param>
-        public static IFilter ParseLogFilter(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return new FilterExpression();
-
-            return value
-                .Split(new char[] { System.IO.Path.PathSeparator, ':', ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(StringToIFilter)
-                .Aggregate(FilterExpression.Combine);
-        }
 
         /// <summary>
         /// Parses a log level string
@@ -1305,7 +1301,7 @@ namespace Duplicati.Library.Main
             get
             {
                 m_options.TryGetValue("log-file-log-filter", out var value);
-                return ParseLogFilter(value);
+                return Library.Utility.FilterExpression.ParseLogFilter(value);
             }
         }
 
@@ -1318,7 +1314,7 @@ namespace Duplicati.Library.Main
             get
             {
                 m_options.TryGetValue("console-log-filter", out var value);
-                return ParseLogFilter(value);
+                return Library.Utility.FilterExpression.ParseLogFilter(value);
             }
         }
 
@@ -1479,16 +1475,24 @@ namespace Duplicati.Library.Main
                 return (int)blocksize;
             }
         }
+        
+		/// <summary>
+        /// Cache for the block hash size value, to avoid creating new hash instances just to get the size
+        /// </summary>
+		private KeyValuePair<string, int> m_cachedBlockHashSize;
 
         /// <summary>
-        /// Gets the size of the blockhash.
+        /// Gets the size of the blockhash in bytes.
         /// </summary>
         /// <value>The size of the blockhash.</value>
         public int BlockhashSize
         {
             get
             {
-                return Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8;
+				if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
+					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
+				
+				return m_cachedBlockHashSize.Value;
             }
         }
 
@@ -1531,6 +1535,22 @@ namespace Duplicati.Library.Main
         public bool SkipMetadata
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "skip-metadata"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if empty folders should be ignored
+        /// </summary>
+        public bool ExcludeEmptyFolders
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "exclude-empty-folders"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if empty folders should be ignored
+        /// </summary>
+        public bool RestoreSymlinkMetadata
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-symlink-metadata"); }
         }
 
         /// <summary>
@@ -1663,6 +1683,21 @@ namespace Duplicati.Library.Main
             }
         }
 
+        /// <summary>
+        /// List of filenames that are used to exclude a folder
+        /// </summary>
+        public string[] IgnoreFilenames
+        {
+            get
+            {
+                string v;
+                m_options.TryGetValue("ignore-filenames", out v);
+                if (string.IsNullOrEmpty(v))
+                    return null;
+
+                return v.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            }
+        }
         /// <summary>
         /// Alternate restore path
         /// </summary>
@@ -1915,6 +1950,62 @@ namespace Duplicati.Library.Main
                 return Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true);
             }
         }
+
+
+        /// <summary>
+        /// Gets the number of concurrent threads
+        /// </summary>
+        public int ConcurrencyMaxThreads
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-max-threads", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return 0;
+                else
+                    return int.Parse(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of concurrent block hashers
+        /// </summary>
+        public int ConcurrencyBlockHashers
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-block-hashers", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return DEFAULT_BLOCK_HASHERS;
+                else
+                    return Math.Max(1, int.Parse(value));
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of concurrent block hashers
+        /// </summary>
+        public int ConcurrencyCompressors
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-compressors", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return DEFAULT_COMPRESSORS;
+                else
+                    return Math.Max(1, int.Parse(value));
+            }
+        }
+
         /// <summary>
         /// Gets a lookup table with compression hints, the key is the file extension with the leading period
         /// </summary>
@@ -1924,8 +2015,7 @@ namespace Duplicati.Library.Main
             {
                 if (m_compressionHints == null)
                 {
-                    //Don't try again, if the file does not exist
-                    m_compressionHints = new Dictionary<string, CompressionHint>(Library.Utility.Utility.ClientFilenameStringComparer);
+                    var hints = new Dictionary<string, CompressionHint>(Library.Utility.Utility.ClientFilenameStringComparer);
 
                     string file;
                     if (!m_options.TryGetValue("compression-extension-file", out file))
@@ -1939,8 +2029,11 @@ namespace Duplicati.Library.Main
                             if (lix > 0)
                                 line = line.Substring(0, lix);
                             if (line.Length >= 2 && line[0] == '.')
-                                m_compressionHints[line] = CompressionHint.Noncompressible;
+                                hints[line] = CompressionHint.Noncompressible;
                         }
+
+                    //Don't try again, if the file does not exist
+                    m_compressionHints = hints;
                 }
 
                 return m_compressionHints;

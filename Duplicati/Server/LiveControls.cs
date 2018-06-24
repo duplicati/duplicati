@@ -158,7 +158,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The timer that is activated after a pause period.
         /// </summary>
-        private System.Threading.Timer m_waitTimer;
+        private readonly System.Threading.Timer m_waitTimer;
 
         /// <summary>
         /// The time that the current pause is expected to expire

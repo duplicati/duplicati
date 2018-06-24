@@ -15,6 +15,18 @@
 </div>
 
 <div class="input text">
+    <label for="openstack_version" translate>Keystone API version</label>
+
+    <select name="openstack_version" id="openstack_version" ng-model="$parent.openstack_version" ng-options="v as k + ' (' + v + ')' for (k, v) in openstack_versions | orderBy: k">
+    </select>
+
+</div>
+
+<div class="input text">
+    <label for="openstack_domainname" translate>Domain Name</label>
+    <input type="text" name="openstack_domainname" id="openstack_domainname" ng-model="$parent.openstack_domainname" placeholder="{{'User domain name' | translate}}"  />
+</div>
+<div class="input text">
     <label for="openstack_username" translate>Username</label>
     <input type="text" name="openstack_username" id="openstack_username" ng-model="$parent.Username" placeholder="{{'Authentication username' | translate}}"  />
 </div>

@@ -423,7 +423,7 @@ namespace Duplicati.Library.AutoUpdater
 
             var updates = version.RemoteURLS.ToList();
 
-            // If alternate update URLs are specified, 
+            // If alternate update URLs are specified,
             // we look for packages there as well
             if (AutoUpdateSettings.UsesAlternateURLs)
             {
@@ -616,7 +616,7 @@ namespace Duplicati.Library.AutoUpdater
                     if (string.IsNullOrWhiteSpace(relpath))
                         continue;
 
-                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparison))
                         continue;
 
                     FileEntry fe;
@@ -624,7 +624,7 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         var ignore = false;
                         foreach (var c in ignores)
-                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparision))
+                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparison))
                                 break;
 
                         if (ignore)
@@ -654,7 +654,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 var filteredpaths = paths
                     .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal))
-                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparison))
                     .Select(p => p.Key)
                     .ToList();
 
@@ -1104,10 +1104,7 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    ErrorDialog = false,
+                    ErrorDialog = false
                 };
                 pi.EnvironmentVariables.Clear();
 
@@ -1120,14 +1117,7 @@ namespace Duplicati.Library.AutoUpdater
                 pi.EnvironmentVariables["LOCALIZATION_FOLDER"] = InstalledBaseDir;
 
                 var proc = System.Diagnostics.Process.Start(pi);
-                var tasks = Task.WhenAll(
-                    Console.OpenStandardInput().CopyToAsync(proc.StandardInput.BaseStream),
-                    proc.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput()),
-                    proc.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError())
-                );
-
                 proc.WaitForExit();
-                tasks.Wait(1000);
 
                 if (proc.ExitCode != MAGIC_EXIT_CODE)
                     return proc.ExitCode;

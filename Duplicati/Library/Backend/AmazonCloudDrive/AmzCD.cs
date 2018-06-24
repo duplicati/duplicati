@@ -45,14 +45,14 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         private EndpointInfo m_endPointInfo;
         private ResourceModel m_curdir;
 
-        private string m_path;
-        private string[] m_labels;
+        private readonly string m_path;
+        private readonly string[] m_labels;
 
-        private OAuthHelper m_oauth;
+        private readonly OAuthHelper m_oauth;
         private Dictionary<string, string> m_filecache;
-        private string m_userid;
+        private readonly string m_userid;
         private DateTime m_waitUntil;
-        private TimeSpan m_delayTimeSpan;
+        private readonly TimeSpan m_delayTimeSpan;
 
         private enum RemoteOperation
         {

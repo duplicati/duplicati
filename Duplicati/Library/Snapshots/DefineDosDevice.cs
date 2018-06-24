@@ -59,11 +59,11 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The path that is mapped to the drive
         /// </summary>
-        private string m_targetPath;
+        private readonly string m_targetPath;
         /// <summary>
         /// A value indicating if the shell should be notified of changes
         /// </summary>
-        private bool m_shellBroadcast;
+        private readonly bool m_shellBroadcast;
 
         /// <summary>
         /// Gets the drive that this mapping represents

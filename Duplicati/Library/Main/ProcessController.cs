@@ -115,9 +115,13 @@ namespace Duplicati.Library.Main
                 try
                 {
                     // -s prevents sleep on AC, -i prevents sleep generally
-                    var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s");
-                    psi.RedirectStandardInput = true;
-                    psi.UseShellExecute = false;
+                    var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s")
+                    {
+                        RedirectStandardInput = true,
+                        RedirectStandardError = false,
+                        RedirectStandardOutput = false,
+                        UseShellExecute = false
+                    };
                     m_caffeinate = System.Diagnostics.Process.Start(psi);
                     m_runningSleepPrevention = true;
                 }
@@ -180,15 +184,25 @@ namespace Duplicati.Library.Main
                 if (Duplicati.Library.Utility.Utility.IsClientOSX)
                 {
                     var data = RunProcessAndGetResult("ps", $"-onice -p {pid}");
-                    m_originalNiceLevel = int.Parse(data.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Last());
+                    if (data.Item1 != 0)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BackgroundPriorityError", null, "Failed to get background IO priority, exitcode: {0}, stderr: {1}", data.Item1, data.Item3);
+                    }
+                    else
+                    {
+                        m_originalNiceLevel = int.Parse(data.Item2.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Last());
 
-                    data = RunProcessAndGetResult("renice", $"20 {pid}");
-                    m_hasEnabledBackgroundIOPriority = true;
+                        data = RunProcessAndGetResult("renice", $"20 -p {pid}");
+                        if (data.Item1 != 0)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackgroundPriorityError", null, "Failed to get background IO priority, exitcode: {0}, stderr: {1}", data.Item1, data.Item3);
+                        else
+                            m_hasEnabledBackgroundIOPriority = true;
+                    }
                 }
                 else
                 {
                     var data = RunProcessAndGetResult("ionice", $"-p {pid}");
-                    var results = data.Split(new char[] { ':', ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    var results = data.Item2.Split(new char[] { ':', ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                     var ioclass = results[0];
                     if (string.Equals(ioclass, "idle", StringComparison.OrdinalIgnoreCase))
                     {
@@ -326,18 +340,28 @@ namespace Duplicati.Library.Main
                 {
                     m_hasEnabledBackgroundIOPriority = false;
                     var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+                    Tuple<int, string, string> data;
+
                     if (Duplicati.Library.Utility.Utility.IsClientOSX)
                     {
-                        var data = RunProcessAndGetResult($"renice", $"{m_originalNiceLevel} {pid}");
+                        // TODO: We can only give lower priority, thus not reset it ...
+                        data = RunProcessAndGetResult($"renice", $"{m_originalNiceLevel} -p {pid}");
+                        if (data.Item1 != 0)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackgroundPriorityError", null, "Failed to reset background IO priority, exitcode: {0}, stderr: {1}", data.Item1, data.Item3);
                     }
                     else
                     {
-                        string data;
                         if (m_originalNiceLevel < 0)
                             data = RunProcessAndGetResult($"ionice", $"-c {m_originalNiceClass} -p {pid}");
                         else
                             data = RunProcessAndGetResult($"ionice", $"-c {m_originalNiceClass} -n {m_originalNiceLevel} -p {pid}");
+
+                        if (!string.IsNullOrWhiteSpace(data.Item3))
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackgroundPriorityError", null, "Failed to reset background IO priority, exitcode: {0}, stderr: {1}", data.Item1, data.Item3);
+
                     }
+
+
                 }
             }
         }
@@ -358,18 +382,29 @@ namespace Duplicati.Library.Main
         /// <returns>The stdout data.</returns>
         /// <param name="filename">The executable to invoke.</param>
         /// <param name="arguments">The commandline arguments.</param>
-        private static string RunProcessAndGetResult(string filename, string arguments)
+        private static Tuple<int, string, string> RunProcessAndGetResult(string filename, string arguments)
         {
-            var psi = new System.Diagnostics.ProcessStartInfo(filename, arguments);
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
+            var psi = new System.Diagnostics.ProcessStartInfo(filename, arguments)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = false,
+                UseShellExecute = false
+            };
 
             Logging.Log.WriteExplicitMessage(LOGTAG, "RunningCommand", null, "Running: {0} {1}", filename, arguments);
 
             var pi = System.Diagnostics.Process.Start(psi);
             pi.WaitForExit(5000);
             if (pi.HasExited)
-                return pi.StandardOutput.ReadToEnd().Trim();
+            {
+                return
+                    new Tuple<int, string, string>(
+                        pi.ExitCode,
+                        pi.StandardOutput.ReadToEnd().Trim(),
+                        pi.StandardError.ReadToEnd().Trim()
+                    );
+            }
             pi.Kill();
 
             throw new Library.Interface.UserInformationException($"The process {filename} with arguments {arguments} failed to stop", "LaunchProcessFailed");

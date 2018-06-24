@@ -92,7 +92,7 @@ namespace Duplicati.Library.Compression
         /// <summary>
         /// This property indicates reading or writing access mode of the file archive.
         /// </summary>
-        ArchiveMode m_mode;
+        readonly ArchiveMode m_mode;
 
         /// <summary>
         /// Gets the number of bytes expected to be written after the stream is disposed
@@ -126,17 +126,17 @@ namespace Duplicati.Library.Compression
         /// <summary>
         /// The compression level applied when the hint does not indicate incompressible
         /// </summary>
-        private SharpCompress.Compressors.Deflate.CompressionLevel m_defaultCompressionLevel;
+        private readonly SharpCompress.Compressors.Deflate.CompressionLevel m_defaultCompressionLevel;
 
         /// <summary>
         /// The compression level applied when the hint does not indicate incompressible
         /// </summary>
-        private CompressionType m_compressionType;
+        private readonly CompressionType m_compressionType;
 
         /// <summary>
         /// A flag indicating if zip64 is in use
         /// </summary>
-        private bool m_usingZip64;
+        private readonly bool m_usingZip64;
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands
@@ -306,9 +306,9 @@ namespace Duplicati.Library.Compression
             var q = m_entryDict.Values.AsEnumerable();
             if (!string.IsNullOrEmpty(prefix))
                 q = q.Where(x =>
-                            x.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                            x.Key.StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparison)
                             ||
-                            x.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision)
+                            x.Key.Replace('\\', '/').StartsWith(prefix, Duplicati.Library.Utility.Utility.ClientFilenameStringComparison)
                            );
 
             return q.Select(x => new KeyValuePair<string, long>(x.Key, x.Size)).ToArray();

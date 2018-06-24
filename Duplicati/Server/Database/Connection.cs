@@ -25,12 +25,12 @@ namespace Duplicati.Server.Database
 {
     public class Connection : IDisposable
     {
-        private System.Data.IDbConnection m_connection;
+        private readonly System.Data.IDbConnection m_connection;
         private System.Data.IDbCommand m_errorcmd;
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
-        private Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
+        private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
 
         public Connection(System.Data.IDbConnection connection)
         {

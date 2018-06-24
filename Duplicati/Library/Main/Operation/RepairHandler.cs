@@ -14,9 +14,9 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RepairHandler>();
-        private string m_backendurl;
-        private Options m_options;
-        private RepairResults m_result;
+        private readonly string m_backendurl;
+        private readonly Options m_options;
+        private readonly RepairResults m_result;
 
         public RepairHandler(string backend, Options options, RepairResults result)
         {
@@ -213,18 +213,15 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         foreach(var rv in ifr.Volumes)
                                         {
-                                            string cmphash;
-                                            long cmpsize;
-                                            RemoteVolumeType cmptype;
-                                            RemoteVolumeState cmpstate;
-                                            if (!db.GetRemoteVolume(rv.Filename, out cmphash, out cmpsize, out cmptype, out cmpstate))
+                                            var entry = db.GetRemoteVolume(rv.Filename);
+                                            if (entry.ID < 0)
                                                 throw new Exception(string.Format("Unknown remote file {0} detected", rv.Filename));
                                             
-                                            if (!new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(cmpstate))
-                                                throw new Exception(string.Format("Volume {0} has local state {1}", rv.Filename, cmpstate));
+                                            if (!new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
+                                                throw new Exception(string.Format("Volume {0} has local state {1}", rv.Filename, entry.State));
                                         
-                                            if (cmphash != rv.Hash || cmpsize != rv.Length || ! new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(cmpstate))
-                                                throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, cmphash, cmpsize, rv.Hash, rv.Length));
+                                            if (entry.Hash != rv.Hash || entry.Size != rv.Length || ! new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
+                                                throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, entry.Hash, entry.Size, rv.Hash, rv.Length));
 
                                             db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks);
                                         }
@@ -286,9 +283,9 @@ namespace Duplicati.Library.Main.Operation
                                 var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
-                                
-                                db.WriteFileset(w, null, filesetId);
-    
+
+                                db.WriteFileset(w, filesetId, null);
+	
                                 w.Close();
                                 if (m_options.Dryrun)
                                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));

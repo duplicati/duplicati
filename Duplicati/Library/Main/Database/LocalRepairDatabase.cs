@@ -71,8 +71,8 @@ namespace Duplicati.Library.Main.Database
                     
                 }
             }
-        
-            private System.Data.IDataReader m_rd;
+
+            private readonly System.Data.IDataReader m_rd;
             public bool Done { get; private set; }
             
             public BlockWithSources(System.Data.IDataReader rd)
@@ -135,11 +135,11 @@ namespace Duplicati.Library.Main.Database
         
         private class MissingBlockList : IMissingBlockList
         {
-            private System.Data.IDbConnection m_connection;
-            private TemporaryTransactionWrapper m_transaction;
+            private readonly System.Data.IDbConnection m_connection;
+            private readonly TemporaryTransactionWrapper m_transaction;
             private System.Data.IDbCommand m_insertCommand;
             private string m_tablename;
-            private string m_volumename;
+            private readonly string m_volumename;
             
             public MissingBlockList(string volumename, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
             {
@@ -483,7 +483,7 @@ namespace Duplicati.Library.Main.Database
 
                     try
                     {
-                        VerifyConsistency(tr, blocksize, hashsize, true);
+                        VerifyConsistency(blocksize, hashsize, true, tr);
                     }
                     catch(Exception ex)
                     {

@@ -34,7 +34,7 @@ namespace Duplicati.Library.Main.Volumes
             return LoadCompressor(compressor, stream, options);
         }
 
-        public VolumeReaderBase(string compressor, string file, Options options)
+        protected VolumeReaderBase(string compressor, string file, Options options)
             : base(options)
         {
             m_compression = LoadCompressor(compressor, file, options, out m_stream);
@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Volumes
             m_disposeCompression = true;
         }
 
-        public VolumeReaderBase(ICompression compression, Options options)
+        protected VolumeReaderBase(ICompression compression, Options options)
             : base(options)
         {
             m_compression = compression;
@@ -109,11 +109,13 @@ namespace Duplicati.Library.Main.Volumes
             using (var fs = compression.OpenRead(filename))
             {
                 int s;
+				var read = 0L;
                 while ((s = Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length)) != 0)
                 {
                     if (s != buffer.Length)
-                        throw new InvalidDataException("Premature End-of-stream encountered while reading blocklist hashes");
+						throw new InvalidDataException($"Premature End-of-stream encountered while reading blocklist hashes for {filename}. Got {s} bytes of {buffer.Length} at offset {read * buffer.Length}");
 
+					read++;
                     yield return Convert.ToBase64String(buffer);
                 }
 

@@ -46,11 +46,14 @@
     <Reference Include="FasterHashing">
       <HintPath>..\..\..\packages\FasterHashing.1.3.0\lib\net45\FasterHashing.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
-    <Compile Include="DefaultFilters.cs" />
+    <Compile Include="FilterGroups.cs" />
     <Compile Include="KeyGenerator.cs" />
+    <Compile Include="MD5HashHelper.cs" />
     <Compile Include="OverrideableStream.cs" />
     <Compile Include="ProgressReportingStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -61,7 +64,7 @@
     <Compile Include="TempFolder.cs" />
     <Compile Include="ThrottledStream.cs" />
     <Compile Include="Timeparser.cs" />
-    <Compile Include="UrlUtillity.cs" />
+    <Compile Include="UrlUtility.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="Win32.cs" />
     <Compile Include="WorkerThread.cs" />
@@ -85,6 +88,7 @@
     <Compile Include="Power\LinuxPowerSupplyState.cs" />
     <Compile Include="Power\WindowsPowerSupplyState.cs" />
     <Compile Include="Power\MacOSPowerSupplyState.cs" />
+    <Compile Include="UrlPath.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
@@ -102,6 +106,10 @@
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj">
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

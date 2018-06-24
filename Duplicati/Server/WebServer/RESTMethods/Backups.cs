@@ -74,7 +74,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     var buf = new byte[3];
                     using(var fs = System.IO.File.OpenRead(file.Filename))
                     {
-                        fs.Read(buf, 0, buf.Length);
+                        Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
 
                         fs.Position = 0;
                         if (buf[0] == 'A' && buf[1] == 'E' && buf[2] == 'S')
@@ -91,9 +91,15 @@ namespace Duplicati.Server.WebServer.RESTMethods
                                 ipx = Serializer.Deserialize<Serializable.ImportExportStructure>(sr);
                         }
                     }
-                    if (!import_metadata) {
+
+                    if (ipx.Backup == null)
+                        throw new Exception("No backup found in document");
+
+                    if (ipx.Backup.Metadata == null)
+                        ipx.Backup.Metadata = new Dictionary<string, string>();
+
+                    if (!import_metadata) 
                         ipx.Backup.Metadata.Clear();
-                    }
 
                     ipx.Backup.ID = null;
                     ((Database.Backup)ipx.Backup).DBPath = null;

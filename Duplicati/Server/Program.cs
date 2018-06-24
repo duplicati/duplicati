@@ -35,7 +35,7 @@ namespace Duplicati.Server
         /// The single instance
         /// </summary>
         public static SingleInstance Instance = null;
-        
+
         /// <summary>
         /// This is the only access to the database
         /// </summary>
@@ -95,7 +95,7 @@ namespace Duplicati.Server
         /// The update poll thread.
         /// </summary>
         public static UpdatePollThread UpdatePoller;
-        
+
         /// <summary>
         /// An event that is set once the server is ready to respond to requests
         /// </summary>
@@ -105,7 +105,7 @@ namespace Duplicati.Server
         /// The status event signaler, used to controll long polling of status updates
         /// </summary>
         public static EventPollNotify StatusEventNotifyer = new EventPollNotify();
-        
+
         /// <summary>
         /// A delegate method for creating a copy of the current progress state
         /// </summary>
@@ -127,11 +127,16 @@ namespace Duplicati.Server
         public static LogWriteHandler LogHandler = new LogWriteHandler();
 
         /// <summary>
-        /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server) 
+        /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server)
         /// </summary>
         public static string Origin = "Server";
 
         private static System.Threading.Timer PurgeTempFilesTimer = null;
+
+        /// <summary>
+        /// Used to maintain a reference to initialized system settings.
+        /// </summary>
+        private static IDisposable SystemSettings;
 
         public static int ServerPort
         {
@@ -200,30 +205,26 @@ namespace Duplicati.Server
                     s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
                     commandlineOptions["help"] = "";
 
+
+            if (commandlineOptions.ContainsKey("tempdir") && !string.IsNullOrEmpty(commandlineOptions["tempdir"]))
+                Library.Utility.SystemContextSettings.DefaultTempPath = commandlineOptions["tempdir"];
+            
+            SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
+
             // Check if a parameters-file was provided. Skip if help was already specified
             if (!commandlineOptions.ContainsKey("help"))
             {
-                string filename = null;
-                if (commandlineOptions.ContainsKey("parameters-file"))
+                // try and parse all parameter file aliases
+                foreach (string parameterOption in new[] { "parameters-file", "parameters-file", "parameterfile" })
                 {
-                    filename = commandlineOptions["parameters-file"];
-                    commandlineOptions.Remove("parameters-file");
-                }
-                else if (commandlineOptions.ContainsKey("parameter-file"))
-                {
-                    filename = commandlineOptions["parameter-file"];
-                    commandlineOptions.Remove("parameter-file");
-                }
-                else if (commandlineOptions.ContainsKey("parameterfile"))
-                {
-                    filename = commandlineOptions["parameterfile"];
-                    commandlineOptions.Remove("parameterfile");
-                }
-
-                if (!string.IsNullOrEmpty(filename))
-                {
-                    // Check the parameters-file and add provided arguments (overriding commandline arguments)
-                    ReadOptionsFromFile(filename, ref filter, args, commandlineOptions);
+                    if (commandlineOptions.ContainsKey(parameterOption) && !string.IsNullOrEmpty(commandlineOptions[parameterOption]))
+                    {
+                        string filename = commandlineOptions[parameterOption];
+                        commandlineOptions.Remove(parameterOption);
+                        if (!ReadOptionsFromFile(filename, ref filter, args, commandlineOptions))
+                            return 100;
+                        break;
+                    }
                 }
             }
 
@@ -239,11 +240,8 @@ namespace Duplicati.Server
 
                     return 0;
                 }
-                else
-                {
-                    throw new Exception("Server invoked with --help");
-                }
 
+                throw new Exception("Server invoked with --help");
             }
 
 #if DEBUG
@@ -254,7 +252,7 @@ namespace Duplicati.Server
                 commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
             }
 #endif
-            
+
             try
             {
                 // Setup the log redirect
@@ -316,12 +314,12 @@ namespace Duplicati.Server
                 Program.DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
-                    
+
                 Duplicati.Library.AutoUpdater.UpdaterManager.OnError += (Exception obj) =>
                 {
                     Program.DataConnection.LogError(null, "Error in updater", obj);
                 };
-                
+
                 UpdatePoller = new UpdatePollThread();
                 DateTime lastPurge = new DateTime(0);
 
@@ -330,27 +328,27 @@ namespace Duplicati.Server
                     {
                         if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
                             return;
-                        
+
                         lastPurge = DateTime.Now;
 
                         foreach(var e in Program.DataConnection.GetTempFiles().Where((f) => f.Expires < DateTime.Now))
                         {
-                            try 
-                            { 
+                            try
+                            {
                                 if (System.IO.File.Exists(e.Path))
                                     System.IO.File.Delete(e.Path);
                             }
                             catch (Exception ex)
                             {
-                                Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", e.Path), ex); 
+                                Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", e.Path), ex);
                             }
 
-                            Program.DataConnection.DeleteTempFile(e.ID);                                
+                            Program.DataConnection.DeleteTempFile(e.ID);
                         }
 
 
                         Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) => {
-                            Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", path), ex); 
+                            Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", path), ex);
                         });
 
                         string pts;
@@ -361,11 +359,11 @@ namespace Duplicati.Server
                     }
                     catch (Exception ex)
                     {
-                        Program.DataConnection.LogError(null, "Failed during temp file cleanup", ex); 
+                        Program.DataConnection.LogError(null, "Failed during temp file cleanup", ex);
                     }
                 };
 
-                try 
+                try
                 {
                     PurgeTempFilesTimer = new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
                 }
@@ -374,7 +372,7 @@ namespace Duplicati.Server
                     //Bugfix for older Mono, slightly more resources used to avoid large values in the period field
                     PurgeTempFilesTimer = new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
                 }
-                    
+
                 LiveControl = new LiveControls(DataConnection.ApplicationSettings);
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
                 LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
@@ -390,21 +388,21 @@ namespace Duplicati.Server
                 Program.WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
                 Program.WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
                 Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
-                Program.WorkThread.OnError += (worker, task, exception) => { Program.DataConnection.LogError(task == null ? null : task.BackupID, "Error in worker", exception); };
+                Program.WorkThread.OnError += (worker, task, exception) => { Program.DataConnection.LogError(task?.BackupID, "Error in worker", exception); };
 
                 var lastscheduleid = LastDataUpdateID;
-                Program.StatusEventNotifyer.NewEvent += (sender, e) => 
-                { 
-                    if (lastscheduleid != LastDataUpdateID) 
+                Program.StatusEventNotifyer.NewEvent += (sender, e) =>
+                {
+                    if (lastscheduleid != LastDataUpdateID)
                     {
                         lastscheduleid = LastDataUpdateID;
-                        Program.Scheduler.Reschedule(); 
+                        Program.Scheduler.Reschedule();
                     }
                 };
 
                 Action<long, Exception> registerTaskResult = (id, ex) => {
                     lock(Program.MainLock) {
-                        
+
                         // If the new results says it crashed, we store that instead of success
                         if (Program.TaskResultCache.Count > 0 && Program.TaskResultCache.Last().Key == id)
                         {
@@ -413,7 +411,7 @@ namespace Duplicati.Server
                             else
                                 return;
                         }
-                        
+
                         Program.TaskResultCache.Add(new KeyValuePair<long, Exception>(id, ex));
                         while(Program.TaskResultCache.Count > MAX_TASK_RESULT_CACHE_SIZE)
                             Program.TaskResultCache.RemoveAt(0);
@@ -426,8 +424,7 @@ namespace Duplicati.Server
 
                 Program.WebServer = new WebServer.Server(commandlineOptions);
 
-                if (Program.WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort)
-                    ServerPortChanged = true;
+                ServerPortChanged |= Program.WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort;
                 DataConnection.ApplicationSettings.LastWebserverPort = Program.WebServer.Port;
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, "ping-pong-keepalive"))
@@ -509,8 +506,8 @@ namespace Duplicati.Server
             //
             //If you desire better security, start Duplicati once with the commandline option
             // --unencrypted-database to decrypt the database.
-            //Then set the environment variable DUPLICATI_DB_KEY to the desired key, 
-            // and run Duplicati again without the --unencrypted-database option 
+            //Then set the environment variable DUPLICATI_DB_KEY to the desired key,
+            // and run Duplicati again without the --unencrypted-database option
             // to re-encrypt it with the new key
             //
             //If you change the key, please note that you need to supply the same
@@ -620,13 +617,13 @@ namespace Duplicati.Server
 
         public static void StartOrStopUsageReporter()
         {
-            var disableUsageReporter = 
+            var disableUsageReporter =
                 string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "none", StringComparison.OrdinalIgnoreCase)
                 ||
                 string.Equals(DataConnection.ApplicationSettings.UsageReporterLevel, "disabled", StringComparison.OrdinalIgnoreCase);
 
             Library.UsageReporter.ReportType reportLevel;
-            if (!Enum.TryParse<Library.UsageReporter.ReportType>(DataConnection.ApplicationSettings.UsageReporterLevel, true, out reportLevel))                    
+            if (!Enum.TryParse<Library.UsageReporter.ReportType>(DataConnection.ApplicationSettings.UsageReporterLevel, true, out reportLevel))
                 Library.UsageReporter.Reporter.SetReportLevel(null, disableUsageReporter);
             else
                 Library.UsageReporter.Reporter.SetReportLevel(reportLevel, disableUsageReporter);
@@ -636,7 +633,7 @@ namespace Duplicati.Server
         {
             if (Program.WorkThread == null)
                 return;
-            
+
             var cur = Program.WorkThread.CurrentTask;
             if (cur != null)
                 cur.UpdateThrottleSpeed();
@@ -645,7 +642,7 @@ namespace Duplicati.Server
         private static void SignalNewEvent(object sender, EventArgs e)
         {
             StatusEventNotifyer.SignalNewEvent();
-        }   
+        }
 
 
         /// <summary>
@@ -654,7 +651,7 @@ namespace Duplicati.Server
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private static void LiveControl_ThreadPriorityChanged(object sender, EventArgs e)
-        {        
+        {
             StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -803,6 +800,7 @@ namespace Duplicati.Server
             get
             {
                 var lst = new List<Duplicati.Library.Interface.ICommandLineArgument> (new Duplicati.Library.Interface.ICommandLineArgument[] {
+                    new Duplicati.Library.Interface.CommandLineArgument("tempdir", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.TempdirShort, Strings.Program.TempdirLong, System.IO.Path.GetTempPath()),
                     new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
                     new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
@@ -818,6 +816,7 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
                     new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
                     new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),
+
                 });
 
                 if (!Duplicati.Library.Utility.Utility.IsClientLinux)

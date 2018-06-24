@@ -44,9 +44,9 @@ namespace Duplicati.Library.Utility
         private readonly object m_lock = new object();
 
         /// <summary> An event to wake reader. </summary>
-        private ManualResetEventSlim m_signalDataAvailable = new ManualResetEventSlim(false);
+        private readonly ManualResetEventSlim m_signalDataAvailable = new ManualResetEventSlim(false);
         /// <summary> An event to wake writer. </summary>
-        private ManualResetEventSlim m_signalBufferAvailable = new ManualResetEventSlim(true);
+        private readonly ManualResetEventSlim m_signalBufferAvailable = new ManualResetEventSlim(true);
         /// <summary> Track closes and enable threadsafe self dispose. </summary>
         private int m_autoDisposeCounter = 2;
 
@@ -60,10 +60,10 @@ namespace Duplicati.Library.Utility
         private volatile bool m_readerClosed = false;
 
         /// <summary> The buffer for piping. </summary>
-        private byte[] m_buf;
+        private readonly byte[] m_buf;
 
         /// <summary> A stream to pass writes to. For stream stacking. </summary>
-        private Stream m_passWriteThrough;
+        private readonly Stream m_passWriteThrough;
 
         /// <summary> Allows to set a length for SubStreams Length property. </summary>
         private long m_knownLength = -1;
@@ -78,14 +78,14 @@ namespace Duplicati.Library.Utility
         /// Forces to wait until reader has consumed all bytes from buffer
         /// on a Flush operation. Set via constructor.
         /// </summary>
-        private bool m_blockOnFlush = true;
+        private readonly bool m_blockOnFlush = true;
 
         /// <summary>
         /// Forces to wait until reader has closed its stream
         /// on writer's Close operation. This may be used to 
         /// synchronize worker threads. Set via constructor.
         /// </summary>
-        private bool m_blockOnClose = true;
+        private readonly bool m_blockOnClose = true;
 
         /// <summary> The helper stream for reader from pipe. </summary>
         private LinkedReaderStream m_readerStream;
@@ -310,7 +310,7 @@ namespace Duplicati.Library.Utility
         {
             protected DirectStreamLink m_linkStream;
             protected long m_knownLength = -1;
-            public LinkedSubStream(DirectStreamLink linkStream)
+            protected LinkedSubStream(DirectStreamLink linkStream)
             { this.m_linkStream = linkStream; }
 
             public override bool CanSeek { get { return false; } }

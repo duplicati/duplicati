@@ -113,7 +113,7 @@ namespace Duplicati.Library.Localization
         /// </summary>
         public static ILocalizationService Get(CultureInfo ci)
         {
-            if (ci == CultureInfo.InvariantCulture)
+            if (ci.Equals(CultureInfo.InvariantCulture))
                 return InvariantService;
 
             ILocalizationService service;

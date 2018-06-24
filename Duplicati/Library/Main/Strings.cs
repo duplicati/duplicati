@@ -11,6 +11,7 @@ namespace Duplicati.Library.Main.Strings
         public static string DuplicateOptionNameWarning(string optionname) { return LC.L(@"The option --{0} exists more than once, please report this to the developers", optionname); }
         public static string NoSourceFoldersError { get { return LC.L(@"No source folders specified for backup"); } }
         public static string SourceIsMissingError(string foldername) { return LC.L(@"The source folder {0} does not exist, aborting backup", foldername); }
+        public static string SourceUnauthorizedError(string foldername) { return LC.L(@"Unauthorized to access source folder {0}, aborting backup", foldername); }
         public static string UnsupportedBooleanValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not parse into a valid boolean, this will be treated as if it was set to ""true""", optionname, value); }
         public static string UnsupportedEnumerationValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"", supported values are: {2}", optionname, value, string.Join(", ", values)); }
         public static string UnsupportedFlagsValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"", supported flag values are: {2}", optionname, value, string.Join(", ", values)); }
@@ -123,8 +124,6 @@ namespace Duplicati.Library.Main.Strings
         public static string QuotasizeShort { get { return LC.L(@"A reported maximum storage"); } }
         public static string QuotaWarningThresholdLong { get { return LC.L(@"Sets a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less that this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored"); } }
         public static string QuotaWarningThresholdShort { get { return LC.L(@"Threshold for warning about low quota"); } }
-        public static string DefaultFiltersLong(string windows, string osx, string linux, string all) { return LC.L(@"Exclude files that match the given filter sets. Which default filter sets should be used. Valid sets are ""{0}"", ""{1}"", ""{2}"", and ""{3}"". If this parameter is set with no value, the set for the current operating system will be used.", windows, osx, linux, all); }
-        public static string DefaultFiltersShort { get { return LC.L(@"Default filter sets"); } }
         public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
         public static string SymlinkpolicyLong(string store, string ignore, string follow) { return LC.L(@"Use this option to handle symlinks differently. The ""{0}"" option will simply record a symlink with its name and destination, and a restore will recreate the symlink as a link. Use the option ""{1}"" to ignore all symlinks and not store any information about them. Previous versions of Duplicati used the setting ""{2}"", which will cause symlinked files to be included and restore as normal files.", store, ignore, follow); }
         public static string HardlinkpolicyShort { get { return LC.L(@"Hardlink handling"); } }
@@ -228,6 +227,12 @@ namespace Duplicati.Library.Main.Strings
         public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. This option can be used to set the locale. Supply a blank string to choose the ""Invariant Culture""."); } }
         public static string DisablepipingShort{ get { return LC.L(@"Handle file communication with backend using threaded pipes"); } }
         public static string DisablepipingLong { get { return LC.L(@"Use this option to disable multithreaded handling of up- and downloads, that can significantly speed up backend operations depending on the hardware you're running on and the transfer rate of your backend."); } }
+        public static string ConcurrencymaxthreadsShort{ get { return LC.L(@"Limit number of concurrent threads"); } }
+        public static string ConcurrencymaxthreadsLong { get { return LC.L(@"Use this option to set the maximum number of threads used. Setting this value to zero or less will dynamically balance the number of active threads to fit the hardware."); } }
+        public static string ConcurrencyblockhashersShort{ get { return LC.L(@"Specify the number of concurrent hashing processes"); } }
+        public static string ConcurrencyblockhashersLong { get { return LC.L(@"Use this option to set the number of processes that perform hashing of data."); } }
+        public static string ConcurrencycompressorsShort{ get { return LC.L(@"Specify the number of concurrent compression processes"); } }
+        public static string ConcurrencycompressorsLong { get { return LC.L(@"Use this option to set the number of processes that perform compression of output data."); } }
         public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of Hyper-V machines (Windows only)"); } }
         public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the IDs of machines to include in the backup. Specify multiple machine IDs with a semicolon separator. (You can use this Powershell command to get ID 'Get-VM | ft VMName, ID')"); } }
         public static string DisablesyntehticfilelistLong { get { return LC.L(@"If Duplicati detects that the previous backup did not complete, it will generate a filelist that is a merge of the last completed backup and the contents that were uploaded in the incomplete backup session."); } }
@@ -256,6 +261,15 @@ namespace Duplicati.Library.Main.Strings
 
         public static string UsebackgroundiopriorityShort { get { return LC.L("Sets the processe to use low IO priority"); } }
         public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructions the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time"); } }
+
+        public static string ExcludeemptyfoldersShort { get { return "Excludes empty folders"; } }
+        public static string ExcludeemptyfoldersLong { get { return "Use this option to remove all empty folders from a backup."; } }
+        public static string IgnorefilenamesShort { get { return LC.L("List of filenames that exclude folders"); } }
+        public static string IgnorefilenamesLong { get { return LC.L("Use this option to set a filename, or list of filenames, that indicate exclusion of a folder which contains it. A common use would be to have a file named something like \".nobackup\" and place this file into folders that should not be backed up."); } }
+        public static string RestoresymlinkmetadataShort { get { return "Apply metadata to symlinks"; } }
+        public static string RestoresymlinkmetadataLong { get { return "If symlink metadata is applied, it will usually mean changing the symlink target, instead of the symlink itself. For this reason, metadata is not applied to symlinks, but this option can be used to override this, such that metadata is applied to symlinks as well."; } }
+        public static string UnittestmodeShort { get { return "Activate unittest mode"; } }
+        public static string UnittestmodeLong { get { return "When running in unittest mode, no automatic fixes are applied, which assumes that the input data is always in perfect shape. This option is not intended for use in daily backups, but required for testing purposes to reveal potential problems."; } }
     }
 
     internal static class Common

@@ -50,7 +50,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                    Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
+                    Library.Utility.TempFolder.SystemTempPath = options["tempdir"];
 
                 bool isHelp = args.Count == 0 || (args.Count >= 1 && string.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase));
                 if (!isHelp && ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile"))))

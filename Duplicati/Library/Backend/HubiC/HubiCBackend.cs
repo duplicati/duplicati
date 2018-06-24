@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.HubiC
 
         private class OpenStackHelper : OpenStackStorage
         {
-            private OAuthHelper m_helper;
+            private readonly OAuthHelper m_helper;
             private HubiCAuthResponse m_token;
 
             public OpenStackHelper(string authid, string url)

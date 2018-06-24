@@ -28,7 +28,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The list of log targets to handle
         /// </summary>
-        private List<Tuple<ILogDestination, LogMessageType, Library.Utility.IFilter>> m_targets = new List<Tuple<ILogDestination, LogMessageType, Library.Utility.IFilter>>();
+        private readonly List<Tuple<ILogDestination, LogMessageType, Library.Utility.IFilter>> m_targets = new List<Tuple<ILogDestination, LogMessageType, Library.Utility.IFilter>>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Library.Main.ControllerMultiLogTarget"/> class.
@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main
         {
             foreach (var e in m_targets)
             {
-                var found = e.Item3.Matches(entry.Tag, out var result, out var match);
+                var found = e.Item3.Matches(entry.FilterTag, out var result, out var match);
 
                 // If there is a filter match, use that
                 if (found)

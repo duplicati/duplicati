@@ -55,7 +55,7 @@ namespace Duplicati.CommandLine
             m_stdout = stdout;
             m_stderr = stderr;
             m_level = level;
-            m_filter = Library.Main.Options.ParseLogFilter(logfilter);
+            m_filter = FilterExpression.ParseLogFilter(logfilter);
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Duplicati.CommandLine
         /// <param name="entry">The entry to write.</param>
         public void WriteMessage(LogEntry entry)
         {
-            var found = m_filter.Matches(entry.Tag, out var result, out var match);
+            var found = m_filter.Matches(entry.FilterTag, out var result, out var match);
             // If there is a filter match, use that
             if (found)
             {

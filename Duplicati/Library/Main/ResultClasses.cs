@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Logging;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main
 {
@@ -201,7 +202,7 @@ namespace Duplicati.Library.Main
         protected Queue<DbMessage> m_dbqueue;
 
         private TaskControlState m_controlState = TaskControlState.Run;
-        private System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
+        private readonly System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
 
         public virtual ParsedResultType ParsedResult
         {
@@ -216,6 +217,7 @@ namespace Duplicati.Library.Main
             }
         }
 
+        public string Version { get { return string.Format("{0} ({1})", AutoUpdater.UpdaterManager.SelfVersion.Version, AutoUpdater.UpdaterManager.SelfVersion.Displayname); } }
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
         public TimeSpan Duration { get { return EndTime.Ticks == 0 ? new TimeSpan(0) : EndTime - BeginTime; } }
@@ -228,6 +230,8 @@ namespace Duplicati.Library.Main
         protected Library.Utility.FileBackedStringList m_retryAttempts;
 
         protected IMessageSink m_messageSink;
+
+        [JsonIgnore]
         public IMessageSink MessageSink
         {
             get { return m_messageSink; }
@@ -352,7 +356,10 @@ namespace Duplicati.Library.Main
         public IEnumerable<string> Warnings { get { return m_parent == null ? m_warnings : m_parent.Warnings; } }
         public IEnumerable<string> Errors { get { return m_parent == null ?  m_errors : m_parent.Errors; } }
 
-        public BasicResults()
+        protected Operation.Common.TaskControl m_taskController;
+        public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
+
+        protected BasicResults()
         {
             this.BeginTime = DateTime.UtcNow;
             this.m_parent = null;
@@ -365,9 +372,10 @@ namespace Duplicati.Library.Main
             m_callerThread = System.Threading.Thread.CurrentThread;
             m_backendProgressUpdater = new BackendProgressUpdater();
             m_operationProgressUpdater = new OperationProgressUpdater();
+            m_taskController = new Duplicati.Library.Main.Operation.Common.TaskControl();
         }
 
-        public BasicResults(BasicResults p)
+        protected BasicResults(BasicResults p)
         {
             this.BeginTime = DateTime.UtcNow;
             this.m_parent = p;
@@ -385,6 +393,7 @@ namespace Duplicati.Library.Main
             }
         }
 
+        [JsonIgnore]
         public IBackendWriter BackendWriter { get { return (IBackendWriter)this.BackendStatistics; } }
 
         public event Action<TaskControlState> StateChangedEvent;
@@ -854,7 +863,7 @@ namespace Duplicati.Library.Main
 
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
-        private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        private readonly List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
 
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {

@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using HttpServer.HttpModules;
-using System.IO;
-using Duplicati.Server.Serialization;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Server.WebServer
@@ -59,7 +56,7 @@ namespace Duplicati.Server.WebServer
         /// <summary>
         /// The single webserver instance
         /// </summary>
-        private HttpServer.HttpServer m_server;
+        private readonly HttpServer.HttpServer m_server;
         
         /// <summary>
         /// The webserver listening port
@@ -249,9 +246,9 @@ namespace Duplicati.Server.WebServer
                 if (!string.IsNullOrWhiteSpace(userroot)
                     &&
                     (
-                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparision)
+                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison)
                         ||
-                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparision)
+                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparison)
                     )
                 )
 #endif
