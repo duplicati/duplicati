@@ -12,12 +12,12 @@
 See duplicati.commandline.exe help <topic> for more information.
   General: example, changelog
   Commands: backup, find, restore, delete, compact, test, compare, purge, vacuum
-  Reparing: repair, affected, list-broken-files, purge-broken-files
-  Debugging: debug, logging, create-report, test-filters, system-info, send-mail
+  Repair: repair, affected, list-broken-files, purge-broken-files
+  Debug: debug, logging, create-report, test-filters, system-info, send-mail
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, encryption, compression
-  Advanced: mail, advanced, returncodes, filter, default-filter-sets, <option>
+  Advanced: mail, advanced, returncodes, filter, filter-groups, <option>
 
 http://www.duplicati.com/              Version: %VERSION%
 
@@ -292,8 +292,10 @@ Duplicati provides information for debugging and logging purposes. By default, a
     If something needs to be retried (e.g. upload failed) this will cause an entry in the log file.
   --log-file = <path>
     The path to the log file e.g. "D:\duplicati\log.txt".
-  --log-level = Profiling | Information | Warning | Error 
-    Specifies the log level.
+  --log-file-log-level = Profiling | Verbose | Information | Warning | Error 
+    Specifies the log level to use for the log file.
+  --console-log-level = Profiling | Verbose | Information | Warning | Error 
+    Specifies the log level to use for the console log.
 
     
 # =============================================================================
@@ -429,36 +431,26 @@ For speed limits, use the same format. If you enter 1MB this will be 1MB/sec.
 Duplicati can apply globbing and regex filter rules to backup and restore specific files only. Globbing filters can be used in file names. To specify a regex filter put the filter in [brackets]. 
   Globbing: *.txt
   Regex: [.*test\.txt]
-  
+
   --include=<filter>
     Adds an include filter
   --exclude=<filter>
     Adds an exclude filter
-  --default-filters=<filter-sets>
-    Which default filter sets should be used. Valid sets are "Windows", "OSX", "Linux", and "All".
+
+Duplicati also has several built-in groups of filters, which include commonly excluded files and folders for different operating systems. These can be specified by putting the name of the group in {curly brackets}.
+  %FILTER_GROUPS_SHORT%
+For more details about these groups, including exactly what files they cover, see 'filter-groups'.
 
 Inside scripts and the commandline --parameters-file, where multiple filters are supplied with a single option, filters must be prefixed with either a plus (+) or a (-), for include and exclude respectively. Example:
   +*.txt%PATH_SEPARATOR%-[.*\.xyz]%PATH_SEPARATOR%+*
 
-
 # =============================================================================
-> duplicati.commandline.exe help default-filter-set
-> duplicati.commandline.exe help default-filter-sets
+> duplicati.commandline.exe help filter-group
+> duplicati.commandline.exe help filter-groups
 
-Duplicati has some built-in filters for different operating systems. In addition to the sets below, there is the special set "All", which selects all filters. These sets are specified via the --default-filters parameter.
+Duplicati has several built-in groups of filters, which include commonly excluded files and folders for different operating systems. These sets can be specified via the --include/--exclude parameter by putting their name in {curly brackets}.
 
-  Common
-    %COMMON_FILTERS%
-
-  Windows
-    %WINDOWS_FILTERS%
-
-  OSX
-    %OSX_FILTERS%
-
-  Linux
-    %LINUX_FILTERS%
-
+%FILTER_GROUPS_LONG%
 
 # =============================================================================
 > duplicati.commandline.exe help mail

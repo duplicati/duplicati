@@ -9,6 +9,8 @@ namespace Duplicati.Library.Backend
 {
     public class OneDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
+		private static readonly string LOGTAG = Logging.Log.LogTagFromType<OneDrive>();
+
         private const string SERVICES_AGREEMENT = "https://www.microsoft.com/en-us/servicesagreement";
         private const string PRIVACY_STATEMENT = "https://privacy.microsoft.com/en-us/privacystatement";
 
@@ -26,14 +28,14 @@ namespace Duplicati.Library.Backend
 
         private static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
-        private string m_rootfolder;
-        private string m_prefix;
+        private readonly string m_rootfolder;
+        private readonly string m_prefix;
         private string m_userid;
         private WLID_FolderItem m_folderid;
 
-        private OAuthHelper m_oauth;
+        private readonly OAuthHelper m_oauth;
 
-        private Dictionary<string, string> m_fileidCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> m_fileidCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
@@ -279,7 +281,7 @@ namespace Duplicati.Library.Backend
                         count = res.data.Length;
 
                         // log
-                        Console.WriteLine("Iteration: {0:D} Offset: {1:D} Count: {2:D} TotalOK: {3:D} TotalRep: {4:D} TotalFiles: {5:D}", iteration, offset, count, filesOk, filesRepeated, numFiles);
+						Library.Logging.Log.WriteProfilingMessage(LOGTAG, "OneDriveListStats", "Iteration: {0:D} Offset: {1:D} Count: {2:D} TotalOK: {3:D} TotalRep: {4:D} TotalFiles: {5:D}", iteration, offset, count, filesOk, filesRepeated, numFiles);
 
                         foreach (var r in res.data)
                         {

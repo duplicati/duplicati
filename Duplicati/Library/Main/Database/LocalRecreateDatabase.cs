@@ -49,23 +49,23 @@ namespace Duplicati.Library.Main.Database
             }
         }
         
-        private System.Data.IDbCommand m_insertFileCommand;
-        private System.Data.IDbCommand m_insertFilesetEntryCommand;
-        private System.Data.IDbCommand m_insertMetadatasetCommand;
-        private System.Data.IDbCommand m_insertBlocksetCommand;
-        private System.Data.IDbCommand m_insertBlocklistHashCommand;
-        private System.Data.IDbCommand m_updateBlockVolumeCommand;
-        private System.Data.IDbCommand m_insertBlockset;
-        private System.Data.IDbCommand m_insertSmallBlockset;
-        private System.Data.IDbCommand m_findBlocksetCommand;
-        private System.Data.IDbCommand m_findMetadatasetCommand;
-        private System.Data.IDbCommand m_findFilesetCommand;
-        private System.Data.IDbCommand m_findblocklisthashCommand;
-        private System.Data.IDbCommand m_findHashBlockCommand;
-        private System.Data.IDbCommand m_insertBlockCommand;
-        private System.Data.IDbCommand m_insertDuplicateBlockCommand;
+        private readonly System.Data.IDbCommand m_insertFileCommand;
+        private readonly System.Data.IDbCommand m_insertFilesetEntryCommand;
+        private readonly System.Data.IDbCommand m_insertMetadatasetCommand;
+        private readonly System.Data.IDbCommand m_insertBlocksetCommand;
+        private readonly System.Data.IDbCommand m_insertBlocklistHashCommand;
+        private readonly System.Data.IDbCommand m_updateBlockVolumeCommand;
+        private readonly System.Data.IDbCommand m_insertBlockset;
+        private readonly System.Data.IDbCommand m_insertSmallBlockset;
+        private readonly System.Data.IDbCommand m_findBlocksetCommand;
+        private readonly System.Data.IDbCommand m_findMetadatasetCommand;
+        private readonly System.Data.IDbCommand m_findFilesetCommand;
+        private readonly System.Data.IDbCommand m_findblocklisthashCommand;
+        private readonly System.Data.IDbCommand m_findHashBlockCommand;
+        private readonly System.Data.IDbCommand m_insertBlockCommand;
+        private readonly System.Data.IDbCommand m_insertDuplicateBlockCommand;
         
-        private PathLookupHelper<PathEntryKeeper> m_filesetLookup;
+        private readonly PathLookupHelper<PathEntryKeeper> m_filesetLookup;
         
         private string m_tempblocklist;
         private string m_tempsmalllist;
@@ -501,7 +501,7 @@ namespace Duplicati.Library.Main.Database
         {
             using(var cmd = m_connection.CreateCommand())
             {
-                cmd.CommandText = string.Format(@"SELECT DISTINCT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"", ""Block"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" AND ""Block"".""VolumeID"" = ?");
+                cmd.CommandText = @"SELECT DISTINCT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"", ""Block"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" AND ""Block"".""VolumeID"" = ?";
                 cmd.AddParameter(volumeid);
                 
                 using(var rd = cmd.ExecuteReader())
@@ -534,8 +534,8 @@ namespace Duplicati.Library.Main.Database
                 var countMissingInformation = string.Format(
                     @"SELECT COUNT(*) FROM (SELECT DISTINCT ""VolumeID"" FROM ({0} UNION {1}))",
                     missingBlockInfo,
-                    missingBlocklistEntries);
-                        
+                    missingBlocklistVolumes);
+
                 if (passNo == 0)
                 {
                     // On the first pass, we select all the volumes we know we need,
@@ -595,8 +595,49 @@ namespace Duplicati.Library.Main.Database
                 
             }
         }
-        
-        public override void Dispose()
+
+		public void CleanupMissingVolumes()
+		{
+			var tablename = "SwapBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());            
+
+            // The first part of this query swaps out blocks for non-present remote files with
+			// existing ones (as recorded in the DuplicateBlock table)
+            // The second part removes references to the non-present remote files,
+            // and marks the index files that pointed to them, such that they will be removed later on
+			var sql = string.Format(@"
+CREATE TEMPORARY TABLE ""{0}"" AS
+SELECT ""A"".""ID"" AS ""BlockID"", ""A"".""VolumeID"" AS ""SourceVolumeID"", ""A"".""State"" AS ""SourceVolumeState"", ""B"".""VolumeID"" AS ""TargetVolumeID"", ""B"".""State"" AS ""TargetVolumeState"" FROM (SELECT ""Block"".""ID"", ""Block"".""VolumeID"", ""Remotevolume"".""State"" FROM ""Block"", ""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" and ""Remotevolume"".""State"" = ""{2}"") A, (SELECT ""DuplicateBlock"".""BlockID"",  ""DuplicateBlock"".""VolumeID"", ""Remotevolume"".""State"" FROM ""DuplicateBlock"", ""Remotevolume"" WHERE ""DuplicateBlock"".""VolumeID"" = ""Remotevolume"".""ID"" and ""Remotevolume"".""State"" = ""{1}"") B WHERE ""A"".""ID"" = ""B"".""BlockID"";
+
+UPDATE ""Block"" SET ""VolumeID"" = (SELECT ""TargetVolumeID"" FROM ""{0}"" WHERE ""Block"".""ID"" = ""{0}"".""BlockID"") WHERE ""Block"".""ID"" IN (SELECT ""BlockID"" FROM ""{0}"");
+
+UPDATE ""DuplicateBlock"" SET ""VolumeID"" = (SELECT ""SourceVolumeID"" FROM ""{0}"" WHERE ""DuplicateBlock"".""BlockID"" = ""{0}"".""BlockID"") WHERE ""DuplicateBlock"".""BlockID"" IN (SELECT ""BlockID"" FROM ""{0}"");
+DROP TABLE ""{0}"";
+
+DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ""{4}"" AND ""State"" = ""{2}"" AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
+DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ""Blocks"" AND ""State"" = ""{2}"" AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
+DELETE FROM ""RemoteVolume"" WHERE ""Type"" = ""{4}"" AND ""State"" = ""{2}"" AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block"");
+", tablename, RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Deleting.ToString(), RemoteVolumeType.Blocks.ToString(), RemoteVolumeType.Index.ToString());
+
+// We could delete these, but we don't have to, so we keep them around until the next compact is done
+// UPDATE ""RemoteVolume"" SET ""State"" = ""{3}"" WHERE ""Type"" = ""{5}"" AND ""ID"" NOT IN (SELECT ""IndexVolumeID"" FROM ""IndexBlockLink"");
+
+			var countsql = @"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""State"" = ""Temporary"" AND ""Type"" = ""Blocks"" ";
+
+			using (var cmd = m_connection.CreateCommand())
+			{
+				var cnt = cmd.ExecuteScalarInt64(countsql);
+				if (cnt > 0)
+				{
+					Logging.Log.WriteWarningMessage(LOGTAG, "MissingVolumesDetected", null, "Found {0} missing volumes; attempting to replace blocks from existing volumes", cnt);
+					cmd.ExecuteNonQuery(sql);
+
+					var cnt2 = cmd.ExecuteScalarInt64(countsql);
+					Logging.Log.WriteVerboseMessage(LOGTAG, "ReplacedMissingVolumes", "Replaced blocks for {0} missing volumes; there are now {1} missing volumes", cnt, cnt2);
+				}
+			}
+		}
+
+		public override void Dispose()
         {                        
             using (var cmd = m_connection.CreateCommand())
             {                    

@@ -1,14 +1,12 @@
 language: csharp
 solution: Duplicati.sln
+dotnet: 2.0.0
 install:
   - nuget restore Duplicati.sln
   - nuget install NUnit.Runners -Version 3.5.0 -OutputDirectory testrunner
   - sudo pip install selenium
-  - if [ ! -d ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2 ]; then ln -s ~/build/duplicati/duplicati/packages/sharpcompress.0.18.2 ~/build/duplicati/duplicati/packages/SharpCompress.0.18.2; fi
+  - if [ ! -d "${TRAVIS_BUILD_DIR}"/packages/SharpCompress.0.18.2 ]; then ln -s "${TRAVIS_BUILD_DIR}"/packages/sharpcompress.0.18.2 "${TRAVIS_BUILD_DIR}"/packages/SharpCompress.0.18.2; fi
 addons:
-  sauce_connect:
-    username: $SAUCE_USERNAME
-    access_key: $SAUCE_ACCESS_KEY
   coverity_scan:
     project:
       name: "duplicati/duplicati"
@@ -25,73 +23,49 @@ env:
   general:
     - USAGEREPORTER_Duplicati_LEVEL=none
     - AUTOUPDATER_Duplicati_SKIP_UPDATE=1
-  matrix:
-  - JOB=job1
-  - JOB=job2
-  - JOB=job3
-notifications:
-  webhooks:
-    urls:
-      - $GITTER_WEBHOOK_URL
-    on_success: always
-    on_failure: always
-    on_start: never
+    - TMPDIR=$HOME/tmp
 
-cache:
-  directories:
-    - $HOME/download
+jobs:
+  include:
+    - stage: Run unittests
+      env: CATEGORY=Border
+    - env: CATEGORY=Filter
+
+    - env: CATEGORY=BulkNormal
+      cache:
+        directories:
+          - $HOME/download/bulk
+
+    - env: CATEGORY=BulkNoSize
+      cache:
+        directories:
+          - $HOME/download/bulk
+
+    - env: CATEGORY=SVNData
+      cache:
+        directories:
+          - $HOME/download/svn
+
+    - env: CATEGORY=SVNDataLong
+      cache:
+        directories:
+          - $HOME/download/svn
+
+    - env: CATEGORY=Targeted
+    - env: CATEGORY=Purge
+    - env: CATEGORY=Serialization
+    - env: CATEGORY=Utility
+    - env: CATEGORY=UriUtility
+    - env: CATEGORY=WebApi
+
+    - env: CATEGORY=GUI
+      addons:
+        sauce_connect:
+          username: $SAUCE_USERNAME
+          access_key: $SAUCE_ACCESS_KEY
 
 before_install:
       - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 script:
-# build duplicati
-  - ls -la ~/build/duplicati/duplicati/packages/
-  - echo "travis_fold:start:build_duplicati"
-  - msbuild /p:Configuration=Release Duplicati.sln
-  - echo "travis_fold:end:build_duplicati"
-  - cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
-# download and extract testdata
-  - echo "travis_fold:start:download_extract_testdata"
-  - ls -la .
-  - if [ ! -d ~/download ]; then mkdir ~/download; fi
-  - if [ ! -f ~/download/DSMCBE.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip" -O ~/download/DSMCBE.zip; fi
-  - if [ ! -f ~/download/data.zip ]; then wget "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip" -O ~/download/data.zip; fi
-  - ls -la .
-  - mkdir ~/testdata
-  - mkdir ~/testdata/data
-  - mkdir ~/testdata/DSMCBE
-  - unzip -q ~/download/DSMCBE.zip -d ~/testdata/
-  - unzip -q ~/download/data.zip -d ~/testdata/
-  - chown -R travis ~/testdata/
-  - chmod -R 755 ~/testdata
-  - ls -la ~/testdata
-  - ls -la ~/testdata/DSMCBE
-  - ls -la ~/testdata/data
-  - echo "travis_fold:end:download_extract_testdata"
-# run unit tests
-  - echo "travis_fold:start:unit_tests_border"
-  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Border --workers=1; fi
-  - echo "travis_fold:end:unit_tests_border"
-  - echo "travis_fold:start:unit_tests_bulknormal"
-  - if [[ "$JOB" == "job2" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNormal --workers=1; fi
-  - echo "travis_fold:end:unit_tests_bulknormal"
-  - echo "travis_fold:start:unit_tests_bulknosize"
-  - if [[ "$JOB" == "job2" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==BulkNoSize --workers=1; fi
-  - echo "travis_fold:end:unit_tests_bulknosize"
-  - echo "travis_fold:start:unit_tests_svndata"
-  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNData --workers=1; fi
-  - echo "travis_fold:end:unit_tests_svndata"
-  - echo "travis_fold:start:unit_tests_svndatalong"
-  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==SVNDataLong --workers=1; fi
-  - echo "travis_fold:end:unit_tests_svndatalong"
-  - echo "travis_fold:start:unit_tests_targeted"
-  - if [[ "$JOB" == "job1" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Targeted --workers=1; fi
-  - echo "travis_fold:end:unit_tests_targeted"
-  - echo "travis_fold:start:unit_tests_purge"
-  - if [[ "$JOB" == "job3" ]]; then mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Purge --workers=1; fi
-  - echo "travis_fold:end:unit_tests_purge"
-# start server and run gui tests
-  - mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
-  - if [[ "$JOB" == "job3" ]]; then python guiTests/guiTest.py; fi
-  
+  - ./build.sh ${TRAVIS_BUILD_DIR} ${CATEGORY}

@@ -29,8 +29,8 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<CreateBugReportHandler>();
         private string m_targetpath;
-        private Options m_options;
-        private CreateLogDatabaseResults m_result;
+        private readonly Options m_options;
+        private readonly CreateLogDatabaseResults m_result;
 
         public CreateBugReportHandler(string targetpath, Options options, CreateLogDatabaseResults result)
         {

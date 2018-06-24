@@ -29,9 +29,9 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ListChangesHandler));
 
-        private string m_backendurl;
-        private Options m_options;
-        private ListChangesResults m_result;
+        private readonly string m_backendurl;
+        private readonly Options m_options;
+        private readonly ListChangesResults m_result;
 
         public ListChangesHandler(string backend, Options options, ListChangesResults result)
         {

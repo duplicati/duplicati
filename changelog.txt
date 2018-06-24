@@ -1,3 +1,104 @@
+2018-06-17 - 2.0.3.7_canary_2018-06-17
+==========
+* Added option to exclude empty folders
+* Added option to exclude folders based on the existence of a marker file
+* Changed the generation of index files to avoid pulling them from a database query
+* Fixed an issue that would create large index files
+* Improved the recreate logic to work if some files are missing, but the data exists in other files
+* Fixed spacing in the status bar UI, thanks @SanduRajapakse
+* Optimized unittests for serialization, thanks @warwickmm
+* Improved commandline parsing, thanks @verhoek
+* Added support for using the USN numbers for faster backups on NTFS drives, thanks @dgehri
+* Added Duplicati program version in status results, thanks @drwtsn32x
+* Added thread safe collections to the Synology auth handler, thanks @warwickmm
+* Improved code readability, thanks @warwickmm
+* Removed all calls to `Console.WriteLine` as it could lock up the console on Windows
+* Added Memset Cloud Storage to OpenStack providers, thanks @tnwhitwell
+* Refactored GoogleDrive backend, thanks @verhoek
+* Improved unittest scripts, thanks @verhoek
+* Optimized some string operations, thanks @warwickmm
+* Fixed a few issues with the commandline interface, thanks @verhoek
+* Updated built-in help for the new `--log-level` options, thanks @tygill
+* Code cleanup and standardization, thanks @warwickmm
+* Fixed issue on OneDrive (MSGraph) that would fail when trying to delete a missing file, thanks @tygill
+* Added additional help text for the dblock size picker UI
+* Added UI validation for B2 paths
+* No longer restoring metadata on symlinks by default, as that updated the targets
+* Fixed an issue with OAuth timeouts, thanks @tygill
+* Fixed an issue with overriding the temporary folder, thanks @verhoek
+* Fixed an issue with clearing callcontext settings, thanks @verhoek
+* Fixed an issue with shared buffers causing validation errors when running multiple index file generators
+* Improved the repair and broken file detection, thanks @tygill
+* Refactored the Google Cloud Storage backend, thanks @verhoek
+* Improved error message and handling for source folders with permission issues, thanks @verhoek
+* Fixed a problem with recreating symlinks on Windows, thanks @snamds
+* Improved handling of the console input/output, thanks @verhoek
+* Fixed a race in the webserver when decoding locale, thanks @verhoek
+* Added an option to disable automatic login from the tray icon
+* Fixed some incorrect status reports being generated during backup
+* Fixed an null-error in the box.com backend, thanks @warwickmm
+
+2018-04-23 - 2.0.3.6_canary_2018-04-23
+==========
+This update adds concurrent processing for the backup. With this update, the backup will now use multiple cores to perform checking and compressing.
+Use the advanced option `--concurrency-max-threads` to toggle how many threads to use.
+The options `--concurrency-block-hashers` and `--concurrency-compressors` can be used to adjust the number of hashers and compressors to use.
+
+Beware that this update contains a lot of new code, and should only be used in test environments.
+
+Other fixes in this build:
+* Fixes for filter groups, thanks @tygill
+* Fixed a backup import issue with empty metadata
+* Added upper bound to password checker, thanks @pectojin
+
+2018-04-13 - 2.0.3.5_canary_2018-04-13
+==========
+* Improved progress bar messsages and layout, thanks @SanduRajapakse
+* Improved icon status images, thanks @dbddhkpde
+* Code and test cleanups, thanks @warwickmm
+* Fixed an issue with rclone backend ignoring options, thanks @Bruceforce
+* Added a fix for browsers with scripting disabled, thanks @Pectojin
+* Added a button to dismiss all messages, thanks @Pectojin
+* Added KeyStone v3 support to OpenStack backend, thanks @epol
+* Updated translations, thanks to all translators!
+* Fixed an issue that caused large log data to accumulate and break sending report/email status
+* Added support for fine-grained control over how log data is reported via email, http and Jabber/XMPP
+* Added support for sending JSON formatted data with the http report module
+* Fixed an issue with MS Graph authentication, thanks @tygill
+* Fixed a performance issue during file scanning, thanks @ltfish
+* Added support for serializing results into json for all report modules and the run-script module as well, thanks @StephenGregory
+* Added filter groups and a UI for it, thanks @tygill
+* Fixed an issue where some paths were not reported via test-filters
+* Fixed some issues with handling internal server settings, thanks @warwickmm
+
+2018-04-02 - 2.0.3.4_canary_2018-04-02
+==========
+* Added support for setting low IO priority during backups
+* Changed order of throttling arguments to fix incorrect throtling
+* Added an option to disable backups when running on battery, thanks @warwickmm
+* Fixed a crash on the CLI help page, thanks @tygill
+* Added new Graph-API based backends for SharePoint and Office 365, thanks @tygill
+* Added new UI status badges, thanks @dbddhkpde
+
+2018-04-02 - 2.0.3.3_beta_2018-04-02
+==========
+This beta release contains many changes, a quick summary of changes:
+
+* Fixed not running the slow VACUUM command after each operation
+* Fixed a problem with SSL certificates periodically failing
+* Added Sia and rclone backends
+* Updated the hashing library to use faster native libraries where available
+* Added a new retention policy and UI which allows backup versions to decrease over time
+* Updated the auto-updater, such that new installs will spawn an extra process instead of using the AppDomain method as previously done.
+* Faster browsing of files to restore
+* Removed automatic tilde expansions as it created numerous problems
+* Multiple new languages added to the UI
+* Fixed a number of browser cache issues, which should fix the XSRF errors
+* Fixed not attempting to read non-symlink reparse points on Windows
+* Fixed some crashes that were caused by the usage reporter filling up reports
+
+Thanks to the many contributors who worked hard to get this release ready!
+
 2018-03-16 - 2.0.3.2_canary_2018-03-16
 ==========
 * Added a new logging system with filters

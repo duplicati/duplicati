@@ -12,17 +12,8 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
     $scope.EditSourceAdvanced = false;
     $scope.EditFilterAdvanced = false;
 
-    $scope.DefaultFilters = [];
     $scope.ExcludeAttributes = [];
     $scope.ExcludeLargeFiles = false;
-
-    $scope.defaultFilterSetAll = 'All';
-    $scope.defaultFilterSets = [
-        { 'name': gettextCatalog.getString('Windows'), 'value': 'Windows' },
-        { 'name': gettextCatalog.getString('OSX'), 'value': 'OSX' },
-        { 'name': gettextCatalog.getString('Linux'), 'value': 'Linux' },
-        { 'name': gettextCatalog.getString('All'), 'value': $scope.defaultFilterSetAll },
-    ];
 
     $scope.fileAttributes = [
         {'name': gettextCatalog.getString('Hidden files'), 'value': 'hidden'}, 
@@ -50,7 +41,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         else if ((passphrase || '') == '')
             scope.PassphraseScore = '';
         else
-            scope.PassphraseScore = (zxcvbn(passphrase) || {'score': -1}).score;
+            scope.PassphraseScore = (zxcvbn(passphrase.substring(0, 100)) || {'score': -1}).score;
 
         scope.PassphraseScoreString = strengthMap[scope.PassphraseScore];
     }
@@ -173,49 +164,6 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         toggleArraySelection($scope.Schedule.AllowedDays, value);
     };
 
-    $scope.isDefaultFilterSetEnabled = function (value) {
-        if ($scope.DefaultFilters == null)
-            $scope.DefaultFilters = [];
-        if (value != $scope.defaultFilterSetAll && $scope.isDefaultFilterSetEnabled($scope.defaultFilterSetAll))
-        {
-            return true;
-        }
-
-        return $scope.DefaultFilters.indexOf(value) > -1;
-    };
-
-    $scope.toggleDefaultFilters = function (value) {
-        if ($scope.DefaultFilters == null)
-            $scope.DefaultFilters = [];
-        if (value == $scope.defaultFilterSetAll)
-        {
-            var wasAllEnabled = $scope.isDefaultFilterSetEnabled($scope.defaultFilterSetAll);
-            $scope.DefaultFilters = [];
-            if (!wasAllEnabled)
-            {
-                for (var index = 0; index < $scope.defaultFilterSets.length; index++)
-                {
-                    $scope.DefaultFilters.push($scope.defaultFilterSets[index].value);
-                }
-            }
-        }
-        else
-        {
-            if ($scope.isDefaultFilterSetEnabled($scope.defaultFilterSetAll))
-            {
-                toggleArraySelection($scope.DefaultFilters, $scope.defaultFilterSetAll);
-            }
-
-            toggleArraySelection($scope.DefaultFilters, value);
-
-            // If everything but the 'all' group is enabled, enable it
-            if ($scope.DefaultFilters.length >= $scope.defaultFilterSets.length - 1)
-            {
-                toggleArraySelection($scope.DefaultFilters, $scope.defaultFilterSetAll);
-            }
-        }
-    };
-
     $scope.toggleExcludeAttributes = function(value) {
         if ($scope.ExcludeAttributes == null)
             $scope.ExcludeAttributes = [];
@@ -248,27 +196,6 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
         for (var n in $scope.servermodulesettings)
             opts['--' + n] = $scope.servermodulesettings[n];
-
-        var defaultFilters = ($scope.DefaultFilters || []).concat((opts['--default-filters'] || '').split(/[,;\|]+/));
-        var filterMap = { '': true };
-
-        // Remove duplicates
-        for (var i = defaultFilters.length - 1; i >= 0; i--) {
-            defaultFilters[i] = (defaultFilters[i] || '').trim();
-            var cmp = defaultFilters[i].toLowerCase();
-            if (filterMap[cmp])
-                defaultFilters.splice(i, 1);
-            else
-                filterMap[cmp] = true;
-        }
-
-        if (defaultFilters.length == 0)
-            delete opts['--default-filters'];
-        else
-            if (filterMap[$scope.defaultFilterSetAll.toLowerCase()])
-                opts['--default-filters'] = $scope.defaultFilterSetAll;
-            else
-                opts['--default-filters'] = defaultFilters.join(',');
 
         var exclattr = ($scope.ExcludeAttributes || []).concat((opts['--exclude-files-attributes'] || '').split(','));
         var exclmap = { '': true };
@@ -568,38 +495,6 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         $scope.ExcludeLargeFiles = (extopts['--skip-files-larger-than'] || '').trim().length > 0;
         if ($scope.ExcludeLargeFiles)
             $scope.Options['--skip-files-larger-than'] = extopts['--skip-files-larger-than'];
-
-        var defaultFilters = (extopts['--default-filters'] || '').split(/[,;\|]+/);
-        var defaultFiltersActive = [];
-        var filterMap = {};
-
-        for (var i = defaultFilters.length - 1; i >= 0; i--) {
-            var cmp = (defaultFilters[i] || '').trim().toLowerCase();
-
-            // Remove empty entries
-            if (cmp.length == 0) {
-                defaultFilters.splice(i, 1);
-                continue;
-            }
-
-            for (var j = scope.defaultFilterSets.length - 1; j >= 0; j--) {
-                if (scope.defaultFilterSets[j].value.toLowerCase() == cmp) {
-                    // Remote duplicates
-                    if (filterMap[cmp] == null) {
-                        defaultFiltersActive.push(scope.defaultFilterSets[j].value);
-                        filterMap[cmp] = true;
-                    }
-                    defaultFilters.splice(i, 1);
-                    break;
-                }
-            }
-        }
-
-        $scope.DefaultFilters = defaultFiltersActive;
-        if (defaultFilters.length == 0)
-            delete extopts['--default-filters'];
-        else
-            extopts['--default-filters'] = defaultFilters.join(',');
 
         var exclattr = (extopts['--exclude-files-attributes'] || '').split(',');
         var dispattr = [];

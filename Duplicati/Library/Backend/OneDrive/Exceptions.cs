@@ -11,7 +11,7 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
 {
     public class MicrosoftGraphException : Exception
     {
-        private static readonly Regex authorizationHeaderRemover = new Regex(@"Authorization:\s*Bearer\s+[A-Za-z0-9+/=]+", RegexOptions.IgnoreCase);
+        private static readonly Regex authorizationHeaderRemover = new Regex(@"Authorization:\s*Bearer\s+\S+", RegexOptions.IgnoreCase);
 
         public MicrosoftGraphException(HttpResponseMessage response)
             : this(string.Format("{0}: {1} error from request {2}", response.StatusCode, response.ReasonPhrase, response.RequestMessage.RequestUri), response)

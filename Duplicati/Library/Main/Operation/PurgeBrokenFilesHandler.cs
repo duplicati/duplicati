@@ -187,7 +187,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.Dryrun && db.RepairInProgress)
                 {                    
                     Logging.Log.WriteInformationMessage(LOGTAG, "ValidatingDatabase", "Database was previously marked as in-progress, checking if it is valid after purging files");
-                    db.VerifyConsistency(null, m_options.Blocksize, m_options.BlockhashSize, true);
+                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
                     Logging.Log.WriteInformationMessage(LOGTAG, "UpdatingDatabase", "Purge completed, and consistency checks completed, marking database as complete");
                     db.RepairInProgress = false;
                 }

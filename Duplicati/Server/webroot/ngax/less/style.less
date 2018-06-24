@@ -496,7 +496,7 @@ body {
             .state {
                 float: left;
                 color: darken(@hColor, 10%);
-                width: 580px;
+                width: 595px;
                 padding: 13px 15px;
                 margin: 10px 20px;
                 border: 1px darken(@hColor, 10%) solid;
@@ -515,7 +515,7 @@ body {
                     margin-right: 10px;
                 }
 
-                span { 
+                span {
                     display: inline;
                 }
 
@@ -568,6 +568,16 @@ body {
                     left: 0px;
                     background: fade(@hColor, 25%);
                     z-index: 5;
+                }
+
+                .task-name {
+                    overflow:hidden;
+                    text-overflow:ellipsis;
+                    cursor: help;
+                }
+
+                .task-state-info {
+                    display: flex;
                 }
             }
 
@@ -772,7 +782,7 @@ body {
                             > span {
                                 background: url('../img/mainmenu/over/arrow_down.png') right center no-repeat;
                             }
-                        }                        
+                        }
 
                         > a.add:hover {
                             background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
@@ -908,8 +918,8 @@ body {
 
 			.progress-small {
                             text-align: center;
-                            height: 18px;                            
-                            background: rgba(164, 209,235, 0.50);                            
+                            height: 18px;
+                            background: rgba(164, 209,235, 0.50);
                         }
 
                         .progress-small-bg {
@@ -1193,7 +1203,7 @@ body {
 
                             .retention-options {
                                 input {
-                                    margin-bottom: 10px;                                    
+                                    margin-bottom: 10px;
                                 }
                             }
 
@@ -1400,7 +1410,7 @@ body {
                             width: @step-width;
                         }
                     }
-                }                
+                }
 
                 div.restore.restore-direct {
                     @legends-steps: 4;
@@ -1935,6 +1945,7 @@ div.modal-dialog {
         transition: width .6s ease;
         height: 100%;
         position: absolute;
+        top:0;
 
         &.active {
             -webkit-animation: progress-bar-stripes 2s linear infinite;
@@ -2059,7 +2070,7 @@ div.modal-dialog {
                 &.x-tree-icon-hypervmachine {
                     background-position: -96px 0px;
                 }
-				
+
 				&.x-tree-icon-mssql {
                     background-position: -96px -32px;
                 }
@@ -2235,7 +2246,7 @@ div.modal-dialog {
 
                 .donate {
                     display: none;
-                }                
+                }
             }
 
             .body {
@@ -2309,7 +2320,7 @@ div.modal-dialog {
 
     body {
         .container {
-            
+
             .header {
                 .logo {
                     padding-left: 10px;

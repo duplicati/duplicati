@@ -39,8 +39,12 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="CoCoL">
+      <HintPath>..\..\..\packages\CoCoL.1.5.1\lib\net45\CoCoL.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -106,11 +110,37 @@
     <Compile Include="Strings.cs" />
     <Compile Include="Operation\RestoreHandlerMetadataStorage.cs" />
     <Compile Include="Operation\SystemInfoHandler.cs" />
+    <Compile Include="Operation\Backup\FileEnumerationProcess.cs" />
+    <Compile Include="Operation\Backup\MetadataPreProcess.cs" />
+    <Compile Include="Operation\Backup\MetadataGenerator.cs" />
+    <Compile Include="Operation\Common\ProgressEvent.cs" />
+    <Compile Include="Operation\Backup\FileBlockProcessor.cs" />
+    <Compile Include="Operation\Backup\DataBlock.cs" />
+    <Compile Include="Operation\Backup\FilePreFilterProcess.cs" />
+    <Compile Include="Operation\Backup\DataBlockProcessor.cs" />
+    <Compile Include="Operation\Backup\SpillCollectorProcess.cs" />
+    <Compile Include="Operation\Backup\BackupDatabase.cs" />
+    <Compile Include="Operation\Common\DatabaseCommon.cs" />
+    <Compile Include="Operation\Common\SingleRunner.cs" />
+    <Compile Include="Operation\Common\BackendHandler.cs" />
+    <Compile Include="Operation\Common\StatsCollector.cs" />
+    <Compile Include="Operation\Backup\BackupStatsCollector.cs" />
+    <Compile Include="Operation\Backup\ProgressHandler.cs" />
+    <Compile Include="Operation\Backup\BackendUploader.cs" />
+    <Compile Include="Operation\Common\IndexVolumeCreator.cs" />
+    <Compile Include="Operation\Backup\UploadSyntheticFilelist.cs" />
+    <Compile Include="Operation\Backup\Channels.cs" />
+    <Compile Include="Operation\Backup\CountFilesHandler.cs" />
+    <Compile Include="Operation\Backup\UploadRealFilelist.cs" />
+    <Compile Include="Operation\Common\TaskControl.cs" />
+    <Compile Include="Operation\Backup\StreamBlockSplitter.cs" />
+    <Compile Include="Operation\Backup\StreamBlock.cs" />
     <Compile Include="Operation\PurgeFilesHandler.cs" />
     <Compile Include="Database\LocalPurgeDatabase.cs" />
     <Compile Include="Database\LocalListBrokenFilesDatabase.cs" />
     <Compile Include="Operation\ListBrokenFilesHandler.cs" />
     <Compile Include="Operation\PurgeBrokenFilesHandler.cs" />
+    <Compile Include="Operation\Backup\RecreateMissingIndexFiles.cs" />
     <Compile Include="ControllerMultiLogTarget.cs" />
     <Compile Include="ProcessController.cs" />
   </ItemGroup>
@@ -180,8 +210,13 @@
     <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
     <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
     <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
+    <EmbeddedResource Include="Database\Database schema\8. Add volume USN.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Operation\Backup\" />
+    <Folder Include="Operation\Common\" />
   </ItemGroup>
 </Project>

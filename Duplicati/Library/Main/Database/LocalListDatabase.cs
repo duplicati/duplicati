@@ -56,9 +56,9 @@ namespace Duplicati.Library.Main.Database
         
         private class FileSets : IFileSets
         {
-            private System.Data.IDbConnection m_connection;
+            private readonly System.Data.IDbConnection m_connection;
             private string m_tablename;
-            private KeyValuePair<long, DateTime>[] m_filesets;
+            private readonly KeyValuePair<long, DateTime>[] m_filesets;
             
             public FileSets(LocalListDatabase owner, DateTime time, long[] versions)
             {
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Main.Database
             
             private class Fileversion : IFileversion
             {
-                private System.Data.IDataReader m_reader;
+                private readonly System.Data.IDataReader m_reader;
                 public string Path { get; private set; }
                 public bool More { get; private set; }
                 

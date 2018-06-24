@@ -79,7 +79,7 @@ namespace Duplicati.Library.Snapshots
         /// Enumerated MS SQL DBs
         /// </summary>
         public List<MSSQLDB> DBs { get { return m_DBs; } }
-        private List<MSSQLDB> m_DBs;
+        private readonly List<MSSQLDB> m_DBs;
 
         public MSSQLUtility()
         {

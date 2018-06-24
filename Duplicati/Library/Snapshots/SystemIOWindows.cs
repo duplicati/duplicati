@@ -251,7 +251,7 @@ namespace Duplicati.Library.Snapshots
         {
             if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
                 throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
-            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(target, PrefixWithUNC(symlinkfile), asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File);
+            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File, AlphaFS.PathFormat.LongFullPath);
 
             //Sadly we do not get a notification if the creation fails :(
             System.IO.FileAttributes attr = 0;
@@ -341,6 +341,16 @@ namespace Duplicati.Library.Snapshots
                 catch (System.ArgumentException) { }
 
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.ChangeExtension(PrefixWithUNC(path), extension));
+        }
+
+        public string PathCombine(string path1, string path2)
+        {
+            if (!IsPathTooLong(path1 + "\\" + path2))
+                try { return System.IO.Path.Combine(path1, path2); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+
+            return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(path1), path2));
         }
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)

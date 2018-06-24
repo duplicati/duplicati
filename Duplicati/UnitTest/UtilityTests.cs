@@ -18,11 +18,53 @@ using Duplicati.Library.Utility;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Duplicati.UnitTest
 {
     public class UtilityTests
     {
+        [Test]
+        [Category("Utility")]
+        public static void ForceStreamRead()
+        {
+            byte[] source = { 0x10, 0x20, 0x30, 0x40, 0x50 };
+
+            // Ensure that ReadOneByteStream returns one byte at a time.
+            byte[] buffer = new byte[source.Length];
+            ReadOneByteStream stream = new ReadOneByteStream(source);
+            Assert.AreEqual(1, stream.Read(buffer, 0, buffer.Length));
+            Assert.AreEqual(source.First(), buffer.First());
+            foreach (byte value in buffer.Skip(1))
+            {
+                Assert.AreEqual(default(byte), value);
+            }
+
+            // Buffer is larger than the length of the stream.
+            buffer = new byte[source.Length + 1];
+            int bytesRead = Utility.ForceStreamRead(new ReadOneByteStream(source), buffer, source.Length);
+            Assert.AreEqual(source.Length, bytesRead);
+            CollectionAssert.AreEqual(source, buffer.Take(source.Length));
+            Assert.AreEqual(default(byte), buffer.Last());
+
+            // Maximum number of bytes is larger than the length of the stream.
+            buffer = new byte[source.Length + 1];
+            bytesRead = Utility.ForceStreamRead(new ReadOneByteStream(source), buffer, source.Length + 1);
+            Assert.AreEqual(source.Length, bytesRead);
+            CollectionAssert.AreEqual(source, buffer.Take(bytesRead));
+            Assert.AreEqual(default(byte), buffer.Last());
+
+            // Maximum number of bytes is smaller than the length of the stream.
+            buffer = new byte[source.Length];
+            bytesRead = Utility.ForceStreamRead(new ReadOneByteStream(source), buffer, source.Length - 1);
+            Assert.AreEqual(source.Length - 1, bytesRead);
+            CollectionAssert.AreEqual(source.Take(bytesRead), buffer.Take(bytesRead));
+            Assert.AreEqual(default(byte), buffer.Last());
+
+            // Buffer is smaller than the length of the stream.
+            Assert.Throws<ArgumentException>(() => Utility.ForceStreamRead(new ReadOneByteStream(source), new byte[source.Length - 1], source.Length));
+        }
+
         [Test]
         [Category("Utility")]
         public void GetUniqueItems()
@@ -92,6 +134,48 @@ namespace Duplicati.UnitTest
                 Assert.IsFalse(Utility.ParseBool(value, false));
                 Assert.IsFalse(Utility.ParseBool(value, returnsFalse));
             }
+        }
+    }
+
+    /// <summary>
+    /// Mimic a Stream that can only read one byte at a time.
+    /// </summary>
+    class ReadOneByteStream : System.IO.MemoryStream
+    {
+        private readonly byte[] source;
+
+        public ReadOneByteStream(byte[] source)
+        {
+            this.source = source;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (Object.ReferenceEquals(buffer, null))
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+            if (offset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            }
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count));
+            }
+            if (offset + count > buffer.Length)
+            {
+                throw new ArgumentException("The sum of offset and count must not be larger than the buffer size.");
+            }
+
+            if (offset < this.source.Length)
+            {
+                const int bytesRead = 1;
+                Array.Copy(this.source, offset, buffer, offset, bytesRead);
+                return bytesRead;
+            }
+
+            return 0;
         }
     }
 }

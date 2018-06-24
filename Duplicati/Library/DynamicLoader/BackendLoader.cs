@@ -138,10 +138,10 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// The static instance used to access backend information
         /// </summary>
-        private static BackendLoaderSub _backendLoader = new BackendLoaderSub();
+        private static readonly BackendLoaderSub _backendLoader = new BackendLoaderSub();
 
         #region Public static API
-        
+
         /// <summary>
         /// Gets a list of loaded backends, the instances can be used to extract interface information, not used to interact with the backend.
         /// </summary>

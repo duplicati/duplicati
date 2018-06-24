@@ -196,7 +196,7 @@ namespace Duplicati.Library.UsageReporter
         /// <param name="current">The current file, which is excluded from the results.</param>
         private static IEnumerable<KeyValuePair<string, long>> GetAbandonedMatches(string current)
         {
-            foreach(var f in Directory.EnumerateFiles(Path.GetTempPath(), FILENAME_PREFIX + "*", SearchOption.TopDirectoryOnly))
+            foreach(var f in Directory.EnumerateFiles(Duplicati.Library.Utility.TempFolder.SystemTempPath, FILENAME_PREFIX + "*", SearchOption.TopDirectoryOnly))
             {
                 var selfname = Path.GetFileName(f);
                 var m = FILNAME_MATCHER.Match(selfname);
@@ -226,7 +226,7 @@ namespace Duplicati.Library.UsageReporter
         /// <param name="instanceid">The instance ID of this process.</param>
         private static string GetTempFilename(string instanceid)
         {
-            return Path.Combine(Path.GetTempPath(), string.Format(FILENAME_TEMPLATE, instanceid, DateTime.UtcNow.ToString("yyyyMMddHHmmss")));
+            return Path.Combine(Duplicati.Library.Utility.TempFolder.SystemTempPath, string.Format(FILENAME_TEMPLATE, instanceid, DateTime.UtcNow.ToString("yyyyMMddHHmmss")));
         }
     }
 }

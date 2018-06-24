@@ -23,7 +23,7 @@ using System.Text;
 
 namespace Duplicati.Library.Utility
 {
-    public static class UrlUtillity
+    public static class UrlUtility
     {
         /// <summary>
         /// The file path to the system browser selected

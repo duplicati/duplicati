@@ -94,17 +94,17 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// The PGP program to use, should be with absolute path
         /// </summary>
-        private string m_programpath = "gpg";
+        private readonly string m_programpath = "gpg";
 
         /// <summary>
         /// Commandline switches for encryption
         /// </summary>
-        private string m_encryption_args;
+        private readonly string m_encryption_args;
 
         /// <summary>
         /// Commandline switches for decryption
         /// </summary>
-        private string m_decryption_args;
+        private readonly string m_decryption_args;
 
         /// <summary>
         /// The key used for cryptographic operations
@@ -224,15 +224,17 @@ namespace Duplicati.Library.Encryption
         /// <param name="input">The input stream</param>
         private System.IO.Stream Execute(string args, System.IO.Stream input, bool encrypt)
         {
-            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-            psi.Arguments = args;
-            psi.CreateNoWindow = true;
-            psi.FileName = m_programpath;
-            psi.RedirectStandardError = true;
-            psi.RedirectStandardInput = true;
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                Arguments = args,
+                CreateNoWindow = true,
+                FileName = m_programpath,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+            };
 
 #if DEBUG
             psi.CreateNoWindow = false;

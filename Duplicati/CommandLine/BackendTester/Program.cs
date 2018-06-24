@@ -27,6 +27,12 @@ namespace Duplicati.CommandLine.BackendTester
 {
     class Program
     {
+
+        /// <summary>
+        /// Used to maintain a reference to initialized system settings.
+        /// </summary>
+        private static IDisposable SystemSettings;
+
         class TempFile
         {
             public readonly string remotefilename;
@@ -80,15 +86,6 @@ namespace Duplicati.CommandLine.BackendTester
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
-                if (!options.ContainsKey("auth_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
-                    options["auth_password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
-
-                if (!options.ContainsKey("auth_username") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
-                    options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
-
-                if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
-                    Library.Utility.TempFolder.SetSystemTempPath(options["tempdir"]);
-
                 if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
                 {
                     Console.WriteLine("Usage: <protocol>://<username>:<password>@<path>");
@@ -106,6 +103,17 @@ namespace Duplicati.CommandLine.BackendTester
 
                     return;
                 }
+
+                if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
+                    Library.Utility.SystemContextSettings.DefaultTempPath = options["tempdir"];
+                
+                SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
+
+                if (!options.ContainsKey("auth_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
+                    options["auth_password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
+
+                if (!options.ContainsKey("auth_username") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
+                    options["auth_username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
                 int reruns = 5;
                 if (options.ContainsKey("reruns"))

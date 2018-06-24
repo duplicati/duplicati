@@ -11,7 +11,7 @@ namespace Duplicati.Library.Main.Volumes
     public class FilesetVolumeWriter : VolumeWriterBase
     {
         private StreamWriter m_streamwriter;
-        private JsonWriter m_writer;
+        private readonly JsonWriter m_writer;
         private long m_filecount;
         private long m_foldercount;
 

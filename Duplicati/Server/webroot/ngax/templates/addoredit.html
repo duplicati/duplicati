@@ -188,27 +188,19 @@
                                     <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
                                     </select>
 
-                                    <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
-
+                                    <div ng-show="!(Backup.Filters[$index].indexOf('-{') == 0 || Backup.Filters[$index].indexOf('+{') == 0)">
+                                        <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
+                                    </div>
+                                    <div ng-show="Backup.Filters[$index].indexOf('-{') == 0 || Backup.Filters[$index].indexOf('+{') == 0">
+                                        <select parse-filter-content ng-model="Backup.Filters[$index]" ng-options="item.value as item.name for item in AppUtils.filterGroups">
+                                        </select>
+                                    </div>
+                                    
                                     <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
                                 </li>
 
                             </ul>
                             <a href ng-click="Backup.Filters.push('-*')" translate>Add filter</a>
-                        </div>
-
-                        <div class="input checkbox multiple">
-                            <strong translate>Default Filters</strong>
-                            
-                            <div ng-repeat="filterSet in defaultFilterSets">
-                                <input id="filterSet_{{filterSet.value}}"
-                                       type="checkbox"
-                                       name="filterSet_{{filterSet.value}}"
-                                       value="{{filterSet.value}}"
-                                       ng-checked="isDefaultFilterSetEnabled(filterSet.value)"
-                                       ng-click="toggleDefaultFilters(filterSet.value)" />
-                                <label for="filterSet_{{filterSet.value}}">{{filterSet.name}}</label>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -308,11 +300,17 @@
             <form class="styled">
                 <h2 translate>General options</h2>
                 <div class="input multiple text select maxSize">
-                    <label for="dblockSizeNumber" translate>Upload volume size</label>
+                    <label for="dblockSizeNumber" translate>Remote volume size</label>
                     <input type="number" class="number" parse-size-number="uppercase" id="dblockSizeNumber" ng-model="Options['dblock-size']" />
                     <select parse-size-multiplier="uppercase" id="dblockSizeMultiplier" ng-model="Options['dblock-size']" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
                     </select>
+
+                    <div class="hint" translate>
+                        This option does not relate to your maximum backup or file size, nor does it affect deduplication rates. <external-link link="'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'">See this page before you change the remote volume size.</external-link>
+                    </div>
+
                 </div>
+
                 <div class="input multiple text select keepBackups">
                     <label for="keepTimeType" translate>Backup retention</label>
                     <select id="keepTimeType" ng-model="KeepType">

@@ -67,8 +67,10 @@ namespace Duplicati.Library.Main.Volumes
             finally { m_streamwriter = null; }
         }
 
-        public void WriteBlocklist(string hash, byte[] data, int offset, int size)
+		public void WriteBlocklist(string hash, byte[] data, int offset, int size)
         {
+			if (size % m_blockhashsize != 0)
+				throw new InvalidDataException($"Attempted to write a blocklist with {size} bytes which is not evenly divisible with {m_blockhashsize}");
             m_blocklists++;
             //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
             using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Library.Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
@@ -78,9 +80,13 @@ namespace Duplicati.Library.Main.Volumes
         public void WriteBlocklist(string hash, Stream source)
         {
             m_blocklists++;
-            //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
-            using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Library.Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
-                Library.Utility.Utility.CopyStream(source, s);
+			//Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
+			using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Library.Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
+			{
+				var size = Library.Utility.Utility.CopyStream(source, s);
+				if (size % m_blockhashsize != 0)
+					throw new InvalidDataException($"Wrote a blocklist with {size} bytes which is not evenly divisible with {m_blockhashsize}");
+			}
         }
 
         public void CopyFrom(IndexVolumeReader rd, Func<string, string> filename_mapping)

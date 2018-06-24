@@ -175,8 +175,11 @@ namespace Duplicati.GUI.TrayIcon
             if (Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) && Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
                 databaseConnection = Server.Program.GetDatabaseConnection(options);
 
+            var disableTrayIconLogin = false;
+
             if (databaseConnection != null)
             {
+                disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
                 password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                 saltedpassword = false;
 
@@ -216,7 +219,7 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, options))
+                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, disableTrayIconLogin, options))
                         {
                             using (var tk = RunTrayIcon(toolkit))
                             {
