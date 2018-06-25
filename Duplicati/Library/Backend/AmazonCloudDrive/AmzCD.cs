@@ -97,10 +97,10 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                 m_delayTimeSpan = Library.Utility.Timeparser.ParseTimeSpan(delay);
 
             m_oauth = new OAuthHelper(m_authid, this.ProtocolKey) { AutoAuthHeader = true };
-            m_userid = m_authid.Split(new string[] {":"}, StringSplitOptions.RemoveEmptyEntries).First();
+            m_userid = m_authid.Split(new [] {":"}, StringSplitOptions.RemoveEmptyEntries).First();
         }
 
-        private void CleanWaitUntil()
+        private static void CleanWaitUntil()
         {
             lock (m_waitUntilLock)
             {
