@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 Result = tcs
             });
 
-            return await tcs.Task;
+            return await tcs.Task.ConfigureAwait(false);
         }
     }
 }

@@ -92,7 +92,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // If we only have metadata, stop here
-                    if (await ProcessMetadata(path, attributes, lastwrite, options, snapshot, emptymetadata, database, self.StreamBlockChannel))
+                    if (await ProcessMetadata(path, attributes, lastwrite, options, snapshot, emptymetadata, database, self.StreamBlockChannel).ConfigureAwait(false))
                     {
                         try
                         {
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             metadata["CoreSymlinkTarget"] = symlinkTarget;
 
                         var metahash = Utility.WrapMetadata(metadata, options);
-                        await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, database, streamblockchannel);
+                        await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, database, streamblockchannel).ConfigureAwait(false);
 
                         Logging.Log.WriteVerboseMessage(FILELOGTAG, "StoreSymlink", "Stored symlink {0}", path);
                         // Don't process further
@@ -192,7 +192,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
 
                 Logging.Log.WriteVerboseMessage(FILELOGTAG, "AddDirectory", "Adding directory {0}", path);
-                await AddFolderToOutputAsync(path, lastwrite, metahash, database, streamblockchannel);
+                await AddFolderToOutputAsync(path, lastwrite, metahash, database, streamblockchannel).ConfigureAwait(false);
                 return false;
             }
 
@@ -224,7 +224,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="lastModified">The value of the lastModified timestamp</param>
         private static async Task AddFolderToOutputAsync(string filename, DateTime lastModified, IMetahash meta, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
-            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, streamblockchannel);
+            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, streamblockchannel).ConfigureAwait(false);
             await database.AddDirectoryEntryAsync(filename, metadataid.Item2, lastModified);
         }
 

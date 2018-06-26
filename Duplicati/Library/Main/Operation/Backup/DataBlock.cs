@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 TaskCompletion = tcs
             });
 
-            var r = await tcs.Task;
+            var r = await tcs.Task.ConfigureAwait(false);
             return r;
         }
     }
