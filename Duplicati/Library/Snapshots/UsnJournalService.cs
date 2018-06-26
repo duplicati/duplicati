@@ -60,6 +60,9 @@ namespace Duplicati.Library.Snapshots
         /// <returns></returns>
         private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, IEnumerable<USNJournalDataEntry> prevJournalData)
         {
+            if (prevJournalData == null)
+                throw new UsnJournalSoftFailureException();
+
             var result = new Dictionary<string, VolumeData>();
 
             // get filter identifying current source filter / sources configuration
