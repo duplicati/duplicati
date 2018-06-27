@@ -238,27 +238,41 @@ namespace Duplicati.Library.SQLiteHelper
             }
         }
 
+        /// <summary>
+        /// Opens the SQLite file in the given connection, creating the file if required
+        /// </summary>
+        /// <param name="con">The connection to use.</param>
+        /// <param name="path">Path to the file to open, which may not exist.</param>
         private static void OpenSQLiteFile(System.Data.IDbConnection con, string path)
         {
             // Check if SQLite database exists before opening a connection to it.
             // This information is used to 'fix' permissions on a newly created file.
-            #if _NOT_WINDOWS
-            bool fileExists = false;
+            var fileExists = false;
             if (!Library.Utility.Utility.IsClientWindows)
-            {
                 fileExists = File.Exists(path);
-            }
-            #endif
 
             con.ConnectionString = "Data Source=" + path;
             con.Open();
 
-            #if _NOT_WINDOWS
+            // If we are non-Windows, make the file only accessible by the current user
             if (!Library.Utility.Utility.IsClientWindows && !fileExists)
-            {
-                Mono.Unix.Native.Syscall.chmod(path, Mono.Unix.Native.FilePermissions.S_IRUSR | Mono.Unix.Native.FilePermissions.S_IWUSR);
-            }
-            #endif
+                SetUnixPermissionUserRWOnly(path);
+        }
+
+        /// <summary>
+        /// Sets the unix permission user read-write Only.
+        /// </summary>
+        /// <param name="path">The file to set permissions on.</param>
+        /// <remarks> Make sure we do not inline this, as we might eventually load Mono.Posix, which is not present on Windows</remarks>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void SetUnixPermissionUserRWOnly(string path)
+        {
+            UnixSupport.File.SetUserGroupAndPermissions(
+                    path, 
+                    UnixSupport.File.GetUserID(path), 
+                    UnixSupport.File.GetGroupID(path), 
+                    0x180 /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR*/
+                );
         }
 
         private static void TestSQLiteFile(System.Data.IDbConnection con)
