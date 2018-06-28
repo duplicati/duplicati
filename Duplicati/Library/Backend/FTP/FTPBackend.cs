@@ -19,7 +19,6 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Interface;
 using System.Linq;
@@ -57,26 +56,30 @@ namespace Duplicati.Library.Backend
 
             var u = new Utility.Uri(url);
             u.RequireHost();
+            string username = null;
+            string password = null;
 
             if (!string.IsNullOrEmpty(u.Username))
             {
-                m_userInfo = new System.Net.NetworkCredential();
-                m_userInfo.UserName = u.Username;
-                if (!string.IsNullOrEmpty(u.Password))
-                    m_userInfo.Password = u.Password;
-                else if (options.ContainsKey("auth-password"))
-                    m_userInfo.Password = options["auth-password"];
+                username = u.Username;
             }
-            else
+            else if (options.ContainsKey("auth-username"))
             {
-                if (options.ContainsKey("auth-username"))
-                {
-                    m_userInfo = new System.Net.NetworkCredential();
-                    m_userInfo.UserName = options["auth-username"];
-                    if (options.ContainsKey("auth-password"))
-                        m_userInfo.Password = options["auth-password"];
-                }
+                username = options["auth-username"];
             }
+
+            if (!string.IsNullOrEmpty(u.Username) && !string.IsNullOrEmpty(u.Password)) {
+                        password = u.Password;
+            }
+            else if (options.ContainsKey("auth-password")) {
+                password = options["auth-password"];
+            }
+
+            m_userInfo = new System.Net.NetworkCredential
+            {
+                UserName = username,
+                Password = password
+            };
 
             //Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
             if (m_userInfo != null)
@@ -137,9 +140,6 @@ namespace Duplicati.Library.Backend
 
             string time = m.Groups["timestamp"].Value;
             string dir = m.Groups["dir"].Value;
-
-            //Unused
-            //string permission = m.Groups["permission"].Value;
 
             if (dir != "" && dir != "-")
                 f.IsFolder = true;
@@ -398,7 +398,7 @@ namespace Duplicati.Library.Backend
             if (createFolder && url.EndsWith("/", StringComparison.Ordinal))
                 url = url.Substring(0, url.Length - 1);
             
-            System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.FtpWebRequest.Create(url + remotename);
+            System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.WebRequest.Create(url + remotename);
 
             if (m_userInfo != null)
                 req.Credentials = m_userInfo;
