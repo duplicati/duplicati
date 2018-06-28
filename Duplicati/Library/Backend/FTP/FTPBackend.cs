@@ -137,13 +137,18 @@ namespace Duplicati.Library.Backend
             string dir = m.Groups["dir"].Value;
 
             if (dir != "" && dir != "-")
+            {
                 f.IsFolder = true;
+            }
             else
+            {
                 f.Size = long.Parse(m.Groups["size"].Value);
+            }
 
-            DateTime t;
-            if (DateTime.TryParse(time, out t))
+            if (DateTime.TryParse(time, out DateTime t))
+            {
                 f.LastAccess = f.LastModification = t;
+            }
 
             return f;
         }
