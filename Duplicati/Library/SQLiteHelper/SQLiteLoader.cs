@@ -18,17 +18,15 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Duplicati.Library.SQLiteHelper
 {
     public static class SQLiteLoader
     {
-		/// <summary>
+        /// <summary>
         /// The tag used for logging
         /// </summary>
-		private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
 
         /// <summary>
         /// A cached copy of the type
@@ -36,61 +34,56 @@ namespace Duplicati.Library.SQLiteHelper
         private static Type m_type = null;
 
         /// <summary>
-        /// Loads an SQLite connection instance, optionally setting the tempfolder and opening the the database
+        /// Loads an SQLite connection instance and opening the database
         /// </summary>
         /// <returns>The SQLite connection instance.</returns>
-        /// <param name="targetpath">The optional path to the database.</param>
-        /// <param name="tempdir">The optional tempdir to set.</param>
-        public static System.Data.IDbConnection LoadConnection(string targetpath = null, string tempdir = null)
+        public static System.Data.IDbConnection LoadConnection()
         {
-            if (string.IsNullOrWhiteSpace(tempdir))
-                tempdir = Library.Utility.TempFolder.SystemTempPath;
-
-            var prev = System.Environment.GetEnvironmentVariable("SQLITE_TMPDIR");
-
             System.Data.IDbConnection con = null;
+
+            SetEnvironmentVariablesForSQLiteTempDir();
 
             try
             {
-                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", tempdir);
                 con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, "Failed to load connection.");
+                DisposeConnection(con);
+
+                throw;
+            }
+
+            return con;
+        }
+
+        /// <summary>
+        /// Loads an SQLite connection instance and opening the database
+        /// </summary>
+        /// <returns>The SQLite connection instance.</returns>
+        /// <param name="targetpath">The optional path to the database.</param>
+        public static System.Data.IDbConnection LoadConnection(string targetpath)
+        {
+            System.Data.IDbConnection con = LoadConnection();
+
+            try
+            {
                 if (!string.IsNullOrWhiteSpace(targetpath))
                 {
                     con.ConnectionString = "Data Source=" + targetpath;
                     con.Open();
-
-                    // Try to set the temp_dir even tough it is deprecated
-                    if (!string.IsNullOrWhiteSpace(tempdir))
-                    {
-                        try
-                        {
-                            using (var cmd = con.CreateCommand())
-                            {
-                                cmd.CommandText = string.Format("PRAGMA temp_store_directory = '{0}'", tempdir);
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-                        catch
-                        {
-                        }
-                    }
                 }
 
             }
-            catch
+            catch (Exception ex)
             {
-                if (con != null)
-                    try { con.Dispose(); }
-                    catch { }
+                Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, @"Failed to load connection with path '{0}'.", targetpath);
+                DisposeConnection(con);
 
                 throw;
             }
-            finally
-            {
-                System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", prev);
-            }
 
-            
             return con;
         }
 
@@ -101,74 +94,104 @@ namespace Duplicati.Library.SQLiteHelper
         {
             get
             {
-                if (m_type == null)
+                if (m_type != null)
                 {
-                    var filename = "System.Data.SQLite.dll";
-                    var basePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
+                    return m_type;
+                }
 
-                    // Set this to make SQLite preload automatically
-                    Environment.SetEnvironmentVariable("PreLoadSQLite_BaseDirectory", basePath);
+                var filename = "System.Data.SQLite.dll";
+                var basePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
 
-                    //Default is to use the pinvoke version which requires a native .dll/.so
-                    var assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
+                // Set this to make SQLite preload automatically
+                Environment.SetEnvironmentVariable("PreLoadSQLite_BaseDirectory", basePath);
 
-                    if (!Duplicati.Library.Utility.Utility.IsMono)
+                //Default is to use the pinvoke version which requires a native .dll/.so
+                var assemblyPath = System.IO.Path.Combine(basePath, "pinvoke");
+                var loadMixedModeAssembly = false;
+
+                if (!Duplicati.Library.Utility.Utility.IsMono)
+                {
+                    //If we run with MS.Net we can use the mixed mode assemblies
+                    if (Environment.Is64BitProcess)
                     {
-                        //If we run with MS.Net we can use the mixed mode assemblies
-                        if (Environment.Is64BitProcess)
+                        if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
                         {
-                            if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win64"), filename)))
-                                assemblyPath = System.IO.Path.Combine(basePath, "win64");
+                            assemblyPath = System.IO.Path.Combine(basePath, "win64");
+                            loadMixedModeAssembly = true;
                         }
-                        else
+                    }
+                    else
+                    {
+                        if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
                         {
-                            if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.Combine(basePath, "win32"), filename)))
-                                assemblyPath = System.IO.Path.Combine(basePath, "win32");
-                        }
-
-                        // If we have a new path, try to force load the mixed-mode assembly for the current architecture
-                        // This can be avoided if the preload in SQLite works, but it is easy to do it here as well
-                        if (assemblyPath != System.IO.Path.Combine(basePath, "pinvoke"))
-                        {
-                            try { PInvoke.LoadLibraryEx(System.IO.Path.Combine(basePath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
-                            catch { }
-                        }
-
-                    } else {
-                        //On Mono, we try to find the Mono version of SQLite
-                        
-                        //This secret environment variable can be used to support older installations
-                        var envvalue = System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE");
-                        if (!Utility.Utility.ParseBool(envvalue, envvalue != null))
-                        {
-                            foreach(var asmversion in new string[] {"4.0.0.0", "2.0.0.0"})
-                            {
-                                try 
-                                {
-                                    Type t = System.Reflection.Assembly.Load(string.Format("Mono.Data.Sqlite, Version={0}, Culture=neutral, PublicKeyToken=0738eb9f132ed756", asmversion)).GetType("Mono.Data.Sqlite.SqliteConnection");
-                                    if (t != null && t.GetInterface("System.Data.IDbConnection", false) != null)
-                                    {
-                                        Version v = new Version((string)t.GetProperty("SQLiteVersion").GetValue(null, null));
-                                        if (v >= new Version(3, 6, 3))
-                                        {
-                                            m_type = t;
-                                            return m_type;
-                                        }
-                                    }
-                                    
-                                } catch {
-                                }
-                            }
-
-							Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadSQLite", "Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
+                            assemblyPath = System.IO.Path.Combine(basePath, "win32");
+                            loadMixedModeAssembly = true;
                         }
                     }
 
-                    m_type = System.Reflection.Assembly.LoadFile(System.IO.Path.Combine(assemblyPath, filename)).GetType("System.Data.SQLite.SQLiteConnection");
+                    // If we have a new path, try to force load the mixed-mode assembly for the current architecture
+                    // This can be avoided if the preload in SQLite works, but it is easy to do it here as well
+                    if (loadMixedModeAssembly)
+                    {
+                        try { PInvoke.LoadLibraryEx(System.IO.Path.Combine(basePath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
+                        catch { }
+                    }
                 }
+                else
+                {
+                    //On Mono, we try to find the Mono version of SQLite
+
+                    //This secret environment variable can be used to support older installations
+                    var envvalue = System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE");
+                    if (!Utility.Utility.ParseBool(envvalue, envvalue != null))
+                    {
+                        foreach (var asmversion in new[] { "4.0.0.0", "2.0.0.0" })
+                        {
+                            try
+                            {
+                                Type t = System.Reflection.Assembly.Load(string.Format("Mono.Data.Sqlite, Version={0}, Culture=neutral, PublicKeyToken=0738eb9f132ed756", asmversion)).GetType("Mono.Data.Sqlite.SqliteConnection");
+                                if (t != null && t.GetInterface("System.Data.IDbConnection", false) != null)
+                                {
+                                    Version v = new Version((string)t.GetProperty("SQLiteVersion").GetValue(null, null));
+                                    if (v >= new Version(3, 6, 3))
+                                    {
+                                        m_type = t;
+                                        return m_type;
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                            }
+                        }
+
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadSQLite", "Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
+                    }
+                }
+
+                m_type = System.Reflection.Assembly.LoadFile(System.IO.Path.Combine(assemblyPath, filename)).GetType("System.Data.SQLite.SQLiteConnection");
 
                 return m_type;
             }
+        }
+
+        /// <summary>
+        /// Set environment variables to be used by SQLite to determine which folder to use for temporary files.
+        /// From SQLite's documentation, SQLITE_TMPDIR is used for unix-like systems.
+        /// For Windows, TMP and TEMP environment variables are used.
+        /// </summary>
+        private static void SetEnvironmentVariablesForSQLiteTempDir()
+        {
+            System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Library.Utility.TempFolder.SystemTempPath);
+            System.Environment.SetEnvironmentVariable("TMP", Library.Utility.TempFolder.SystemTempPath);
+            System.Environment.SetEnvironmentVariable("TEMP", Library.Utility.TempFolder.SystemTempPath);
+        }
+
+        private static void DisposeConnection(System.Data.IDbConnection con)
+        {
+            if (con != null)
+                try { con.Dispose(); }
+                catch { }
         }
     }
 
