@@ -216,7 +216,7 @@ namespace Duplicati.Library.Backend
                     req);
                 
                 string line;
-                while ((line = HandleListExceptions(() => sr.ReadLine(), req)) != null)
+                while ((line = HandleListExceptions(sr.ReadLine, req)) != null)
                 {
                     FileEntry f = ParseLine(line);
                     if (f != null)
