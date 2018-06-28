@@ -182,7 +182,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         /// <param name="connection">The database connection to use</param>
         /// <param name="sourcefile">The file the database is placed in</param>
-        public static void UpgradeDatabase(IDbConnection connection, string sourcefile, string schema, IList<string> versions)
+        private static void UpgradeDatabase(IDbConnection connection, string sourcefile, string schema, IList<string> versions)
         {
             if (connection.State != ConnectionState.Open)
             {
