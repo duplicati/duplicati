@@ -267,10 +267,11 @@ namespace Duplicati.Library.SQLiteHelper
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void SetUnixPermissionUserRWOnly(string path)
         {
+            var fi = UnixSupport.File.GetUserGroupAndPermissions(path);
             UnixSupport.File.SetUserGroupAndPermissions(
                     path, 
-                    UnixSupport.File.GetUserID(path), 
-                    UnixSupport.File.GetGroupID(path), 
+                    fi.UID, 
+                    fi.GID, 
                     0x180 /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR*/
                 );
         }
