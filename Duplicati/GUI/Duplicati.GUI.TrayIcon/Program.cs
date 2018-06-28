@@ -40,7 +40,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             // No longer using Cocoa directly as it fails on 32bit as well            
             if (Duplicati.Library.Utility.Utility.IsClientOSX)
-                    return TOOLKIT_RUMPS;
+                return TOOLKIT_RUMPS;
 
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
             if (Duplicati.Library.Utility.Utility.IsClientLinux)
