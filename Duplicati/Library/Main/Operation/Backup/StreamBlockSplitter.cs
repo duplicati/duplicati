@@ -100,8 +100,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 fslen = stream.Length;
                             }
 
-                            await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = fslen, Type = EventType.FileStarted });
-                            send_close = true;
+                            // Don't send progress reports for metadata
+                            if (!e.IsMetadata)
+                            {
+                                await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = fslen, Type = EventType.FileStarted });
+                                send_close = true;
+                            }
 
                             filehasher.Initialize();
                             var lastread = 0;
@@ -134,14 +138,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 filesize += lastread;
 
                                 // Don't spam updates
-                                if ((DateTime.Now - lastupdate).TotalSeconds > 10)
+                                if (send_close && (DateTime.Now - lastupdate).TotalSeconds > 5)
                                 {
                                     await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileProgressUpdate });
                                     lastupdate = DateTime.Now;
                                 }
 
                                 // Make sure the filehasher is done with the buf instance before we pass it on
-                                await pftask;
+                                await pftask.ConfigureAwait(false);
                                 await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, 0, lastread, e.Hint, false);
                                 buf = new byte[blocksize];
                             }

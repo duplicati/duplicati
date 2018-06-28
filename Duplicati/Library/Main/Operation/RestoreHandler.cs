@@ -325,7 +325,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteVerboseMessage(LOGTAG, "PatchingMetadata", "Patching metadata with remote data: {0}", targetpath);
                     try
                     {
-                        var folderpath = m_systemIO.PathGetDirectoryName(targetpath);
+                        var folderpath = Duplicati.Library.Utility.Utility.GetParent(targetpath, false);
                         if (!options.Dryrun && !m_systemIO.DirectoryExists(folderpath))
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for target {1}", folderpath, targetpath);
@@ -904,7 +904,7 @@ namespace Duplicati.Library.Main.Operation
                                 if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0) // clear readonly attribute
                                 {
                                     if (options.Dryrun) 
-                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribyte", "Would reset read-only attribute on file: {0}", targetpath);
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribute", "Would reset read-only attribute on file: {0}", targetpath);
                                     else m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
                                 }
                                 if (options.Dryrun)

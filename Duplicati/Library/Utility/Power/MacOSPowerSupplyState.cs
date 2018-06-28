@@ -38,9 +38,13 @@ namespace Duplicati.Library.Utility.Power
         {
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo("pmset", "-g batt");
-                psi.RedirectStandardOutput = true;
-                psi.UseShellExecute = false;
+                var psi = new System.Diagnostics.ProcessStartInfo("pmset", "-g batt")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardInput = false,
+                    RedirectStandardError = false,
+                    UseShellExecute = false
+                };
 
                 var pi = System.Diagnostics.Process.Start(psi);
                 pi.WaitForExit(1000);
@@ -71,9 +75,13 @@ namespace Duplicati.Library.Utility.Power
         {
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo("ioreg", "-n AppleSmartBattery -r");
-                psi.RedirectStandardOutput = true;
-                psi.UseShellExecute = false;
+                var psi = new System.Diagnostics.ProcessStartInfo("ioreg", "-n AppleSmartBattery -r")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = false,
+                    RedirectStandardInput = false,
+                    UseShellExecute = false
+                };
 
                 var pi = System.Diagnostics.Process.Start(psi);
                 pi.WaitForExit(1000);

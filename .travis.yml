@@ -56,6 +56,7 @@ jobs:
     - env: CATEGORY=Serialization
     - env: CATEGORY=Utility
     - env: CATEGORY=UriUtility
+    - env: CATEGORY=WebApi
 
     - env: CATEGORY=GUI
       addons:
@@ -67,4 +68,4 @@ before_install:
       - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 script:
-  - ./build.sh ${TRAVIS_BUILD_DIR} ${CATEGORY}
+  - ./build.sh ${CATEGORY} ${TRAVIS_BUILD_DIR}

@@ -15,9 +15,11 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using HttpServer.HttpModules;
-using System.Collections.Generic;
+
 using Duplicati.Server.WebServer.RESTMethods;
 
 namespace Duplicati.Server.WebServer
@@ -64,7 +66,7 @@ namespace Duplicati.Server.WebServer
             DoProcess(request, response, session, method, module.Name.ToLowerInvariant(), (request.Method.ToUpper() == "POST" ? request.Form : request.QueryString)["id"].Value);
         }
 
-        private static Dictionary<string, System.Globalization.CultureInfo> _cultureCache = new Dictionary<string, System.Globalization.CultureInfo>(StringComparer.OrdinalIgnoreCase);
+        private static ConcurrentDictionary<string, System.Globalization.CultureInfo> _cultureCache = new ConcurrentDictionary<string, System.Globalization.CultureInfo>(StringComparer.OrdinalIgnoreCase);
 
         private static System.Globalization.CultureInfo ParseRequestCulture(RequestInfo info)
         {

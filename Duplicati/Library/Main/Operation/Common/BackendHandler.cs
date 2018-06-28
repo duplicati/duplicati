@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     using(var enc = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions))
                         enc.Encrypt(this.LocalFilename, tempfile);
 
-                    await this.DeleteLocalFile();
+                    await this.DeleteLocalFile().ConfigureAwait(false);
 
                     this.LocalTempfile = tempfile;
                     this.Hash = null;
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
             return RunRetryOnMain<bool>(fe, async () =>
             {
-                await DoPut(fe);
+                await DoPut(fe).ConfigureAwait(false);
                 m_uploadSuccess = true;
                 return true;
             });
@@ -227,17 +227,17 @@ namespace Duplicati.Library.Main.Operation.Common
                 {
                     await DoWithRetry(fe, async () => {
                         if (fe.IsRetry)
-                            await RenameFileAfterErrorAsync(fe);
+                            await RenameFileAfterErrorAsync(fe).ConfigureAwait(false);
 
                         // Make sure the encryption and hashing has completed
-                        await backgroundhashAndEncrypt;
+                        await backgroundhashAndEncrypt.ConfigureAwait(false);
 
-                        return await DoPut(fe);
-                    });
+                        return await DoPut(fe).ConfigureAwait(false);
+                    }).ConfigureAwait(false);
 
                     if (createIndexFile != null)
                     {
-                        var ix = await createIndexFile(fe.RemoteFilename);
+                        var ix = await createIndexFile(fe.RemoteFilename).ConfigureAwait(false);
                         var indexFile = new FileEntryItem(BackendActionType.Put, ix.RemoteFilename);
                         indexFile.SetLocalfilename(ix.LocalFilename);
 
@@ -245,15 +245,15 @@ namespace Duplicati.Library.Main.Operation.Common
 
                         await DoWithRetry(indexFile, async () => {
                             if (indexFile.IsRetry)
-                                await RenameFileAfterErrorAsync(indexFile);
+                                await RenameFileAfterErrorAsync(indexFile).ConfigureAwait(false);
 
-                            var res = await DoPut(indexFile);
+                            var res = await DoPut(indexFile).ConfigureAwait(false);
 
                             // Register that the index file is tracking the block file
                             await m_database.AddIndexBlockLinkAsync(
                                 ix.VolumeID,
                                 await m_database.GetRemoteVolumeIDAsync(fe.RemoteFilename)
-                            );
+                            ).ConfigureAwait(false);
 
 
                             return res;
@@ -271,7 +271,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 }
             });
 
-            await tcs.Task;
+            await tcs.Task.ConfigureAwait(false);
         }
 
         public Task DeleteFileAsync(string remotename, bool suppressCleanup = false)
@@ -309,7 +309,7 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             var fe = new FileEntryItem(BackendActionType.Get, remotename);
             return RunRetryOnMain(fe, async () => {
-                var res = await DoGet(fe);
+                var res = await DoGet(fe).ConfigureAwait(false);
                 return new Tuple<Library.Utility.TempFile, long, string>(
                     res,
                     fe.Size,
@@ -354,7 +354,7 @@ namespace Duplicati.Library.Main.Operation.Common
             for(var i = 0; i < m_options.NumberOfRetries; i++)
             {
                 if (m_options.RetryDelay.Ticks != 0 && i != 0)
-                    await Task.Delay(m_options.RetryDelay);
+                    await Task.Delay(m_options.RetryDelay).ConfigureAwait(false);
 
                 if (!await m_taskreader.TransferProgressAsync)
                     throw new OperationCanceledException();
@@ -368,8 +368,8 @@ namespace Duplicati.Library.Main.Operation.Common
                         m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
                     if (m_backend == null)
                         throw new Exception("Backend failed to re-load");
-                    
-                    var r = await method();
+
+                    var r = await method().ConfigureAwait(false);
                     return r;
                 }
                 catch (Exception ex)
@@ -397,14 +397,14 @@ namespace Duplicati.Library.Main.Operation.Common
                             Logging.Log.WriteWarningMessage(LOGTAG, "FolderCreateError", dex, "Failed to create folder: {0}", ex.Message);
                         }
                     }
-                        
+
                     if (!recovered)
-                        await ResetBackendAsync(ex);
+                        await ResetBackendAsync(ex).ConfigureAwait(false);
                 }
                 finally
                 {
                     if (m_options.NoConnectionReuse)
-                        await ResetBackendAsync(null);
+                        await ResetBackendAsync(null).ConfigureAwait(false);
                 }
             }
 
@@ -429,7 +429,7 @@ namespace Duplicati.Library.Main.Operation.Common
         private async Task<bool> DoPut(FileEntryItem item, bool updatedHash = false)
         {
             // If this is not already encrypted, do it now
-            await item.Encrypt(m_options);
+            await item.Encrypt(m_options).ConfigureAwait(false);
 
             updatedHash |= item.UpdateHashAndSize(m_options);
 
@@ -439,7 +439,7 @@ namespace Duplicati.Library.Main.Operation.Common
             if (m_options.Dryrun)
             {
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadVolume", "Would upload volume: {0}, size: {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(item.LocalFilename).Length));
-                await item.DeleteLocalFile();
+                await item.DeleteLocalFile().ConfigureAwait(false);
                 return true;
             }
             

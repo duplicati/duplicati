@@ -52,7 +52,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                 while (await taskreader.ProgressAsync)
                 {
                     var e = await self.Input.ReadAsync();
-                    var filesize = 0L;
 
                     try
                     {
@@ -86,6 +85,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         var metadataid = await metatask;
                         var filekey = filestreamdata.Streamhash;
+                        var filesize = filestreamdata.Streamlength;
 
                         if (oldHash != filekey)
                         {

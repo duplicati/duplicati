@@ -213,7 +213,7 @@ namespace Duplicati.GUI.TrayIcon
                         while(true)
                         {
                             var line = await self.Input.ReadAsync();
-                            await stream.WriteLineAsync(line);
+                            await stream.WriteLineAsync(line).ConfigureAwait(false);
                             //Console.WriteLine("Wrote {0}", line);
                         }
                     }
@@ -225,7 +225,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             string line;
             using(stream)
-                while ((line = await stream.ReadLineAsync()) != null)
+                while ((line = await stream.ReadLineAsync().ConfigureAwait(false)) != null)
                 {
                     //Console.WriteLine("Got message: {0}", line);
 

@@ -52,9 +52,9 @@ namespace Duplicati.Library.Backend.GoogleServices
             switch (ct)
             {
                 case ConfigType.StorageClasses:
-                    return GoogleCloudStorage.GoogleCloudStorage.KNOWN_GCS_STORAGE_CLASSES.ToDictionary((x) => x.Key, (y) => y.Value);
+                    return WebApi.GoogleCloudStorage.KNOWN_GCS_STORAGE_CLASSES.ToDictionary((x) => x.Key, (y) => y.Value);
                 default:
-                    return GoogleCloudStorage.GoogleCloudStorage.KNOWN_GCS_LOCATIONS.ToDictionary((x) => x.Key, (y) => y.Value);
+                    return WebApi.GoogleCloudStorage.KNOWN_GCS_LOCATIONS.ToDictionary((x) => x.Key, (y) => y.Value);
             }
         }
 
@@ -79,4 +79,3 @@ namespace Duplicati.Library.Backend.GoogleServices
         #endregion
     }
 }
-
