@@ -31,8 +31,7 @@ namespace Duplicati.Library.Backend
         private readonly string m_url;
 
         private readonly bool m_useSSL = false;
-        private readonly bool m_defaultPassive = true;
-        private readonly bool m_passive = false;
+        private readonly bool m_passiveMode = false;
         private readonly bool m_listVerify = true;
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
@@ -87,7 +86,9 @@ namespace Duplicati.Library.Backend
 
             m_url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
             if (!m_url.EndsWith("/", StringComparison.Ordinal))
+            {
                 m_url += "/";
+            }
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
@@ -95,14 +96,8 @@ namespace Duplicati.Library.Backend
 
             if (Utility.Utility.ParseBoolOption(options, "ftp-passive"))
             {
-                m_defaultPassive = false;
-                m_passive = true;
-            }
-            if (Utility.Utility.ParseBoolOption(options, "ftp-regular"))
-            {
-                m_defaultPassive = false;
-                m_passive = false;
-            }
+                m_passiveMode = true;
+            } else m_passiveMode &= !Utility.Utility.ParseBoolOption(options, "ftp-regular");
         }
 
         #region Regular expression to parse list lines
@@ -381,8 +376,7 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            if (m_userInfo != null)
-                m_userInfo = null;
+            m_userInfo = null;
         }
 
         #endregion
@@ -401,11 +395,12 @@ namespace Duplicati.Library.Backend
             System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.WebRequest.Create(url + remotename);
 
             if (m_userInfo != null)
+            {
                 req.Credentials = m_userInfo;
-            req.KeepAlive = false;
+            }
 
-            if (!m_defaultPassive)
-                req.UsePassive = m_passive;
+            req.KeepAlive = false;
+            req.UsePassive = m_passiveMode;
 
             if (m_useSSL)
                 req.EnableSsl = m_useSSL;
