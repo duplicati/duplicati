@@ -137,9 +137,9 @@ namespace Duplicati.CommandLine.BackendTester
         {
             string allowedChars = ValidFilenameChars;
             if (options.ContainsKey("extended-chars"))
-                allowedChars += options["extended-chars"];
-            else
-                allowedChars += ExtendedChars;
+            {
+                allowedChars += String.IsNullOrEmpty(options["extended-chars"]) ? ExtendedChars : options["extended-chars"];
+            }
 
             bool autoCreateFolders = Library.Utility.Utility.ParseBoolOption(options, "auto-create-folder");
 
