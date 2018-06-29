@@ -127,7 +127,6 @@
     <Compile Include="WebServer\SynologyAuthenticationHandler.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="Duplicati.snk" />
     <EmbeddedResource Include="newbackup.json" />
     <EmbeddedResource Include="Database\Database schema\Schema.sql" />
