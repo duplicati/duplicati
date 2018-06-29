@@ -121,8 +121,8 @@ namespace Duplicati.Library.Snapshots
             try
             {
                 IsHyperVInstalled = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(
-                        "SELECT * FROM meta_class")).Get().OfType<ManagementObject>()
-                        .Any(o => ((string)o.GetPropertyValue("Name")).StartsWith("Msvm_"));
+                    "SELECT * FROM meta_class")).Get().OfType<ManagementObject>()
+                    .Any(o => ((ManagementClass)o).ClassPath.ClassName.StartsWith("Msvm_"));
             }
             catch { IsHyperVInstalled = false; }
 
