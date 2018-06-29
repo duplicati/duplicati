@@ -1,212 +1,54 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.Library.Main</RootNamespace>
-    <AssemblyName>Duplicati.Library.Main</AssemblyName>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>2.0.0.7</Version>
+    <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <UseMSBuildEngine>false</UseMSBuildEngine>
+    <Copyright>LGPL, Copyright ? Duplicati Team 2015</Copyright>
+    <Product>Duplicati.Main</Product>
+    <Company>Duplicati Team</Company>
+    <Authors>Duplicati Team</Authors>
+    <Description>The main Duplicati implementation module</Description>
+    <PackageId>Main</PackageId>
+    <AssemblyName>Duplicati.Main</AssemblyName>
+    <RootNamespace>Duplicati.Main</RootNamespace>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>True</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+  
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Core" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="CoCoL">
-      <HintPath>..\..\..\packages\CoCoL.1.5.1\lib\net45\CoCoL.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="CoCoL" Version="1.6.1" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Operation\VacuumHandler.cs" />
-    <Compile Include="Options.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Database\ILocalFileEntry.cs" />
-    <Compile Include="Database\IRemoteVolume.cs" />
-    <Compile Include="Database\LocalBackupDatabase.cs" />
-    <Compile Include="Database\LocalDatabase.cs" />
-    <Compile Include="Database\LocalRestoreDatabase.cs" />
-    <Compile Include="Database\RemoteVolume.cs" />
-    <Compile Include="Database\RemoteVolumeEntry.cs" />
-    <Compile Include="Database\ExtensionMethods.cs" />
-    <Compile Include="Database\LocalDeleteDatabase.cs" />
-    <Compile Include="Database\LocalBugReportDatabase.cs" />
-    <Compile Include="Database\LocalRepairDatabase.cs" />
-    <Compile Include="Operation\BackupHandler.cs" />
-    <Compile Include="Operation\ListFilesHandler.cs" />
-    <Compile Include="Operation\RecreateDatabaseHandler.cs" />
-    <Compile Include="Operation\RestoreControlFilesHandler.cs" />
-    <Compile Include="Operation\RestoreHandler.cs" />
-    <Compile Include="Operation\CompactHandler.cs" />
-    <Compile Include="Operation\DeleteHandler.cs" />
-    <Compile Include="Operation\CreateBugReportHandler.cs" />
-    <Compile Include="Operation\RepairHandler.cs" />
-    <Compile Include="Volumes\BlockVolumeReader.cs" />
-    <Compile Include="Volumes\BlockVolumeWriter.cs" />
-    <Compile Include="Volumes\FilesetVolumeReader.cs" />
-    <Compile Include="Volumes\FilesetVolumeWriter.cs" />
-    <Compile Include="Volumes\IFileEntry.cs" />
-    <Compile Include="Volumes\InvalidManifestException.cs" />
-    <Compile Include="Volumes\IParsedVolume.cs" />
-    <Compile Include="Volumes\VolumeBase.cs" />
-    <Compile Include="Volumes\VolumeReaderBase.cs" />
-    <Compile Include="Volumes\VolumeWriterBase.cs" />
-    <Compile Include="Volumes\IndexVolumeWriter.cs" />
-    <Compile Include="Volumes\IndexVolumeReader.cs" />
-    <Compile Include="AsyncDownloader.cs" />
-    <Compile Include="Blockprocessor.cs" />
-    <Compile Include="DatabaseLocator.cs" />
-    <Compile Include="Enums.cs" />
-    <Compile Include="BackendManager.cs" />
-    <Compile Include="Operation\FilelistProcessor.cs" />
-    <Compile Include="Utility.cs" />
-    <Compile Include="IMetahash.cs" />
-    <Compile Include="Controller.cs" />
-    <Compile Include="Database\LocalListDatabase.cs" />
-    <Compile Include="ResultClasses.cs" />
-    <Compile Include="Operation\ListControlFilesHandler.cs" />
-    <Compile Include="Operation\ListChangesHandler.cs" />
-    <Compile Include="Database\LocalListChangesDatabase.cs" />
-    <Compile Include="Database\LocalTestDatabase.cs" />
-    <Compile Include="Operation\TestHandler.cs" />
-    <Compile Include="Database\LocalRecreateDatabase.cs" />
-    <Compile Include="ProgressClasses.cs" />
-    <Compile Include="OperationPhase.cs" />
-    <Compile Include="Database\PathLookupHelper.cs" />
-    <Compile Include="Database\HashLookupHelper.cs" />
-    <Compile Include="Operation\TestFilterHandler.cs" />
-    <Compile Include="Operation\ListAffected.cs" />
-    <Compile Include="Database\LocalListAffectedDatabase.cs" />
-    <Compile Include="Strings.cs" />
-    <Compile Include="Operation\RestoreHandlerMetadataStorage.cs" />
-    <Compile Include="Operation\SystemInfoHandler.cs" />
-    <Compile Include="Operation\Backup\FileEnumerationProcess.cs" />
-    <Compile Include="Operation\Backup\MetadataPreProcess.cs" />
-    <Compile Include="Operation\Backup\MetadataGenerator.cs" />
-    <Compile Include="Operation\Common\ProgressEvent.cs" />
-    <Compile Include="Operation\Backup\FileBlockProcessor.cs" />
-    <Compile Include="Operation\Backup\DataBlock.cs" />
-    <Compile Include="Operation\Backup\FilePreFilterProcess.cs" />
-    <Compile Include="Operation\Backup\DataBlockProcessor.cs" />
-    <Compile Include="Operation\Backup\SpillCollectorProcess.cs" />
-    <Compile Include="Operation\Backup\BackupDatabase.cs" />
-    <Compile Include="Operation\Common\DatabaseCommon.cs" />
-    <Compile Include="Operation\Common\SingleRunner.cs" />
-    <Compile Include="Operation\Common\BackendHandler.cs" />
-    <Compile Include="Operation\Common\StatsCollector.cs" />
-    <Compile Include="Operation\Backup\BackupStatsCollector.cs" />
-    <Compile Include="Operation\Backup\ProgressHandler.cs" />
-    <Compile Include="Operation\Backup\BackendUploader.cs" />
-    <Compile Include="Operation\Common\IndexVolumeCreator.cs" />
-    <Compile Include="Operation\Backup\UploadSyntheticFilelist.cs" />
-    <Compile Include="Operation\Backup\Channels.cs" />
-    <Compile Include="Operation\Backup\CountFilesHandler.cs" />
-    <Compile Include="Operation\Backup\UploadRealFilelist.cs" />
-    <Compile Include="Operation\Common\TaskControl.cs" />
-    <Compile Include="Operation\Backup\StreamBlockSplitter.cs" />
-    <Compile Include="Operation\Backup\StreamBlock.cs" />
-    <Compile Include="Operation\PurgeFilesHandler.cs" />
-    <Compile Include="Database\LocalPurgeDatabase.cs" />
-    <Compile Include="Database\LocalListBrokenFilesDatabase.cs" />
-    <Compile Include="Operation\ListBrokenFilesHandler.cs" />
-    <Compile Include="Operation\PurgeBrokenFilesHandler.cs" />
-    <Compile Include="Operation\Backup\RecreateMissingIndexFiles.cs" />
-    <Compile Include="ControllerMultiLogTarget.cs" />
-    <Compile Include="ProcessController.cs" />
-  </ItemGroup>
-  <ItemGroup>
+
+  <ItemGroup>	
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
-      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
     <ProjectReference Include="..\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
-      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
-      <Name>Duplicati.Library.DynamicLoader</Name>
     </ProjectReference>
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
-      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
-      <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj">
-      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
-      <Name>Duplicati.Library.Logging</Name>
     </ProjectReference>
     <ProjectReference Include="..\Snapshots\Duplicati.Library.Snapshots.csproj">
-      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</Project>
-      <Name>Duplicati.Library.Snapshots</Name>
     </ProjectReference>
     <ProjectReference Include="..\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
-      <Project>{2C838169-B187-4B09-8768-1C24C2521C8D}</Project>
-      <Name>Duplicati.Library.SQLiteHelper</Name>
     </ProjectReference>
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj">
-      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
-      <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
-      <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
-      <Name>Duplicati.Library.AutoUpdater</Name>
     </ProjectReference>
     <ProjectReference Include="..\UsageReporter\Duplicati.Library.UsageReporter.csproj">
-      <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
-      <Name>Duplicati.Library.UsageReporter</Name>
     </ProjectReference>
     <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
-      <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
-      <Name>Duplicati.Library.Modules.Builtin</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="Duplicati.snk" />
-    <None Include="packages.config" />
-  </ItemGroup>
+  
   <ItemGroup>
     <EmbeddedResource Include="Database\Database schema\Schema.sql" />
     <EmbeddedResource Include="Database\Database schema\1. Add index.sql" />
     <EmbeddedResource Include="Database\Database schema\2. Use Lastmodified.sql" />
     <EmbeddedResource Include="Database\Database schema\3. Add grace delete period.sql" />
     <EmbeddedResource Include="Database\Database schema\4. Add index.sql" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
-  <ItemGroup>
     <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
     <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
     <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
@@ -215,8 +57,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Operation\Backup\" />
-    <Folder Include="Operation\Common\" />
-  </ItemGroup>
+
 </Project>
