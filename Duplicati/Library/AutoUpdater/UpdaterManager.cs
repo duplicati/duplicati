@@ -1081,6 +1081,10 @@ namespace Duplicati.Library.AutoUpdater
             // If we are not the primary entry, just execute
             if (IsRunningInUpdateEnvironment)
             {
+                // For some reason this does not work
+                //if (Library.Utility.Utility.IsClientWindows)
+                    //Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+
                 int r = 0;
                 WrapWithUpdater(defaultstrategy, () => {
                     r = RunMethod(method, cmdargs);
@@ -1106,7 +1110,7 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    ErrorDialog = false
+                    ErrorDialog = false,
                 };
                 pi.EnvironmentVariables.Clear();
 
@@ -1118,8 +1122,36 @@ namespace Duplicati.Library.AutoUpdater
                 pi.EnvironmentVariables[string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)] = InstalledBaseDir;
                 pi.EnvironmentVariables["LOCALIZATION_FOLDER"] = InstalledBaseDir;
 
+                // On Windows, we manually redirect the streams
+                if (Library.Utility.Utility.IsClientWindows)
+                {
+                    pi.RedirectStandardError = true;
+                    pi.RedirectStandardInput = true;
+                    pi.RedirectStandardOutput = true;
+                }
+
                 var proc = System.Diagnostics.Process.Start(pi);
+                Task tasks = null;
+                if (Library.Utility.Utility.IsClientWindows)
+                {
+                    // On Windows, we manually redirect the streams
+                    tasks = Task.WhenAll(
+                        // This does some unwanted buffering that breaks things
+                        //Console.OpenStandardInput().CopyToAsync(proc.StandardInput.BaseStream),
+                        Task.Run(async () => {
+                            var stdin = new StreamReader(Console.OpenStandardInput());
+                            var line = string.Empty;
+                            while ((line = await stdin.ReadLineAsync()) != null)
+                                await proc.StandardInput.WriteLineAsync(line);
+                        }),
+                        proc.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput()),
+                        proc.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError())
+                    );
+                }
+
                 proc.WaitForExit();
+                if (tasks != null)
+                    tasks.Wait(1000);
 
                 if (proc.ExitCode != MAGIC_EXIT_CODE)
                     return proc.ExitCode;

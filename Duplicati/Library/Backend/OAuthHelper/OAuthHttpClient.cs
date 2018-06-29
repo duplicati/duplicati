@@ -67,7 +67,7 @@ namespace Duplicati.Library
                 this.PreventAuthentication(request);
             }
 
-            return await this.SendAsync(request);
+            return await this.SendAsync(request).ConfigureAwait(false);
         }
 
         /// <summary>

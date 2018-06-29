@@ -904,7 +904,7 @@ namespace Duplicati.Library.Main.Operation
                                 if ((currentAttr & System.IO.FileAttributes.ReadOnly) != 0) // clear readonly attribute
                                 {
                                     if (options.Dryrun) 
-                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribyte", "Would reset read-only attribute on file: {0}", targetpath);
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldResetReadOnlyAttribute", "Would reset read-only attribute on file: {0}", targetpath);
                                     else m_systemIO.SetFileAttributes(targetpath, currentAttr & ~System.IO.FileAttributes.ReadOnly);
                                 }
                                 if (options.Dryrun)

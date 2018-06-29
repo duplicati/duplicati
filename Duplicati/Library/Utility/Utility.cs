@@ -596,7 +596,7 @@ namespace Duplicati.Library.Utility
             int index = 0;
             do
             {
-                a = await stream.ReadAsync(buf, index, count);
+                a = await stream.ReadAsync(buf, index, count).ConfigureAwait(false);
                 index += a;
                 count -= a;
             } while (a != 0 && count > 0);

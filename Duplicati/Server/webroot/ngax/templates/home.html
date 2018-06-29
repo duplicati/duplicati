@@ -43,11 +43,12 @@
                 </dl>
 
                 <dl>
-                    <dt translate>Last successful run:</dt>
+                    <dt translate>Last successful backup:</dt>
                     <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"
                         title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}"
                         translate translate-params-time="item.Backup.Metadata.LastBackupFinished | moment: 'calendar'"
-                        translate-params-duration="formatDuration(item.Backup.Metadata.LastDuration)">{{time}} (took {{duration}})</dd>
+                        translate-params-duration="formatDuration(item.Backup.Metadata.LastBackupDuration || item.Backup.Metadata.LastDuration)">{{time}} (took {{duration}})
+                    </dd>
                     <dd>
                         <span ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{'Never' | translate}} - </span><a href class="action-link" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
                     </dd>

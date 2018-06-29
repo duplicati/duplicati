@@ -88,12 +88,11 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Enumerated Hyper-V guests
         /// </summary>
-        public List<HyperVGuest> Guests { get { return m_Guests; } }
-        private readonly List<HyperVGuest> m_Guests;
+        public List<HyperVGuest> Guests { get; }
 
         public HyperVUtility()
         {
-            m_Guests = new List<HyperVGuest>();
+            Guests = new List<HyperVGuest>();
 
             if (!Utility.Utility.IsClientWindows)
             {
@@ -116,14 +115,14 @@ namespace Duplicati.Library.Snapshots
 
             IsVSSWriterSupported = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem")
                     .Get().OfType<ManagementObject>()
-                    .Select(o => (uint)o.GetPropertyValue("ProductType")).First() != 1;
+                    .Select(o => (uint)o.GetPropertyValue("ProductType"))
+                    .First() != 1;
 
             try
             {
-                var classesCount = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(
-                        "SELECT * FROM meta_class")).Get().OfType<ManagementObject>().Count();
-
-                IsHyperVInstalled = classesCount > 0;
+                IsHyperVInstalled = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(
+                    "SELECT * FROM meta_class")).Get().OfType<ManagementObject>()
+                    .Any(o => ((ManagementClass)o).ClassPath.ClassName.StartsWith("Msvm_"));
             }
             catch { IsHyperVInstalled = false; }
 
@@ -141,7 +140,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsHyperVInstalled)
                 return;
 
-            m_Guests.Clear();
+            Guests.Clear();
             var wmiQuery = _wmiv2Namespace
                 ? "SELECT * FROM Msvm_VirtualSystemSettingData WHERE VirtualSystemType = 'Microsoft:Hyper-V:System:Realized'"
                 : "SELECT * FROM Msvm_VirtualSystemSettingData WHERE SettingType = 3";
@@ -149,11 +148,11 @@ namespace Duplicati.Library.Snapshots
             if (IsVSSWriterSupported)
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
-                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ? GetAllVMsPathsVSS()[(string)mObject[_vmIdField]] : null));
+                        Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ? GetAllVMsPathsVSS()[(string)mObject[_vmIdField]] : null));
             else
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
-                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ?
+                        Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ?
                             GetVMVhdPathsWMI((string)mObject[_vmIdField])
                                 .Union(GetVMConfigPathsWMI((string)mObject[_vmIdField]))
                                 .Distinct(Utility.Utility.ClientFilenameStringComparer)
