@@ -410,7 +410,11 @@ namespace Duplicati.Library.Snapshots
             if (!m_volumeMap.TryGetValue(root, out var volumePath))
                 throw new InvalidOperationException();
 
-            return Path.Combine(volumePath, localPath.Substring(root.Length));
+            var mappedPath = IO_WIN.PathCombine(volumePath, localPath.Substring(root.Length));
+            if (localPath.EndsWith("\\", StringComparison.Ordinal))
+                return Library.Utility.Utility.AppendDirSeparator(mappedPath);
+
+            return mappedPath;
         }
 
         /// <inheritdoc />
