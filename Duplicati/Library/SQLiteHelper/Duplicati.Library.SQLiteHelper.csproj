@@ -44,5 +44,11 @@
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Reference Include="UnixSupport">
+      <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 
 </Project>
