@@ -1,3 +1,21 @@
+2018-06-28 - 2.0.3.8_canary_2018-06-28
+==========
+* Fixed MSI version number
+* Un-hid the Google GCS backend
+* Fixed file sizes reported as zero
+* Fixed a wrong display of sizes less than 1kb, thanks @fyndecano
+* Improvements to the build process, thanks @verhoek
+* Fixed a problem with the Amazon Cloud Drive delay, thanks @snamds
+* Fixed a potential deadlock/performance issue, thanks @warwickmm
+* Improved metadata reporting and UI, thanks @verhoek
+* Improved Hyper-V detection, thanks @mnaiman
+* Improved ways to handle the temporary folder, thanks @verhoek
+* Added logic to remove privileges from the database files, thanks @verhoek
+* Fixed a problem with USN support, thanks @dgehri
+* Fixed temporary files not being removed
+* Fixed no output from commandline on Windows
+* Enabled password input from console again
+
 2018-06-17 - 2.0.3.7_canary_2018-06-17
 ==========
 * Added option to exclude empty folders

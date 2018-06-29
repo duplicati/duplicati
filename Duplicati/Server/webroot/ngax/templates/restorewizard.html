@@ -23,6 +23,12 @@
                 <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.TargetSizeString == null" class="subtext" translate translate-n="parseInt(item.Backup.Metadata.BackupListCount)" translate-plural="{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions">{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version</div>
 
                 <div ng-show="item.Backup.Metadata == null || item.Backup.Metadata.TargetSizeString == null" class="subtext" translate>Unknown backup size and versions</div>
+
+                <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastRestoreFinished == null"
+                class="subtext"
+                translate translate-params-time="item.Backup.Metadata.LastRestoreFinished | moment: 'calendar'"
+                translate-params-duration="formatDuration(item.Backup.Metadata.LastRestoreDuration)">Last successful restore: {{time}} (took {{duration || '0 seconds'}})
+                </div>
     		</li>
     	</ul>
 

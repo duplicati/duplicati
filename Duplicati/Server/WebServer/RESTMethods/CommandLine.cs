@@ -198,7 +198,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     continue;
                 }
 
-                await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(60));
+                await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(60)).ConfigureAwait(false);
             }
         }
 

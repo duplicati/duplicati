@@ -713,37 +713,38 @@ namespace Duplicati.Server
             }
         }
 
-        private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, object o)
+        private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IBasicResults result)
         {
-            if (o is Duplicati.Library.Interface.IBasicResults)
+            if (result is Duplicati.Library.Interface.IRestoreResults)
             {
-                var r = (Duplicati.Library.Interface.IBasicResults)o;
-                backup.Metadata["LastDuration"] = r.Duration.ToString();
-                backup.Metadata["LastStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
-                backup.Metadata["LastFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
+                var r = (Duplicati.Library.Interface.IRestoreResults)result;
+                backup.Metadata["LastRestoreDuration"] = r.Duration.ToString();
+                backup.Metadata["LastRestoreStarted"] = Library.Utility.Utility.SerializeDateTime(result.BeginTime.ToUniversalTime());
+                backup.Metadata["LastRestoreFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
             }
 
-            if (o is Duplicati.Library.Interface.IParsedBackendStatistics)
+            if (result is Duplicati.Library.Interface.IParsedBackendStatistics)
             {
-                var r = (Duplicati.Library.Interface.IParsedBackendStatistics)o;
+                var r = (Duplicati.Library.Interface.IParsedBackendStatistics)result;
                 UpdateMetadata(backup, r);
             }
 
-            if (o is Duplicati.Library.Interface.IBackendStatsticsReporter)
+            if (result is Duplicati.Library.Interface.IBackendStatsticsReporter)
             {
-                var r = (Duplicati.Library.Interface.IBackendStatsticsReporter)o;
+                var r = (Duplicati.Library.Interface.IBackendStatsticsReporter)result;
                 if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
                     UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
             }
 
-            if (o is Duplicati.Library.Interface.IBackupResults)
+            if (result is Duplicati.Library.Interface.IBackupResults)
             {
-                var r = (Duplicati.Library.Interface.IBackupResults)o;
+                var r = (Duplicati.Library.Interface.IBackupResults)result;
                 backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
                 backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
-                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
-                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
+                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(result.BeginTime.ToUniversalTime());
+                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
+                backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
@@ -778,24 +779,23 @@ namespace Duplicati.Server
                     );
                 }
             }
-            else if (o is Duplicati.Library.Interface.IBasicResults)
+            else
             {
-                var r = (Duplicati.Library.Interface.IBasicResults)o;
-                if (r.ParsedResult != Library.Interface.ParsedResultType.Success)
+                if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
                 {
-                    var type = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                    var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
                                 ? NotificationType.Warning
                                 : NotificationType.Error;
 
-                    var title = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                    var title = result.ParsedResult == Library.Interface.ParsedResultType.Warning
                                  ? (backup.IsTemporary ?
                                     "Warning" : string.Format("Warning while running {0}", backup.Name))
                                 : (backup.IsTemporary ?
                                    "Error" : string.Format("Error while running {0}", backup.Name));
 
-                    var message = r.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                   ? string.Format("Got {0} warning(s) ", r.Warnings.Count())
-                                   : string.Format("Got {0} error(s) ", r.Errors.Count());
+                    var message = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                        ? string.Format("Got {0} warning(s) ", result.Warnings.Count())
+                                        : string.Format("Got {0} error(s) ", result.Errors.Count());
 
                     Program.DataConnection.RegisterNotification(
                         type,

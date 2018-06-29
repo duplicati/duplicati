@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.Operation
                     );
                 }
 
-                await all;
+                await all.ConfigureAwait(false);
 
                 if (options.ChangedFilelist != null && options.ChangedFilelist.Length >= 1)
                 {
@@ -354,7 +354,7 @@ namespace Duplicati.Library.Main.Operation
 
             // In case the uploader crashes, we grab the exception here
             if (await Task.WhenAny(uploader, flushReq.LastWriteSizeAync) == uploader)
-                await uploader;
+                await uploader.ConfigureAwait(false);
 
             // Grab the size of the last uploaded volume
             return await flushReq.LastWriteSizeAync;
@@ -477,7 +477,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Run the backup operation
                                 if (await m_result.TaskReader.ProgressAsync)
-                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid);
+                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid).ConfigureAwait(false);
                             }
                             finally
                             {
@@ -496,7 +496,7 @@ namespace Duplicati.Library.Main.Operation
 
                         // Wait for upload completion
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-                        var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploader);
+                        var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploader).ConfigureAwait(false);
 
                         // Make sure we have the database up-to-date
                         await db.CommitTransactionAsync("CommitAfterUpload", false);

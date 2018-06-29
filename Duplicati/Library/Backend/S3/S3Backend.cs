@@ -28,6 +28,8 @@ namespace Duplicati.Library.Backend
 {
     public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
+        private static string LOGTAG = Logging.Log.LogTagFromType<S3>();
+
         public const string RRS_OPTION = "s3-use-rrs";
         public const string STORAGECLASS_OPTION = "s3-storage-class";
         public const string EU_BUCKETS_OPTION = "s3-european-buckets";
@@ -243,8 +245,7 @@ namespace Duplicati.Library.Backend
                         throw new UserInformationException(Strings.S3Backend.UnableToDecodeBucketnameError(url), "S3CannotDecodeBucketName");
                 }
 
-                try { Console.Error.WriteLine(Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix)); }
-                catch { }
+                Logging.Log.WriteWarningMessage(LOGTAG, "DeprecatedS3Format", null, Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix)); 
             }
             else
             {

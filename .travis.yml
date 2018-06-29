@@ -68,4 +68,4 @@ before_install:
       - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 script:
-  - ./build.sh ${TRAVIS_BUILD_DIR} ${CATEGORY}
+  - ./build.sh ${CATEGORY} ${TRAVIS_BUILD_DIR}

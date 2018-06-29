@@ -60,11 +60,14 @@ namespace Duplicati.Library.Snapshots
         /// <returns></returns>
         private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, IEnumerable<USNJournalDataEntry> prevJournalData)
         {
+            if (prevJournalData == null)
+                throw new UsnJournalSoftFailureException();
+
             var result = new Dictionary<string, VolumeData>();
 
             // get filter identifying current source filter / sources configuration
             // ReSharper disable once PossibleMultipleEnumeration
-			var configHash =  emitFilter.GetFilterHash() + Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(m_sources));
+            var configHash = (emitFilter == null ? string.Empty : emitFilter.GetFilterHash()) + Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(m_sources));
 
             // create lookup for journal data
             var journalDataDict = prevJournalData.ToDictionary(data => data.Volume);
