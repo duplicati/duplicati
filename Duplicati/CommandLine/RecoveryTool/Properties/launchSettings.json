@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Duplicati.CommandLine.RecoveryTool": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "AUTOUPDATER_Duplicati_SKIP_UPDATE": "1"
+      }
+    }
+  }
+}
