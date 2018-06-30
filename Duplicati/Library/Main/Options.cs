@@ -1458,6 +1458,11 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets a value indicating whether a blocksize has been specified
+        /// </summary>
+        public bool HasBlocksize { get { return m_options.ContainsKey("blocksize") && !string.IsNullOrEmpty(m_options["blocksize"]); } }
+
+        /// <summary>
         /// Gets the size of file-blocks
         /// </summary>
         public int Blocksize
