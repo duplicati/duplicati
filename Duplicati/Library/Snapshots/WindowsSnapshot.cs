@@ -95,10 +95,15 @@ namespace Duplicati.Library.Snapshots
                 if (vss == null)
                     throw new InvalidOperationException();
 
-                var excludedWriters = new Guid[0];
+                // Default to exclude the System State writer
+                var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
                 if (options.ContainsKey("vss-exclude-writers"))
                 {
-                    excludedWriters = options["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
+                    excludedWriters = options["vss-exclude-writers"]
+                        .Split(';')
+                        .Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0)
+                        .Select(x => new Guid(x))
+                        .ToArray();
                 }
 
                 //Check if we should map any drives
