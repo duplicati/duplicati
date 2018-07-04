@@ -109,7 +109,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 this.LocalTempfile.Protected = true;
             }
                 
-            public Task Encrypt(Options options)
+            public void Encrypt(Options options)
             {
                 if (!this.Encrypted && !options.NoEncryption)
                 {
@@ -124,9 +124,6 @@ namespace Duplicati.Library.Main.Operation.Common
                     this.Size = 0;
                     this.Encrypted = true;
                 }
-
-                // If we target .NET Framework 4.6, we can return Task.CompletedTask;
-                return Task.FromResult(0);
             }
 
             public static string CalculateFileHash(string filename)
@@ -224,9 +221,9 @@ namespace Duplicati.Library.Main.Operation.Common
 
             var tcs = new TaskCompletionSource<bool>();
 
-            var backgroundhashAndEncrypt = Task.Run(async () =>
+            var backgroundhashAndEncrypt = Task.Run(() =>
             {
-                await fe.Encrypt(m_options).ConfigureAwait(false);
+                fe.Encrypt(m_options);
                 return fe.UpdateHashAndSize(m_options);
             });
 
@@ -334,7 +331,7 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunRetryOnMain(fe, () => DoGet(fe));
         }
 
-        private Task ResetBackend(Exception ex)
+        private void ResetBackend(Exception ex)
         {
             try
             {
@@ -346,9 +343,6 @@ namespace Duplicati.Library.Main.Operation.Common
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeError", dex, "Failed to dispose backend instance: {0}", ex.Message); 
             }
             m_backend = null;
-
-            // If we target .NET Framework 4.6, we can return Task.CompletedTask;
-            return Task.FromResult(0);
         }
 
         private async Task<T> DoWithRetry<T>(FileEntryItem item, Func<Task<T>> method)
@@ -410,12 +404,12 @@ namespace Duplicati.Library.Main.Operation.Common
                     }
 
                     if (!recovered)
-                        await ResetBackend(ex).ConfigureAwait(false);
+                        ResetBackend(ex);
                 }
                 finally
                 {
                     if (m_options.NoConnectionReuse)
-                        await ResetBackend(null).ConfigureAwait(false);
+                        ResetBackend(null);
                 }
             }
 
@@ -440,7 +434,7 @@ namespace Duplicati.Library.Main.Operation.Common
         private async Task<bool> DoPut(FileEntryItem item, bool updatedHash = false)
         {
             // If this is not already encrypted, do it now
-            await item.Encrypt(m_options).ConfigureAwait(false);
+            item.Encrypt(m_options);
 
             updatedHash |= item.UpdateHashAndSize(m_options);
 

@@ -77,13 +77,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                         }
 
-                        return AttributeFilter(null, x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
+                        return AttributeFilter(null, x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
                     });
                 }
                 else
                 {
-					Library.Utility.Utility.EnumerationFilterDelegate attributeFilter = (root, path, attr) =>
-					    AttributeFilter(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
+                    Library.Utility.Utility.EnumerationFilterDelegate attributeFilter = (root, path, attr) =>
+                        AttributeFilter(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
 
                     if (journalService != null)
                     {
@@ -222,7 +222,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="rootpath">The root path that initiated this enumeration.</param>
         /// <param name="path">The current path.</param>
         /// <param name="attributes">The file or folder attributes.</param>
-        private static Task<bool> AttributeFilter(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
+        private static bool AttributeFilter(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
         {
 			// Step 1, exclude block devices
 			try
@@ -230,13 +230,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                 if (snapshot.IsBlockDevice(path))
                 {
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingBlockDevice", "Excluding block device: {0}", path);
-                    return Task.FromResult(false);
+                    return false;
                 }
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
-                return Task.FromResult(false);
+                return false;
             }
 
             // Check if we explicitly include this entry
@@ -245,7 +245,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             if (sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingSourcePath", "Including source path: {0}", path);
-                return Task.FromResult(true);
+                return true;
             }
 
             // If we have a hardlink strategy, obey it
@@ -259,7 +259,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (hardlinkPolicy == Options.HardlinkStrategy.None)
                         {
                             Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingHardlinkByPolicy", "Excluding hardlink: {0} ({1})", path, id);
-                            return Task.FromResult(false);
+                            return false;
                         }
                         else if (hardlinkPolicy == Options.HardlinkStrategy.First)
                         {
@@ -267,7 +267,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (hardlinkmap.TryGetValue(id, out prevPath))
                             {
                                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingDuplicateHardlink", "Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
-                                return Task.FromResult(false);
+                                return false;
                             }
                             else
                             {
@@ -279,7 +279,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 catch (Exception ex)
                 {
                     Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
-                    return Task.FromResult(false);
+                    return false;
                 }                    
             }
 
@@ -293,7 +293,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (snapshot.FileExists(ignorepath))
                         {
                             Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathDueToIgnoreFile", "Excluding path because ignore file was found: {0}", ignorepath);
-                            return Task.FromResult(false);
+                            return false;
                         }
                     }
                 }
@@ -307,7 +307,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             if ((attributeFilter & attributes) != 0)
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromAttributes", "Excluding path due to attribute filter: {0}", path);
-                return Task.FromResult(false);
+                return false;
             }
 
             // Then check if the filename is not explicitly excluded by a filter
@@ -316,7 +316,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             if (!Library.Utility.FilterExpression.Matches(enumeratefilter, path, out match))
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromFilter", "Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
-                return Task.FromResult(false);
+                return false;
             }
             else if (match != null)
             {
@@ -338,7 +338,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (symlinkPolicy == Options.SymlinkStrategy.Ignore)
                     {
                         Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludeSymlink", "Excluding symlink: {0}", path);
-                        return Task.FromResult(false);
+                        return false;
                     }
 
                     if (symlinkPolicy == Options.SymlinkStrategy.Store)
@@ -348,7 +348,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         // We return false because we do not want to recurse into the path,
                         // but we add the symlink to the mixin so we process the symlink itself
                         mixinqueue.Enqueue(path);
-                        return Task.FromResult(false);
+                        return false;
                     }
                 }
                 else
@@ -361,7 +361,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPath", "Including path as no filters matched: {0}", path);
 
             // All the way through, yes!
-            return Task.FromResult(true);
+            return true;
         }
     }
 }
