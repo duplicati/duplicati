@@ -222,7 +222,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="rootpath">The root path that initiated this enumeration.</param>
         /// <param name="path">The current path.</param>
         /// <param name="attributes">The file or folder attributes.</param>
-        private static bool AttributeFilter(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
+        private static bool AttributeFilter(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
         {
 			// Step 1, exclude block devices
 			try
@@ -304,7 +304,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             // If we exclude files based on attributes, filter that
-            if ((attributeFilter & attributes) != 0)
+            if ((fileAttributes & attributes) != 0)
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromAttributes", "Excluding path due to attribute filter: {0}", path);
                 return false;
