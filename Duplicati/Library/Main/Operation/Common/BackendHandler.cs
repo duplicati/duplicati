@@ -109,7 +109,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 this.LocalTempfile.Protected = true;
             }
                 
-            public async Task Encrypt(Options options)
+            public Task Encrypt(Options options)
             {
                 if (!this.Encrypted && !options.NoEncryption)
                 {
@@ -124,6 +124,9 @@ namespace Duplicati.Library.Main.Operation.Common
                     this.Size = 0;
                     this.Encrypted = true;
                 }
+
+                // If we target .NET Framework 4.6, we can return Task.CompletedTask;
+                return Task.FromResult(0);
             }
 
             public static string CalculateFileHash(string filename)
@@ -331,7 +334,7 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunRetryOnMain(fe, () => DoGet(fe));
         }
 
-        private async Task ResetBackendAsync(Exception ex)
+        private Task ResetBackendAsync(Exception ex)
         {
             try
             {
@@ -344,6 +347,8 @@ namespace Duplicati.Library.Main.Operation.Common
             }
             m_backend = null;
 
+            // If we target .NET Framework 4.6, we can return Task.CompletedTask;
+            return Task.FromResult(0);
         }
 
         private async Task<T> DoWithRetry<T>(FileEntryItem item, Func<Task<T>> method)

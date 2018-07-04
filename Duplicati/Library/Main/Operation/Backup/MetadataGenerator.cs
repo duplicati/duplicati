@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         private static readonly string METALOGTAG = Logging.Log.LogTagFromType(typeof(MetadataGenerator)) + ".Metadata";
 
-        public static async Task<Dictionary<string, string>> GenerateMetadataAsync(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot)
+        public static Task<Dictionary<string, string>> GenerateMetadataAsync(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot)
         {
             try
             {
@@ -74,12 +74,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                     metadata = new Dictionary<string, string>();
                 }
 
-                return metadata;
+                return Task.FromResult(metadata);
             }
             catch(Exception ex)
             {
                 Logging.Log.WriteWarningMessage(METALOGTAG, "MetadataProcessFailed", ex, "Failed to process metadata for \"{0}\", storing empty metadata", path);
-                return new Dictionary<string, string>();
+                return Task.FromResult(new Dictionary<string, string>());
             }
         }
     }
