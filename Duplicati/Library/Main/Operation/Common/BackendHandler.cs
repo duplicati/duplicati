@@ -334,7 +334,7 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunRetryOnMain(fe, () => DoGet(fe));
         }
 
-        private Task ResetBackendAsync(Exception ex)
+        private Task ResetBackend(Exception ex)
         {
             try
             {
@@ -410,12 +410,12 @@ namespace Duplicati.Library.Main.Operation.Common
                     }
 
                     if (!recovered)
-                        await ResetBackendAsync(ex).ConfigureAwait(false);
+                        await ResetBackend(ex).ConfigureAwait(false);
                 }
                 finally
                 {
                     if (m_options.NoConnectionReuse)
-                        await ResetBackendAsync(null).ConfigureAwait(false);
+                        await ResetBackend(null).ConfigureAwait(false);
                 }
             }
 

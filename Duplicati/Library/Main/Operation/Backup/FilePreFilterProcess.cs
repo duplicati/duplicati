@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     await stats.AddExaminedFile(filestatsize);
 
-                    e.MetaHashAndSize = options.StoreMetadata ? Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot), options) : EMPTY_METADATA;
+                    e.MetaHashAndSize = options.StoreMetadata ? Utility.WrapMetadata(await MetadataGenerator.GenerateMetadata(e.Path, e.Attributes, options, snapshot), options) : EMPTY_METADATA;
 
                     var timestampChanged = e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
                     var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
