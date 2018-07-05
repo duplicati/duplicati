@@ -92,7 +92,7 @@ namespace Duplicati.Library.Main.Operation
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, restoredb))
             {
                 restoredb.RepairInProgress = true;
-
+                var autoDetectBlockSize = !(m_options.HasBlocksize && restoredb.GetDbOptions().ContainsKey("blocksize"));                    
                 var volumeIds = new Dictionary<string, long>();
 
                 var rawlist = backend.List();
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 var parsed = VolumeBase.ParseFilename(entry.Name);
 
-                                if (!hasUpdatedOptions && !updating) 
+                                if (!hasUpdatedOptions && (!updating || autoDetectBlockSize)) 
                                 {
                                     VolumeReaderBase.UpdateOptionsFromManifest(parsed.CompressionModule, tmpfile, m_options);
                                     hasUpdatedOptions = true;

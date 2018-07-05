@@ -1,3 +1,10 @@
+2018-06-30 - 2.0.3.9_canary_2018-06-30
+==========
+* Fixed an issue with dectection HyperV, thanks @mnaiman
+* Default to exclude the System State VSS writers, thanks @mnaiman
+* Fixed an issue where restores from the GUI would not autodetect blocksize and other parameters
+* Fixed an issue with VSS failing to map the paths
+
 2018-06-28 - 2.0.3.8_canary_2018-06-28
 ==========
 * Fixed MSI version number

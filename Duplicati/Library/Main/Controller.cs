@@ -867,6 +867,7 @@ namespace Duplicati.Library.Main
                     string source;
                     try
                     {
+                        // TODO: This expands "C:" to CWD, but not C:\
                         source = System.IO.Path.GetFullPath(expandedSource);
                     }
                     catch (Exception ex)
