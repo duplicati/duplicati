@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Database
         public static string GetPrintableCommandText(this System.Data.IDbCommand self)
         {
             var txt = self.CommandText;
-#if DEBUG
+
             foreach(var p in self.Parameters.Cast<System.Data.IDbDataParameter>())
             {
                 var ix = txt.IndexOf('?');
@@ -58,7 +58,7 @@ namespace Duplicati.Library.Main.Database
                     txt = txt.Substring(0, ix) + v + txt.Substring(ix + 1);
                 }
             }
-#endif
+
             return txt;
         }
 
