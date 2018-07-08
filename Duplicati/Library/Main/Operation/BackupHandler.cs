@@ -154,13 +154,14 @@ namespace Duplicati.Library.Main.Operation
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "BackendVerifyFailedAttemptingCleanup", ex, "Backend verification failed, attempting automatic cleanup");
                         m_result.RepairResults = new RepairResults(m_result);
-                        new RepairHandler(backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
 
-                        Logging.Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                        m_database.Connection.Close(); //close handles to database files, because RepairHandler could eventually move file as file.backup
+                        m_database.Dispose(); //Dispose is trully closing handle file to database
+                        new RepairHandler(backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
+                        
+                        Logging.Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished.");
+                        throw new Exception("Gracefully ending backup after database repair. Run backup again.");
                     }
-                    else
-                        throw;
                 }
             }
         }
