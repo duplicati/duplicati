@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.Operation
                     else if (missing.Count == 0)
                         Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsOrMissingFiles", "Found no broken filesets and no missing remote files");
                     else
-                        throw new UserInformationException(string.Format("Found no broken filesets, but {0} missing remote files", sets.Length), "NoBrokenSetsButMissingRemoteFiles");
+                        throw new UserInformationException(string.Format("Found no broken filesets, but {0} missing remote files", missing.Count), "NoBrokenSetsButMissingRemoteFiles");
                 }
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "FoundBrokenFilesets", "Found {0} broken filesets with {1} affected files, purging files", sets.Length, sets.Sum(x => x.Item3));
