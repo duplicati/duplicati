@@ -97,7 +97,7 @@ namespace Duplicati.Library.Backend
             if (Utility.Utility.ParseBoolOption(options, "ftp-passive"))
             {
                 m_passiveMode = true;
-            } else m_passiveMode &= !Utility.Utility.ParseBoolOption(options, "ftp-regular");
+            } else m_passiveMode = !Utility.Utility.ParseBoolOption(options, "ftp-regular");
         }
 
         #region Regular expression to parse list lines
