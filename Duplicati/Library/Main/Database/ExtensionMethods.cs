@@ -136,7 +136,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LOGTAG, "ExcuteReader", string.Format("ExecuteReader: {0}", self.GetPrintableCommandText())))
+            using(new Logging.Timer(LOGTAG, "ExecuteReader", string.Format("ExecuteReader: {0}", self.GetPrintableCommandText())))
                 return self.ExecuteReader();
         }
 
