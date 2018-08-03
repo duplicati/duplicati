@@ -1122,23 +1122,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Checks that a hostname is valid
-        /// </summary>
-        /// <param name="hostname">The hostname to verify</param>
-        /// <returns>True if the hostname is valid, false otherwise</returns>
-        public static bool IsValidHostname(string hostname)
-        {
-            try
-            {
-                return System.Uri.CheckHostName(hostname) != UriHostNameType.Unknown;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
         /// The format string for a DateTime
         /// </summary>
         //Note: Actually the K should be Z which is more correct as it is forced to be Z, but Z as a format specifier is fairly undocumented
