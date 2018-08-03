@@ -654,17 +654,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Calculates the hash of a given file, and returns the results as an base64 encoded string
-        /// </summary>
-        /// <param name="path">The path to the file to calculate the hash for</param>
-        /// <returns>The base64 encoded hash</returns>
-        public static string CalculateHash(string path)
-        {
-            using (FileStream fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                return CalculateHash(fs);
-        }
-
-        /// <summary>
         /// Calculates the hash of a given stream, and returns the results as an base64 encoded string
         /// </summary>
         /// <param name="stream">The stream to calculate the hash for</param>
