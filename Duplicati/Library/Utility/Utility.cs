@@ -1238,16 +1238,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Converts a Unix timestamp to a DateTime instance
-        /// </summary>
-        /// <returns>The DateTime instance represented by the timestamp.</returns>
-        /// <param name="input">The Unix timestamp to use.</param>
-        public static DateTime ToUnixTimestamp(long input)
-        {
-            return EPOCH.AddSeconds(input);
-        }
-
-        /// <summary>
         /// Returns a value indicating if the given type should be treated as a primitive
         /// </summary>
         /// <returns><c>true</c>, if type is primitive for serialization, <c>false</c> otherwise.</returns>
