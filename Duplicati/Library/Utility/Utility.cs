@@ -1078,50 +1078,6 @@ namespace Duplicati.Library.Utility
         public static StringComparison ClientFilenameStringComparison => IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase;
 
         /// <summary>
-        /// Searches the system paths for the file specified
-        /// </summary>
-        /// <param name="filename">The file to locate</param>
-        /// <returns>The full path to the file, or null if the file was not found</returns>
-        public static string LocateFileInSystemPath(string filename)
-        {
-            try
-            {
-                if (Path.IsPathRooted(filename))
-                    return File.Exists(filename) ? filename : null;
-
-                try
-                {
-                    filename = Path.GetFileName(filename);
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                string homedir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + Path.PathSeparator.ToString();
-
-                //Look in application base folder and all system path folders
-                foreach (string s in (homedir + Environment.GetEnvironmentVariable("PATH")).Split(Path.PathSeparator))
-                    if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
-                        try
-                        {
-                            foreach (string sx in Directory.GetFiles(ExpandEnvironmentVariables(s), filename))
-                                return sx;
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-            }
-            catch
-            {
-                // ignored
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// The path to the users home directory
         /// </summary>
         public static readonly string HOME_PATH = Environment.GetFolderPath(IsClientLinux ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
