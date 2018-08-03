@@ -1224,17 +1224,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Decodes a &quot;base64 for url&quot; encoded string into the raw byte array.
-        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
-        /// </summary>
-        /// <param name="data">The data to decode</param>
-        /// <returns>The raw data</returns>
-        public static byte[] Base64UrlDecode(string data)
-        {
-            return Convert.FromBase64String(Base64UrlToBase64Plain(data));
-        }
-
-        /// <summary>
         /// Converts a DateTime instance to a Unix timestamp
         /// </summary>
         /// <returns>The Unix timestamp.</returns>
