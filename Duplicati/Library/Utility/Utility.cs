@@ -1052,11 +1052,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Gets the users default UI language
-        /// </summary>
-        public static System.Globalization.CultureInfo DefaultCulture => new System.Threading.Thread(() => { }).CurrentUICulture;
-
-        /// <summary>
         /// Gets a string comparer that matches the client filesystems case sensitivity
         /// </summary>
         public static StringComparer ClientFilenameStringComparer => IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase;
