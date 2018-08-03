@@ -1082,11 +1082,6 @@ namespace Duplicati.Library.Utility
         private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_WINDOWS = new Regex(@"\%(?<name>\w+)\%");
 
         /// <summary>
-        /// Regexp for matching environment variables on Linux ($VAR or ${VAR})
-        /// </summary>
-        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_LINUX = new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})");
-
-        /// <summary>
         /// Expands environment variables in a RegExp safe format
         /// </summary>
         /// <returns>The expanded string.</returns>
@@ -1099,8 +1094,8 @@ namespace Duplicati.Library.Utility
 
             return
 
-                // TODO: Should we switch to using the native format, instead of following the Windows scheme?
-                //IsClientLinux ? ENVIRONMENT_VARIABLE_MATCHER_LINUX : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
+                // TODO: Should we switch to using the native format ($VAR or ${VAR}), instead of following the Windows scheme?
+                // IsClientLinux ? new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})") : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
 
                 ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value)));
         }
