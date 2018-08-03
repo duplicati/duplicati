@@ -1178,34 +1178,6 @@ namespace Duplicati.Library.Utility
             return uniqueItems;
         }
 
-        /// <summary>
-        /// Helper method that replaces one file with another
-        /// </summary>
-        /// <param name="target">The file to replace</param>
-        /// <param name="sourcefile">The file to replace with</param>
-        public static void ReplaceFile(string target, string sourcefile)
-        {
-            if (File.Exists(target))
-                File.Delete(target);
-
-            //Nasty workaround for the fact that a recently deleted file occasionally blocks a new write
-            long i = 5;
-            do
-            {
-                try
-                {
-                    File.Move(sourcefile, target);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    if (i == 0)
-                        throw new Exception(
-                            $"Failed to replace the file \"{target}\" volume with the \"{sourcefile}\", error: {ex.Message}");
-                    System.Threading.Thread.Sleep(250);
-                }
-            } while (i-- > 0);
-        }
         // <summary>
         // Returns the entry assembly or reasonable approximation if no entry assembly is available.
         // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
