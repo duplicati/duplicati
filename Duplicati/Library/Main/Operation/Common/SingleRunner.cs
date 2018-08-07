@@ -27,77 +27,18 @@ namespace Duplicati.Library.Main.Operation.Common
     /// </summary>
     internal abstract class SingleRunner : IDisposable
     {
-        protected IChannel<Func<Task>> m_channel;
-        protected readonly Task m_worker;
-        protected CancellationTokenSource m_workerSource;
+        protected AsyncLock m_lock = new AsyncLock();
+        protected CancellationTokenSource m_workerSource = new CancellationTokenSource();
 
-        public SingleRunner()
+        protected async Task<T> DoRunOnMain<T>(Func<Task<T>> method)
         {
-            AutomationExtensions.AutoWireChannels(this, null);
-            m_channel = ChannelManager.CreateChannel<Func<Task>>();
-            m_workerSource = new System.Threading.CancellationTokenSource();
-            m_worker = AutomationExtensions.RunProtected(this, Start);
-        }
+            m_workerSource.Token.ThrowIfCancellationRequested();
 
-        private async Task Start()
-        {            
-            var ct = m_workerSource.Token;
-            while(!ct.IsCancellationRequested)
+            using (await m_lock.LockAsync())
             {
-                // Grab next task
-                var nextTask = await m_channel.ReadAsync();
-
-                // Execute it
-                await nextTask();
+                m_workerSource.Token.ThrowIfCancellationRequested();
+                return await method().ConfigureAwait(false);
             }
-        }
-
-        protected Task<T> DoRunOnMain<T>(Func<Task<T>> method)
-        {
-            var res = new TaskCompletionSource<T>();
-
-            Task.Run(async () =>
-            {
-                try
-                {
-                    if (m_workerSource.IsCancellationRequested)
-                    {
-                        res.TrySetCanceled();
-                        return;
-                    }
-
-                    await m_channel.WriteAsync(async () =>
-                    {
-                        if (m_workerSource.IsCancellationRequested)
-                        {
-                            res.TrySetCanceled();
-                            return;
-                        }
-
-                        try
-                        {
-                            var r = await method().ConfigureAwait(false);
-                            res.SetResult(r);
-                        }
-                        catch (Exception ex)
-                        {
-                            if (ex is System.Threading.ThreadAbortException)
-                                res.TrySetCanceled();
-                            else
-                                res.TrySetException(ex);
-                        }
-                    }).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    if (ex is System.Threading.ThreadAbortException)
-                        res.TrySetCanceled();
-                    else
-                        res.TrySetException(ex);
-                }
-            });
-
-            return res.Task;
         }
 
         protected Task RunOnMain(Action method)
@@ -138,13 +79,6 @@ namespace Duplicati.Library.Main.Operation.Common
         protected virtual void Dispose(bool isDisposing)
         {
             m_workerSource.Cancel();
-
-            if (m_channel != null)
-                try { m_channel.Retire(); }
-                catch { }
-                finally { }
-
-            AutomationExtensions.RetireAllChannels(this);
         }
     }
 }
