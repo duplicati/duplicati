@@ -53,6 +53,7 @@ namespace Duplicati.Server.Database
             public const string USAGE_REPORTER_LEVEL = "usage-reporter-level";
 			public const string HAS_ASKED_FOR_PASSWORD_PROTECTION = "has-asked-for-password-protection";
             public const string DISABLE_TRAY_ICON_LOGIN = "disable-tray-icon-login";
+            public const string SERVER_ALLOWED_HOSTNAMES = "allowed-hostnames";
 		}
 
         private readonly Dictionary<string, string> m_values;
@@ -339,9 +340,19 @@ namespace Duplicati.Server.Database
             GenerateWebserverPasswordTrayIcon();
         }
 
+        public void SetAllowedHostnames(string allowedHostnames)
+        {
+            lock (m_connection.m_lock)
+                m_values[CONST.SERVER_ALLOWED_HOSTNAMES] = allowedHostnames;
+
+            SaveSettings();
+        }
+
         public string WebserverPasswordTrayIcon => m_values[CONST.SERVER_PASSPHRASETRAYICON];
 
         public string WebserverPasswordTrayIconHash => m_values[CONST.SERVER_PASSPHRASETRAYICONHASH];
+
+        public string AllowedHostnames => m_values[CONST.SERVER_ALLOWED_HOSTNAMES];
 
         public void GenerateWebserverPasswordTrayIcon()
         {

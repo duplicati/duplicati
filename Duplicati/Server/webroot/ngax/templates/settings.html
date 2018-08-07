@@ -12,7 +12,12 @@
             <input type="checkbox" class="checkbox" id="remote" name="remote" ng-model="allowRemoteAccess" />
             <label for="remote" translate>Allow remote access (requires restart)</label>     
             <div class="sublabel" translate>By allowing remote access, the server listens to requests from any machine on your network. If you enable this option, make sure you are always using the computer on a secure firewall protected network.</div>
-        </div>            
+        </div>
+        <div class="input mixed multiple" ng-show="allowRemoteAccess">
+            <label for="hostnames" translate>Hostnames</label>
+            <input type="text" id="hostnames" name="hostnames" ng-model="remoteHostnames" />
+            <div class="sublabel" translate>To prevent various DNS based attacks, Duplicati limits the allowed hostnames to the ones listed here. Direct IP access and localhost is always allowed. Multiple hostnames can be supplied with a semicolon separator. If any of the allowed hostnames is an asterisk (*), all hostnames are allowed and this feature is disabled. If the field is empty, only IP address and localhost access is allowed.</div>
+        </div>
 
         <div class="input checkbox">
             <input type="checkbox" class="checkbox" id="trayiconlogin" name="trayiconlogin" ng-model="disableTrayIconLogin" />
