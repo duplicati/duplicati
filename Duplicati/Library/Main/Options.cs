@@ -563,6 +563,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
                     new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong),
                     new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
+                    new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
+
                 });
 
                 return lst;
@@ -1939,6 +1941,14 @@ namespace Duplicati.Library.Main
         public bool DisableOnBattery
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-on-battery"); }
+        }
+
+        /// <summary>
+        /// Gets a value indicating if missing dblock files are attempted created
+        /// </summary>
+        public bool RebuildMissingDblockFiles
+        {
+            get { return GetBool("rebuild-missing-dblock-files"); }
         }
 
         /// <summary>
