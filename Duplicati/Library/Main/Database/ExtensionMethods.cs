@@ -111,7 +111,7 @@ namespace Duplicati.Library.Main.Database
 
         public static long ExecuteScalarInt64(this System.Data.IDbCommand self, bool writeLog, long defaultvalue = -1)
         {
-            return ExecuteScalarInt64(self, writeLog, defaultvalue);
+            return ExecuteScalarInt64(self, writeLog, null, defaultvalue);
         }
 
         public static long ExecuteScalarInt64(this System.Data.IDbCommand self, long defaultvalue = -1)
