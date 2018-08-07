@@ -268,6 +268,11 @@ namespace Duplicati.Library.Main.Strings
         public static string RestoresymlinkmetadataLong { get { return "If symlink metadata is applied, it will usually mean changing the symlink target, instead of the symlink itself. For this reason, metadata is not applied to symlinks, but this option can be used to override this, such that metadata is applied to symlinks as well."; } }
         public static string UnittestmodeShort { get { return "Activate unittest mode"; } }
         public static string UnittestmodeLong { get { return "When running in unittest mode, no automatic fixes are applied, which assumes that the input data is always in perfect shape. This option is not intended for use in daily backups, but required for testing purposes to reveal potential problems."; } }
+
+        public static string ProfilealldatabasequeriesShort { get { return LC.L("Activates logging of all database queries"); } }
+        public static string ProfilealldatabasequeriesLong { get { return LC.L("To improve performance of the backups, frequent database queries are not logged by default. Enable this option to log all database queries, and remember to set either --{0}={2} or --{1}={2} to report the additional log data", "console-log-level", "log-file-log-level", nameof(Logging.LogMessageType.Profiling)); } }
+        public static string RebuildmissingdblockfilesShort { get { return "Rebuild dblock files when missing"; } }
+        public static string RebuildmissingdblockfilesLong { get { return "If dblock files are missing from the destination, you can attempt to rebuild them using local source data. However, since the local data may have changed, it may not be possible to retrieve all the required data and the process may be slow. Use this option to attempt to rebuild missing dblock files."; } }
     }
 
     internal static class Common

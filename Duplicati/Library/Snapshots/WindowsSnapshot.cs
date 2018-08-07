@@ -76,6 +76,11 @@ namespace Duplicati.Library.Snapshots
         private static SystemIOWindows IO_WIN = new SystemIOWindows();
 
         /// <summary>
+        /// Commonly used string element
+        /// </summary>
+        private static string SLASH = Path.DirectorySeparatorChar.ToString();
+
+        /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sources">Sources to determine which volumes to include in snapshot</param>
@@ -95,10 +100,15 @@ namespace Duplicati.Library.Snapshots
                 if (vss == null)
                     throw new InvalidOperationException();
 
-                var excludedWriters = new Guid[0];
+                // Default to exclude the System State writer
+                var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
                 if (options.ContainsKey("vss-exclude-writers"))
                 {
-                    excludedWriters = options["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
+                    excludedWriters = options["vss-exclude-writers"]
+                        .Split(';')
+                        .Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0)
+                        .Select(x => new Guid(x))
+                        .ToArray();
                 }
 
                 //Check if we should map any drives
@@ -399,18 +409,34 @@ namespace Duplicati.Library.Snapshots
             throw new InvalidOperationException();
         }
 
+        /// <summary>
+        /// Cache element to speed up returning the same paths
+        /// </summary>
+        private KeyValuePair<string, string> m_lastLookup;
+
         /// <inheritdoc />
         public override string ConvertToSnapshotPath(string localPath)
         {
+            // Hot cache, we tend to call the same conversion multiple times
+            var m = m_lastLookup;
+            if (m.Key == localPath)
+                return m.Value;
+
             if (!Path.IsPathRooted(localPath))
                 throw new InvalidOperationException();
 
             var root = AlphaFS.Path.GetPathRoot(localPath);
-
             if (!m_volumeMap.TryGetValue(root, out var volumePath))
                 throw new InvalidOperationException();
 
-            return Path.Combine(volumePath, localPath.Substring(root.Length));
+            // Note: Do NOT use Path.Combine as it strips the UNC path prefix
+            var subPath = localPath.Replace(root, String.Empty);
+            if (!volumePath.EndsWith(SLASH, StringComparison.Ordinal) && !subPath.StartsWith(SLASH, StringComparison.Ordinal))
+                subPath = subPath.Insert(0, SLASH);
+
+            var mappedPath = subPath.Insert(0, volumePath);
+            m_lastLookup = new KeyValuePair<string, string>(localPath, mappedPath);
+            return mappedPath;
         }
 
         /// <inheritdoc />

@@ -95,6 +95,8 @@ namespace Duplicati.Library.Main.Database
         
         private long m_filesetId;
 
+        private readonly bool m_logQueries;
+
         public LocalBackupDatabase(string path, Options options)
             : this(new LocalDatabase(path, "Backup", false), options)
         {
@@ -104,6 +106,8 @@ namespace Duplicati.Library.Main.Database
         public LocalBackupDatabase(LocalDatabase db, Options options)
             : base(db)
         {
+            m_logQueries = options.ProfileAllDatabaseQueries;
+
             m_findblockCommand = m_connection.CreateCommand();
             m_insertblockCommand = m_connection.CreateCommand();
             m_insertfileCommand = m_connection.CreateCommand();
@@ -219,7 +223,7 @@ namespace Duplicati.Library.Main.Database
             m_findblockCommand.Transaction = transaction;
             m_findblockCommand.SetParameterValue(0, key);
             m_findblockCommand.SetParameterValue(1, size);
-            return m_findblockCommand.ExecuteScalarInt64(-1);
+            return m_findblockCommand.ExecuteScalarInt64(m_logQueries, -1);
         }
 
 		/// <summary>
@@ -244,7 +248,7 @@ namespace Duplicati.Library.Main.Database
             m_findblockCommand.Transaction = transaction;
             m_findblockCommand.SetParameterValue(0, key);
             m_findblockCommand.SetParameterValue(1, size);
-            var r = m_findblockCommand.ExecuteScalarInt64(-1);
+            var r = m_findblockCommand.ExecuteScalarInt64(m_logQueries, -1);
 
             if (r == -1L)
             {
@@ -252,7 +256,7 @@ namespace Duplicati.Library.Main.Database
                 m_insertblockCommand.SetParameterValue(0, key);
                 m_insertblockCommand.SetParameterValue(1, volumeid);
                 m_insertblockCommand.SetParameterValue(2, size);
-                r = m_insertblockCommand.ExecuteScalarInt64();
+                r = m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
                 if (m_blockCache != null)
                     m_blockCache.Add(key, size);
                 return true;
@@ -276,7 +280,7 @@ namespace Duplicati.Library.Main.Database
         public bool AddBlockset(string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, out long blocksetid, System.Data.IDbTransaction transaction = null)
         {
             m_findblocksetCommand.Transaction = transaction;
-            blocksetid = m_findblocksetCommand.ExecuteScalarInt64(null, -1, filehash, size);
+            blocksetid = m_findblocksetCommand.ExecuteScalarInt64(m_logQueries, null, -1, filehash, size);
             if (blocksetid != -1)
                 return false; //Found it
 
@@ -285,7 +289,7 @@ namespace Duplicati.Library.Main.Database
                 m_insertblocksetCommand.Transaction = tr.Parent;
                 m_insertblocksetCommand.SetParameterValue(0, size);
                 m_insertblocksetCommand.SetParameterValue(1, filehash);
-                blocksetid = m_insertblocksetCommand.ExecuteScalarInt64();
+                blocksetid = m_insertblocksetCommand.ExecuteScalarInt64(m_logQueries);
 
                 long ix = 0;
                 if (blocklistHashes != null)
@@ -296,7 +300,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         m_insertblocklistHashesCommand.SetParameterValue(1, ix);
                         m_insertblocklistHashesCommand.SetParameterValue(2, bh);
-                        m_insertblocklistHashesCommand.ExecuteNonQuery();
+                        m_insertblocklistHashesCommand.ExecuteNonQuery(m_logQueries);
                         ix++;
                     }
                 }
@@ -315,7 +319,7 @@ namespace Duplicati.Library.Main.Database
                     m_insertblocksetentryCommand.SetParameterValue(1, ix);
                     m_insertblocksetentryCommand.SetParameterValue(2, h);
                     m_insertblocksetentryCommand.SetParameterValue(3, exsize);
-                    var c = m_insertblocksetentryCommand.ExecuteNonQuery();
+                    var c = m_insertblocksetentryCommand.ExecuteNonQuery(m_logQueries);
                     if (c != 1)
                     {
                         Logging.Log.WriteErrorMessage(LOGTAG, "CheckingErrorsForIssue1400", null, "Checking errors, related to #1400. Unexpected result count: {0}, expected {1}, hash: {2}, size: {3}, blocksetid: {4}, ix: {5}, fullhash: {6}, fullsize: {7}", c, 1, h, exsize, blocksetid, ix, filehash, size);
@@ -354,7 +358,7 @@ namespace Duplicati.Library.Main.Database
             if (size > 0)
             {
                 m_findmetadatasetCommand.Transaction = transaction;
-                metadataid = m_findmetadatasetCommand.ExecuteScalarInt64(null, -1, filehash, size);
+                metadataid = m_findmetadatasetCommand.ExecuteScalarInt64(m_logQueries, null, -1, filehash, size);
                 return metadataid != -1;
             }
 
@@ -365,10 +369,10 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Adds a metadata set to the database, and returns a value indicating if the record was new
         /// </summary>
-        /// <param name="filehash">The hash of the metadata</param>
+        /// <param name="filehash">The metadata hash</param>
         /// <param name="size">The size of the metadata</param>
-        /// <param name="blocksetid">The ID of the blockset with the data</param>
-        /// <param name="transaction">The transaction to use</param>
+        /// <param name="transaction">The transaction to execute under</param>
+        /// <param name="blocksetid">The id of the blockset to add</param>
         /// <param name="metadataid">The id of the metadata set</param>
         /// <returns>True if the set was added to the database, false otherwise</returns>
         public bool AddMetadataset(string filehash, long size, long blocksetid, out long metadataid, System.Data.IDbTransaction transaction = null)
@@ -380,7 +384,7 @@ namespace Duplicati.Library.Main.Database
             {
                 m_insertmetadatasetCommand.Transaction = tr.Parent;
                 m_insertmetadatasetCommand.SetParameterValue(0, blocksetid);
-                metadataid = m_insertmetadatasetCommand.ExecuteScalarInt64();
+                metadataid = m_insertmetadatasetCommand.ExecuteScalarInt64(m_logQueries);
                 tr.Commit();
                 return true;
             }
@@ -398,13 +402,12 @@ namespace Duplicati.Library.Main.Database
         public void AddFile(long pathprefixid, string filename, DateTime lastmodified, long blocksetID, long metadataID, System.Data.IDbTransaction transaction)
         {
             var fileidobj = -1L;
-
             m_findfilesetCommand.Transaction = transaction;
             m_findfilesetCommand.SetParameterValue(0, blocksetID);
             m_findfilesetCommand.SetParameterValue(1, metadataID);
             m_findfilesetCommand.SetParameterValue(2, filename);
             m_findfilesetCommand.SetParameterValue(3, pathprefixid);
-            fileidobj = m_findfilesetCommand.ExecuteScalarInt64();
+            fileidobj = m_findfilesetCommand.ExecuteScalarInt64(m_logQueries);
 
             if (fileidobj == -1)
             {
@@ -415,8 +418,7 @@ namespace Duplicati.Library.Main.Database
                     m_insertfileCommand.SetParameterValue(1, filename);
                     m_insertfileCommand.SetParameterValue(2, blocksetID);
                     m_insertfileCommand.SetParameterValue(3, metadataID);
-
-                    fileidobj = m_insertfileCommand.ExecuteScalarInt64();
+                    fileidobj = m_insertfileCommand.ExecuteScalarInt64(m_logQueries);
                     tr.Commit();
                 }
             }
@@ -425,7 +427,7 @@ namespace Duplicati.Library.Main.Database
             m_insertfileOperationCommand.SetParameterValue(0, m_filesetId);
             m_insertfileOperationCommand.SetParameterValue(1, fileidobj);
             m_insertfileOperationCommand.SetParameterValue(2, lastmodified.ToUniversalTime().Ticks);
-            m_insertfileOperationCommand.ExecuteNonQuery();        
+            m_insertfileOperationCommand.ExecuteNonQuery(m_logQueries);        
         }
 
         /// <summary>
@@ -448,7 +450,7 @@ namespace Duplicati.Library.Main.Database
             m_insertfileOperationCommand.SetParameterValue(0, m_filesetId);
             m_insertfileOperationCommand.SetParameterValue(1, fileid);
             m_insertfileOperationCommand.SetParameterValue(2, lastmodified.ToUniversalTime().Ticks);
-            m_insertfileOperationCommand.ExecuteNonQuery();
+            m_insertfileOperationCommand.ExecuteNonQuery(m_logQueries);
         }
 
         public void AddDirectoryEntry(string path, long metadataID, DateTime lastmodified, System.Data.IDbTransaction transaction = null)
@@ -467,7 +469,7 @@ namespace Duplicati.Library.Main.Database
             m_selectfilelastmodifiedCommand.SetParameterValue(0, prefixid);
 			m_selectfilelastmodifiedCommand.SetParameterValue(1, path);
             m_selectfilelastmodifiedCommand.SetParameterValue(2, filesetid);
-            using (var rd = m_selectfilelastmodifiedCommand.ExecuteReader())
+            using (var rd = m_selectfilelastmodifiedCommand.ExecuteReader(m_logQueries, null))
                 if (rd.Read())
                 {
                     oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
@@ -506,7 +508,7 @@ namespace Duplicati.Library.Main.Database
         public string GetFileHash(long fileid)
         {
             m_selectfileHashCommand.SetParameterValue(0, fileid);
-            var r = m_selectfileHashCommand.ExecuteScalar();
+            var r = m_selectfileHashCommand.ExecuteScalar(m_logQueries, null);
             if (r == null || r == DBNull.Value)
                 return null;
                 
