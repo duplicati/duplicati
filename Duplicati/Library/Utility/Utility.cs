@@ -1445,6 +1445,11 @@ namespace Duplicati.Library.Utility
                     writer.Write("{0}{1}: ", indentstring, p.Name);
                     PrintSerializeIfPrimitive(p.GetValue(item, null), writer);
                 }
+                else if (typeof(Task).IsAssignableFrom(p.PropertyType) || p.Name == "TaskReader")
+                {
+                    // Ignore Task items
+                    continue;
+                }
                 else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(p.PropertyType))
                 {
                     var enumerable = (System.Collections.IEnumerable)p.GetValue(item, null);

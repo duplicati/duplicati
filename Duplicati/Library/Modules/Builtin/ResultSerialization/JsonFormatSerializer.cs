@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -43,6 +44,7 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                 return base
                     .CreateProperties(type, memberSerialization)
                     .Where(x => !m_excludes.Contains(x.PropertyName))
+                    .Where(x => !typeof(Task).IsAssignableFrom(x.PropertyType))
                     .ToList();
             }
         }
@@ -70,7 +72,8 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                     ContractResolver = new DynamicContractResolver(
                             nameof(IBasicResults.Warnings),
                             nameof(IBasicResults.Errors),
-                            nameof(IBasicResults.Messages)
+                            nameof(IBasicResults.Messages),
+                            "TaskReader"
                     ),
                     Converters = new List<JsonConverter>()
                     {
