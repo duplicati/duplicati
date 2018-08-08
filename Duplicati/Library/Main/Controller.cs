@@ -1027,6 +1027,9 @@ namespace Duplicati.Library.Main
                 {
                     return Strings.Controller.UnsupportedSizeValue(optionname, value);
                 }
+
+                if (!string.IsNullOrWhiteSpace(value) && char.IsDigit(value.Last()))
+                    return Strings.Controller.NonQualifiedSizeValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan)
             {
