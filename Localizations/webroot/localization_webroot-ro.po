@@ -1,126 +1,126 @@
 # Translators:
-# Kees Zaaijer, 2016
+# Leonte Cristian <leontecristian86@gmail.com>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Kees Zaaijer, 2016\n"
-"Language-Team: Dutch (Netherlands) (https://www.transifex.com/duplicati/teams/67655/nl_NL/)\n"
+"Last-Translator: Leonte Cristian <leontecristian86@gmail.com>, 2017\n"
+"Language-Team: Romanian (https://www.transifex.com/duplicati/teams/67655/ro/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: nl_NL\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: ro\n"
+"Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1));\n"
 
 #: templates/advancedoptionseditor.html:48
 msgid "- pick an option -"
-msgstr " - kies een optie -"
+msgstr "- alegeți o opțiune -"
 
 #: templates/delete.html:7 templates/localdatabase.html:4
 msgid "...loading..."
-msgstr "...laden..."
+msgstr "...se incarca..."
 
 #: templates/backends/openstack.html:44
 msgid "API Key"
-msgstr "API sleutel"
+msgstr "Cheia API"
 
 #: scripts/services/EditUriBuiltins.js:828 templates/backends/s3.html:54
 #: templates/backends/s3.html:55
 msgid "AWS Access ID"
-msgstr "AWS Toegangs ID"
+msgstr "AWS Access ID"
 
 #: scripts/services/EditUriBuiltins.js:829 templates/backends/s3.html:58
 #: templates/backends/s3.html:59
 msgid "AWS Access Key"
-msgstr "AWS Toegangssleutel"
+msgstr "AWS Access Key"
 
 #: scripts/services/EditUriBuiltins.js:138
 msgid "AWS IAM Policy"
-msgstr "AWS IAM Beleid"
+msgstr "Politica AWS IAM"
 
 #: index.html:225 index.html:241
 msgid "About"
-msgstr "Over"
+msgstr "Despre"
 
 #: templates/about.html:2
 msgid "About {{appname}}"
-msgstr "Over {{appname}}"
+msgstr "Despre {{appname}}"
 
 #: scripts/services/EditUriBuiltins.js:777 templates/backends/azure.html:11
 msgid "Access Key"
-msgstr "Toegangssleutel"
+msgstr "Cheie de acces"
 
 #: scripts/services/AppUtils.js:70
 msgid "Access denied"
-msgstr "Toegang geweigerd"
+msgstr "Acces interzis"
 
 #: templates/settings.html:5
 msgid "Access to user interface"
-msgstr "Toegang tot gebruikersinterface"
+msgstr "Accesul la interfața cu utilizatorul"
 
 #: scripts/services/EditUriBuiltins.js:776 templates/backends/azure.html:7
 msgid "Account name"
-msgstr "Accountnaam"
+msgstr "Nume de cont"
 
 #: templates/notificationarea.html:29 templates/updatechangelog.html:11
 msgid "Activate"
-msgstr "Activeren"
+msgstr "Activati"
 
 #: scripts/controllers/AboutController.js:54
 #: scripts/controllers/UpdateChangelogController.js:18
 msgid "Activate failed:"
-msgstr "Activeren mislukt"
+msgstr "Activare nereușită:"
 
 #: templates/addwizard.html:3
 msgid "Add a new backup"
-msgstr "Nieuwe back-up toevoegen"
+msgstr "Adăugați o copie de rezervă nouă"
 
 #: templates/addoredit.html:149
 msgid "Add a path directly"
-msgstr "Voeg een pad rechtstreeks toe"
+msgstr "Adăugați direct o cale"
 
 #: templates/advancedoptionseditor.html:46
 msgid "Add advanced option"
-msgstr "Voeg geavanceerde optie toe"
+msgstr "Adăugați opțiunea avansată"
 
 #: index.html:213
 msgid "Add backup"
-msgstr "Back-up toevoegen"
+msgstr "Adăugați copia de siguranță"
 
 #: templates/addoredit.html:203
 msgid "Add filter"
-msgstr "Voeg filter toe"
+msgstr "Adăugați un filtru"
 
 #: templates/addoredit.html:152
 msgid "Add path"
-msgstr "Voeg pad toe"
+msgstr "Adaugă calea"
 
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
 msgid "Adjust bucket name?"
-msgstr "Bucket naam aanpassen?"
+msgstr "Reglați numele găleții?"
 
 #: scripts/services/EditUriBuiltins.js:757
 msgid "Adjust path name?"
-msgstr "Padnaam aanpassen?"
+msgstr "Ajustați numele traseului?"
 
 #: templates/restoredirect.html:66 templates/restoredirect.html:74
 msgid "Advanced Options"
-msgstr "Geavanceerde Opties"
+msgstr "Opțiuni avansate"
 
 #: templates/addoredit.html:372 templates/edituri.html:28
 msgid "Advanced options"
-msgstr "Geavanceerde opties"
+msgstr "Opțiuni avansate"
 
 #: templates/home.html:30
 msgid "Advanced:"
-msgstr "Geavanceerd:"
+msgstr "Avansat:"
 
 #: scripts/directives/sourceFolderPicker.js:423
 msgid "All Hyper-V Machines"
-msgstr "Alle Hyper-V Machines"
+msgstr "Toate mașinile Hyper-V"
 
 #: scripts/directives/sourceFolderPicker.js:455
 msgid "All Microsoft SQL Databases"
-msgstr "Alle Microsoft SQL Databases"
+msgstr "Toate bazele de date Microsoft SQL"
 
 #: templates/settings.html:129
 msgid ""
@@ -130,32 +130,31 @@ msgid ""
 "similar data. They do not contain paths, filenames, usernames, passwords or "
 "similar sensitive information."
 msgstr ""
-"Alle gebruiksrapporten worden anoniem verstuurd en bevatten geen enkele "
-"persoonlijke informatie. Ze bevatten informatie over hardware en "
-"besturingssysteem, het type backend, back-up tijdsduur, totale grootte van "
-"brongegevens en soortgelijke gegevens. Ze bevatten geen paden, "
-"bestandsnamen, gebruikersnamen, wachtwoorden of soortgelijke gevoelige "
-"informatie."
+"Toate rapoartele de utilizare sunt trimise anonim și nu conțin informații "
+"personale. Acestea conțin informații despre hardware și sistemul de operare,"
+" tipul de backend, durata de copiere, dimensiunea generală a datelor sursă "
+"și datele similare. Ele nu conțin căi, nume de fișiere, nume de utilizator, "
+"parole sau alte informații sensibile similare."
 
 #: templates/settings.html:13
 msgid "Allow remote access (requires restart)"
-msgstr "Remote toegang toestaan (herstart vereist)"
+msgstr "Permiteți accesul la distanță (necesită repornire)"
 
 #: templates/addoredit.html:274
 msgid "Allowed days"
-msgstr "Alleen op deze dagen"
+msgstr "Permise zile"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
-msgstr "Een bestaand bestand was gevonden op de nieuwe locatie"
+msgstr "Un fișier existent a fost găsit la noua locație"
 
 #: scripts/controllers/LocalDatabaseController.js:72
 msgid ""
 "An existing file was found at the new location\n"
 "Are you sure you want the database to point to an existing file?"
 msgstr ""
-"Een bestaand bestand was gevonden op de nieuwe locatie. Weet u zeker dat de "
-"database moet verwijzen naar een bestaand bestand?"
+"Un fișier existent a fost găsit la noua locație\n"
+"Sigur doriți ca baza de date să indice un fișier existent?"
 
 #: scripts/controllers/EditBackupController.js:428
 msgid ""
@@ -164,22 +163,22 @@ msgid ""
 "\n"
 " Do you wish to use the existing database?"
 msgstr ""
-"Een bestaande lokale database voor de opslag is gevonden.\n"
-"Hergebruik van de database zal toestaan dat de opdrachtregel- en server instances werken op dezelfde remote opslag.\n"
+"O bază de date locală existentă pentru stocare a fost găsită.\n"
+"Reutilizarea bazei de date va permite instanțelor de linie de comandă și server să funcționeze pe aceeași stocare la distanță.\n"
 "\n"
-"Wilt u de bestaande database gebruiken?"
+" Doriți să utilizați baza de date existentă?"
 
 #: templates/settings.html:117
 msgid "Anonymous usage reports"
-msgstr "Anonieme gebruiksrapporten"
+msgstr "Rapoarte de utilizare anonime"
 
 #: scripts/services/AppUtils.js:204
 msgid "Applications"
-msgstr "Toepassingen"
+msgstr ""
 
 #: templates/export.html:8
 msgid "As Command-line"
-msgstr "Als Opdrachtregel"
+msgstr "Ca linie de comandă"
 
 #: scripts/services/EditUriBuiltins.js:710 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/msgroup.html:13
@@ -187,121 +186,121 @@ msgstr "Als Opdrachtregel"
 #: templates/backends/oauth.html:9 templates/backends/sharepoint.html:8
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
-msgstr "AuthID"
+msgstr "authId"
 
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
 msgid "Authentication password"
-msgstr "Authenticatie wachtwoord"
+msgstr "Parola de autentificare"
 
 #: templates/backends/generic.html:19 templates/backends/openstack.html:31
 msgid "Authentication username"
-msgstr "Authenticatie gebruikersnaam"
+msgstr "Numele de utilizator de autentificare"
 
 #: scripts/controllers/EditBackupController.js:337
 msgid "Autogenerated passphrase"
-msgstr "Automatisch gegenereerde wachtwoordzin"
+msgstr "Fraza de acces generată automat"
 
 #: templates/addoredit.html:254
 msgid "Automatically run backups."
-msgstr "Automatisch back-ups uitvoeren"
+msgstr "Executați automat backup-uri."
 
 #: templates/backends/b2.html:12
 msgid "B2 Account ID"
-msgstr "B2 Account ID"
+msgstr "ID-ul contului B2"
 
 #: templates/backends/b2.html:16
 msgid "B2 Application Key"
-msgstr "B2 Applicatiesleutel"
+msgstr "B2 cheie de aplicație"
 
 #: scripts/services/EditUriBuiltins.js:875 templates/backends/b2.html:13
 msgid "B2 Cloud Storage Account ID"
-msgstr "B2 Cloud Storage Account ID"
+msgstr "B2 ID-ul contului de stocare în cloud"
 
 #: scripts/services/EditUriBuiltins.js:876 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
-msgstr "B2 Cloud Storage Applicatiesleutel"
+msgstr "B2 Cheia aplicației de stocare cloud"
 
 #: templates/restore.html:132 templates/restore.html:70
 msgid "Back"
-msgstr "Vorige"
+msgstr "Înapoi"
 
 #: templates/about.html:67
 msgid "Backend modules:"
-msgstr "Backend modules:"
+msgstr "Module backend:"
 
 #: scripts/services/ServerStatus.js:44
 msgid "Backup Complete!"
-msgstr "Back-up Voltooid!"
+msgstr ""
 
 #: templates/addoredit.html:88
 msgid "Backup destination"
-msgstr "Back-updoel"
+msgstr "Destinație de rezervă"
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
 msgid "Backup location"
-msgstr "Back-up locatie"
+msgstr "Locație de rezervă"
 
 #: templates/addoredit.html:315
 msgid "Backup retention"
-msgstr "Back-up retentie"
+msgstr ""
 
 #: templates/home.html:66
 msgid "Backup:"
-msgstr "Back-up:"
+msgstr "Backup:"
 
 #: templates/settings.html:94
 msgid "Beta"
-msgstr "Beta"
+msgstr "beta"
 
 #: scripts/services/AppUtils.js:68
 msgid "Broken access"
-msgstr "Verbroken toegang"
+msgstr "Accesul spart"
 
 #: templates/backends/file.html:8 templates/restore.html:91
 msgid "Browse"
-msgstr "Bladeren"
+msgstr "Naviga"
 
 #: scripts/controllers/SystemSettingsController.js:33
 msgid "Browser default"
-msgstr "Browser standaard"
+msgstr "Browser default"
 
 #: scripts/services/EditUriBuiltins.js:787
 #: scripts/services/EditUriBuiltins.js:827
 #: scripts/services/EditUriBuiltins.js:874
 #: scripts/services/EditUriBuiltins.js:884
 msgid "Bucket Name"
-msgstr "Bucket Naam"
+msgstr "Numele bucketului"
 
 #: templates/backends/gcs.html:15
 msgid "Bucket create location"
-msgstr "Bucket aanmaaklocatie"
+msgstr "Bucket crea locația"
 
 #: templates/backends/s3.html:26
 msgid "Bucket create region"
-msgstr "Bucket aanmaakregio"
+msgstr "Bucket crea regiune"
 
 #: templates/backends/b2.html:2 templates/backends/b2.html:3
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
 #: templates/backends/s3.html:19 templates/backends/s3.html:20
 msgid "Bucket name"
-msgstr "Bucketnaam"
+msgstr "Numele bucketului"
 
 #: templates/backends/gcs.html:26
 msgid "Bucket storage class"
-msgstr "Bucket opslagklasse"
+msgstr "Categoria de depozitare a cupelor"
 
 #: scripts/services/ServerStatus.js:48
 msgid "Building list of files to restore ..."
-msgstr "Lijst samenstellen met te herstellen bestanden ..."
+msgstr "Crearea listei de fișiere pentru restaurarea ..."
 
 #: scripts/controllers/RestoreController.js:361
 msgid "Building partial temporary database ..."
-msgstr "Gedeeltelijke tijdelijke database samenstellen ..."
+msgstr "Crearea unei baze de date temporare temporare ..."
 
 #: templates/restore.html:59
 msgid "Busy ..."
-msgstr "Bezig ..."
+msgstr "Ocupat ..."
 
 #: templates/settings.html:14
 msgid ""
@@ -309,10 +308,6 @@ msgid ""
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
-"Door remote toegang toe te staan, luistert de server naar aanvragen van een "
-"willekeurige machine op het netwerk. Verzeker u ervan dat de computer wordt "
-"gebruikt op een netwerk dat wordt beschermd door een veilig ingestelde "
-"firewall als u deze optie wilt inschakelen."
 
 #: templates/settings.html:25
 msgid ""
@@ -322,21 +317,14 @@ msgid ""
 " you prefer having to type in the password, even when accessing the user "
 "interface from the tray icon, enable this option."
 msgstr ""
-"Standaard opent het systeemvak-pictogram de gebruikersinterface met een "
-"token dat de gebruikersinterface ontgrendelt. Dit zorgt ervoor dat u toegang"
-" heeft tot de gebruikersinterface vanaf het systeemvak-pictogram, zonder dat"
-" u anderen hoeft te vragen een wachtwoord in te voeren. Schakel deze optie "
-"in als u er de voorkeur aan geeft zelf het wachtwoord in te voeren, zelfs "
-"wanneer de gebruikersinterface wordt geopend vanuit het systeemvak-"
-"pictogram."
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
-msgstr "Cache bestanden"
+msgstr ""
 
 #: templates/settings.html:104
 msgid "Canary"
-msgstr "Canary"
+msgstr "Canar"
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
@@ -360,324 +348,325 @@ msgstr "Canary"
 #: templates/export.html:26 templates/settings.html:159
 #: templates/waitarea.html:19
 msgid "Cancel"
-msgstr "Annuleren"
+msgstr "Anulare"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "Cannot move to existing file"
-msgstr "Kan niet verplaatsen naar bestaand bestand"
+msgstr "Nu se poate muta la fișierul existent"
 
 #: templates/about.html:5
 msgid "Changelog"
-msgstr "Aanpassingen-log"
+msgstr "changelog"
 
 #: templates/updatechangelog.html:2
 msgid "Changelog for {{appname}} {{version}}"
-msgstr "Aanpassingen-log voor {{appname}} {{version}}"
+msgstr "Modificări pentru {{appname}} {{version}}"
 
 #: scripts/controllers/UpdateChangelogController.js:24
 msgid "Check failed:"
-msgstr "Controle mislukt:"
+msgstr "Verificarea a eșuat:"
 
 #: templates/about.html:36
 msgid "Check for updates now"
-msgstr "Controleer nu op updates"
+msgstr "Verificați acum actualizările"
 
 #: templates/captcha.html:10
 msgid "Checking ..."
-msgstr "Controleren ..."
+msgstr "Control ..."
 
 #: templates/about.html:37
 msgid "Checking for updates ..."
-msgstr "Controleren op updates ..."
+msgstr "Se verifică pentru actualizări ..."
 
 #: templates/edituri.html:16
 msgid "Chose a storage type to get started"
-msgstr "Kies een opslagtype om aan de slag te gaan"
+msgstr "Alegeți un tip de stocare pentru a începe"
 
 #: templates/backends/gcs.html:11 templates/backends/msgroup.html:16
 #: templates/backends/oauth.html:11 templates/backends/sharepoint.html:11
 msgid "Click the AuthID link to create an AuthID"
-msgstr "Klik op de AuthID link om een AuthID aan te maken"
+msgstr "Faceți clic pe linkul AuthID pentru a crea un AuthID"
 
 #: index.html:150 index.html:201
 msgid "Click to set throttle options"
-msgstr "Klik om bandbreedte-opties in te stellen"
+msgstr "Faceți clic pentru a seta opțiunile de accelerație"
 
 #: templates/home.html:35
 msgid "Commandline ..."
-msgstr "Opdrachtregel ..."
+msgstr "Linie de comanda ..."
 
 #: templates/home.html:34
 msgid "Compact now"
-msgstr "Nu opruimen"
+msgstr "Compact acum"
 
 #: scripts/services/ServerStatus.js:41 scripts/services/ServerStatus.js:64
 msgid "Compacting remote data ..."
-msgstr "Opruimen van remote gegevens ..."
+msgstr "Compactarea datelor de la distanță ..."
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup ..."
-msgstr "Back-up wordt voltooid ..."
+msgstr "Completarea copiilor de rezervă ..."
 
 #: scripts/services/ServerStatus.js:36
 msgid "Completing previous backup ..."
-msgstr "Vorige back-up wordt voltooid ..."
+msgstr "Finalizarea copierii anterioare ..."
 
 #: templates/about.html:68
 msgid "Compression modules:"
-msgstr "Compressiemodules:"
+msgstr "Module de comprimare:"
 
 #: scripts/directives/sourceFolderPicker.js:381
 msgid "Computer"
-msgstr "Computer"
+msgstr "Calculator"
 
 #: templates/import.html:9
 msgid "Configuration file:"
-msgstr "Configuratiebestand"
+msgstr "Fișier de configurare:"
 
 #: templates/home.html:22
 msgid "Configuration:"
-msgstr "Configuratie:"
+msgstr "Configurare:"
 
 #: templates/addwizard.html:9
 msgid "Configure a new backup"
-msgstr "Een nieuwe back-up instellen"
+msgstr "Configurați o copie de rezervă nouă"
 
 #: scripts/controllers/DeleteController.js:65
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Confirm delete"
-msgstr "Bevestig verwijderen"
+msgstr "Confirmă ștergerea"
 
 #: scripts/services/EditUriBackendConfig.js:66
 msgid "Confirmation required"
-msgstr "Bevestiging vereist"
+msgstr "Confirmare Necesară"
 
 #: templates/restoredirect.html:80
 msgid "Connect"
-msgstr "Verbind"
+msgstr "Conectați"
 
 #: index.html:313
 msgid "Connect now"
-msgstr "Verbind nu"
+msgstr "Conectați acum"
 
 #: index.html:309
 msgid "Connecting to server ..."
-msgstr "Verbinden met server ..."
+msgstr "Conectare la server ..."
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
-msgstr "Verbinding maken met taak ..."
+msgstr "Se conectează la sarcină ...."
 
 #: index.html:314
 msgid "Connecting..."
-msgstr "Verbinden..."
+msgstr "Conectarea ..."
 
 #: index.html:305
 msgid "Connection lost"
-msgstr "Verbinding verbroken"
+msgstr "Conexiunea a fost pierdută"
 
 #: scripts/directives/backupEditUri.js:51
 #: scripts/directives/backupEditUri.js:54
 msgid "Connection worked!"
-msgstr "Verbinding werkt!"
+msgstr "Conexiunea a funcționat!"
 
 #: scripts/services/EditUriBuiltins.js:778 templates/backends/azure.html:2
 msgid "Container name"
-msgstr "Containernaam"
+msgstr "Numele containerului"
 
 #: templates/backends/openstack.html:49
 msgid "Container region"
-msgstr "Container-regio"
+msgstr "Zona containerului"
 
 #: templates/restore.html:69
 msgid "Continue"
-msgstr "Volgende"
+msgstr "Continua"
 
 #: scripts/controllers/EditBackupController.js:407
 msgid "Continue without encryption"
-msgstr "Ga verder zonder versleuteling"
+msgstr "Continuați fără criptare"
 
 #: scripts/controllers/DialogController.js:16
 msgid "Copied!"
-msgstr "Gekopieerd!"
+msgstr "Copiată!"
 
 #: templates/copy_clipboard_buttons.html:3
 msgid "Copy"
-msgstr "Kopie"
+msgstr ""
 
 #: templates/addoredit.html:99 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
-msgstr "Kopieer doel URL naar Klembord"
+msgstr "Copiați adresa URL de destinație în Clipboard"
 
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
-msgstr "Kopiëren mislukt. Kopieer de URL handmatig"
+msgstr "Copierea a eșuat. Copiați manual adresa URL"
 
 #: scripts/services/AppUtils.js:639
 msgid "Core options"
-msgstr "Kern-opties"
+msgstr "Core opțiuni"
 
 #: scripts/controllers/StateController.js:34
 msgid "Counting ({{files}} files found, {{size}})"
-msgstr "Tellen ({{files}} bestanden gevonden, {{size}})"
+msgstr "Numărătoare ({{fișiere}} fișiere găsite, {{size}})"
 
 #: templates/settings.html:124
 msgid "Crashes only"
-msgstr "Alleen crashes"
+msgstr "Se blochează numai"
 
 #: templates/home.html:41
 msgid "Create bug report ..."
-msgstr "Bug rapport maken ..."
+msgstr "Creați un raport de eroare ..."
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
-msgstr "Map aanmaken?"
+msgstr "Creeaza dosar?"
 
 #: scripts/services/EditUriBuiltins.js:124
 msgid "Created new limited user"
-msgstr "Nieuwe beperkte gebruiker aangemaakt"
+msgstr "Creat nou utilizator limitat"
 
 #: scripts/services/ServerStatus.js:59
 msgid "Creating bug report ..."
-msgstr "Bug rapport aanmaken ..."
+msgstr "Crearea unui raport de eroare ..."
 
 #: scripts/services/EditUriBuiltins.js:115
 msgid "Creating new user with limited access ..."
-msgstr "Nieuwe gebruiker met beperkte toegang aanmaken ..."
+msgstr "Crearea unui nou utilizator cu acces limitat ..."
 
 #: scripts/services/ServerStatus.js:49
 msgid "Creating target folders ..."
-msgstr "Doelmappen aanmaken ..."
+msgstr "Crearea dosarelor țintă ..."
 
 #: scripts/controllers/RestoreController.js:356
 msgid "Creating temporary backup ..."
-msgstr "Tijdelijke back-up aanmaken ..."
+msgstr "Se creează backup temporar ..."
 
 #: scripts/services/EditUriBuiltins.js:115
 msgid "Creating user..."
-msgstr "Gebruiker aanmaken ..."
+msgstr "Crearea utilizatorului ..."
 
 #: templates/home.html:71
 msgid "Current action:"
-msgstr "Huidige actie:"
+msgstr ""
 
 #: templates/home.html:81
 msgid "Current file:"
-msgstr "Huidig bestand:"
+msgstr ""
 
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
-msgstr "Huidige versie is {{versionname}} ({{versionnumber}})"
+msgstr "Versiunea curentă este {{versionname}} ({{versionnumber}})"
 
 #: templates/backends/s3.html:14
 msgid "Custom S3 endpoint"
-msgstr "Aangepaste S3 endpoint"
+msgstr "Obiectiv final S3"
 
 #: templates/backends/openstack.html:13
 msgid "Custom authentication url"
-msgstr "Aangepaste authenticatie url"
+msgstr "Adresa de autentificare personalizată"
 
 #: templates/addoredit.html:321
 msgid "Custom backup retention"
-msgstr "Aangepaste back-up retentie"
+msgstr ""
 
 #: templates/backends/gcs.html:18
 msgid "Custom location ({{server}})"
-msgstr "Aangepaste locatie ({{server}})"
+msgstr "Locația particularizată ({{server}})"
 
 #: templates/backends/s3.html:32
 msgid "Custom region for creating buckets"
-msgstr "Aangepaste regio voor het aanmaken van buckets"
+msgstr "Regiunea personalizată pentru crearea de cupe"
 
 #: templates/backends/s3.html:29
 msgid "Custom region value ({{region}})"
-msgstr "Aangepaste regio waarde ({{region}})"
+msgstr "Valoarea pentru regiunea particularizată ({{region}})"
 
 #: templates/backends/openstack.html:10 templates/backends/s3.html:11
 msgid "Custom server url ({{server}})"
-msgstr "Aangepaste server url ({{server}})"
+msgstr "Adresa URL a serverului personalizat ({{server}})"
 
 #: templates/backends/gcs.html:29 templates/backends/s3.html:41
 msgid "Custom storage class ({{class}})"
-msgstr "Aangepaste opslagklasse ({{class}})"
+msgstr "Clase de stocare personalizate ({{class}})"
 
 #: templates/home.html:32
 msgid "Database ..."
-msgstr "Database ..."
+msgstr "Bază de date ..."
 
 #: scripts/services/AppUtils.js:91 templates/addoredit.html:347
 msgid "Days"
-msgstr "Dagen"
+msgstr "zi"
 
 #: scripts/controllers/SystemSettingsController.js:34
 msgid "Default"
-msgstr "Standaard"
+msgstr "Mod implicit"
 
 #: templates/settings.html:81
 msgid "Default ({{channelname}})"
-msgstr "Standaard ({{channelname}})"
+msgstr "Implicit ({{nume_canal}})"
 
 #: scripts/services/AppUtils.js:185
 msgid "Default excludes"
-msgstr "Standaard uitsluitingen"
+msgstr ""
 
 #: templates/settings.html:144
 msgid "Default options"
-msgstr "Standaard opties"
+msgstr "Opțiunile prestabilite"
 
 #: templates/localdatabase.html:19
 msgid "Delete"
-msgstr "Verwijderen"
+msgstr "Șterge"
 
 #: templates/home.html:26
 msgid "Delete ..."
-msgstr "Verwijderen ..."
+msgstr "Șterge ..."
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
-msgstr "Verwijder back-up"
+msgstr "Ștergeți rezervarea"
 
 #: templates/addoredit.html:318
 msgid "Delete backups that are older than"
-msgstr "Verwijder back-ups die ouder zijn dan"
+msgstr ""
 
 #: templates/delete.html:13
 msgid "Delete local database"
-msgstr "Verwijder lokale database"
+msgstr "Ștergeți baza de date locală"
 
 #: templates/delete.html:38 templates/delete.html:47
 msgid "Delete remote files"
-msgstr "Verwijder remote bestanden"
+msgstr "Șterge fișierele la distanță"
 
 #: templates/delete.html:26
 msgid "Delete the local database"
-msgstr "Verwijder de lokale database"
+msgstr "Ștergeți baza de date locală"
 
 #: templates/delete.html:41
 msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
 msgstr ""
-"{{filecount}} bestanden ({{filesize}}) van de remote opslag verwijderen?"
+"Ștergeți fișierele {{filecount}} ({{file size}}) din spațiul de stocare de "
+"la distanță?"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
-msgstr "Remote bestanden verwijderen ..."
+msgstr "Ștergerea fișierelor la distanță ..."
 
 #: scripts/services/ServerStatus.js:40
 msgid "Deleting unwanted files ..."
-msgstr "Onnodige bestanden verwijderen ..."
+msgstr "Ștergerea fișierelor nedorite ..."
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
-msgstr "Desktop"
+msgstr "Spațiul de lucru"
 
 #: templates/addoredit.html:25
 msgid "Destination"
-msgstr "Doel"
+msgstr "Destinaţie"
 
 #: templates/backends/sharepoint.html:2
 msgid "Destination path"
-msgstr "Doelpad"
+msgstr ""
 
 #: templates/restore.html:141
 msgid ""
@@ -685,89 +674,89 @@ msgid ""
 "with a donation. We suggest {{smallamount}} for private use and "
 "{{largeamount}} for commercial use."
 msgstr ""
-"Hebben we geholpen uw bestanden veilig te stellen? Overweeg in dat geval "
-"Duplicati te ondersteunen met een donatie. We raden {{smallamount}} aan voor"
-" persoonlijk gebruik en {{largeamount}} voor bedrijfsmatig gebruik."
+"Am ajutat la salvarea dosarelor? În acest caz, vă rugăm să luați în "
+"considerare sprijinirea duplicatului cu o donație. Vă sugerăm utilizarea "
+"{{smallamount}} pentru uz privat și {{largeamount}} pentru uz comercial."
 
 #: templates/restorewizard.html:9
 msgid "Direct restore from backup files ..."
-msgstr "Rechtstreeks herstellen vanuit back-up bestanden ..."
+msgstr "Restaurare directă din fișierele de rezervă ..."
 
 #: templates/log.html:31
 msgid "Disabled"
-msgstr "Uitgeschakeld"
+msgstr "invalid"
 
 #: templates/notificationarea.html:10 templates/notificationarea.html:27
 msgid "Dismiss"
-msgstr "Afwijzen"
+msgstr "destitui"
 
 #: templates/notificationarea.html:41
 msgid "Dismiss all"
-msgstr "Alles afwijzen"
+msgstr ""
 
 #: templates/settings.html:63
 msgid "Display and color theme"
-msgstr "Weergave en kleurenschema"
+msgstr "Afișare și temă color"
 
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
-msgstr "Wilt u de back-up \"{{name}}\" echt verwijderen?"
+msgstr "Chiar doriți să ștergeți copia de rezervă: \"{{name}}\"?"
 
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Do you really want to delete the local database for: {{name}}"
-msgstr "Wilt u de lokale database voor: {{name}} echt verwijderen?"
+msgstr "Chiar doriți să ștergeți baza de date locală pentru: {{name}}"
 
 #: templates/backends/openstack.html:26
 msgid "Domain Name"
-msgstr "Domeinnaam"
+msgstr ""
 
 #: index.html:142 index.html:249
 msgid "Donate"
-msgstr "Doneren"
+msgstr "Dona"
 
 #: templates/settings.html:71 templates/settings.html:73
 msgid "Donation messages"
-msgstr "Doneer-berichten"
+msgstr "Donați mesaje"
 
 #: templates/settings.html:75
 msgid "Donation messages are hidden, click to show"
-msgstr "Doneer-berichten zijn verborgen, klik om ze weer te geven"
+msgstr "Mesajele de donare sunt ascunse, dați clic pentru a afișa"
 
 #: templates/settings.html:74
 msgid "Donation messages are visible, click to hide"
-msgstr "Doneer-berichten zijn zichtbaar, klik om ze te verbergen"
+msgstr "Mesajele de donare sunt vizibile, faceți clic pentru a ascunde"
 
 #: templates/export.html:45
 msgid "Done"
-msgstr "Klaar"
+msgstr "Terminat"
 
 #: templates/notificationarea.html:16
 msgid "Download"
-msgstr "Download"
+msgstr "Descarca"
 
 #: templates/notificationarea.html:30
 msgid "Downloading ..."
-msgstr "Downloaden ..."
+msgstr "Descărcarea ..."
 
 #: scripts/services/ServerStatus.js:53
 msgid "Downloading files ..."
-msgstr "Bestanden downloaden ..."
+msgstr "Descărcarea fișierelor ..."
 
 #: templates/notificationarea.html:24
 msgid "Downloading update..."
-msgstr "Update downloaden ..."
+msgstr "Descărcarea actualizării ..."
 
 #: scripts/services/AppUtils.js:301
 msgid "Duplicate option {{opt}}"
-msgstr "Dupliceer optie {{opt}}"
+msgstr "Opțiunea duplicat {{opt}}"
 
 #: index.html:269
 msgid "Duplicati Website"
-msgstr "Duplicati Website"
+msgstr "Duplicați site-ul web"
 
 #: index.html:257
 msgid "Duplicati forum"
-msgstr "Duplicati forum"
+msgstr "Forum duplicat"
 
 #: templates/delete.html:15
 msgid ""
@@ -775,9 +764,9 @@ msgid ""
 "            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
-"Iedere back-up heeft een lokale database waarmee het geassocieerd is, die informatie opslaat over de remote back-up op de lokale machine.\n"
-"Bij het verwijderen van een back-up kan eveneens de lokale database verwijderd worden, zonder dat dit invloed heeft op de mogelijkheid van het terugzetten van de remote bestanden.\n"
-"Als de lokale database gebruikt wordt voor back-ups vanaf de opdrachtregel, moet de database behouden blijven."
+"Fiecare copie de rezervă are o bază de date locală asociată cu aceasta, care stochează informații despre copia de siguranță la distanță de pe aparatul local.\n"
+"            Când ștergeți o copie de rezervă, puteți șterge și baza de date locală fără a afecta capacitatea de a restabili fișierele la distanță.\n"
+"            Dacă utilizați baza de date locală pentru copii de rezervă din linia de comandă, ar trebui să păstrați baza de date."
 
 #: templates/localdatabase.html:8
 msgid ""
@@ -786,44 +775,46 @@ msgid ""
 "faster to perform many operations, and reduces the amount of data that needs"
 " to be downloaded for each operation."
 msgstr ""
-"Iedere back-up heeft een lokale database waarmee het geassocieerd is, die informatie opslaat over de remote back-up op de lokale machine.\n"
-"Dit maakt het sneller bij het uitvoeren van veel bewerkingen, en reduceert de hoeveelheid gegevens die gedownload moeten worden voor iedere bewerking."
+"Fiecare copie de siguranță are o bază de date locală asociată cu aceasta, "
+"care stochează informații despre copia de rezervă la distanță pe mașina "
+"locală. \\ NAcest lucru face mai rapidă efectuarea mai multor operații și "
+"reduce cantitatea de date care trebuie descărcată pentru fiecare operație."
 
 #: templates/home.html:24
 msgid "Edit ..."
-msgstr "Bewerken ..."
+msgstr "Editați | × ..."
 
 #: templates/addoredit.html:170 templates/addoredit.html:383
 #: templates/edituri.html:39 templates/settings.html:148
 msgid "Edit as list"
-msgstr "Bewerk als lijst"
+msgstr "Editați ca listă"
 
 #: templates/addoredit.html:173 templates/addoredit.html:386
 #: templates/edituri.html:42 templates/settings.html:154
 msgid "Edit as text"
-msgstr "Bewerk als tekst"
+msgstr "Editați ca text"
 
 #: templates/export.html:18
 msgid "Encrypt file"
-msgstr "Versleutel bestand"
+msgstr "Criptați fișierul"
 
 #: templates/addoredit.html:43 templates/restore.html:22
 #: templates/restoredirect.html:22 templates/restoredirect.html:58
 msgid "Encryption"
-msgstr "Versleuteling"
+msgstr "Criptarea"
 
 #: scripts/controllers/EditBackupController.js:380
 msgid "Encryption changed"
-msgstr "Versleuteling aangepast"
+msgstr "Criptarea a fost modificată"
 
 #: templates/about.html:69
 msgid "Encryption modules:"
-msgstr "Versleutelingsmodules:"
+msgstr "Module de criptare:"
 
 #: scripts/controllers/EditBackupController.js:75
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
-msgstr "Geef URL in"
+msgstr "Introdu URL-ul"
 
 #: templates/addoredit.html:335
 msgid ""
@@ -833,66 +824,59 @@ msgid ""
 "the next 4 weeks, and one for each of the next 36 months. This can also be "
 "written as 1W:1D,1M:1W,3Y:1M."
 msgstr ""
-"Geef handmatig een retentie-strategie op. Tijdelijke aanduidingen zijn D/W/Y"
-" voor dagen/weken/jaren en U voor onbeperkt. De syntaxis is: "
-"7D:1D,4W:1W,36M:1M. Dit voorbeeld bewaart één back-up voor elk van de "
-"volgende 7 dagen, één voor elk van de volgende 4 weken, en één voor elk van "
-"de volgende 36 maanden. Dit kan eveneens worden geschreven als "
-"1W:1D,1M:1W,3Y:1M."
 
 #: templates/backends/azure.html:12
 msgid "Enter access key"
-msgstr "Geef toegangscode in"
+msgstr "Introduceți cheia de acces"
 
 #: templates/backends/azure.html:8
 msgid "Enter account name"
-msgstr "Geef accountnaam in"
+msgstr "Introduceți numele contului"
 
 #: templates/restoredirect.html:61
 msgid "Enter backup passphrase, if any"
-msgstr "Geef eventueel back-up wachtwoordzin in"
+msgstr "Introduceți fraza de acces, dacă există"
 
 #: templates/addwizard.html:10
 msgid "Enter configuration details"
-msgstr "Voer configuratie-details in"
+msgstr "Introduceți detaliile de configurare"
 
 #: templates/backends/azure.html:3
 msgid "Enter container name"
-msgstr "Geef containernaam in"
+msgstr "Introduceți numele containerului"
 
 #: templates/export.html:22 templates/import.html:15
 msgid "Enter encryption passphrase"
-msgstr "Geef een wachtwoordzin in voor versleuteling"
+msgstr "Introduceți expresia de acces pentru criptare"
 
 #: templates/addoredit.html:192
 msgid "Enter expression here"
-msgstr "Geef uitdrukking hier in"
+msgstr "Introduceți expresia aici"
 
 #: templates/backends/jottacloud.html:3 templates/backends/mega.html:3
 msgid "Enter folder path name"
-msgstr "Geef padnaam van de map in"
+msgstr "Introduceți numele căii de cale"
 
 #: scripts/services/AppUtils.js:122
 msgid "Enter one option per line in command-line format, eg. {0}"
 msgstr ""
-"Geef één optie per regel in opdracht-prompt indeling, bijvoorbeeld {0}"
+"Introduceți o opțiune pe linie în format de linie de comandă, de ex. {0}"
 
 #: templates/backends/file.html:7 templates/backends/generic.html:14
 #: templates/backends/msgroup.html:8 templates/backends/oauth.html:3
 #: templates/restore.html:90
 msgid "Enter the destination path"
-msgstr "Geef het doelpad in"
+msgstr "Introduceți calea de destinație"
 
 #: templates/backends/msgroup.html:3
 msgid "Enter the email address of the Office 365 group"
-msgstr "Geef het e-mailadres van de Office 365 groep"
+msgstr ""
 
 #: templates/backends/sharepoint.html:3
 msgid ""
 "Enter the full destination path, including the server name, but without "
 "https"
 msgstr ""
-"Geef het volledige doelpad, inclusief de servernaam, maar zonder https"
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
@@ -914,97 +898,97 @@ msgstr ""
 #: scripts/services/AppUtils.js:347 scripts/services/AppUtils.js:349
 #: scripts/services/AppUtils.js:357 scripts/services/AppUtils.js:359
 msgid "Error"
-msgstr "Fout"
+msgstr "Eroare"
 
 #: scripts/services/ServerStatus.js:66
 msgid "Error!"
-msgstr "Fout!"
+msgstr "Eroare!"
 
 #: templates/settings.html:123
 msgid "Errors and crashes"
-msgstr "Fouten en crashes"
+msgstr "Erori și accidente"
 
 #: templates/addoredit.html:210
 msgid "Exclude"
-msgstr "Uitsluiten"
+msgstr "Exclude"
 
 #: scripts/services/AppUtils.js:125
 msgid "Exclude directories whose names contain"
-msgstr "Sluit mappen uit waarvan de naam bevat:"
+msgstr "Excludeți directoarele ale căror nume conțin"
 
 #: scripts/services/AppUtils.js:179
 msgid "Exclude expression"
-msgstr "Sluit uitdrukking uit"
+msgstr "Excludeți expresia"
 
 #: scripts/services/AppUtils.js:143
 msgid "Exclude file"
-msgstr "Sluit bestand uit"
+msgstr "Excludeți fișierul"
 
 #: scripts/services/AppUtils.js:149
 msgid "Exclude file extension"
-msgstr "Sluit bestandsextensie uit"
+msgstr "Excludeți extensia de fișier"
 
 #: scripts/services/AppUtils.js:131
 msgid "Exclude files whose names contain"
-msgstr "Sluit bestanden uit waarvan de naam bevat:"
+msgstr "Excludeți fișierele ale căror nume conțin"
 
 #: scripts/services/AppUtils.js:164
 msgid "Exclude filter group"
-msgstr "Sluit filtergroep uit"
+msgstr ""
 
 #: scripts/services/AppUtils.js:137
 msgid "Exclude folder"
-msgstr "Sluit map uit"
+msgstr "Excludeți dosarul"
 
 #: scripts/services/AppUtils.js:154
 msgid "Exclude regular expression"
-msgstr "Sluit reguliere expressie uit"
+msgstr "Excludeți expresia regulată"
 
 #: scripts/controllers/LocalDatabaseController.js:72
 msgid "Existing file found"
-msgstr "Bestaand bestand gevonden"
+msgstr "Fișierul existent găsit"
 
 #: templates/settings.html:99
 msgid "Experimental"
-msgstr "Experimenteel"
+msgstr "Experimental"
 
 #: templates/export.html:27
 msgid "Export"
-msgstr "Exporteer"
+msgstr "Export"
 
 #: templates/home.html:25
 msgid "Export ..."
-msgstr "Exporteren ..."
+msgstr "Export ..."
 
 #: templates/export.html:2
 msgid "Export backup configuration"
-msgstr "Exporteer back-upconfiguratie"
+msgstr "Exportați configurația de backup"
 
 #: templates/delete.html:31 templates/delete.html:34
 msgid "Export configuration"
-msgstr "Exporteer configuratie"
+msgstr "Exportați configurația"
 
 #: templates/export.html:31
 msgid "Exporting ..."
-msgstr "Exporteren ..."
+msgstr "Exportarea ..."
 
 #: templates/externallink.html:1
 msgid "External link"
-msgstr "Externe link"
+msgstr ""
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
-msgstr "FTP (Alternatief)"
+msgstr "FTP (alternativă)"
 
 #: scripts/controllers/RestoreController.js:378
 msgid "Failed to build temporary database: {{message}}"
-msgstr "Opbouwen tijdelijke database mislukt: {{message}}"
+msgstr "Eroare la crearea bazei de date temporare: {{message}}"
 
 #: scripts/directives/backupEditUri.js:143
 #: scripts/directives/backupEditUri.js:205
 #: scripts/directives/backupEditUri.js:239
 msgid "Failed to connect:"
-msgstr "Verbinden mislukt:"
+msgstr "Eroare de conexiune:"
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
@@ -1017,61 +1001,61 @@ msgstr "Verbinden mislukt:"
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
 msgid "Failed to connect: {{message}}"
-msgstr "Verbinden mislukt: {{message}}"
+msgstr "Nu s-a putut conecta: {{message}}"
 
 #: scripts/controllers/LocalDatabaseController.js:38
 msgid "Failed to delete:"
-msgstr "Verwijderen mislukt:"
+msgstr "Nu sa șters:"
 
 #: scripts/controllers/RestoreController.js:114
 #: scripts/controllers/RestoreController.js:144
 msgid "Failed to fetch path information: {{message}}"
-msgstr "Ophalen pad-informatie mislukt: {{message}}"
+msgstr "Nu s-a putut obține informații despre cale: {{message}}"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
-msgstr "Importeren mislukt:"
+msgstr "Imposibil de importat:"
 
 #: scripts/controllers/EditBackupController.js:668
 msgid "Failed to read backup defaults:"
-msgstr "Standaard instellingen voor back-up inlezen mislukt:"
+msgstr "Nu au putut fi citite valorile implicite de rezervă:"
 
 #: scripts/controllers/RestoreController.js:411
 msgid "Failed to restore files: {{message}}"
-msgstr "Herstellen bestanden mislukt: {{message}}"
+msgstr "Nu sa reușit restaurarea fișierelor: {{message}}"
 
 #: scripts/controllers/SystemSettingsController.js:113
 msgid "Failed to save:"
-msgstr "Opslaan mislukt:"
+msgstr "Salvarea nu a reușit:"
 
 #: scripts/controllers/RestoreController.js:120
 #: scripts/controllers/RestoreController.js:159
 msgid "Fetching path information ..."
-msgstr "Ophalen pad-informatie ..."
+msgstr "Obținerea informațiilor despre calea ..."
 
 #: scripts/services/AppUtils.js:74
 msgid "File"
-msgstr "Bestand"
+msgstr "Fişier"
 
 #: templates/addoredit.html:233
 msgid "Files larger than:"
-msgstr "Bestanden groter dan:"
+msgstr "Fișiere mai mari decât:"
 
 #: templates/addoredit.html:159
 msgid "Filters"
-msgstr "Filters"
+msgstr "Filtre"
 
 #: templates/commandline.html:60
 msgid "Finished!"
-msgstr "Klaar!"
+msgstr "Terminat!"
 
 #: scripts/controllers/AppController.js:170
 msgid "First run setup"
-msgstr "Instellen voor eerste gebruik"
+msgstr "Prima configurare"
 
 #: scripts/services/AppUtils.js:51
 msgid "Folder"
-msgstr "Map"
+msgstr "Pliant"
 
 #: templates/backends/b2.html:7 templates/backends/file.html:22
 #: templates/backends/file.html:6 templates/backends/jottacloud.html:2
@@ -1079,11 +1063,11 @@ msgstr "Map"
 #: templates/backends/sia.html:6 templates/restore.html:105
 #: templates/restore.html:89
 msgid "Folder path"
-msgstr "Map-pad"
+msgstr "Dosarul de cale"
 
 #: scripts/services/AppUtils.js:108
 msgid "Fri"
-msgstr "Vrijdag"
+msgstr "Vi"
 
 #: scripts/services/AppUtils.js:84
 msgid "GByte"
@@ -1091,82 +1075,82 @@ msgstr "GByte"
 
 #: scripts/services/AppUtils.js:117
 msgid "GByte/s"
-msgstr "GByte/s"
+msgstr "GByte / s"
 
 #: templates/backends/gcs.html:38
 msgid "GCS Project ID"
-msgstr "GCS Project ID"
+msgstr "ID de proiect GCS"
 
 #: templates/about.html:4 templates/addoredit.html:24 templates/log.html:9
 msgid "General"
-msgstr "Algemeen"
+msgstr "General"
 
 #: templates/addoredit.html:36
 msgid "General backup settings"
-msgstr "Algemene back-upinstellingen"
+msgstr "Setări de rezervă generale"
 
 #: templates/addoredit.html:301
 msgid "General options"
-msgstr "Algemene opties"
+msgstr "Optiuni generale"
 
 #: templates/addoredit.html:69
 msgid "Generate"
-msgstr "Genereer"
+msgstr "Genera"
 
 #: templates/backends/s3.html:63
 msgid "Generate IAM access policy"
-msgstr "Genereer IAM toegangsbeleid"
+msgstr "Generați politica de acces la IAM"
 
 #: scripts/controllers/RestoreController.js:66
 msgid "Getting file versions ..."
-msgstr "Bestandsversies ophalen ..."
+msgstr "Se obțin versiuni de fișiere ..."
 
 #: scripts/services/EditUriBuiltins.js:729
 #: scripts/services/EditUriBuiltins.js:740 templates/backends/msgroup.html:2
 msgid "Group email"
-msgstr "Groep e-mail"
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:19
 msgid "Hidden files"
-msgstr "Verborgen bestanden"
+msgstr "Fișiere ascunse"
 
 #: templates/addoredit.html:64
 msgid "Hide"
-msgstr "Verberg"
+msgstr "Ascunde"
 
 #: templates/backends/file.html:15 templates/restore.html:98
 msgid "Hide hidden folders"
-msgstr "Verberg verborgen bestanden"
+msgstr "Ascundeți folderele ascunse"
 
 #: index.html:210 scripts/services/AppUtils.js:62
 msgid "Home"
-msgstr "Start"
+msgstr "Acasă"
 
 #: templates/settings.html:17
 msgid "Hostnames"
-msgstr "hostnamen"
+msgstr ""
 
 #: scripts/services/AppUtils.js:100 scripts/services/AppUtils.js:90
 #: templates/settings.html:47
 msgid "Hours"
-msgstr "Uur"
+msgstr "ore"
 
 #: templates/restore.html:111
 msgid "How do you want to handle existing files?"
-msgstr "Hoe wilt u omgaan met bestaande bestanden?"
+msgstr "Cum doriți să gestionați fișierele existente?"
 
 #: scripts/services/AppUtils.js:64
 msgid "Hyper-V Machine"
-msgstr "Hyper-V Machine"
+msgstr "Mașină Hyper-V"
 
 #: scripts/directives/sourceFolderPicker.js:438
 msgid "Hyper-V Machine:"
-msgstr "Hyper-V Machine:"
+msgstr "Mașina Hyper-V:"
 
 #: scripts/directives/sourceFolderPicker.js:417
 #: scripts/services/AppUtils.js:66
 msgid "Hyper-V Machines"
-msgstr "Hyper-V Machines"
+msgstr "Mașini Hyper-V"
 
 #: scripts/directives/sourceFolderPicker.js:56
 #: scripts/directives/sourceFolderPicker.js:62
@@ -1176,16 +1160,13 @@ msgstr "ID:"
 #: templates/addoredit.html:257
 msgid "If a date was missed, the job will run as soon as possible."
 msgstr ""
-"Als een geplande taak werd overgeslagen, zal de taak zo snel mogelijk na het"
-" geplande tijdstip starten."
+"Dacă o dată a fost ratată, lucrarea va funcționa cât mai curând posibil."
 
 #: templates/addoredit.html:355
 msgid ""
 "If at least one newer backup is found, all backups older than this date are "
 "deleted."
 msgstr ""
-"Als tenminste één nieuwere back-up is gevonden, zullen alle back-ups die "
-"ouder zijn dan deze datum worden verwijderd."
 
 #: templates/localdatabase.html:13
 msgid ""
@@ -1193,8 +1174,10 @@ msgid ""
 "that you perform a repair operation to synchronize the database.\\nIf the "
 "repair is unsuccesful, you can delete the local database and re-generate."
 msgstr ""
-"Als de back-up en de remote opslag niet gesynchroniseerd zijn, zal Duplicati vereisen dat u een repareer-bewerking uitvoert om de database te synchroniseren.\n"
-"Als het repareren niet succesvol was, kunt u de lokale database verwijderen en opnieuw samenstellen."
+"Dacă spațiul de salvare și stocarea la distanță nu se sincronizează, "
+"Duplicati va necesita efectuarea unei operații de reparații pentru "
+"sincronizarea bazei de date. \\ NDacă repararea nu este reușită, puteți "
+"șterge baza de date locală și puteți re-genera."
 
 #: templates/export.html:41
 msgid ""
@@ -1202,9 +1185,9 @@ msgid ""
 "href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
 " as ...&quot;</a>"
 msgstr ""
-"Als het back-upbestand niet automatisch is gedownload, <a "
-"href=\"{{DownloadURL}}\" target=\"_blank\">klik met rechts en kies "
-"&quot;Opslaan als ...&quot;</a>"
+"Dacă fișierul de rezervă nu a fost descărcat automat, <a "
+"href=\"{{DownloadURL}}\" target=\"_blank\"> dați clic dreapta și alegeți "
+"&quot;Save ca ... &quot; </a>"
 
 #: templates/notificationarea.html:7
 msgid ""
@@ -1212,249 +1195,248 @@ msgid ""
 "href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
 "&quot;Save as ...&quot;</a>"
 msgstr ""
-"Als het back-upbestand niet automatisch is gedownload, <a "
-"href=\"{{item.DownloadLink}}\" target=\"_blank\">klik met rechts en kies "
-"&quot;Opslaan als ...&quot;</a>"
+"Dacă fișierul de rezervă nu a fost descărcat automat, <a "
+"href=\"{{item.DownloadLink}}\" target=\"_blank\"> faceți clic dreapta și "
+"alegeți &quot;Save ca ... &quot; </a>"
 
 #: scripts/services/EditUriBackendConfig.js:106
 msgid ""
 "If you do not enter a path, all files will be stored in the login folder.\n"
 "Are you sure this is what you want?"
 msgstr ""
-"Als u geen pad ingeeft, zullen alle bestanden opgeslagen worden in de login map.\n"
-"Weet u zeker dat dit is wat u wilt?"
+"Dacă nu introduceți o cale, toate fișierele vor fi stocate în dosarul de conectare.\n"
+"Ești sigur că asta vrei?"
 
 #: templates/backends/openstack.html:40
 msgid "If you do not enter an API Key, the tenant name is required"
-msgstr "Als u geen API sleutel ingeeft, is een tenant naam vereist"
+msgstr "Dacă nu introduceți o cheie API, este necesar numele locatarului"
 
 #: templates/delete.html:32
 msgid ""
 "If you want to use the backup later, you can export the configuration before"
 " deleting it"
 msgstr ""
-"Als u de back-up later wilt gebruiken, kunt u de configuratie exporteren "
-"alvorens hem te verwijderen"
+"Dacă doriți să utilizați ulterior copia de rezervă, puteți să exportați "
+"configurația înainte de ao șterge"
 
 #: scripts/controllers/AppController.js:171
 msgid ""
 "If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
 "Do you want to set a password now?"
 msgstr ""
-"Als uw machine zich in een multi-user omgeving bevindt (bijvoorbeeld als op de machine met meer dan één account kan worden aangemeld), moet een wachtwoord worden ingesteld om te voorkomen dat andere gebruikers togang kunnen krijgen tot gegevens behorend bij uw account.\n"
-"Wilt u nu een wachtwoord instellen?"
+"Dacă aparatul dvs. se află într-un mediu cu mai mulți utilizatori (adică mașina are mai multe conturi), trebuie să setați o parolă pentru a împiedica alți utilizatori să acceseze date din contul dvs.\n"
+"Doriți să setați o parolă acum?"
 
 #: templates/import.html:31
 msgid "Import"
-msgstr "Importeer"
+msgstr "Import"
 
 #: templates/addoredit.html:96 templates/restoredirect.html:39
 msgid "Import Destination URL"
-msgstr "Importeer Doel URL"
+msgstr "Importați adresa URL de destinație"
 
 #: templates/import.html:3
 msgid "Import backup configuration"
-msgstr "Importeer back-upconfiguratie"
+msgstr "Importați configurația de rezervă"
 
 #: scripts/directives/backupEditUri.js:159
 msgid "Import completed, but no certificates were found after the import"
 msgstr ""
-"Importeren voltooid, maar na het importeren zijn geen certificaten gevonden"
+"Importul a fost finalizat, dar nu au fost găsite certificate după import"
 
 #: scripts/directives/backupEditUri.js:159
 msgid "Import failed"
-msgstr "Importeren mislukt"
+msgstr "Importul a eșuat"
 
 #: templates/addwizard.html:15
 msgid "Import from a file"
-msgstr "Importeer vanuit een bestand"
+msgstr "Importați dintr-un fișier"
 
 #: templates/import.html:19
 msgid "Import metadata"
-msgstr "Importeer metadata"
+msgstr ""
 
 #: templates/import.html:35
 msgid "Importing ..."
-msgstr "Importeren ..."
+msgstr "Se importă ..."
 
 #: scripts/controllers/EditBackupController.js:143
 msgid "Include a file?"
-msgstr "Een bestand opnemen?"
+msgstr "Includeți un fișier?"
 
 #: scripts/services/AppUtils.js:175
 msgid "Include expression"
-msgstr "Uitdrukking opnemen"
+msgstr "Includeți expresia"
 
 #: scripts/services/AppUtils.js:159
 msgid "Include regular expression"
-msgstr "Reguliere expressie opnemen"
+msgstr "Includeți expresia regulată"
 
 #: templates/captcha.html:11
 msgid "Incorrect answer, try again"
-msgstr "Incorrect antwoord, probeer opnieuw"
+msgstr "Răspuns incorect, încercați din nou"
 
 #: templates/settings.html:105
 msgid ""
 "Individual builds for developers only. Not for use with important data."
 msgstr ""
-"Individuele builds alleen voor ontwikkelaars. Niet voor gebruik met "
-"belangrijke gegevens."
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
-msgstr "Informatie"
+msgstr "informație"
 
 #: templates/notificationarea.html:28 templates/updatechangelog.html:10
 msgid "Install"
-msgstr "Installeren"
+msgstr "Instalare"
 
 #: scripts/controllers/UpdateChangelogController.js:14
 msgid "Install failed:"
-msgstr "Installeren mislukt"
+msgstr "Instalarea a eșuat:"
 
 #: scripts/services/EditUriBuiltins.js:932
 msgid "Invalid characters in path"
-msgstr "Ongeldige tekens in pad"
+msgstr "Caractere nevalide în cale"
 
 #: scripts/controllers/EditBackupController.js:269
 #: scripts/controllers/EditBackupController.js:276
 #: scripts/controllers/EditBackupController.js:283
 msgid "Invalid retention time"
-msgstr "Ongeldige retentietijd"
+msgstr "Timp de retenție nevalid"
 
 #: scripts/services/EditUriBuiltins.js:686
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
 msgstr ""
-"Het is mogelijk te verbinden met sommige FTP servers zonder een wachtwoord.\n"
-"Weet u zeker dat uw FTP server aanmelden zonder wachtwoord ondersteunt?"
+"Este posibil să vă conectați la un FTP fără o parolă.\n"
+"Sunteți sigur că serverul FTP acceptă login-urile fără parolă?"
 
 #: scripts/services/AppUtils.js:82
 msgid "KByte"
-msgstr "KByte"
+msgstr "kByte"
 
 #: scripts/services/AppUtils.js:115
 msgid "KByte/s"
-msgstr "KByte/s"
+msgstr "KByte / s"
 
 #: templates/addoredit.html:319
 msgid "Keep a specific number of backups"
-msgstr "Behoud een specifiek aantal back-ups"
+msgstr ""
 
 #: templates/addoredit.html:317
 msgid "Keep all backups"
-msgstr "Behoud alle back-ups"
+msgstr ""
 
 #: templates/backends/openstack.html:18
 msgid "Keystone API version"
-msgstr "Keystone API versie"
+msgstr ""
 
 #: templates/settings.html:53
 msgid "Language in user interface"
-msgstr "Taal in gebruikersinterface"
+msgstr "Limba în interfața cu utilizatorul"
 
 #: scripts/controllers/RestoreController.js:37
 msgid "Last month"
-msgstr "Vorige maand"
+msgstr "Luna trecuta"
 
 #: templates/home.html:46
 msgid "Last successful backup:"
-msgstr "Laatste succesvolle back-up:"
+msgstr ""
 
 #: templates/restorewizard.html:27
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr ""
-"Laatste succesvolle hersteloperatie: {{time}} (duurde {{duration || '0 "
-"seconden'}})"
 
 #: scripts/controllers/RestoreController.js:56
 msgid "Latest"
-msgstr "Laatste"
+msgstr "Cele mai recente"
 
 #: templates/about.html:6
 msgid "Libraries"
-msgstr "Bibliotheken"
+msgstr "Biblioteci"
 
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates ..."
-msgstr "Back-updata weergeven ..."
+msgstr "Se afișează datele de rezervă ..."
 
 #: scripts/services/ServerStatus.js:60
 msgid "Listing remote files ..."
-msgstr "Remote bestanden weergeven ..."
+msgstr "Afișați fișierele la distanță ..."
 
 #: scripts/services/ServerStatus.js:62
 msgid "Listing remote files for Purge ..."
-msgstr "Remote bestanden weergeven voor Purge ..."
+msgstr ""
 
 #: templates/log.html:8
 msgid "Live"
-msgstr "Live"
+msgstr ""
 
 #: templates/addwizard.html:16
 msgid "Load a configuration from an exported job or a storage provider"
 msgstr ""
-"Laad een configuratie vanuit een geëxporteerde taak of een opslagprovider"
+"Încărcați o configurație dintr-o lucrare exportată sau dintr-un furnizor de "
+"stocare"
 
 #: templates/restorewizard.html:16
 msgid "Load destination from an exported job or a storage provider"
-msgstr "Laad doel vanuit een geëxporteerde taak of een opslagprovider"
+msgstr ""
+"Încărcați destinația dintr-o lucrare exportată sau dintr-un furnizor de "
+"stocare"
 
 #: templates/log.html:23 templates/log.html:54 templates/log.html:68
 msgid "Load older data"
-msgstr "Laad oudere gegevens"
+msgstr "Încărcați date mai vechi"
 
 #: templates/about.html:45 templates/about.html:50 templates/about.html:56
 #: templates/captcha.html:14 templates/log.html:15 templates/log.html:22
 #: templates/log.html:45 templates/log.html:53 templates/log.html:60
 #: templates/log.html:67 templates/updatechangelog.html:7
 msgid "Loading ..."
-msgstr "Laden ..."
+msgstr "Se incarca ..."
 
 #: templates/delete.html:40
 msgid "Loading remote storage usage ..."
-msgstr "Laden van remote opslaggebruik ..."
+msgstr "Se încarcă utilizarea spațiului de stocare ..."
 
 #: scripts/services/EditUriBuiltins.js:945
 msgid "Local Repository"
-msgstr "Lokale Opslagplaats"
+msgstr ""
 
 #: templates/localdatabase.html:2
 msgid "Local database for"
-msgstr "Lokale database voor"
+msgstr "Bază de date locală pentru"
 
 #: templates/localdatabase.html:26
 msgid "Local database path:"
-msgstr "Lokaal database-pad:"
+msgstr "Calea bazei de date locale:"
 
 #: templates/backends/rclone.html:2
 msgid "Local repository"
-msgstr "Lokale opslagplaats"
+msgstr ""
 
 #: scripts/services/SystemInfo.js:81
 msgid "Local storage"
-msgstr "Lokale opslag"
+msgstr "Depozit local"
 
 #: templates/localdatabase.html:23
 msgid "Location"
-msgstr "Locatie"
+msgstr "Locație"
 
 #: templates/backends/gcs.html:21
 msgid "Location where buckets are created"
-msgstr "Locatie waar buckets gemaakt worden"
+msgstr "Locația în care sunt create găleți"
 
 #: templates/log.html:4
 msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
-msgstr "Log gegevens voor <b>{{Backup.Backup.Name}}</b>"
+msgstr "Date din jurnal pentru <b> {{Backup.Backup.Name}} </ b>"
 
 #: templates/log.html:3
 msgid "Log data from the server"
-msgstr "Log gegevens van de server"
+msgstr "Datele din jurnal de pe server"
 
 #: index.html:228
 msgid "Log out"
-msgstr "Uitloggen"
+msgstr "Deconectați-vă"
 
 #: scripts/services/AppUtils.js:83
 msgid "MByte"
@@ -1462,137 +1444,137 @@ msgstr "MByte"
 
 #: scripts/services/AppUtils.js:116
 msgid "MByte/s"
-msgstr "MByte/s"
+msgstr "MByte / s"
 
 #: templates/localdatabase.html:11
 msgid "Maintenance"
-msgstr "Onderhoud"
+msgstr "întreținere"
 
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
-msgstr "Voer pad handmatig in"
+msgstr "Trasează manual calea"
 
 #: templates/throttle.html:15
 msgid "Max download speed"
-msgstr "Max downloadsnelheid"
+msgstr "Viteză maximă de descărcare"
 
 #: templates/throttle.html:5
 msgid "Max upload speed"
-msgstr "Max Uploadsnelheid"
+msgstr "Viteză maximă de încărcare"
 
 #: index.html:146 templates/addoredit.html:123 templates/addoredit.html:165
 #: templates/addoredit.html:378 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
-msgstr "Menu"
+msgstr "Meniul"
 
 #: scripts/directives/sourceFolderPicker.js:471
 msgid "Microsoft SQL Database:"
-msgstr "Microsoft SQL Database"
+msgstr "Microsoft SQL Database:"
 
 #: scripts/directives/sourceFolderPicker.js:449
 msgid "Microsoft SQL Databases"
-msgstr "Microsoft SQL Databases"
+msgstr "Baze de date Microsoft SQL"
 
 #: templates/backends/sia.html:14
 msgid "Minimum redundancy"
-msgstr "Minimale redundantie"
+msgstr "Redundanță minimă"
 
 #: scripts/services/EditUriBuiltins.js:936
 msgid "Minimum redundancy is 1.0"
-msgstr "Minimale redundantie is 1.0"
+msgstr "Redundanța minimă este de 1,0"
 
 #: scripts/services/AppUtils.js:89 scripts/services/AppUtils.js:99
 #: templates/settings.html:46
 msgid "Minutes"
-msgstr "Minuten"
+msgstr "Minute"
 
 #: scripts/controllers/EditBackupController.js:219
 msgid "Missing name"
-msgstr "Ontbrekende naam"
+msgstr "Lipsește numele"
 
 #: scripts/controllers/EditBackupController.js:227
 msgid "Missing passphrase"
-msgstr "Ontbrekende wachtwoordzin"
+msgstr "Fraza de acces lipsă"
 
 #: scripts/controllers/EditBackupController.js:240
 msgid "Missing sources"
-msgstr "Ontbrekende bronnen"
+msgstr "Sursa lipsă"
 
 #: scripts/services/AppUtils.js:104
 msgid "Mon"
-msgstr "Maandag"
+msgstr "Mon"
 
 #: scripts/services/AppUtils.js:93 templates/addoredit.html:349
 msgid "Months"
-msgstr "Maanden"
+msgstr "Luni"
 
 #: templates/localdatabase.html:34
 msgid "Move existing database"
-msgstr "Verplaats bestaande database"
+msgstr "Mutați baza de date existentă"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Move failed:"
-msgstr "Verplaatsen mislukt:"
+msgstr "Mutarea a eșuat:"
 
 #: scripts/services/AppUtils.js:54
 msgid "My Documents"
-msgstr "Mijn Documenten"
+msgstr "Documentele mele"
 
 #: scripts/services/AppUtils.js:56
 msgid "My Music"
-msgstr "Mijn Muziek"
+msgstr "Muzica mea"
 
 #: templates/addoredit.html:40
 msgid "My Photos"
-msgstr "Mijn Foto's"
+msgstr "Fotografiile mele"
 
 #: scripts/services/AppUtils.js:58
 msgid "My Pictures"
-msgstr "Mijn Afbeeldingen"
+msgstr "Pozele mele"
 
 #: templates/addoredit.html:39
 msgid "Name"
-msgstr "Naam"
+msgstr "Nume"
 
 #: templates/home.html:53
 msgid "Never"
-msgstr "Nooit"
+msgstr "Nu"
 
 #: templates/notificationarea.html:22
 msgid "New update found: {{message}}"
-msgstr "Nieuwe update gevonden: {{message}}"
+msgstr "S-a găsit o nouă actualizare: {{message}}"
 
 #: scripts/services/EditUriBuiltins.js:124
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
 msgstr ""
-"Nieuwe gebruikersnaam is {{user}}.\n"
-"Gebruikersreferenties bijgewerkt om de nieuwe beperkte gebruiker te gebruiken"
+"Numele noului utilizator este {{user}}.\n"
+"Au fost aprobate informațiile pentru a utiliza noul utilizator limitat"
 
 #: templates/addoredit.html:109 templates/addoredit.html:242
 #: templates/addoredit.html:292 templates/addoredit.html:78
 #: templates/addwizard.html:28 templates/restoredirect.html:52
 #: templates/restorewizard.html:36
 msgid "Next"
-msgstr "Volgende"
+msgstr "Următor →"
 
 #: templates/home.html:57
 msgid "Next scheduled run:"
-msgstr "Volgende geplande uitvoering:"
+msgstr "Următorul programat:"
 
 #: index.html:185
 msgid "Next scheduled task:"
-msgstr "Volgende geplande taak:"
+msgstr "Următoarea sarcină programată:"
 
 #: index.html:182
 msgid "Next task:"
-msgstr "Volgende taak:"
+msgstr "Următoarea sarcină:"
 
 #: templates/addoredit.html:260
 msgid "Next time"
-msgstr "Volgende keer"
+msgstr "Data viitoare"
 
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:133
@@ -1611,7 +1593,7 @@ msgstr "Volgende keer"
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
 msgid "No"
-msgstr "Nee"
+msgstr "Nu"
 
 #: scripts/directives/backupEditUri.js:210
 msgid ""
@@ -1619,53 +1601,52 @@ msgid ""
 "\n"
 "Do you want to approve the reported host key?"
 msgstr ""
-"Er is eerder geen certificaat opgegeven, controleer svp met de serverbeheerder of de sleutel correct is: {{key}}\n"
+"Niciun certificat nu a fost specificat anterior, verificați cu administratorul serverului că cheia este corectă: {{key}}\n"
 "\n"
-"Wilt u de gerapporteerde host-sleutel goedkeuren?"
+"Doriți să aprobați cheia de gazdă raportată?"
 
 #: templates/edituri.html:12
 msgid "No editor found for the &quot;{{backend}}&quot; storage type"
 msgstr ""
-"Geen bewerkingsprogramma gevonden voor het &quot;{{backend}}&quot; "
-"opslagtype"
+"Nu a fost găsit un editor pentru tipul de stocare 6118489 _ {{backend}} "
+"&quot;"
 
 #: scripts/controllers/EditBackupController.js:407 templates/addoredit.html:45
 msgid "No encryption"
-msgstr "Geen versleuteling"
+msgstr "Nu există criptare"
 
 #: scripts/controllers/RestoreController.js:192
 msgid "No items selected"
-msgstr "Geen items geselecteerd"
+msgstr "Nu au fost selectate elemente"
 
 #: scripts/controllers/RestoreController.js:192
 msgid "No items to restore, please select one or more items"
-msgstr "Geen items om te herstellen, selecteer één of meer items"
+msgstr ""
+"Nu există elemente pentru restaurare, selectați unul sau mai multe elemente"
 
 #: scripts/controllers/ExportController.js:10
 msgid "No passphrase entered"
-msgstr "Geen wachtwoordzin ingegeven"
+msgstr "Nu a fost introdusă nici o expresie de acces"
 
 #: index.html:187
 msgid "No scheduled tasks"
-msgstr "Geen geplande taken"
+msgstr "Nu există sarcini programate"
 
 #: scripts/controllers/AppController.js:172
 msgid "No, my machine has only a single account"
-msgstr "Nee, mijn machine heeft slechts een enkele account"
+msgstr "Nu, mașina mea are doar un singur cont"
 
 #: scripts/controllers/EditBackupController.js:233
 msgid "Non-matching passphrase"
-msgstr "Niet-bijbehorende wachtwoordzin"
+msgstr "Fraza de acces fără potrivire"
 
 #: templates/settings.html:125
 msgid "None / disabled"
-msgstr "Geen / uitgeschakeld"
+msgstr "Nici unul / dezactivat"
 
 #: templates/addoredit.html:324
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr ""
-"Er zal niets verwijderd worden. De back-upgrootte zal toenemen met iedere "
-"verandering."
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
@@ -1678,15 +1659,13 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:124 templates/restore.html:146
 #: templates/settings.html:160
 msgid "OK"
-msgstr "OK"
+msgstr "O.K"
 
 #: templates/addoredit.html:342
 msgid ""
 "Once there are more backups than the specified number, the oldest backups "
 "are deleted."
 msgstr ""
-"Zodra er meer back-ups zijn dan het opgegeven aantal, zullen de oudste back-"
-"ups worden verwijderd."
 
 #: templates/backends/openstack.html:7
 msgid "OpenStack AuthURI"
@@ -1698,49 +1677,49 @@ msgstr "OpenStack Object Storage / Swift"
 
 #: scripts/services/EditUriBuiltins.js:803
 msgid "Openstack API Key are not supported in v3 keystone API."
-msgstr "Openstack API Sleutels worden niet ondersteund in v3 keystone API."
+msgstr ""
 
 #: scripts/services/AppUtils.js:195
 msgid "Operating System"
-msgstr "Besturingssysteem"
+msgstr ""
 
 #: scripts/controllers/SystemSettingsController.js:124
 #: scripts/controllers/SystemSettingsController.js:135
 msgid "Operation failed:"
-msgstr "Bewerking mislukt:"
+msgstr "Operația a eșuat:"
 
 #: templates/home.html:16
 msgid "Operations:"
-msgstr "Bewerkingen:"
+msgstr "Operații:"
 
 #: templates/backends/file.html:34
 msgid "Optional authentication password"
-msgstr "Optioneel authenticatie wachtwoord"
+msgstr "Parola de autentificare opțională"
 
 #: templates/backends/file.html:30
 msgid "Optional authentication username"
-msgstr "Optionele authenticatie gebruikersnaam"
+msgstr "Nume de utilizator opțional de autentificare"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
 #: templates/settings.html:147 templates/settings.html:153
 msgid "Options"
-msgstr "Opties"
+msgstr "Opțiuni"
 
 #: templates/settings.html:145
 msgid ""
 "Options added here are applied to all backups, but can be overridden in each"
 " individual backup"
 msgstr ""
-"Opties die hier worden toegevoegd, worden toegepast op alle back-ups, maar "
-"kunnen worden overschreven in iedere afzonderlijke back-up"
+"Opțiunile adăugate aici sunt aplicate tuturor backup-urilor, dar pot fi "
+"suprascrise în fiecare copie de rezervă individuală"
 
 #: templates/restore.html:81
 msgid "Original location"
-msgstr "Originele locatie"
+msgstr "Locația originală"
 
 #: scripts/services/SystemInfo.js:84
 msgid "Others"
-msgstr "Anderen"
+msgstr "Alții"
 
 #: templates/addoredit.html:328
 msgid ""
@@ -1748,31 +1727,27 @@ msgid ""
 "backup for each of the last 7 days, each of the last 4 weeks, each of the "
 "last 12 months. There will always be at least one remaining backup."
 msgstr ""
-"Na verloop van tijd zullen back-ups automatisch verwijderd worden. Er zal "
-"één back-up overblijven voor elk van de laatste 7 dagen, voor elk van de "
-"laatste 4 weken, en voor elk van de laatste 12 maanden. Er zal altijd "
-"tenminste één back-up overblijven."
 
 #: templates/restore.html:114
 msgid "Overwrite"
-msgstr "Overschrijven"
+msgstr "Suprascriere"
 
 #: templates/addoredit.html:54 templates/export.html:21
 #: templates/restoredirect.html:60
 msgid "Passphrase"
-msgstr "Wachtwoordzin"
+msgstr "o expresie de acces"
 
 #: templates/import.html:14
 msgid "Passphrase (if encrypted)"
-msgstr "Wachtwoordzin (indien versleuteld)"
+msgstr "Fraza de acces (dacă este criptată)"
 
 #: scripts/controllers/EditBackupController.js:371
 msgid "Passphrase changed"
-msgstr "Wachtwoordzin veranderd"
+msgstr "Fraza de acces a fost modificată"
 
 #: scripts/controllers/EditBackupController.js:233
 msgid "Passphrases are not matching"
-msgstr "Wachtwoordzinnen komen niet overeen"
+msgstr "Frazele de acces nu se potrivesc"
 
 #: scripts/services/EditUriBuiltins.js:910
 #: scripts/services/EditUriBuiltins.js:920 templates/backends/file.html:33
@@ -1781,301 +1756,301 @@ msgstr "Wachtwoordzinnen komen niet overeen"
 #: templates/backends/mega.html:12 templates/backends/openstack.html:34
 #: templates/settings.html:8
 msgid "Password"
-msgstr "Wachtwoord"
+msgstr "Parola"
 
 #: scripts/controllers/EditBackupController.js:29
 msgid "Passwords do not match"
-msgstr "Wachtwoorden komen niet overeen"
+msgstr "parolele nu se potrivesc"
 
 #: scripts/services/ServerStatus.js:52
 msgid "Patching files with local blocks ..."
-msgstr "Bestanden bijwerken met lokale blokken ..."
+msgstr "Patching fișierele cu blocuri locale ..."
 
 #: scripts/services/EditUriBuiltins.js:895
 msgid "Path"
-msgstr "Pad"
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:133
 msgid "Path not found"
-msgstr "Pad niet gevonden"
+msgstr "Calea nu a fost găsită"
 
 #: templates/backends/generic.html:13 templates/backends/msgroup.html:7
 #: templates/backends/oauth.html:2
 msgid "Path on server"
-msgstr "Pad op server"
+msgstr "Cale pe server"
 
 #: templates/backends/b2.html:8 templates/backends/s3.html:50
 msgid "Path or subfolder in the bucket"
-msgstr "Pad of submap in de bucket"
+msgstr "Cale sau subfolder în găleată"
 
 #: templates/settings.html:31
 msgid "Pause"
-msgstr "Pauze"
+msgstr "Pauză"
 
 #: templates/settings.html:29
 msgid "Pause after startup or hibernation"
-msgstr "Pauzeer na opstarten of slaapmodus"
+msgstr "Întrerupeți după pornire sau hibernare"
 
 #: scripts/controllers/AppController.js:42
 msgid "Pause options"
-msgstr "Pauzeer-opties"
+msgstr "Opțiunile de întrerupere"
 
 #: templates/restore.html:123
 msgid "Permissions"
-msgstr "Permissies"
+msgstr "Permisiuni"
 
 #: templates/restore.html:85
 msgid "Pick location"
-msgstr "Kies locatie"
+msgstr "Alegeți locația"
 
 #: templates/restorewizard.html:10
 msgid "Point to your backup files and restore from there"
-msgstr "Verwijs naar de back-up bestanden en herstel  daar vandaan"
+msgstr "Indicați fișierele de rezervă și restaurați-le de acolo"
 
 #: templates/backends/generic.html:9
 msgid "Port"
-msgstr "Poort"
+msgstr "Port"
 
 #: templates/settings.html:24
 msgid "Prevent tray icon automatic log-in"
-msgstr "Voorkom automatisch inloggen door systeemvak-pictogram"
+msgstr ""
 
 #: templates/addoredit.html:110 templates/addoredit.html:243
 #: templates/addoredit.html:293 templates/addoredit.html:405
 #: templates/restoredirect.html:81
 msgid "Previous"
-msgstr "Vorige"
+msgstr "Anterior"
 
 #: templates/home.html:73
 msgid "Progress:"
-msgstr "Voortgang:"
+msgstr ""
 
 #: templates/backends/gcs.html:39
 msgid "ProjectID is optional if the bucket exist"
-msgstr "ProjectID is optioneel als de bucket bestaat"
+msgstr "ID-ul proiectului este opțional dacă există o cupă"
 
 #: scripts/services/SystemInfo.js:83
 msgid "Proprietary"
-msgstr "Fabrikantgebonden"
+msgstr "Proprietate"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
-msgstr "Bestanden wissen ..."
+msgstr "Ștergerea fișierelor ..."
 
 #: scripts/services/ServerStatus.js:65
 msgid "Purging files Complete!"
-msgstr "Wissen van bestanden Voltooid!"
+msgstr ""
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
-msgstr "Opnieuw opbouwen van lokale database ..."
+msgstr "Reconstruirea bazei de date locale ..."
 
 #: templates/localdatabase.html:20
 msgid "Recreate (delete and repair)"
-msgstr "Opnieuw aanmaken (verwijderen en repareren)"
+msgstr "Refaceți (ștergeți și reparați)"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database ..."
-msgstr "Opnieuw opbouwen van de database ..."
+msgstr "Refacerea bazei de date ..."
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup ..."
-msgstr "Registreren tijdelijke back-up ..."
+msgstr "Înregistrarea copiilor de rezervă temporară ..."
 
 #: scripts/controllers/EditBackupController.js:118
 msgid "Relative paths not allowed"
-msgstr "Relatieve paden zijn  niet toegestaan"
+msgstr "Căile relative nu sunt permise"
 
 #: templates/captcha.html:7
 msgid "Reload"
-msgstr "Andere code"
+msgstr "Reîncarcă"
 
 #: templates/log.html:10
 msgid "Remote"
-msgstr "Remote"
+msgstr "la distanta"
 
 #: scripts/services/EditUriBuiltins.js:946
 msgid "Remote Path"
-msgstr "Remote Pad"
+msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:944
 msgid "Remote Repository"
-msgstr "Remote Opslagplaats"
+msgstr ""
 
 #: templates/backends/rclone.html:10
 msgid "Remote path"
-msgstr "Remote pad"
+msgstr ""
 
 #: templates/backends/rclone.html:6
 msgid "Remote repository"
-msgstr "Remote opslagplaats"
+msgstr ""
 
 #: templates/addoredit.html:303
 msgid "Remote volume size"
-msgstr "Remote volume grootte"
+msgstr ""
 
 #: templates/addoredit.html:199
 msgid "Remove"
-msgstr "Verwijderen"
+msgstr "Elimina"
 
 #: templates/advancedoptionseditor.html:40
 msgid "Remove option"
-msgstr "Verwijder optie"
+msgstr "Eliminați opțiunea"
 
 #: templates/localdatabase.html:18 templates/notificationarea.html:14
 msgid "Repair"
-msgstr "Repareer"
+msgstr "Reparație"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
-msgstr "Database repareren ..."
+msgstr ""
 
 #: templates/addoredit.html:58
 msgid "Repeat Passphrase"
-msgstr "Herhaal wachtwoordzin"
+msgstr "Repetați expresia de acces"
 
 #: templates/home.html:38
 msgid "Reporting:"
-msgstr "Rapportage:"
+msgstr "Raportarea:"
 
 #: templates/localdatabase.html:31
 msgid "Reset"
-msgstr "Reset"
+msgstr "restabili"
 
 #: index.html:216 templates/restore.html:131
 msgid "Restore"
-msgstr "Herstellen"
+msgstr "Restabili"
 
 #: scripts/services/ServerStatus.js:55
 msgid "Restore Complete!"
-msgstr "Herstellen Voltooid!"
+msgstr ""
 
 #: templates/restore.html:45
 msgid "Restore files"
-msgstr "Herstel bestanden"
+msgstr "Restaurați fișierele"
 
 #: templates/home.html:19
 msgid "Restore files ..."
-msgstr "Bestanden herstellen ..."
+msgstr "Restaurați fișierele ..."
 
 #: templates/restore.html:46
 msgid "Restore files from {{backupname}}"
-msgstr "Herstel bestanden vanuit {{backupname}}"
+msgstr "Restaurați fișierele din {{backupname}}"
 
 #: templates/restore.html:48
 msgid "Restore from"
-msgstr "Herstellen vanaf"
+msgstr "Restaurați de la"
 
 #: templates/import.html:4
 msgid "Restore from backup configuration"
-msgstr "Herstel vanuit back-up configuratie"
+msgstr "Restabiliți din configurația de backup"
 
 #: templates/restorewizard.html:15
 msgid "Restore from configuration ..."
-msgstr "Herstel vanuit configuratie..."
+msgstr "Restabiliți din configurație ..."
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
 msgid "Restore options"
-msgstr "Herstelopties"
+msgstr "Restaurați opțiunile"
 
 #: templates/restore.html:126
 msgid "Restore read/write permissions"
-msgstr "Herstel lees/schrijfpermissies"
+msgstr "Restaurați permisiunile de citire / scriere"
 
 #: scripts/controllers/RestoreController.js:371
 #: scripts/controllers/RestoreController.js:393
 msgid "Restoring files ..."
-msgstr "Bestanden worden hersteld ..."
+msgstr "Se restabilește fișierele ..."
 
 #: index.html:219
 msgid "Resume"
-msgstr "Hervat"
+msgstr "Relua"
 
 #: templates/addoredit.html:265
 msgid "Run again every"
-msgstr "Voer opnieuw uit iedere"
+msgstr "Rulați din nou fiecare"
 
 #: templates/home.html:18 templates/home.html:53
 msgid "Run now"
-msgstr "Nu uitvoeren"
+msgstr "Fugiți acum"
 
 #: scripts/controllers/StateController.js:25
 msgid "Running ..."
-msgstr "In uitvoering ..."
+msgstr "Alergare ..."
 
 #: templates/commandline.html:58
 msgid "Running ...."
-msgstr "Uitvoeren ..."
+msgstr "Alergare ...."
 
 #: templates/commandline.html:47
 msgid "Running commandline entry"
-msgstr "Opdrachtregelinvoer in uitvoering"
+msgstr "Rulează intrarea în linia de comandă"
 
 #: index.html:174
 msgid "Running task:"
-msgstr "Taak in uitvoering:"
+msgstr "Sarcina de funcționare:"
 
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
-msgstr "S3 Compatible"
+msgstr "S3 Compatibil"
 
 #: templates/settings.html:82
 msgid "Same as the base install version: {{channelname}}"
-msgstr "Zelfde als de basis installatie versie: {{channelname}}"
+msgstr "La fel ca versiunea de instalare de bază: {{channelname}}"
 
 #: scripts/services/AppUtils.js:109
 msgid "Sat"
-msgstr "Zaterdag"
+msgstr "Sat"
 
 #: templates/addoredit.html:404 templates/localdatabase.html:32
 msgid "Save"
-msgstr "Opslaan"
+msgstr "Salvați"
 
 #: templates/localdatabase.html:33
 msgid "Save and repair"
-msgstr "Opslaan en repareren"
+msgstr "Salvați și reparați"
 
 #: templates/restore.html:118
 msgid "Save different versions with timestamp in file name"
-msgstr "Sla verschillende versies op met tijdstempel in de bestandsnaam"
+msgstr "Salvați diferite versiuni cu marca de timp în numele fișierului"
 
 #: templates/import.html:24
 msgid "Save immediately"
-msgstr "Onmiddellijk opslaan"
+msgstr "Salvați imediat"
 
 #: scripts/services/ServerStatus.js:50
 msgid "Scanning existing files ..."
-msgstr "Scannen bestaande bestanden ..."
+msgstr "Scanarea fișierelor existente ..."
 
 #: scripts/services/ServerStatus.js:51
 msgid "Scanning for local blocks ..."
-msgstr "Scannen op lokale blokken ..."
+msgstr "Scanarea blocurilor locale ..."
 
 #: templates/addoredit.html:251 templates/addoredit.html:27
 msgid "Schedule"
-msgstr "Planning"
+msgstr "Programa"
 
 #: templates/restore.html:60
 msgid "Search"
-msgstr "Zoek"
+msgstr "Căutare"
 
 #: templates/restore.html:56
 msgid "Search for files"
-msgstr "Zoek bestanden"
+msgstr "Căutați fișiere"
 
 #: scripts/services/AppUtils.js:98 templates/settings.html:45
 msgid "Seconds"
-msgstr "Seconden"
+msgstr "secunde"
 
 #: templates/log.html:29
 msgid "Select a log level and see messages as they happen:"
-msgstr "Selecteer een logniveau en bekijk meldingen zodra ze zich voordoen:"
+msgstr "Selectați un nivel de jurnal și vedeți mesajele așa cum se întâmplă:"
 
 #: templates/restore.html:23 templates/restore.html:38
 #: templates/restoredirect.html:23
 msgid "Select files"
-msgstr "Selecteer bestanden"
+msgstr "Selectati fisierele"
 
 #: scripts/services/EditUriBuiltins.js:928 templates/backends/s3.html:8
 #: templates/backends/sia.html:2
@@ -2084,166 +2059,164 @@ msgstr "Server"
 
 #: templates/backends/generic.html:7
 msgid "Server and port"
-msgstr "Server en poort"
+msgstr "Server și port"
 
 #: templates/backends/generic.html:8
 msgid "Server hostname or IP"
-msgstr "Server hostnaam of IP"
+msgstr "Server hostname sau IP"
 
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
 msgid "Server is currently paused,"
-msgstr "Server is momenteel gepauzeerd,"
+msgstr "Serverul este în prezent întrerupt,"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server is currently paused, do you want to resume now?"
-msgstr "Server is momenteel gepauzeerd, wilt u nu hervatten?"
+msgstr "Serverul este în prezent întrerupt, doriți să îl reluați acum?"
 
 #: templates/backends/sia.html:10
 msgid "Server password"
-msgstr "Server wachtwoord"
+msgstr "Parola serverului"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server paused"
-msgstr "Server gepauzeerd"
+msgstr "Serverul a fost întrerupt"
 
 #: templates/about.html:72
 msgid "Server state properties"
-msgstr "Server status eigenschappen"
+msgstr "Proprietăți stare server"
 
 #: index.html:222 templates/settings.html:2
 msgid "Settings"
-msgstr "Instellingen"
+msgstr "Setări"
 
 #: templates/addoredit.html:65 templates/notificationarea.html:12
 #: templates/notificationarea.html:32
 msgid "Show"
-msgstr "Tonen"
+msgstr "Spectacol"
 
 #: templates/addoredit.html:128
 msgid "Show advanced editor"
-msgstr "Toon geavanceerde editor"
+msgstr "Afișați editorul avansat"
 
 #: templates/addoredit.html:139 templates/backends/file.html:16
 #: templates/restore.html:99
 msgid "Show hidden folders"
-msgstr "Toon verborgen mappen"
+msgstr "Afișați dosarele ascunse"
 
 #: templates/about.html:8
 msgid "Show log"
-msgstr "Log weergeven"
+msgstr "Arată jurnal"
 
 #: templates/home.html:40
 msgid "Show log ..."
-msgstr "Log weergeven ..."
+msgstr "Arată jurnal ..."
 
 #: templates/addoredit.html:131
 msgid "Show treeview"
-msgstr "Toon boomstructuur"
+msgstr "Afișați arborele"
 
 #: templates/backends/sia.html:11
 msgid "Sia server password"
-msgstr "Sia server wachtwoord"
+msgstr "Parola serverului Sia"
 
 #: templates/addoredit.html:320
 msgid "Smart backup retention"
-msgstr "Slimme back-up retentie"
+msgstr ""
 
 #: templates/backends/openstack.html:45
 msgid ""
 "Some OpenStack providers allow an API key instead of a password and tenant "
 "name"
 msgstr ""
-"Sommige OpenStack providers staan een API key toe in plaats van een "
-"wachtwoord en tenant naam"
+"Unii furnizori OpenStack permit o cheie API în locul unei parole și a unui "
+"nume de chiriaș"
 
 #: templates/addoredit.html:26
 msgid "Source Data"
-msgstr "Bron"
+msgstr "Datele sursă"
 
 #: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:120
 msgid "Source data"
-msgstr "Brongegevens"
+msgstr "Datele sursă"
 
 #: templates/addoredit.html:145
 msgid "Source folders"
-msgstr "Bronmappen"
+msgstr "Sursă de directoare"
 
 #: templates/home.html:62
 msgid "Source:"
-msgstr "Bron:"
+msgstr "Sursă:"
 
 #: templates/settings.html:100
 msgid "Specific builds for developers only. Not for use with important data."
 msgstr ""
-"Specifieke builds alleen voor ontwikkelaars. Niet voor gebruik met "
-"belangrijke gegevens."
 
 #: scripts/services/SystemInfo.js:82
 msgid "Standard protocols"
-msgstr "Standaard protocollen"
+msgstr "Protocoale standard"
 
 #: scripts/services/ServerStatus.js:33
 msgid "Starting Backup ..."
-msgstr "Back-up wordt gestart..."
+msgstr ""
 
 #: scripts/services/ServerStatus.js:45
 msgid "Starting Restore..."
-msgstr "Herstellen wordt gestart..."
+msgstr ""
 
 #: scripts/controllers/RestoreController.js:367
 #: scripts/controllers/RestoreController.js:391
 msgid "Starting the restore process ..."
-msgstr "Starten van het herstelproces ..."
+msgstr "Pornirea procesului de restaurare ..."
 
 #: scripts/controllers/StateController.js:112
 msgid "Stop after the current file"
-msgstr "Stop na het huidige bestand"
+msgstr "Opriți după fișierul curent"
 
 #: scripts/controllers/StateController.js:103
 msgid "Stop after upload"
-msgstr "Stop na de upload"
+msgstr "Opriți după încărcare"
 
 #: scripts/controllers/StateController.js:103
 #: scripts/controllers/StateController.js:112
 msgid "Stop now"
-msgstr "Nu stoppen"
+msgstr "Opreste-te acum"
 
 #: scripts/controllers/StateController.js:101
 msgid "Stop running backup"
-msgstr "Stop de back-up in uitvoering"
+msgstr "Nu mai rulați backupul"
 
 #: scripts/controllers/StateController.js:110
 msgid "Stop running task"
-msgstr "Stop de taak in uitvoering"
+msgstr "Opriți executarea sarcinii"
 
 #: index.html:170
 msgid "Stopping after upload:"
-msgstr "Stop na de upload:"
+msgstr "Oprirea după încărcare:"
 
 #: index.html:175
 msgid "Stopping task:"
-msgstr "Taak wordt gestopt:"
+msgstr "Oprire:"
 
 #: templates/edituri.html:3
 msgid "Storage Type"
-msgstr "Opslagtype"
+msgstr "Tip de stocare"
 
 #: templates/backends/s3.html:38
 msgid "Storage class"
-msgstr "Opslagklasse"
+msgstr "Clasă de stocare"
 
 #: templates/backends/gcs.html:32
 msgid "Storage class for creating a bucket"
-msgstr "Opslagklasse voor het aanmaken van een bucket"
+msgstr "Clasă de stocare pentru crearea unei găleți"
 
 #: templates/log.html:7
 msgid "Stored"
-msgstr "Opgeslagen"
+msgstr "stocate"
 
 #: scripts/controllers/EditBackupController.js:33
 msgid "Strong"
-msgstr "Sterk"
+msgstr "Puternic"
 
 #: scripts/directives/backupEditUri.js:51
 #: scripts/directives/backupEditUri.js:54
@@ -2252,31 +2225,31 @@ msgstr "Succes"
 
 #: scripts/services/AppUtils.js:110
 msgid "Sun"
-msgstr "Zondag"
+msgstr "Soare"
 
 #: scripts/services/AppUtils.js:72
 msgid "Symbolic link"
-msgstr "Symbolische link"
+msgstr "Link-uri simbolice"
 
 #: scripts/services/AppUtils.js:192
 msgid "System Files"
-msgstr "Systeembestanden"
+msgstr ""
 
 #: templates/settings.html:120
 msgid "System default ({{levelname}})"
-msgstr "Systeem standaard ({{levelname}})"
+msgstr "Implicit în sistem ({{levelname}})"
 
 #: scripts/controllers/EditBackupController.js:20
 msgid "System files"
-msgstr "Systeembestanden"
+msgstr "Fișiere de sistem"
 
 #: templates/about.html:7
 msgid "System info"
-msgstr "Systeeminformatie"
+msgstr "Informatie de sistem"
 
 #: templates/about.html:64
 msgid "System properties"
-msgstr "Systeemeigenschappen"
+msgstr "Proprietatile sistemului"
 
 #: scripts/services/AppUtils.js:85
 msgid "TByte"
@@ -2284,47 +2257,47 @@ msgstr "TByte"
 
 #: scripts/services/AppUtils.js:118
 msgid "TByte/s"
-msgstr "TByte/s"
+msgstr "TByte / s"
 
 #: templates/backends/sia.html:7
 msgid "Target path, ie /backup"
-msgstr "Doelpad, bijvoorbeeld /backup"
+msgstr "Calea țintă, adică / backup"
 
 #: templates/waitarea.html:5
 msgid "Task is running"
-msgstr "Taak is in uitvoering"
+msgstr "Sarcina se execută"
 
 #: scripts/services/AppUtils.js:201
 msgid "Temporary Files"
-msgstr "Tijdelijke bestanden"
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:21
 msgid "Temporary files"
-msgstr "Tijdelijke bestanden"
+msgstr "Fișiere temporare"
 
 #: templates/backends/openstack.html:39
 msgid "Tenant Name"
-msgstr "Tenant naam"
+msgstr "Numele proprietarului"
 
 #: templates/edituri.html:21
 msgid "Test connection"
-msgstr "Test verbinding"
+msgstr "Test de conexiune"
 
 #: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
 msgid "Testing ..."
-msgstr "Testen ..."
+msgstr "Testarea ..."
 
 #: scripts/directives/backupEditUri.js:44
 msgid "Testing connection ..."
-msgstr "Testen van de verbinding ..."
+msgstr "Testarea conexiunii ..."
 
 #: scripts/services/EditUriBuiltins.js:45
 msgid "Testing permissions ..."
-msgstr "Testen van de permissies ..."
+msgstr "Testarea permisiunilor ..."
 
 #: scripts/services/EditUriBuiltins.js:45
 msgid "Testing permissions..."
-msgstr "Testen van de permissies ..."
+msgstr "Testarea permisiunilor ..."
 
 #: scripts/services/EditUriBuiltins.js:884
 #: scripts/services/EditUriBuiltins.js:895
@@ -2332,41 +2305,37 @@ msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
-"Het '{{fieldname}}' veld bevat een ongeldig teken: {{character}} (value: "
-"{{value}}, index: {{pos}})"
 
 #: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
-"De bucket-naam hoort in kleine letters te zijn, automatisch converteren?"
+"Numele găleții ar trebui să fie toate literele mici, să se convertească "
+"automat?"
 
 #: scripts/services/EditUriBuiltins.js:839
 msgid ""
 "The bucket name should start with your username, prepend automatically?"
 msgstr ""
-"De bucket naam hoort te beginnen met uw gebruikersnaam, automatisch "
-"voorvoegen?"
+"Numele bucketului ar trebui să înceapă cu numele dvs. de utilizator, să se "
+"predea automat?"
 
 #: index.html:306
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
-msgstr ""
-"De verbinding met de server is verbroken, opnieuw proberen over {{time}} ..."
+msgstr "Conexiunea la server este pierdută, încercând din nou în {{time}} ..."
 
 #: templates/settings.html:67
 msgid "The dark theme (by Michal)"
-msgstr "Het donkere thema (door Michal)"
+msgstr "Tema intunecata (de Michal)"
 
 #: templates/settings.html:66
 msgid "The default blue on white theme (by Alex)"
-msgstr "Het standaard blauw op wit thema (door Alex)"
+msgstr "Culoarea albastră implicită pe alb (de Alex)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
 msgstr ""
-"De map {{folder}} bestaat niet.\n"
-"Nu aanmaken?"
 
 #: scripts/directives/backupEditUri.js:212
 msgid ""
@@ -2374,13 +2343,13 @@ msgid ""
 "\n"
 "Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
 msgstr ""
-"De host sleutel is veranderd, controleer met uw server beheerder of dit correct is, in het andere geval zou u het slachtoffer kunnen zijn van een MAN-IN-THE-MIDDLE aanval.\n"
+"Cheia gazdă a fost modificată, verificați-vă cu administratorul serverului dacă aceasta este corectă, altfel ați putea fi victima unui atac MAN-IN-THE-MIDDLE.\n"
 "\n"
-"Wilt u de HUIDIGE host sleutel \"{prev}\" VERVANGEN door de GERAPPORTEERDE host sleutel: {{key}}?"
+"Doriți să ÎNLOCUIți cheia gazdă CURRENT \"{{prev}}\" cu cheia gazdă REPORTED: {{key}}?"
 
 #: scripts/controllers/EditBackupController.js:133
 msgid "The path does not appear to exist, do you want to add it anyway?"
-msgstr "Het pad lijkt niet te bestaan, wilt u het desondanks toevoegen?"
+msgstr "Calea nu pare să existe, vreți să o adăugați oricum?"
 
 #: scripts/controllers/EditBackupController.js:143
 msgid ""
@@ -2388,17 +2357,17 @@ msgid ""
 "\n"
 "Do you want to include the specified file?"
 msgstr ""
-"Het pad eindigt niet met een '{{dirsep}}' teken, wat betekent dat u een bestand opneemt, niet een map.\n"
+"Calea nu se termină cu un caracter {{dirsep}}, ceea ce înseamnă că includeți un fișier, nu un dosar.\n"
 "\n"
-"Wilt u het aangegeven bestand opnemen?"
+"Doriți să includeți fișierul specificat?"
 
 #: scripts/controllers/EditBackupController.js:118
 msgid ""
 "The path must be an absolute path, i.e. it must start with a forward slash "
 "'/'"
 msgstr ""
-"Het pad moet een absoluut pad zijn, bijvoorbeeld het moet beginnen met een "
-"forward slash '/'"
+"Calea trebuie să fie o cale absolută, adică trebuie să pornească cu o slash "
+"'/'"
 
 #: scripts/services/EditUriBuiltins.js:757
 msgid ""
@@ -2406,46 +2375,43 @@ msgid ""
 "\n"
 "Do you want to add the prefix to the path automatically?"
 msgstr ""
-"Het pad moet beginnen met \"{{prefix1}}\" of \"{{prefix2}}\", anders zullen "
-"bestanden in de HubiC web interface niet zichtbaar zijn."
+"Calea ar trebui să înceapă cu \"{{prefix1}}\" sau \"{{prefix2}}\", altfel nu veți putea vedea fișierele din interfața web HubiC.\n"
+"\n"
+"Doriți să adăugați prefixul la cale în mod automat?"
 
 #: templates/backends/s3.html:28
 msgid "The region parameter is only applied when creating a new bucket"
-msgstr ""
-"De regio parameter wordt alleen toegepast bij het aanmaken van een bucket"
+msgstr "Parametrul regiune se aplică numai când se creează o nouă găleată"
 
 #: templates/backends/openstack.html:50
 msgid "The region parameter is only used when creating a bucket"
-msgstr ""
-"De regio parameter wordt alleen gebruikt bij het aanmaken van een bucket"
+msgstr "Parametrul regiune este utilizat numai când creați o găleată"
 
 #: scripts/directives/backupEditUri.js:87
 msgid ""
 "The server certificate could not be validated.\n"
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
 msgstr ""
-"Het servercertificaat kon niet gevalideerd worden.\n"
-"Wilt u het certificaat goedkeuren met deze hash: {{hash}}?"
+"Certificatul de server nu a putut fi validat.\n"
+"Doriți să aprobați certificatul SSL cu hash: {{hash}}?"
 
 #: templates/backends/s3.html:40
 msgid "The storage class affects the availability and price for a stored file"
 msgstr ""
-"De opslagklasse beïnvloedt de beschikbaarheid en prijs van een opgeslagen "
-"bestand"
+"Clasa de stocare afectează disponibilitatea și prețul unui fișier stocat"
 
 #: scripts/controllers/RestoreDirectController.js:106
 msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
-msgstr ""
-"De doelmap bevat versleutelde bestanden, geef alstublieft de wachtwoordzin"
+msgstr "Dosarul țintă conține fișiere criptate, furnizați expresia de acces"
 
 #: scripts/services/EditUriBuiltins.js:50
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
 msgstr ""
-"De gebruiker heeft teveel permmissies. Wilt u een nieuwe beperkte gebruiker "
-"aanmaken, met enkel permissies tot het aangegeven pad?"
+"Utilizatorul are prea multe permisiuni. Doriți să creați un nou utilizator "
+"limitat, cu permisiuni numai pentru calea selectată?"
 
 #: scripts/controllers/RestoreController.js:305
 msgid ""
@@ -2454,14 +2420,14 @@ msgid ""
 "unexpected places. Are you sure you want to continue without choosing a "
 "destination folder?"
 msgstr ""
-"De back-up werd aangemaakt op een ander besturingssysteem. Bestanden "
-"terugzetten zonder een doelmap op te geven kan tot gevolg hebben dat "
-"bestanden worden teruggezet naar onverwachte plaatsen. Bent u er zeker van "
-"dat u wilt doorgaan zonder een doelmap te kiezen?"
+"Această copie de siguranță a fost creată pe un alt sistem de operare. "
+"Restaurarea fișierelor fără specificarea unui dosar de destinație poate "
+"determina refacerea fișierelor în locuri neașteptate. Sigur doriți să "
+"continuați fără a alege un dosar de destinație?"
 
 #: scripts/controllers/RestoreController.js:36
 msgid "This month"
-msgstr "Afgelopen maand"
+msgstr "Luna aceasta"
 
 #: templates/addoredit.html:308
 msgid ""
@@ -2471,40 +2437,36 @@ msgid ""
 "size'\">See this page before you change the remote volume size.</external-"
 "link>"
 msgstr ""
-"Deze optie heeft geen betrekking op de maximale back-up of bestandsgrootte. "
-"<external-link link=\"'https://www.duplicati.com/articles/Choosing-Sizes"
-"/#remote-volume-size'\">Zie deze pagina voordat u de remote volumegrootte "
-"verandert.</external-link>"
 
 #: scripts/controllers/RestoreController.js:35
 msgid "This week"
-msgstr "Afgelopen week"
+msgstr "Săptămâna aceasta"
 
 #: scripts/controllers/AppController.js:57
 msgid "Throttle settings"
-msgstr "Bandbreedte-instellingen"
+msgstr "Setările clapetei"
 
 #: scripts/services/AppUtils.js:107
 msgid "Thu"
-msgstr "Donderdag"
+msgstr "Thu"
 
 #: templates/export.html:14
 msgid "To File"
-msgstr "Naar Bestand"
+msgstr "La dosar"
 
 #: scripts/controllers/DeleteController.js:66
 msgid ""
 "To confirm you want to delete all remote files for \"{{name}}\", please "
 "enter the word you see below"
 msgstr ""
-"Om te bevestigen dat u alle remote bestanden wilt verwijderen voor "
-"\"{{name}}\", geef svp het woord in dat u hieronder ziet"
+"Pentru a confirma că doriți să ștergeți toate fișierele la distanță pentru "
+"\"{{name}}\", introduceți cuvântul pe care îl vedeți mai jos"
 
 #: scripts/controllers/ExportController.js:10
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr ""
-"Om te exporteren zonder een wachtwoordzin, deselecteer het \"Versleutel "
-"bestand\" vakje"
+"Pentru a exporta fără o expresie de acces, debifați caseta \"Criptare "
+"fișier\""
 
 #: templates/settings.html:19
 msgid ""
@@ -2515,25 +2477,18 @@ msgid ""
 "feature is disabled. If the field is empty, only IP address and localhost "
 "access is allowed."
 msgstr ""
-"Om verschillende op DNS gebaseerde aanvallen te voorkomen, beperkt Duplicati"
-" de toegestane hostnamen tot de hier genoemde. Directe IP-toegang en "
-"localhost zijn altijd toegestaan. Meerdere hostnamen kunnen worden opgegeven"
-" met een puntkomma als scheidingsteken. Als één van de toegestane hostnamen "
-"een asterisk (*) is, zijn alle hostnamen toegestaan en is deze functie "
-"uitgeschakeld. Als het veld leeg is, is toegang alleen toegestaan via het IP"
-" adres en localhost."
 
 #: scripts/controllers/RestoreController.js:33
 msgid "Today"
-msgstr "Vandaag"
+msgstr "Astăzi"
 
 #: scripts/directives/backupEditUri.js:214
 msgid "Trust host certificate?"
-msgstr "Vertrouw host certificaat?"
+msgstr "Trust gazdă certificat?"
 
 #: scripts/directives/backupEditUri.js:87
 msgid "Trust server certificate?"
-msgstr "Vertrouw server certificaat?"
+msgstr "Certificat de server de încredere?"
 
 #: templates/settings.html:95
 msgid ""
@@ -2541,41 +2496,38 @@ msgid ""
 "version available. Test Restore data before using this in production "
 "environments."
 msgstr ""
-"Probeer de nieuwste functies waar we aan werken. Momenteel de meest stabiele"
-" beschikbare versie. Test Herstellen van bestanden alvorens te gebruiken in "
-"productie-omgevingen."
 
 #: scripts/services/AppUtils.js:105
 msgid "Tue"
-msgstr "Dinsdag"
+msgstr "Marti"
 
 #: templates/restore.html:57
 msgid "Type to highlight files"
-msgstr "Typ om bestanden uit te lichten"
+msgstr "Tastați pentru a evidenția fișierele"
 
 #: templates/restorewizard.html:25
 msgid "Unknown backup size and versions"
-msgstr "Onbekende back-up grootte en versies"
+msgstr "Mărimea și versiunile de rezervă necunoscute"
 
 #: templates/pause.html:31
 msgid "Until resumed"
-msgstr "Tot hervatting"
+msgstr "Până la reluare"
 
 #: templates/settings.html:78
 msgid "Update channel"
-msgstr "Updatekanaal"
+msgstr "Actualizați canalul"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Update failed:"
-msgstr "Update mislukt:"
+msgstr "Actualizare esuata:"
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid "Updating with existing database"
-msgstr "Updaten met bestaande database"
+msgstr "Actualizarea cu baza de date existentă"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
-msgstr "Uploaden controlebestand ..."
+msgstr "Încărcarea fișierului de verificare ..."
 
 #: templates/settings.html:127
 msgid ""
@@ -2583,50 +2535,46 @@ msgid ""
 " features. We use them to generate <external-link link=\"link\">public usage"
 " statistics</external-link>"
 msgstr ""
-"Gebruiksrapporten helpen ons de gebruikerservaring te verbeteren en de "
-"impact van nieuwe mogelijkheden te evalueren. We gebruiken ze om<external-"
-"link link=\"link\">openbare gebruikstatistieken</external-link> te "
-"genereren. "
 
 #: templates/settings.html:115
 msgid "Usage statistics"
-msgstr "Gebruikstatistieken"
+msgstr "Statistica utilizării"
 
 #: templates/settings.html:121
 msgid "Usage statistics, warnings, errors, and crashes"
-msgstr "Gebruikstatistieken, waarschuwingen, fouten en crashes"
+msgstr "Statistici de utilizare, avertismente, erori și accidente"
 
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
-msgstr "Gebruik SSL"
+msgstr "Utilizați SSL"
 
 #: scripts/controllers/EditBackupController.js:428
 msgid "Use existing database?"
-msgstr "Gebruik bestaande database?"
+msgstr "Utilizați baza de date existentă?"
 
 #: scripts/controllers/EditBackupController.js:322
 msgid "Use weak passphrase"
-msgstr "Gebruik zwakke wachtwoordzin"
+msgstr "Utilizați fraza de acces slabă"
 
 #: scripts/controllers/EditBackupController.js:30
 msgid "Useless"
-msgstr "Waardeloos"
+msgstr "Inutil"
 
 #: scripts/directives/sourceFolderPicker.js:374
 msgid "User data"
-msgstr "Gebruikersgegevens"
+msgstr "Datele utilizatorului"
 
 #: templates/backends/openstack.html:27
 msgid "User domain name"
-msgstr "Gebruikers domeinnaam"
+msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:50
 msgid "User has too many permissions"
-msgstr "Gebruiker heeft teveel permissies"
+msgstr "Utilizatorul are prea multe permisiuni"
 
 #: templates/settings.html:51
 msgid "User interface settings"
-msgstr "Gebruikersinterface instellingen"
+msgstr "Setările interfeței utilizatorului"
 
 #: scripts/services/EditUriBuiltins.js:681
 #: scripts/services/EditUriBuiltins.js:786
@@ -2636,123 +2584,119 @@ msgstr "Gebruikersinterface instellingen"
 #: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
 #: templates/backends/mega.html:8 templates/backends/openstack.html:30
 msgid "Username"
-msgstr "Gebruikersnaam"
+msgstr "Nume de utilizator"
 
 #: templates/addoredit.html:151
 msgid "Validating ..."
-msgstr "Valideren ..."
+msgstr "Validarea ..."
 
 #: templates/home.html:33
 msgid "Verify files"
-msgstr "Bestanden controleren"
+msgstr "Verificați fișierele"
 
 #: scripts/services/CaptchaService.js:32 templates/notificationarea.html:31
 msgid "Verifying ..."
-msgstr "Controleren ..."
+msgstr "Verificarea ..."
 
 #: scripts/services/CaptchaService.js:32
 msgid "Verifying answer"
-msgstr "Antwoord controleren"
+msgstr "Verificarea răspunsului"
 
 #: scripts/services/ServerStatus.js:34 scripts/services/ServerStatus.js:43
 msgid "Verifying backend data ..."
-msgstr "Controleren van backend gegevens ..."
+msgstr "Verificarea datelor backend ..."
 
 #: scripts/services/ServerStatus.js:58
 msgid "Verifying files..."
-msgstr "Controleren bestanden..."
+msgstr ""
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
-msgstr "Controleren van remote gegevens ..."
+msgstr "Verificarea datelor de la distanță ..."
 
 #: scripts/services/ServerStatus.js:54
 msgid "Verifying restored files ..."
-msgstr "Controleren van herstelde bestanden ..."
+msgstr "Verificarea fișierelor restaurate ..."
 
 #: scripts/controllers/EditBackupController.js:34
 msgid "Very strong"
-msgstr "Erg sterk"
+msgstr "Foarte puternic"
 
 #: scripts/controllers/EditBackupController.js:31
 msgid "Very weak"
-msgstr "Erg zwak"
+msgstr "Foarte slab"
 
 #: index.html:254
 msgid "Visit us on"
-msgstr "Bezoek ons op"
+msgstr "Vizitați-ne"
 
 #: templates/delete.html:21
 msgid ""
 "WARNING: The remote database is found to be in use by the commandline "
 "library"
 msgstr ""
-"WAARSCHUWING: De remote database blijkt in gebruik te zijn door de "
-"opdrachtregel bibliotheek"
+"AVERTISMENT: Baza de date la distanță este folosită de biblioteca de comandă"
 
 #: templates/delete.html:44
 msgid "WARNING: This will prevent you from restoring the data in the future."
 msgstr ""
-"WAARSCHUWING: Dit zal het onmogelijk maken om in de toekomst bestanden te "
-"herstellen."
+"AVERTISMENT: Acest lucru vă va împiedica să restaurați datele în viitor."
 
 #: templates/waitarea.html:2
 msgid "Waiting for task to begin"
-msgstr "Wachten op het starten van de taak"
+msgstr "Se așteaptă ca sarcina să înceapă"
 
 #: templates/commandline.html:54
 msgid "Waiting for task to start ...."
-msgstr "Wachten op het starten van de taak ..."
+msgstr "Se așteaptă ca sarcina să înceapă ...."
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload ..."
-msgstr "Wachten op upload ..."
+msgstr "Se așteaptă încărcarea ..."
 
 #: templates/settings.html:122
 msgid "Warnings, errors and crashes"
-msgstr "Waarschuwingen, fouten en crashes"
+msgstr "Avertizări, erori și accidente"
 
 #: templates/restore.html:142
 msgid ""
 "We accept donations via different services, such as OpenCollective, PayPal, "
 "BountySource and various crypto currencies."
 msgstr ""
-"We accepteren donaties via verschillende services, zoals OpenCollective, "
-"PayPal, BountySource en diverse crypto-valuta."
 
 #: templates/addoredit.html:50
 msgid "We recommend that you encrypt all backups stored outside your system"
 msgstr ""
-"We raden aan dat u alle back-ups die buiten uw systeem worden opgeslagen "
-"versleutelt"
+"Vă recomandăm să criptați toate copiile de rezervă stocate în afara "
+"sistemului dvs."
 
 #: scripts/controllers/EditBackupController.js:32
 msgid "Weak"
-msgstr "Zwak"
+msgstr "Slab"
 
 #: scripts/controllers/EditBackupController.js:322
 msgid "Weak passphrase"
-msgstr "Zwakke wachtwoordzin"
+msgstr "Frază de acces slabă"
 
 #: scripts/services/AppUtils.js:106
 msgid "Wed"
-msgstr "Woensdag"
+msgstr "însura"
 
 #: scripts/services/AppUtils.js:92 templates/addoredit.html:348
 msgid "Weeks"
-msgstr "Weken"
+msgstr "săptămâni"
 
 #: templates/restorewizard.html:3
 msgid "Where do you want to restore from?"
-msgstr "Waar vandaan wilt u herstellen?"
+msgstr "De unde doriți să restaurați?"
 
 #: templates/restore.html:78
 msgid "Where do you want to restore the files to?"
-msgstr "Waarheen wilt u de bestanden herstellen?"
+msgstr "Unde doriți să restaurați fișierele?"
 
 #: scripts/services/AppUtils.js:94 templates/addoredit.html:350
 msgid "Years"
-msgstr "Jaren"
+msgstr "Ani"
 
 #: scripts/controllers/AppController.js:172
 #: scripts/controllers/DeleteController.js:77
@@ -2772,89 +2716,86 @@ msgstr "Jaren"
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
 msgid "Yes"
-msgstr "Ja"
+msgstr "da"
 
 #: scripts/controllers/EditBackupController.js:337
 msgid "Yes, I have stored the passphrase safely"
-msgstr "Ja, ik heb de wachtwoordzin op een veilige plaats opgeborgen"
+msgstr "Da, am stocat expresia de acces în siguranță"
 
 #: scripts/controllers/EditBackupController.js:380
 msgid "Yes, I'm brave!"
-msgstr "Ja, ik ben dapper!"
+msgstr "Da, sunt curajos!"
 
 #: scripts/controllers/EditBackupController.js:371
 msgid "Yes, please break my backup!"
-msgstr "Ja, help mijn back-up om zeep!"
+msgstr "Da, vă rog să întrerupeți backupul!"
 
 #: scripts/controllers/RestoreController.js:34
 msgid "Yesterday"
-msgstr "Gisteren"
+msgstr "Ieri"
 
 #: scripts/directives/backupEditUri.js:153
 msgid ""
 "You appear to be running Mono with no SSL certificates loaded.\n"
 "Do you want to import the list of trusted certificates from Mozilla?"
 msgstr ""
-"Het lijkt er op dat u Mono gebruikt zonder dat SSL certificaten geladen zijn.\n"
-"Wilt u de lijst met vertrouwde certificaten importeren van Mozilla?"
+"Se pare că rulați Mono fără certificate SSL încărcate.\n"
+"Doriți să importați lista de certificate de încredere de la Mozilla?"
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid ""
 "You are changing the database path away from an existing database.\n"
 "Are you sure this is what you want?"
 msgstr ""
-"U verandert het database pad weg van een bestaande database.\n"
-"Weet u zeker dat dit is wat u wilt?"
+"Schimbați calea bazei de date departe de o bază de date existentă.\n"
+"Ești sigur că asta vrei?"
 
 #: templates/about.html:27
 msgid "You are currently running {{appname}} {{version}}"
-msgstr "U werkt momenteel met {{appname}} {{version}}"
+msgstr "În prezent, executați {{appname}} {{version}}"
 
 #: scripts/controllers/StateController.js:102
 msgid ""
 "You can stop the backup immediately, or stop after the current file has been"
 " uploaded."
 msgstr ""
-"De back-up kan onmiddellijk worden gestopt, of stoppen nadat het huidige "
-"bestand is geüpload."
+"Puteți opri backupul imediat sau opriți după încărcarea fișierului curent."
 
 #: scripts/controllers/StateController.js:111
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and the stop."
 msgstr ""
-"De taak kan onmiddellijk worden gestopt, of het proces toestaan om door te "
-"gaan met het huidige bestand en dan stoppen."
+"Puteți opri sarcina imediat sau permiteți procesului să continue fișierul "
+"curent și oprirea."
 
 #: scripts/controllers/EditBackupController.js:380
 msgid ""
 "You have changed the encryption mode. This may break stuff. You are "
 "encouraged to create a new backup instead"
 msgstr ""
-"U hebt de versleutelingsmodus veranderd. Dit kan dingen kapotmaken. U wordt "
-"daarom aangemoedigd een nieuwe back-up aan te maken"
+"Ați schimbat modul de criptare. Acest lucru poate sparge lucrurile. Sunteți "
+"încurajați să creați în schimb o copie de siguranță nouă"
 
 #: scripts/controllers/EditBackupController.js:371
 msgid ""
 "You have changed the passphrase, which is not supported. You are encouraged "
 "to create a new backup instead."
 msgstr ""
-"U hebt de wachtwoordzin aangepast, wat niet wordt ondersteund. U wordt "
-"daarom aangemoedigd een nieuwe back-up aan te maken."
+"Ați schimbat fraza de acces, care nu este acceptată. Sunteți încurajați să "
+"creați în schimb o copie de siguranță nouă."
 
 #: scripts/controllers/EditBackupController.js:407
 msgid ""
 "You have chosen not to encrypt the backup. Encryption is recommended for all"
 " data stored on a remote server."
 msgstr ""
-"U hebt ervoor gekozen de back-up niet te versleutelen. Encryptie is "
-"aanbevolen voor alle gegevens die worden opgeslagen op een remote server."
+"Ați ales să nu criptați copia de rezervă. Criptarea este recomandată pentru "
+"toate datele stocate pe un server de la distanță."
 
 #: scripts/controllers/RestoreController.js:299
 msgid "You have chosen to restore to a new location, but not entered one"
-msgstr ""
-"U koos voor terugzetten naar een nieuwe locatie, maar hebt geen locatie "
-"opgegeven"
+msgstr "Ați ales să restaurați o locație nouă, dar nu ați introdus una"
 
 #: scripts/controllers/EditBackupController.js:337
 msgid ""
@@ -2862,133 +2803,134 @@ msgid ""
 "of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
 msgstr ""
-"U hebt een sterke wachtwoordzin gegenereerd. Verzeker u ervan dat u een "
-"veilige kopie heeft van de wachtwoordzin, omdat de gegevens niet hersteld "
-"kunnen worden als u de wachtwoordzin verliest."
+"Ați generat o expresie de acces puternică. Asigurați-vă că ați făcut o copie"
+" sigură a expresiei de acces, deoarece datele nu pot fi recuperate dacă "
+"pierdeți expresia de acces."
 
 #: scripts/controllers/EditBackupController.js:240
 msgid "You must choose at least one source folder"
-msgstr "U moet tenminste één bronmap kiezen"
+msgstr "Trebuie să alegeți cel puțin un dosar sursă"
 
 #: scripts/services/EditUriBuiltins.js:797
 msgid "You must enter a domain name to use v3 API"
-msgstr "Een domeinnaam moet worden opgegeven om v3 API te gebruiken"
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:219
 msgid "You must enter a name for the backup"
-msgstr "U moet een naam ingeven voor de back-up"
+msgstr "Trebuie să introduceți un nume pentru copia de rezervă"
 
 #: scripts/controllers/EditBackupController.js:227
 msgid "You must enter a passphrase or disable encryption"
-msgstr "U moet een wachtwoordzin ingeven of versleuteling uitschakelen"
+msgstr ""
+"Trebuie să introduceți o expresie de acces sau să dezactivați criptarea"
 
 #: scripts/services/EditUriBuiltins.js:794
 msgid "You must enter a password to use v3 API"
-msgstr "Een wachtwoord moet worden opgegeven om v3 API te gebruiken"
+msgstr ""
 
 #: scripts/controllers/EditBackupController.js:276
 msgid "You must enter a positive number of backups to keep"
 msgstr ""
-"U moet een positief getal opgeven voor de hoeveelheid te bewaren back-ups"
+"Trebuie să introduceți un număr pozitiv de copii de rezervă pe care să le "
+"păstrați"
 
 #: scripts/services/EditUriBuiltins.js:800
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr ""
-"Een tenant (ofwel project) naam moet worden opgegeven om v3 API te gebruiken"
-" "
 
 #: scripts/services/EditUriBuiltins.js:814
 msgid "You must enter a tenant name if you do not provide an API Key"
-msgstr "U moet een tenant naam ingeven als u de API sleutel niet verstrekt"
+msgstr ""
+"Trebuie să introduceți un nume de chiriaș dacă nu furnizați o cheie API"
 
 #: scripts/controllers/EditBackupController.js:269
 msgid "You must enter a valid duration for the time to keep backups"
 msgstr ""
-"U moet een geldige tijdsduur ingeven voor de tijd dat back-ups bewaard "
-"moeten worden"
+"Trebuie să introduceți o durată valabilă pentru timpul necesar pentru a "
+"păstra copii de rezervă"
 
 #: scripts/controllers/EditBackupController.js:283
 msgid "You must enter a valid rentention policy string"
-msgstr "Er moet een geldige tekenreeks voor retentiebeleid worden opgegeven"
+msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:811
 msgid "You must enter either a password or an API Key"
-msgstr "U moet òf een wachtwoord, òf een API sleutel ingeven"
+msgstr "Trebuie să introduceți o parolă sau o cheie API"
 
 #: scripts/services/EditUriBuiltins.js:818
 msgid "You must enter either a password or an API Key, not both"
-msgstr "U moet òf een wachtwoord, òf een API sleutel ingeven, niet beide"
+msgstr "Trebuie să introduceți o parolă sau o cheie API, nu ambele"
 
 #: scripts/services/EditUriBackendConfig.js:115
 msgid "You must fill in the password"
-msgstr "U moet het wachtwoord invullen"
+msgstr "Trebuie să completați parola"
 
 #: scripts/services/EditUriBackendConfig.js:92
 msgid "You must fill in the server name or address"
-msgstr "U moet de servernaam of -adres invullen"
+msgstr "Trebuie să completați numele sau adresa serverului"
 
 #: scripts/services/EditUriBackendConfig.js:113
 #: scripts/services/EditUriBackendConfig.js:122
 msgid "You must fill in the username"
-msgstr "U moet de gebruikersnaam invullen"
+msgstr "Trebuie să completați numele de utilizator"
 
 #: scripts/services/EditUriBackendConfig.js:78
 msgid "You must fill in {{field}}"
-msgstr "U moet {{field}} invullen"
+msgstr "Trebuie să completați {{field}}"
 
 #: scripts/services/EditUriBuiltins.js:790
 msgid "You must select or fill in the AuthURI"
-msgstr "U moet de AuthURI selecteren of invullen"
+msgstr "Trebuie să selectați sau să completați AuthURI"
 
 #: scripts/services/EditUriBuiltins.js:832
 msgid "You must select or fill in the server"
-msgstr "U moet de server selecteren of invullen"
+msgstr "Trebuie să selectați sau să completați serverul"
 
 #: scripts/services/EditUriBackendConfig.js:99
 msgid "You must specify a path"
-msgstr "U moet een pad opgeven"
+msgstr "Trebuie să specificați o cale"
 
 #: scripts/services/EditUriBackendConfig.js:85
 msgid "You should fill in {{field}}{{reason}}"
-msgstr "U zou in moeten vullen {{field}}{{reason}}"
+msgstr ""
 
 #: templates/restore.html:139
 msgid "Your files and folders have been restored successfully."
-msgstr "Uw bestanden en mappen zijn succesvol hersteld"
+msgstr "Fișierele și folderele dvs. au fost restaurate cu succes."
 
 #: scripts/controllers/EditBackupController.js:322
 msgid "Your passphrase is easy to guess. Consider changing passphrase."
 msgstr ""
-"Uw wachtwoordzin is eenvoudig te raden. Overweeg de wachtwoordzin te "
-"veranderen."
+"Fraza de acces este ușor de ghicit. Luați în considerare schimbarea "
+"expresiei de acces."
 
 #: templates/backends/gcs.html:3 templates/backends/openstack.html:3
 msgid "bucket/folder/subfolder"
-msgstr "bucket/map/submap"
+msgstr "cupă pentru excavat / folder / subfolder"
 
 #: scripts/services/AppUtils.js:81
 msgid "byte"
-msgstr "byte"
+msgstr "octet"
 
 #: scripts/services/AppUtils.js:114
 msgid "byte/s"
-msgstr "byte/s"
+msgstr "byte / s"
 
 #: templates/addoredit.html:268 templates/addoredit.html:351
 #: templates/advancedoptionseditor.html:28
 #: templates/advancedoptionseditor.html:35
 msgid "custom"
-msgstr "aangepast"
+msgstr "personalizat"
 
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
 msgid "resume now"
-msgstr "nu hervatten"
+msgstr "reluați acum"
 
 #: scripts/services/EditUriBuiltins.js:729
 #: scripts/services/EditUriBuiltins.js:740
 msgid "unless you are explicitly specifying --group-id"
-msgstr "tenzij u expliciet --group-id opgeeft"
+msgstr ""
 
 #: templates/about.html:12
 msgid ""
@@ -2997,31 +2939,31 @@ msgid ""
 "<a href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is licensed "
 "under the <a href=\"{{licenselink}}\">{{licensename}}</a>."
 msgstr ""
-"{{appname}} werd in eerste instantie ontwikkeld door <a "
-"href=\"{{mail1}}\">{{dev1}}</a> en <a href=\"{{mail2}}\">{{dev2}}</a>. "
-"{{appname}} kan gedownload worden van <a "
-"href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is gelicenseerd "
-"onder de <a href=\"{{licenselink}}\">{{licensename}}</a>."
+"{{appname}} a fost dezvoltat în primul rând prin <a href=\"{{mail\"}}\"> "
+"{{dev1}} </a> și <a href=\"{{mail2}}\"> {{dev2}} </ a>. {{appname}} poate fi"
+" descărcat de la <a href=\"{{websitelink}}\"> {{sitename}} </a>. {{appname}}"
+" este licențiat sub <a href=\"{{licenselink}}\"> {{licensename}} </a>."
 
 #: scripts/controllers/StateController.js:50
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
-msgstr "{{files}} bestanden ({{size}}) te gaan {{speed_txt}}"
+msgstr "{{files}} fișiere ({{size}}) pentru a merge {{speed_txt}}"
 
 #: templates/home.html:67 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
-msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versie"
-msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versies"
+msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$ count}} versiune"
+msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$ count}} Versiuni"
+msgstr[2] "{{item.Backup.Metadata.TargetSizeString}} / {{$ count}} Versiuni"
 
 #: templates/pause.html:26
 msgid "{{number}} Hour"
-msgstr "{{number}} Uur"
+msgstr "{{număr}} oră"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6
 msgid "{{number}} Minutes"
-msgstr "{{number}} Minuten"
+msgstr "{{număr}} Minute"
 
 #: templates/home.html:47
 msgid "{{time}} (took {{duration}})"
-msgstr "{{time}} (duurde {{duration}})"
+msgstr "{{time}} (a luat {{duration}})"
