@@ -169,6 +169,18 @@ namespace Duplicati.UnitTest
                 opts["check-filetime-only"] = "true";
             });
         }
+
+        [Test]
+        [Category("Border")]
+        public void RunFullScan()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
+                opts["disable-filetime-check"] = "true";
+            });
+        }
+
         public static Dictionary<string, int> WriteTestFilesToFolder(string targetfolder, int blocksize, int basedatasize = 0)
         {
             if (basedatasize <= 0)
@@ -226,6 +238,11 @@ namespace Duplicati.UnitTest
                 //Console.WriteLine("In first backup:");
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
             }
+
+            // Do a "touch" on files to trigger a re-scan, which should do nothing
+            //foreach (var k in filenames)
+                //if (File.Exists(Path.Combine(DATAFOLDER, "a" + k.Key)))
+                    //File.SetLastWriteTime(Path.Combine(DATAFOLDER, "a" + k.Key), DateTime.Now.AddSeconds(5));
 
             var data = new byte[filenames.Select(x => x.Value).Max()];
             new Random().NextBytes(data);

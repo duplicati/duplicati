@@ -86,10 +86,12 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_findfileCommand;
         private readonly System.Data.IDbCommand m_selectfilelastmodifiedCommand;
+        private readonly System.Data.IDbCommand m_selectfilelastmodifiedWithSizeCommand;
         private readonly System.Data.IDbCommand m_selectfileHashCommand;
         private readonly System.Data.IDbCommand m_selectblocklistHashesCommand;
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
+        private readonly System.Data.IDbCommand m_selectfilemetadatahashandsizeCommand;
         
         private PathLookupHelper<PathEntryKeeper> m_pathLookup;
         private Dictionary<string, long> m_blockCache;
@@ -123,8 +125,10 @@ namespace Duplicati.Library.Main.Database
             m_insertfileOperationCommand = m_connection.CreateCommand();
             m_findfileCommand = m_connection.CreateCommand();
             m_selectfilelastmodifiedCommand = m_connection.CreateCommand();
+            m_selectfilelastmodifiedWithSizeCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_insertblocksetentryFastCommand = m_connection.CreateCommand();
+            m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand();
                 
             m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
@@ -164,6 +168,12 @@ namespace Duplicati.Library.Main.Database
 
             m_selectfilelastmodifiedCommand.CommandText = @"SELECT ""A"".""ID"", ""B"".""LastModified"" FROM (SELECT ""ID"" FROM ""File"" WHERE ""Path"" = ?) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = ?";
             m_selectfilelastmodifiedCommand.AddParameters(2);
+
+            m_selectfilelastmodifiedWithSizeCommand.CommandText = @"SELECT ""C"".""ID"", ""C"".""LastModified"", ""D"".""Length"" FROM (SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"" FROM (SELECT ""ID"", ""BlocksetID"" FROM ""File"" WHERE ""Path"" = ?) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = ?) AS ""C"", ""Blockset"" AS ""D"" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" ";
+            m_selectfilelastmodifiedWithSizeCommand.AddParameters(2);
+
+            m_selectfilemetadatahashandsizeCommand.CommandText = @"SELECT ""A"".""Length"", ""A"".""FullHash"" FROM ""Blockset"" ""A"", ""File"" ""B"" WHERE ""B"".""ID"" = ? AND ""A"".""ID"" = ""B"".""MetadataID""";
+            m_selectfilemetadatahashandsizeCommand.AddParameters(1);
 
             //Need a temporary table with path/lastmodified lookups
             m_findfileCommand.CommandText =
@@ -418,7 +428,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Gets the metadataset ID from the filehash
         /// </summary>
-        /// <returns><c>true</c>, if metadataset should be recorded, false if it already exists.</returns>
+        /// <returns><c>true</c>, if metadataset found, false if does not exist.</returns>
         /// <param name="filehash">The metadata hash.</param>
         /// <param name="size">The size of the metadata.</param>
         /// <param name="metadataid">The ID of the metadataset.</param>
@@ -545,23 +555,53 @@ namespace Duplicati.Library.Main.Database
             AddFile(path, lastmodified, SYMLINK_BLOCKSET_ID, metadataID, transaction);
         }
 
-        public long GetFileLastModified(string path, long filesetid, out DateTime oldModified, System.Data.IDbTransaction transaction = null)
+        public long GetFileLastModified(string path, long filesetid, bool includeLength, out DateTime oldModified, out long length, System.Data.IDbTransaction transaction = null)
         {
-			m_selectfileHashCommand.Transaction = transaction;
-			m_selectfilelastmodifiedCommand.SetParameterValue(0, path);
-            m_selectfilelastmodifiedCommand.SetParameterValue(1, filesetid);
-            using (var rd = m_selectfilelastmodifiedCommand.ExecuteReader(m_logQueries, null))
-                if (rd.Read())
-                {
-                    oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
-                    return rd.ConvertValueToInt64(0);    
-                }
+            if (includeLength)
+            {
+                m_selectfilelastmodifiedWithSizeCommand.Transaction = transaction;
+                m_selectfilelastmodifiedWithSizeCommand.SetParameterValue(0, path);
+                m_selectfilelastmodifiedWithSizeCommand.SetParameterValue(1, filesetid);
+                using (var rd = m_selectfilelastmodifiedWithSizeCommand.ExecuteReader(m_logQueries, null))
+                    if (rd.Read())
+                    {
+                        oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
+                        length = rd.ConvertValueToInt64(2);
+                        return rd.ConvertValueToInt64(0);
+                    }
 
+            }
+            else
+            {
+                m_selectfilelastmodifiedCommand.Transaction = transaction;
+                m_selectfilelastmodifiedCommand.SetParameterValue(0, path);
+                m_selectfilelastmodifiedCommand.SetParameterValue(1, filesetid);
+                using (var rd = m_selectfilelastmodifiedCommand.ExecuteReader(m_logQueries, null))
+                    if (rd.Read())
+                    {
+                        length = -1;
+                        oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
+                        return rd.ConvertValueToInt64(0);
+                    }
+
+            }
             oldModified = new DateTime(0, DateTimeKind.Utc);
+            length = -1;
             return -1;
         }
 
-        public long GetFileEntry(string path, long filesetid, out DateTime oldModified, out long lastFileSize, out string oldMetahash, out long oldMetasize)
+        public Tuple<long, string> GetMetadataHashAndSizeForFile(long fileid, System.Data.IDbTransaction transaction)
+        {
+            m_selectfilemetadatahashandsizeCommand.Transaction = transaction;
+            m_selectfilemetadatahashandsizeCommand.SetParameterValue(0, fileid);
+            using (var rd = m_selectfilemetadatahashandsizeCommand.ExecuteReader(m_logQueries, null))
+                if (rd.Read())
+                    return new Tuple<long, string>(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1));
+
+            return null;
+        }
+
+        public long GetFileEntry(string path, long filesetid, out DateTime oldModified, out long lastFileSize, out string oldMetahash, out long oldMetasize, System.Data.IDbTransaction transaction)
         {
             if (m_pathLookup != null)
             {            
@@ -586,7 +626,7 @@ namespace Duplicati.Library.Main.Database
             else
             {
                 m_findfileCommand.SetParameterValue(0, path);
-
+                m_findfileCommand.Transaction = transaction;
                 using(var rd = m_findfileCommand.ExecuteReader(m_logQueries, null))
                     if (rd.Read())
                     {

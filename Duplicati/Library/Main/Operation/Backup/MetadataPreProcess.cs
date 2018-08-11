@@ -67,6 +67,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
 
+                var CHECKFILETIMEONLY = options.CheckFiletimeOnly;
+                var DISABLEFILETIMECHECK = options.DisableFiletimeCheck;
+
                 while (true)
                 {
                     var path = await self.Input.ReadAsync();
@@ -96,16 +99,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         try
                         {
-                            if (options.CheckFiletimeOnly || options.DisableFiletimeCheck)
+                            if (CHECKFILETIMEONLY || DISABLEFILETIMECHECK)
                             {
-                                var tmp = await database.GetFileLastModifiedAsync(path, lastfilesetid);
+                                var tmp = await database.GetFileLastModifiedAsync(path, lastfilesetid, false);
                                 await self.Output.WriteAsync(new FileEntry() {
-                                    OldId = tmp.Key < 0 ? -1 : tmp.Key,
+                                    OldId = tmp.Item1,
                                     Path = path,
                                     Attributes = attributes,
                                     LastWrite = lastwrite,
-                                    OldModified = tmp.Key < 0 ? new DateTime(0) : tmp.Value,
-                                    LastFileSize = -1 ,
+                                    OldModified = tmp.Item2,
+                                    LastFileSize = tmp.Item3 ,
                                     OldMetaHash = null,
                                     OldMetaSize = -1
                                 });
@@ -182,7 +185,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 IMetahash metahash;
 
-                if (options.StoreMetadata)
+                if (!options.SkipMetadata)
                 {
                     metahash = Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot), options);
                 }
