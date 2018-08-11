@@ -172,7 +172,7 @@ namespace Duplicati.Library.Main.Database
             m_selectfilelastmodifiedWithSizeCommand.CommandText = @"SELECT ""C"".""ID"", ""C"".""LastModified"", ""D"".""Length"" FROM (SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"" FROM (SELECT ""ID"", ""BlocksetID"" FROM ""File"" WHERE ""Path"" = ?) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = ?) AS ""C"", ""Blockset"" AS ""D"" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" ";
             m_selectfilelastmodifiedWithSizeCommand.AddParameters(2);
 
-            m_selectfilemetadatahashandsizeCommand.CommandText = @"SELECT ""A"".""Length"", ""A"".""FullHash"" FROM ""Blockset"" ""A"", ""File"" ""B"" WHERE ""B"".""ID"" = ? AND ""A"".""ID"" = ""B"".""MetadataID""";
+            m_selectfilemetadatahashandsizeCommand.CommandText = @"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = ? AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ";
             m_selectfilemetadatahashandsizeCommand.AddParameters(1);
 
             //Need a temporary table with path/lastmodified lookups
