@@ -49,6 +49,19 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
                 var blocksize = options.Blocksize;
 
+
+                // Pre-cache the option variables here to simplify and
+                // speed up repeated option access below
+
+                var SKIPFILESLARGERTHAN = options.SkipFilesLargerThan;
+                // Zero and max both indicate no size limit
+                if (SKIPFILESLARGERTHAN == long.MaxValue)
+                    SKIPFILESLARGERTHAN = 0;
+
+                var DISABLEFILETIMECHECK = options.DisableFiletimeCheck;
+                var CHECKFILETIMEONLY = options.CheckFiletimeOnly;
+                var SKIPMETADATA = options.SkipMetadata;
+
                 while (true)
                 {
                     var e = await self.Input.ReadAsync();
@@ -60,30 +73,61 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     catch(Exception ex)
                     {
-                        Logging.Log.WriteExplicitMessage(FILELOGTAG, "FailedToReadSize", ex, "Failed tp read size of file: {0}", e.Path);
+                        Logging.Log.WriteExplicitMessage(FILELOGTAG, "FailedToReadSize", ex, "Failed to read size of file: {0}", e.Path);
                     }
 
                     await stats.AddExaminedFile(filestatsize);
 
-                    e.MetaHashAndSize = options.StoreMetadata ? Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot), options) : EMPTY_METADATA;
-
-                    var timestampChanged = e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
-                    var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
-                    var tooLargeFile = options.SkipFilesLargerThan != long.MaxValue && options.SkipFilesLargerThan != 0 && filestatsize >= 0 && filestatsize > options.SkipFilesLargerThan;
-                    e.MetadataChanged = !options.CheckFiletimeOnly && !options.SkipMetadata && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
-
-                    if ((e.OldId < 0 || options.DisableFiletimeCheck || timestampChanged || filesizeChanged || e.MetadataChanged) && !tooLargeFile)
+                    // Stop now if the file is too large
+                    var tooLargeFile = SKIPFILESLARGERTHAN != 0 && filestatsize >= 0 && filestatsize > SKIPFILESLARGERTHAN;
+                    if (tooLargeFile)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, e.OldId <= 0, timestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Path);
+                        continue;
+                    }
+
+                    // Invalid ID indicates a new file
+                    var isNewFile = e.OldId < 0;
+
+                    // If we disable the filetime check, we always assume that the file has changed
+                    // Otherwise we check that the timestamps are different or if any of them are empty
+                    var timestampChanged = DISABLEFILETIMECHECK || e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
+
+                    // Avoid generating a new matadata blob if timestamp has not changed
+                    // and we only check for timestamp changes
+                    if (CHECKFILETIMEONLY && !timestampChanged && !isNewFile)
+                    {
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", e.Path);                                                
+                        await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                        continue;
+                    }
+
+                    // If we have have disabled the filetime check, we do not have the metadata info
+                    // but we want to know if the metadata is potentially changed
+                    if (!isNewFile && DISABLEFILETIMECHECK)
+                    {
+                        var tp = await database.GetMetadataHashAndSizeForFileAsync(e.OldId);
+                        if (tp != null)
+                        {
+                            e.OldMetaSize = tp.Item1;
+                            e.OldMetaHash = tp.Item2;
+                        }
+                    }
+
+                    // Compute current metadata
+                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Path, e.Attributes, options, snapshot), options);
+                    e.MetadataChanged = !SKIPMETADATA && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
+
+                    // Check if the file is new, or something indicates a change
+                    var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
+                    if (isNewFile || timestampChanged || filesizeChanged || e.MetadataChanged)
+                    {
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, isNewFile, timestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
                         await self.Output.WriteAsync(e);
                     }
                     else
                     {
-                        if (tooLargeFile)
-                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Path);                        
-                        else
-                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", e.Path);                        
-                        
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoMetadataChange", "Skipped checking file, because no metadata was updated {0}", e.Path);                                                
                         await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                     }
                 }
