@@ -92,7 +92,7 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
         private readonly System.Data.IDbCommand m_selectfilemetadatahashandsizeCommand;
-        
+
         private PathLookupHelper<PathEntryKeeper> m_pathLookup;
         private Dictionary<string, long> m_blockCache;
         
@@ -175,17 +175,65 @@ namespace Duplicati.Library.Main.Database
             m_selectfilemetadatahashandsizeCommand.CommandText = @"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = ? AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ";
             m_selectfilemetadatahashandsizeCommand.AddParameters(1);
 
-            //Need a temporary table with path/lastmodified lookups
+            // The original command (v==1) finds the most recent entry of the file in question, 
+            // but it requires some large joins to extract the required information.
+            // To speed it up, we use a slightly simpler approach that only looks at the
+            // previous fileset, and uses information here.
+            // If there is a case where a file is sometimes there and sometimes not
+            // (i.e. filter file, remove filter) we will not find the file.
+            // We currently use this faster version, 
+            // but allow users to switch back via an environment variable
+            // such that we can get performance feedback
+
             m_findfileCommand.CommandText =
                 @" SELECT ""File"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
                 @"   FROM ""File"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
                 @"  WHERE ""File"".""Path"" = ? " +
+                @"    AND ""Fileset"".""ID"" = ? " +
                 @"    AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
                 @"    AND ""FileBlockset"".""ID"" = ""File"".""BlocksetID"" " +
-                @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
-                @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
-                @"  LIMIT 1 ";
-            m_findfileCommand.AddParameters(1);
+                @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" ";
+
+            m_findfileCommand.AddParameters(2);
+
+            // Allow users to test on real-world data
+            // to get feedback on potential performance
+            int.TryParse(Environment.GetEnvironmentVariable("TEST_QUERY_VERSION"), out var testqueryversion);
+
+            if (testqueryversion == 1)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "TestFileQuery", null, "Using performance test query version {0} as the TEST_QUERY_VERSION environment variable is set", testqueryversion);
+
+                m_findfileCommand.CommandText =
+                    @" SELECT ""File"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
+                    @"   FROM ""File"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
+                    @"  WHERE ""File"".""Path"" = ? " +
+                    @"    AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
+                    @"    AND ""FileBlockset"".""ID"" = ""File"".""BlocksetID"" " +
+                    @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
+                    @"    AND ? IS NOT NULL" +
+                    @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
+                    @"  LIMIT 1 ";
+            }
+            else if (testqueryversion == 2)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "TestFileQuery", null, "Using performance test query version {0} as the TEST_QUERY_VERSION environment variable is set", testqueryversion);
+
+                var getLastFileEntryForPath =
+                    @"SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"", ""A"".""MetadataID"" " +
+                    @"  FROM (SELECT ""ID"", ""BlocksetID"", ""MetadataID"" FROM ""File"" WHERE ""Path"" = ?) ""A"" " +
+                    @"  CROSS JOIN ""FilesetEntry"" ""B"" " +
+                    @"  WHERE ""A"".""ID"" = ""B"".""FileID"" " +
+                    @"    AND ""B"".""FilesetID"" = ? ";
+
+                m_findfileCommand.CommandText = string.Format(
+                    @"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize"" " +
+                    @"  FROM " +
+                    @"  ({0}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F"" " +
+                    @" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID"" ",
+                    getLastFileEntryForPath
+                );
+            }
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""File"" WHERE ""Blockset"".""ID"" = ""File"".""BlocksetID"" AND ""File"".""ID"" = ?  ";
             m_selectfileHashCommand.AddParameters(1);
@@ -626,6 +674,7 @@ namespace Duplicati.Library.Main.Database
             else
             {
                 m_findfileCommand.SetParameterValue(0, path);
+                m_findfileCommand.SetParameterValue(1, filesetid);
                 m_findfileCommand.Transaction = transaction;
                 using(var rd = m_findfileCommand.ExecuteReader(m_logQueries, null))
                     if (rd.Read())

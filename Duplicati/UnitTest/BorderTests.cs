@@ -249,8 +249,17 @@ namespace Duplicati.UnitTest
             foreach(var k in filenames)
                 File.WriteAllBytes(Path.Combine(DATAFOLDER, "b" + k.Key), data.Take(k.Value).ToArray());
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                c.Backup(new string[] { DATAFOLDER });
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var r = c.Backup(new string[] { DATAFOLDER });
+                if (!Library.Utility.Utility.ParseBoolOption(testopts, "disable-filetime-check"))
+                {
+                    if (r.OpenedFiles != filenames.Count)
+                        throw new Exception($"Opened {r.OpenedFiles}, but should open {filenames.Count}");
+                    if (r.ExaminedFiles != filenames.Count * 2)
+                        throw new Exception($"Examined {r.ExaminedFiles}, but should examine open {filenames.Count * 2}");
+                }
+            }
 
             var rn = new Random();
             foreach(var k in filenames)
