@@ -409,19 +409,9 @@ namespace Duplicati.Library.Snapshots
             throw new InvalidOperationException();
         }
 
-        /// <summary>
-        /// Cache element to speed up returning the same paths
-        /// </summary>
-        private KeyValuePair<string, string> m_lastLookup;
-
         /// <inheritdoc />
         public override string ConvertToSnapshotPath(string localPath)
         {
-            // Hot cache, we tend to call the same conversion multiple times
-            var m = m_lastLookup;
-            if (m.Key == localPath)
-                return m.Value;
-
             if (!Path.IsPathRooted(localPath))
                 throw new InvalidOperationException();
 
@@ -430,12 +420,11 @@ namespace Duplicati.Library.Snapshots
                 throw new InvalidOperationException();
 
             // Note: Do NOT use Path.Combine as it strips the UNC path prefix
-            var subPath = localPath.Replace(root, String.Empty);
+            var subPath = localPath.Substring(root.Length);
             if (!volumePath.EndsWith(SLASH, StringComparison.Ordinal) && !subPath.StartsWith(SLASH, StringComparison.Ordinal))
-                subPath = subPath.Insert(0, SLASH);
+                volumePath += SLASH;
 
-            var mappedPath = subPath.Insert(0, volumePath);
-            m_lastLookup = new KeyValuePair<string, string>(localPath, mappedPath);
+            var mappedPath = volumePath + subPath;
             return mappedPath;
         }
 
