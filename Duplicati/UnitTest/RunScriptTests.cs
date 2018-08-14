@@ -142,7 +142,7 @@ namespace Duplicati.UnitTest
         }
 
 
-        private static string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0)
+        private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0)
         {
             var id = Guid.NewGuid().ToString("N").Substring(0, 6);
             if (Library.Utility.Utility.IsClientWindows)
@@ -157,7 +157,7 @@ namespace Duplicati.UnitTest
 
                 commands.Add($"exit {exitcode}");
 
-                var filename = Path.GetFullPath(Path.Combine(BASEFOLDER, $"run-script-{id}.bat"));
+                var filename = Path.GetFullPath(Path.Combine(DATAFOLDER, $"run-script-{id}.bat"));
                 File.WriteAllLines(filename, commands);
 
                 return filename;
@@ -175,7 +175,7 @@ namespace Duplicati.UnitTest
                     commands.Add($@"sleep {sleeptime}");
 
                 commands.Add($"exit {exitcode}");
-                var filename = Path.GetFullPath(Path.Combine(BASEFOLDER, $"run-script-{id}.sh"));
+                var filename = Path.GetFullPath(Path.Combine(DATAFOLDER, $"run-script-{id}.sh"));
                 File.WriteAllLines(filename, commands);
 
                 System.Diagnostics.Process.Start("chmod", $@"+x ""{filename}""").WaitForExit();
