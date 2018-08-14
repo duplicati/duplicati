@@ -120,7 +120,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             // When we write the file to output, update the last modified time
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "NoFileChanges", "File has not changed {0}", e.Path);
-                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+
+                            try
+                            {
+                                await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                            }
                         }
                     }
                     catch(Exception ex)

@@ -98,7 +98,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (CHECKFILETIMEONLY && !timestampChanged && !isNewFile)
                     {
                         Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", e.Path);                                                
-                        await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                        try
+                        {
+                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (ex.IsRetiredException())
+                                throw;
+                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                        }
                         continue;
                     }
 
@@ -127,8 +136,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     else
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoMetadataChange", "Skipped checking file, because no metadata was updated {0}", e.Path);                                                
-                        await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoMetadataChange", "Skipped checking file, because no metadata was updated {0}", e.Path);
+                        try
+                        {
+                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                        }
                     }
                 }
             });
