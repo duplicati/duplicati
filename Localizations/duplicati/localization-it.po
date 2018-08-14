@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-09 09:01+0200\n"
+"POT-Creation-Date: 2018-08-12 22:33+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Massimo Piceni <massimo.piceni@inwind.it>, 2017\n"
 "Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
@@ -658,11 +658,11 @@ msgstr ""
 
 #: Library/Snapshots/Strings.cs:15
 msgid "Unable to determine full file path for USN entry"
-msgstr ""
+msgstr "Impossibile determinare il percorso completo del file per la voce USN"
 
 #: Library/Snapshots/Strings.cs:16
 msgid "USN journal entries were purged since last scan"
-msgstr ""
+msgstr "Le voci del registro USN sono state eliminate dall'ultima scansione"
 
 #: Library/Snapshots/Strings.cs:17
 msgid "Unexpected empty response while enumerating"
@@ -682,11 +682,11 @@ msgstr ""
 
 #: Library/Snapshots/Strings.cs:20
 msgid "Unexpected path format encountered"
-msgstr ""
+msgstr "Rilevato un formato percorso imprevisto"
 
 #: Library/Snapshots/Strings.cs:21
 msgid "Unsupported USN journal version."
-msgstr ""
+msgstr "Versione del registro USN non supportata."
 
 #: Library/Snapshots/Strings.cs:25
 msgid "Calling process does not have the backup privilege"
@@ -1087,10 +1087,10 @@ msgstr "Nascondi unità di squadra"
 #: Library/Backend/GoogleServices/Strings.cs:49
 msgid ""
 "This option disables the team drives, showing only files and folders "
-"accesible with the account itself"
+"accessible with the account itself"
 msgstr ""
-"Questa opzione disabilita le unità di squadra, mostrando solo i file e le "
-"cartelle accessibile con l'account stesso"
+"Questa opzione disabilita le unità del gruppo di lavoro, mostrando solo i "
+"file e le cartelle accessibili con l'account stesso"
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -4250,7 +4250,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:231
 msgid "Limit number of concurrent threads"
-msgstr ""
+msgstr "Limita il numero di thread simultanei"
 
 #: Library/Main/Strings.cs:232
 msgid ""
@@ -4261,22 +4261,26 @@ msgstr ""
 
 #: Library/Main/Strings.cs:233
 msgid "Specify the number of concurrent hashing processes"
-msgstr ""
+msgstr "Specificare il numero di processi hash simultanei"
 
 #: Library/Main/Strings.cs:234
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
+"Utilizza questa opzione per impostare il numero di processi che eseguono "
+"l'hash dei dati."
 
 #: Library/Main/Strings.cs:235
 msgid "Specify the number of concurrent compression processes"
-msgstr ""
+msgstr "Specifica il numero di processi di compressione simultanei"
 
 #: Library/Main/Strings.cs:236
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 msgstr ""
+"Utilizza questa opzione per impostare il numero di processi che eseguono la "
+"compressione dei dati di uscita."
 
 #: Library/Main/Strings.cs:237
 msgid "Perform backup of Hyper-V machines (Windows only)"
@@ -4467,7 +4471,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:268
 msgid "List of filenames that exclude folders"
-msgstr ""
+msgstr "Elenco di nomi dei file che escludono cartelle"
 
 #: Library/Main/Strings.cs:269
 msgid ""
@@ -4479,7 +4483,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:275
 msgid "Activates logging of all database queries"
-msgstr ""
+msgstr "Attiva la registrazione di tutte le query del database"
 
 #: Library/Main/Strings.cs:276
 #, csharp-format
@@ -4788,13 +4792,14 @@ msgstr "Esegui lo script richiesto all'avvio"
 #: Library/Modules/Builtin/Strings.cs:59
 #: Library/Modules/Builtin/Strings.cs:182
 msgid "Selects the output format for results"
-msgstr ""
+msgstr "Seleziona il formato di uscita per i risultati"
 
 #: Library/Modules/Builtin/Strings.cs:60
 #: Library/Modules/Builtin/Strings.cs:183
 #, csharp-format
 msgid "Selects the output format for results. Available formats: {0}"
 msgstr ""
+"Seleziona il formato di uscita per i risultati. Formati disponibili: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:61
 #, csharp-format
@@ -5163,15 +5168,16 @@ msgstr "Invio del messaggio http fallito: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:168
 msgid "Send data as JSON body"
-msgstr ""
+msgstr "Invia dati come corpo JSON"
 
 #: Library/Modules/Builtin/Strings.cs:169
 msgid "Use this flag to send the result data as a JSON object"
 msgstr ""
+"Utilizza questo flag per inviare i dati del risultato come oggetto JSON"
 
 #: Library/Modules/Builtin/Strings.cs:170
 msgid "Sets the HTTP verb to use"
-msgstr ""
+msgstr "Imposta il protocollo HTTP da utilizzare"
 
 #: Library/Modules/Builtin/Strings.cs:171
 msgid ""
@@ -5194,7 +5200,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:178
 msgid "Log message filter"
-msgstr ""
+msgstr "Filtro messaggi di log"
 
 #: Library/Modules/Builtin/Strings.cs:179
 msgid ""
@@ -5204,7 +5210,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:180
 msgid "Limits log lines"
-msgstr ""
+msgstr "Limita le linee di log"
 
 #: Library/Modules/Builtin/Strings.cs:181
 msgid ""

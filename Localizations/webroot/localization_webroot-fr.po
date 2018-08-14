@@ -1,4 +1,5 @@
 # Translators:
+# Josse du PLESSIS <josse@du-plessis.fr>, 2016
 # Glaude Ratinier, 2016
 # 0xDEADC0DE, 2016
 # Louis MILCENT <louis@lmilcent.com>, 2016
@@ -7,11 +8,10 @@
 # Kevin CHAILLY <kchailly@adeo-informatique.fr>, 2017
 # Alexandre DAUMAS <daumas.alexandre@gmail.com>, 2017
 # Thibaut B, 2017
-# Josse du PLESSIS <josse@du-plessis.fr>, 2018
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Josse du PLESSIS <josse@du-plessis.fr>, 2018\n"
+"Last-Translator: Thibaut B, 2017\n"
 "Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -20,11 +20,11 @@ msgstr ""
 
 #: templates/advancedoptionseditor.html:48
 msgid "- pick an option -"
-msgstr "- Choisissez une option -"
+msgstr "- choisissez une option -"
 
 #: templates/delete.html:7 templates/localdatabase.html:4
 msgid "...loading..."
-msgstr "...chargement..."
+msgstr "... chargement..."
 
 #: templates/backends/openstack.html:44
 msgid "API Key"
@@ -184,7 +184,7 @@ msgstr "Rapports d'utilisation anonyme"
 
 #: scripts/services/AppUtils.js:204
 msgid "Applications"
-msgstr ""
+msgstr "Applications"
 
 #: templates/export.html:8
 msgid "As Command-line"
@@ -318,6 +318,10 @@ msgid ""
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
+"En autorisant l'accès à distance, le serveur écoute les requêtes de "
+"n'importe quel ordinateur de votre réseau. Si vous activez cette option, "
+"assurez-vous de toujours utiliser l'ordinateur sur un réseau protégé par un "
+"pare-feu paramétré de manière ad-hoc."
 
 #: templates/settings.html:25
 msgid ""
@@ -327,10 +331,17 @@ msgid ""
 " you prefer having to type in the password, even when accessing the user "
 "interface from the tray icon, enable this option."
 msgstr ""
+"Par défaut, l'icône de la barre d'état système ouvrira l'interface "
+"utilisateur avec un jeton que déverrouille l'interface utilisateur. Cela "
+"garantit que vous pouvez accéder à l'interface utilisateur à partir de "
+"l'icône de la barre d'état, tout en demandant aux autres utilisateurs de "
+"saisir un mot de passe. Si vous préférez saisir le mot de passe, même "
+"lorsque vous accédez à l'interface utilisateur à partir de l'icône de la "
+"barre d'état, activez cette option."
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
-msgstr ""
+msgstr "Cache les fichiers"
 
 #: templates/settings.html:104
 msgid "Canary"
@@ -618,7 +629,7 @@ msgstr "({{channelname}}) par défaut"
 
 #: scripts/services/AppUtils.js:185
 msgid "Default excludes"
-msgstr ""
+msgstr "Le défaut exclut"
 
 #: templates/settings.html:144
 msgid "Default options"
@@ -951,7 +962,7 @@ msgstr "Exclure fichiers dont le nom contient"
 
 #: scripts/services/AppUtils.js:164
 msgid "Exclude filter group"
-msgstr ""
+msgstr "Exclure le groupe de filtres"
 
 #: scripts/services/AppUtils.js:137
 msgid "Exclude folder"
@@ -1146,7 +1157,7 @@ msgstr "Poste de travail"
 
 #: templates/settings.html:17
 msgid "Hostnames"
-msgstr ""
+msgstr "Les noms d'hôtes"
 
 #: scripts/services/AppUtils.js:100 scripts/services/AppUtils.js:90
 #: templates/settings.html:47
@@ -1361,11 +1372,13 @@ msgstr "Mois dernier"
 
 #: templates/home.html:46
 msgid "Last successful backup:"
-msgstr ""
+msgstr "Dernière sauvegarde réussie :"
 
 #: templates/restorewizard.html:27
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr ""
+"Dernière restauration réussie : {{time}} (a pris {{duration || '0 "
+"secondes'}})"
 
 #: scripts/controllers/RestoreController.js:56
 msgid "Latest"
@@ -1701,7 +1714,7 @@ msgstr ""
 
 #: scripts/services/AppUtils.js:195
 msgid "Operating System"
-msgstr ""
+msgstr "Système d'exploitation"
 
 #: scripts/controllers/SystemSettingsController.js:124
 #: scripts/controllers/SystemSettingsController.js:135
@@ -1837,7 +1850,7 @@ msgstr "Port"
 
 #: templates/settings.html:24
 msgid "Prevent tray icon automatic log-in"
-msgstr ""
+msgstr "Empêcher la connexion automatique de l'icône de la barre de tâches"
 
 #: templates/addoredit.html:110 templates/addoredit.html:243
 #: templates/addoredit.html:293 templates/addoredit.html:405
@@ -1911,7 +1924,7 @@ msgstr "Stockage distant"
 
 #: templates/addoredit.html:303
 msgid "Remote volume size"
-msgstr ""
+msgstr "Taille du volume distant"
 
 #: templates/addoredit.html:199
 msgid "Remove"
@@ -1927,7 +1940,7 @@ msgstr "Réparer"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
-msgstr ""
+msgstr "Réparation de la base de données..."
 
 #: templates/addoredit.html:58
 msgid "Repeat Passphrase"
@@ -2264,7 +2277,7 @@ msgstr "Lien symbolique"
 
 #: scripts/services/AppUtils.js:192
 msgid "System Files"
-msgstr ""
+msgstr "Fichiers système"
 
 #: templates/settings.html:120
 msgid "System default ({{levelname}})"
@@ -2300,7 +2313,7 @@ msgstr "La tâche est en cours"
 
 #: scripts/services/AppUtils.js:201
 msgid "Temporary Files"
-msgstr ""
+msgstr "Fichiers temporaires"
 
 #: scripts/controllers/EditBackupController.js:21
 msgid "Temporary files"
@@ -2336,6 +2349,8 @@ msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
+"Le champ '{{fieldname}}' contient un caractère non valide : {{character}} "
+"(valeur : {{value}}, index : {{pos}})"
 
 #: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
@@ -2476,6 +2491,11 @@ msgid ""
 "size'\">See this page before you change the remote volume size.</external-"
 "link>"
 msgstr ""
+"Cette option ne concerne pas la taille maximale de la sauvegarde ou du "
+"fichier, ni les taux de déduplication. <external-link link = "
+"\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'\">"
+" Consultez cette page avant de modifier la taille du volume distant. </ "
+"external-link>"
 
 #: scripts/controllers/RestoreController.js:35
 msgid "This week"
@@ -2514,6 +2534,13 @@ msgid ""
 "feature is disabled. If the field is empty, only IP address and localhost "
 "access is allowed."
 msgstr ""
+"Pour éviter diverses attaques basées sur le DNS, Duplicati limite les noms "
+"d'hôtes autorisés à ceux répertoriés ici. L'accès IP direct et localhost est"
+" toujours autorisé. Plusieurs noms d'hôte peuvent être fournis avec un "
+"séparateur de points-virgules. Si l'un des noms d'hôtes autorisés est un "
+"astérisque (*), tous les noms d'hôte sont autorisés et cette fonctionnalité "
+"est désactivée. Si le champ est vide, seule l'adresse IP et l'accès "
+"localhost sont autorisés."
 
 #: scripts/controllers/RestoreController.js:33
 msgid "Today"

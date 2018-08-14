@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-09 09:01+0200\n"
+"POT-Creation-Date: 2018-08-12 22:33+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Lukáš Tyrychtr <lukastyrychtr@mail.muni.cz>, 2017\n"
 "Language-Team: Czech (https://www.transifex.com/duplicati/teams/67655/cs/)\n"
@@ -185,6 +185,9 @@ msgid ""
 "hostnames are \"*\", all hostnames are allowed and the hostname checking is "
 "disabled."
 msgstr ""
+"Jsou přijímány názvy strojů, oddělované středníkem. Pokud je některý z názvů"
+" „*“ (hvězdička), jsou umožněny všechny názvy strojů a kontrola názvu stroje"
+" je vypnutá."
 
 #: Server/Strings.cs:35
 msgid "Enables the ping-pong responder"
@@ -248,6 +251,9 @@ msgid ""
 "storage. By default the system default temporary folder is used. Note that "
 "also SQLite will put temporary files in this temporary folder."
 msgstr ""
+"Tuto volbu je možné použít pro zadání alternativní složky pro dočasné "
+"úložiště. Ve výchozím stavu je použita výchozí dočasná složka systému. Mějte"
+" na paměti, že sem své dočasné soubory umístí také SQLite."
 
 #: Server/Strings.cs:47
 #, csharp-format
@@ -632,11 +638,11 @@ msgstr ""
 
 #: Library/Snapshots/Strings.cs:15
 msgid "Unable to determine full file path for USN entry"
-msgstr ""
+msgstr "Nedaří se zjistit úplný popis umístění souboru pro USN položku"
 
 #: Library/Snapshots/Strings.cs:16
 msgid "USN journal entries were purged since last scan"
-msgstr ""
+msgstr "Položky USN žurnálu byly od posledního skenu odstraněny"
 
 #: Library/Snapshots/Strings.cs:17
 msgid "Unexpected empty response while enumerating"
@@ -656,11 +662,11 @@ msgstr ""
 
 #: Library/Snapshots/Strings.cs:20
 msgid "Unexpected path format encountered"
-msgstr ""
+msgstr "narazilo se na neočekávaný formát popisu umístění"
 
 #: Library/Snapshots/Strings.cs:21
 msgid "Unsupported USN journal version."
-msgstr ""
+msgstr "Nepodporovaná verze USN žurnálu."
 
 #: Library/Snapshots/Strings.cs:25
 msgid "Calling process does not have the backup privilege"
@@ -1065,10 +1071,10 @@ msgstr "Skrýt týmové jednotky"
 #: Library/Backend/GoogleServices/Strings.cs:49
 msgid ""
 "This option disables the team drives, showing only files and folders "
-"accesible with the account itself"
+"accessible with the account itself"
 msgstr ""
-"Tato volba skryje týmové jednotky, zobrazeny budou pouze soubory a složky "
-"přístupné účtu samotnému"
+"Tato volba vypne skupinové jednotky, takže budou zobrazeny pouze soubory a "
+"složky přístupné z účtu samotného"
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -2726,6 +2732,7 @@ msgstr "Zdrojová složka {0} neexistuje, rušení zálohy"
 #, csharp-format
 msgid "Unauthorized to access source folder {0}, aborting backup"
 msgstr ""
+"Chybí oprávnění pro přístup do zdrojové složky {0}, přerušuje se zálohování"
 
 #: Library/Main/Strings.cs:15
 #, csharp-format
@@ -2834,6 +2841,9 @@ msgid ""
 "etc). A multiplier is recommended to avoid unexpected changes if the program"
 " is updated."
 msgstr ""
+"Velikost „{1}“ zadaná pro --{0} postrádá jednotku (b, kb, mb, atd). Je "
+"doporučeno jednotky používat, jako prevenci neočekávaných změn po "
+"aktualizaci programu."
 
 #: Library/Main/Strings.cs:36
 msgid ""
@@ -4181,7 +4191,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:231
 msgid "Limit number of concurrent threads"
-msgstr ""
+msgstr "Omezit počet souběžných vláken"
 
 #: Library/Main/Strings.cs:232
 msgid ""
@@ -4189,25 +4199,32 @@ msgid ""
 "value to zero or less will dynamically balance the number of active threads "
 "to fit the hardware."
 msgstr ""
+"Tuto volbu použijte pro nastavení nejvyššího umožněného počtu použitých "
+"vláken. Nastavení této hodnoty na nulu nebo méně bude dynamicky vyvažovat "
+"počet aktivních vláken tak, aby odpovídalo hardware."
 
 #: Library/Main/Strings.cs:233
 msgid "Specify the number of concurrent hashing processes"
-msgstr ""
+msgstr "Určete počet souběžných procesů vytváření otisků"
 
 #: Library/Main/Strings.cs:234
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
+"Tuto volbu použijte pro nastavení počtu procesů které provádějí pořizování "
+"otisků dat."
 
 #: Library/Main/Strings.cs:235
 msgid "Specify the number of concurrent compression processes"
-msgstr ""
+msgstr "Určete počet souběžných procesů komprimace"
 
 #: Library/Main/Strings.cs:236
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 msgstr ""
+"Tuto volbu použijte pro nastavení počtu procesů které provádějí komprimaci "
+"výstupních dat."
 
 #: Library/Main/Strings.cs:237
 msgid "Perform backup of Hyper-V machines (Windows only)"
@@ -4391,7 +4408,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:268
 msgid "List of filenames that exclude folders"
-msgstr ""
+msgstr "Seznam souborů ze kterého jsou vynechány složky"
 
 #: Library/Main/Strings.cs:269
 msgid ""
@@ -4400,10 +4417,14 @@ msgid ""
 "file named something like \".nobackup\" and place this file into folders "
 "that should not be backed up."
 msgstr ""
+"Tuto volbu použijte pro nastavení názvu souboru, nebo seznamu souborů, který"
+" značí vynechání složky, která ho obsahuje. Běžné použití by byl soubor "
+"nazvaný něco jako „.nezalohovat“ a umístění tohoto souboru do složek, které "
+"by neměly být zálohovány."
 
 #: Library/Main/Strings.cs:275
 msgid "Activates logging of all database queries"
-msgstr ""
+msgstr "Zapne zaznamenávání událostí o všech dotazech do databáze"
 
 #: Library/Main/Strings.cs:276
 #, csharp-format
@@ -4413,6 +4434,10 @@ msgid ""
 "remember to set either --{0}={2} or --{1}={2} to report the additional log "
 "data"
 msgstr ""
+"Pro zrychlení zálohování, nejsou nejčastější dotazy do databáze ve výchozím "
+"stavu zapisovány do záznamu událostí. Pokud chcete zaznamenávat vše, zapněte"
+" tuto volbu. Dále nezapomeňte pro vykazování dalších dat nastavit buď "
+"--{0}={2} nebo --{1}={2}"
 
 #: Library/Main/Strings.cs:283
 #, csharp-format
@@ -4503,6 +4528,12 @@ msgid ""
 "derivatives{0}    curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync "
 "--user cacert.pem; rm cacert.pem #for MacOS{0}Read more: {1}"
 msgstr ""
+"Nebyly nalezeny žádné certifikáty, nainstalovat nějaké je možné pomocí "
+"jednoho z těchto příkazů:{0}    cert-sync /etc/ssl/certs/ca-certificates.crt"
+" #pro systémy, založené na distribuci Debian{0}    cert-sync "
+"/etc/pki/tls/certs/ca-bundle.crt #pro odvozené od distribuce RedHat {0}    "
+"curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync --user cacert.pem; rm "
+"cacert.pem #pro macOS{0}Přečtěte si více: {1}"
 
 #: Library/Modules/Builtin/Strings.cs:21
 msgid ""
@@ -4707,13 +4738,13 @@ msgstr "Při spuštění spustit vyžadovaný skript"
 #: Library/Modules/Builtin/Strings.cs:59
 #: Library/Modules/Builtin/Strings.cs:182
 msgid "Selects the output format for results"
-msgstr ""
+msgstr "Vybere výstupní formát pro výsledky"
 
 #: Library/Modules/Builtin/Strings.cs:60
 #: Library/Modules/Builtin/Strings.cs:183
 #, csharp-format
 msgid "Selects the output format for results. Available formats: {0}"
-msgstr ""
+msgstr "Vybere výstupní formát pro výsledky. Možné formáty: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:61
 #, csharp-format
@@ -5072,59 +5103,68 @@ msgstr "Http zprávu se nepodařilo odeslat: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:168
 msgid "Send data as JSON body"
-msgstr ""
+msgstr "Poslat data jako JSON tělo"
 
 #: Library/Modules/Builtin/Strings.cs:169
 msgid "Use this flag to send the result data as a JSON object"
 msgstr ""
+"Tento příznak použijte pro posílání výsledných dat v podobě JSON objektu"
 
 #: Library/Modules/Builtin/Strings.cs:170
 msgid "Sets the HTTP verb to use"
-msgstr ""
+msgstr "Nastaví HTTP sloveso které použít"
 
 #: Library/Modules/Builtin/Strings.cs:171
 msgid ""
 "Use this option to change the default HTTP verb used to submit a report"
 msgstr ""
+"Tuto volbu použijte pro změnu výchozího HTTP slovesa sloužícího pro poslání "
+"výkazu"
 
 #: Library/Modules/Builtin/Strings.cs:175
 #, csharp-format
 msgid "Failed to send message: {0}"
-msgstr ""
+msgstr "Zprávu se nepodařilo odeslat: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:176
 msgid "Defines a log level for messages"
-msgstr ""
+msgstr "Určuje stupeň podrobnosti zpráv záznamu událostí"
 
 #: Library/Modules/Builtin/Strings.cs:177
 msgid ""
 "Use this option to set the log level for messages to include in the report"
 msgstr ""
+"Tuto volbu použijte pro nastavení stupně podrobnosti zpráv záznamu událostí "
+"které zahrnout do výkazu"
 
 #: Library/Modules/Builtin/Strings.cs:178
 msgid "Log message filter"
-msgstr ""
+msgstr "Filtr zpráv záznamu událostí"
 
 #: Library/Modules/Builtin/Strings.cs:179
 msgid ""
 "Use this option to set a filter expression that defines what options are "
 "included in the report"
 msgstr ""
+"Tuto volbu použijte pro nastavení výrazu filtru který určuje, které volby "
+"jsou zahrnuty ve výkazu"
 
 #: Library/Modules/Builtin/Strings.cs:180
 msgid "Limits log lines"
-msgstr ""
+msgstr "Omezuje řádky záznamu událostí"
 
 #: Library/Modules/Builtin/Strings.cs:181
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
 msgstr ""
+"Tuto volbu použijte pro nastavení nejvyššího počtu řádků záznamu událostí, "
+"které zahrnout do výkazu. Nula nebo záporná hodnota znamená neomezeno."
 
 #: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:19
 #, csharp-format
 msgid "The format is not supported: {0}"
-msgstr ""
+msgstr "Formát není podporován: {0}"
 
 #: Library/Utility/Strings.cs:7
 #, csharp-format
@@ -5243,26 +5283,32 @@ msgid ""
 "The string {0} does not represent a known filter group name. Valid values "
 "are: {1}"
 msgstr ""
+"Řetězec {0} nepředstavuje známý název skupiny filtru. Platné hodnoty jsou: "
+"{1}"
 
 #: Library/Utility/FilterGroups.cs:182
 #, csharp-format
 msgid "{0}: Selects no filters."
-msgstr ""
+msgstr "{0}: Nevybírá žádné filtry."
 
 #: Library/Utility/FilterGroups.cs:183
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr ""
+"{0}: Sada výchozích filtrů, které vynechávají, v tuto chvíli vyhodnocuje na:"
+" {1}."
 
 #: Library/Utility/FilterGroups.cs:184
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr ""
+"{0}: Sada výchozích filtrů, které zahrnují, v tuto chvíli vyhodnocuje na: "
+"{1}."
 
 #: Library/Utility/FilterGroups.cs:195
 #, csharp-format
 msgid " Aliases: {0}"
-msgstr ""
+msgstr "Alternativní názvy: {0}"
 
 #: Library/Utility/FilterGroups.cs:208
 #, csharp-format
@@ -5271,6 +5317,9 @@ msgid ""
 "includes any operating system reported protected files. Most users should at"
 " least apply these filters."
 msgstr ""
+"{0}: Soubory vlastněné systémem nebo takové, které se nehodí pro zálohování."
+" To zahrnuje jakékoli soubory, které operační systém hlásí jako chráněné. "
+"Většina uživatelů by měla používat alespoň tyto filtry."
 
 #: Library/Utility/FilterGroups.cs:210
 #, csharp-format
@@ -5278,11 +5327,13 @@ msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
 "when the operating system is re-installed."
 msgstr ""
+"{0}: Soubory které náleží operačnímu systému. Tyto soubory jsou obnoveny "
+"když je operační systém přeinstalován."
 
 #: Library/Utility/FilterGroups.cs:212
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
-msgstr ""
+msgstr "{0}: Soubory a složky, známé jako úložiště dočasných dat."
 
 #: Library/Utility/FilterGroups.cs:214
 #, csharp-format
@@ -5290,11 +5341,14 @@ msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
 "system and various applications"
 msgstr ""
+"{0}: Soubory a složky, známé jako umístění mezipamětí pro operační systém a "
+"aplikace"
 
 #: Library/Utility/FilterGroups.cs:216
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr ""
+"{0}: Nainstalovány programy a jejich knihovny, ale už ne jejich nastavení."
 
 #: CommandLine/Strings.cs:4
 #, csharp-format
@@ -5389,6 +5443,13 @@ msgid ""
 "files and folders) can be specified by using curly braces, i.e. "
 "{{Applications}}."
 msgstr ""
+"Zahrnout soubory které odpovídají tomuto filtru. Speciální znak „*“ "
+"(hvězdička) zastupuje libovolný počet znaků a „?“ (otazník) jeden jakýkoli "
+"znak (např. pro zahrnutí všech souborů s příponou txt použijte *.txt). Je "
+"také možné použít regulární výrazy a to jejich zadáním v hranatých "
+"závorkách, tj. [.*\\.txt]. Skupiny filtru (které obalují vestavěnou sadu "
+"známých souborů a složek) je možné zadat pomocí složených závorek, tj. "
+"{{Applications}}."
 
 #: CommandLine/Strings.cs:26
 msgid "Include files"
@@ -5404,6 +5465,13 @@ msgid ""
 "files and folders) can be specified by using curly braces, i.e. "
 "{{TemporaryFiles}}."
 msgstr ""
+"Vynechat soubory které odpovídají tomuto filtru. Speciální znak * "
+"(hvězdička) znamená libovolný počet znaků a speciální znak ? znamená "
+"libovolný jeden znak. Například pro vynechání všech souborů  příponou txt "
+"použijte *.txt. Jsou také podporovány regulární výrazy a je možné je zadat "
+"pomocí hranatých závorek, tj. [.*\\.txt]. Skupiny filtru (které obalují "
+"vestavěnou sadu známých souborů a složek) je možné zadat pomocí složených "
+"závorek, tj. {{TemporaryFiles}}."
 
 #: CommandLine/Strings.cs:28
 msgid "Exclude files"

@@ -171,7 +171,7 @@ msgstr "Anonymní hlášení o použití"
 
 #: scripts/services/AppUtils.js:204
 msgid "Applications"
-msgstr ""
+msgstr "Aplikace"
 
 #: templates/export.html:8
 msgid "As Command-line"
@@ -317,7 +317,7 @@ msgstr ""
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
-msgstr ""
+msgstr "Soubory mezipaměti"
 
 #: templates/settings.html:104
 msgid "Canary"
@@ -1128,7 +1128,7 @@ msgstr "Domovská složka"
 
 #: templates/settings.html:17
 msgid "Hostnames"
-msgstr ""
+msgstr "Názvy strojů"
 
 #: scripts/services/AppUtils.js:100 scripts/services/AppUtils.js:90
 #: templates/settings.html:47
@@ -1343,7 +1343,7 @@ msgstr "Minulý měsíc"
 
 #: templates/home.html:46
 msgid "Last successful backup:"
-msgstr ""
+msgstr "Minulá úspěšná záloha:"
 
 #: templates/restorewizard.html:27
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
@@ -1678,7 +1678,7 @@ msgstr ""
 
 #: scripts/services/AppUtils.js:195
 msgid "Operating System"
-msgstr ""
+msgstr "Operační systém"
 
 #: scripts/controllers/SystemSettingsController.js:124
 #: scripts/controllers/SystemSettingsController.js:135
@@ -1890,7 +1890,7 @@ msgstr "Vzdálený repozitář"
 
 #: templates/addoredit.html:303
 msgid "Remote volume size"
-msgstr ""
+msgstr "Velikost vzdáleného svazku"
 
 #: templates/addoredit.html:199
 msgid "Remove"
@@ -1906,7 +1906,7 @@ msgstr "Opravit"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
-msgstr ""
+msgstr "Oprava databáze…"
 
 #: templates/addoredit.html:58
 msgid "Repeat Passphrase"
@@ -2239,7 +2239,7 @@ msgstr "Symbolický odkaz"
 
 #: scripts/services/AppUtils.js:192
 msgid "System Files"
-msgstr ""
+msgstr "Systémové soubory"
 
 #: templates/settings.html:120
 msgid "System default ({{levelname}})"
@@ -2275,7 +2275,7 @@ msgstr "Úloha je spuštěná"
 
 #: scripts/services/AppUtils.js:201
 msgid "Temporary Files"
-msgstr ""
+msgstr "Dočasné soubory"
 
 #: scripts/controllers/EditBackupController.js:21
 msgid "Temporary files"

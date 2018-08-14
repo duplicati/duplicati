@@ -191,7 +191,7 @@ msgstr "Anonyme Nutzungsberichte"
 
 #: scripts/services/AppUtils.js:204
 msgid "Applications"
-msgstr ""
+msgstr "Anwendungen"
 
 #: templates/export.html:8
 msgid "As Command-line"
@@ -325,6 +325,10 @@ msgid ""
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
+"Bei erlauben des Remotezugriffes, wird der Server auf jede Anfrage von jedem"
+" Computer aus dem Netzwerk hören. Wenn Du diese Option aktivierst, stelle "
+"bitte sicher, dass Du ein Computer aus einemmit einer Firewall geschützten "
+"Netzwerk verwendest."
 
 #: templates/settings.html:25
 msgid ""
@@ -334,10 +338,15 @@ msgid ""
 " you prefer having to type in the password, even when accessing the user "
 "interface from the tray icon, enable this option."
 msgstr ""
+"Standardmäßig öffnet das Taskleistensymbol den Zugriff auf die "
+"Benutzeroberfläche. Dies stellt sicher, dass Du über das Taskleistensymbol "
+"auf die Benutzeroberfläche zugreifen kannst. Wenn Du das Passwort auch beim "
+"Zugriff auf die Benutzeroberfläche über das Taskleistensymbol eingeben "
+"möchten, aktiviere diese Option."
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
-msgstr ""
+msgstr "Dateien cachen"
 
 #: templates/settings.html:104
 msgid "Canary"
@@ -625,7 +634,7 @@ msgstr "Standard ({{channelname}})"
 
 #: scripts/services/AppUtils.js:185
 msgid "Default excludes"
-msgstr ""
+msgstr "Standardmäßig ausgeschlossen"
 
 #: templates/settings.html:144
 msgid "Default options"
@@ -953,7 +962,7 @@ msgstr "Dateien ausschließen dessen Namen beinhaltet"
 
 #: scripts/services/AppUtils.js:164
 msgid "Exclude filter group"
-msgstr ""
+msgstr "Filtergruppe ausschließen"
 
 #: scripts/services/AppUtils.js:137
 msgid "Exclude folder"
@@ -1147,7 +1156,7 @@ msgstr "Home"
 
 #: templates/settings.html:17
 msgid "Hostnames"
-msgstr ""
+msgstr "Hostnamen"
 
 #: scripts/services/AppUtils.js:100 scripts/services/AppUtils.js:90
 #: templates/settings.html:47
@@ -1364,11 +1373,13 @@ msgstr "Letzter Monat"
 
 #: templates/home.html:46
 msgid "Last successful backup:"
-msgstr ""
+msgstr "Letztes erfolgreiches Backup:"
 
 #: templates/restorewizard.html:27
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr ""
+"Letzte erfolgreiche Wiederherstellung: {{time}} (dauerte {{duration || '0 "
+"Sekunden'}})"
 
 #: scripts/controllers/RestoreController.js:56
 msgid "Latest"
@@ -1702,7 +1713,7 @@ msgstr "Openstack API Key ist nicht Unterstützt in der v3 Keystone API."
 
 #: scripts/services/AppUtils.js:195
 msgid "Operating System"
-msgstr ""
+msgstr "Betriebssystem"
 
 #: scripts/controllers/SystemSettingsController.js:124
 #: scripts/controllers/SystemSettingsController.js:135
@@ -1838,7 +1849,7 @@ msgstr "Port"
 
 #: templates/settings.html:24
 msgid "Prevent tray icon automatic log-in"
-msgstr ""
+msgstr "Verhindert das automatische Anmelden per Taskleistensymbol"
 
 #: templates/addoredit.html:110 templates/addoredit.html:243
 #: templates/addoredit.html:293 templates/addoredit.html:405
@@ -1912,7 +1923,7 @@ msgstr "Entferntes Repository"
 
 #: templates/addoredit.html:303
 msgid "Remote volume size"
-msgstr ""
+msgstr "Remote-Volume-Größe"
 
 #: templates/addoredit.html:199
 msgid "Remove"
@@ -1928,7 +1939,7 @@ msgstr "Reparieren"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
-msgstr ""
+msgstr "Repariere Datenbank..."
 
 #: templates/addoredit.html:58
 msgid "Repeat Passphrase"
@@ -2262,7 +2273,7 @@ msgstr "Symbolischer Link"
 
 #: scripts/services/AppUtils.js:192
 msgid "System Files"
-msgstr ""
+msgstr "Systemdateien"
 
 #: templates/settings.html:120
 msgid "System default ({{levelname}})"
@@ -2298,7 +2309,7 @@ msgstr "Aufgabe wird ausgeführt"
 
 #: scripts/services/AppUtils.js:201
 msgid "Temporary Files"
-msgstr ""
+msgstr "Temporäre Dateien"
 
 #: scripts/controllers/EditBackupController.js:21
 msgid "Temporary files"
@@ -2334,6 +2345,8 @@ msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
+"Das Feld '{{fieldname}}' beinhaltet ein ungültiges Zeichen: {{character}} "
+"(Wert: {{value}}, Position: {{pos}})"
 
 #: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
@@ -2471,6 +2484,11 @@ msgid ""
 "size'\">See this page before you change the remote volume size.</external-"
 "link>"
 msgstr ""
+"Diese Option bezieht sich nicht auf die maximale Backupanzahl oder "
+"Dateigröße, noch hat es ein Effekt auf die Deduplizierungrate. <external-"
+"link link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-"
+"volume-size'\">Weitere Informationen zum ändern der Remote-Volume-Größe sind"
+" auf der Seite zu finden.</external-link>"
 
 #: scripts/controllers/RestoreController.js:35
 msgid "This week"
@@ -2510,6 +2528,13 @@ msgid ""
 "feature is disabled. If the field is empty, only IP address and localhost "
 "access is allowed."
 msgstr ""
+"Um verschiedene DNS-basierte Angriffe zu verhindern, beschränkt Duplicati "
+"die erlaubten Hostnamen auf die hier aufgeführten. Direkter IP-Zugriff und "
+"localhost ist immer erlaubt. Mehrere Hostnamen können mit einem Semikolon-"
+"Trennzeichen versehen werden. Wenn einer der zulässigen Hostnamen ein "
+"Sternchen (*) ist, sind alle Hostnamen zulässig und diese Funktion ist "
+"deaktiviert. Is das Feld leer, sind nur IP-Adresse und lokaler Host-Zugriff "
+"zulässig."
 
 #: scripts/controllers/RestoreController.js:33
 msgid "Today"

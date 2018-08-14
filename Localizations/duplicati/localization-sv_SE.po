@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-09 09:01+0200\n"
+"POT-Creation-Date: 2018-08-12 22:33+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: nils måsén <nils@piksel.se>, 2018\n"
 "Language-Team: Swedish (Sweden) (https://www.transifex.com/duplicati/teams/67655/sv_SE/)\n"
@@ -919,7 +919,7 @@ msgstr ""
 #: Library/Backend/GoogleServices/Strings.cs:49
 msgid ""
 "This option disables the team drives, showing only files and folders "
-"accesible with the account itself"
+"accessible with the account itself"
 msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:4
