@@ -430,14 +430,29 @@ namespace Duplicati.Library.Main
                 {
                     result.EndTime = DateTime.UtcNow;
 
-                    try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                    catch { }
+                    if (ex is Library.Interface.OperationAbortException oae)
+                    {
+                        // Perform the module shutdown
+                        OnOperationComplete(ex);
 
-                    OnOperationComplete(ex);
+                        // Log this as a normal operation, as the script rasing the exception,
+                        // has already populated either warning or log messages as required
+                        Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
 
-                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+                        return result;
+                    }
+                    else
+                    {
+                        try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                        catch { }
 
-                    throw;
+                        OnOperationComplete(ex);
+
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+
+                        throw;
+                    }
+
                 }
                 finally
                 {
