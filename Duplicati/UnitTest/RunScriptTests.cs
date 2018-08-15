@@ -44,6 +44,9 @@ namespace Duplicati.UnitTest
             options["blocksize"] = blocksize.ToString() + "b";
             options["run-script-timeout"] = "5s";
 
+            // We need a small delay as we run very small backups back-to-back
+            var PAUSE_TIME = TimeSpan.FromSeconds(3);
+
             BorderTests.WriteTestFilesToFolder(DATAFOLDER, blocksize, 0);
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, options, null))
@@ -51,7 +54,8 @@ namespace Duplicati.UnitTest
                 var res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Success)
                     throw new Exception("Unexpected result from base backup");
-
+                
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(0);
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Success)
@@ -59,6 +63,7 @@ namespace Duplicati.UnitTest
                 if (res.ExaminedFiles <= 0)
                     throw new Exception("Backup did not examine any files for code 0?");
 
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(1);
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Success)
@@ -66,6 +71,7 @@ namespace Duplicati.UnitTest
                 if (res.ExaminedFiles > 0)
                     throw new Exception("Backup did examine files for code 1?");
 
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(2);
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Warning)
@@ -73,6 +79,7 @@ namespace Duplicati.UnitTest
                 if (res.ExaminedFiles <= 0)
                     throw new Exception("Backup did not examine any files for code 2?");
 
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(3);
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Warning)
@@ -80,6 +87,7 @@ namespace Duplicati.UnitTest
                 if (res.ExaminedFiles > 0)
                     throw new Exception("Backup did examine files for code 3?");
 
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(4);
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Error)
@@ -87,6 +95,7 @@ namespace Duplicati.UnitTest
                 if (res.ExaminedFiles <= 0)
                     throw new Exception("Backup did not examine any files for code 4?");
                 
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(5);
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Error)
@@ -95,7 +104,7 @@ namespace Duplicati.UnitTest
                     throw new Exception("Backup did examine files for code 5?");
 
 
-
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(2, "TEST WARNING MESSAGE");
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Warning)
@@ -105,6 +114,7 @@ namespace Duplicati.UnitTest
                 if (!res.Warnings.Any(x => x.IndexOf("TEST WARNING MESSAGE", StringComparison.Ordinal) >= 0))
                     throw new Exception("Found no warning message in output for code 2");
 
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(3, "TEST WARNING MESSAGE");
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Warning)
@@ -114,6 +124,7 @@ namespace Duplicati.UnitTest
                 if (!res.Warnings.Any(x => x.IndexOf("TEST WARNING MESSAGE", StringComparison.Ordinal) >= 0))
                     throw new Exception("Found no warning message in output for code 3");
 
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(4, "TEST ERROR MESSAGE");
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Error)
@@ -123,6 +134,7 @@ namespace Duplicati.UnitTest
                 if (!res.Errors.Any(x => x.IndexOf("TEST ERROR MESSAGE", StringComparison.Ordinal) >= 0))
                     throw new Exception("Found no error message in output for code 4");
 
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(5, "TEST ERROR MESSAGE");
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Error)
@@ -132,6 +144,7 @@ namespace Duplicati.UnitTest
                 if (!res.Errors.Any(x => x.IndexOf("TEST ERROR MESSAGE", StringComparison.Ordinal) >= 0))
                     throw new Exception("Found no error message in output for code 5");
 
+                System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(0, sleeptime: 10);
                 res = c.Backup(new string[] { DATAFOLDER });
                 if (res.ParsedResult != ParsedResultType.Warning)
