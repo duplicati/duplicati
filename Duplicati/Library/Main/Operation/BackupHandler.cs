@@ -421,7 +421,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
 
                                 // Make sure the database is sane
-                                await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, true);
+                                await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
 
                                 // Start the uploader process
                                 uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result, m_result.TaskReader, stats);
