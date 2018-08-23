@@ -93,7 +93,7 @@ namespace Duplicati.Library.Logging
         public static object Lock { get { return m_lock; } }
 
         /// <summary>
-        /// Gets a log tag taht reflects the type
+        /// Gets a log tag that reflects the type
         /// </summary>
         /// <returns>The log-tag for the type.</returns>
         /// <typeparam name="T">The type to get the tag for.</typeparam>
@@ -104,7 +104,7 @@ namespace Duplicati.Library.Logging
 
 
         /// <summary>
-        /// Gets a log tag taht reflects the type
+        /// Gets a log tag that reflects the type
         /// </summary>
         /// <returns>The log-tag for the type.</returns>
         /// <param name="t">The type to get the tag for.</param>
