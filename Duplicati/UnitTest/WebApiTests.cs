@@ -27,9 +27,7 @@ namespace Duplicati.UnitTest
         public static void GoogleCloudPutUrl()
         {
             string bucketId = "my_bucket";
-
-            var putUrl = "https://www.googleapis.com/upload/storage/v1/b/" +
-                bucketId + "?uploadType=resumable";
+            string putUrl = $"https://www.googleapis.com/upload/storage/v1/b/{bucketId}/o?uploadType=resumable";
             Assert.AreEqual(putUrl, GoogleCloudStorage.PutUrl(bucketId));
         }
 
