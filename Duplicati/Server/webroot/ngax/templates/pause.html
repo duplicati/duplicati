@@ -26,6 +26,21 @@
     			<label for="onehour" class="pause-60" translate translate-params-number="1">{{number}} Hour</label>
     		</li>
 
+        <li class="input" ng-click="selection.time = '4h'">
+	    		<input type="radio" name="fourhour" id="fourhour" ng-model="selection.time" value="4h">
+    			<label for="fourhour" class="pause-240" translate translate-params-number="4">{{number}} Hours</label>
+    		</li>
+
+        <li class="input" ng-click="selection.time = '8h'">
+	    		<input type="radio" name="eighthour" id="eighthour" ng-model="selection.time" value="8h">
+    			<label for="eighthour" class="pause-480" translate translate-params-number="8">{{number}} Hours</label>
+    		</li>
+
+        <li class="input" ng-click="selection.time = '24h'">
+	    		<input type="radio" name="twentyfourhour" id="twentyfourhour" ng-model="selection.time" value="24h">
+    			<label for="twentyfourhour" class="pause-1440" translate translate-params-number="24">{{number}} Hours</label>
+    		</li>
+
     		<li class="input" ng-click="selection.time = 'infinite'">
 	    		<input type="radio" name="infinite" id="infinite" ng-model="selection.time" value="infinite">
     			<label for="infinite" class="pause-x" translate>Until resumed</label>
