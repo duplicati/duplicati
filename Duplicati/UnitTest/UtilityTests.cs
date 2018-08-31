@@ -122,7 +122,7 @@ namespace Duplicati.UnitTest
 
             // Test with custom comparer.
             IEqualityComparer<string> comparer = StringComparer.OrdinalIgnoreCase;
-            uniqueItems = new string[] {"a", "b", "c"};
+            uniqueItems = new string[] { "a", "b", "c" };
             duplicateItems = new string[] { "a", "c" };
 
             actualDuplicateItems = null;
