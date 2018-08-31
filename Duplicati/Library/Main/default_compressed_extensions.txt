@@ -99,6 +99,9 @@
 .dng #Adobe Digital Negative
 .cr2 #Canon RAW Image Format
 .webp #WebP Image
+.nef #Nikon RAW format
+.arw #Sony RAW format
+.heic #High Efficiency Image File Format
 
 
 # Compressed Font files
