@@ -16,6 +16,15 @@ REM --run-script-before = <filename>
 REM Duplicati will run the script before the backup job and waits for its 
 REM completion for 60 seconds (default timeout value). After a timeout a 
 REM warning is logged and the backup is started.
+REM The following exit codes are supported:
+REM
+REM - 0: OK, run operation
+REM - 1: OK, don't run operation
+REM - 2: Warning, run operation
+REM - 3: Warning, don't run operation
+REM - 4: Error, run operation
+REM - 5: Error don't run operation
+REM - other: Error don't run operation
 REM
 REM --run-script-before-required = <filename>
 REM Duplicati will run the script before the backup job and wait for its 
@@ -32,6 +41,10 @@ REM --run-script-after = <filename>
 REM Duplicati will run the script after the backup job and wait for its 
 REM completion for 60 seconds (default timeout value). After a timeout a 
 REM warning is logged.
+REM The same exit codes as in --run-script-before are supported, but
+REM the operation will always continue (i.e. 1 => 0, 3 => 2, 5 => 4)
+REM as it has already completed so stopping it during stop is useless.
+
 
 
 REM ###############################################################################

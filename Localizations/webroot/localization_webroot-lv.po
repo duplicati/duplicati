@@ -18,25 +18,25 @@ msgstr "- izvēlieties iestatījumu -"
 msgid "...loading..."
 msgstr "...notiek ielāde..."
 
-#: templates/backends/openstack.html:32
+#: templates/backends/openstack.html:44
 msgid "API Key"
 msgstr "API atslēga"
 
-#: scripts/services/EditUriBuiltins.js:725 templates/backends/s3.html:54
+#: scripts/services/EditUriBuiltins.js:828 templates/backends/s3.html:54
 #: templates/backends/s3.html:55
 msgid "AWS Access ID"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:726 templates/backends/s3.html:58
+#: scripts/services/EditUriBuiltins.js:829 templates/backends/s3.html:58
 #: templates/backends/s3.html:59
 msgid "AWS Access Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:135
+#: scripts/services/EditUriBuiltins.js:138
 msgid "AWS IAM Policy"
 msgstr ""
 
-#: index.html:217 index.html:233
+#: index.html:225 index.html:241
 msgid "About"
 msgstr "Par"
 
@@ -44,11 +44,11 @@ msgstr "Par"
 msgid "About {{appname}}"
 msgstr "Par {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:690 templates/backends/azure.html:11
+#: scripts/services/EditUriBuiltins.js:777 templates/backends/azure.html:11
 msgid "Access Key"
 msgstr "Piekļuves atslēga"
 
-#: scripts/services/AppUtils.js:69
+#: scripts/services/AppUtils.js:70
 msgid "Access denied"
 msgstr "Piekļuve liegta"
 
@@ -56,11 +56,11 @@ msgstr "Piekļuve liegta"
 msgid "Access to user interface"
 msgstr "Piekļuve lietotāja saskarnei"
 
-#: scripts/services/EditUriBuiltins.js:689 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:776 templates/backends/azure.html:7
 msgid "Account name"
 msgstr "Konta nosaukums"
 
-#: templates/notificationarea.html:27 templates/updatechangelog.html:11
+#: templates/notificationarea.html:29 templates/updatechangelog.html:11
 msgid "Activate"
 msgstr "Aktivizēt"
 
@@ -81,11 +81,11 @@ msgstr "Pievienot tiešo ceļu"
 msgid "Add advanced option"
 msgstr "Pievienot pielāgotu iestatījumu"
 
-#: index.html:205
+#: index.html:213
 msgid "Add backup"
 msgstr "Pievienot dublējumkopiju"
 
-#: templates/addoredit.html:197
+#: templates/addoredit.html:203
 msgid "Add filter"
 msgstr "Pievienot filtru"
 
@@ -93,12 +93,12 @@ msgstr "Pievienot filtru"
 msgid "Add path"
 msgstr "Pievienot ceļu"
 
-#: scripts/services/EditUriBuiltins.js:736
-#: scripts/services/EditUriBuiltins.js:753
+#: scripts/services/EditUriBuiltins.js:839
+#: scripts/services/EditUriBuiltins.js:856
 msgid "Adjust bucket name?"
 msgstr "Precizēt spaiņa iestatījumu?"
 
-#: scripts/services/EditUriBuiltins.js:664
+#: scripts/services/EditUriBuiltins.js:757
 msgid "Adjust path name?"
 msgstr "Precizēt ceļa nosaukumu?"
 
@@ -106,17 +106,13 @@ msgstr "Precizēt ceļa nosaukumu?"
 msgid "Advanced Options"
 msgstr "Pielāgotas Opcijas"
 
-#: templates/addoredit.html:374 templates/edituri.html:28
+#: templates/addoredit.html:372 templates/edituri.html:28
 msgid "Advanced options"
 msgstr "Pielāgotas opcijas"
 
-#: templates/home.html:25
+#: templates/home.html:30
 msgid "Advanced:"
 msgstr "Pielāgots:"
-
-#: scripts/controllers/EditBackupController.js:24
-msgid "All"
-msgstr ""
 
 #: scripts/directives/sourceFolderPicker.js:423
 msgid "All Hyper-V Machines"
@@ -126,7 +122,7 @@ msgstr "Visas Hyper-V Mašīnas"
 msgid "All Microsoft SQL Databases"
 msgstr "Visas Microsoft SQL Datubāzes"
 
-#: templates/settings.html:116
+#: templates/settings.html:129
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
 "information. They contain information about hardware and operating system, "
@@ -139,7 +135,7 @@ msgstr ""
 msgid "Allow remote access (requires restart)"
 msgstr "Atļaut attālinātu piekļuvi (nepieciešams restartēt programmu)"
 
-#: templates/addoredit.html:282
+#: templates/addoredit.html:274
 msgid "Allowed days"
 msgstr "Atļautās dienas"
 
@@ -155,7 +151,7 @@ msgstr ""
 "Tika atrasts jau esošs fails jaunajā atrašanās vietā\n"
 "Vai esat pārliecināts, ka vēlaties datubāzi novirzīt uz jau esošo failu?"
 
-#: scripts/controllers/EditBackupController.js:496
+#: scripts/controllers/EditBackupController.js:428
 msgid ""
 "An existing local database for the storage has been found.\n"
 "Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
@@ -163,33 +159,39 @@ msgid ""
 " Do you wish to use the existing database?"
 msgstr ""
 
-#: templates/settings.html:104
+#: templates/settings.html:117
 msgid "Anonymous usage reports"
 msgstr "Anonīmas lietošanas atskaites"
+
+#: scripts/services/AppUtils.js:204
+msgid "Applications"
+msgstr ""
 
 #: templates/export.html:8
 msgid "As Command-line"
 msgstr "Kā Komand-rinda"
 
-#: scripts/services/EditUriBuiltins.js:648 templates/backends/gcs.html:8
-#: templates/backends/gcs.html:9 templates/backends/oauth.html:8
-#: templates/backends/oauth.html:9
+#: scripts/services/EditUriBuiltins.js:710 templates/backends/gcs.html:8
+#: templates/backends/gcs.html:9 templates/backends/msgroup.html:13
+#: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
+#: templates/backends/oauth.html:9 templates/backends/sharepoint.html:8
+#: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr ""
 
-#: templates/backends/generic.html:23 templates/backends/openstack.html:23
+#: templates/backends/generic.html:23 templates/backends/openstack.html:35
 msgid "Authentication password"
 msgstr "Autentifikācijas parole"
 
-#: templates/backends/generic.html:19 templates/backends/openstack.html:19
+#: templates/backends/generic.html:19 templates/backends/openstack.html:31
 msgid "Authentication username"
 msgstr "Autentifikācijas lietotājvārds"
 
-#: scripts/controllers/EditBackupController.js:405
+#: scripts/controllers/EditBackupController.js:337
 msgid "Autogenerated passphrase"
 msgstr "Automātiski izveidota piekļuves frāze"
 
-#: templates/addoredit.html:262
+#: templates/addoredit.html:254
 msgid "Automatically run backups."
 msgstr "Automātiski palaist dublējumkopijas."
 
@@ -201,11 +203,11 @@ msgstr ""
 msgid "B2 Application Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:772 templates/backends/b2.html:13
+#: scripts/services/EditUriBuiltins.js:875 templates/backends/b2.html:13
 msgid "B2 Cloud Storage Account ID"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:773 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:876 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr ""
 
@@ -217,6 +219,10 @@ msgstr "Atpakaļ"
 msgid "Backend modules:"
 msgstr "Backend moduļi:"
 
+#: scripts/services/ServerStatus.js:44
+msgid "Backup Complete!"
+msgstr ""
+
 #: templates/addoredit.html:88
 msgid "Backup destination"
 msgstr "Dublējumkopijas mērķa atrašanās vieta"
@@ -226,19 +232,19 @@ msgstr "Dublējumkopijas mērķa atrašanās vieta"
 msgid "Backup location"
 msgstr "Dublējumkopijas atrašanās vieta"
 
-#: templates/addoredit.html:317
+#: templates/addoredit.html:315
 msgid "Backup retention"
 msgstr ""
 
-#: templates/home.html:60
+#: templates/home.html:66
 msgid "Backup:"
 msgstr "Dublējumkopija:"
 
-#: templates/settings.html:81
+#: templates/settings.html:94
 msgid "Beta"
 msgstr "Beta versija"
 
-#: scripts/services/AppUtils.js:67
+#: scripts/services/AppUtils.js:68
 msgid "Broken access"
 msgstr ""
 
@@ -250,9 +256,10 @@ msgstr "Pārlūkot"
 msgid "Browser default"
 msgstr "Pārlūka noklusējums"
 
-#: scripts/services/EditUriBuiltins.js:700
-#: scripts/services/EditUriBuiltins.js:724
-#: scripts/services/EditUriBuiltins.js:771
+#: scripts/services/EditUriBuiltins.js:787
+#: scripts/services/EditUriBuiltins.js:827
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:884
 msgid "Bucket Name"
 msgstr "Spaiņa Nosaukums"
 
@@ -286,30 +293,50 @@ msgstr "Notiek daļēja pagaidu datubāzes izveide..."
 msgid "Busy ..."
 msgstr "Aizņemts ..."
 
-#: templates/settings.html:91
+#: templates/settings.html:14
+msgid ""
+"By allowing remote access, the server listens to requests from any machine "
+"on your network. If you enable this option, make sure you are always using "
+"the computer on a secure firewall protected network."
+msgstr ""
+
+#: templates/settings.html:25
+msgid ""
+"By default, the tray icon will open the user interface with a token than "
+"unlocks the user interface. This ensures that you can access the user "
+"interface from the tray icon, while requiring others to enter a password. If"
+" you prefer having to type in the password, even when accessing the user "
+"interface from the tray icon, enable this option."
+msgstr ""
+
+#: scripts/services/AppUtils.js:198
+msgid "Cache Files"
+msgstr ""
+
+#: templates/settings.html:104
 msgid "Canary"
 msgstr "Canary"
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
-#: scripts/controllers/EditBackupController.js:390
-#: scripts/controllers/EditBackupController.js:405
-#: scripts/controllers/EditBackupController.js:439
-#: scripts/controllers/EditBackupController.js:448
-#: scripts/controllers/EditBackupController.js:475
-#: scripts/controllers/EditBackupController.js:496
-#: scripts/controllers/EditBackupController.js:84
+#: scripts/controllers/EditBackupController.js:322
+#: scripts/controllers/EditBackupController.js:337
+#: scripts/controllers/EditBackupController.js:371
+#: scripts/controllers/EditBackupController.js:380
+#: scripts/controllers/EditBackupController.js:407
+#: scripts/controllers/EditBackupController.js:428
+#: scripts/controllers/EditBackupController.js:75
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
 #: scripts/controllers/StateController.js:103
 #: scripts/controllers/StateController.js:112
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:47
-#: scripts/services/EditUriBuiltins.js:664
-#: scripts/services/EditUriBuiltins.js:736
-#: scripts/services/EditUriBuiltins.js:753 templates/delete.html:54
-#: templates/export.html:26 templates/settings.html:146
+#: scripts/services/EditUriBuiltins.js:50
+#: scripts/services/EditUriBuiltins.js:757
+#: scripts/services/EditUriBuiltins.js:839
+#: scripts/services/EditUriBuiltins.js:856 templates/delete.html:54
+#: templates/export.html:26 templates/settings.html:159
 #: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Atcelt"
@@ -346,19 +373,20 @@ msgstr "Pārbaudīt atjauninājumus ..."
 msgid "Chose a storage type to get started"
 msgstr ""
 
-#: templates/backends/gcs.html:11 templates/backends/oauth.html:11
+#: templates/backends/gcs.html:11 templates/backends/msgroup.html:16
+#: templates/backends/oauth.html:11 templates/backends/sharepoint.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr ""
 
-#: index.html:150 index.html:193
+#: index.html:150 index.html:201
 msgid "Click to set throttle options"
 msgstr "Uzklikšķiniet, lai uzstādītu ierobežojumus"
 
-#: templates/home.html:30
+#: templates/home.html:35
 msgid "Commandline ..."
 msgstr "Komandrinda ..."
 
-#: templates/home.html:29
+#: templates/home.html:34
 msgid "Compact now"
 msgstr "Saspiest tagad"
 
@@ -386,7 +414,7 @@ msgstr "Dators"
 msgid "Configuration file:"
 msgstr "Konfigurācijas fails:"
 
-#: templates/home.html:17
+#: templates/home.html:22
 msgid "Configuration:"
 msgstr "Konfigurācija:"
 
@@ -408,11 +436,11 @@ msgstr "Nepieciešams apstiprinājums"
 msgid "Connect"
 msgstr "Pieslēgties"
 
-#: index.html:305
+#: index.html:313
 msgid "Connect now"
 msgstr "Pieslēgties tagad"
 
-#: index.html:301
+#: index.html:309
 msgid "Connecting to server ..."
 msgstr "Pieslēdzas serverim"
 
@@ -420,11 +448,11 @@ msgstr "Pieslēdzas serverim"
 msgid "Connecting to task ...."
 msgstr "Pieslēdzas uzdevumam"
 
-#: index.html:306
+#: index.html:314
 msgid "Connecting..."
 msgstr "Pieslēdzas ..."
 
-#: index.html:297
+#: index.html:305
 msgid "Connection lost"
 msgstr "Savienojums ir zudis"
 
@@ -433,11 +461,11 @@ msgstr "Savienojums ir zudis"
 msgid "Connection worked!"
 msgstr "Savienojums strādā!"
 
-#: scripts/services/EditUriBuiltins.js:691 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:778 templates/backends/azure.html:2
 msgid "Container name"
 msgstr ""
 
-#: templates/backends/openstack.html:37
+#: templates/backends/openstack.html:49
 msgid "Container region"
 msgstr ""
 
@@ -445,7 +473,7 @@ msgstr ""
 msgid "Continue"
 msgstr "Turpināt"
 
-#: scripts/controllers/EditBackupController.js:475
+#: scripts/controllers/EditBackupController.js:407
 msgid "Continue without encryption"
 msgstr "Turpināt bez šifrēšanas"
 
@@ -465,7 +493,7 @@ msgstr ""
 msgid "Copy failed. Please manually copy the URL"
 msgstr ""
 
-#: scripts/services/AppUtils.js:603
+#: scripts/services/AppUtils.js:639
 msgid "Core options"
 msgstr "Pamata opcijas"
 
@@ -473,11 +501,11 @@ msgstr "Pamata opcijas"
 msgid "Counting ({{files}} files found, {{size}})"
 msgstr ""
 
-#: templates/settings.html:111
+#: templates/settings.html:124
 msgid "Crashes only"
 msgstr "Tikai avārijas"
 
-#: templates/home.html:36
+#: templates/home.html:41
 msgid "Create bug report ..."
 msgstr "Izveidot kļūdu atskaiti"
 
@@ -485,7 +513,7 @@ msgstr "Izveidot kļūdu atskaiti"
 msgid "Create folder?"
 msgstr "Izveidot mapi?"
 
-#: scripts/services/EditUriBuiltins.js:121
+#: scripts/services/EditUriBuiltins.js:124
 msgid "Created new limited user"
 msgstr ""
 
@@ -493,7 +521,7 @@ msgstr ""
 msgid "Creating bug report ..."
 msgstr "Tiek izveidota kļūdas atskaite ..."
 
-#: scripts/services/EditUriBuiltins.js:112
+#: scripts/services/EditUriBuiltins.js:115
 msgid "Creating new user with limited access ..."
 msgstr ""
 
@@ -505,9 +533,17 @@ msgstr ""
 msgid "Creating temporary backup ..."
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:112
+#: scripts/services/EditUriBuiltins.js:115
 msgid "Creating user..."
 msgstr "Izveido lietotāju..."
+
+#: templates/home.html:71
+msgid "Current action:"
+msgstr ""
+
+#: templates/home.html:81
+msgid "Current file:"
+msgstr ""
 
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
@@ -521,7 +557,7 @@ msgstr ""
 msgid "Custom authentication url"
 msgstr ""
 
-#: templates/addoredit.html:323
+#: templates/addoredit.html:321
 msgid "Custom backup retention"
 msgstr ""
 
@@ -545,11 +581,11 @@ msgstr ""
 msgid "Custom storage class ({{class}})"
 msgstr ""
 
-#: templates/home.html:27
+#: templates/home.html:32
 msgid "Database ..."
 msgstr "Datubāze ..."
 
-#: scripts/services/AppUtils.js:90 templates/addoredit.html:349
+#: scripts/services/AppUtils.js:91 templates/addoredit.html:347
 msgid "Days"
 msgstr "Dienas"
 
@@ -557,15 +593,15 @@ msgstr "Dienas"
 msgid "Default"
 msgstr "Noklusējums"
 
-#: templates/settings.html:68
+#: templates/settings.html:81
 msgid "Default ({{channelname}})"
 msgstr ""
 
-#: templates/addoredit.html:201
-msgid "Default Filters"
+#: scripts/services/AppUtils.js:185
+msgid "Default excludes"
 msgstr ""
 
-#: templates/settings.html:131
+#: templates/settings.html:144
 msgid "Default options"
 msgstr "Noklusējuma iestatījumi"
 
@@ -573,7 +609,7 @@ msgstr "Noklusējuma iestatījumi"
 msgid "Delete"
 msgstr "Izdzēst"
 
-#: templates/home.html:21
+#: templates/home.html:26
 msgid "Delete ..."
 msgstr "Izdzēst ..."
 
@@ -581,7 +617,7 @@ msgstr "Izdzēst ..."
 msgid "Delete backup"
 msgstr "Izdzēst dublējumkopiju"
 
-#: templates/addoredit.html:320
+#: templates/addoredit.html:318
 msgid "Delete backups that are older than"
 msgstr ""
 
@@ -609,13 +645,17 @@ msgstr "Tiek dzēsti attālinātie faili ..."
 msgid "Deleting unwanted files ..."
 msgstr "Notiek nevēlamu failu dzēšana..."
 
-#: scripts/services/AppUtils.js:59
+#: scripts/services/AppUtils.js:60
 msgid "Desktop"
 msgstr "Darbavirsma"
 
 #: templates/addoredit.html:25
 msgid "Destination"
 msgstr "Mērķis"
+
+#: templates/backends/sharepoint.html:2
+msgid "Destination path"
+msgstr ""
 
 #: templates/restore.html:141
 msgid ""
@@ -632,11 +672,15 @@ msgstr ""
 msgid "Disabled"
 msgstr "Atspējots"
 
-#: templates/notificationarea.html:10 templates/notificationarea.html:25
+#: templates/notificationarea.html:10 templates/notificationarea.html:27
 msgid "Dismiss"
 msgstr "Atmest"
 
-#: templates/settings.html:50
+#: templates/notificationarea.html:41
+msgid "Dismiss all"
+msgstr ""
+
+#: templates/settings.html:63
 msgid "Display and color theme"
 msgstr "Displeja un krāsu motīvs"
 
@@ -648,19 +692,23 @@ msgstr ""
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr ""
 
-#: index.html:142 index.html:241
+#: templates/backends/openstack.html:26
+msgid "Domain Name"
+msgstr ""
+
+#: index.html:142 index.html:249
 msgid "Donate"
 msgstr "Ziedot"
 
-#: templates/settings.html:58 templates/settings.html:60
+#: templates/settings.html:71 templates/settings.html:73
 msgid "Donation messages"
 msgstr ""
 
-#: templates/settings.html:62
+#: templates/settings.html:75
 msgid "Donation messages are hidden, click to show"
 msgstr "Ziedojumu ziņas ir slēptas, uzklikšķiniet lai parādītu tās"
 
-#: templates/settings.html:61
+#: templates/settings.html:74
 msgid "Donation messages are visible, click to hide"
 msgstr "Ziedojumu ziņas ir redzamas, uzklikšķiniet lai paslēptu tās"
 
@@ -668,11 +716,11 @@ msgstr "Ziedojumu ziņas ir redzamas, uzklikšķiniet lai paslēptu tās"
 msgid "Done"
 msgstr "Pabeigts"
 
-#: templates/notificationarea.html:14
+#: templates/notificationarea.html:16
 msgid "Download"
 msgstr "Lejupielādēt"
 
-#: templates/notificationarea.html:28
+#: templates/notificationarea.html:30
 msgid "Downloading ..."
 msgstr "Lejupielādē ..."
 
@@ -680,19 +728,19 @@ msgstr "Lejupielādē ..."
 msgid "Downloading files ..."
 msgstr "Lejupielādē failus..."
 
-#: templates/notificationarea.html:22
+#: templates/notificationarea.html:24
 msgid "Downloading update..."
 msgstr "Lejupielādē atjauninājumu..."
 
-#: scripts/services/AppUtils.js:265
+#: scripts/services/AppUtils.js:301
 msgid "Duplicate option {{opt}}"
 msgstr ""
 
-#: index.html:261
+#: index.html:269
 msgid "Duplicati Website"
 msgstr "Duplicati tīmekļa vietne"
 
-#: index.html:249
+#: index.html:257
 msgid "Duplicati forum"
 msgstr "Duplicati forums"
 
@@ -711,17 +759,17 @@ msgid ""
 " to be downloaded for each operation."
 msgstr ""
 
-#: templates/home.html:19
+#: templates/home.html:24
 msgid "Edit ..."
 msgstr "Rediģēt ..."
 
-#: templates/addoredit.html:170 templates/addoredit.html:385
-#: templates/edituri.html:39 templates/settings.html:135
+#: templates/addoredit.html:170 templates/addoredit.html:383
+#: templates/edituri.html:39 templates/settings.html:148
 msgid "Edit as list"
 msgstr "Rediģēt kā sarakstu"
 
-#: templates/addoredit.html:173 templates/addoredit.html:388
-#: templates/edituri.html:42 templates/settings.html:141
+#: templates/addoredit.html:173 templates/addoredit.html:386
+#: templates/edituri.html:42 templates/settings.html:154
 msgid "Edit as text"
 msgstr "Rediģēt kā tekstu"
 
@@ -734,7 +782,7 @@ msgstr "Šifrēt failu"
 msgid "Encryption"
 msgstr "Šifrēšana"
 
-#: scripts/controllers/EditBackupController.js:448
+#: scripts/controllers/EditBackupController.js:380
 msgid "Encryption changed"
 msgstr "Šifrēšana mainīta"
 
@@ -742,18 +790,18 @@ msgstr "Šifrēšana mainīta"
 msgid "Encryption modules:"
 msgstr "Šīfrēšanas moduļi:"
 
-#: scripts/controllers/EditBackupController.js:84
+#: scripts/controllers/EditBackupController.js:75
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
 msgstr "Ievadiet URL"
 
-#: templates/addoredit.html:337
+#: templates/addoredit.html:335
 msgid ""
 "Enter a retention strategy manually. Placeholders are D/W/Y for "
-"days/weeks/years. The syntax is: 7D:1D,4W:1W,36M:1M. This example keeps one "
-"backup for each of the next 7 days, one for each of the next 4 weeks, and "
-"one for each of the next 36 months. This can also be written as "
-"1W:1D,1M:1W,3Y:1M."
+"days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. "
+"This example keeps one backup for each of the next 7 days, one for each of "
+"the next 4 weeks, and one for each of the next 36 months. This can also be "
+"written as 1W:1D,1M:1W,3Y:1M."
 msgstr ""
 
 #: templates/backends/azure.html:12
@@ -780,7 +828,7 @@ msgstr ""
 msgid "Enter encryption passphrase"
 msgstr "Ievadiet pieejas frāzi šifrēšanai"
 
-#: templates/addoredit.html:191
+#: templates/addoredit.html:192
 msgid "Enter expression here"
 msgstr ""
 
@@ -788,14 +836,25 @@ msgstr ""
 msgid "Enter folder path name"
 msgstr ""
 
-#: scripts/services/AppUtils.js:121
+#: scripts/services/AppUtils.js:122
 msgid "Enter one option per line in command-line format, eg. {0}"
 msgstr ""
 
 #: templates/backends/file.html:7 templates/backends/generic.html:14
-#: templates/backends/oauth.html:3 templates/restore.html:90
+#: templates/backends/msgroup.html:8 templates/backends/oauth.html:3
+#: templates/restore.html:90
 msgid "Enter the destination path"
 msgstr "Ievadiet mērķa atrašanās vietu"
+
+#: templates/backends/msgroup.html:3
+msgid "Enter the email address of the Office 365 group"
+msgstr ""
+
+#: templates/backends/sharepoint.html:3
+msgid ""
+"Enter the full destination path, including the server name, but without "
+"https"
+msgstr ""
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
@@ -813,9 +872,9 @@ msgstr "Ievadiet mērķa atrašanās vietu"
 #: scripts/directives/backupEditUri.js:143
 #: scripts/directives/backupEditUri.js:170
 #: scripts/directives/backupEditUri.js:205
-#: scripts/directives/backupEditUri.js:239 scripts/services/AppUtils.js:265
-#: scripts/services/AppUtils.js:311 scripts/services/AppUtils.js:313
-#: scripts/services/AppUtils.js:321 scripts/services/AppUtils.js:323
+#: scripts/directives/backupEditUri.js:239 scripts/services/AppUtils.js:301
+#: scripts/services/AppUtils.js:347 scripts/services/AppUtils.js:349
+#: scripts/services/AppUtils.js:357 scripts/services/AppUtils.js:359
 msgid "Error"
 msgstr "Kļūda"
 
@@ -823,39 +882,43 @@ msgstr "Kļūda"
 msgid "Error!"
 msgstr "Kļūda!"
 
-#: templates/settings.html:110
+#: templates/settings.html:123
 msgid "Errors and crashes"
 msgstr "Kļūdas un avārijas"
 
-#: templates/addoredit.html:218
+#: templates/addoredit.html:210
 msgid "Exclude"
 msgstr ""
 
-#: scripts/services/AppUtils.js:124
+#: scripts/services/AppUtils.js:125
 msgid "Exclude directories whose names contain"
 msgstr ""
 
-#: scripts/services/AppUtils.js:167
+#: scripts/services/AppUtils.js:179
 msgid "Exclude expression"
 msgstr ""
 
-#: scripts/services/AppUtils.js:142
+#: scripts/services/AppUtils.js:143
 msgid "Exclude file"
 msgstr ""
 
-#: scripts/services/AppUtils.js:148
+#: scripts/services/AppUtils.js:149
 msgid "Exclude file extension"
 msgstr ""
 
-#: scripts/services/AppUtils.js:130
+#: scripts/services/AppUtils.js:131
 msgid "Exclude files whose names contain"
 msgstr ""
 
-#: scripts/services/AppUtils.js:136
+#: scripts/services/AppUtils.js:164
+msgid "Exclude filter group"
+msgstr ""
+
+#: scripts/services/AppUtils.js:137
 msgid "Exclude folder"
 msgstr ""
 
-#: scripts/services/AppUtils.js:153
+#: scripts/services/AppUtils.js:154
 msgid "Exclude regular expression"
 msgstr ""
 
@@ -863,7 +926,7 @@ msgstr ""
 msgid "Existing file found"
 msgstr ""
 
-#: templates/settings.html:86
+#: templates/settings.html:99
 msgid "Experimental"
 msgstr "Eksperimentāls"
 
@@ -871,7 +934,7 @@ msgstr "Eksperimentāls"
 msgid "Export"
 msgstr "Eksportēt"
 
-#: templates/home.html:20
+#: templates/home.html:25
 msgid "Export ..."
 msgstr "Eksports ..."
 
@@ -908,7 +971,7 @@ msgstr "Neizdevās izveidot savienojumu:"
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
 #: scripts/controllers/ExportController.js:28
-#: scripts/controllers/LogController.js:77
+#: scripts/controllers/LogController.js:78
 #: scripts/controllers/RestoreController.js:291
 #: scripts/controllers/RestoreController.js:331
 #: scripts/controllers/RestoreController.js:421
@@ -931,7 +994,7 @@ msgstr ""
 msgid "Failed to import:"
 msgstr "Neizdevās importēt:"
 
-#: scripts/controllers/EditBackupController.js:768
+#: scripts/controllers/EditBackupController.js:668
 msgid "Failed to read backup defaults:"
 msgstr ""
 
@@ -939,7 +1002,7 @@ msgstr ""
 msgid "Failed to restore files: {{message}}"
 msgstr ""
 
-#: scripts/controllers/SystemSettingsController.js:110
+#: scripts/controllers/SystemSettingsController.js:113
 msgid "Failed to save:"
 msgstr ""
 
@@ -948,11 +1011,11 @@ msgstr ""
 msgid "Fetching path information ..."
 msgstr ""
 
-#: scripts/services/AppUtils.js:73
+#: scripts/services/AppUtils.js:74
 msgid "File"
 msgstr "Fails"
 
-#: templates/addoredit.html:241
+#: templates/addoredit.html:233
 msgid "Files larger than:"
 msgstr "Faili lielāki par:"
 
@@ -960,8 +1023,7 @@ msgstr "Faili lielāki par:"
 msgid "Filters"
 msgstr "Filtrs"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:55
-#: scripts/services/ServerStatus.js:65 templates/commandline.html:60
+#: templates/commandline.html:60
 msgid "Finished!"
 msgstr "Pabeigts!"
 
@@ -969,7 +1031,7 @@ msgstr "Pabeigts!"
 msgid "First run setup"
 msgstr ""
 
-#: scripts/services/AppUtils.js:50
+#: scripts/services/AppUtils.js:51
 msgid "Folder"
 msgstr "Mape"
 
@@ -981,15 +1043,15 @@ msgstr "Mape"
 msgid "Folder path"
 msgstr ""
 
-#: scripts/services/AppUtils.js:107
+#: scripts/services/AppUtils.js:108
 msgid "Fri"
 msgstr ""
 
-#: scripts/services/AppUtils.js:83
+#: scripts/services/AppUtils.js:84
 msgid "GByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:116
+#: scripts/services/AppUtils.js:117
 msgid "GByte/s"
 msgstr ""
 
@@ -1005,7 +1067,7 @@ msgstr "Vispārīgi"
 msgid "General backup settings"
 msgstr "Vispārīgie dublējumkopiju iestatījumi"
 
-#: templates/addoredit.html:309
+#: templates/addoredit.html:301
 msgid "General options"
 msgstr "Vispārīgie iestatījumi"
 
@@ -1021,7 +1083,12 @@ msgstr ""
 msgid "Getting file versions ..."
 msgstr "Izveido failu versijas"
 
-#: scripts/controllers/EditBackupController.js:28
+#: scripts/services/EditUriBuiltins.js:729
+#: scripts/services/EditUriBuiltins.js:740 templates/backends/msgroup.html:2
+msgid "Group email"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:19
 msgid "Hidden files"
 msgstr "Paslēptie faili"
 
@@ -1033,12 +1100,16 @@ msgstr "Paslēpt"
 msgid "Hide hidden folders"
 msgstr "Paslēpt paslēptās mapes"
 
-#: index.html:202 scripts/services/AppUtils.js:61
+#: index.html:210 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "Mājas"
 
-#: scripts/services/AppUtils.js:89 scripts/services/AppUtils.js:99
-#: templates/settings.html:34
+#: templates/settings.html:17
+msgid "Hostnames"
+msgstr ""
+
+#: scripts/services/AppUtils.js:100 scripts/services/AppUtils.js:90
+#: templates/settings.html:47
 msgid "Hours"
 msgstr "Stundas"
 
@@ -1046,7 +1117,7 @@ msgstr "Stundas"
 msgid "How do you want to handle existing files?"
 msgstr "Kā jūs vēlaties rīkoties ar jau esošajiem failiem?"
 
-#: scripts/services/AppUtils.js:63
+#: scripts/services/AppUtils.js:64
 msgid "Hyper-V Machine"
 msgstr "Hyper-V Mašīna"
 
@@ -1055,7 +1126,7 @@ msgid "Hyper-V Machine:"
 msgstr "Hyper-V Mašīna:"
 
 #: scripts/directives/sourceFolderPicker.js:417
-#: scripts/services/AppUtils.js:65
+#: scripts/services/AppUtils.js:66
 msgid "Hyper-V Machines"
 msgstr "Hyper-V Mašīnas"
 
@@ -1064,12 +1135,12 @@ msgstr "Hyper-V Mašīnas"
 msgid "ID:"
 msgstr "ID:"
 
-#: templates/addoredit.html:265
+#: templates/addoredit.html:257
 msgid "If a date was missed, the job will run as soon as possible."
 msgstr ""
 "Ja tika nokavēts datums, uzdevums tiks palaists cik ātri vien iespējams."
 
-#: templates/addoredit.html:357
+#: templates/addoredit.html:355
 msgid ""
 "If at least one newer backup is found, all backups older than this date are "
 "deleted."
@@ -1096,13 +1167,13 @@ msgid ""
 "&quot;Save as ...&quot;</a>"
 msgstr ""
 
-#: scripts/services/EditUriBackendConfig.js:99
+#: scripts/services/EditUriBackendConfig.js:106
 msgid ""
 "If you do not enter a path, all files will be stored in the login folder.\n"
 "Are you sure this is what you want?"
 msgstr ""
 
-#: templates/backends/openstack.html:28
+#: templates/backends/openstack.html:40
 msgid "If you do not enter an API Key, the tenant name is required"
 msgstr ""
 
@@ -1152,15 +1223,15 @@ msgstr ""
 msgid "Importing ..."
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:152
+#: scripts/controllers/EditBackupController.js:143
 msgid "Include a file?"
 msgstr ""
 
-#: scripts/services/AppUtils.js:163
+#: scripts/services/AppUtils.js:175
 msgid "Include expression"
 msgstr ""
 
-#: scripts/services/AppUtils.js:158
+#: scripts/services/AppUtils.js:159
 msgid "Include regular expression"
 msgstr ""
 
@@ -1168,15 +1239,16 @@ msgstr ""
 msgid "Incorrect answer, try again"
 msgstr "Nepareiza atbilde, mēģiniet vēlreiz"
 
-#: templates/settings.html:92
-msgid "Individual builds for developers only."
-msgstr "Individuāli laidumi, kuri paredzēti tikai izstrādātājiem"
+#: templates/settings.html:105
+msgid ""
+"Individual builds for developers only. Not for use with important data."
+msgstr ""
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
 msgstr "Informācija"
 
-#: templates/notificationarea.html:26 templates/updatechangelog.html:10
+#: templates/notificationarea.html:28 templates/updatechangelog.html:10
 msgid "Install"
 msgstr "Uzstādīt"
 
@@ -1184,17 +1256,17 @@ msgstr "Uzstādīt"
 msgid "Install failed:"
 msgstr "Uzstādīšana neizdevās"
 
-#: scripts/services/EditUriBuiltins.js:805
+#: scripts/services/EditUriBuiltins.js:932
 msgid "Invalid characters in path"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:337
-#: scripts/controllers/EditBackupController.js:344
-#: scripts/controllers/EditBackupController.js:351
+#: scripts/controllers/EditBackupController.js:269
+#: scripts/controllers/EditBackupController.js:276
+#: scripts/controllers/EditBackupController.js:283
 msgid "Invalid retention time"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:624
+#: scripts/services/EditUriBuiltins.js:686
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1202,23 +1274,27 @@ msgstr ""
 "Ir iespējams pievienoties pie kāda FTP servera bez paroles.\n"
 "Vai esat pārliecināts, ka jūsu FTP serveris atbalsta bez-paroles pieslēgšanos?"
 
-#: scripts/services/AppUtils.js:81
+#: scripts/services/AppUtils.js:82
 msgid "KByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:114
+#: scripts/services/AppUtils.js:115
 msgid "KByte/s"
 msgstr ""
 
-#: templates/addoredit.html:321
+#: templates/addoredit.html:319
 msgid "Keep a specific number of backups"
 msgstr ""
 
-#: templates/addoredit.html:319
+#: templates/addoredit.html:317
 msgid "Keep all backups"
 msgstr ""
 
-#: templates/settings.html:40
+#: templates/backends/openstack.html:18
+msgid "Keystone API version"
+msgstr ""
+
+#: templates/settings.html:53
 msgid "Language in user interface"
 msgstr "Lietotāja saskarnes valoda:"
 
@@ -1226,8 +1302,12 @@ msgstr "Lietotāja saskarnes valoda:"
 msgid "Last month"
 msgstr "Pagājušais mēnesis"
 
-#: templates/home.html:41
-msgid "Last successful run:"
+#: templates/home.html:46
+msgid "Last successful backup:"
+msgstr ""
+
+#: templates/restorewizard.html:27
+msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr ""
 
 #: scripts/controllers/RestoreController.js:56
@@ -1238,17 +1318,17 @@ msgstr "Pēdējais"
 msgid "Libraries"
 msgstr "Bibliotēkas"
 
-#: scripts/controllers/EditBackupController.js:23
-msgid "Linux"
-msgstr ""
-
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates ..."
 msgstr ""
 
-#: scripts/services/ServerStatus.js:60 scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:60
 msgid "Listing remote files ..."
 msgstr "Kārto attālinātos failus"
+
+#: scripts/services/ServerStatus.js:62
+msgid "Listing remote files for Purge ..."
+msgstr ""
 
 #: templates/log.html:8
 msgid "Live"
@@ -1277,7 +1357,7 @@ msgstr "Notiek ielāde ..."
 msgid "Loading remote storage usage ..."
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:818
+#: scripts/services/EditUriBuiltins.js:945
 msgid "Local Repository"
 msgstr ""
 
@@ -1293,7 +1373,7 @@ msgstr "Ceļš uz lokālo datubāzi:"
 msgid "Local repository"
 msgstr ""
 
-#: scripts/services/SystemInfo.js:78
+#: scripts/services/SystemInfo.js:81
 msgid "Local storage"
 msgstr "Lokālā krātuve"
 
@@ -1313,15 +1393,15 @@ msgstr ""
 msgid "Log data from the server"
 msgstr ""
 
-#: index.html:220
+#: index.html:228
 msgid "Log out"
 msgstr "Izrakstīties"
 
-#: scripts/services/AppUtils.js:82
+#: scripts/services/AppUtils.js:83
 msgid "MByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:115
+#: scripts/services/AppUtils.js:116
 msgid "MByte/s"
 msgstr ""
 
@@ -1342,7 +1422,7 @@ msgid "Max upload speed"
 msgstr "Maksimālais augšupielādes ātrums"
 
 #: index.html:146 templates/addoredit.html:123 templates/addoredit.html:165
-#: templates/addoredit.html:380 templates/addoredit.html:91
+#: templates/addoredit.html:378 templates/addoredit.html:91
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Izvēlne"
@@ -1359,32 +1439,32 @@ msgstr ""
 msgid "Minimum redundancy"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:809
+#: scripts/services/EditUriBuiltins.js:936
 msgid "Minimum redundancy is 1.0"
 msgstr ""
 
-#: scripts/services/AppUtils.js:88 scripts/services/AppUtils.js:98
-#: templates/settings.html:33
+#: scripts/services/AppUtils.js:89 scripts/services/AppUtils.js:99
+#: templates/settings.html:46
 msgid "Minutes"
 msgstr "Minūtes"
 
-#: scripts/controllers/EditBackupController.js:292
+#: scripts/controllers/EditBackupController.js:219
 msgid "Missing name"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:300
+#: scripts/controllers/EditBackupController.js:227
 msgid "Missing passphrase"
 msgstr "Trūkst pieejas frāze"
 
-#: scripts/controllers/EditBackupController.js:313
+#: scripts/controllers/EditBackupController.js:240
 msgid "Missing sources"
 msgstr ""
 
-#: scripts/services/AppUtils.js:103
+#: scripts/services/AppUtils.js:104
 msgid "Mon"
 msgstr ""
 
-#: scripts/services/AppUtils.js:92 templates/addoredit.html:351
+#: scripts/services/AppUtils.js:93 templates/addoredit.html:349
 msgid "Months"
 msgstr "Mēneši"
 
@@ -1396,11 +1476,11 @@ msgstr "Pārvietot esošo datubāzi"
 msgid "Move failed:"
 msgstr "Pārvietošana neizdevās:"
 
-#: scripts/services/AppUtils.js:53
+#: scripts/services/AppUtils.js:54
 msgid "My Documents"
 msgstr "Mani dokumenti"
 
-#: scripts/services/AppUtils.js:55
+#: scripts/services/AppUtils.js:56
 msgid "My Music"
 msgstr "Mana mūzika"
 
@@ -1408,7 +1488,7 @@ msgstr "Mana mūzika"
 msgid "My Photos"
 msgstr "Mani fotoattēli"
 
-#: scripts/services/AppUtils.js:57
+#: scripts/services/AppUtils.js:58
 msgid "My Pictures"
 msgstr "Mani attēli"
 
@@ -1416,47 +1496,47 @@ msgstr "Mani attēli"
 msgid "Name"
 msgstr ""
 
-#: templates/home.html:47
+#: templates/home.html:53
 msgid "Never"
 msgstr "Nekad"
 
-#: templates/notificationarea.html:20
+#: templates/notificationarea.html:22
 msgid "New update found: {{message}}"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:121
+#: scripts/services/EditUriBuiltins.js:124
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
 msgstr ""
 
-#: templates/addoredit.html:109 templates/addoredit.html:250
-#: templates/addoredit.html:300 templates/addoredit.html:78
+#: templates/addoredit.html:109 templates/addoredit.html:242
+#: templates/addoredit.html:292 templates/addoredit.html:78
 #: templates/addwizard.html:28 templates/restoredirect.html:52
-#: templates/restorewizard.html:30
+#: templates/restorewizard.html:36
 msgid "Next"
 msgstr "Nākamais"
 
-#: templates/home.html:51
+#: templates/home.html:57
 msgid "Next scheduled run:"
 msgstr "Nākamā plānotā norise"
 
-#: index.html:177
+#: index.html:185
 msgid "Next scheduled task:"
 msgstr "Nākamais plānotais uzdevums:"
 
-#: index.html:174
+#: index.html:182
 msgid "Next task:"
 msgstr "Nākamais uzdevums:"
 
-#: templates/addoredit.html:268
+#: templates/addoredit.html:260
 msgid "Next time"
 msgstr "Nākamreiz"
 
 #: scripts/controllers/DeleteController.js:77
-#: scripts/controllers/EditBackupController.js:142
-#: scripts/controllers/EditBackupController.js:152
-#: scripts/controllers/EditBackupController.js:496
+#: scripts/controllers/EditBackupController.js:133
+#: scripts/controllers/EditBackupController.js:143
+#: scripts/controllers/EditBackupController.js:428
 #: scripts/controllers/HomeController.js:7
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
@@ -1465,10 +1545,10 @@ msgstr "Nākamreiz"
 #: scripts/directives/backupEditUri.js:214
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:47
-#: scripts/services/EditUriBuiltins.js:664
-#: scripts/services/EditUriBuiltins.js:736
-#: scripts/services/EditUriBuiltins.js:753
+#: scripts/services/EditUriBuiltins.js:50
+#: scripts/services/EditUriBuiltins.js:757
+#: scripts/services/EditUriBuiltins.js:839
+#: scripts/services/EditUriBuiltins.js:856
 msgid "No"
 msgstr "Nē"
 
@@ -1483,7 +1563,7 @@ msgstr ""
 msgid "No editor found for the &quot;{{backend}}&quot; storage type"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:475 templates/addoredit.html:45
+#: scripts/controllers/EditBackupController.js:407 templates/addoredit.html:45
 msgid "No encryption"
 msgstr "Nav šifrešanas"
 
@@ -1500,7 +1580,7 @@ msgstr ""
 msgid "No passphrase entered"
 msgstr "Pieejas frāze nav ievadīta"
 
-#: index.html:179
+#: index.html:187
 msgid "No scheduled tasks"
 msgstr "Nav ieplānotu uzdevumu"
 
@@ -1508,36 +1588,32 @@ msgstr "Nav ieplānotu uzdevumu"
 msgid "No, my machine has only a single account"
 msgstr "Nē, manai ierīcei ir tikai viens konts"
 
-#: scripts/controllers/EditBackupController.js:306
+#: scripts/controllers/EditBackupController.js:233
 msgid "Non-matching passphrase"
 msgstr "Nesakrītoša pieejas frāze"
 
-#: templates/settings.html:112
+#: templates/settings.html:125
 msgid "None / disabled"
 msgstr "Nav / Atspējots"
 
-#: templates/addoredit.html:326
+#: templates/addoredit.html:324
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr ""
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
-#: scripts/controllers/EditBackupController.js:84
-#: scripts/controllers/EditBackupController.js:92
+#: scripts/controllers/EditBackupController.js:75
+#: scripts/controllers/EditBackupController.js:83
 #: scripts/controllers/RestoreDirectController.js:24
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:121 templates/restore.html:146
-#: templates/settings.html:147
+#: scripts/services/EditUriBuiltins.js:124 templates/restore.html:146
+#: templates/settings.html:160
 msgid "OK"
 msgstr "Labi"
 
-#: scripts/controllers/EditBackupController.js:22
-msgid "OSX"
-msgstr ""
-
-#: templates/addoredit.html:344
+#: templates/addoredit.html:342
 msgid ""
 "Once there are more backups than the specified number, the oldest backups "
 "are deleted."
@@ -1551,12 +1627,20 @@ msgstr ""
 msgid "OpenStack Object Storage / Swift"
 msgstr ""
 
-#: scripts/controllers/SystemSettingsController.js:121
-#: scripts/controllers/SystemSettingsController.js:132
+#: scripts/services/EditUriBuiltins.js:803
+msgid "Openstack API Key are not supported in v3 keystone API."
+msgstr ""
+
+#: scripts/services/AppUtils.js:195
+msgid "Operating System"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:124
+#: scripts/controllers/SystemSettingsController.js:135
 msgid "Operation failed:"
 msgstr ""
 
-#: templates/home.html:11
+#: templates/home.html:16
 msgid "Operations:"
 msgstr "Darbības:"
 
@@ -1569,11 +1653,11 @@ msgid "Optional authentication username"
 msgstr ""
 
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/settings.html:134 templates/settings.html:140
+#: templates/settings.html:147 templates/settings.html:153
 msgid "Options"
 msgstr "Iestatījumi"
 
-#: templates/settings.html:132
+#: templates/settings.html:145
 msgid ""
 "Options added here are applied to all backups, but can be overridden in each"
 " individual backup"
@@ -1585,11 +1669,11 @@ msgstr ""
 msgid "Original location"
 msgstr "Sākotnējā atrašanās vieta"
 
-#: scripts/services/SystemInfo.js:81
+#: scripts/services/SystemInfo.js:84
 msgid "Others"
 msgstr "Citi"
 
-#: templates/addoredit.html:330
+#: templates/addoredit.html:328
 msgid ""
 "Over time backups will be deleted automatically. There will remain one "
 "backup for each of the last 7 days, each of the last 4 weeks, each of the "
@@ -1609,24 +1693,24 @@ msgstr "Pieejas frāze"
 msgid "Passphrase (if encrypted)"
 msgstr "Pieejas frāze (ja šifrēts)"
 
-#: scripts/controllers/EditBackupController.js:439
+#: scripts/controllers/EditBackupController.js:371
 msgid "Passphrase changed"
 msgstr "Pieejas frāze nomainīta"
 
-#: scripts/controllers/EditBackupController.js:306
+#: scripts/controllers/EditBackupController.js:233
 msgid "Passphrases are not matching"
 msgstr "Pieejas frāzes nesakrīt"
 
-#: scripts/services/EditUriBuiltins.js:783
-#: scripts/services/EditUriBuiltins.js:793 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:910
+#: scripts/services/EditUriBuiltins.js:920 templates/backends/file.html:33
 #: templates/backends/generic.html:22 templates/backends/jottacloud.html:11
 #: templates/backends/jottacloud.html:12 templates/backends/mega.html:11
-#: templates/backends/mega.html:12 templates/backends/openstack.html:22
+#: templates/backends/mega.html:12 templates/backends/openstack.html:34
 #: templates/settings.html:8
 msgid "Password"
 msgstr "Parole"
 
-#: scripts/controllers/EditBackupController.js:38
+#: scripts/controllers/EditBackupController.js:29
 msgid "Passwords do not match"
 msgstr "Paroles nesakrīt"
 
@@ -1634,11 +1718,16 @@ msgstr "Paroles nesakrīt"
 msgid "Patching files with local blocks ..."
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:142
+#: scripts/services/EditUriBuiltins.js:895
+msgid "Path"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:133
 msgid "Path not found"
 msgstr "Ceļš nav atrasts"
 
-#: templates/backends/generic.html:13 templates/backends/oauth.html:2
+#: templates/backends/generic.html:13 templates/backends/msgroup.html:7
+#: templates/backends/oauth.html:2
 msgid "Path on server"
 msgstr "Ceļs uz servera"
 
@@ -1646,11 +1735,11 @@ msgstr "Ceļs uz servera"
 msgid "Path or subfolder in the bucket"
 msgstr ""
 
-#: templates/settings.html:18
+#: templates/settings.html:31
 msgid "Pause"
 msgstr "Pauzēt"
 
-#: templates/settings.html:16
+#: templates/settings.html:29
 msgid "Pause after startup or hibernation"
 msgstr ""
 
@@ -1674,22 +1763,34 @@ msgstr ""
 msgid "Port"
 msgstr "Ports"
 
-#: templates/addoredit.html:110 templates/addoredit.html:251
-#: templates/addoredit.html:301 templates/addoredit.html:407
+#: templates/settings.html:24
+msgid "Prevent tray icon automatic log-in"
+msgstr ""
+
+#: templates/addoredit.html:110 templates/addoredit.html:243
+#: templates/addoredit.html:293 templates/addoredit.html:405
 #: templates/restoredirect.html:81
 msgid "Previous"
+msgstr ""
+
+#: templates/home.html:73
+msgid "Progress:"
 msgstr ""
 
 #: templates/backends/gcs.html:39
 msgid "ProjectID is optional if the bucket exist"
 msgstr ""
 
-#: scripts/services/SystemInfo.js:80
+#: scripts/services/SystemInfo.js:83
 msgid "Proprietary"
 msgstr ""
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
+msgstr ""
+
+#: scripts/services/ServerStatus.js:65
+msgid "Purging files Complete!"
 msgstr ""
 
 #: scripts/services/ServerStatus.js:46
@@ -1708,7 +1809,7 @@ msgstr ""
 msgid "Registering temporary backup ..."
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:127
+#: scripts/controllers/EditBackupController.js:118
 msgid "Relative paths not allowed"
 msgstr ""
 
@@ -1720,11 +1821,11 @@ msgstr "Pārlādēt"
 msgid "Remote"
 msgstr "Attālināts"
 
-#: scripts/services/EditUriBuiltins.js:819
+#: scripts/services/EditUriBuiltins.js:946
 msgid "Remote Path"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:817
+#: scripts/services/EditUriBuiltins.js:944
 msgid "Remote Repository"
 msgstr ""
 
@@ -1736,7 +1837,11 @@ msgstr ""
 msgid "Remote repository"
 msgstr ""
 
-#: templates/addoredit.html:193
+#: templates/addoredit.html:303
+msgid "Remote volume size"
+msgstr ""
+
+#: templates/addoredit.html:199
 msgid "Remove"
 msgstr "Noņemt"
 
@@ -1744,19 +1849,19 @@ msgstr "Noņemt"
 msgid "Remove option"
 msgstr "Noņemt iestatījumu"
 
-#: templates/localdatabase.html:18
+#: templates/localdatabase.html:18 templates/notificationarea.html:14
 msgid "Repair"
 msgstr "Salabot"
 
 #: scripts/services/ServerStatus.js:57
-msgid "Reparing ..."
-msgstr "Notiek labošana ..."
+msgid "Repairing database ..."
+msgstr ""
 
 #: templates/addoredit.html:58
 msgid "Repeat Passphrase"
 msgstr "Atkārtot pieejas frāzi"
 
-#: templates/home.html:33
+#: templates/home.html:38
 msgid "Reporting:"
 msgstr ""
 
@@ -1764,15 +1869,19 @@ msgstr ""
 msgid "Reset"
 msgstr "Attiestatīt"
 
-#: index.html:208 templates/restore.html:131
+#: index.html:216 templates/restore.html:131
 msgid "Restore"
 msgstr "Atgūt"
+
+#: scripts/services/ServerStatus.js:55
+msgid "Restore Complete!"
+msgstr ""
 
 #: templates/restore.html:45
 msgid "Restore files"
 msgstr "Atgūt failus"
 
-#: templates/home.html:14
+#: templates/home.html:19
 msgid "Restore files ..."
 msgstr "Atgūt failus ..."
 
@@ -1806,15 +1915,15 @@ msgstr "Atjaunot lasīšanas/rakstīšanas atļaujas"
 msgid "Restoring files ..."
 msgstr "Atjauno failus ..."
 
-#: index.html:211
+#: index.html:219
 msgid "Resume"
 msgstr "Turpināt"
 
-#: templates/addoredit.html:273
+#: templates/addoredit.html:265
 msgid "Run again every"
 msgstr "Palaist atkal katru"
 
-#: templates/home.html:13 templates/home.html:47
+#: templates/home.html:18 templates/home.html:53
 msgid "Run now"
 msgstr "Palaist tagad"
 
@@ -1830,7 +1939,7 @@ msgstr ""
 msgid "Running commandline entry"
 msgstr ""
 
-#: index.html:166
+#: index.html:174
 msgid "Running task:"
 msgstr ""
 
@@ -1838,15 +1947,15 @@ msgstr ""
 msgid "S3 Compatible"
 msgstr ""
 
-#: templates/settings.html:69
+#: templates/settings.html:82
 msgid "Same as the base install version: {{channelname}}"
 msgstr ""
 
-#: scripts/services/AppUtils.js:108
+#: scripts/services/AppUtils.js:109
 msgid "Sat"
 msgstr ""
 
-#: templates/addoredit.html:406 templates/localdatabase.html:32
+#: templates/addoredit.html:404 templates/localdatabase.html:32
 msgid "Save"
 msgstr "Saglabāt"
 
@@ -1870,7 +1979,7 @@ msgstr ""
 msgid "Scanning for local blocks ..."
 msgstr ""
 
-#: templates/addoredit.html:259 templates/addoredit.html:27
+#: templates/addoredit.html:251 templates/addoredit.html:27
 msgid "Schedule"
 msgstr ""
 
@@ -1882,7 +1991,7 @@ msgstr "Meklēt"
 msgid "Search for files"
 msgstr "Meklēt failus"
 
-#: scripts/services/AppUtils.js:97 templates/settings.html:32
+#: scripts/services/AppUtils.js:98 templates/settings.html:45
 msgid "Seconds"
 msgstr "sekundes"
 
@@ -1895,7 +2004,7 @@ msgstr ""
 msgid "Select files"
 msgstr "Izvēlēties failus"
 
-#: scripts/services/EditUriBuiltins.js:801 templates/backends/s3.html:8
+#: scripts/services/EditUriBuiltins.js:928 templates/backends/s3.html:8
 #: templates/backends/sia.html:2
 msgid "Server"
 msgstr "Serveris"
@@ -1929,12 +2038,12 @@ msgstr ""
 msgid "Server state properties"
 msgstr ""
 
-#: index.html:214 templates/settings.html:2
+#: index.html:222 templates/settings.html:2
 msgid "Settings"
 msgstr "Iestatījumi"
 
 #: templates/addoredit.html:65 templates/notificationarea.html:12
-#: templates/notificationarea.html:30
+#: templates/notificationarea.html:32
 msgid "Show"
 msgstr "Parādīt"
 
@@ -1951,7 +2060,7 @@ msgstr "Parādīt paslēptās mapes"
 msgid "Show log"
 msgstr "Parādīt žurnālu"
 
-#: templates/home.html:35
+#: templates/home.html:40
 msgid "Show log ..."
 msgstr "Parādīt žurnālu ..."
 
@@ -1963,11 +2072,11 @@ msgstr ""
 msgid "Sia server password"
 msgstr "Sia servera parole"
 
-#: templates/addoredit.html:322
+#: templates/addoredit.html:320
 msgid "Smart backup retention"
 msgstr ""
 
-#: templates/backends/openstack.html:33
+#: templates/backends/openstack.html:45
 msgid ""
 "Some OpenStack providers allow an API key instead of a password and tenant "
 "name"
@@ -1985,21 +2094,25 @@ msgstr "Avota dati"
 msgid "Source folders"
 msgstr "Avota mapes"
 
-#: templates/home.html:56
+#: templates/home.html:62
 msgid "Source:"
 msgstr "Avots:"
 
-#: templates/settings.html:87
-msgid "Specific builds for developers only."
+#: templates/settings.html:100
+msgid "Specific builds for developers only. Not for use with important data."
 msgstr ""
 
-#: scripts/services/SystemInfo.js:79
+#: scripts/services/SystemInfo.js:82
 msgid "Standard protocols"
 msgstr ""
 
-#: scripts/services/ServerStatus.js:33 scripts/services/ServerStatus.js:45
-msgid "Starting ..."
-msgstr "Sākšana ..."
+#: scripts/services/ServerStatus.js:33
+msgid "Starting Backup ..."
+msgstr ""
+
+#: scripts/services/ServerStatus.js:45
+msgid "Starting Restore..."
+msgstr ""
 
 #: scripts/controllers/RestoreController.js:367
 #: scripts/controllers/RestoreController.js:391
@@ -2027,11 +2140,11 @@ msgstr ""
 msgid "Stop running task"
 msgstr "Pārtraukt uzdevuma izpildi"
 
-#: index.html:162
+#: index.html:170
 msgid "Stopping after upload:"
 msgstr ""
 
-#: index.html:167
+#: index.html:175
 msgid "Stopping task:"
 msgstr "Aptur uzdevumu:"
 
@@ -2051,7 +2164,7 @@ msgstr ""
 msgid "Stored"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:42
+#: scripts/controllers/EditBackupController.js:33
 msgid "Strong"
 msgstr "Spēcīgs"
 
@@ -2060,19 +2173,23 @@ msgstr "Spēcīgs"
 msgid "Success"
 msgstr ""
 
-#: scripts/services/AppUtils.js:109
+#: scripts/services/AppUtils.js:110
 msgid "Sun"
 msgstr ""
 
-#: scripts/services/AppUtils.js:71
+#: scripts/services/AppUtils.js:72
 msgid "Symbolic link"
 msgstr "Simboliskā saite"
 
-#: templates/settings.html:107
+#: scripts/services/AppUtils.js:192
+msgid "System Files"
+msgstr ""
+
+#: templates/settings.html:120
 msgid "System default ({{levelname}})"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:29
+#: scripts/controllers/EditBackupController.js:20
 msgid "System files"
 msgstr "Sistēmas faili"
 
@@ -2084,11 +2201,11 @@ msgstr "Sistēmas informācija"
 msgid "System properties"
 msgstr "Sistēmas īpašības"
 
-#: scripts/services/AppUtils.js:84
+#: scripts/services/AppUtils.js:85
 msgid "TByte"
 msgstr ""
 
-#: scripts/services/AppUtils.js:117
+#: scripts/services/AppUtils.js:118
 msgid "TByte/s"
 msgstr ""
 
@@ -2100,11 +2217,15 @@ msgstr ""
 msgid "Task is running"
 msgstr "Uzdevums ir palaists"
 
-#: scripts/controllers/EditBackupController.js:30
+#: scripts/services/AppUtils.js:201
+msgid "Temporary Files"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:21
 msgid "Temporary files"
 msgstr "Pagaidu faili"
 
-#: templates/backends/openstack.html:27
+#: templates/backends/openstack.html:39
 msgid "Tenant Name"
 msgstr ""
 
@@ -2120,32 +2241,39 @@ msgstr "Notiek pārbaude..."
 msgid "Testing connection ..."
 msgstr "Pārbauda savienojumu..."
 
-#: scripts/services/EditUriBuiltins.js:42
+#: scripts/services/EditUriBuiltins.js:45
 msgid "Testing permissions ..."
 msgstr "Pārbauda atļaujas..."
 
-#: scripts/services/EditUriBuiltins.js:42
+#: scripts/services/EditUriBuiltins.js:45
 msgid "Testing permissions..."
 msgstr "Pārbauda atļaujas..."
 
-#: scripts/services/EditUriBuiltins.js:753
+#: scripts/services/EditUriBuiltins.js:884
+#: scripts/services/EditUriBuiltins.js:895
+msgid ""
+"The '{{fieldname}}' field contains an invalid character: {{character}} "
+"(value: {{value}}, index: {{pos}})"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:736
+#: scripts/services/EditUriBuiltins.js:839
 msgid ""
 "The bucket name should start with your username, prepend automatically?"
 msgstr ""
 
-#: index.html:298
+#: index.html:306
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr ""
 
-#: templates/settings.html:54
+#: templates/settings.html:67
 msgid "The dark theme (by Michal)"
 msgstr "Tumšais motīvs (veidoja Michal)"
 
-#: templates/settings.html:53
+#: templates/settings.html:66
 msgid "The default blue on white theme (by Alex)"
 msgstr "Noklusējuma zils uz balta motīvs (veidoja Alex)"
 
@@ -2162,24 +2290,24 @@ msgid ""
 "Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:142
+#: scripts/controllers/EditBackupController.js:133
 msgid "The path does not appear to exist, do you want to add it anyway?"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:152
+#: scripts/controllers/EditBackupController.js:143
 msgid ""
 "The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n"
 "\n"
 "Do you want to include the specified file?"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:127
+#: scripts/controllers/EditBackupController.js:118
 msgid ""
 "The path must be an absolute path, i.e. it must start with a forward slash "
 "'/'"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:664
+#: scripts/services/EditUriBuiltins.js:757
 msgid ""
 "The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
 "\n"
@@ -2190,7 +2318,7 @@ msgstr ""
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr ""
 
-#: templates/backends/openstack.html:38
+#: templates/backends/openstack.html:50
 msgid "The region parameter is only used when creating a bucket"
 msgstr ""
 
@@ -2209,7 +2337,7 @@ msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:47
+#: scripts/services/EditUriBuiltins.js:50
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
@@ -2227,6 +2355,15 @@ msgstr ""
 msgid "This month"
 msgstr "Šis mēnesis"
 
+#: templates/addoredit.html:308
+msgid ""
+"This option does not relate to your maximum backup or file size, nor does it"
+" affect deduplication rates. <external-link "
+"link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-"
+"size'\">See this page before you change the remote volume size.</external-"
+"link>"
+msgstr ""
+
 #: scripts/controllers/RestoreController.js:35
 msgid "This week"
 msgstr "Šī diena"
@@ -2235,7 +2372,7 @@ msgstr "Šī diena"
 msgid "Throttle settings"
 msgstr ""
 
-#: scripts/services/AppUtils.js:106
+#: scripts/services/AppUtils.js:107
 msgid "Thu"
 msgstr ""
 
@@ -2253,6 +2390,16 @@ msgstr ""
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr ""
 
+#: templates/settings.html:19
+msgid ""
+"To prevent various DNS based attacks, Duplicati limits the allowed hostnames"
+" to the ones listed here. Direct IP access and localhost is always allowed. "
+"Multiple hostnames can be supplied with a semicolon separator. If any of the"
+" allowed hostnames is an asterisk (*), all hostnames are allowed and this "
+"feature is disabled. If the field is empty, only IP address and localhost "
+"access is allowed."
+msgstr ""
+
 #: scripts/controllers/RestoreController.js:33
 msgid "Today"
 msgstr "Šodien"
@@ -2265,12 +2412,14 @@ msgstr ""
 msgid "Trust server certificate?"
 msgstr ""
 
-#: templates/settings.html:82
+#: templates/settings.html:95
 msgid ""
-"Try out the new features we are working on. Don't use with important data."
+"Try out the new features that we are working on. Currently the most stable "
+"version available. Test Restore data before using this in production "
+"environments."
 msgstr ""
 
-#: scripts/services/AppUtils.js:104
+#: scripts/services/AppUtils.js:105
 msgid "Tue"
 msgstr ""
 
@@ -2286,7 +2435,7 @@ msgstr ""
 msgid "Until resumed"
 msgstr ""
 
-#: templates/settings.html:65
+#: templates/settings.html:78
 msgid "Update channel"
 msgstr "Atjauninājumu kanāls"
 
@@ -2298,26 +2447,22 @@ msgstr "Atjaunināšana neizdevās:"
 msgid "Updating with existing database"
 msgstr ""
 
-#: templates/addoredit.html:311
-msgid "Upload volume size"
-msgstr ""
-
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
 msgstr ""
 
-#: templates/settings.html:114
+#: templates/settings.html:127
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"link\">public usage"
 " statistics</external-link>"
 msgstr ""
 
-#: templates/settings.html:102
+#: templates/settings.html:115
 msgid "Usage statistics"
 msgstr "Izmantošanas statistika"
 
-#: templates/settings.html:108
+#: templates/settings.html:121
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr ""
 
@@ -2325,15 +2470,15 @@ msgstr ""
 msgid "Use SSL"
 msgstr "Izmantot SSL"
 
-#: scripts/controllers/EditBackupController.js:496
+#: scripts/controllers/EditBackupController.js:428
 msgid "Use existing database?"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:390
+#: scripts/controllers/EditBackupController.js:322
 msgid "Use weak passphrase"
 msgstr "Lietot vāju pieejas frāzi"
 
-#: scripts/controllers/EditBackupController.js:39
+#: scripts/controllers/EditBackupController.js:30
 msgid "Useless"
 msgstr "Bezjēdzīgs"
 
@@ -2341,21 +2486,25 @@ msgstr "Bezjēdzīgs"
 msgid "User data"
 msgstr "Lietotāja dati"
 
-#: scripts/services/EditUriBuiltins.js:47
+#: templates/backends/openstack.html:27
+msgid "User domain name"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:50
 msgid "User has too many permissions"
 msgstr ""
 
-#: templates/settings.html:38
+#: templates/settings.html:51
 msgid "User interface settings"
 msgstr "Lietotāja saskarnes iestatījumi"
 
-#: scripts/services/EditUriBuiltins.js:619
-#: scripts/services/EditUriBuiltins.js:699
-#: scripts/services/EditUriBuiltins.js:782
-#: scripts/services/EditUriBuiltins.js:792 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:681
+#: scripts/services/EditUriBuiltins.js:786
+#: scripts/services/EditUriBuiltins.js:909
+#: scripts/services/EditUriBuiltins.js:919 templates/backends/file.html:29
 #: templates/backends/generic.html:18 templates/backends/jottacloud.html:7
 #: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
-#: templates/backends/mega.html:8 templates/backends/openstack.html:18
+#: templates/backends/mega.html:8 templates/backends/openstack.html:30
 msgid "Username"
 msgstr "Lietotājvārds"
 
@@ -2363,12 +2512,11 @@ msgstr "Lietotājvārds"
 msgid "Validating ..."
 msgstr ""
 
-#: templates/home.html:28
+#: templates/home.html:33
 msgid "Verify files"
 msgstr "Pārbaudīt failus"
 
-#: scripts/services/CaptchaService.js:32 scripts/services/ServerStatus.js:58
-#: templates/notificationarea.html:29
+#: scripts/services/CaptchaService.js:32 templates/notificationarea.html:31
 msgid "Verifying ..."
 msgstr "Notiek pārbaude ..."
 
@@ -2380,6 +2528,10 @@ msgstr ""
 msgid "Verifying backend data ..."
 msgstr ""
 
+#: scripts/services/ServerStatus.js:58
+msgid "Verifying files..."
+msgstr ""
+
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
 msgstr ""
@@ -2388,15 +2540,15 @@ msgstr ""
 msgid "Verifying restored files ..."
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:43
+#: scripts/controllers/EditBackupController.js:34
 msgid "Very strong"
 msgstr "Ļoti stiprs"
 
-#: scripts/controllers/EditBackupController.js:40
+#: scripts/controllers/EditBackupController.js:31
 msgid "Very weak"
 msgstr "Ļoti vājš"
 
-#: index.html:246
+#: index.html:254
 msgid "Visit us on"
 msgstr ""
 
@@ -2422,7 +2574,7 @@ msgstr ""
 msgid "Waiting for upload ..."
 msgstr "Notiek gaidīšana uz augšupielādes procesu"
 
-#: templates/settings.html:109
+#: templates/settings.html:122
 msgid "Warnings, errors and crashes"
 msgstr "Brīdinājumi, kļūdas un avārijas"
 
@@ -2438,19 +2590,19 @@ msgstr ""
 "Mēs iesakām jums šifrēt visas dublējumkopijas, kuras tiek uzglabātas ārpus "
 "jūsu sistēmas"
 
-#: scripts/controllers/EditBackupController.js:41
+#: scripts/controllers/EditBackupController.js:32
 msgid "Weak"
 msgstr "Vājš"
 
-#: scripts/controllers/EditBackupController.js:390
+#: scripts/controllers/EditBackupController.js:322
 msgid "Weak passphrase"
 msgstr "Vāja pieejas frāze"
 
-#: scripts/services/AppUtils.js:105
+#: scripts/services/AppUtils.js:106
 msgid "Wed"
 msgstr ""
 
-#: scripts/services/AppUtils.js:91 templates/addoredit.html:350
+#: scripts/services/AppUtils.js:92 templates/addoredit.html:348
 msgid "Weeks"
 msgstr "Nedēļas"
 
@@ -2462,19 +2614,15 @@ msgstr ""
 msgid "Where do you want to restore the files to?"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:21
-msgid "Windows"
-msgstr ""
-
-#: scripts/services/AppUtils.js:93 templates/addoredit.html:352
+#: scripts/services/AppUtils.js:94 templates/addoredit.html:350
 msgid "Years"
 msgstr "Gadi"
 
 #: scripts/controllers/AppController.js:172
 #: scripts/controllers/DeleteController.js:77
-#: scripts/controllers/EditBackupController.js:142
-#: scripts/controllers/EditBackupController.js:152
-#: scripts/controllers/EditBackupController.js:496
+#: scripts/controllers/EditBackupController.js:133
+#: scripts/controllers/EditBackupController.js:143
+#: scripts/controllers/EditBackupController.js:428
 #: scripts/controllers/HomeController.js:7
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
@@ -2483,22 +2631,22 @@ msgstr "Gadi"
 #: scripts/directives/backupEditUri.js:214
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:47
-#: scripts/services/EditUriBuiltins.js:664
-#: scripts/services/EditUriBuiltins.js:736
-#: scripts/services/EditUriBuiltins.js:753
+#: scripts/services/EditUriBuiltins.js:50
+#: scripts/services/EditUriBuiltins.js:757
+#: scripts/services/EditUriBuiltins.js:839
+#: scripts/services/EditUriBuiltins.js:856
 msgid "Yes"
 msgstr "Jā"
 
-#: scripts/controllers/EditBackupController.js:405
+#: scripts/controllers/EditBackupController.js:337
 msgid "Yes, I have stored the passphrase safely"
 msgstr "Jā, esmu noglabājais pieejas frāzi droši"
 
-#: scripts/controllers/EditBackupController.js:448
+#: scripts/controllers/EditBackupController.js:380
 msgid "Yes, I'm brave!"
 msgstr "Jā, esmu drosmīgs!"
 
-#: scripts/controllers/EditBackupController.js:439
+#: scripts/controllers/EditBackupController.js:371
 msgid "Yes, please break my backup!"
 msgstr "Jā, lūdzu salauziet manu dublējumkopiju!"
 
@@ -2534,19 +2682,19 @@ msgid ""
 "current file and the stop."
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:448
+#: scripts/controllers/EditBackupController.js:380
 msgid ""
 "You have changed the encryption mode. This may break stuff. You are "
 "encouraged to create a new backup instead"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:439
+#: scripts/controllers/EditBackupController.js:371
 msgid ""
 "You have changed the passphrase, which is not supported. You are encouraged "
 "to create a new backup instead."
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:475
+#: scripts/controllers/EditBackupController.js:407
 msgid ""
 "You have chosen not to encrypt the backup. Encryption is recommended for all"
 " data stored on a remote server."
@@ -2556,59 +2704,71 @@ msgstr ""
 msgid "You have chosen to restore to a new location, but not entered one"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:405
+#: scripts/controllers/EditBackupController.js:337
 msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
 "of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:313
+#: scripts/controllers/EditBackupController.js:240
 msgid "You must choose at least one source folder"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:292
+#: scripts/services/EditUriBuiltins.js:797
+msgid "You must enter a domain name to use v3 API"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:219
 msgid "You must enter a name for the backup"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:300
+#: scripts/controllers/EditBackupController.js:227
 msgid "You must enter a passphrase or disable encryption"
 msgstr "Jums nepieciešams ievadīt pieejas frāzi vai atspējot šifrēšanu"
 
-#: scripts/controllers/EditBackupController.js:344
+#: scripts/services/EditUriBuiltins.js:794
+msgid "You must enter a password to use v3 API"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:276
 msgid "You must enter a positive number of backups to keep"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:711
+#: scripts/services/EditUriBuiltins.js:800
+msgid "You must enter a tenant (aka project) name to use v3 API"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:814
 msgid "You must enter a tenant name if you do not provide an API Key"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:337
+#: scripts/controllers/EditBackupController.js:269
 msgid "You must enter a valid duration for the time to keep backups"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:351
+#: scripts/controllers/EditBackupController.js:283
 msgid "You must enter a valid rentention policy string"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:708
+#: scripts/services/EditUriBuiltins.js:811
 msgid "You must enter either a password or an API Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:715
+#: scripts/services/EditUriBuiltins.js:818
 msgid "You must enter either a password or an API Key, not both"
 msgstr ""
 
-#: scripts/services/EditUriBackendConfig.js:108
+#: scripts/services/EditUriBackendConfig.js:115
 msgid "You must fill in the password"
 msgstr ""
 
-#: scripts/services/EditUriBackendConfig.js:85
+#: scripts/services/EditUriBackendConfig.js:92
 msgid "You must fill in the server name or address"
 msgstr ""
 
-#: scripts/services/EditUriBackendConfig.js:106
-#: scripts/services/EditUriBackendConfig.js:115
+#: scripts/services/EditUriBackendConfig.js:113
+#: scripts/services/EditUriBackendConfig.js:122
 msgid "You must fill in the username"
 msgstr ""
 
@@ -2616,23 +2776,27 @@ msgstr ""
 msgid "You must fill in {{field}}"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:703
+#: scripts/services/EditUriBuiltins.js:790
 msgid "You must select or fill in the AuthURI"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:729
+#: scripts/services/EditUriBuiltins.js:832
 msgid "You must select or fill in the server"
 msgstr ""
 
-#: scripts/services/EditUriBackendConfig.js:92
+#: scripts/services/EditUriBackendConfig.js:99
 msgid "You must specify a path"
 msgstr "Jums jānorāda ceļš"
+
+#: scripts/services/EditUriBackendConfig.js:85
+msgid "You should fill in {{field}}{{reason}}"
+msgstr ""
 
 #: templates/restore.html:139
 msgid "Your files and folders have been restored successfully."
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:390
+#: scripts/controllers/EditBackupController.js:322
 msgid "Your passphrase is easy to guess. Consider changing passphrase."
 msgstr ""
 "Jūsu pieejas frāzi ir vienkārsi uzminēt. Apdomājiet pieejas frāzes nomaiņu."
@@ -2641,15 +2805,15 @@ msgstr ""
 msgid "bucket/folder/subfolder"
 msgstr "spainis/mape/apakšmape"
 
-#: scripts/services/AppUtils.js:80
+#: scripts/services/AppUtils.js:81
 msgid "byte"
 msgstr "baits"
 
-#: scripts/services/AppUtils.js:113
+#: scripts/services/AppUtils.js:114
 msgid "byte/s"
 msgstr "baiti/sekundē"
 
-#: templates/addoredit.html:276 templates/addoredit.html:353
+#: templates/addoredit.html:268 templates/addoredit.html:351
 #: templates/advancedoptionseditor.html:28
 #: templates/advancedoptionseditor.html:35
 msgid "custom"
@@ -2659,6 +2823,11 @@ msgstr ""
 #: templates/waitarea.html:15
 msgid "resume now"
 msgstr "turpināt tagad"
+
+#: scripts/services/EditUriBuiltins.js:729
+#: scripts/services/EditUriBuiltins.js:740
+msgid "unless you are explicitly specifying --group-id"
+msgstr ""
 
 #: templates/about.html:12
 msgid ""
@@ -2672,7 +2841,7 @@ msgstr ""
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
 msgstr ""
 
-#: templates/home.html:61 templates/restorewizard.html:23
+#: templates/home.html:67 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] ""
@@ -2688,6 +2857,6 @@ msgstr "{{number}} Stunda"
 msgid "{{number}} Minutes"
 msgstr "{{number}} Minūtes"
 
-#: templates/home.html:42
+#: templates/home.html:47
 msgid "{{time}} (took {{duration}})"
 msgstr ""

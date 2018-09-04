@@ -22,7 +22,7 @@
             <fieldset>
 
                 <p><label for="login-password">Password</label></p>
-                <p><input type="password" id="login-password" value="password" onBlur="if(this.value=='')this.value='password'" onFocus="if(this.value=='password')this.value=''"></p> <!-- JS because of IE support; better: placeholder="password" -->
+                <p><input type="password" id="login-password" value="password" onBlur="if(this.value=='')this.value='password'" onFocus="if(this.value=='password')this.value=''" autofocus></p> <!-- JS because of IE support; better: placeholder="password" -->
 
                 <p><input type="submit" id="login-button" value="Sign In"></p>
 

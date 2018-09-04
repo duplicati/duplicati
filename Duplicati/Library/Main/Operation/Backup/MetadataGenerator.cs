@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 Dictionary<string, string> metadata;
 
-                if (options.StoreMetadata)
+                if (!options.SkipMetadata)
                 {
                     metadata = snapshot.GetMetadata(path, snapshot.IsSymlink(path, attributes), options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
                     if (metadata == null)

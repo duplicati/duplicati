@@ -38,7 +38,8 @@ if [ ! -f "$1" ]; then
     exit
 fi
 
-VERSION_NUMBER=$(echo "$1" | awk -F- '{print $2}' | awk -F_ '{print $1}')
+ZIPNAME=$(basename "$1")
+VERSION_NUMBER=$(echo "$ZIPNAME" | awk -F- '{print $2}' | awk -F_ '{print $1}')
 
 VERSION_NAME="Duplicati"
 if [ -e "${OUTPUT_DMG}" ]; then
@@ -63,11 +64,9 @@ mkdir "Duplicati.app/Contents/Resources"
 # Extract the zip into the Resouces folder
 unzip -q "$1" -d "Duplicati.app/Contents/Resources"
 
-# Install the Info.plist and icon
-SHORT_VERSION_NUMBER=$(echo ${VERSION_NUMBER} | awk -F. '{printf $1; printf "."; printf $2; printf "."; print $3}')
+# Install the Info.plist and icon, patch the plist file as well
 PLIST=$(cat "Info.plist")
-PLIST=${PLIST/!LONG_VERSION!/${VERSION_NUMBER}}
-PLIST=${PLIST/!SHORT_VERSION!/${SHORT_VERSION_NUMBER}}
+PLIST=${PLIST//!LONG_VERSION!/${VERSION_NUMBER}}
 echo ${PLIST} > "Duplicati.app/Contents/Info.plist"
 cp "Duplicati.icns" "Duplicati.app/Contents/Resources"
 
