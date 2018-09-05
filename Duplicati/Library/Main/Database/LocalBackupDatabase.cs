@@ -175,7 +175,14 @@ namespace Duplicati.Library.Main.Database
             m_selectfilemetadatahashandsizeCommand.CommandText = @"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = ? AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ";
             m_selectfilemetadatahashandsizeCommand.AddParameters(1);
 
-            // The original command (v==1) finds the most recent entry of the file in question, 
+            // Allow users to test on real-world data
+            // to get feedback on potential performance
+            int.TryParse(Environment.GetEnvironmentVariable("TEST_QUERY_VERSION"), out var testqueryversion);
+
+            if (testqueryversion != 0)
+                Logging.Log.WriteWarningMessage(LOGTAG, "TestFileQuery", null, "Using performance test query version {0} as the TEST_QUERY_VERSION environment variable is set", testqueryversion);
+
+            // The original query (v==1) finds the most recent entry of the file in question, 
             // but it requires some large joins to extract the required information.
             // To speed it up, we use a slightly simpler approach that only looks at the
             // previous fileset, and uses information here.
@@ -185,55 +192,74 @@ namespace Duplicati.Library.Main.Database
             // but allow users to switch back via an environment variable
             // such that we can get performance feedback
 
-            m_findfileCommand.CommandText =
-                @" SELECT ""File"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
-                @"   FROM ""File"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
-                @"  WHERE ""File"".""Path"" = ? " +
-                @"    AND ""Fileset"".""ID"" = ? " +
-                @"    AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
-                @"    AND ""FileBlockset"".""ID"" = ""File"".""BlocksetID"" " +
-                @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" ";
+            switch (testqueryversion)
+            {
+                // The query used in Duplicati until 2.0.3.9
+                case 1:
+                    m_findfileCommand.CommandText =
+                        @" SELECT ""File"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
+                        @"   FROM ""File"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
+                        @"  WHERE ""File"".""Path"" = ? " +
+                        @"    AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
+                        @"    AND ""FileBlockset"".""ID"" = ""File"".""BlocksetID"" " +
+                        @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
+                        @"    AND ? IS NOT NULL" +
+                        @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
+                        @"  LIMIT 1 ";
+                    break;
+
+                // The fastest reported query in Duplicati 2.0.3.10, but with "LIMIT 1" added
+                default:
+                case 2:
+                    var getLastFileEntryForPath =
+                        @"SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"", ""A"".""MetadataID"" " +
+                        @"  FROM (SELECT ""ID"", ""BlocksetID"", ""MetadataID"" FROM ""File"" WHERE ""Path"" = ?) ""A"" " +
+                        @"  CROSS JOIN ""FilesetEntry"" ""B"" " +
+                        @"  WHERE ""A"".""ID"" = ""B"".""FileID"" " +
+                        @"    AND ""B"".""FilesetID"" = ? ";
+
+                    m_findfileCommand.CommandText = string.Format(
+                        @"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize"" " +
+                        @"  FROM " +
+                        @"  ({0}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F"" " +
+                        @" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID"" " +
+                        @" LIMIT 1",
+                        getLastFileEntryForPath
+                    );
+                    break;
+
+                // Potentially faster query: https://forum.duplicati.com/t/release-2-0-3-10-canary-2018-08-30/4497/25
+                case 3:
+                    m_findfileCommand.CommandText =
+                        @"    SELECT File.ID as FileID, FilesetEntry.Lastmodified, FileBlockset.Length,  " +
+                        @"           MetaBlockset.FullHash AS Metahash, MetaBlockset.Length as Metasize " +
+                        @"      FROM FilesetEntry " +
+                        @"INNER JOIN Fileset ON (FileSet.ID = FilesetEntry.FilesetID) " +
+                        @"INNER JOIN File ON (File.ID = FilesetEntry.FileID) " +
+                        @"INNER JOIN Metadataset ON (Metadataset.ID = File.MetadataID) " +
+                        @"INNER JOIN Blockset AS MetaBlockset ON (MetaBlockset.ID = Metadataset.BlocksetID) " +
+                        @" LEFT JOIN Blockset AS FileBlockset ON (FileBlockset.ID = File.BlocksetID) " +
+                        @"     WHERE File.Path = ? AND FilesetID = ? " +
+                        @"     LIMIT 1 ";
+                    break;
+
+                // The slow query used in Duplicati 2.0.3.10, but with "LIMIT 1" added
+                case 4:
+                    m_findfileCommand.CommandText =
+                        @" SELECT ""File"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
+                        @"   FROM ""File"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
+                        @"  WHERE ""File"".""Path"" = ? " +
+                        @"    AND ""Fileset"".""ID"" = ? " +
+                        @"    AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
+                        @"    AND ""FileBlockset"".""ID"" = ""File"".""BlocksetID"" " +
+                        @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
+                        @"  LIMIT 1 ";
+                    break;
+
+            }
 
             m_findfileCommand.AddParameters(2);
 
-            // Allow users to test on real-world data
-            // to get feedback on potential performance
-            int.TryParse(Environment.GetEnvironmentVariable("TEST_QUERY_VERSION"), out var testqueryversion);
-
-            if (testqueryversion == 1)
-            {
-                Logging.Log.WriteWarningMessage(LOGTAG, "TestFileQuery", null, "Using performance test query version {0} as the TEST_QUERY_VERSION environment variable is set", testqueryversion);
-
-                m_findfileCommand.CommandText =
-                    @" SELECT ""File"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
-                    @"   FROM ""File"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
-                    @"  WHERE ""File"".""Path"" = ? " +
-                    @"    AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
-                    @"    AND ""FileBlockset"".""ID"" = ""File"".""BlocksetID"" " +
-                    @"    AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
-                    @"    AND ? IS NOT NULL" +
-                    @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
-                    @"  LIMIT 1 ";
-            }
-            else if (testqueryversion == 2)
-            {
-                Logging.Log.WriteWarningMessage(LOGTAG, "TestFileQuery", null, "Using performance test query version {0} as the TEST_QUERY_VERSION environment variable is set", testqueryversion);
-
-                var getLastFileEntryForPath =
-                    @"SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"", ""A"".""MetadataID"" " +
-                    @"  FROM (SELECT ""ID"", ""BlocksetID"", ""MetadataID"" FROM ""File"" WHERE ""Path"" = ?) ""A"" " +
-                    @"  CROSS JOIN ""FilesetEntry"" ""B"" " +
-                    @"  WHERE ""A"".""ID"" = ""B"".""FileID"" " +
-                    @"    AND ""B"".""FilesetID"" = ? ";
-
-                m_findfileCommand.CommandText = string.Format(
-                    @"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize"" " +
-                    @"  FROM " +
-                    @"  ({0}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F"" " +
-                    @" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID"" ",
-                    getLastFileEntryForPath
-                );
-            }
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""File"" WHERE ""Blockset"".""ID"" = ""File"".""BlocksetID"" AND ""File"".""ID"" = ?  ";
             m_selectfileHashCommand.AddParameters(1);
