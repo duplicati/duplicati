@@ -198,7 +198,7 @@ msgid "Automatically run backups."
 msgstr ""
 
 #: templates/backends/b2.html:12
-msgid "B2 Account ID"
+msgid "B2 Account ID or Application ID"
 msgstr ""
 
 #: templates/backends/b2.html:16
@@ -2596,7 +2596,7 @@ msgid "Waiting for task to start ...."
 msgstr ""
 
 #: scripts/services/ServerStatus.js:39
-msgid "Waiting for upload ..."
+msgid "Waiting for upload to finish ..."
 msgstr ""
 
 #: templates/settings.html:122
