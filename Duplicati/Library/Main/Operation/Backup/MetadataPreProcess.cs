@@ -162,7 +162,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     if (options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                     {
-                        var metadata = await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot);
+                        var metadata = MetadataGenerator.GenerateMetadata(path, attributes, options, snapshot);
 
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
                             metadata["CoreSymlinkTarget"] = symlinkTarget;
@@ -187,7 +187,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 if (!options.SkipMetadata)
                 {
-                    metahash = Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot), options);
+                    metahash = Utility.WrapMetadata(MetadataGenerator.GenerateMetadata(path, attributes, options, snapshot), options);
                 }
                 else
                 {

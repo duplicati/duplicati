@@ -109,7 +109,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 this.LocalTempfile.Protected = true;
             }
                 
-            public async Task Encrypt(Options options)
+            public void Encrypt(Options options)
             {
                 if (!this.Encrypted && !options.NoEncryption)
                 {
@@ -221,9 +221,9 @@ namespace Duplicati.Library.Main.Operation.Common
 
             var tcs = new TaskCompletionSource<bool>();
 
-            var backgroundhashAndEncrypt = Task.Run(async () =>
+            var backgroundhashAndEncrypt = Task.Run(() =>
             {
-                await fe.Encrypt(m_options).ConfigureAwait(false);
+                fe.Encrypt(m_options);
                 return fe.UpdateHashAndSize(m_options);
             });
 
@@ -331,7 +331,7 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunRetryOnMain(fe, () => DoGet(fe));
         }
 
-        private async Task ResetBackendAsync(Exception ex)
+        private void ResetBackend(Exception ex)
         {
             try
             {
@@ -343,7 +343,6 @@ namespace Duplicati.Library.Main.Operation.Common
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeError", dex, "Failed to dispose backend instance: {0}", ex.Message); 
             }
             m_backend = null;
-
         }
 
         private async Task<T> DoWithRetry<T>(FileEntryItem item, Func<Task<T>> method)
@@ -405,12 +404,12 @@ namespace Duplicati.Library.Main.Operation.Common
                     }
 
                     if (!recovered)
-                        await ResetBackendAsync(ex).ConfigureAwait(false);
+                        ResetBackend(ex);
                 }
                 finally
                 {
                     if (m_options.NoConnectionReuse)
-                        await ResetBackendAsync(null).ConfigureAwait(false);
+                        ResetBackend(null);
                 }
             }
 
@@ -435,7 +434,7 @@ namespace Duplicati.Library.Main.Operation.Common
         private async Task<bool> DoPut(FileEntryItem item, bool updatedHash = false)
         {
             // If this is not already encrypted, do it now
-            await item.Encrypt(m_options).ConfigureAwait(false);
+            item.Encrypt(m_options);
 
             updatedHash |= item.UpdateHashAndSize(m_options);
 
