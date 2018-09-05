@@ -1054,12 +1054,12 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Gets a string comparer that matches the client filesystems case sensitivity
         /// </summary>
-        public static StringComparer ClientFilenameStringComparer => IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase;
+        public static StringComparer ClientFilenameStringComparer => IsFSCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
 
         /// <summary>
         /// Gets the string comparision that matches the client filesystems case sensitivity
         /// </summary>
-        public static StringComparison ClientFilenameStringComparison => IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase;
+        public static StringComparison ClientFilenameStringComparison => IsFSCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
         /// <summary>
         /// The path to the users home directory
