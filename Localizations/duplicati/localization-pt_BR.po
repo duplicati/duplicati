@@ -191,6 +191,9 @@ msgid ""
 "hostnames are \"*\", all hostnames are allowed and the hostname checking is "
 "disabled."
 msgstr ""
+"Nomes de host que são aceitos, separados por ponto e vírgula. Se qualquer um"
+" dos nomes de host for \"*\", todos os nomes de host serão permitidos e a "
+"verificação do nome do host será desativada."
 
 #: Server/Strings.cs:35
 msgid "Enables the ping-pong responder"
@@ -258,6 +261,10 @@ msgid ""
 "storage. By default the system default temporary folder is used. Note that "
 "also SQLite will put temporary files in this temporary folder."
 msgstr ""
+"Essa opção pode ser usada para fornecer uma pasta alternativa para "
+"armazenamento temporário. Por padrão, a pasta temporária padrão do sistema é"
+" usada. Note que também o SQLite irá colocar arquivos temporários nesta "
+"pasta temporária."
 
 #: Server/Strings.cs:47
 #, csharp-format
@@ -655,10 +662,11 @@ msgstr ""
 #: Library/Snapshots/Strings.cs:15
 msgid "Unable to determine full file path for USN entry"
 msgstr ""
+"Não é possível determinar o caminho completo do arquivo para a entrada USN"
 
 #: Library/Snapshots/Strings.cs:16
 msgid "USN journal entries were purged since last scan"
-msgstr ""
+msgstr "Journal USN foram removidas desde a última verificação"
 
 #: Library/Snapshots/Strings.cs:17
 msgid "Unexpected empty response while enumerating"
@@ -678,11 +686,11 @@ msgstr ""
 
 #: Library/Snapshots/Strings.cs:20
 msgid "Unexpected path format encountered"
-msgstr ""
+msgstr "Formato de caminho inesperado encontrado"
 
 #: Library/Snapshots/Strings.cs:21
 msgid "Unsupported USN journal version."
-msgstr ""
+msgstr "Versão de journal USN não suportada."
 
 #: Library/Snapshots/Strings.cs:25
 msgid "Calling process does not have the backup privilege"
@@ -1086,6 +1094,8 @@ msgid ""
 "This option disables the team drives, showing only files and folders "
 "accessible with the account itself"
 msgstr ""
+"Esta opção desativa as team drives, mostrando apenas arquivos e pastas "
+"acessíveis com a própria conta"
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -2740,7 +2750,7 @@ msgstr "A pasta de origem {0} não existe, cancelando o backup"
 #: Library/Main/Strings.cs:14
 #, csharp-format
 msgid "Unauthorized to access source folder {0}, aborting backup"
-msgstr ""
+msgstr "Não autorizado a acessar a pasta de origem {0}, abortando o backup"
 
 #: Library/Main/Strings.cs:15
 #, csharp-format
@@ -2852,6 +2862,9 @@ msgid ""
 "etc). A multiplier is recommended to avoid unexpected changes if the program"
 " is updated."
 msgstr ""
+"O tamanho \"{1}\" fornecido para --{0} não possui um multiplicador (b, kb, "
+"mb, etc). Um multiplicador é recomendado para evitar alterações inesperadas "
+"se o programa for atualizado."
 
 #: Library/Main/Strings.cs:36
 msgid ""
@@ -4206,7 +4219,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:231
 msgid "Limit number of concurrent threads"
-msgstr ""
+msgstr "Limitar o número de threads simultâneas"
 
 #: Library/Main/Strings.cs:232
 msgid ""
@@ -4214,25 +4227,32 @@ msgid ""
 "value to zero or less will dynamically balance the number of active threads "
 "to fit the hardware."
 msgstr ""
+"Use essa opção para definir o número máximo de threads usados. Definir esse "
+"valor como zero ou menos equilibrará dinamicamente o número de threads "
+"ativos para ajustar o hardware."
 
 #: Library/Main/Strings.cs:233
 msgid "Specify the number of concurrent hashing processes"
-msgstr ""
+msgstr "Especifique o número de processos de hashing simultâneos"
 
 #: Library/Main/Strings.cs:234
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
+"Use esta opção para definir o número de processos que executam o hash de "
+"dados."
 
 #: Library/Main/Strings.cs:235
 msgid "Specify the number of concurrent compression processes"
-msgstr ""
+msgstr "Especifique o número de processos de compactação simultâneos"
 
 #: Library/Main/Strings.cs:236
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 msgstr ""
+"Use essa opção para definir o número de processos que executam a compactação"
+" dos dados de saída."
 
 #: Library/Main/Strings.cs:237
 msgid "Perform backup of Hyper-V machines (Windows only)"
@@ -4421,7 +4441,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:268
 msgid "List of filenames that exclude folders"
-msgstr ""
+msgstr "Lista de nomes de arquivos que excluem pastas"
 
 #: Library/Main/Strings.cs:269
 msgid ""
@@ -4430,10 +4450,14 @@ msgid ""
 "file named something like \".nobackup\" and place this file into folders "
 "that should not be backed up."
 msgstr ""
+"Use essa opção para definir um nome de arquivo ou uma lista de nomes de "
+"arquivos que indiquem a exclusão de uma pasta que o contenha. Um uso comum "
+"seria ter um arquivo chamado algo como \".nobackup\" e colocar esse arquivo "
+"em pastas que não devem ser submetidas a backup."
 
 #: Library/Main/Strings.cs:275
 msgid "Activates logging of all database queries"
-msgstr ""
+msgstr "Ativa o registro de todas as consultas do banco de dados"
 
 #: Library/Main/Strings.cs:276
 #, csharp-format
@@ -4443,6 +4467,10 @@ msgid ""
 "remember to set either --{0}={2} or --{1}={2} to report the additional log "
 "data"
 msgstr ""
+"Para melhorar o desempenho dos backups, as consultas frequentes ao banco de "
+"dados não são registradas por padrão. Ative esta opção para registrar todas "
+"as consultas ao banco de dados e lembre-se de definir --{0}={2} ou --{1}={2}"
+" para relatar os dados de log adicionais"
 
 #: Library/Main/Strings.cs:283
 #, csharp-format
@@ -4534,6 +4562,11 @@ msgid ""
 "derivatives{0}    curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync "
 "--user cacert.pem; rm cacert.pem #for MacOS{0}Read more: {1}"
 msgstr ""
+"Nenhum certificado encontrado, você pode instalar alguns com um destes "
+"comandos: {0} cert-sync /etc/ssl/certs/ca-certificates.crt #para sistemas "
+"baseados em Debian {0} cert-sync  /etc/pki/tls/certs/ca-bundle.crt #para "
+"Derivados RedHat {0} curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync "
+"--user cacert.pem; rm cacert.pem #para MacOS {0} Leia mais: {1}"
 
 #: Library/Modules/Builtin/Strings.cs:21
 msgid ""
@@ -4742,13 +4775,14 @@ msgstr "Executar um script necessário na inicialização"
 #: Library/Modules/Builtin/Strings.cs:59
 #: Library/Modules/Builtin/Strings.cs:182
 msgid "Selects the output format for results"
-msgstr ""
+msgstr "Seleciona o formato de saída para resultados"
 
 #: Library/Modules/Builtin/Strings.cs:60
 #: Library/Modules/Builtin/Strings.cs:183
 #, csharp-format
 msgid "Selects the output format for results. Available formats: {0}"
 msgstr ""
+"Seleciona o formato de saída dos resultados. Formatos disponíveis: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:61
 #, csharp-format
@@ -5117,59 +5151,68 @@ msgstr "Falha no envio de mensagem htto: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:168
 msgid "Send data as JSON body"
-msgstr ""
+msgstr "Enviar dados como JSON"
 
 #: Library/Modules/Builtin/Strings.cs:169
 msgid "Use this flag to send the result data as a JSON object"
 msgstr ""
+"Use este sinalizador para enviar os dados do resultado como um objeto JSON"
 
 #: Library/Modules/Builtin/Strings.cs:170
 msgid "Sets the HTTP verb to use"
-msgstr ""
+msgstr "Define o cabeçalho HTTP que deseja usar"
 
 #: Library/Modules/Builtin/Strings.cs:171
 msgid ""
 "Use this option to change the default HTTP verb used to submit a report"
 msgstr ""
+"Use esta opção para alterar o cabeçalho HTTP padrão usado para enviar um "
+"relatório"
 
 #: Library/Modules/Builtin/Strings.cs:175
 #, csharp-format
 msgid "Failed to send message: {0}"
-msgstr ""
+msgstr "Falha ao enviar mensagem: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:176
 msgid "Defines a log level for messages"
-msgstr ""
+msgstr "Define um nível de log para mensagens"
 
 #: Library/Modules/Builtin/Strings.cs:177
 msgid ""
 "Use this option to set the log level for messages to include in the report"
 msgstr ""
+"Use esta opção para definir o nível de log das mensagens a serem incluídas "
+"no relatório"
 
 #: Library/Modules/Builtin/Strings.cs:178
 msgid "Log message filter"
-msgstr ""
+msgstr "Filtro de mensagens de log"
 
 #: Library/Modules/Builtin/Strings.cs:179
 msgid ""
 "Use this option to set a filter expression that defines what options are "
 "included in the report"
 msgstr ""
+"Use essa opção para definir uma expressão de filtro que defina quais opções "
+"estão incluídas no relatório"
 
 #: Library/Modules/Builtin/Strings.cs:180
 msgid "Limits log lines"
-msgstr ""
+msgstr "Limita linhas de log"
 
 #: Library/Modules/Builtin/Strings.cs:181
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
 msgstr ""
+"Use essa opção para definir o número máximo de linhas de log a serem "
+"incluídas no relatório. Valores zero ou negativos significam ilimitado."
 
 #: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:19
 #, csharp-format
 msgid "The format is not supported: {0}"
-msgstr ""
+msgstr "O formato não é suportado: {0}"
 
 #: Library/Utility/Strings.cs:7
 #, csharp-format
@@ -5287,26 +5330,31 @@ msgid ""
 "The string {0} does not represent a known filter group name. Valid values "
 "are: {1}"
 msgstr ""
+"A cadeia {0} não representa um nome de grupo de filtros conhecido. Os "
+"valores válidos são: {1}"
 
 #: Library/Utility/FilterGroups.cs:182
 #, csharp-format
 msgid "{0}: Selects no filters."
-msgstr ""
+msgstr "{0}: não seleciona filtros."
 
 #: Library/Utility/FilterGroups.cs:183
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr ""
+"{0}: Um conjunto de filtros de exclusão padrão, atualmente avaliado como: "
+"{1}."
 
 #: Library/Utility/FilterGroups.cs:184
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr ""
+"{0}: Um conjunto de filtros de inclusão padrão avalia atualmente: {1}."
 
 #: Library/Utility/FilterGroups.cs:195
 #, csharp-format
 msgid " Aliases: {0}"
-msgstr ""
+msgstr " Aliases: {0}"
 
 #: Library/Utility/FilterGroups.cs:208
 #, csharp-format
@@ -5315,6 +5363,9 @@ msgid ""
 "includes any operating system reported protected files. Most users should at"
 " least apply these filters."
 msgstr ""
+"{0}: Arquivos pertencentes ao sistema ou não adequados para backup. Isso "
+"inclui todos os arquivos protegidos relatados pelo sistema operacional. A "
+"maioria dos usuários deve pelo menos aplicar esses filtros."
 
 #: Library/Utility/FilterGroups.cs:210
 #, csharp-format
@@ -5322,11 +5373,15 @@ msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
 "when the operating system is re-installed."
 msgstr ""
+"{0}: Arquivos que pertencem ao sistema operacional. Esses arquivos são "
+"restaurados quando o sistema operacional é reinstalado."
 
 #: Library/Utility/FilterGroups.cs:212
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr ""
+"{0}: Arquivos e pastas que são conhecidos como armazenamento de dados "
+"temporários."
 
 #: Library/Utility/FilterGroups.cs:214
 #, csharp-format
@@ -5334,11 +5389,14 @@ msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
 "system and various applications"
 msgstr ""
+"{0}: arquivos e pastas que são locais de cache conhecidos para o sistema "
+"operacional e vários aplicativos"
 
 #: Library/Utility/FilterGroups.cs:216
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr ""
+"{0}: programas instalados e suas bibliotecas, mas não suas configurações."
 
 #: CommandLine/Strings.cs:4
 #, csharp-format
@@ -5432,6 +5490,14 @@ msgid ""
 "files and folders) can be specified by using curly braces, i.e. "
 "{{Applications}}."
 msgstr ""
+"Inclua arquivos que correspondam a esse filtro. O caractere especial * "
+"significa qualquer quantidade de caracteres e o caractere especial ? "
+"significa qualquer caractere único, use * .txt para incluir todos os "
+"arquivos com uma extensão de texto. Expressões regulares também são "
+"suportadas e podem ser fornecidas usando chaves rígidas, ou seja, "
+"[.*\\.txt]. Os grupos de filtros (que encapsulam um conjunto interno de "
+"arquivos e pastas conhecidos) podem ser especificados usando chaves, ou "
+"seja, {{Applications}}."
 
 #: CommandLine/Strings.cs:26
 msgid "Include files"
@@ -5447,6 +5513,13 @@ msgid ""
 "files and folders) can be specified by using curly braces, i.e. "
 "{{TemporaryFiles}}."
 msgstr ""
+"Exclua arquivos que correspondam a esse filtro. O caractere especial * "
+"significa qualquer número de caracteres e o caractere especial ? significa "
+"qualquer caractere único, use *.txt para excluir todos os arquivos com uma "
+"extensão txt. Expressões regulares também são suportadas e podem ser "
+"fornecidas usando chaves rígidas, ou seja, [.*\\.txt]. Os grupos de filtros "
+"(que encapsulam um conjunto interno de arquivos e pastas conhecidos) podem "
+"ser especificados usando chaves, ou seja, {{TemporaryFiles}}."
 
 #: CommandLine/Strings.cs:28
 msgid "Exclude files"

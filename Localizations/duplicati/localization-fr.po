@@ -4153,33 +4153,33 @@ msgstr ""
 
 #: Library/Main/Strings.cs:206
 msgid "Allow the passphrase to change"
-msgstr "Autoriser le mot de passe à changer"
+msgstr "Autoriser le changement de mot de passe"
 
 #: Library/Main/Strings.cs:207
 msgid ""
 "Use this option to allow the passphrase to change, note that this option is "
 "not permitted for a backup or repair operation"
 msgstr ""
-"Utilisez cette option pour autoriser la modification de la phrase secrète, "
-"notez que cette option n'est pas autorisée pour une opération de sauvegarde "
-"ou de réparation"
+"Utilisez cette option pour autoriser la modification du mot de passe, notez "
+"que cette option n'est pas autorisée pour une opération de sauvegarde ou de "
+"réparation"
 
 #: Library/Main/Strings.cs:208
 msgid "List only filesets"
-msgstr "Afficher uniquement les ensembles de fichiers"
+msgstr "Afficher uniquement les index de fichiers"
 
 #: Library/Main/Strings.cs:209
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process"
 msgstr ""
-"Utilisez cette option pour répertorier uniquement les ensembles de fichiers "
-"et éviter de traverser les noms de fichiers et autres métadonnées qui "
+"Utilisez cette option pour répertorier uniquement les index de fichiers et "
+"éviter d'analyser les noms de fichiers et autres métadonnées qui "
 "ralentissent le processus"
 
 #: Library/Main/Strings.cs:211
 msgid "Don't store metadata"
-msgstr "Ne stockez pas de métadonnées"
+msgstr "Ne stocke pas de métadonnées"
 
 #: Library/Main/Strings.cs:212
 msgid ""
@@ -4215,10 +4215,9 @@ msgid ""
 "verify that the restore was successful. Use this option to disable the check"
 " and avoid waiting for the verification."
 msgstr ""
-"Après la restauration des fichiers, le hachage du fichier de tous les "
-"fichiers restaurés est vérifié pour vérifier que la restauration a réussi. "
-"Utilisez cette option pour désactiver la vérification et éviter d'attendre "
-"la vérification."
+"Après la restauration des fichiers, l'empreinte de chaque fichier restauré "
+"est vérifié pour vérifier que la restauration a réussi. Utilisez cette "
+"option pour désactiver et donc éviter d'attendre la vérification."
 
 #: Library/Main/Strings.cs:217
 msgid "Activate caches"
@@ -4227,11 +4226,11 @@ msgstr "Activer les caches"
 #: Library/Main/Strings.cs:218
 msgid "Activate in-memory caches, which are now off by default"
 msgstr ""
-"Activer les caches en mémoire, qui sont maintenant désactivés par défaut"
+"Active les caches en mémoire, qui sont maintenant désactivés par défaut"
 
 #: Library/Main/Strings.cs:219
 msgid "Do not use local data"
-msgstr "N'utilisez pas de données locales"
+msgstr "N'utilise pas de données locales"
 
 #: Library/Main/Strings.cs:220
 msgid ""
@@ -4241,24 +4240,24 @@ msgid ""
 msgstr ""
 "Duplicati tentera d'utiliser les données des fichiers sources pour réduire "
 "la quantité de données téléchargées. Utilisez cette option pour ignorer "
-"cette optimisation et n'utiliser que des données distantes."
+"cette optimisation et n'utiliser que les données distantes."
 
 #: Library/Main/Strings.cs:221
 msgid "Check block hashes"
-msgstr "Bloc de contrôle"
+msgstr "Vérifie les empreintes des blocs"
 
 #: Library/Main/Strings.cs:222
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
 msgstr ""
-"Utilisez cette option pour augmenter la vérification en vérifiant le hachage"
-" des blocs lus à partir d'un volume avant d'appliquer les correctifs aux "
-"fichiers restaurés avec les données."
+"Utilisez cette option pour augmenter la vérification en vérifiant "
+"l'empreinte des blocs lus à partir d'un volume avant d'appliquer les "
+"correctifs aux fichiers restaurés avec les données."
 
 #: Library/Main/Strings.cs:225
 msgid "Repair database with paths"
-msgstr "Réparer la base de données avec des chemins"
+msgstr "Répare la base de données avec les chemins d'accès"
 
 #: Library/Main/Strings.cs:226
 msgid ""
@@ -4268,11 +4267,11 @@ msgid ""
 "resulting database can be searched, but cannot be used to restore data with."
 msgstr ""
 "Utilisez cette option pour créer une base de données locale interrogeable "
-"contenant uniquement des informations de chemin d'accès. Cette option est "
-"utilisable pour créer rapidement une base de données afin de localiser "
-"certains contenus sans avoir à reconstituer toutes les informations. La base"
-" de données résultante peut être recherchée, mais ne peut pas être utilisée "
-"pour restaurer des données."
+"contenant uniquement des informations de chemin d'accès. Cette option existe"
+" pour créer rapidement une base de données afin de localiser certains "
+"contenus sans avoir à reconstituer toutes les informations. La base de "
+"données résultante est interrogeable, mais ne peut pas être utilisée pour "
+"restaurer des données."
 
 #: Library/Main/Strings.cs:227
 msgid "Force the locale setting"

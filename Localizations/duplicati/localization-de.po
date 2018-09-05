@@ -1101,6 +1101,8 @@ msgid ""
 "This option disables the team drives, showing only files and folders "
 "accessible with the account itself"
 msgstr ""
+"Diese Option deaktiviert die Teamlaufwerke und zeigt nur Dateien und Ordner "
+"an, welche mit diesem Konto zugegriffen werden können"
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -2012,6 +2014,10 @@ msgid ""
 "better on a slower or less reliable connection), and to be a multiple of 320"
 " KiB."
 msgstr ""
+"Größe der einzelnen Fragmente, die separat für große Dateien hochgeladen "
+"werden. Es ist empfohlen, zwischen 5-10 MiB zu liegen (obwohl ein "
+"niedrigerer Wert bei einer langsameren oder weniger zuverlässigen Verbindung"
+" besser funktionieren kann) und ein Vielfaches von 320 KiB zu sein."
 
 #: Library/Backend/OneDrive/Strings.cs:23
 msgid "Number of retries for each fragment"
@@ -2047,7 +2053,7 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:33
 msgid "Optional ID of the drive"
-msgstr ""
+msgstr "Optionale ID vom Laufwerk"
 
 #: Library/Backend/OneDrive/Strings.cs:34
 #, csharp-format
@@ -2624,7 +2630,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:20
 msgid "Experimental - 7z Archive"
-msgstr ""
+msgstr "Experimentell - 7z Archiv"
 
 #: Library/Compression/Strings.cs:21
 msgid ""

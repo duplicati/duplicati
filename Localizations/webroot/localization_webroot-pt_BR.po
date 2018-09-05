@@ -180,7 +180,7 @@ msgstr "Relatório anônimo de uso"
 
 #: scripts/services/AppUtils.js:204
 msgid "Applications"
-msgstr ""
+msgstr "Aplicações"
 
 #: templates/export.html:8
 msgid "As Command-line"
@@ -236,7 +236,7 @@ msgstr "Módulos:"
 
 #: scripts/services/ServerStatus.js:44
 msgid "Backup Complete!"
-msgstr ""
+msgstr "Backup concluído!"
 
 #: templates/addoredit.html:88
 msgid "Backup destination"
@@ -314,6 +314,9 @@ msgid ""
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
+"Ao permitir o acesso remoto, o servidor escuta solicitações de qualquer "
+"máquina em sua rede. Se você habilitar essa opção, verifique se está sempre "
+"usando o computador em uma rede protegida por firewall seguro."
 
 #: templates/settings.html:25
 msgid ""
@@ -323,10 +326,15 @@ msgid ""
 " you prefer having to type in the password, even when accessing the user "
 "interface from the tray icon, enable this option."
 msgstr ""
+"Por padrão, o ícone da bandeja abrirá a interface do usuário com um token do"
+" que desbloqueia a interface do usuário. Isso garante que você possa acessar"
+" a interface do usuário a partir do ícone da bandeja, exigindo que outras "
+"pessoas insiram uma senha. Se você preferir digitar a senha, mesmo ao "
+"acessar a interface do usuário no ícone da bandeja, ative essa opção."
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
-msgstr ""
+msgstr "Arquivos de Cache"
 
 #: templates/settings.html:104
 msgid "Canary"
@@ -554,11 +562,11 @@ msgstr "Criando usuário..."
 
 #: templates/home.html:71
 msgid "Current action:"
-msgstr ""
+msgstr "Ação atual:"
 
 #: templates/home.html:81
 msgid "Current file:"
-msgstr ""
+msgstr "Arquivo atual:"
 
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
@@ -614,7 +622,7 @@ msgstr "Padrão ({{channelname}})"
 
 #: scripts/services/AppUtils.js:185
 msgid "Default excludes"
-msgstr ""
+msgstr "Exclusões padrão"
 
 #: templates/settings.html:144
 msgid "Default options"
@@ -671,7 +679,7 @@ msgstr "Destino"
 
 #: templates/backends/sharepoint.html:2
 msgid "Destination path"
-msgstr ""
+msgstr "Caminho de destino"
 
 #: templates/restore.html:141
 msgid ""
@@ -697,7 +705,7 @@ msgstr "Ok"
 
 #: templates/notificationarea.html:41
 msgid "Dismiss all"
-msgstr ""
+msgstr "Ignorar tudo"
 
 #: templates/settings.html:63
 msgid "Display and color theme"
@@ -713,7 +721,7 @@ msgstr "Deseja realmente remover a base local para: {{name}}"
 
 #: templates/backends/openstack.html:26
 msgid "Domain Name"
-msgstr ""
+msgstr "Nome do domínio"
 
 #: index.html:142 index.html:249
 msgid "Donate"
@@ -878,13 +886,15 @@ msgstr "Informe o caminho no destino"
 
 #: templates/backends/msgroup.html:3
 msgid "Enter the email address of the Office 365 group"
-msgstr ""
+msgstr "Digite o endereço de email do grupo do Office 365"
 
 #: templates/backends/sharepoint.html:3
 msgid ""
 "Enter the full destination path, including the server name, but without "
 "https"
 msgstr ""
+"Digite o caminho de destino completo, incluindo o nome do servidor, mas sem "
+"https"
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
@@ -942,7 +952,7 @@ msgstr "Excluir arquivos que contenham"
 
 #: scripts/services/AppUtils.js:164
 msgid "Exclude filter group"
-msgstr ""
+msgstr "Excluir grupo de filtros"
 
 #: scripts/services/AppUtils.js:137
 msgid "Exclude folder"
@@ -1116,7 +1126,7 @@ msgstr "Obtendo versões de arquivos ..."
 #: scripts/services/EditUriBuiltins.js:729
 #: scripts/services/EditUriBuiltins.js:740 templates/backends/msgroup.html:2
 msgid "Group email"
-msgstr ""
+msgstr "E-mail do grupo"
 
 #: scripts/controllers/EditBackupController.js:19
 msgid "Hidden files"
@@ -1136,7 +1146,7 @@ msgstr "Home"
 
 #: templates/settings.html:17
 msgid "Hostnames"
-msgstr ""
+msgstr "Hostnames"
 
 #: scripts/services/AppUtils.js:100 scripts/services/AppUtils.js:90
 #: templates/settings.html:47
@@ -1291,6 +1301,7 @@ msgstr "Resposta incorreta, tente novamente"
 msgid ""
 "Individual builds for developers only. Not for use with important data."
 msgstr ""
+"Versões apenas para desenvolvedores. Não para uso com dados importantes."
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
@@ -1340,7 +1351,7 @@ msgstr "Manter todos os backups"
 
 #: templates/backends/openstack.html:18
 msgid "Keystone API version"
-msgstr ""
+msgstr "Versão da API Keystone"
 
 #: templates/settings.html:53
 msgid "Language in user interface"
@@ -1352,11 +1363,13 @@ msgstr "Último mês"
 
 #: templates/home.html:46
 msgid "Last successful backup:"
-msgstr ""
+msgstr "Último backup bem-sucedido:"
 
 #: templates/restorewizard.html:27
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr ""
+"Última restauração bem-sucedida: {{time}} (duração de {{duration || '0 "
+"seconds'}})"
 
 #: scripts/controllers/RestoreController.js:56
 msgid "Latest"
@@ -1376,7 +1389,7 @@ msgstr "Listando arquivos remotos ..."
 
 #: scripts/services/ServerStatus.js:62
 msgid "Listing remote files for Purge ..."
-msgstr ""
+msgstr "Listando arquivos remotos para o Deleção..."
 
 #: templates/log.html:8
 msgid "Live"
@@ -1688,11 +1701,11 @@ msgstr "OpenStack Object Storage / Swift"
 
 #: scripts/services/EditUriBuiltins.js:803
 msgid "Openstack API Key are not supported in v3 keystone API."
-msgstr ""
+msgstr "A Key de API Openstack não é suportada na API keystone da v3."
 
 #: scripts/services/AppUtils.js:195
 msgid "Operating System"
-msgstr ""
+msgstr "Sistema operacional"
 
 #: scripts/controllers/SystemSettingsController.js:124
 #: scripts/controllers/SystemSettingsController.js:135
@@ -1827,7 +1840,7 @@ msgstr "Porta"
 
 #: templates/settings.html:24
 msgid "Prevent tray icon automatic log-in"
-msgstr ""
+msgstr "Impedir login automático no ícone da bandeja"
 
 #: templates/addoredit.html:110 templates/addoredit.html:243
 #: templates/addoredit.html:293 templates/addoredit.html:405
@@ -1837,7 +1850,7 @@ msgstr "Anterior"
 
 #: templates/home.html:73
 msgid "Progress:"
-msgstr ""
+msgstr "Progresso:"
 
 #: templates/backends/gcs.html:39
 msgid "ProjectID is optional if the bucket exist"
@@ -1853,7 +1866,7 @@ msgstr "Limpando arquivos ..."
 
 #: scripts/services/ServerStatus.js:65
 msgid "Purging files Complete!"
-msgstr ""
+msgstr "Deleção de arquivos Completo!"
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
@@ -1901,7 +1914,7 @@ msgstr "Repositório remoto"
 
 #: templates/addoredit.html:303
 msgid "Remote volume size"
-msgstr ""
+msgstr "Tamanho do volume remoto"
 
 #: templates/addoredit.html:199
 msgid "Remove"
@@ -1917,7 +1930,7 @@ msgstr "Reparar"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
-msgstr ""
+msgstr "Reparando banco de dados ..."
 
 #: templates/addoredit.html:58
 msgid "Repeat Passphrase"
@@ -1937,7 +1950,7 @@ msgstr "Restaurar"
 
 #: scripts/services/ServerStatus.js:55
 msgid "Restore Complete!"
-msgstr ""
+msgstr "Restauração Completa!"
 
 #: templates/restore.html:45
 msgid "Restore files"
@@ -2165,6 +2178,7 @@ msgstr "Origem:"
 #: templates/settings.html:100
 msgid "Specific builds for developers only. Not for use with important data."
 msgstr ""
+"Versão apenas para desenvolvedores. Não para uso com dados importantes."
 
 #: scripts/services/SystemInfo.js:82
 msgid "Standard protocols"
@@ -2172,11 +2186,11 @@ msgstr "Protocolos padrão"
 
 #: scripts/services/ServerStatus.js:33
 msgid "Starting Backup ..."
-msgstr ""
+msgstr "Iniciando o Backup ..."
 
 #: scripts/services/ServerStatus.js:45
 msgid "Starting Restore..."
-msgstr ""
+msgstr "Iniciando a restauração ..."
 
 #: scripts/controllers/RestoreController.js:367
 #: scripts/controllers/RestoreController.js:391
@@ -2247,7 +2261,7 @@ msgstr "Link simbólico"
 
 #: scripts/services/AppUtils.js:192
 msgid "System Files"
-msgstr ""
+msgstr "Arquivos do sistema"
 
 #: templates/settings.html:120
 msgid "System default ({{levelname}})"
@@ -2283,7 +2297,7 @@ msgstr "Tarefa está executando"
 
 #: scripts/services/AppUtils.js:201
 msgid "Temporary Files"
-msgstr ""
+msgstr "Arquivos temporários"
 
 #: scripts/controllers/EditBackupController.js:21
 msgid "Temporary files"
@@ -2319,6 +2333,8 @@ msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
+"O campo '{{fieldname}}' contém um caractere inválido: {{character}} (valor: "
+"{{value}}, índice: {{pos}})"
 
 #: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
@@ -2455,6 +2471,11 @@ msgid ""
 "size'\">See this page before you change the remote volume size.</external-"
 "link>"
 msgstr ""
+"Essa opção não está relacionada ao backup ou ao tamanho máximo do arquivo, "
+"nem afeta as taxas de desduplicação. <external-link link = "
+"\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'\">"
+" Veja esta página antes de alterar o tamanho do volume remoto. </ external-"
+"link>"
 
 #: scripts/controllers/RestoreController.js:35
 msgid "This week"
@@ -2493,6 +2514,13 @@ msgid ""
 "feature is disabled. If the field is empty, only IP address and localhost "
 "access is allowed."
 msgstr ""
+"Para evitar vários ataques baseados em DNS, o Duplicati limita os nomes de "
+"host permitidos aos listados aqui. O acesso IP direto e o host local sempre "
+"são permitidos. Vários nomes de host podem ser fornecidos com um separador "
+"de ponto-e-vírgula. Se qualquer um dos nomes de host permitidos for um "
+"asterisco (*), todos os nomes de host serão permitidos e esse recurso será "
+"desativado. Se o campo estiver vazio, somente o endereço IP e o acesso ao "
+"host local serão permitidos."
 
 #: scripts/controllers/RestoreController.js:33
 msgid "Today"
@@ -2512,6 +2540,9 @@ msgid ""
 "version available. Test Restore data before using this in production "
 "environments."
 msgstr ""
+"Experimente os novos recursos em que estamos trabalhando. Atualmente, a "
+"versão mais estável disponível. Teste Restaurar dados antes de usar isso em "
+"ambientes de produção."
 
 #: scripts/services/AppUtils.js:105
 msgid "Tue"
@@ -2585,7 +2616,7 @@ msgstr "Dados do usuário"
 
 #: templates/backends/openstack.html:27
 msgid "User domain name"
-msgstr ""
+msgstr "Nome de domínio do usuário"
 
 #: scripts/services/EditUriBuiltins.js:50
 msgid "User has too many permissions"
@@ -2627,7 +2658,7 @@ msgstr "Verificando os dados do backend ..."
 
 #: scripts/services/ServerStatus.js:58
 msgid "Verifying files..."
-msgstr ""
+msgstr "Verificando arquivos ..."
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
@@ -2834,7 +2865,7 @@ msgstr "Você deve escolher pelo menos uma pasta de origem"
 
 #: scripts/services/EditUriBuiltins.js:797
 msgid "You must enter a domain name to use v3 API"
-msgstr ""
+msgstr "Você deve inserir um nome de domínio para usar a API v3"
 
 #: scripts/controllers/EditBackupController.js:219
 msgid "You must enter a name for the backup"
@@ -2846,7 +2877,7 @@ msgstr "Você deve inserir uma senha ou desativar a criptografia"
 
 #: scripts/services/EditUriBuiltins.js:794
 msgid "You must enter a password to use v3 API"
-msgstr ""
+msgstr "Você deve digitar uma senha para usar a API v3"
 
 #: scripts/controllers/EditBackupController.js:276
 msgid "You must enter a positive number of backups to keep"
@@ -2855,6 +2886,7 @@ msgstr "Você deve inserir um número positivo de backups para manter."
 #: scripts/services/EditUriBuiltins.js:800
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr ""
+"Você deve inserir um nome de inquilino (aka project) para usar a API v3"
 
 #: scripts/services/EditUriBuiltins.js:814
 msgid "You must enter a tenant name if you do not provide an API Key"
@@ -2907,7 +2939,7 @@ msgstr "Você deve especificar um caminho"
 
 #: scripts/services/EditUriBackendConfig.js:85
 msgid "You should fill in {{field}}{{reason}}"
-msgstr ""
+msgstr "Você deve preencher {{field}} {{reason}}"
 
 #: templates/restore.html:139
 msgid "Your files and folders have been restored successfully."
@@ -2943,7 +2975,7 @@ msgstr "continuar agora"
 #: scripts/services/EditUriBuiltins.js:729
 #: scripts/services/EditUriBuiltins.js:740
 msgid "unless you are explicitly specifying --group-id"
-msgstr ""
+msgstr "a menos que você esteja explicitamente especificando --group-id"
 
 #: templates/about.html:12
 msgid ""

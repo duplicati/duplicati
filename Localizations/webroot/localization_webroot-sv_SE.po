@@ -1,10 +1,11 @@
 # Translators:
 # Lennart Jansson <petterallan@gmail.com>, 2018
 # nils måsén <nils@piksel.se>, 2018
+# Tommy Kronkvist <tommykronkvist@me.com>, 2018
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: nils måsén <nils@piksel.se>, 2018\n"
+"Last-Translator: Tommy Kronkvist <tommykronkvist@me.com>, 2018\n"
 "Language-Team: Swedish (Sweden) (https://www.transifex.com/duplicati/teams/67655/sv_SE/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1743,7 +1744,7 @@ msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:895
 msgid "Path"
-msgstr ""
+msgstr "Sökväg"
 
 #: scripts/controllers/EditBackupController.js:133
 msgid "Path not found"
@@ -2234,7 +2235,7 @@ msgstr ""
 
 #: templates/backends/sia.html:7
 msgid "Target path, ie /backup"
-msgstr ""
+msgstr "Målsökväg, d.v.s. /backup"
 
 #: templates/waitarea.html:5
 msgid "Task is running"

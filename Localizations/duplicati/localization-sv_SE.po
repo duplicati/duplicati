@@ -28,10 +28,12 @@ msgid ""
 "Failed to create, open or upgrade the database.\n"
 "Error message: {0}"
 msgstr ""
+"Misslyckades med att skapa, öppna, eller uppgradera databasen.\n"
+"Felmeddelande: {0}"
 
 #: Server/Strings.cs:10
 msgid "Displays this help"
-msgstr ""
+msgstr "Visa den här hjälpen"
 
 #: Server/Strings.cs:11
 msgid ""
@@ -42,7 +44,7 @@ msgstr ""
 #: Server/Strings.cs:14
 #, csharp-format
 msgid "--{0}: {1}"
-msgstr ""
+msgstr "--{0}: {1}"
 
 #: Server/Strings.cs:15 CommandLine/Strings.cs:21
 #, csharp-format
@@ -83,7 +85,7 @@ msgstr ""
 
 #: Server/Strings.cs:21
 msgid "Determines the amount of information written in the log file"
-msgstr ""
+msgstr "Avgör hur mycket information som skrivs till logg-filen"
 
 #: Server/Strings.cs:22
 msgid ""
@@ -94,7 +96,7 @@ msgstr ""
 #: Server/Strings.cs:23
 #, csharp-format
 msgid "A serious error occurred in Duplicati: {0}"
-msgstr ""
+msgstr "Ett allvarligt fel inträffade i Duplicati: {0}"
 
 #: Server/Strings.cs:24
 #, csharp-format
@@ -102,10 +104,12 @@ msgid ""
 "Unable to start up, perhaps another process is already running?\n"
 "Error message: {0}"
 msgstr ""
+"Kan inte starta. Kanske en annan process redan körs?\n"
+"Felmeddelande: {0}"
 
 #: Server/Strings.cs:26
 msgid "Disables database encryption"
-msgstr ""
+msgstr "Inaktiverar kryptering av databasen"
 
 #: Server/Strings.cs:27
 #, csharp-format
@@ -168,7 +172,7 @@ msgstr ""
 
 #: Server/Strings.cs:37 Library/Main/Strings.cs:223
 msgid "Clean up old log data"
-msgstr ""
+msgstr "Ta bort gammal data från loggarna"
 
 #: Server/Strings.cs:38 Library/Main/Strings.cs:224
 msgid "Set the time after which log data will be purged from the database."
@@ -200,7 +204,7 @@ msgstr ""
 
 #: Server/Strings.cs:43 Library/Main/Strings.cs:74
 msgid "Temporary storage folder"
-msgstr ""
+msgstr "Mapp för temporär lagring"
 
 #: Server/Strings.cs:44 Library/Main/Strings.cs:75
 msgid ""
@@ -320,7 +324,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:24
 msgid "The path to GnuPG"
-msgstr ""
+msgstr "Sökvägen till GnuPG"
 
 #: Library/Encryption/Strings.cs:25
 #, csharp-format
@@ -376,15 +380,15 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:5
 msgid "default value"
-msgstr ""
+msgstr "förvalt värde"
 
 #: Library/Interface/Strings.cs:6
 msgid "[DEPRECATED]"
-msgstr ""
+msgstr "[FÖRÅLDRAD]"
 
 #: Library/Interface/Strings.cs:7
 msgid "values"
-msgstr ""
+msgstr "värden"
 
 #: Library/Interface/Strings.cs:10
 msgid "Boolean"
@@ -392,35 +396,35 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:11
 msgid "Enumeration"
-msgstr ""
+msgstr "Uppräkning"
 
 #: Library/Interface/Strings.cs:12
 msgid "Flags"
-msgstr ""
+msgstr "Flaggor"
 
 #: Library/Interface/Strings.cs:13
 msgid "Integer"
-msgstr ""
+msgstr "Heltal"
 
 #: Library/Interface/Strings.cs:14
 msgid "Path"
-msgstr ""
+msgstr "Sökväg"
 
 #: Library/Interface/Strings.cs:15
 msgid "Size"
-msgstr ""
+msgstr "Storlek"
 
 #: Library/Interface/Strings.cs:16
 msgid "String"
-msgstr ""
+msgstr "Sträng"
 
 #: Library/Interface/Strings.cs:17
 msgid "Timespan"
-msgstr ""
+msgstr "Tidsrymd"
 
 #: Library/Interface/Strings.cs:18
 msgid "Unknown"
-msgstr ""
+msgstr "Okänd"
 
 #: Library/Interface/Strings.cs:21
 #, csharp-format
@@ -430,40 +434,44 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:22
 msgid "Do you want to test the connection?"
-msgstr ""
+msgstr "Vil du testa anslutningen?"
 
 #: Library/Interface/Strings.cs:23
 #, csharp-format
 msgid "Connection Failed: {0}"
-msgstr ""
+msgstr "Anslutningen Misslyckades: {0}"
 
 #: Library/Interface/Strings.cs:24
 msgid "Connection succeeded!"
-msgstr ""
+msgstr "Anslutningen lyckades!"
 
 #: Library/Interface/Strings.cs:25
 msgid ""
 "You have not entered a path. This will store all backups in the default "
 "directory. Is this what you want?"
 msgstr ""
+"Du har inte angivit någon sökväg. Detta kommer att lagra alla "
+"säkerhetskopior i standardmappen. Är det din avsikt?"
 
 #: Library/Interface/Strings.cs:26
 msgid "You must enter a password"
-msgstr ""
+msgstr "Du måste fylla i ett lösenord"
 
 #: Library/Interface/Strings.cs:27
 msgid ""
 "You have not entered a password.\n"
 "Proceed without a password?"
 msgstr ""
+"Du har inte angivit något lösenord.\n"
+"Vill du fortsätta utan lösenord?"
 
 #: Library/Interface/Strings.cs:29
 msgid "You must enter the name of the server"
-msgstr ""
+msgstr "Du måste ange namnet på servern"
 
 #: Library/Interface/Strings.cs:30
 msgid "You must enter a username"
-msgstr ""
+msgstr "Du måste fylla i ett användarnamn"
 
 #: Library/Interface/Strings.cs:31
 msgid ""
@@ -471,6 +479,9 @@ msgid ""
 "This is fine if the server allows anonymous uploads, but likely a username is required\n"
 "Proceed without a username?"
 msgstr ""
+"Du har inte skrivit i något användarnamn.\n"
+"Det är fungerar om servern tillåter anonyma uppladdningar, men troligtvis kommer ett användarnamn att krävas\n"
+"Vill du fortsätta utan användarnamn?"
 
 #: Library/Interface/Strings.cs:34
 msgid ""
@@ -478,32 +489,35 @@ msgid ""
 "\n"
 "Do you want to use the selected folder?"
 msgstr ""
+"Uppkopplingen lyckades men en tidigare backup hittades i mappen. Det är möjligt att ställa in Duplicati så att flera olika säkerhetskopior sparas i samma mapp, men det rekommenderas inte.\n"
+"\n"
+"Vill du använda den valda mappen?"
 
 #: Library/Interface/Strings.cs:37
 msgid "The folder cannot be created because it already exists"
-msgstr ""
+msgstr "Mappen kan inte skapas, eftersom den redan finns"
 
 #: Library/Interface/Strings.cs:38
 msgid "Folder created!"
-msgstr ""
+msgstr "Mappen skapades!"
 
 #: Library/Interface/Strings.cs:39
 msgid "The requested folder does not exist"
-msgstr ""
+msgstr "Den efterfrågade mappen finns inte"
 
 #: Library/Interface/Strings.cs:40
 #, csharp-format
 msgid "The server name \"{0}\" is not valid"
-msgstr ""
+msgstr "Servernamnet \"{0}\" är inte giltigt"
 
 #: Library/Interface/Strings.cs:41
 msgid "Cancelled"
-msgstr ""
+msgstr "Avbrutet"
 
 #: Library/Interface/CustomExceptions.cs:82
 #: Library/Interface/CustomExceptions.cs:90
 msgid "The requested file does not exist"
-msgstr ""
+msgstr "Den efterfrågade filen finns inte"
 
 #: Library/Snapshots/Strings.cs:4
 #, csharp-format
@@ -717,7 +731,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:9 Library/Backend/FTP/Strings.cs:11
 msgid "Toggles the FTP connections method"
-msgstr ""
+msgstr "Byter anslutningsmetod för FTP"
 
 #: Library/Backend/FTP/Strings.cs:10
 msgid ""
@@ -738,6 +752,8 @@ msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
 msgstr ""
+"Lösenordet som används för att ansluta till servern. Det kan också "
+"tillhandahållas med hjälp av miljövariabeln \"AUTH_PASSWORD\"."
 
 #: Library/Backend/FTP/Strings.cs:16
 msgid ""
@@ -747,7 +763,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:17
 msgid "Instructs Duplicati to use an SSL (ftps) connection"
-msgstr ""
+msgstr "Instruerar Duplicati att använda en SSL-uppkoppling (ftps)"
 
 #: Library/Backend/FTP/Strings.cs:18
 msgid "FTP"
@@ -757,7 +773,7 @@ msgstr "FTP"
 #: Library/Backend/TahoeLAFS/Strings.cs:8
 #, csharp-format
 msgid "The folder {0} was not found, message: {1}"
-msgstr ""
+msgstr "Mappen {0} hittades inte, meddelande: {1}"
 
 #: Library/Backend/FTP/Strings.cs:20
 #: Library/Backend/AlternativeFTP/Strings.cs:16
@@ -778,7 +794,7 @@ msgstr ""
 #: Library/Backend/FTP/Strings.cs:22
 #: Library/Backend/AlternativeFTP/Strings.cs:18
 msgid "Disable upload verification"
-msgstr ""
+msgstr "Inaktivera verifiering av uppladdningen"
 
 #: Library/Backend/FTP/Strings.cs:23
 msgid ""
@@ -800,7 +816,7 @@ msgstr ""
 #: Library/Backend/HubiC/Strings.cs:24 Library/Backend/Dropbox/Strings.cs:24
 #: Library/Backend/OAuthHelper/Strings.cs:9
 msgid "The authorization code"
-msgstr ""
+msgstr "Auktoriseringskoden"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:25
 #: Library/Backend/GoogleServices/Strings.cs:27
@@ -823,7 +839,7 @@ msgstr "Amazon Cloud Drive"
 #: Library/Backend/OAuthHelper/Strings.cs:6
 #, csharp-format
 msgid "You need an AuthID, you can get it from: {0}"
-msgstr ""
+msgstr "Du behöver ett AuthID, som du kan få från: {0}"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:28
 msgid "The labels to set"
@@ -837,7 +853,7 @@ msgstr ""
 #: Library/Backend/GoogleServices/Strings.cs:47
 #, csharp-format
 msgid "There is more than one item named \"{0}\" in the folder \"{1}\""
-msgstr ""
+msgstr "Det finns mer än ett objekt med namnet \"{0}\" i mappen \"{1}\""
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:31
 msgid "The consistency delay"
@@ -932,7 +948,7 @@ msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:5
 msgid "Provide another authentication URL"
-msgstr ""
+msgstr "Ange en annan URL för autentisering"
 
 #: Library/Backend/CloudFiles/Strings.cs:10
 msgid "Supplies the API Access Key used to authenticate with CloudFiles."
@@ -1023,11 +1039,11 @@ msgstr "Amazon S3"
 
 #: Library/Backend/S3/Strings.cs:13
 msgid "No Amazon S3 secret key given"
-msgstr ""
+msgstr "Ingen hemlig nyckel för Amazon S3 angiven"
 
 #: Library/Backend/S3/Strings.cs:14
 msgid "No Amazon S3 userID given"
-msgstr ""
+msgstr "Inget användar-ID för Amazon S3 angivet"
 
 #: Library/Backend/S3/Strings.cs:15
 msgid ""
@@ -1038,7 +1054,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:16
 msgid "Use a European server"
-msgstr "Använd server i Europa"
+msgstr "Använd en server i Europa"
 
 #: Library/Backend/S3/Strings.cs:17
 msgid ""
@@ -1082,12 +1098,12 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:24
 #, csharp-format
 msgid "The options --{0} and --{1} are mutually exclusive"
-msgstr ""
+msgstr "Alternativen --{0} och --{1} är ömsesidigt exklusiva"
 
 #: Library/Backend/S3/Strings.cs:25 Library/Backend/S3/Strings.cs:38
 #, csharp-format
 msgid "Please use --{0}={1} instead"
-msgstr ""
+msgstr "Vänligen använd --{0}={1} istället"
 
 #: Library/Backend/S3/Strings.cs:26
 #, csharp-format
@@ -1109,7 +1125,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:31
 msgid "Specifies an alternate S3 server name"
-msgstr ""
+msgstr "Anger ett alternativt S3-servernamn"
 
 #: Library/Backend/S3/Strings.cs:32
 msgid ""
@@ -1185,10 +1201,12 @@ msgstr "Konfigurera krypteringstyp för FTP"
 #: Library/Backend/AlternativeFTP/Strings.cs:24
 msgid "This flag controls the SSL policy to use when encryption is enabled."
 msgstr ""
+"Denna parameter kontrollerar vilken SSL-policy som ska användas då "
+"kryptering är aktiverad"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
-msgstr ""
+msgstr "Konfigurera vilken SSL-policy som används då kryptering är aktiverad"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:26
 #, csharp-format
@@ -1207,55 +1225,55 @@ msgstr "Fel vid skrivning av fil: {0}"
 
 #: Library/Backend/SSHv2/Strings.cs:4
 msgid "Module for generating SSH private/public keys"
-msgstr ""
+msgstr "Modul för att generera privata/publika SSH-nycklar"
 
 #: Library/Backend/SSHv2/Strings.cs:5
 msgid "SSH Key Generator"
-msgstr ""
+msgstr "Nyckelskapare för SSH"
 
 #: Library/Backend/SSHv2/Strings.cs:6
 msgid "Public key username"
-msgstr ""
+msgstr "Användarnamn för publik nyckel"
 
 #: Library/Backend/SSHv2/Strings.cs:7
 msgid "A username to append to the public key"
-msgstr ""
+msgstr "Ett användarnamn som ska läggas till den publika nyckeln"
 
 #: Library/Backend/SSHv2/Strings.cs:8
 msgid "The key type"
-msgstr ""
+msgstr "Typ av nyckel"
 
 #: Library/Backend/SSHv2/Strings.cs:9
 msgid "Determines the type of key to generate"
-msgstr ""
+msgstr "Bestämmer vilken typ av nyckel som ska genereras"
 
 #: Library/Backend/SSHv2/Strings.cs:10
 msgid "The key length"
-msgstr ""
+msgstr "Nyckelns längd"
 
 #: Library/Backend/SSHv2/Strings.cs:11
 msgid "The length of the key in bits"
-msgstr ""
+msgstr "Nyckellängden angiven i bit"
 
 #: Library/Backend/SSHv2/Strings.cs:14
 msgid "Module for uploading SSH public keys"
-msgstr ""
+msgstr "Modul för att ladda upp publika SSH-nycklar"
 
 #: Library/Backend/SSHv2/Strings.cs:15
 msgid "SSH Key Uploader"
-msgstr ""
+msgstr "Uppladdare för SSH-nycklar"
 
 #: Library/Backend/SSHv2/Strings.cs:16
 msgid "The SSH connection URL"
-msgstr ""
+msgstr "URL för SSH-uppkoppling"
 
 #: Library/Backend/SSHv2/Strings.cs:17
 msgid "The SSH connection URL used to establish the connection"
-msgstr ""
+msgstr "Den SSH-anslutningsadress som används för att upprätta anslutningen"
 
 #: Library/Backend/SSHv2/Strings.cs:18
 msgid "The SSH public key to append"
-msgstr ""
+msgstr "Den publika SSH-nyckel som ska läggas till"
 
 #: Library/Backend/SSHv2/Strings.cs:19
 msgid ""
@@ -1279,6 +1297,7 @@ msgstr ""
 #: Library/Backend/SSHv2/Strings.cs:28
 msgid "Supplies server fingerprint used for validation of server identity"
 msgstr ""
+"Tillhandahåller serverfingeravtryck för att validera serverns identitet"
 
 #: Library/Backend/SSHv2/Strings.cs:29
 msgid ""
@@ -1289,7 +1308,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:30
 msgid "Disables fingerprint validation"
-msgstr ""
+msgstr "Inaktiverar validering av fingeravtryck"
 
 #: Library/Backend/SSHv2/Strings.cs:31
 msgid ""
@@ -1301,7 +1320,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:32 Library/Backend/SSHv2/Strings.cs:34
 msgid "Uses a SSH private key to authenticate"
-msgstr ""
+msgstr "Använder en privat SSH-nyckel för autentisering"
 
 #: Library/Backend/SSHv2/Strings.cs:33
 #, csharp-format
@@ -1336,7 +1355,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:39
 msgid "SFTP (SSH)"
-msgstr ""
+msgstr "SFTP (SSH)"
 
 #: Library/Backend/SSHv2/Strings.cs:40
 #, csharp-format
@@ -1381,7 +1400,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:6
 msgid "Rclone"
-msgstr ""
+msgstr "Rclone"
 
 #: Library/Backend/Rclone/Strings.cs:7
 msgid "This backend can read and write data to Rclone."
@@ -1417,11 +1436,11 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:14
 msgid "Rclone options."
-msgstr ""
+msgstr "Inställningar för Rclone"
 
 #: Library/Backend/Rclone/Strings.cs:15
 msgid "Options will be transferred to rclone."
-msgstr ""
+msgstr "Inställningarna kommer att överföras till rclone"
 
 #: Library/Backend/Rclone/Strings.cs:16
 msgid "Rclone executable"
@@ -1593,27 +1612,27 @@ msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:8
 msgid "Sia address"
-msgstr ""
+msgstr "Sia-adress"
 
 #: Library/Backend/Sia/Strings.cs:9
 msgid "Sia address, ie 127.0.0.1:9980"
-msgstr ""
+msgstr "Sia-adress, d.v.s. 127.0.0.1:9980"
 
 #: Library/Backend/Sia/Strings.cs:10
 msgid "Backup path"
-msgstr ""
+msgstr "Sökväg för backup"
 
 #: Library/Backend/Sia/Strings.cs:11
 msgid "Target path, ie /backup"
-msgstr ""
+msgstr "Målsökväg, d.v.s. /backup"
 
 #: Library/Backend/Sia/Strings.cs:12 Library/Backend/Sia/Strings.cs:13
 msgid "Sia password"
-msgstr ""
+msgstr "Sia-lösenord"
 
 #: Library/Backend/Sia/Strings.cs:14
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: Library/Backend/Sia/Strings.cs:15
 msgid "Minimum value is 3."
@@ -1634,17 +1653,17 @@ msgstr "Skapa mapp automatiskt"
 #: Library/Backend/OAuthHelper/Strings.cs:8
 #, csharp-format
 msgid "Unexpected error code: {0} - {1}"
-msgstr ""
+msgstr "Oväntad felkod: {0} - {1}"
 
 #: Library/Backend/OneDrive/Strings.cs:8
 #, csharp-format
 msgid "Missing the folder: {0}"
-msgstr ""
+msgstr "Saknar mappen: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:13
 #, csharp-format
 msgid "File not found: {0}"
-msgstr ""
+msgstr "Filen kan inte hittas: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:10
 msgid "Microsoft OneDrive"
@@ -1696,7 +1715,7 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:31
 msgid "Microsoft OneDrive v2"
-msgstr ""
+msgstr "Microsoft OneDrive v2"
 
 #: Library/Backend/OneDrive/Strings.cs:32
 #, csharp-format
@@ -1719,7 +1738,7 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:39
 msgid "Microsoft SharePoint v2"
-msgstr ""
+msgstr "Microsoft SharePoint v2"
 
 #: Library/Backend/OneDrive/Strings.cs:40
 #, csharp-format
@@ -1748,7 +1767,7 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:49
 msgid "Microsoft Office 365 Group"
-msgstr ""
+msgstr "Microsoft Office 365 Group"
 
 #: Library/Backend/OneDrive/Strings.cs:50
 #, csharp-format
@@ -1873,7 +1892,7 @@ msgstr "Inget lösenord angivet"
 
 #: Library/Backend/Jottacloud/Strings.cs:9 Library/Backend/Mega/Strings.cs:11
 msgid "No path given, cannot upload files to the root folder"
-msgstr ""
+msgstr "Ingen sökväg angiven; kan inte ladda upp filer till rotkatalogen"
 
 #: Library/Backend/Jottacloud/Strings.cs:10
 msgid "Illegal mount point given."
@@ -2073,6 +2092,8 @@ msgid ""
 "Use this flag to communicate using Secure Socket Layer (SSL) over http "
 "(https)."
 msgstr ""
+"Använd den här parametern för att kommunicera med hjälp av Secure Socket "
+"Layer (SSL) över http (https)."
 
 #: Library/Backend/WEBDAV/Strings.cs:21
 msgid ""
@@ -2096,7 +2117,7 @@ msgstr "Tahoe-LAFS"
 
 #: Library/Backend/TahoeLAFS/Strings.cs:9
 msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
-msgstr ""
+msgstr "Felaktigt URL-format, måste starta med \"uri/URI:DIR2:\""
 
 #: Library/Backend/OAuthHelper/Strings.cs:7
 #, csharp-format
@@ -2122,13 +2143,16 @@ msgstr ""
 #: Library/Compression/Strings.cs:4
 #, csharp-format
 msgid "Please use the {0} option instead"
-msgstr ""
+msgstr "Vänligen använd {0}-inställningen istället"
 
 #: Library/Compression/Strings.cs:5 Library/Compression/Strings.cs:23
 msgid ""
 "This option controls the compression level used. A setting of zero gives no "
 "compression, and a setting of 9 gives maximum compression."
 msgstr ""
+"Det här alternativet styr vilken nivå av komprimering som används. En "
+"inställning på noll ger ingen kompression, och en inställning på 9 ger "
+"maximal kompression."
 
 #: Library/Compression/Strings.cs:6
 msgid "Sets the Zip compression level"
@@ -2144,17 +2168,19 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:8
 msgid "Sets the Zip compression method"
-msgstr ""
+msgstr "Anger metod för Zip-komprimering"
 
 #: Library/Compression/Strings.cs:9
 msgid "Toggles Zip64 support"
-msgstr ""
+msgstr "Växlar mellan Zip64-support"
 
 #: Library/Compression/Strings.cs:10
 msgid ""
 "The zip64 format is required for files larger than 4GiB, use this flag to "
 "toggle it"
 msgstr ""
+"För filer större än 4GiB krävs zip64-format, använd den här inställningen "
+"för att skifta"
 
 #: Library/Compression/Strings.cs:11
 msgid ""
@@ -2164,7 +2190,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:12
 msgid "Zip compression"
-msgstr ""
+msgstr "Zip-komprimering"
 
 #: Library/Compression/Strings.cs:16
 msgid "Archive not opened for writing"
@@ -2176,7 +2202,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:18
 msgid "The given file is not part of this archive"
-msgstr ""
+msgstr "Den angivna filen är inte en del av det här arkivet"
 
 #: Library/Compression/Strings.cs:19
 msgid "*Experimental*: 7z Archive with LZMA2 support."
@@ -2198,7 +2224,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:24
 msgid "Sets the 7z compression level"
-msgstr ""
+msgstr "Ställer in komprimeringsnivå för 7z"
 
 #: Library/Compression/Strings.cs:25
 msgid ""
@@ -2213,12 +2239,12 @@ msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:4
 msgid "backup"
-msgstr ""
+msgstr "säkerhetskopia"
 
 #: Library/SQLiteHelper/Strings.cs:5
 #, csharp-format
 msgid "Unable to determine database format: {0}"
-msgstr ""
+msgstr "Kan inte avgöra databas-formatet: {0}"
 
 #: Library/SQLiteHelper/Strings.cs:6
 #, csharp-format
@@ -2279,7 +2305,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:12
 msgid "No source folders specified for backup"
-msgstr ""
+msgstr "Inga källmallar angivna för backup"
 
 #: Library/Main/Strings.cs:13
 #, csharp-format
@@ -2362,7 +2388,7 @@ msgstr ""
 #: Library/Main/Strings.cs:27
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
-msgstr ""
+msgstr "Ogiltig sökväg: \"{0}\" ({1})"
 
 #: Library/Main/Strings.cs:28
 #, csharp-format
@@ -2433,7 +2459,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:43
 msgid "Restore to another folder"
-msgstr ""
+msgstr "Återställ till en annan mapp"
 
 #: Library/Main/Strings.cs:44
 msgid "Toggles system sleep mode"
@@ -2454,7 +2480,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:47
 msgid "Max number of kilobytes to download pr. second"
-msgstr ""
+msgstr "Maximalt antal kilobyte att ladda ned per sekund"
 
 #: Library/Main/Strings.cs:48
 msgid ""
@@ -2475,7 +2501,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:51
 msgid "Disable encryption"
-msgstr ""
+msgstr "Inaktivera kryptering"
 
 #: Library/Main/Strings.cs:52
 msgid ""
@@ -2496,7 +2522,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:55
 msgid "Passphrase used to encrypt backups"
-msgstr ""
+msgstr "Lösenordsfras för att kryptera säkerhetskopior"
 
 #: Library/Main/Strings.cs:56
 msgid ""
@@ -2528,7 +2554,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:61
 msgid "Show all versions"
-msgstr ""
+msgstr "Visa alla versioner"
 
 #: Library/Main/Strings.cs:62
 msgid ""
@@ -2548,7 +2574,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:65
 msgid "Show folder contents"
-msgstr ""
+msgstr "Vissa mappens innehåll"
 
 #: Library/Main/Strings.cs:66
 msgid ""
@@ -2607,7 +2633,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:79
 msgid "Limit the size of the volumes"
-msgstr ""
+msgstr "Begränsa storleken på volymerna"
 
 #: Library/Main/Strings.cs:80
 msgid ""
@@ -2641,7 +2667,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:85
 msgid "Select what module to use for compression"
-msgstr ""
+msgstr "Välj vilken modul som ska användas för komprimering"
 
 #: Library/Main/Strings.cs:86
 msgid ""
@@ -2653,7 +2679,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:87
 msgid "Select what module to use for encryption"
-msgstr ""
+msgstr "Välj vilken modul som ska användas för kryptering"
 
 #: Library/Main/Strings.cs:88
 msgid "Supply one or more module names, separated by commas to unload them"
@@ -2661,7 +2687,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:89
 msgid "Disabled one or more modules"
-msgstr ""
+msgstr "En eller flera moduler inaktiverades"
 
 #: Library/Main/Strings.cs:90
 msgid "Supply one or more module names, separated by commas to load them"
@@ -2669,7 +2695,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:91
 msgid "Enables one or more modules"
-msgstr ""
+msgstr "Aktiverar en eller flera moduler"
 
 #: Library/Main/Strings.cs:92
 msgid ""

@@ -404,7 +404,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:14
 msgid "Path"
-msgstr ""
+msgstr "Kelias"
 
 #: Library/Interface/Strings.cs:15
 msgid "Size"
@@ -1389,7 +1389,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:8
 msgid "Local repository"
-msgstr ""
+msgstr "Vietinė saugykla"
 
 #: Library/Backend/Rclone/Strings.cs:9
 msgid ""
@@ -1399,7 +1399,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:10
 msgid "Remote repository"
-msgstr ""
+msgstr "Nutolusi saugykla"
 
 #: Library/Backend/Rclone/Strings.cs:11
 msgid ""
@@ -1409,7 +1409,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:12
 msgid "Remote path"
-msgstr ""
+msgstr "Kelias iki nutolusio serverio"
 
 #: Library/Backend/Rclone/Strings.cs:13
 msgid "Path on the Remote repository. "
