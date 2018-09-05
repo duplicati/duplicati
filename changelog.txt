@@ -1,3 +1,13 @@
+2018-09-05 - 2.0.3.11_canary_2018-09-05
+==========
+* Cleanup of async methods and naming, thanks @warwickmm
+* Added more non-compressible file extensions, thanks @ravisorg
+* Login password field is now auto-focused, thanks @ltGuillaume
+* Added more pause time options, thanks @bmendonca
+* Fixed filename comparer to support correct filename encoding, thanks @warwickmm
+* Changed the default filename query to fix reported slowdowns
+* Added additional experimental queries to possible speed things up even more with 
+
 2018-08-30 - 2.0.3.10_canary_2018-08-30
 ==========
 * Updated the help text for no certificates found, thanks @jonmikeiv
