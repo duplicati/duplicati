@@ -588,6 +588,7 @@ namespace Duplicati.Library.Main.Database
             m_findfileCommand.SetParameterValue(0, prefixid);
             m_findfileCommand.SetParameterValue(1, path);
             m_findfileCommand.SetParameterValue(2, filesetid);
+            m_findfileCommand.Transaction = transaction;
 
             using (var rd = m_findfileCommand.ExecuteReader())
                 if (rd.Read())
@@ -608,10 +609,23 @@ namespace Duplicati.Library.Main.Database
                 }
         }
 
+        public Tuple<long, string> GetMetadataHashAndSizeForFile(long fileid, System.Data.IDbTransaction transaction)
+        {
+            m_selectfilemetadatahashandsizeCommand.SetParameterValue(0, fileid);
+            m_selectfilemetadatahashandsizeCommand.Transaction = transaction;
 
-        public string GetFileHash(long fileid)
+            using (var rd = m_findfileCommand.ExecuteReader())
+                if (rd.Read())
+                    return new Tuple<long, string>(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1));
+
+            return null;
+        }
+
+
+        public string GetFileHash(long fileid, System.Data.IDbTransaction transaction)
         {
             m_selectfileHashCommand.SetParameterValue(0, fileid);
+            m_selectfileHashCommand.Transaction = transaction;
             var r = m_selectfileHashCommand.ExecuteScalar(m_logQueries, null);
             if (r == null || r == DBNull.Value)
                 return null;

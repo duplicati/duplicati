@@ -62,7 +62,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task<string> GetFileHashAsync(long fileid)
         {
-            return RunOnMain(() => m_database.GetFileHash(fileid));
+            return RunOnMain(() => m_database.GetFileHash(fileid, m_transaction));
         }
 
         public Task<Tuple<bool, long>> AddMetadatasetAsync(string hash, long size, long blocksetid)
@@ -100,7 +100,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.GetMetadataHashAndSizeForFile(fileid, m_transaction));
         }
 
-        public Task<KeyValuePair<long, DateTime>> GetFileLastModifiedAsync(long prefixid, string path, long lastfilesetid, bool includeLength)
+        public Task<Tuple<long, DateTime, long>> GetFileLastModifiedAsync(long prefixid, string path, long lastfilesetid, bool includeLength)
         {
             return RunOnMain(() =>
             {
