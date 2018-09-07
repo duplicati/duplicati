@@ -86,11 +86,13 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_findfileCommand;
         private readonly System.Data.IDbCommand m_selectfilelastmodifiedCommand;
+        private readonly System.Data.IDbCommand m_selectfilelastmodifiedWithSizeCommand;
         private readonly System.Data.IDbCommand m_selectfileHashCommand;
         private readonly System.Data.IDbCommand m_selectblocklistHashesCommand;
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
-        
+        private readonly System.Data.IDbCommand m_selectfilemetadatahashandsizeCommand;
+
         private Dictionary<string, long> m_blockCache;
         
         private long m_filesetId;
@@ -122,8 +124,10 @@ namespace Duplicati.Library.Main.Database
             m_insertfileOperationCommand = m_connection.CreateCommand();
             m_findfileCommand = m_connection.CreateCommand();
             m_selectfilelastmodifiedCommand = m_connection.CreateCommand();
+            m_selectfilelastmodifiedWithSizeCommand = m_connection.CreateCommand();
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_insertblocksetentryFastCommand = m_connection.CreateCommand();
+            m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand();
                 
             m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
@@ -164,17 +168,96 @@ namespace Duplicati.Library.Main.Database
             m_selectfilelastmodifiedCommand.CommandText = @"SELECT ""A"".""ID"", ""B"".""LastModified"" FROM (SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ?) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = ?";
             m_selectfilelastmodifiedCommand.AddParameters(3);
 
-            //Need a temporary table with path/lastmodified lookups
-            m_findfileCommand.CommandText = 
-                @" SELECT ""FileLookup"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
-                @"   FROM ""FileLookup"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
-                @"  WHERE ""FileLookup"".""PrefixID"" = ? AND ""FileLookup"".""Path"" = ? " +
-                @"    AND ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
-                @"    AND ""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID"" " +
-                @"    AND ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
-                @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
-                @"  LIMIT 1 ";
-            m_findfileCommand.AddParameters(2);
+            m_selectfilelastmodifiedWithSizeCommand.CommandText = @"SELECT ""C"".""ID"", ""C"".""LastModified"", ""D"".""Length"" FROM (SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"" FROM (SELECT ""ID"", ""BlocksetID"" FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ?) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = ?) AS ""C"", ""Blockset"" AS ""D"" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" ";
+            m_selectfilelastmodifiedWithSizeCommand.AddParameters(3);
+
+            m_selectfilemetadatahashandsizeCommand.CommandText = @"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = ? AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ";
+            m_selectfilemetadatahashandsizeCommand.AddParameters(1);
+
+            // Allow users to test on real-world data
+            // to get feedback on potential performance
+            int.TryParse(Environment.GetEnvironmentVariable("TEST_QUERY_VERSION"), out var testqueryversion);
+
+            if (testqueryversion != 0)
+                Logging.Log.WriteWarningMessage(LOGTAG, "TestFileQuery", null, "Using performance test query version {0} as the TEST_QUERY_VERSION environment variable is set", testqueryversion);
+
+            // The original query (v==1) finds the most recent entry of the file in question, 
+            // but it requires some large joins to extract the required information.
+            // To speed it up, we use a slightly simpler approach that only looks at the
+            // previous fileset, and uses information here.
+            // If there is a case where a file is sometimes there and sometimes not
+            // (i.e. filter file, remove filter) we will not find the file.
+            // We currently use this faster version, 
+            // but allow users to switch back via an environment variable
+            // such that we can get performance feedback
+
+            switch (testqueryversion)
+            {
+                // The query used in Duplicati until 2.0.3.9
+                case 1:
+                    m_findfileCommand.CommandText =
+                        @" SELECT ""FileLookup"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
+                        @"   FROM ""FileLookup"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
+                        @"  WHERE ""FileLookup"".""PrefixID"" = ? AND ""FileLookup"".""Path"" = ? " +
+                        @"    AND ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
+                        @"    AND ""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID"" " +
+                        @"    AND ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
+                        @"    AND ? IS NOT NULL" +
+                        @"  ORDER BY ""Fileset"".""Timestamp"" DESC " +
+                        @"  LIMIT 1 ";
+                    break;
+
+                // The fastest reported query in Duplicati 2.0.3.10, but with "LIMIT 1" added
+                default:
+                case 2:
+                    var getLastFileEntryForPath =
+                        @"SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"", ""A"".""MetadataID"" " +
+                        @"  FROM (SELECT ""ID"", ""BlocksetID"", ""MetadataID"" FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ?) ""A"" " +
+                        @"  CROSS JOIN ""FilesetEntry"" ""B"" " +
+                        @"  WHERE ""A"".""ID"" = ""B"".""FileID"" " +
+                        @"    AND ""B"".""FilesetID"" = ? ";
+
+                    m_findfileCommand.CommandText = string.Format(
+                        @"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize"" " +
+                        @"  FROM " +
+                        @"  ({0}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F"" " +
+                        @" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID"" " +
+                        @" LIMIT 1",
+                        getLastFileEntryForPath
+                    );
+                    break;
+
+                // Potentially faster query: https://forum.duplicati.com/t/release-2-0-3-10-canary-2018-08-30/4497/25
+                case 3:
+                    m_findfileCommand.CommandText =
+                        @"    SELECT FileLookup.ID as FileID, FilesetEntry.Lastmodified, FileBlockset.Length,  " +
+                        @"           MetaBlockset.FullHash AS Metahash, MetaBlockset.Length as Metasize " +
+                        @"      FROM FilesetEntry " +
+                        @"INNER JOIN Fileset ON (FileSet.ID = FilesetEntry.FilesetID) " +
+                        @"INNER JOIN FileLookup ON (FileLookup.ID = FilesetEntry.FileID) " +
+                        @"INNER JOIN Metadataset ON (Metadataset.ID = FileLookup.MetadataID) " +
+                        @"INNER JOIN Blockset AS MetaBlockset ON (MetaBlockset.ID = Metadataset.BlocksetID) " +
+                        @" LEFT JOIN Blockset AS FileBlockset ON (FileBlockset.ID = FileLookup.BlocksetID) " +
+                        @"     WHERE FileLookup.PrefixID = ? AND FileLookup.Path = ? AND FilesetID = ? " +
+                        @"     LIMIT 1 ";
+                    break;
+
+                // The slow query used in Duplicati 2.0.3.10, but with "LIMIT 1" added
+                case 4:
+                    m_findfileCommand.CommandText =
+                        @" SELECT ""FileLookup"".""ID"" AS ""FileID"", ""FilesetEntry"".""Lastmodified"", ""FileBlockset"".""Length"", ""MetaBlockset"".""Fullhash"" AS ""Metahash"", ""MetaBlockset"".""Length"" AS ""Metasize"" " +
+                        @"   FROM ""FileLookup"", ""FilesetEntry"", ""Fileset"", ""Blockset"" ""FileBlockset"", ""Metadataset"", ""Blockset"" ""MetaBlockset"" " +
+                        @"  WHERE ""FileLookup"".""PrefixID"" = ? AND ""FileLookup"".""Path"" = ? " +
+                        @"    AND ""Fileset"".""ID"" = ? " +
+                        @"    AND ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" " +
+                        @"    AND ""FileBlockset"".""ID"" = ""FileLookup"".""BlocksetID"" " +
+                        @"    AND ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID"" AND ""MetaBlockset"".""ID"" = ""Metadataset"".""BlocksetID"" " +
+                        @"  LIMIT 1 ";
+                    break;
+
+            }
+
+            m_findfileCommand.AddParameters(3);
 
             m_selectfileHashCommand.CommandText = @"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""FileLookup"" WHERE ""Blockset"".""ID"" = ""FileLookup"".""BlocksetID"" AND ""FileLookup"".""ID"" = ?  ";
             m_selectfileHashCommand.AddParameters(1);
@@ -348,7 +431,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Gets the metadataset ID from the filehash
         /// </summary>
-        /// <returns><c>true</c>, if metadataset should be recorded, false if it already exists.</returns>
+        /// <returns><c>true</c>, if metadataset found, false if does not exist.</returns>
         /// <param name="filehash">The metadata hash.</param>
         /// <param name="size">The size of the metadata.</param>
         /// <param name="metadataid">The ID of the metadataset.</param>
@@ -463,27 +546,48 @@ namespace Duplicati.Library.Main.Database
             AddFile(path, lastmodified, SYMLINK_BLOCKSET_ID, metadataID, transaction);
         }
 
-        public long GetFileLastModified(long prefixid, string path, long filesetid, out DateTime oldModified, System.Data.IDbTransaction transaction = null)
+        public long GetFileLastModified(long prefixid, string path, long filesetid, bool includeLength, out DateTime oldModified, out long length, System.Data.IDbTransaction transaction = null)
         {
-            m_selectfilelastmodifiedCommand.Transaction = transaction;
-            m_selectfilelastmodifiedCommand.SetParameterValue(0, prefixid);
-			m_selectfilelastmodifiedCommand.SetParameterValue(1, path);
-            m_selectfilelastmodifiedCommand.SetParameterValue(2, filesetid);
-            using (var rd = m_selectfilelastmodifiedCommand.ExecuteReader(m_logQueries, null))
-                if (rd.Read())
-                {
-                    oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
-                    return rd.ConvertValueToInt64(0);    
-                }
+            if (includeLength)
+            {
+                m_selectfilelastmodifiedWithSizeCommand.Transaction = transaction;
+                m_selectfilelastmodifiedWithSizeCommand.SetParameterValue(0, prefixid);
+                m_selectfilelastmodifiedWithSizeCommand.SetParameterValue(1, path);
+                m_selectfilelastmodifiedWithSizeCommand.SetParameterValue(2, filesetid);
+                using (var rd = m_selectfilelastmodifiedWithSizeCommand.ExecuteReader(m_logQueries, null))
+                    if (rd.Read())
+                    {
+                        oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
+                        length = rd.ConvertValueToInt64(2);
+                        return rd.ConvertValueToInt64(0);
+                    }
+            }
+            else
+            {
+                m_selectfilelastmodifiedCommand.Transaction = transaction;
+                m_selectfilelastmodifiedCommand.SetParameterValue(0, prefixid);
+                m_selectfilelastmodifiedCommand.SetParameterValue(1, path);
+                m_selectfilelastmodifiedCommand.SetParameterValue(2, filesetid);
+                using (var rd = m_selectfilelastmodifiedCommand.ExecuteReader(m_logQueries, null))
+                    if (rd.Read())
+                    {
+                        length = -1;
+                        oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
+                        return rd.ConvertValueToInt64(0);
+                    }
 
+            }
             oldModified = new DateTime(0, DateTimeKind.Utc);
+            length = -1;
             return -1;
         }
 
-        public long GetFileEntry(long prefixid, string path, long lastfilesetid, out DateTime oldModified, out long lastFileSize, out string oldMetahash, out long oldMetasize)
+
+        public long GetFileEntry(long prefixid, string path, long filesetid, out DateTime oldModified, out long lastFileSize, out string oldMetahash, out long oldMetasize, System.Data.IDbTransaction transaction)
         {
             m_findfileCommand.SetParameterValue(0, prefixid);
             m_findfileCommand.SetParameterValue(1, path);
+            m_findfileCommand.SetParameterValue(2, filesetid);
 
             using (var rd = m_findfileCommand.ExecuteReader())
                 if (rd.Read())

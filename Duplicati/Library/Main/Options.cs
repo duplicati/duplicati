@@ -511,7 +511,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
                     new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb"),
-                    new CommandLineArgument("store-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadataShort, Strings.Options.StoremetadataLong, "true", null, null, Strings.Options.StoremetadataDeprecated),
                     new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipmetadataShort, Strings.Options.SkipmetadataLong, "false"),
                     new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
                     new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
@@ -560,6 +559,7 @@ namespace Duplicati.Library.Main
                     
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
+                    new CommandLineArgument("disable-filelist-consistency-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilelistconsistencychecksShort, Strings.Options.DisablefilelistconsistencychecksLong, "false"),
                     new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
 
                     new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
@@ -1526,23 +1526,6 @@ namespace Duplicati.Library.Main
                 return (int)t;
             }
         }
-        
-        /// <summary>
-        /// Gets a flag indicating if metadata for files and folders should be ignored
-        /// </summary>
-        public bool StoreMetadata
-        {
-            get 
-            { 
-                if (m_options.ContainsKey("skip-metadata"))
-                    return !Library.Utility.Utility.ParseBoolOption(m_options, "skip-metadata");
-
-                if (m_options.ContainsKey("store-metadata"))
-                    return Library.Utility.Utility.ParseBoolOption(m_options, "store-metadata"); 
-
-                return true;
-            }
-        }
 
         /// <summary>
         /// Gets a flag indicating if metadata for files and folders should be ignored
@@ -1927,6 +1910,15 @@ namespace Duplicati.Library.Main
         public bool DisableFileScanner
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-file-scanner"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the filelist consistency checks should be disabled
+        /// </summary>
+        /// <value><c>true</c> if the filelist consistency checks should be disabled; otherwise, <c>false</c>.</value>
+        public bool DisableFilelistConsistencyChecks
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-filelist-consistency-checks"); }
         }
 
         /// <summary>
