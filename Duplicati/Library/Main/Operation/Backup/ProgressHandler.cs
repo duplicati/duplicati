@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
 
                             processedFileCount += 1;
-                            processedFileSize += 1;
+                            processedFileSize += t.Length;
 
                             stat.OperationProgressUpdater.UpdatefilesProcessed(processedFileCount, processedFileSize);
                             filesStarted.Remove(t.Filepath);
