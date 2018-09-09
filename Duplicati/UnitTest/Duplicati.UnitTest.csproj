@@ -52,6 +52,7 @@
     <Compile Include="ResultFormatSerializerProviderTest.cs" />
     <Compile Include="UriUtilityTests.cs" />
     <Compile Include="WebApiTests.cs" />
+    <Compile Include="RunScriptTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

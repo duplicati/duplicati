@@ -68,10 +68,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 if (!e.MetadataChanged)
                                 {
                                     var res = await database.GetMetadataIDAsync(e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length);
-                                    if (!res.Item1)
+                                    if (res.Item1)
                                         return res.Item2;
 
-                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpextedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2);
+                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpextedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}, Path: {3}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2, e.Path);
                                     e.MetadataChanged = true;
                                 }
 
@@ -120,7 +120,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             // When we write the file to output, update the last modified time
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "NoFileChanges", "File has not changed {0}", e.Path);
-                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+
+                            try
+                            {
+                                await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                            }
                         }
                     }
                     catch(Exception ex)
