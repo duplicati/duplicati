@@ -36,7 +36,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -69,9 +69,6 @@
     <Compile Include="ServiceProcessInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Duplicati.snk" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">

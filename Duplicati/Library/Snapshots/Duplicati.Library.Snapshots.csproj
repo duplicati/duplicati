@@ -10,7 +10,7 @@
     <RootNamespace>Duplicati.Library.Snapshots</RootNamespace>
     <AssemblyName>Duplicati.Library.Snapshots</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
@@ -103,7 +103,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Duplicati.snk" />
     <Content Include="lvm-scripts\create-lvm-snapshot.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

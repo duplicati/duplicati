@@ -3,8 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Version>2.0.0.7</Version>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+    
     <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
     <Product>Duplicati.Library.Backend.Rclone</Product>
     <Company>Duplicati Team</Company>
