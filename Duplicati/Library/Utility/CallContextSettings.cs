@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
-using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography.X509Certificates;
 
 using Duplicati.Library.Interface;
@@ -316,8 +315,10 @@ namespace Duplicati.Library.Utility
             /// </summary>
             public ContextGuard()
             {
-
+                /* TODO-DNC - No supported Remoting - https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md
+                    
                 CallContext.LogicalSetData(contextSettingsType, ID);
+                */
             }
 
             /// <summary>
@@ -339,7 +340,10 @@ namespace Duplicati.Library.Utility
                     _settings.Remove(ID);
                 }
 
+                /* TODO-DNC - No supported Remoting - https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md
+                   
                 CallContext.LogicalSetData(contextSettingsType, null);
+                */
             }
         }
 
@@ -351,7 +355,11 @@ namespace Duplicati.Library.Utility
         {
             get
             {
+                /* TODO-DNC - No supported Remoting - https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md
+                   
                 return contextSettingsType != null ? CallContext.LogicalGetData(contextSettingsType) as string : null;
+                */
+                return null;
             }
         }
     }
