@@ -26,6 +26,7 @@ using Newtonsoft.Json;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
@@ -129,7 +130,7 @@ namespace Duplicati.Library.Main.Operation.Common
             public static string CalculateFileHash(string filename)
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                using (var hasher = Duplicati.Library.Utility.HashAlgorithmHelper.Create(VOLUME_HASH))
+                using (var hasher = HashAlgorithm.Create(VOLUME_HASH))
                     return Convert.ToBase64String(hasher.ComputeHash(fs));
             }
 

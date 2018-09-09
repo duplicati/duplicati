@@ -20,6 +20,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -1506,7 +1507,7 @@ namespace Duplicati.Library.Main
             get
             {
 				if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
-					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
+					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, HashAlgorithm.Create(BlockHashAlgorithm).HashSize / 8);
 				
 				return m_cachedBlockHashSize.Value;
             }

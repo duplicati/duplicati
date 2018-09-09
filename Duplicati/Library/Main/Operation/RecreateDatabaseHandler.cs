@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
@@ -309,7 +310,7 @@ namespace Duplicati.Library.Main.Operation
             
                 if (!m_options.RepairOnlyPaths)
                 {
-                    var hashalg = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
+                    var hashalg = HashAlgorithm.Create(m_options.BlockHashAlgorithm);
                     if (hashalg == null)
                         throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
                     var hashsize = hashalg.HashSize / 8;

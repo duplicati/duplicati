@@ -21,6 +21,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using System.Net;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Backend.Backblaze
 {
@@ -189,7 +190,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 var p = measure.Position;
 
                 // Compute the hash
-                using(var hashalg = Duplicati.Library.Utility.HashAlgorithmHelper.Create("sha1"))
+                using(var hashalg = HashAlgorithm.Create("sha1"))
                     sha1 = Library.Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
 
                 // Reset the stream position
