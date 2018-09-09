@@ -28,6 +28,7 @@ namespace Duplicati.Library.Main.Strings
         public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
         public static string SourceVolumeNameInvalidError(string filename) { return LC.L(@"The source {0} uses an invalid volume name, aborting backup", filename); }
         public static string SourceVolumeNameNotFoundError(string filename, Guid volumeGuid) { return LC.L(@"The source {0} is on volume {1}, which could not be found, aborting backup", filename, volumeGuid); }
+        public static string NonQualifiedSizeValue(string optionname, string value) { return LC.L(@"The size ""{1}"" supplied to --{0} does not have a multiplier (b, kb, mb, etc). A multiplier is recommended to avoid unexpected changes if the program is updated.", optionname, value); }
     }
 
     internal static class Options
@@ -152,9 +153,6 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefilepathcacheShort { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
 		public static string UseblockcacheShort { get { return LC.L(@"This option can be used to increase speed in exchange for extra memory use."); } }
 		public static string UseblockcacheLong { get { return LC.L(@"Store an in-memory block cache"); } }
-		public static string StoremetadataLong { get { return LC.L(@"Stores metadata, such as file timestamps and attributes. This increases the required storage space as well as the processing time."); } }
-        public static string StoremetadataShort { get { return LC.L(@"Enables storing file metadata"); } }
-        public static string StoremetadataDeprecated { get { return LC.L(@"This option is no longer used as metadata is now stored by default"); } }
         public static string MetadatahashlookupsizeLong { get { return LC.L(@"A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log."); } }
         public static string MetadatahashlookupsizeShort { get { return LC.L(@"Memory used by the metadata hash"); } }
         public static string NobackendverificationLong { get { return LC.L(@"If this flag is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable."); } }
@@ -247,6 +245,8 @@ namespace Duplicati.Library.Main.Strings
         public static string AutoVacuumLong { get { return LC.L(@"Some operations that manipulate the local database leave unused entries behind. These entries are not deleted from a hard drive until a VACUUM operation is run. This operation saves disk space in the long run but needs to temporarily create a copy of all valid entries in the database. Setting this to true will allow Duplicati to perform VACUUM operations at its discretion."); } }
         public static string DisablefilescannerShort { get { return LC.L(@"Disable the read-ahead scanner"); } }
         public static string DisablefilescannerLong { get { return LC.L(@"When this flag is enabled, the scanner that computes the size of source files is disabled, and instead the reported size is read from the database. Using this flag can speed up the backup by reducing disk access, but will give a less accurate progress indicator."); } }
+        public static string DisablefilelistconsistencychecksShort { get { return LC.L(@"Disable filelist consistency checks"); } }
+        public static string DisablefilelistconsistencychecksLong { get { return LC.L(@"In backups with a large number of filesets, the verification can take up a large part of the backup time. If you disable the checks, make sure you run regular check commands to ensure that everything is working as expected."); } }
         public static string DisableOnBatteryShort { get { return LC.L("Disable the backup when on battery power"); } }
         public static string DisableOnBatteryLong { get { return LC.L("When this flag is enabled, a scheduled backup will not run if the system is detected to be running on battery power (manual or command line backups will still be run).  If the detected power source is mains (i.e., AC) or unknown, then scheduled backups will proceed as normal."); } }
 
@@ -270,6 +270,11 @@ namespace Duplicati.Library.Main.Strings
         public static string RestoresymlinkmetadataLong { get { return "If symlink metadata is applied, it will usually mean changing the symlink target, instead of the symlink itself. For this reason, metadata is not applied to symlinks, but this option can be used to override this, such that metadata is applied to symlinks as well."; } }
         public static string UnittestmodeShort { get { return "Activate unittest mode"; } }
         public static string UnittestmodeLong { get { return "When running in unittest mode, no automatic fixes are applied, which assumes that the input data is always in perfect shape. This option is not intended for use in daily backups, but required for testing purposes to reveal potential problems."; } }
+
+        public static string ProfilealldatabasequeriesShort { get { return LC.L("Activates logging of all database queries"); } }
+        public static string ProfilealldatabasequeriesLong { get { return LC.L("To improve performance of the backups, frequent database queries are not logged by default. Enable this option to log all database queries, and remember to set either --{0}={2} or --{1}={2} to report the additional log data", "console-log-level", "log-file-log-level", nameof(Logging.LogMessageType.Profiling)); } }
+        public static string RebuildmissingdblockfilesShort { get { return "Rebuild dblock files when missing"; } }
+        public static string RebuildmissingdblockfilesLong { get { return "If dblock files are missing from the destination, you can attempt to rebuild them using local source data. However, since the local data may have changed, it may not be possible to retrieve all the required data and the process may be slow. Use this option to attempt to rebuild missing dblock files."; } }
     }
 
     internal static class Common

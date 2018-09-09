@@ -135,14 +135,6 @@ namespace Duplicati.CommandLine.BackendTester
 
         static bool Run(List<string> args, Dictionary<string, string> options, bool first)
         {
-            string allowedChars = ValidFilenameChars;
-            if (options.ContainsKey("extended-chars"))
-                allowedChars += options["extended-chars"];
-            else
-                allowedChars += ExtendedChars;
-
-            bool autoCreateFolders = Library.Utility.Utility.ParseBoolOption(options, "auto-create-folder");
-
             Library.Interface.IBackend backend = Library.DynamicLoader.BackendLoader.GetBackend(args[0], options);
             if (backend == null)
             {
@@ -151,6 +143,14 @@ namespace Duplicati.CommandLine.BackendTester
                 Console.WriteLine("Supported backends: " + string.Join(",", Duplicati.Library.DynamicLoader.BackendLoader.Keys));
                 return false;
             }
+
+            string allowedChars = ValidFilenameChars;
+            if (options.ContainsKey("extended-chars"))
+            {
+                allowedChars += String.IsNullOrEmpty(options["extended-chars"]) ? ExtendedChars : options["extended-chars"];
+            }
+
+            bool autoCreateFolders = Library.Utility.Utility.ParseBoolOption(options, "auto-create-folder");
 
             string disabledModulesValue;
             string enabledModulesValue;

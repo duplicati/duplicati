@@ -105,7 +105,14 @@ namespace Duplicati.Library.Main.Operation
             if (brokensets.Length == 0)
             {
                 m_result.BrokenFiles = new Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>[0];
-                Logging.Log.WriteInformationMessage(LOGTAG, "NoMissingFilesFound", "No broken filesets found");
+
+                if (missing == null)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesets", "Found no broken filesets");
+                else if (missing.Count == 0)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsOrMissingFiles", "Found no broken filesets and no missing remote files");
+                else
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenSetsButMissingRemoteFiles", string.Format("Found no broken filesets, but {0} missing remote files. Run purge-broken-files.", missing.Count));
+
                 return;
             }
 

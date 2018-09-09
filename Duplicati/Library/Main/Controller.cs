@@ -430,14 +430,29 @@ namespace Duplicati.Library.Main
                 {
                     result.EndTime = DateTime.UtcNow;
 
-                    try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                    catch { }
+                    if (ex is Library.Interface.OperationAbortException oae)
+                    {
+                        // Perform the module shutdown
+                        OnOperationComplete(ex);
 
-                    OnOperationComplete(ex);
+                        // Log this as a normal operation, as the script rasing the exception,
+                        // has already populated either warning or log messages as required
+                        Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
 
-                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+                        return result;
+                    }
+                    else
+                    {
+                        try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                        catch { }
 
-                    throw;
+                        OnOperationComplete(ex);
+
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+
+                        throw;
+                    }
+
                 }
                 finally
                 {
@@ -867,6 +882,7 @@ namespace Duplicati.Library.Main
                     string source;
                     try
                     {
+                        // TODO: This expands "C:" to CWD, but not C:\
                         source = System.IO.Path.GetFullPath(expandedSource);
                     }
                     catch (Exception ex)
@@ -1026,6 +1042,9 @@ namespace Duplicati.Library.Main
                 {
                     return Strings.Controller.UnsupportedSizeValue(optionname, value);
                 }
+
+                if (!string.IsNullOrWhiteSpace(value) && char.IsDigit(value.Last()))
+                    return Strings.Controller.NonQualifiedSizeValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan)
             {

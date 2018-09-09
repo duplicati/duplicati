@@ -100,7 +100,7 @@ namespace Duplicati.Library.Backend.WebApi
             {
                 { QueryParam.UploadType, QueryValue.Resumable }
             };
-            var path = UrlPath.Create(Path.Bucket).Append(bucketId).ToString();
+            var path = UrlPath.Create(Path.Bucket).Append(bucketId).Append(Path.Object).ToString();
             return Uri.UriBuilder(Url.UPLOAD, path, queryParams);
         }
 

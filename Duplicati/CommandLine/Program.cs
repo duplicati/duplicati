@@ -203,6 +203,21 @@ namespace Duplicati.CommandLine
             string command = cargs[0];
             cargs.RemoveAt(0);
 
+            if (verboseErrors)
+            {
+                outwriter.WriteLine("Input command: {0}", command);
+                outwriter.WriteLine("Input arguments: ");
+                foreach (var a in cargs)
+                    outwriter.WriteLine("\t{0}", a);
+                outwriter.WriteLine();
+
+                outwriter.WriteLine("Input options: ");
+                foreach (var n in options)
+                    outwriter.WriteLine("{0}: {1}", n.Key, n.Value);
+                outwriter.WriteLine();
+            }
+
+
             if (CommandMap.ContainsKey(command))
             {
                 var autoupdate = Library.Utility.Utility.ParseBoolOption(options, "auto-update");

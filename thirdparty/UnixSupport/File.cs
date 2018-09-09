@@ -201,7 +201,8 @@ namespace UnixSupport
             {
                 // In case the underlying filesystem does not support extended attributes,
                 // we simply return that there are no attributes
-                if (Syscall.GetLastError() == Errno.EOPNOTSUPP)
+                var err = Syscall.GetLastError();
+                if (err == Errno.EOPNOTSUPP || err == Errno.ENODATA)
                     return null;
 
                 throw new FileAccesException(path, use_llistxattr ? "llistxattr" : "listxattr");

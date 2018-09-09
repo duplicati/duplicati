@@ -26,6 +26,46 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Utility")]
+        [TestCase("da-DK")]
+        [TestCase("en-US")]
+        [TestCase("hu-HU")]
+        [TestCase("tr-TR")]
+        public static void FilenameStringComparison(string cultureName)
+        {
+            Action<string, string> checkStringComparison = (x, y) => Assert.IsFalse(String.Equals(x, y, Utility.ClientFilenameStringComparison));
+            Action<string, string> checkStringComparer = (x, y) => Assert.IsFalse(new HashSet<string>(new[] { x }).Contains(y, Utility.ClientFilenameStringComparer));
+
+            System.Globalization.CultureInfo originalCulture = System.Globalization.CultureInfo.CurrentCulture;
+            try
+            {
+                System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo(cultureName, false);
+
+                // These are equivalent with respect to hu-HU, but different with respect to en-US.
+                string ddzs = "ddzs";
+                string dzsdzs = "dzsdzs";
+                checkStringComparison(ddzs, dzsdzs);
+                checkStringComparer(ddzs, dzsdzs);
+
+                // Many cultures treat the following as equivalent.
+                string eAcuteOneCharacter = System.Text.Encoding.GetEncoding("iso-8859-1").GetString(new byte[] { 233 }); // 'é' as one character (ALT+0233).
+                string eAcuteTwoCharacters = "\u0065\u0301"; // 'e', combined with an acute accent (U+301).
+                checkStringComparison(eAcuteOneCharacter, eAcuteTwoCharacters);
+                checkStringComparer(eAcuteOneCharacter, eAcuteTwoCharacters);
+
+                // These are equivalent with respect to en-US, but different with respect to da-DK.
+                string aDiaeresisOneCharacter = "\u00C4"; // 'A' with a diaeresis.
+                string aDiaeresisTwoCharacters = "\u0041\u0308"; // 'A', combined with a diaeresis.
+                checkStringComparison(aDiaeresisOneCharacter, aDiaeresisTwoCharacters);
+                checkStringComparer(aDiaeresisOneCharacter, aDiaeresisTwoCharacters);
+            }
+            finally
+            {
+                System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
+            }
+        }
+
+        [Test]
+        [Category("Utility")]
         public static void ForceStreamRead()
         {
             byte[] source = { 0x10, 0x20, 0x30, 0x40, 0x50 };
@@ -82,7 +122,7 @@ namespace Duplicati.UnitTest
 
             // Test with custom comparer.
             IEqualityComparer<string> comparer = StringComparer.OrdinalIgnoreCase;
-            uniqueItems = new string[] {"a", "b", "c"};
+            uniqueItems = new string[] { "a", "b", "c" };
             duplicateItems = new string[] { "a", "c" };
 
             actualDuplicateItems = null;

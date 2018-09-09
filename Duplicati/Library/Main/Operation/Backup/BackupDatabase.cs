@@ -95,14 +95,18 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.AddSymlinkEntry(filename, metadataid, lastModified, m_transaction));
         }
 
-        public Task<KeyValuePair<long, DateTime>> GetFileLastModifiedAsync(string path, long lastfilesetid)
+        public Task<Tuple<long, string>> GetMetadataHashAndSizeForFileAsync(long fileid)
+        {
+            return RunOnMain(() => m_database.GetMetadataHashAndSizeForFile(fileid, m_transaction));
+        }
+
+        public Task<Tuple<long, DateTime, long>> GetFileLastModifiedAsync(string path, long lastfilesetid, bool includeLength)
         {
             return RunOnMain(() =>
             {
-                DateTime lastModified;
-                var id = m_database.GetFileLastModified(path, lastfilesetid, out lastModified, m_transaction);
+                var id = m_database.GetFileLastModified(path, lastfilesetid, includeLength, out var lastModified, out var length, m_transaction);
 
-                return new KeyValuePair<long, DateTime>(id, lastModified);
+                return new Tuple<long, DateTime, long>(id, lastModified, length);
             });
 		}
 
@@ -114,7 +118,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 string oldMetahash;
                 long oldMetasize;
 
-                var id = m_database.GetFileEntry(path, lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                var id = m_database.GetFileEntry(path, lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize, m_transaction);
                 return
                     id < 0 ?
                     null :

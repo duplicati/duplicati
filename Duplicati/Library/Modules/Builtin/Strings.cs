@@ -15,7 +15,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
     internal static class CheckMonoSSL {
         public static string Description { get { return LC.L(@"When running with Mono, this module will check if any certificates are installed and suggest installing them otherwise"); } }
         public static string Displayname { get { return LC.L(@"Check for SSL certificates"); } }
-        public static string ErrorMessage { get { return LC.L(@"No certificates found, you can install some with one of these commands:{0}    cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat derivatives{0}Read more: {1}", Environment.NewLine, "http://www.mono-project.com/docs/about-mono/releases/3.12.0/#cert-sync"); } }
+        public static string ErrorMessage { get { return LC.L(@"No certificates found, you can install some with one of these commands:{0}    cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat derivatives{0}    curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync --user cacert.pem; rm cacert.pem #for MacOS{0}Read more: {1}", Environment.NewLine, "http://www.mono-project.com/docs/about-mono/releases/3.12.0/#cert-sync"); } }
     }
     internal static class HttpOptions {
         public static string Description { get { return LC.L(@"This module exposes a number of properties that can be used to change the way http requests are issued"); } }
@@ -54,6 +54,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string FinishoptionLong { get { return LC.L(@"Executes a script after performing an operation. The script will receive the operation results written to stdout."); } }
         public static string FinishoptionShort { get { return LC.L(@"Run a script on exit"); } }
         public static string InvalidExitCodeError(string script, int exitcode) { return LC.L(@"The script ""{0}"" returned with exit code {1}", script, exitcode); }
+        public static string ExitCodeError(string script, int exitcode, string message) { return LC.L(@"The script ""{0}"" returned with exit code {1}{2}", script, exitcode, string.IsNullOrWhiteSpace(message) ? string.Empty : string.Format(": {0}", message)); }
         public static string RequiredoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out. If the script returns a non-zero error code or times out, the operation will be aborted."); } }
         public static string RequiredoptionShort { get { return LC.L(@"Run a required script on startup"); } }
         public static string ResultFormatShort { get { return LC.L(@"Selects the output format for results"); } }

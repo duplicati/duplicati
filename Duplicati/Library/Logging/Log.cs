@@ -93,7 +93,7 @@ namespace Duplicati.Library.Logging
         public static object Lock { get { return m_lock; } }
 
         /// <summary>
-        /// Gets a log tag taht reflects the type
+        /// Gets a log tag that reflects the type
         /// </summary>
         /// <returns>The log-tag for the type.</returns>
         /// <typeparam name="T">The type to get the tag for.</typeparam>
@@ -104,7 +104,7 @@ namespace Duplicati.Library.Logging
 
 
         /// <summary>
-        /// Gets a log tag taht reflects the type
+        /// Gets a log tag that reflects the type
         /// </summary>
         /// <returns>The log-tag for the type.</returns>
         /// <param name="t">The type to get the tag for.</param>
@@ -341,10 +341,32 @@ namespace Duplicati.Library.Logging
         /// <summary>
         /// Starts a new scope, that can be closed by disposing the returned instance
         /// </summary>
+        /// <param name="detached">Flag indicating if the scope should be detached from the parent</param>
         /// <returns>The new scope.</returns>
-        public static IDisposable StartIsolatingScope()
+        public static IDisposable StartIsolatingScope(bool detached)
         {
-            return StartScope((ILogDestination)null, null, true);
+            lock (m_lock)
+            {
+                var scope = StartScope((ILogDestination)null, null, true);
+                if (detached)
+                    DetachCurrentScope(scope);
+                return scope;
+            }
+        }
+
+        /// <summary>
+        /// Detaches the current scope, such that new scopes do not chain onto this
+        /// </summary>
+        /// <param name="scope">The current scope.</param>
+        public static IDisposable DetachCurrentScope(IDisposable scope)
+        {
+            lock (m_lock)
+            {
+                if (CurrentScope == scope && scope != null && CurrentScope.Parent != null)
+                    CurrentScope = CurrentScope.Parent;
+            }
+
+            return scope;
         }
 
         /// <summary>
@@ -451,7 +473,6 @@ namespace Duplicati.Library.Logging
                     {
                         System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LOGICAL_CONTEXT_KEY, null);
                     }
-                        
                 }
                 */
             }
