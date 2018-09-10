@@ -21,11 +21,11 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.IO;
 
-using AlphaFS = Alphaleonis.Win32.Filesystem;
-
-
 namespace Duplicati.Library.Snapshots
 {
+    //TODO-DNC - Simplify this class of dependance on AlphaFS, because .NETCORE
+    //supports long paths and UNC paths
+    //https://github.com/duplicati/duplicati/pull/3124#issuecomment-419842529
     public struct SystemIOWindows : ISystemIO
     {
         private const string UNCPREFIX = @"\\?\";
@@ -251,7 +251,7 @@ namespace Duplicati.Library.Snapshots
         {
             if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
                 throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
-            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File, AlphaFS.PathFormat.LongFullPath);
+            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File, Alphaleonis.Win32.Filesystem.PathFormat.LongFullPath);
 
             //Sadly we do not get a notification if the creation fails :(
             System.IO.FileAttributes attr = 0;
@@ -274,14 +274,14 @@ namespace Duplicati.Library.Snapshots
             {
                 try
                 {
-                    return AlphaFS.File.GetLinkTargetInfo(file).PrintName;
+                    return Alphaleonis.Win32.Filesystem.File.GetLinkTargetInfo(file).PrintName;
                 }
                 catch (PathTooLongException) { }
 
-                return AlphaFS.File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(file)).PrintName;
+                return Alphaleonis.Win32.Filesystem.File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(file)).PrintName;
             }
-            catch (AlphaFS.NotAReparsePointException) { }
-            catch (AlphaFS.UnrecognizedReparsePointException) { }
+            catch (Alphaleonis.Win32.Filesystem.NotAReparsePointException) { }
+            catch (Alphaleonis.Win32.Filesystem.UnrecognizedReparsePointException) { }
 
             // This path looks like it isn't actually a symlink
             // (Note that some reparse points aren't actually symlinks -
@@ -501,49 +501,67 @@ namespace Duplicati.Library.Snapshots
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
         {
             if (!IsPathTooLong(path))
-                try { return System.IO.Directory.GetAccessControl(path); }
+                try
+                {
+                    var di = new DirectoryInfo(path);
+                    return di.GetAccessControl();
+                }
             catch (System.IO.PathTooLongException) { }
             catch (System.ArgumentException) { }
 
-            return Alphaleonis.Win32.Filesystem.Directory.GetAccessControl(PrefixWithUNC(path));
+            //TODO-DNC Revert back to proper call when Library will be netstandart ready
+            return (System.Security.AccessControl.FileSystemSecurity)
+                typeof(Alphaleonis.Win32.Filesystem.Directory).GetMethod("GetAccessControl", new Type[] { typeof(string) })
+                    .Invoke(null, new object[] { PrefixWithUNC(path) });
         }
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
         {
             if (!IsPathTooLong(path))
-                try { return System.IO.File.GetAccessControl(path); }
+                try
+                {
+                    var fi = new FileInfo(path);
+                    return fi.GetAccessControl();
+                }
             catch (System.IO.PathTooLongException) { }
             catch (System.ArgumentException) { }
 
-            return Alphaleonis.Win32.Filesystem.File.GetAccessControl(PrefixWithUNC(path));
+            //TODO-DNC Revert back to proper call when Library will be netstandart ready
+            return (System.Security.AccessControl.FileSystemSecurity)
+                typeof(Alphaleonis.Win32.Filesystem.File).GetMethod("GetAccessControl", new Type[] { typeof(string) })
+                    .Invoke(null, new object[] { PrefixWithUNC(path) });
         }
 
         private void SetAccessControlFile(string path, FileSecurity rules)
         {
             if (!IsPathTooLong(path))
                 try 
-                { 
-                    System.IO.File.SetAccessControl(path, rules); 
+                {
+                    new FileInfo(path).SetAccessControl(rules);
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
                 catch (System.ArgumentException) { }
 
-            Alphaleonis.Win32.Filesystem.File.SetAccessControl(PrefixWithUNC(path), rules, AccessControlSections.All);
+            //TODO-DNC Revert back to proper call when Library will be netstandart ready
+            typeof(Alphaleonis.Win32.Filesystem.File).GetMethod("SetAccessControl", new Type[] { typeof(string), typeof(System.Security.AccessControl.FileSystemSecurity), typeof(AccessControlSections) })
+                .Invoke(null, new object[] { PrefixWithUNC(path), rules, AccessControlSections.All });
         }
 
         private void SetAccessControlDir(string path, DirectorySecurity rules)
         {
             if (!IsPathTooLong(path))
                 try 
-                { 
-                    System.IO.Directory.SetAccessControl(path, rules); 
+                {
+                    new DirectoryInfo(path).SetAccessControl(rules); 
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
                 catch (System.ArgumentException) { }
 
-            Alphaleonis.Win32.Filesystem.Directory.SetAccessControl(PrefixWithUNC(path), rules, AccessControlSections.All);
+            //TODO-DNC Revert back to proper call when Library will be netstandart ready
+            typeof(Alphaleonis.Win32.Filesystem.Directory).GetMethod("SetAccessControl", new Type[] { typeof(string), typeof(System.Security.AccessControl.FileSystemSecurity), typeof(AccessControlSections) })
+                .Invoke(null, new object[] { PrefixWithUNC(path), rules, AccessControlSections.All });
         }
 
         public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)

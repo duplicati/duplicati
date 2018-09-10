@@ -168,7 +168,9 @@ namespace Duplicati.Library.Snapshots
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
             //TODO: We need to be able to seek to pos 0
-            return new Alphaleonis.Win32.Filesystem.BackupFileStream(hFile, FileSystemRights.Read);
+            //TODO-DNC Revert back to proper call when Library will be netstandart ready
+            return (Alphaleonis.Win32.Filesystem.BackupFileStream)Activator.CreateInstance
+                (typeof(Alphaleonis.Win32.Filesystem.BackupFileStream), hFile, FileSystemRights.Read);
         }
 
         /// <summary>

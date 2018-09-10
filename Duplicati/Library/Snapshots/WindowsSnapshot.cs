@@ -24,7 +24,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Alphaleonis.Win32.Vss;
-using AlphaFS = Alphaleonis.Win32.Filesystem;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -138,7 +137,7 @@ namespace Duplicati.Library.Snapshots
                 m_volumes = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
                 foreach (var s in sources)
                 {
-                    var drive = AlphaFS.Path.GetPathRoot(s);
+                    var drive = Alphaleonis.Win32.Filesystem.Path.GetPathRoot(s);
                     if (!m_volumes.ContainsKey(drive))
                     {
                         //TODO: that seems a bit harsh... we could fall-back to not using VSS for that volume only
@@ -209,7 +208,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFolders(string localFolderPath)
         {
-            var root = Utility.Utility.AppendDirSeparator(AlphaFS.Path.GetPathRoot(localFolderPath));
+            var root = Utility.Utility.AppendDirSeparator(Alphaleonis.Win32.Filesystem.Path.GetPathRoot(localFolderPath));
             var volumePath = Utility.Utility.AppendDirSeparator(ConvertToSnapshotPath(root));
 
             string[] tmp = null;
@@ -217,7 +216,7 @@ namespace Duplicati.Library.Snapshots
 
             if (SystemIOWindows.IsPathTooLong(spath))
             {
-                try { tmp = AlphaFS.Directory.GetDirectories(spath); }
+                try { tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(spath); }
                 catch (PathTooLongException) { }
                 catch (DirectoryNotFoundException) { }
             }
@@ -230,7 +229,7 @@ namespace Duplicati.Library.Snapshots
             if (tmp == null)
             {
                 spath = SystemIOWindows.PrefixWithUNC(spath);
-                tmp = AlphaFS.Directory.GetDirectories(spath);
+                tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(spath);
             }
 
             volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
@@ -252,7 +251,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFiles(string localFolderPath)
         {
-            var root = Utility.Utility.AppendDirSeparator(AlphaFS.Path.GetPathRoot(localFolderPath));
+            var root = Utility.Utility.AppendDirSeparator(Alphaleonis.Win32.Filesystem.Path.GetPathRoot(localFolderPath));
             var volumePath = Utility.Utility.AppendDirSeparator(ConvertToSnapshotPath(root));
 
             string[] tmp = null;
@@ -260,7 +259,7 @@ namespace Duplicati.Library.Snapshots
 
             if (SystemIOWindows.IsPathTooLong(spath))
             {
-                try { tmp = AlphaFS.Directory.GetFiles(spath); }
+                try { tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(spath); }
                 catch (PathTooLongException) { }
                 catch (DirectoryNotFoundException) { }
             }
@@ -273,7 +272,7 @@ namespace Duplicati.Library.Snapshots
             if (tmp == null)
             {
                 spath = SystemIOWindows.PrefixWithUNC(spath);
-                tmp = AlphaFS.Directory.GetFiles(spath);
+                tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(spath);
             }
 
             volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
@@ -306,7 +305,7 @@ namespace Duplicati.Library.Snapshots
                 catch (PathTooLongException) { }
             }
 
-            return AlphaFS.File.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
+            return Alphaleonis.Win32.Filesystem.File.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
 
         /// <summary>
@@ -326,7 +325,7 @@ namespace Duplicati.Library.Snapshots
                 catch (PathTooLongException) { }
             }
 
-            return AlphaFS.File.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
+            return Alphaleonis.Win32.Filesystem.File.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
 
         /// <summary>
@@ -415,7 +414,7 @@ namespace Duplicati.Library.Snapshots
             if (!Path.IsPathRooted(localPath))
                 throw new InvalidOperationException();
 
-            var root = AlphaFS.Path.GetPathRoot(localPath);
+            var root = Alphaleonis.Win32.Filesystem.Path.GetPathRoot(localPath);
             if (!m_volumeMap.TryGetValue(root, out var volumePath))
                 throw new InvalidOperationException();
 
