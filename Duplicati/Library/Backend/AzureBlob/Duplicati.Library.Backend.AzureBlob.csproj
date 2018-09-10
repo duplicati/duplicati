@@ -11,6 +11,10 @@
     <Description>An Azure blob storage backend for Duplicati</Description>
     <PackageId>AzureBlob</PackageId>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <WarningsAsErrors />
+  </PropertyGroup>
   
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
@@ -18,6 +22,7 @@
     <PackageReference Include="Microsoft.Data.OData" Version="5.8.3" />
     <PackageReference Include="Microsoft.Data.Services.Client" Version="5.8.3" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="System.Diagnostics.Tracing" Version="4.3.0" />
     <PackageReference Include="System.Spatial" Version="5.8.3" />
     <PackageReference Include="WindowsAzure.Storage" Version="8.4.0" />
   </ItemGroup>
