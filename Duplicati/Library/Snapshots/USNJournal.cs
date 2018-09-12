@@ -575,7 +575,16 @@ namespace Duplicati.Library.Snapshots
                 // perform binary search
                 int index = m_records.BinarySearch(usnRecord, 
                     Comparer<Record>.Create(
-                        (left, right) => left.UsnRecord.Usn.CompareTo(right.UsnRecord.Usn)));
+                        (left, right) =>
+                        {
+                            if (left == null && right == null)
+                                return 0;
+                            if (left == null)
+                                return -1;
+                            if (right == null)
+                                return 1;
+                            return left.UsnRecord.Usn.CompareTo(right.UsnRecord.Usn);
+                        }));
 
                 if (index >= 0)
                 {
