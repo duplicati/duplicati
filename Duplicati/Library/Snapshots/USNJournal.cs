@@ -169,7 +169,7 @@ namespace Duplicati.Library.Snapshots
             if (path == null)
                 throw new Exception(Strings.USNHelper.UnexpectedPathFormat);
 
-            return new System.IO.DirectoryInfo(path).Root.FullName;
+            return System.IO.Path.GetPathRoot(path);
         }
 
         public static string GetDeviceNameFromPath(string path)
