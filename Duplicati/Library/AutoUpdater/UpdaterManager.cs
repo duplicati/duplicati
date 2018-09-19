@@ -1141,7 +1141,7 @@ namespace Duplicati.Library.AutoUpdater
                         Task.Run(async () => {
                             var stdin = new StreamReader(Console.OpenStandardInput());
                             var line = string.Empty;
-                            while ((line = await stdin.ReadLineAsync()) != null)
+                            while ((line = await stdin.ReadLineAsync().ConfigureAwait(false)) != null)
                                 await proc.StandardInput.WriteLineAsync(line);
                         }),
                         proc.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput()),

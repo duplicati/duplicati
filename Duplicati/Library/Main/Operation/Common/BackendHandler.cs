@@ -263,7 +263,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
 
                             return res;
-                        });
+                        }).ConfigureAwait(false);
                     }
 
                     tcs.TrySetResult(true);
