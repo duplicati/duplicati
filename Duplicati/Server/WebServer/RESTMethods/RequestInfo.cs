@@ -47,7 +47,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         public bool LongPollCheck(EventPollNotify poller, ref long id, out bool isError)
         {
-            HttpServer.HttpInput input = Request.Method.ToUpper() == "POST" ? Request.Form : Request.QueryString;
+            HttpServer.HttpInput input = String.Equals(Request.Method, "POST", StringComparison.OrdinalIgnoreCase) ? Request.Form : Request.QueryString;
             if (Library.Utility.Utility.ParseBool(input["longpoll"].Value, false))
             {
                 long lastEventId;
