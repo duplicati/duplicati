@@ -270,7 +270,7 @@ namespace Duplicati.Library.Backend
                 if (string.IsNullOrEmpty(m_fingerprint))
                     throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower(), SSH_FINGERPRINT_OPTION, SSH_FINGERPRINT_ACCEPT_ANY_OPTION), hostFingerprint, m_fingerprint);
 
-                if (hostFingerprint.ToLower() != m_fingerprint.ToLower())
+                if (!String.Equals(hostFingerprint, m_fingerprint, StringComparison.OrdinalIgnoreCase))
                     throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower()), hostFingerprint, m_fingerprint);
                 else
                     e.CanTrust = true;
