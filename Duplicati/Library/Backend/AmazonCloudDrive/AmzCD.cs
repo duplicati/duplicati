@@ -341,8 +341,8 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                         req.Method = overwrite ? "PUT" : "POST";
                     },
 
-                    new MultipartItem(createreq, name: "metadata"),
-                    new MultipartItem(stream, name: "content", filename: remotename)
+                    new MultipartItem(createreq, "metadata"),
+                    new MultipartItem(stream, "content", remotename)
 
                 );
 

@@ -218,7 +218,7 @@ namespace Duplicati.Library.Backend.Box
                 {
                     res = m_oauth.PostMultipartAndGetJSONData<FileList>(
                         string.Format("{0}/{1}/content", BOX_UPLOAD_URL, m_filecache[remotename]),
-                        new MultipartItem(stream, name: "file", filename: remotename)
+                        new MultipartItem(stream, "file", remotename)
                     ).Entries.First();
                 }
                 else
@@ -226,8 +226,8 @@ namespace Duplicati.Library.Backend.Box
 
                     res = m_oauth.PostMultipartAndGetJSONData<FileList>(
                         string.Format("{0}/content", BOX_UPLOAD_URL),
-                        new MultipartItem(createreq, name: "attributes"),
-                        new MultipartItem(stream, name: "file", filename: remotename)
+                        new MultipartItem(createreq, "attributes"),
+                        new MultipartItem(stream, "file", remotename)
                     ).Entries.First();
                 }
 
