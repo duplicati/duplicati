@@ -996,7 +996,7 @@ namespace Duplicati.CommandLine
 
 
             using (var console = new ConsoleOutput(outwriter, options))
-            using (var i = new Library.Main.Controller(args[0], options, console))
+            using (var i = new Library.Main.Controller(backend, options, console))
             {
                 setup(i);
                 i.PurgeFiles(filter);
