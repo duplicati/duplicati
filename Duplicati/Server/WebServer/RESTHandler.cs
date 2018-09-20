@@ -63,7 +63,7 @@ namespace Duplicati.Server.WebServer
             if (!string.IsNullOrWhiteSpace(request.Headers["X-HTTP-Method-Override"]))
                 method = request.Headers["X-HTTP-Method-Override"];
             
-            DoProcess(request, response, session, method, module.Name.ToLowerInvariant(), (request.Method.ToUpper() == "POST" ? request.Form : request.QueryString)["id"].Value);
+            DoProcess(request, response, session, method, module.Name.ToLowerInvariant(), (String.Equals(request.Method, "POST", StringComparison.OrdinalIgnoreCase) ? request.Form : request.QueryString)["id"].Value);
         }
 
         private static ConcurrentDictionary<string, System.Globalization.CultureInfo> _cultureCache = new ConcurrentDictionary<string, System.Globalization.CultureInfo>(StringComparer.OrdinalIgnoreCase);

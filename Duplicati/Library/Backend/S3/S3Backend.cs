@@ -216,7 +216,7 @@ namespace Duplicati.Library.Backend
                 host = u.Host;
                 m_prefix = "";
 
-                if (host.ToLower() == s3host)
+                if (String.Equals(host, s3host, StringComparison.OrdinalIgnoreCase))
                 {
                     m_bucket = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
 
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     //Subdomain type lookup
-                    if (host.ToLower().EndsWith("." + s3host, StringComparison.Ordinal))
+                    if (host.EndsWith("." + s3host, StringComparison.OrdinalIgnoreCase))
                     {
                         m_bucket = host.Substring(0, host.Length - ("." + s3host).Length);
                         host = s3host;
