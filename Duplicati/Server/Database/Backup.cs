@@ -57,6 +57,10 @@ namespace Duplicati.Server.Database
         /// </summary>
         public string Name { get; set; }
         /// <summary>
+        /// The backup description
+        /// </summary>
+        public string Description { get; set; }
+        /// <summary>
         /// The backup tags
         /// </summary>
         public string[] Tags { get; set; }
