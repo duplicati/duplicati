@@ -543,9 +543,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The path with the directory separator appended</returns>
         public static string AppendDirSeparator(string path, string separator)
         {
-            return !path.EndsWith(DirectorySeparatorString, StringComparison.Ordinal)
-                ? path + separator
-                : path;
+            return !path.EndsWith(separator, StringComparison.Ordinal) ? path + separator : path;
         }
 
         /// <summary>
