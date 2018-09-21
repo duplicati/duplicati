@@ -72,10 +72,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         public AmzCD(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
-
-            m_path = uri.HostAndPath;
-            if (!m_path.EndsWith("/", StringComparison.Ordinal))
-                m_path += "/";
+            m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(uri.HostAndPath, "/");
 
             if (options.ContainsKey(AUTHID_OPTION))
                 m_authid = options[AUTHID_OPTION];

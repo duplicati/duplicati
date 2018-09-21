@@ -256,8 +256,10 @@ namespace Duplicati.Library.Backend
 
             m_options = options;
             m_prefix = m_prefix.Trim();
-            if (m_prefix.Length != 0 && !m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            if (m_prefix.Length != 0)
+            {
+                m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_prefix, "/");
+            }
 
             // Auto-disable dns lookup for non AWS configurations
             var hasForcePathStyle = options.ContainsKey("s3-ext-forcepathstyle");

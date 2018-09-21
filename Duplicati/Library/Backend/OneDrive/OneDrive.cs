@@ -46,9 +46,7 @@ namespace Duplicati.Library.Backend
             var uri = new Utility.Uri(url);
 
             m_rootfolder = uri.Host;
-            m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator("/" + uri.Path, "/");
 
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))
