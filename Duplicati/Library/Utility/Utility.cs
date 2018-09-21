@@ -535,7 +535,7 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Appends the appropriate directory separator to paths, depending on OS.
+        /// Appends the specified directory separator to paths.
         /// Does not append the separator if the path already ends with it.
         /// </summary>
         /// <param name="path">The path to append to</param>
