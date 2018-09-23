@@ -901,7 +901,7 @@ namespace Duplicati.Server
            return
                 (from n in filters
                 orderby n.Order
-                let exp = Library.Utility.Utility.ExpandEnvironmentVariables(n.Expression)
+                let exp = Environment.ExpandEnvironmentVariables(n.Expression)
                 select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }

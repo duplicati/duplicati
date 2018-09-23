@@ -101,7 +101,7 @@ namespace Duplicati.UnitTest
                 //Filter empty entries, commonly occuring with copy/paste and newlines
                 folders = (from x in folders
                            where !string.IsNullOrWhiteSpace(x)
-                           select Library.Utility.Utility.ExpandEnvironmentVariables(x)).ToArray();
+                           select Environment.ExpandEnvironmentVariables(x)).ToArray();
 
                 foreach (var f in folders)
                     foreach (var n in f.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))

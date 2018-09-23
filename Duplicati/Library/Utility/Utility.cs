@@ -1067,16 +1067,6 @@ namespace Duplicati.Library.Utility
         public static readonly string HOME_PATH = Environment.GetFolderPath(IsClientLinux ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
 
         /// <summary>
-        /// Expands environment variables.
-        /// </summary>
-        /// <returns>The expanded string.</returns>
-        /// <param name="str">The string to expand.</param>
-        public static string ExpandEnvironmentVariables(string str)
-        {
-            return Environment.ExpandEnvironmentVariables(str);
-        }
-
-        /// <summary>
         /// Regexp for matching environment variables on Windows (%VAR%)
         /// </summary>
         private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_WINDOWS = new Regex(@"\%(?<name>\w+)\%");
