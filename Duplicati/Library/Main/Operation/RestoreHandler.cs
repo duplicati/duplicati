@@ -114,7 +114,8 @@ namespace Duplicati.Library.Main.Operation
                 {
                     using(var metadatastorage = new RestoreHandlerMetadataStorage())
                     {
-                        // TODO: When UpdateMissingBlocksTable is implemented, the localpatcher can be activated
+                        // TODO: When UpdateMissingBlocksTable is implemented, the localpatcher
+                        // (removed in revision 9ce1e807 ("Remove unused variables and fields") can be activated
                         // and this will reduce the need for multiple downloads of the same volume
                         // TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
                         m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
