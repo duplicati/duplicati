@@ -175,7 +175,6 @@ namespace Duplicati.UnitTest
 
             var round1 = filenames.Take(filenames.Count / 3).ToArray();
             var round2 = filenames.Take((filenames.Count / 3) * 2).ToArray();
-            var round3 = filenames;
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {

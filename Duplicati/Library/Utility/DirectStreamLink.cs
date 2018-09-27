@@ -399,12 +399,6 @@ namespace Duplicati.Library.Utility
         /// </summary>
         public class DataPump
         {
-            /// <summary> Minimum buffer size for pumping </summary>
-            public const int MINBUFSIZE = 1 << 10; // 1K
-            /// <summary> Default buffer size for pumping </summary>
-            public const int DEFAULTBUFSIZE = 1 << 14; // 16K
-
-            private readonly  int m_bufsize;
             private readonly bool m_closeInputWhenDone, m_closeOutputWhenDone;
             private readonly Action<DataPump> m_callbackFinalizePumping = null;
             private Stream m_input, m_output;
@@ -415,17 +409,15 @@ namespace Duplicati.Library.Utility
             /// <summary> Creates and configures a new DataPump instance. </summary>
             /// <param name="input"> The stream to read data from. </param>
             /// <param name="output"> The stream to write data to. </param>
-            /// <param name="bufsize"> The internal buffer size for reading/writing. </param>
             /// <param name="callbackFinalizePumping"> A callback to issue when pumping is done but before streams are closed. e.g. Can add data to output. </param>
             /// <param name="dontCloseInputWhenDone"> Disable auto close of input stream when pumping is done. </param>
             /// <param name="dontCloseOutputWhenDone"> Disable auto close of output stream when pumping is done. </param>
-            public DataPump(Stream input, Stream output, int bufsize = DEFAULTBUFSIZE
+            public DataPump(Stream input, Stream output
                 , Action<DataPump> callbackFinalizePumping = null
                 , bool dontCloseInputWhenDone = false, bool dontCloseOutputWhenDone = false)
             {
                 this.m_input = input;
                 this.m_output = output;
-                this.m_bufsize = Math.Max(MINBUFSIZE, bufsize);
                 this.m_callbackFinalizePumping = callbackFinalizePumping;
                 this.m_closeInputWhenDone = !dontCloseInputWhenDone;
                 this.m_closeOutputWhenDone = !dontCloseOutputWhenDone;
@@ -453,7 +445,6 @@ namespace Duplicati.Library.Utility
             /// <summary> Actually transfers stream data. </summary>
             private long doRun(bool rethrowException)
             {
-                Exception hadException = null;
                 byte[] buf = new byte[1 << 14]; int c;
                 try
                 {
@@ -469,9 +460,8 @@ namespace Duplicati.Library.Utility
                         catch { }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    hadException = ex;
                     if (rethrowException) throw;
                 }
                 finally
