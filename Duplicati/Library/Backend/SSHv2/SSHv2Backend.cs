@@ -78,8 +78,10 @@ namespace Duplicati.Library.Backend
 
             m_path = uri.Path;
 
-            if (!string.IsNullOrWhiteSpace(m_path) && !m_path.EndsWith("/", StringComparison.Ordinal))
-                m_path += "/";
+            if (!string.IsNullOrWhiteSpace(m_path))
+            {
+                m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_path, "/");
+            }
 
             if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
@@ -291,11 +293,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(path))
                 return;
 
-            string working_dir = m_con.WorkingDirectory;
-
-            if (!working_dir.EndsWith("/", StringComparison.Ordinal))
-                working_dir += "/";
-
+            string working_dir = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_con.WorkingDirectory, "/");
             if (working_dir == path)
                 return;
 

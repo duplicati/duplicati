@@ -25,6 +25,32 @@ namespace Duplicati.UnitTest
     public class UtilityTests
     {
         [Test]
+        public static void AppendDirSeparator()
+        {
+            const string noTrailingSlash = @"/a\b/c";
+            string hasTrailingSlash = noTrailingSlash + Utility.DirectorySeparatorString;
+
+            string alternateSeparator = null;
+            if (String.Equals(Utility.DirectorySeparatorString, "/", StringComparison.Ordinal))
+            {
+                alternateSeparator = @"\";
+            }
+            if (String.Equals(Utility.DirectorySeparatorString, @"\", StringComparison.Ordinal))
+            {
+                alternateSeparator = "/";
+            }
+
+            Assert.AreEqual(hasTrailingSlash, Utility.AppendDirSeparator(noTrailingSlash));
+            Assert.AreEqual(hasTrailingSlash, Utility.AppendDirSeparator(hasTrailingSlash));
+            Assert.AreEqual(hasTrailingSlash, Utility.AppendDirSeparator(noTrailingSlash), Utility.DirectorySeparatorString);
+            Assert.AreEqual(hasTrailingSlash, Utility.AppendDirSeparator(hasTrailingSlash), Utility.DirectorySeparatorString);
+
+            Assert.AreEqual(noTrailingSlash + alternateSeparator, Utility.AppendDirSeparator(noTrailingSlash, alternateSeparator));
+            Assert.AreEqual(noTrailingSlash + alternateSeparator, Utility.AppendDirSeparator(noTrailingSlash + alternateSeparator, alternateSeparator));
+            Assert.AreEqual(hasTrailingSlash + alternateSeparator, Utility.AppendDirSeparator(hasTrailingSlash, alternateSeparator));
+        }
+
+        [Test]
         [Category("Utility")]
         [TestCase("da-DK")]
         [TestCase("en-US")]

@@ -535,7 +535,7 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Appends the appropriate directory separator to paths, depending on OS.
+        /// Appends the specified directory separator to paths.
         /// Does not append the separator if the path already ends with it.
         /// </summary>
         /// <param name="path">The path to append to</param>
@@ -543,9 +543,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The path with the directory separator appended</returns>
         public static string AppendDirSeparator(string path, string separator)
         {
-            return !path.EndsWith(DirectorySeparatorString, StringComparison.Ordinal)
-                ? path + separator
-                : path;
+            return !path.EndsWith(separator, StringComparison.Ordinal) ? path + separator : path;
         }
 
         /// <summary>
