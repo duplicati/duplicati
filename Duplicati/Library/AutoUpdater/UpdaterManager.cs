@@ -51,7 +51,7 @@ namespace Duplicati.Library.AutoUpdater
         private static readonly string INSTALLED_BASE_DIR =
             string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)))
             ? System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
-            : Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+            : Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
 
         private static readonly bool DISABLE_UPDATE_DOMAIN = !string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)));
 
@@ -187,7 +187,7 @@ namespace Duplicati.Library.AutoUpdater
             }
             else
             {
-                INSTALLDIR = Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+                INSTALLDIR = Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
             }
 
 
