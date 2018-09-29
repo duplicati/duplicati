@@ -359,13 +359,13 @@ namespace Duplicati.Library.Backend
                 UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
 
                 // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
-                int fragmentSize = (int)Math.Min(this.fragmentSize, stream.Length);
+                int bufferSize = (int)Math.Min(this.fragmentSize, stream.Length);
 
-                byte[] fragmentBuffer = new byte[fragmentSize];
+                byte[] fragmentBuffer = new byte[bufferSize];
                 int read = 0;
                 for (int offset = 0; offset < stream.Length; offset += read)
                 {
-                    read = stream.Read(fragmentBuffer, 0, fragmentSize);
+                    read = stream.Read(fragmentBuffer, 0, bufferSize);
 
                     int retryCount = this.fragmentRetryCount;
                     for (int attempt = 0; attempt < retryCount; attempt++)
@@ -393,7 +393,7 @@ namespace Duplicati.Library.Backend
                             if (attempt >= retryCount - 1)
                             {
                                 // We've used up all our retry attempts
-                                throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
+                                throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                             }
                             else if ((int)ex.Response.StatusCode >= 500 && (int)ex.Response.StatusCode < 600)
                             {
@@ -406,7 +406,7 @@ namespace Duplicati.Library.Backend
                             {
                                 // 404 is a special case indicating the upload session no longer exists, so the fragment shouldn't be retried.
                                 // Instead we'll let the caller re-attempt the whole file.
-                                throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
+                                throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                             }
                             else if ((int)ex.Response.StatusCode >= 400 && (int)ex.Response.StatusCode < 500)
                             {
@@ -416,7 +416,7 @@ namespace Duplicati.Library.Backend
                             else
                             {
                                 // Other errors should be rethrown
-                                throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
+                                throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                             }
                         }
 
