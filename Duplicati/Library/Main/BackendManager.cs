@@ -272,7 +272,7 @@ namespace Duplicati.Library.Main
                 public string Newname;
             }
 
-            public DatabaseCollector(LocalDatabase database)
+            public DatabaseCollector(LocalDatabase database, IBackendWriter stats)
             {
                 m_database = database;
                 m_dbqueue = new List<IDbEntry>();
@@ -376,7 +376,7 @@ namespace Duplicati.Library.Main
             m_numberofretries = options.NumberOfRetries;
             m_retrydelay = options.RetryDelay;
 
-            m_db = new DatabaseCollector(database);
+            m_db = new DatabaseCollector(database, statwriter);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
             if (m_backend == null)
