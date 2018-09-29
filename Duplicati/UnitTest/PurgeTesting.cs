@@ -203,8 +203,6 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(filenames.Count - round2.Length, res.AddedFiles);
             }
 
-            var last_ts = DateTime.Now;
-
             File.Delete(dblock_file);
 
             long[] affectedfiles;
