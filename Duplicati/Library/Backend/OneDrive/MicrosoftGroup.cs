@@ -17,7 +17,7 @@ namespace Duplicati.Library.Backend
         public MicrosoftGroup() { } // Constructor needed for dynamic loading to find it
 
         public MicrosoftGroup(string url, Dictionary<string, string> options)
-            : base(url, options)
+            : base(url, MicrosoftGroup.PROTOCOL_KEY, options)
         {
             string groupId = null;
             string groupEmail;

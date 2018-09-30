@@ -15,7 +15,7 @@ namespace Duplicati.Library.Backend
         public OneDriveV2() { } // Constructor needed for dynamic loading to find it
 
         public OneDriveV2(string url, Dictionary<string, string> options)
-            : base(url, options)
+            : base(url, OneDriveV2.PROTOCOL_KEY, options)
         {
             string driveId;
             if (options.TryGetValue(DRIVE_ID_OPTION, out driveId))

@@ -19,7 +19,7 @@ namespace Duplicati.Library.Backend
         public SharePointV2() { } // Constructor needed for dynamic loading to find it
 
         public SharePointV2(string url, Dictionary<string, string> options)
-            : base(url, options)
+            : base(url, SharePointV2.PROTOCOL_KEY, options)
         {
             // Check to see if a site ID was explicitly provided
             string siteIdOption;

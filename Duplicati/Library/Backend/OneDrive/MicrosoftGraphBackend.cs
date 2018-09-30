@@ -83,12 +83,12 @@ namespace Duplicati.Library.Backend
 
         protected MicrosoftGraphBackend() { } // Constructor needed for dynamic loading to find it
 
-        protected MicrosoftGraphBackend(string url, Dictionary<string, string> options)
+        protected MicrosoftGraphBackend(string url, string protocolKey, Dictionary<string, string> options)
         {
             string authid;
             options.TryGetValue(AUTHID_OPTION, out authid);
             if (string.IsNullOrEmpty(authid))
-                throw new UserInformationException(Strings.MicrosoftGraph.MissingAuthId(OAuthHelper.OAUTH_LOGIN_URL(this.ProtocolKey)), "MicrosoftGraphBackendMissingAuthId");
+                throw new UserInformationException(Strings.MicrosoftGraph.MissingAuthId(OAuthHelper.OAUTH_LOGIN_URL(protocolKey)), "MicrosoftGraphBackendMissingAuthId");
 
             string fragmentSizeStr;
             if (options.TryGetValue(UPLOAD_SESSION_FRAGMENT_SIZE_OPTION, out fragmentSizeStr) && int.TryParse(fragmentSizeStr, out this.fragmentSize))
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Backend
                 this.fragmentRetryDelay = UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY;
             }
 
-            this.m_client = new OAuthHttpClient(authid, this.ProtocolKey);
+            this.m_client = new OAuthHttpClient(authid, protocolKey);
             this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
 
             // Extract out the path to the backup root folder from the given URI
