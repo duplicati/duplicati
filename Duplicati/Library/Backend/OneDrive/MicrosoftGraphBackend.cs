@@ -74,12 +74,14 @@ namespace Duplicati.Library.Backend
 
         private readonly JsonSerializer m_serializer = new JsonSerializer();
         private readonly OAuthHttpClient m_client;
-        private readonly string m_path;
         private readonly int fragmentSize;
         private readonly int fragmentRetryCount;
         private readonly int fragmentRetryDelay; // In milliseconds
 
         private string[] dnsNames = null;
+
+        private Lazy<string> rootPathFromURL;
+        private string m_path => this.rootPathFromURL.Value;
 
         protected MicrosoftGraphBackend() { } // Constructor needed for dynamic loading to find it
 
@@ -121,7 +123,7 @@ namespace Duplicati.Library.Backend
             this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
 
             // Extract out the path to the backup root folder from the given URI
-            this.m_path = NormalizeSlashes(this.GetRootPathFromUrl(url));
+            this.rootPathFromURL = new Lazy<string>(() => this.GetRootPathFromUrl(url));
         }
 
         public abstract string ProtocolKey { get; }
