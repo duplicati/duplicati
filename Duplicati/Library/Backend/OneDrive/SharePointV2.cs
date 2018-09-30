@@ -11,6 +11,7 @@ namespace Duplicati.Library.Backend
     public class SharePointV2 : MicrosoftGraphBackend
     {
         private const string SITE_ID_OPTION = "site-id";
+        private const string PROTOCOL_KEY = "sharepoint";
 
         private readonly string drivePath;
         private string siteId = null;
@@ -42,7 +43,7 @@ namespace Duplicati.Library.Backend
 
         public override string ProtocolKey
         {
-            get { return "sharepoint"; }
+            get { return SharePointV2.PROTOCOL_KEY; }
         }
 
         public override string DisplayName

@@ -7,8 +7,8 @@ namespace Duplicati.Library.Backend
     public class OneDriveV2 : MicrosoftGraphBackend
     {
         private const string DRIVE_ID_OPTION = "drive-id";
-
         private const string DEFAULT_DRIVE_PATH = "/me/drive";
+        private const string PROTOCOL_KEY = "onedrivev2";
 
         private readonly string drivePath;
 
@@ -30,7 +30,7 @@ namespace Duplicati.Library.Backend
 
         public override string ProtocolKey
         {
-            get { return "onedrivev2"; }
+            get { return OneDriveV2.PROTOCOL_KEY; }
         }
 
         public override string DisplayName

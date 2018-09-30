@@ -10,6 +10,7 @@ namespace Duplicati.Library.Backend
     {
         private const string GROUP_EMAIL_OPTION = "group-email";
         private const string GROUP_ID_OPTION = "group-id";
+        private const string PROTOCOL_KEY = "msgroup";
 
         private readonly string drivePath;
 
@@ -46,7 +47,7 @@ namespace Duplicati.Library.Backend
 
         public override string ProtocolKey
         {
-            get { return "msgroup"; }
+            get { return MicrosoftGroup.PROTOCOL_KEY; }
         }
 
         public override string DisplayName
