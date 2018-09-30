@@ -80,7 +80,7 @@ namespace Duplicati.Library.Backend
 
         private string[] dnsNames = null;
 
-        private Lazy<string> rootPathFromURL;
+        private readonly Lazy<string> rootPathFromURL;
         private string RootPath => this.rootPathFromURL.Value;
 
         protected MicrosoftGraphBackend() { } // Constructor needed for dynamic loading to find it
