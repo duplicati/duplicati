@@ -37,7 +37,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     return;
                 }
 
-                task = tasks.Where(x => x.TaskID == taskid).FirstOrDefault();
                 if (tasks.Where(x => x.TaskID == taskid).FirstOrDefault() == null)
                 {
                     KeyValuePair<long, Exception>[] matches;

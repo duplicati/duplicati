@@ -93,7 +93,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         var s = 1;
                         var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
-                        var oldFilesetID = incompleteSet.Key;
 
                         // Probe for an unused filename
                         while (s < 60)

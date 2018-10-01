@@ -177,8 +177,10 @@ namespace Duplicati.GUI.TrayIcon
             m_toRumps = ch.AsWriteOnly();
 
             WriteChannel(m_rumpsProcess.StandardInput, ch.AsReadOnly());
-            var standardOutputTask = ReadChannel(m_rumpsProcess.StandardOutput);
-            var standardErrorTask = ReadChannel(m_rumpsProcess.StandardError);
+            #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            ReadChannel(m_rumpsProcess.StandardOutput);
+            ReadChannel(m_rumpsProcess.StandardError);
+            #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "background"}));
             //m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "setappicon", Image = GetIcon(m_lastIcon)}));

@@ -341,7 +341,7 @@ namespace Duplicati.Library.Backend
                 var response = this.m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename)), streamContent).Await();
                 
                 // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
-                var result = this.ParseResponse<DriveItem>(response);
+                this.ParseResponse<DriveItem>(response);
             }
             else
             {
@@ -353,7 +353,7 @@ namespace Duplicati.Library.Backend
                 HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename)));
 
                 // Indicate that we want to replace any existing content with this new data we're uploading
-                StringContent createSessionContent = this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } });
+                this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } });
 
                 HttpResponseMessage createSessionResponse = this.m_client.SendAsync(createSessionRequest).Await();
                 UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
@@ -384,7 +384,7 @@ namespace Duplicati.Library.Backend
                             response = this.m_client.SendAsync(request, false).Await();
 
                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
-                            var result = this.ParseResponse<UploadSession>(response);
+                            this.ParseResponse<UploadSession>(response);
                         }
                         catch (MicrosoftGraphException ex)
                         {
@@ -446,7 +446,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 string rootPath = string.Format("{0}/root:{1}", this.DrivePrefix, this.m_path);
-                DriveItem rootFolder = this.Get<DriveItem>(rootPath);
+                this.Get<DriveItem>(rootPath);
             }
             catch (DriveItemNotFoundException ex)
             {

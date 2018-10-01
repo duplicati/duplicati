@@ -114,71 +114,14 @@ namespace Duplicati.Library.Main.Operation
                 {
                     using(var metadatastorage = new RestoreHandlerMetadataStorage())
                     {
-                        System.Security.Cryptography.HashAlgorithm blockhasher = null;
-                        System.Security.Cryptography.HashAlgorithm filehasher = null;
-
-                        bool first = true;
-                        RecreateDatabaseHandler.BlockVolumePostProcessor localpatcher =
-                            (key, rd) =>
-                            {
-                                if (first)
-                                {
-                                    Utility.UpdateOptionsFromDb(database, m_options);
-                                    m_blockbuffer = new byte[m_options.Blocksize];
-
-                                    //Figure out what files are to be patched, and what blocks are needed
-                                    PrepareBlockAndFileList(database, m_options, filter, m_result);
-
-                                    blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
-                                    filehasher = Library.Utility.HashAlgorithmHelper.Create(m_options.FileHashAlgorithm);
-                                    if (blockhasher == null)
-                                        throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                                    if (!blockhasher.CanReuseTransform)
-                                        throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-
-                                    if (filehasher == null)
-                                        throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
-                                    if (!filehasher.CanReuseTransform)
-                                        throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
-
-                                    // Don't run this again
-                                    first = false;
-                                }
-                                else
-                                {
-                                    // Patch the missing blocks list to include the newly discovered blocklists
-                                    //UpdateMissingBlocksTable(key);
-                                }
-
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                                    return;
-
-                                CreateDirectoryStructure(database, m_options, m_result);
-
-                                //If we are patching an existing target folder, do not touch stuff that is already updated
-                                ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, m_result);
-
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                                    return;
-
-                                // If other local files already have the blocks we want, we use them instead of downloading
-                                if (!m_options.NoLocalBlocks)
-                                    ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, m_result, metadatastorage);
-                                
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
-                                    return;
-                            
-                                //Update files with data
-                                PatchWithBlocklist(database, rd, m_options, m_result, m_blockbuffer, metadatastorage);
-                            };
-
-                        // TODO: When UpdateMissingBlocksTable is implemented, the localpatcher can be activated
+                        // TODO: When UpdateMissingBlocksTable is implemented, the localpatcher
+                        // (removed in revision 9ce1e807 ("Remove unused variables and fields") can be activated
                         // and this will reduce the need for multiple downloads of the same volume
                         // TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
                         m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
                         using(new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
                             new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                                .DoRun(database, false, filter, filelistfilter, /*localpatcher*/null);
+                                .DoRun(database, false, filter, filelistfilter, null);
 
                         if (!m_options.SkipMetadata)
                             ApplyStoredMetadata(database, m_options, m_result, metadatastorage);

@@ -1052,7 +1052,7 @@ namespace Duplicati.CommandLine
             using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
-                var res = i.PurgeBrokenFiles(filter);
+                i.PurgeBrokenFiles(filter);
             }
 
             return 0;

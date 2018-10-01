@@ -47,8 +47,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             async self =>
             {
                 var EMPTY_METADATA = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-                var blocksize = options.Blocksize;
-
 
                 // Pre-cache the option variables here to simplify and
                 // speed up repeated option access below

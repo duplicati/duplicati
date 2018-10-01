@@ -1301,7 +1301,6 @@ ORDER BY
                         {
                             yield return new Tuple<string, byte[], int>(curHash, buffer, index);
                             buffer = new byte[blocksize];
-                            curHash = null;
                             index = 0;
                         }
 

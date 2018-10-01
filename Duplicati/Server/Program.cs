@@ -133,11 +133,6 @@ namespace Duplicati.Server
 
         private static System.Threading.Timer PurgeTempFilesTimer = null;
 
-        /// <summary>
-        /// Used to maintain a reference to initialized system settings.
-        /// </summary>
-        private static IDisposable SystemSettings;
-
         public static int ServerPort
         {
             get
@@ -209,7 +204,7 @@ namespace Duplicati.Server
             if (commandlineOptions.ContainsKey("tempdir") && !string.IsNullOrEmpty(commandlineOptions["tempdir"]))
                 Library.Utility.SystemContextSettings.DefaultTempPath = commandlineOptions["tempdir"];
             
-            SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
+            Library.Utility.SystemContextSettings.StartSession();
 
             // Check if a parameters-file was provided. Skip if help was already specified
             if (!commandlineOptions.ContainsKey("help"))
@@ -255,9 +250,6 @@ namespace Duplicati.Server
 
             try
             {
-                // Setup the log redirect
-                var logscope = Library.Logging.Log.StartScope(Program.LogHandler, null);
-
                 if (commandlineOptions.ContainsKey("log-file"))
                 {
 #if DEBUG
