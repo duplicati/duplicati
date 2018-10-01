@@ -154,5 +154,5 @@ CREATE TABLE "TempFile" (
     "Expires" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (5);
+INSERT INTO "Version" ("Version") VALUES (6);
 
