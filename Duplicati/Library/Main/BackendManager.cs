@@ -248,7 +248,6 @@ namespace Duplicati.Library.Main
             private readonly LocalDatabase m_database;
             private readonly System.Threading.Thread m_callerThread;
             private List<IDbEntry> m_dbqueue;
-            private readonly IBackendWriter m_stats;
 
             private interface IDbEntry { }
 
@@ -276,7 +275,6 @@ namespace Duplicati.Library.Main
             public DatabaseCollector(LocalDatabase database, IBackendWriter stats)
             {
                 m_database = database;
-                m_stats = stats;
                 m_dbqueue = new List<IDbEntry>();
                 if (m_database != null)
                     m_callerThread = System.Threading.Thread.CurrentThread;

@@ -42,7 +42,6 @@ namespace Duplicati.Library.Main.Operation
 
         public void Run(string[] sources, Library.Utility.IFilter filter)
         {
-            var storeSymlinks = m_options.SymlinkPolicy == Options.SymlinkStrategy.Store;
             var sourcefilter = new Library.Utility.FilterExpression(sources, true);
 
             using(var snapshot = BackupHandler.GetSnapshot(sources, m_options))

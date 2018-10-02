@@ -234,7 +234,7 @@ namespace Duplicati.UnitTest
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                c.List("*");
                 //Console.WriteLine("In first backup:");
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
             }

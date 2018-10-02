@@ -47,8 +47,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-                var blocksize = options.Blocksize;
-
                 while (await taskreader.ProgressAsync)
                 {
                     var e = await self.Input.ReadAsync();

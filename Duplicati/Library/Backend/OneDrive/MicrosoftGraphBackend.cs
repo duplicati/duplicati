@@ -344,7 +344,7 @@ namespace Duplicati.Library.Backend
                 var response = this.m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)), streamContent).Await();
                 
                 // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
-                var result = this.ParseResponse<DriveItem>(response);
+                this.ParseResponse<DriveItem>(response);
             }
             else
             {
@@ -356,19 +356,19 @@ namespace Duplicati.Library.Backend
                 HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)));
 
                 // Indicate that we want to replace any existing content with this new data we're uploading
-                StringContent createSessionContent = this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } });
+                this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } });
 
                 HttpResponseMessage createSessionResponse = this.m_client.SendAsync(createSessionRequest).Await();
                 UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
 
                 // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
-                int fragmentSize = (int)Math.Min(this.fragmentSize, stream.Length);
+                int bufferSize = (int)Math.Min(this.fragmentSize, stream.Length);
 
-                byte[] fragmentBuffer = new byte[fragmentSize];
+                byte[] fragmentBuffer = new byte[bufferSize];
                 int read = 0;
                 for (int offset = 0; offset < stream.Length; offset += read)
                 {
-                    read = stream.Read(fragmentBuffer, 0, fragmentSize);
+                    read = stream.Read(fragmentBuffer, 0, bufferSize);
 
                     int retryCount = this.fragmentRetryCount;
                     for (int attempt = 0; attempt < retryCount; attempt++)
@@ -387,7 +387,7 @@ namespace Duplicati.Library.Backend
                             response = this.m_client.SendAsync(request, false).Await();
 
                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
-                            var result = this.ParseResponse<UploadSession>(response);
+                            this.ParseResponse<UploadSession>(response);
                         }
                         catch (MicrosoftGraphException ex)
                         {
@@ -396,7 +396,7 @@ namespace Duplicati.Library.Backend
                             if (attempt >= retryCount - 1)
                             {
                                 // We've used up all our retry attempts
-                                throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
+                                throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                             }
                             else if ((int)ex.Response.StatusCode >= 500 && (int)ex.Response.StatusCode < 600)
                             {
@@ -409,7 +409,7 @@ namespace Duplicati.Library.Backend
                             {
                                 // 404 is a special case indicating the upload session no longer exists, so the fragment shouldn't be retried.
                                 // Instead we'll let the caller re-attempt the whole file.
-                                throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
+                                throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                             }
                             else if ((int)ex.Response.StatusCode >= 400 && (int)ex.Response.StatusCode < 500)
                             {
@@ -419,7 +419,7 @@ namespace Duplicati.Library.Backend
                             else
                             {
                                 // Other errors should be rethrown
-                                throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
+                                throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                             }
                         }
 
@@ -449,7 +449,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 string rootPath = string.Format("{0}/root:{1}", this.DrivePrefix, this.RootPath);
-                DriveItem rootFolder = this.Get<DriveItem>(rootPath);
+                this.Get<DriveItem>(rootPath);
             }
             catch (DriveItemNotFoundException ex)
             {

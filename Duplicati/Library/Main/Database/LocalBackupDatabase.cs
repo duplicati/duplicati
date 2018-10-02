@@ -410,7 +410,7 @@ namespace Duplicati.Library.Main.Database
                 m_insertblockCommand.SetParameterValue(0, key);
                 m_insertblockCommand.SetParameterValue(1, volumeid);
                 m_insertblockCommand.SetParameterValue(2, size);
-                r = m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
+                m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
                 if (m_blockCache != null)
                     m_blockCache.Add(key, size);
                 return true;

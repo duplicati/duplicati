@@ -31,7 +31,9 @@ namespace Duplicati.CommandLine.BackendTester
         /// <summary>
         /// Used to maintain a reference to initialized system settings.
         /// </summary>
+        #pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
         private static IDisposable SystemSettings;
+        #pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
 
         class TempFile
         {

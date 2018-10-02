@@ -159,9 +159,6 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private bool m_isConfigured;
         /// <summary>
-        /// A value indicating if this instance has been disposed
-        /// </summary>
-        private bool m_isDisposed;
         /// <summary>
         /// The mail subject
         /// </summary>

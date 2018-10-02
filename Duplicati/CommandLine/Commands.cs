@@ -623,7 +623,7 @@ namespace Duplicati.CommandLine
                 output.MessageEvent(string.Format("  Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
                 output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
 
-                if (result.ExaminedFiles == 0 && (filter != null || !filter.Empty))
+                if (result.ExaminedFiles == 0 && (filter != null && !filter.Empty))
                     output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filters\" command");
 
                 output.MessageEvent("Backup completed successfully!");
@@ -1052,7 +1052,7 @@ namespace Duplicati.CommandLine
             using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
-                var res = i.PurgeBrokenFiles(filter);
+                i.PurgeBrokenFiles(filter);
             }
 
             return 0;
