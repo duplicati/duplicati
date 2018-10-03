@@ -37,7 +37,11 @@
 
                     <div class="input text">
                         <label for="name" translate>Name</label>
-                        <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}"/>
+                        <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}" />
+                    </div>
+                    <div class="input textarea">
+                        <label for="description" translate>Description</label>
+                        <textarea name="description" id="description" ng-model="Backup.Description"></textarea>
                     </div>
                     <div class="input select" ng-hide="SystemInfo.EncryptionModules.length == 0">
                         <label for="encryption" translate>Encryption</label>
