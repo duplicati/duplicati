@@ -169,7 +169,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 if (string.IsNullOrWhiteSpace(installdir))
                     foreach (var p in legacypaths)
-                        if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Count() > 0 && TestDirectoryIsWriteable(p))
+                        if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Any() && TestDirectoryIsWriteable(p))
                         {
                             installdir = p;
                             break;

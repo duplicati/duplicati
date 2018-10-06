@@ -667,7 +667,7 @@ namespace Duplicati.Library.Main
                 selectedRetentionOptions.Add("keep-versions");
             }
 
-            if (m_options.RetentionPolicy.Count() > 0)
+            if (m_options.RetentionPolicy.Any())
             {
                 selectedRetentionOptions.Add("retention-policy");
             }

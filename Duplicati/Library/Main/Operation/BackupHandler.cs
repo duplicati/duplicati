@@ -269,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(m_database, null);
             }
 
-            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Count() > 0)
+            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Any())
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
