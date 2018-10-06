@@ -740,7 +740,7 @@ namespace Duplicati.CommandLine
             return 200;
         }
 
-        public static int PrintInvalidCommand(TextWriter outwriter, string command, List<string> args)
+        public static int PrintInvalidCommand(TextWriter outwriter, string command)
         {
             outwriter.WriteLine(Strings.Program.InvalidCommandError(command));
             return 200;

@@ -333,7 +333,7 @@ namespace Duplicati.Server
         {
             var backup = data.Backup;
 
-            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            var options = ApplyOptions(backup, GetCommonOptions());
             if (data.ExtraOptions != null)
                 foreach(var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
@@ -383,7 +383,7 @@ namespace Duplicati.Server
         {
             var backup = data.Backup;
 
-            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            var options = ApplyOptions(backup, GetCommonOptions());
             if (data.ExtraOptions != null)
                 foreach (var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
@@ -454,7 +454,7 @@ namespace Duplicati.Server
                     Program.StatusEventNotifyer.SignalNewEvent();
                 }
 
-                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+                var options = ApplyOptions(backup, GetCommonOptions());
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
@@ -495,7 +495,7 @@ namespace Duplicati.Server
                     {
                         case DuplicatiOperation.Backup:
                             {
-                                var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation));
+                                var filter = ApplyFilter(backup, GetCommonFilter());
                                 var sources =
                                     (from n in backup.Sources
                                         let p = SpecialFolders.ExpandEnvironmentVariables(n)
@@ -819,7 +819,7 @@ namespace Duplicati.Server
             Program.StatusEventNotifyer.SignalNewEvent();
         }
 
-        private static bool TestIfOptionApplies(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, string filter)
+        private static bool TestIfOptionApplies()
         {
             //TODO: Implement to avoid warnings
             return true;
@@ -841,19 +841,19 @@ namespace Duplicati.Server
             options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.OrdinalIgnoreCase));
         }
 
-        internal static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
+        internal static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, Dictionary<string, string> options)
         {
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
 
             // Apply normal options
             foreach(var o in backup.Settings)
-                if (!o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
+                if (!o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name] = o.Value;
 
             // Apply override options
             foreach(var o in backup.Settings)
-                if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
+                if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name.Substring(2)] = o.Value;
 
 
@@ -863,7 +863,7 @@ namespace Duplicati.Server
             return options;
         }
 
-        private static Library.Utility.IFilter ApplyFilter(Serialization.Interface.IBackup backup, DuplicatiOperation mode, Library.Utility.IFilter filter)
+        private static Library.Utility.IFilter ApplyFilter(Serialization.Interface.IBackup backup, Library.Utility.IFilter filter)
         {
             var f2 = backup.Filters;
             if (f2 != null && f2.Length > 0)
@@ -884,15 +884,15 @@ namespace Duplicati.Server
             return filter;
         }
 
-        internal static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        internal static Dictionary<string, string> GetCommonOptions()
         {
             return
                 (from n in Program.DataConnection.Settings
-                 where TestIfOptionApplies(backup, mode, n.Filter)
+                 where TestIfOptionApplies()
                  select n).ToDictionary(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value);
         }
 
-        private static Duplicati.Library.Utility.IFilter GetCommonFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        private static Duplicati.Library.Utility.IFilter GetCommonFilter()
         {
             var filters = Program.DataConnection.Filters;
             if (filters == null || filters.Length == 0)

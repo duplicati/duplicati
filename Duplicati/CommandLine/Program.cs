@@ -234,7 +234,7 @@ namespace Duplicati.CommandLine
             }
             else
             {
-                Commands.PrintInvalidCommand(outwriter, command, cargs);
+                Commands.PrintInvalidCommand(outwriter, command);
                 return 200;
             }
         }

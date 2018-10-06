@@ -415,8 +415,7 @@ namespace Duplicati.Library.Utility
             /// <param name="callbackFinalizePumping"> A callback to issue when pumping is done but before streams are closed. e.g. Can add data to output. </param>
             /// <param name="dontCloseInputWhenDone"> Disable auto close of input stream when pumping is done. </param>
             /// <param name="dontCloseOutputWhenDone"> Disable auto close of output stream when pumping is done. </param>
-            public DataPump(Stream input, Stream output, int bufsize = DEFAULTBUFSIZE
-                , Action<DataPump> callbackFinalizePumping = null
+            public DataPump(Stream input, Stream output, Action<DataPump> callbackFinalizePumping = null
                 , bool dontCloseInputWhenDone = false, bool dontCloseOutputWhenDone = false)
             {
                 this.m_input = input;

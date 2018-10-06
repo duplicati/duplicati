@@ -272,7 +272,7 @@ namespace Duplicati.Library.Main.Database
         {
             private System.Data.IDbCommand m_command;
 
-            public BlockQuery(System.Data.IDbConnection con, Options options, System.Data.IDbTransaction transaction)
+            public BlockQuery(System.Data.IDbConnection con, System.Data.IDbTransaction transaction)
             {
                 m_command = con.CreateCommand();
                 m_command.Transaction = transaction;
@@ -302,9 +302,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Builds a lookup table to enable faster response to block queries
         /// </summary>
-        public IBlockQuery CreateBlockQueryHelper(Options options, System.Data.IDbTransaction transaction)
+        public IBlockQuery CreateBlockQueryHelper(System.Data.IDbTransaction transaction)
         {
-            return new BlockQuery(m_connection, options, transaction);
+            return new BlockQuery(m_connection, transaction);
         }
 
         public void MoveBlockToNewVolume(string hash, long size, long volumeID, System.Data.IDbTransaction tr)

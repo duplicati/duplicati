@@ -460,7 +460,7 @@ namespace Duplicati.Library.AutoUpdater
                             var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
                             using (var resp = areq.GetResponse())
                             using (var rss = areq.GetResponseStream())
-                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
+                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, cb))
                             {
                                 Duplicati.Library.Utility.Utility.CopyStream(pgs, tempfile);
                             }

@@ -57,7 +57,7 @@ namespace Duplicati.Server.WebServer
             }
         }
 
-        public static void HandleControlCGI(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw, Type module)
+        public static void HandleControlCGI(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, Type module)
         {
             var method = request.Method;
             if (!string.IsNullOrWhiteSpace(request.Headers["X-HTTP-Method-Override"]))

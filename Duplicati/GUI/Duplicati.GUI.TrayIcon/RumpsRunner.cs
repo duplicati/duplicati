@@ -36,7 +36,7 @@ namespace Duplicati.GUI.TrayIcon
             private bool m_enabled;
             private bool m_default;
 
-            public MenuItemWrapper(RumpsRunner parent, string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
+            public MenuItemWrapper(RumpsRunner parent, string text, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
             {
                 m_parent = parent;
                 Key = Guid.NewGuid().ToString("N");
@@ -325,7 +325,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override Duplicati.GUI.TrayIcon.IMenuItem CreateMenuItem (string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, System.Collections.Generic.IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
         {
-            return new MenuItemWrapper(this, text, icon, callback, subitems);
+            return new MenuItemWrapper(this, text, callback, subitems);
         }
 
         protected override void Exit()

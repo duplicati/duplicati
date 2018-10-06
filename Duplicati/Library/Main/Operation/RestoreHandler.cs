@@ -124,7 +124,7 @@ namespace Duplicati.Library.Main.Operation
                                 .DoRun(database, false, filter, filelistfilter, null);
 
                         if (!m_options.SkipMetadata)
-                            ApplyStoredMetadata(database, m_options, m_result, metadatastorage);
+                            ApplyStoredMetadata(m_options, metadatastorage);
                     }
 
                     //If we have --version set, we need to adjust, as the db has only the required versions
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private static void ApplyStoredMetadata(LocalRestoreDatabase database, Options options, RestoreResults result, RestoreHandlerMetadataStorage metadatastorage)
+        private static void ApplyStoredMetadata(Options options, RestoreHandlerMetadataStorage metadatastorage)
         {
             foreach(var metainfo in metadatastorage.Records)
             {
@@ -407,7 +407,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Apply metadata
                 if (!m_options.SkipMetadata)
-                    ApplyStoredMetadata(database, m_options, m_result, metadatastorage);
+                    ApplyStoredMetadata(m_options, metadatastorage);
                 
                 // Reset the filehasher if it was used to verify existing files
                 filehasher.Initialize();
