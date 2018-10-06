@@ -692,7 +692,7 @@ namespace Duplicati.Server
                 messageid,
                 null,
                 (n, a) => {
-                    return a.Where(x => x.BackupID == backup.ID).FirstOrDefault() ?? n;
+                    return a.FirstOrDefault(x => x.BackupID == backup.ID) ?? n;
                 }
             );
         }

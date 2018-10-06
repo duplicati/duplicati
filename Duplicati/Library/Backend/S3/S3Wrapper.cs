@@ -52,7 +52,7 @@ namespace Duplicati.Library.Backend
 
             foreach(var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
             {
-                var prop = cfg.GetType().GetProperties().Where(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var prop = cfg.GetType().GetProperties().FirstOrDefault(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
                 if (prop != null && prop.CanWrite)
                 {
                     if (prop.PropertyType == typeof(bool))

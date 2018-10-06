@@ -383,7 +383,7 @@ namespace Duplicati.CommandLine
         {
             var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
             
-            if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.OrdinalIgnoreCase)).Any())
+            if (!options.Keys.Any(x => requiredOptions.Contains(x, StringComparer.OrdinalIgnoreCase)))
             {
                 outwriter.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions)); 
                 return 200;
