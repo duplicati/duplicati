@@ -116,7 +116,7 @@ namespace Duplicati.Library.Backend.Backblaze
                     );
 
                     if (buckets != null && buckets.Buckets != null)
-                        m_bucket = buckets.Buckets.Where(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                        m_bucket = buckets.Buckets.FirstOrDefault(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase));
 
                     if (m_bucket == null)
                         throw new FolderMissingException();

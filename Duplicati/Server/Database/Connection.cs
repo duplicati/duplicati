@@ -747,13 +747,13 @@ namespace Duplicati.Server.Database
             lock(m_lock)
             {
                 var notifications = GetNotifications();
-                var cur = notifications.Where(x => x.ID == id).FirstOrDefault();
+                var cur = notifications.FirstOrDefault(x => x.ID == id);
                 if (cur == null)
                     return false;
 
                 DeleteFromDb(typeof(Notification).Name, id);
-                Program.DataConnection.ApplicationSettings.UnackedError = notifications.Where(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Error).Any();
-                Program.DataConnection.ApplicationSettings.UnackedWarning = notifications.Where(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning).Any();
+                Program.DataConnection.ApplicationSettings.UnackedError = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Error);
+                Program.DataConnection.ApplicationSettings.UnackedWarning = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning);
             }
 
             System.Threading.Interlocked.Increment(ref Program.LastNotificationUpdateID);
@@ -1139,7 +1139,7 @@ namespace Duplicati.Server.Database
         private void OverwriteAndUpdateDb<T>(System.Data.IDbTransaction transaction, string deleteSql, object[] deleteArgs, IEnumerable<T> values, bool updateExisting)
         {
             var properties = GetORMFields<T>();
-            var idfield = properties.Where(x => x.Name == "ID").FirstOrDefault();
+            var idfield = properties.FirstOrDefault(x => x.Name == "ID");
             properties = properties.Where(x => x.Name != "ID").ToArray();
 
             string sql;

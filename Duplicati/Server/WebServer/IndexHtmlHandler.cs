@@ -66,7 +66,7 @@ namespace Duplicati.Server.WebServer
 
         private string GetPath(Uri uri)
         {
-            if (ForbiddenChars.Where(x => uri.AbsolutePath.Contains(x)).Any())
+            if (ForbiddenChars.Any(x => uri.AbsolutePath.Contains(x)))
                 throw new BadRequestException("Illegal path");
             var uripath = Uri.UnescapeDataString(uri.AbsolutePath);
             while(uripath.Length > 0 && (uripath.StartsWith("/", StringComparison.Ordinal) || uripath.StartsWith(DirSep, StringComparison.Ordinal)))

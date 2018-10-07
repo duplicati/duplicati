@@ -235,7 +235,7 @@ namespace Duplicati.GUI.TrayIcon
                     if (line.StartsWith("click:", StringComparison.OrdinalIgnoreCase))
                     {
                         var key = line.Substring("click:".Length);
-                        var menu = m_menus.Where(x => string.Equals(x.Key, key)).FirstOrDefault();
+                        var menu = m_menus.FirstOrDefault(x => string.Equals(x.Key, key));
                         if (menu == null)
                         {
                             Console.WriteLine("Menu not found: {0}", key);

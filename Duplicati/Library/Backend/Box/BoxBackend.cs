@@ -122,7 +122,7 @@ namespace Duplicati.Library.Backend.Box
 
             foreach(var p in m_path.Split(new string[] {"/"}, StringSplitOptions.RemoveEmptyEntries))
             {
-                var el = (MiniFolder)PagedFileListResponse(parentid, true).Where(x => x.Name == p).FirstOrDefault();
+                var el = (MiniFolder)PagedFileListResponse(parentid, true).FirstOrDefault(x => x.Name == p);
                 if (el == null)
                 {
                     if (!create)

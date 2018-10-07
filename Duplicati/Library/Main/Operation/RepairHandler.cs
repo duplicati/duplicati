@@ -130,20 +130,20 @@ namespace Duplicati.Library.Main.Operation
 
                 if (m_options.Dryrun)
                 {
-                    if (tp.ParsedVolumes.Count() == 0 && tp.OtherVolumes.Count() > 0)
+                    if (!tp.ParsedVolumes.Any() && tp.OtherVolumes.Any())
                     {
                         if (tp.BackupPrefixes.Length == 1)
                             throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup prefix?", m_options.Prefix, tp.BackupPrefixes[0]), "RemoteFolderEmptyWithPrefix");
                         else
                             throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)), "RemoteFolderEmptyWithPrefix");
                     }
-                    else if (tp.ParsedVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
+                    else if (!tp.ParsedVolumes.Any() && tp.ExtraVolumes.Any())
                     {
                         throw new UserInformationException(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()), "NoRemoteFilesMissing");
                     }
                 }
 
-                if (tp.ExtraVolumes.Count() > 0 || tp.MissingVolumes.Count() > 0 || tp.VerificationRequiredVolumes.Count() > 0)
+                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any())
                 {
                     if (tp.VerificationRequiredVolumes.Any())
                     {
