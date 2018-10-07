@@ -274,7 +274,7 @@ namespace Duplicati.Server
                 try
                 {
                     //This will also create DATAFOLDER if it does not exist
-                    Instance = new SingleInstance(Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName, DataFolder);
+                    Instance = new SingleInstance(DataFolder);
                 }
                 catch (Exception ex)
                 {

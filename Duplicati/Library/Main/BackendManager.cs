@@ -272,7 +272,7 @@ namespace Duplicati.Library.Main
                 public string Newname;
             }
 
-            public DatabaseCollector(LocalDatabase database, IBackendWriter stats)
+            public DatabaseCollector(LocalDatabase database)
             {
                 m_database = database;
                 m_dbqueue = new List<IDbEntry>();
@@ -376,7 +376,7 @@ namespace Duplicati.Library.Main
             m_numberofretries = options.NumberOfRetries;
             m_retrydelay = options.RetryDelay;
 
-            m_db = new DatabaseCollector(database, statwriter);
+            m_db = new DatabaseCollector(database);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
             if (m_backend == null)
@@ -631,7 +631,7 @@ namespace Duplicati.Library.Main
         private void RenameFileAfterError(FileEntryItem item)
         {
             var p = VolumeBase.ParseFilename(item.RemoteFilename);
-            var guid = VolumeWriterBase.GenerateGuid(m_options);
+            var guid = VolumeWriterBase.GenerateGuid();
             var time = p.Time.Ticks == 0 ? p.Time : p.Time.AddSeconds(1);
             var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
             var oldname = item.RemoteFilename;
@@ -733,7 +733,7 @@ namespace Duplicati.Library.Main
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
             else
@@ -827,7 +827,7 @@ namespace Duplicati.Library.Main
                         using (var ss = new ShaderStream(nextTierWriter, false))
                         {
                             using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
-                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                             {
                                 taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
                                 if (taskDecrypter != null) taskDecrypter.Start();
@@ -912,7 +912,7 @@ namespace Duplicati.Library.Main
                     using (var ss = new ShaderStream(hs, true))
                     {
                         using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
-                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                         { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;

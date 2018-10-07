@@ -77,13 +77,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                         }
 
-                        return AttributeFilter(null, x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
+                        return AttributeFilter(x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
                     });
                 }
                 else
                 {
                     Library.Utility.Utility.EnumerationFilterDelegate attributeFilter = (root, path, attr) =>
-                        AttributeFilter(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
+                        AttributeFilter(path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
 
                     if (journalService != null)
                     {
@@ -219,10 +219,9 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// Plugin filter for enumerating a list of files.
         /// </summary>
         /// <returns>True if the path should be returned, false otherwise.</returns>
-        /// <param name="rootpath">The root path that initiated this enumeration.</param>
         /// <param name="path">The current path.</param>
         /// <param name="attributes">The file or folder attributes.</param>
-        private static bool AttributeFilter(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
+        private static bool AttributeFilter(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
         {
 			// Step 1, exclude block devices
 			try

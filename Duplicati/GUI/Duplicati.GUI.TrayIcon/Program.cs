@@ -36,7 +36,7 @@ namespace Duplicati.GUI.TrayIcon
         public static string BrowserCommand { get { return _browser_command; } }
         public static Server.Database.Connection databaseConnection = null;
 
-        private static string GetDefaultToolKit(bool printwarnings)
+        private static string GetDefaultToolKit()
         {
             // No longer using Cocoa directly as it fails on 32bit as well            
             if (Duplicati.Library.Utility.Utility.IsClientOSX)
@@ -114,7 +114,7 @@ namespace Duplicati.GUI.TrayIcon
                 if (Library.Utility.Utility.IsClientLinux && !Library.Utility.Utility.IsClientOSX)
                     Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
 #endif
-                toolkit = GetDefaultToolKit(true);
+                toolkit = GetDefaultToolKit();
             }
             else 
             {
@@ -131,7 +131,7 @@ namespace Duplicati.GUI.TrayIcon
                 else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_RUMPS;
                 else
-                    toolkit = GetDefaultToolKit(true);
+                    toolkit = GetDefaultToolKit();
             }
 
             HostedInstanceKeeper hosted = null;
@@ -437,7 +437,7 @@ namespace Duplicati.GUI.TrayIcon
                 
                 var args = new List<Duplicati.Library.Interface.ICommandLineArgument>()
                 {
-                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(false), null, toolkits.ToArray()),
+                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(), null, toolkits.ToArray()),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                     new Duplicati.Library.Interface.CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),               
