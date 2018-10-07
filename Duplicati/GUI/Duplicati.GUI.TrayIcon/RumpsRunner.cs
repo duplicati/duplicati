@@ -333,9 +333,9 @@ namespace Duplicati.GUI.TrayIcon
             m_isQuitting = true;
             if (m_rumpsProcess != null && !m_rumpsProcess.HasExited)
             {
-                m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "shutdown"}));
                 if (m_toRumps != null)
                 {
+                    m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new { Action = "shutdown" }));
                     m_toRumps.Dispose();
                     m_toRumps = null;
                 }
