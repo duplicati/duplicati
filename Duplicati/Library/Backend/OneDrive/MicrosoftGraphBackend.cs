@@ -498,7 +498,7 @@ namespace Duplicati.Library.Backend
         private T SendRequest<T>(HttpMethod method, string url, T body)
         {
             var request = new HttpRequestMessage(method, url);
-            if (body != null)
+            if (!Object.Equals(body, default(T)))
             {
                 request.Content = this.PrepareContent(body);
             }
