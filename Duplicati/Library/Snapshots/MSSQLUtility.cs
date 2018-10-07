@@ -174,7 +174,7 @@ namespace Duplicati.Library.Snapshots
                             }
 
                         m_DBs.Add(new MSSQLDB(component.ComponentName, component.LogicalPath + "\\" + component.ComponentName, 
-                            paths.ConvertAll(m => m[0].ToString().ToUpper() + m.Substring(1)).Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList()));
+                            paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1)).Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList()));
                     }
                 }
                 finally
