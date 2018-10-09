@@ -479,12 +479,12 @@ namespace Duplicati.Library.Backend
             return this.SendRequest<T>(HttpMethod.Get, url);
         }
 
-        protected T Post<T>(string url, T body)
+        protected T Post<T>(string url, T body) where T : class
         {
             return this.SendRequest(HttpMethod.Post, url, body);
         }
 
-        protected T Patch<T>(string url, T body)
+        protected T Patch<T>(string url, T body) where T : class
         {
             return this.SendRequest(PatchMethod, url, body);
         }
@@ -495,10 +495,10 @@ namespace Duplicati.Library.Backend
             return this.SendRequest<T>(request);
         }
 
-        private T SendRequest<T>(HttpMethod method, string url, T body)
+        private T SendRequest<T>(HttpMethod method, string url, T body) where T : class
         {
             var request = new HttpRequestMessage(method, url);
-            if (!Object.Equals(body, default(T)))
+            if (body != null)
             {
                 request.Content = this.PrepareContent(body);
             }
