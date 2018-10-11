@@ -145,7 +145,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 if (string.IsNullOrWhiteSpace(token))
                     break;
                 url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix), token);
-            };
+            }
         }
 
         public void Put(string remotename, string filename)
