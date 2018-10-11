@@ -250,6 +250,9 @@ namespace Duplicati.Server
 
             try
             {
+                // Setup the log redirect
+                var logscope = Library.Logging.Log.StartScope(Program.LogHandler, null);
+
                 if (commandlineOptions.ContainsKey("log-file"))
                 {
 #if DEBUG
