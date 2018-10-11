@@ -164,7 +164,7 @@ namespace Duplicati.Server.WebServer
                     ((IRESTMethodPUT)mod).PUT(key, info);
                 else if (method == HttpServer.Method.Post && mod is IRESTMethodPOST)
                 {
-                    if (info.Request.Form == HttpServer.HttpForm.EmptyForm)
+                    if (info.Request.Form == HttpServer.HttpForm.EmptyForm || info.Request.Form == HttpServer.HttpInput.Empty)
                     {
                         var r = info.Request.GetType().GetMethod("AssignForm", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(HttpServer.HttpForm) }, null);
                         r.Invoke(info.Request, new object[] { new HttpServer.HttpForm(info.Request.QueryString) });
