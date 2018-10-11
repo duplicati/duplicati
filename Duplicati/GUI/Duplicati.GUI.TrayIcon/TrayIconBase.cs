@@ -165,25 +165,9 @@ namespace Duplicati.GUI.TrayIcon
             ShowStatusWindow();
         }
 
-        protected void OnWizardClicked()
-        {
-        }
-        
-        protected void OnOptionsClicked()
-        {
-        }
-        
-        protected void OnStopClicked()
-        {
-        }
-
         protected void OnQuitClicked()
         {
             Exit();
-        }
-
-        protected void OnThrottleClicked()
-        {
         }
 
         protected void OnPauseClicked()
