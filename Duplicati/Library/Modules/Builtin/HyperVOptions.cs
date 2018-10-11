@@ -63,6 +63,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
+            // Do nothing.  Implementation needed for IGenericModule interface.
         }
 
         #endregion

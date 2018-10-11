@@ -625,7 +625,7 @@ namespace Duplicati.Library.Main.Database
             {
                 get
                 {
-                    return m_reader.ConvertValueToInt64(1);;
+                    return m_reader.ConvertValueToInt64(1);
                 }
             }
 
