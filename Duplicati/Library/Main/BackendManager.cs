@@ -856,7 +856,7 @@ namespace Duplicati.Library.Main
                     // are properly ended and tidied up. For what is thrown: If exceptions in main thread occured (download) it is thrown,
                     // then hasher task is checked and last decryption. This resembles old logic.
                     try { retHashcode = taskHasher.Result; }
-                    catch (AggregateException ex) { if (!hadException) { hadException = true; throw ex.InnerExceptions[0]; } }
+                    catch (AggregateException ex) { if (!hadException) { hadException = true; throw ex.Flatten().InnerException; } }
                     finally
                     {
                         if (taskDecrypter != null)
@@ -867,10 +867,11 @@ namespace Duplicati.Library.Main
                                 if (!hadException)
                                 {
                                     hadException = true;
-                                    if (ex.InnerExceptions[0] is System.Security.Cryptography.CryptographicException)
-                                        throw ex.InnerExceptions[0];
+                                    AggregateException flattenedException = ex.Flatten();
+                                    if (flattenedException.InnerException is System.Security.Cryptography.CryptographicException)
+                                        throw flattenedException.InnerException;
                                     else
-                                        throw new System.Security.Cryptography.CryptographicException(ex.InnerExceptions[0].Message, ex.InnerExceptions[0]);
+                                        throw new System.Security.Cryptography.CryptographicException(flattenedException.InnerException.Message, flattenedException.InnerException);
                                 }
                             }
                         }
