@@ -159,7 +159,6 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private bool m_isConfigured;
         /// <summary>
-        /// <summary>
         /// The mail subject
         /// </summary>
         private string m_subject;
