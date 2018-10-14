@@ -6,7 +6,7 @@ using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Database
 {
-    internal partial class LocalRestoreDatabase : LocalDatabase
+    internal class LocalRestoreDatabase : LocalDatabase
     {
         /// <summary>
         /// The tag used for logging
