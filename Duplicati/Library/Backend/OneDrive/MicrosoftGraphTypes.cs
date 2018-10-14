@@ -4,14 +4,13 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-/// <summary>
-/// Types are based on definitions from:
-/// https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/resources/onedrive
-/// 
-/// Note that some classes don't have the full set of properties defined, particularly if they don't seem like they are needed.
-/// </summary>
 namespace Duplicati.Library.Backend.MicrosoftGraph
 {
+    /// Types are based on definitions from:
+    /// https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/resources/onedrive
+    ///
+    /// Note that some classes don't have the full set of properties defined, particularly if they don't seem like they are needed.
+
     public class Identity
     {
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
