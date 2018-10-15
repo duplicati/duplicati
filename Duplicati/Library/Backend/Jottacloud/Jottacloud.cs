@@ -36,7 +36,6 @@ namespace Duplicati.Library.Backend
         private const string JFS_DEVICE_OPTION = "jottacloud-device";
         private const string JFS_MOUNT_POINT_OPTION = "jottacloud-mountpoint";
         private const string JFS_DATE_FORMAT = "yyyy'-'MM'-'dd-'T'HH':'mm':'ssK";
-        private const bool ALLOW_USER_DEFINED_MOUNT_POINTS = false;
         private readonly string m_device;
         private readonly bool m_device_builtin;
         private readonly string m_mountPoint;

@@ -304,19 +304,6 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private void LogDbMessage(string type, string message, Exception ex)
-        {
-            if (System.Threading.Thread.CurrentThread != m_callerThread)
-            {
-                m_dbqueue.Enqueue(new DbMessage(type, message, ex));
-            }
-            else
-            {
-                FlushLog();
-                m_db.LogMessage("Message", message, ex, null);
-            }
-        }
-
         private static bool m_is_reporting = false;
 
         public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size)

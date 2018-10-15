@@ -309,14 +309,11 @@ namespace Duplicati.Library.Utility
         private abstract class LinkedSubStream : Stream
         {
             protected DirectStreamLink m_linkStream;
-            protected long m_knownLength = -1;
             protected LinkedSubStream(DirectStreamLink linkStream)
             { this.m_linkStream = linkStream; }
 
             public override bool CanSeek { get { return false; } }
             public override void SetLength(long value) { throw new NotSupportedException(); }
-            public void SetFakeLength(long value) { m_knownLength = value; }
-
             public override long Length { get { if (m_linkStream.m_knownLength >= 0) return m_linkStream.m_knownLength; else throw new NotSupportedException(); } }
 
             // We fake Seek and Position to at least support dummy operations.

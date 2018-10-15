@@ -34,9 +34,6 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         private static Type m_type = null;
 
-
-        private const string SQLiteAssembly = "System.Data.SQLite.dll";
-
         /// <summary>
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>

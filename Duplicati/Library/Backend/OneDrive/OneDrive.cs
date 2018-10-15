@@ -55,13 +55,6 @@ namespace Duplicati.Library.Backend
             m_oauth = new OAuthHelper(authid, this.ProtocolKey);
         }
 
-        private class WLID_Service_Response
-        {
-            public string access_token { get; set; }
-            [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-            public int expires { get; set; }
-        }
-
         private class WLID_DataItem
         {
             public WLID_FolderItem[] data { get; set; }
@@ -87,16 +80,6 @@ namespace Duplicati.Library.Backend
         {
             public string name;
             public string description;
-        }
-
-        private class WLID_ContinuationResponse
-        {
-            [Newtonsoft.Json.JsonProperty("uploadUrl")]
-            public string UploadUrl { get; set; }
-            [Newtonsoft.Json.JsonProperty("expirationDateTime", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-            public DateTime Expires { get; set; } 
-            [Newtonsoft.Json.JsonProperty("nextExpectedRanges")]
-            public string[] NextRanges { get; set; }
         }
 
         private class WLID_UserInfo

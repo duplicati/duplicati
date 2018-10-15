@@ -1010,15 +1010,6 @@ namespace Duplicati.Server.Database
 
         }
 
-        private T ConvertToEnum<T>(System.Data.IDataReader rd, int index, T @default)
-            where T : struct
-        {
-            T res;
-            if (!Enum.TryParse<T>(ConvertToString(rd, index), true, out res))
-                return @default;
-            return res;
-        }
-
         private object ConvertToEnum(Type enumType, System.Data.IDataReader rd, int index, object @default)
         {
             try
