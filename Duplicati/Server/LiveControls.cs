@@ -341,14 +341,6 @@ namespace Duplicati.Server
         }
 
         /// <summary>
-        /// Method for calling a Win32 API
-        /// </summary>
-        private void UnregisterHibernateMonitor()
-        {
-            Microsoft.Win32.SystemEvents.PowerModeChanged -= new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
-        }
-
-        /// <summary>
         /// A monitor for detecting when the system hibernates or resumes
         /// </summary>
         /// <param name="sender">Unused sender parameter</param>

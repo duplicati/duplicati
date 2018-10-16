@@ -213,12 +213,6 @@ namespace Duplicati.Library.Main.Volumes
                             }
                         }
                     }
-
-                    public void Set(JsonTextReader reader)
-                    {
-                        if (reader.TokenType != JsonToken.StartObject)
-                            throw new InvalidDataException(string.Format("Invalid JSON, expected StartObject, but got {0}, {1}", reader.TokenType, reader.Value));
-                    }
                 }
 
                 private readonly ICompression m_compression;

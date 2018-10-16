@@ -51,12 +51,7 @@ namespace Duplicati.Library.Main.Database
             m_moveBlockToNewVolumeCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_moveBlockToNewVolumeCommand.AddParameters(3);
         }
-        
-        private long GetLastFilesetID(System.Data.IDbCommand cmd)
-        {
-            return cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC LIMIT 1", -1);
-        }
-        
+
         /// <summary>
         /// Drops all entries related to operations listed in the table.
         /// </summary>

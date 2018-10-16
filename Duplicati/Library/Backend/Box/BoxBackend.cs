@@ -403,14 +403,6 @@ namespace Duplicati.Library.Backend.Box
             public long Limit { get; set; }
         }
 
-        private class SharePermissions
-        {
-            [JsonProperty("can_download")]
-            public bool CanDownload { get; set; }
-            [JsonProperty("can_preview")]
-            public bool CanPreview { get; set; }
-        }
-
         private class UploadEmail
         {
             [JsonProperty("access")]
@@ -418,28 +410,6 @@ namespace Duplicati.Library.Backend.Box
             [JsonProperty("email")]
             public string Email { get; set; }
         }
-
-        private class SharedLink
-        {
-            [JsonProperty("url")]
-            public string Url { get; set; }
-            [JsonProperty("download_url")]
-            public string DownloadUrl { get; set; }
-            [JsonProperty("vanity_url")]
-            public string VanityUrl { get; set; }
-            [JsonProperty("is_password_enabled")]
-            public bool IsPasswordEnabled { get; set; }
-            [JsonProperty("unshared_at")]
-            public DateTime? UnsharedAt { get; set; }
-            [JsonProperty("download_count")]
-            public long DownloadCount { get; set; }
-            [JsonProperty("preview_count")]
-            public long PreviewCount { get; set; }
-            [JsonProperty("access")]
-            public string Access { get; set; }
-            [JsonProperty("permissions")]
-            public SharePermissions Permissions { get; set; }
-         }
 
         private class ListFolderResponse : MiniFolder
         {
@@ -516,9 +486,6 @@ namespace Duplicati.Library.Backend.Box
             public int Status { get; set; }
             [JsonProperty("code")]
             public string Code { get; set; }
-            // Not working exactly his way ...
-            //[JsonProperty("context_info")]
-            //public ErrorItem[] ContextInfo { get; set; }
             [JsonProperty("help_url")]
             public string HelpUrl { get; set; }
             [JsonProperty("message")]
@@ -527,17 +494,6 @@ namespace Duplicati.Library.Backend.Box
             public string RequestId { get; set; }
 
         }
-
-        private class ErrorItem
-        {
-            [JsonProperty("reason")]
-            public string Reason { get; set; }
-            [JsonProperty("name")]
-            public string Name { get; set; }
-            [JsonProperty("message")]
-            public string Message { get; set; }
-        }
-
     }
 }
 
