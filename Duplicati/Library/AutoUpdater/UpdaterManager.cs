@@ -1050,6 +1050,19 @@ namespace Duplicati.Library.AutoUpdater
                         var currentmanifest = ReadInstalledManifest(targetfolder);
                         if (currentmanifest != null && TryParseVersion(currentmanifest.Version) > TryParseVersion(best.Value.Version) && VerifyUnpackedFolder(targetfolder, currentmanifest))
                             best = new KeyValuePair<string, UpdateInfo>(targetfolder, currentmanifest);
+
+                        // Iterate through all directories under updates/ and delete old versions of Duplicati
+                        foreach (var directory in System.IO.Directory.GetDirectories(INSTALLDIR))
+                        {
+                            var folderManifest = ReadInstalledManifest(directory);
+
+                            // If the manifest is not found or has a lesser version
+                            // No need to verify folder if we want to delete it
+                            if (folderManifest != null && TryParseVersion(folderManifest.Version) < TryParseVersion(best.Value.Version))
+                                Directory.Delete(directory, true);
+                            else if (folderManifest == null)
+                                Directory.Delete(directory, true);
+                        }
                     }
                 }
                 catch (Exception ex)
