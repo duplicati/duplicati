@@ -46,6 +46,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("dinCloud - Los Angeles", "d3-lax.dincloud.com"),
             new KeyValuePair<string, string>("IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net"),
             new KeyValuePair<string, string>("Wasabi Hot Storage", "s3.wasabisys.com"),
+            new KeyValuePair<string, string>("Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com"),
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
