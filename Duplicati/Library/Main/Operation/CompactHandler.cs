@@ -141,7 +141,7 @@ namespace Duplicati.Library.Main.Operation
                                                  where report.CompactableVolumes.Contains(v.Name)
                                                  select (IRemoteVolume)v).ToList();
                         
-                        using(var q = db.CreateBlockQueryHelper(m_options, transaction))
+                        using(var q = db.CreateBlockQueryHelper(transaction))
                         {
                             foreach (var entry in new AsyncDownloader(volumesToDownload, backend))
                             {

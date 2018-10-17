@@ -67,12 +67,12 @@ namespace Duplicati.Library.Main.Operation
             var useLocalDb = !m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath);
             baseVersion = string.IsNullOrEmpty(baseVersion) ? "1" : baseVersion;
             compareVersion = string.IsNullOrEmpty(compareVersion) ? "0" : compareVersion;
-            
-            long baseVersionIndex = -1;
-            long compareVersionIndex = -1;
-            
-            DateTime baseVersionTime = new DateTime(0);
-            DateTime compareVersionTime = new DateTime(0);
+
+            long baseVersionIndex;
+            long compareVersionIndex;
+
+            DateTime baseVersionTime;
+            DateTime compareVersionTime;
             
             using(var tmpdb = useLocalDb ? null : new Library.Utility.TempFile())
             using(var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb))

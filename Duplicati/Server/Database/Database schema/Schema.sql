@@ -9,6 +9,7 @@
 CREATE TABLE "Backup" (
     "ID" INTEGER PRIMARY KEY AUTOINCREMENT,
     "Name" TEXT NOT NULL,
+    "Description" TEXT NOT NULL,
     "Tags" TEXT NOT NULL,
     "TargetURL" TEXT NOT NULL,
     "DBPath" TEXT NOT NULL
@@ -153,5 +154,5 @@ CREATE TABLE "TempFile" (
     "Expires" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (5);
+INSERT INTO "Version" ("Version") VALUES (6);
 

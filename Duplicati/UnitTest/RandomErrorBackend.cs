@@ -50,7 +50,7 @@ namespace Duplicati.UnitTest
         {
             var uploadError = random.NextDouble() > 0.9;
 
-            using(var f = new Library.Utility.ProgressReportingStream(stream, stream.Length, x => { if (uploadError && stream.Position > stream.Length / 2) throw new Exception("Random upload failure"); }))
+            using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new Exception("Random upload failure"); }))
                 m_backend.Put(remotename, f);
             ThrowErrorRandom();
         }

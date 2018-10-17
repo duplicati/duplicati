@@ -134,7 +134,7 @@ namespace Duplicati.Library.UsageReporter
                             self.Output.WriteNoWait(tf);
                             rs = new ReportSet();
 
-                            await ProcessAbandonedFiles(self.Output, self.Input, null);
+                            await ProcessAbandonedFiles(self.Output, self.Input, null).ConfigureAwait(false);
 
                             tf = nextFilename;
                         }

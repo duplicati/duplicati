@@ -87,10 +87,6 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
-        private void VerifyManifest()
-        {
-        }
-
         public virtual void Dispose()
         {
             if (m_disposeCompression && m_compression != null)

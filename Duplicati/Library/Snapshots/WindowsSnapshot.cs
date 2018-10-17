@@ -421,8 +421,10 @@ namespace Duplicati.Library.Snapshots
 
             // Note: Do NOT use Path.Combine as it strips the UNC path prefix
             var subPath = localPath.Substring(root.Length);
-            if (!volumePath.EndsWith(SLASH, StringComparison.Ordinal) && !subPath.StartsWith(SLASH, StringComparison.Ordinal))
-                volumePath += SLASH;
+            if (!subPath.StartsWith(SLASH, StringComparison.Ordinal))
+            {
+                volumePath = Duplicati.Library.Utility.Utility.AppendDirSeparator(volumePath, SLASH);
+            }
 
             var mappedPath = volumePath + subPath;
             return mappedPath;

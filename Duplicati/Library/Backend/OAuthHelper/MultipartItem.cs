@@ -28,28 +28,34 @@ namespace Duplicati.Library
             this.Headers = new Dictionary<string, string>();
         }
 
-        public MultipartItem(string contenttype, string name = null, string filename = null)
+        public MultipartItem(string contenttype, string name, string filename)
             : this()
         {
             ContentType = contenttype;
             SetContentDisposition(name, filename);
         }
 
-        public MultipartItem(object content, string contenttype = "application/json; charset=utf-8", string name = null, string filename = null)
-            : this(JsonConvert.SerializeObject(content), contenttype, name, filename)
+        public MultipartItem(object content, string name)
+            : this(JsonConvert.SerializeObject(content), "application/json; charset=utf-8", name, null)
         {
         }
 
-        public MultipartItem(string content, string contenttype = null, string name = null, string filename = null)
+        public MultipartItem(string content, string contenttype, string name, string filename)
             : this(System.Text.Encoding.UTF8.GetBytes(content), contenttype, name, filename)
         {
         }
 
-        public MultipartItem(byte[] content, string contenttype = "application/octet-stream", string name = null, string filename = null)
+        public MultipartItem(byte[] content, string contenttype, string name, string filename)
             : this(new MemoryStream(content), contenttype, name, filename)
         {
         }
-        public MultipartItem(Stream content, string contenttype = "application/octet-stream", string name = null, string filename = null)
+
+        public MultipartItem(Stream content, string name, string filename)
+            : this(content, "application/octet-stream", name, filename)
+        {
+        }
+
+        public MultipartItem(Stream content, string contenttype, string name, string filename)
             : this(contenttype, name, filename)
         {
             ContentData = content;

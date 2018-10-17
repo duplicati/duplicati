@@ -85,10 +85,7 @@ namespace Duplicati.Library.Backend
                 m_userInfo.Domain = "";
 
             m_url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            if (!m_url.EndsWith("/", StringComparison.Ordinal))
-            {
-                m_url += "/";
-            }
+            m_url = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_url, "/");
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 

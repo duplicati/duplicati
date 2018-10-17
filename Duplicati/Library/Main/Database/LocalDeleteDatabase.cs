@@ -51,12 +51,7 @@ namespace Duplicati.Library.Main.Database
             m_moveBlockToNewVolumeCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_moveBlockToNewVolumeCommand.AddParameters(3);
         }
-        
-        private long GetLastFilesetID(System.Data.IDbCommand cmd)
-        {
-            return cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC LIMIT 1", -1);
-        }
-        
+
         /// <summary>
         /// Drops all entries related to operations listed in the table.
         /// </summary>
@@ -272,7 +267,7 @@ namespace Duplicati.Library.Main.Database
         {
             private System.Data.IDbCommand m_command;
 
-            public BlockQuery(System.Data.IDbConnection con, Options options, System.Data.IDbTransaction transaction)
+            public BlockQuery(System.Data.IDbConnection con, System.Data.IDbTransaction transaction)
             {
                 m_command = con.CreateCommand();
                 m_command.Transaction = transaction;
@@ -302,9 +297,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Builds a lookup table to enable faster response to block queries
         /// </summary>
-        public IBlockQuery CreateBlockQueryHelper(Options options, System.Data.IDbTransaction transaction)
+        public IBlockQuery CreateBlockQueryHelper(System.Data.IDbTransaction transaction)
         {
-            return new BlockQuery(m_connection, options, transaction);
+            return new BlockQuery(m_connection, transaction);
         }
 
         public void MoveBlockToNewVolume(string hash, long size, long volumeID, System.Data.IDbTransaction tr)

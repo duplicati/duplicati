@@ -101,8 +101,6 @@ namespace Duplicati.Library.Backend.Backblaze
                         }
                         catch (Exception ex)
                         {
-                            
-                            var msg = ex.Message;
                             var clienterror = false;
 
                             try

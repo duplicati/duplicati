@@ -78,7 +78,7 @@ namespace Duplicati.Library.Backend
                     client.ChangeDirectory(SSH_FOLDER);
                 }
                 
-                var sshfolder = client.ListDirectory(".").Where(x => x.Name == ".").First();                    
+                var sshfolder = client.ListDirectory(".").First(x => x.Name == ".");                    
                 client.ChangeDirectory("..");
                 
                 if (!sshfolder.OwnerCanRead || !sshfolder.OwnerCanWrite)
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Backend
                 string authorized_keys = "";
                 byte[] authorized_keys_bytes = null;
                 
-                var existing_authorized_keys = client.ListDirectory(SSH_FOLDER).Where(x => x.Name == AUTHORIZED_KEYS_FILE).Any();
+                var existing_authorized_keys = client.ListDirectory(SSH_FOLDER).Any(x => x.Name == AUTHORIZED_KEYS_FILE);
                 if (existing_authorized_keys)
                 {
                     using(var ms = new System.IO.MemoryStream())
@@ -102,11 +102,11 @@ namespace Duplicati.Library.Backend
                 var cleaned_keys = keys.Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#", StringComparison.Ordinal));
                 
                 // Does the key already exist?
-                if (cleaned_keys.Where(x =>
+                if (cleaned_keys.Any(x =>
                 {
                     var els = x.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(y => y.Trim()).Where(y => y.Length > 0).ToArray();
                     return els.Length == 3 && els[0] == pubkey[0] && els[1] == pubkey[1];
-                }).Any())
+                }))
                 {
                     res["status"] = "Key already existed";
                 }

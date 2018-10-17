@@ -46,6 +46,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("dinCloud - Los Angeles", "d3-lax.dincloud.com"),
             new KeyValuePair<string, string>("IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net"),
             new KeyValuePair<string, string>("Wasabi Hot Storage", "s3.wasabisys.com"),
+            new KeyValuePair<string, string>("Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com"),
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
@@ -216,7 +217,7 @@ namespace Duplicati.Library.Backend
                 host = u.Host;
                 m_prefix = "";
 
-                if (host.ToLower() == s3host)
+                if (String.Equals(host, s3host, StringComparison.OrdinalIgnoreCase))
                 {
                     m_bucket = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
 
@@ -232,7 +233,7 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     //Subdomain type lookup
-                    if (host.ToLower().EndsWith("." + s3host, StringComparison.Ordinal))
+                    if (host.EndsWith("." + s3host, StringComparison.OrdinalIgnoreCase))
                     {
                         m_bucket = host.Substring(0, host.Length - ("." + s3host).Length);
                         host = s3host;
@@ -256,8 +257,10 @@ namespace Duplicati.Library.Backend
 
             m_options = options;
             m_prefix = m_prefix.Trim();
-            if (m_prefix.Length != 0 && !m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            if (m_prefix.Length != 0)
+            {
+                m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_prefix, "/");
+            }
 
             // Auto-disable dns lookup for non AWS configurations
             var hasForcePathStyle = options.ContainsKey("s3-ext-forcepathstyle");

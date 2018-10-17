@@ -113,10 +113,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         {
                             var basename = ipx.Backup.Name;
                             var c = 0;
-                            while (c++ < 100 && Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
+                            while (c++ < 100 && Program.DataConnection.Backups.Any(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)))
                                 ipx.Backup.Name = basename + " (" + c.ToString() + ")";
 
-                            if (Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
+                            if (Program.DataConnection.Backups.Any(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)))
                             {
                                 info.BodyWriter.SetOK();
                                 info.Response.ContentType = "text/html";
@@ -204,7 +204,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                     lock(Program.DataConnection.m_lock)
                     {
-                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
+                        if (Program.DataConnection.Backups.Any(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase)))
                         {
                             info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name, System.Net.HttpStatusCode.Conflict);
                             return;
