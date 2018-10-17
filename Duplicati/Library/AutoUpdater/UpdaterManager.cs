@@ -1050,19 +1050,6 @@ namespace Duplicati.Library.AutoUpdater
                         var currentmanifest = ReadInstalledManifest(targetfolder);
                         if (currentmanifest != null && TryParseVersion(currentmanifest.Version) > TryParseVersion(best.Value.Version) && VerifyUnpackedFolder(targetfolder, currentmanifest))
                             best = new KeyValuePair<string, UpdateInfo>(targetfolder, currentmanifest);
-
-                        // Iterate through all directories under updates/ and delete old versions of Duplicati
-                        foreach (var directory in System.IO.Directory.GetDirectories(INSTALLDIR))
-                        {
-                            var folderManifest = ReadInstalledManifest(directory);
-
-                            // If the manifest is not found or has a lesser version
-                            // No need to verify folder if we want to delete it
-                            if (folderManifest != null && TryParseVersion(folderManifest.Version) < TryParseVersion(best.Value.Version))
-                                Directory.Delete(directory, true);
-                            else if (folderManifest == null)
-                                Directory.Delete(directory, true);
-                        }
                     }
                 }
                 catch (Exception ex)
@@ -1073,6 +1060,36 @@ namespace Duplicati.Library.AutoUpdater
             }
 
             return best;
+        }
+
+        private static void CleanOlderUpdates()
+        {
+            // This function is only called under an update environment, therefore SelfVersion will always be the best version
+            KeyValuePair<string, UpdateInfo> best = new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, SelfVersion);
+
+            if (INSTALLDIR != null && System.IO.File.Exists(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE)))
+            {
+                try
+                {
+                    // Iterate through all directories under updates/ and delete old versions of Duplicati
+                    foreach (var directory in System.IO.Directory.GetDirectories(INSTALLDIR))
+                    {
+                        var folderManifest = ReadInstalledManifest(directory);
+
+                        // If the manifest is not found or has a lesser version
+                        // No need to verify folder if we want to delete it
+                        if (folderManifest != null && TryParseVersion(folderManifest.Version) < TryParseVersion(best.Value.Version))
+                            Directory.Delete(directory, true);
+                        else if (folderManifest == null)
+                            Directory.Delete(directory, true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (OnError != null)
+                        OnError(ex);
+                }
+            }
         }
 
         public static bool IsRunningInUpdateEnvironment => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
@@ -1096,7 +1113,9 @@ namespace Duplicati.Library.AutoUpdater
             {
                 // For some reason this does not work
                 //if (Library.Utility.Utility.IsClientWindows)
-                    //Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+                //  Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+
+                CleanOlderUpdates();
 
                 int r = 0;
                 WrapWithUpdater(defaultstrategy, () => {
