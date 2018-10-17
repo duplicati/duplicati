@@ -256,6 +256,7 @@ namespace Duplicati.CommandLine
                 if (ex is Duplicati.Library.Interface.UserInformationException && !verboseErrors)
                 {
                     errwriter.WriteLine();
+                    errwriter.WriteLine("ErrorID: {0}", ((Duplicati.Library.Interface.UserInformationException)ex).HelpID);
                     errwriter.WriteLine(ex.Message);
                 }
                 else if (!(ex is Library.Interface.CancelException))
