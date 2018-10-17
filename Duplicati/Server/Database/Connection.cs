@@ -518,7 +518,7 @@ namespace Duplicati.Server.Database
                            
                             return new object[] {
                                 n.Name,
-                                n.Description,
+                                n.Description == null ? "" : n.Description, // Description is optional but the column is set to NOT NULL, an additional check is welcome
                                 string.Join(",", n.Tags ?? new string[0]),
                                 n.TargetURL,
                                 update ? (object)item.ID : (object)n.DBPath 
