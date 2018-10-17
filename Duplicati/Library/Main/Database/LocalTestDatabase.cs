@@ -169,29 +169,25 @@ namespace Duplicati.Library.Main.Database
               protected string m_tablename;
               protected System.Data.IDbTransaction m_transaction;
               protected System.Data.IDbCommand m_insertCommand;
-              protected abstract string TABLE_PREFIX { get; }
-              protected abstract string TABLEFORMAT { get; }
-              protected abstract string INSERTCOMMAND { get; }
-              protected abstract int INSERTARGUMENTS { get; }
-              
-              protected Basiclist(System.Data.IDbConnection connection, string volumename)
+
+              protected Basiclist(System.Data.IDbConnection connection, string volumename, string tablePrefix, string tableFormat, string insertCommand, int insertArguments)
               {
                 m_connection = connection;
                 m_volumename = volumename;
                 m_transaction = m_connection.BeginTransaction();
-                var tablename = TABLE_PREFIX + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
                 using(var cmd = m_connection.CreateCommand())
                 {
                     cmd.Transaction = m_transaction;
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" {1}", tablename, TABLEFORMAT));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" {1}", tablename, tableFormat));
                     m_tablename = tablename;
                 }
                 
                 m_insertCommand = m_connection.CreateCommand();
                 m_insertCommand.Transaction = m_transaction;
-                m_insertCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" {1}", m_tablename, INSERTCOMMAND);
-                m_insertCommand.AddParameters(INSERTARGUMENTS);
+                m_insertCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" {1}", m_tablename, insertCommand);
+                m_insertCommand.AddParameters(insertArguments);
             }
 
             public virtual void Dispose()
@@ -228,13 +224,13 @@ namespace Duplicati.Library.Main.Database
         
         private class Filelist : Basiclist, IFilelist
         {
-            protected override string TABLE_PREFIX { get { return "Filelist"; } }
-            protected override string TABLEFORMAT { get { return @"(""Path"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Hash"" TEXT NULL, ""Metasize"" INTEGER NOT NULL, ""Metahash"" TEXT NOT NULL)"; } }
-            protected override string INSERTCOMMAND { get { return @"(""Path"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (?,?,?,?,?)"; } }
-            protected override int INSERTARGUMENTS { get { return 5; } }
+            private const string TABLE_PREFIX = "Filelist";
+            private const string TABLE_FORMAT = @"(""Path"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Hash"" TEXT NULL, ""Metasize"" INTEGER NOT NULL, ""Metahash"" TEXT NOT NULL)";
+            private const string INSERT_COMMAND = @"(""Path"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (?,?,?,?,?)";
+            private const int INSERT_ARGUMENTS = 5;
 
             public Filelist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename)
+                : base(connection, volumename, Filelist.TABLE_PREFIX, Filelist.TABLE_FORMAT, Filelist.INSERT_COMMAND, Filelist.INSERT_ARGUMENTS)
             { 
             }
             
@@ -287,13 +283,13 @@ namespace Duplicati.Library.Main.Database
         
         private class Indexlist : Basiclist, IIndexlist
         {
-            protected override string TABLE_PREFIX { get { return "Indexlist"; } }
-            protected override string TABLEFORMAT { get { return @"(""Name"" TEXT NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)"; } }
-            protected override string INSERTCOMMAND { get { return @"(""Name"", ""Hash"", ""Size"") VALUES (?,?,?)"; } }
-            protected override int INSERTARGUMENTS { get { return 3; } }
+            private const string TABLE_PREFIX = "Indexlist";
+            private const string TABLE_FORMAT = @"(""Name"" TEXT NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
+            private const string INSERT_COMMAND = @"(""Name"", ""Hash"", ""Size"") VALUES (?,?,?)";
+            private const int INSERT_ARGUMENTS = 3;
             
             public Indexlist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename)
+                : base(connection, volumename, Indexlist.TABLE_PREFIX, Indexlist.TABLE_FORMAT, Indexlist.INSERT_COMMAND, Indexlist.INSERT_ARGUMENTS)
             {
             }
                     
@@ -343,13 +339,13 @@ namespace Duplicati.Library.Main.Database
 
        private class Blocklist : Basiclist, IBlocklist
        {
-            protected override string TABLE_PREFIX { get { return "Blocklist"; } }
-            protected override string TABLEFORMAT { get { return @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)"; } }
-            protected override string INSERTCOMMAND { get { return @"(""Hash"", ""Size"") VALUES (?,?)"; } }
-            protected override int INSERTARGUMENTS { get { return 2; } }
+            private const string TABLE_PREFIX = "Blocklist";
+            private const string TABLE_FORMAT = @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
+            private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (?,?)";
+            private const int INSERT_ARGUMENTS = 2;
             
             public Blocklist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename)
+                : base(connection, volumename, Blocklist.TABLE_PREFIX, Blocklist.TABLE_FORMAT, Blocklist.INSERT_COMMAND, Blocklist.INSERT_ARGUMENTS)
             { }            
         
             public void AddBlock(string hash, long size)
