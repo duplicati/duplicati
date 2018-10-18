@@ -169,17 +169,16 @@ namespace Duplicati.Library.Main.Database
               protected string m_tablename;
               protected System.Data.IDbTransaction m_transaction;
               protected System.Data.IDbCommand m_insertCommand;
-              protected abstract string TABLE_PREFIX { get; }
               protected abstract string TABLEFORMAT { get; }
               protected abstract string INSERTCOMMAND { get; }
               protected abstract int INSERTARGUMENTS { get; }
               
-              protected Basiclist(System.Data.IDbConnection connection, string volumename)
+              protected Basiclist(System.Data.IDbConnection connection, string volumename, string tablePrefix)
               {
                 m_connection = connection;
                 m_volumename = volumename;
                 m_transaction = m_connection.BeginTransaction();
-                var tablename = TABLE_PREFIX + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
                 using(var cmd = m_connection.CreateCommand())
                 {
@@ -228,13 +227,12 @@ namespace Duplicati.Library.Main.Database
         
         private class Filelist : Basiclist, IFilelist
         {
-            protected override string TABLE_PREFIX { get { return "Filelist"; } }
             protected override string TABLEFORMAT { get { return @"(""Path"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Hash"" TEXT NULL, ""Metasize"" INTEGER NOT NULL, ""Metahash"" TEXT NOT NULL)"; } }
             protected override string INSERTCOMMAND { get { return @"(""Path"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (?,?,?,?,?)"; } }
             protected override int INSERTARGUMENTS { get { return 5; } }
 
             public Filelist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename)
+                : base(connection, volumename, "Filelist")
             { 
             }
             
@@ -287,13 +285,12 @@ namespace Duplicati.Library.Main.Database
         
         private class Indexlist : Basiclist, IIndexlist
         {
-            protected override string TABLE_PREFIX { get { return "Indexlist"; } }
             protected override string TABLEFORMAT { get { return @"(""Name"" TEXT NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)"; } }
             protected override string INSERTCOMMAND { get { return @"(""Name"", ""Hash"", ""Size"") VALUES (?,?,?)"; } }
             protected override int INSERTARGUMENTS { get { return 3; } }
             
             public Indexlist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename)
+                : base(connection, volumename, "Indexlist")
             {
             }
                     
@@ -343,13 +340,12 @@ namespace Duplicati.Library.Main.Database
 
        private class Blocklist : Basiclist, IBlocklist
        {
-            protected override string TABLE_PREFIX { get { return "Blocklist"; } }
             protected override string TABLEFORMAT { get { return @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)"; } }
             protected override string INSERTCOMMAND { get { return @"(""Hash"", ""Size"") VALUES (?,?)"; } }
             protected override int INSERTARGUMENTS { get { return 2; } }
             
             public Blocklist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename)
+                : base(connection, volumename, "Blocklist")
             { }            
         
             public void AddBlock(string hash, long size)
