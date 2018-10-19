@@ -174,7 +174,9 @@ namespace Duplicati.Library.AutoUpdater
             }
         }
 
-        public override long Position
+        // Since the constructor sets the Position, we seal the implementation here to prevent subclasses
+        // from potentially referencing uninitialized members.
+        public sealed override long Position
         {
             get
             {
