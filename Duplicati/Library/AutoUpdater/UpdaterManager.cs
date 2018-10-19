@@ -1078,9 +1078,8 @@ namespace Duplicati.Library.AutoUpdater
 
                         // If the manifest is not found or has a lesser version
                         // No need to verify folder if we want to delete it
-                        if (folderManifest != null && TryParseVersion(folderManifest.Version) < TryParseVersion(best.Version))
-                            Directory.Delete(directory, true);
-                        else if (folderManifest == null)
+                        if ((folderManifest == null) || 
+                            (folderManifest != null && TryParseVersion(folderManifest.Version) < TryParseVersion(best.Version)))
                             Directory.Delete(directory, true);
                     }
                 }
