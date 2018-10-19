@@ -1065,9 +1065,9 @@ namespace Duplicati.Library.AutoUpdater
         private static void CleanOlderUpdates()
         {
             // This function is only called under an update environment, therefore SelfVersion will always be the best version
-            KeyValuePair<string, UpdateInfo> best = new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, SelfVersion);
+            UpdateInfo best = SelfVersion;
 
-            if (INSTALLDIR != null && System.IO.File.Exists(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE)))
+            if (INSTALLDIR != null)
             {
                 try
                 {
@@ -1078,7 +1078,7 @@ namespace Duplicati.Library.AutoUpdater
 
                         // If the manifest is not found or has a lesser version
                         // No need to verify folder if we want to delete it
-                        if (folderManifest != null && TryParseVersion(folderManifest.Version) < TryParseVersion(best.Value.Version))
+                        if (folderManifest != null && TryParseVersion(folderManifest.Version) < TryParseVersion(best.Version))
                             Directory.Delete(directory, true);
                         else if (folderManifest == null)
                             Directory.Delete(directory, true);
