@@ -24,14 +24,14 @@ namespace Duplicati.Library.Backend
 
         public ListFolderResult ListFiles(string path)
         {
-            var pa = new PathArg();
-            pa.path = path;
-
-            var url = string.Format("{0}/files/list_folder", API_URL);
+            var pa = new PathArg
+            {
+                path = path
+            };
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(url, pa);
+                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesUrl(), pa);
             }
             catch (Exception ex)
             {

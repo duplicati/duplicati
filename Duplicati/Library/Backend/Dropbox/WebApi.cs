@@ -27,6 +27,11 @@ namespace Duplicati.Library.Backend.WebApi
             return Uri.UriBuilder(Url.API, Path.CreateFolder);
         }
 
+        public static string ListFilesUrl()
+        {
+            return string.Format("{0}/files/list_folder", Url.API);
+        }
+
         private static class Url
         {
             public const string API = "https://api.dropboxapi.com/2";
