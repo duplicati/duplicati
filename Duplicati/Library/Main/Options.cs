@@ -31,10 +31,6 @@ namespace Duplicati.Library.Main
     /// </summary>
     public class Options
     {
-        private const string DEFAULT_BLOCK_HASH_LOOKUP_SIZE = "64mb";
-        private const string DEFAULT_METADATA_HASH_LOOKUP_SIZE = "64mb";
-        private const string DEFAULT_FILE_HASH_LOOKUP_SIZE = "32mb";
-        
         private const string DEFAULT_BLOCK_HASH_ALGORITHM = "SHA256";
         private const string DEFAULT_FILE_HASH_ALGORITHM = "SHA256";
         

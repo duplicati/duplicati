@@ -139,13 +139,13 @@ namespace Duplicati.Library.Main.Operation
                     orderby n.Time descending
                     select n;
 
-                if (filelists.Count() <= 0)
+                if (!filelists.Any())
                     throw new UserInformationException("No filelists found on the remote destination", "EmptyRemoteLocation");
                 
                 if (filelistfilter != null)
                     filelists = filelistfilter(filelists).Select(x => x.Value).ToArray();
 
-                if (filelists.Count() <= 0)
+                if (!filelists.Any())
                     throw new UserInformationException("No filelists", "NoMatchingRemoteFilelists");
 
                 // If we are updating, all files should be accounted for

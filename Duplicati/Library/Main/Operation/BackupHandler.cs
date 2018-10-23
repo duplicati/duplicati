@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (m_options.NoBackendverification)
                     {
-                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyLocalList(backend, m_database);
                         UpdateStorageStatsFromDatabase();
                     }
                     else
@@ -269,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(m_database, null);
             }
 
-            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Count() > 0)
+            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Any())
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
@@ -454,7 +454,7 @@ namespace Duplicati.Library.Main.Operation
                                 var lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
 
                                 // Rebuild any index files that are missing
-                                await Backup.RecreateMissingIndexFiles.Run(db, m_options, m_result, m_result.TaskReader);
+                                await Backup.RecreateMissingIndexFiles.Run(db, m_options, m_result.TaskReader);
 
                                 // This should be removed as the lookups are no longer used
                                 m_database.BuildLookupTable(m_options);

@@ -47,8 +47,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-                var blocksize = options.Blocksize;
-
                 while (await taskreader.ProgressAsync)
                 {
                     var e = await self.Input.ReadAsync();
@@ -99,14 +97,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 await stats.AddAddedFile(filesize);
 
                                 if (options.Dryrun)
-                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WoudlAddNewFile", "Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddNewFile", "Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
                             else
                             {
                                 await stats.AddModifiedFile(filesize);
 
                                 if (options.Dryrun)
-                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WoudlAddChangedFile", "Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddChangedFile", "Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
                             await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);

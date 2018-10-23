@@ -19,9 +19,9 @@ namespace Duplicati.WindowsService
 
         public static void RealMain(string[] args)
         {
-            var install = args != null && args.Where(x => string.Equals("install", x, StringComparison.OrdinalIgnoreCase)).Any();
-            var uninstall = args != null && args.Where(x => string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase)).Any();
-            var help = args != null && args.Where(x => string.Equals("help", x, StringComparison.OrdinalIgnoreCase)).Any();
+            var install = args != null && args.Any(x => string.Equals("install", x, StringComparison.OrdinalIgnoreCase));
+            var uninstall = args != null && args.Any(x => string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase));
+            var help = args != null && args.Any(x => string.Equals("help", x, StringComparison.OrdinalIgnoreCase));
 
             if (help)
             {

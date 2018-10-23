@@ -30,7 +30,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
-            var el = Program.DataConnection.GetNotifications().Where(x => x.ID == id).FirstOrDefault();
+            var el = Program.DataConnection.GetNotifications().FirstOrDefault(x => x.ID == id);
             if (el == null)
                 info.ReportClientError("No such notification", System.Net.HttpStatusCode.NotFound);
             else
@@ -46,7 +46,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
-            var el = Program.DataConnection.GetNotifications().Where(x => x.ID == id).FirstOrDefault();
+            var el = Program.DataConnection.GetNotifications().FirstOrDefault(x => x.ID == id);
             if (el == null)
                 info.ReportClientError("No such notification", System.Net.HttpStatusCode.NotFound);
             else

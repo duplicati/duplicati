@@ -39,6 +39,8 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var filesStarted = new Dictionary<string, long>();
                 var fileProgress = new Dictionary<string, long>();
+                long processedFileCount = 0;
+                long processedFileSize = 0;
                 string current = null;
 
                 while(true)
@@ -63,6 +65,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
                                 current = null;
                             }
+
+                            processedFileCount += 1;
+                            processedFileSize += t.Length;
+
+                            stat.OperationProgressUpdater.UpdatefilesProcessed(processedFileCount, processedFileSize);
                             filesStarted.Remove(t.Filepath);
                             fileProgress.Remove(t.Filepath);
                             break;

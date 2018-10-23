@@ -174,7 +174,7 @@ namespace Duplicati.CommandLine
                 setup(i);
                 i.ListAffected(args, res => 
                 { 
-                    if (res.Filesets != null && res.Filesets.Count() != 0)
+                    if (res.Filesets != null && res.Filesets.Any())
                     {
                         outwriter.WriteLine("The following filesets are affected:");
                         foreach (var e in res.Filesets)
@@ -314,8 +314,8 @@ namespace Duplicati.CommandLine
                 // try again with all-versions set
                 var compareFilter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(args), filter);
                 var isRequestForFiles = 
-                    !controlFiles && res.Filesets.Count() != 0 && 
-                    (res.Files == null || res.Files.Count() == 0) && 
+                    !controlFiles && res.Filesets.Any() && 
+                    (res.Files == null || !res.Files.Any()) && 
                     !compareFilter.Empty;
                 
                 if (isRequestForFiles && !Library.Utility.Utility.ParseBoolOption(options, "all-versions"))
@@ -327,7 +327,7 @@ namespace Duplicati.CommandLine
                     res = i.List(args, filter);
                 }
 
-                if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0) && compareFilter.Empty)
+                if (res.Filesets.Any() && (res.Files == null || !res.Files.Any()) && compareFilter.Empty)
                 {
                     outwriter.WriteLine("Listing filesets:");
                     
@@ -345,11 +345,11 @@ namespace Duplicati.CommandLine
                 }
                 else
                 {
-                    if (res.Filesets.Count() == 0)
+                    if (!res.Filesets.Any())
                     {
                         outwriter.WriteLine("No time or version matched a fileset");
                     }
-                    else if (res.Files == null || res.Files.Count() == 0)
+                    else if (res.Files == null || !res.Files.Any())
                     {
                         outwriter.WriteLine("Found {0} filesets, but no files matched", res.Filesets.Count());
                     }
@@ -383,7 +383,7 @@ namespace Duplicati.CommandLine
         {
             var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
             
-            if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.OrdinalIgnoreCase)).Any())
+            if (!options.Keys.Any(x => requiredOptions.Contains(x, StringComparer.OrdinalIgnoreCase)))
             {
                 outwriter.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions)); 
                 return 200;
@@ -396,7 +396,7 @@ namespace Duplicati.CommandLine
                 args.RemoveAt(0);
                 var res = i.Delete();
                 
-                if (res.DeletedSets.Count() == 0)
+                if (!res.DeletedSets.Any())
                 {
                     outwriter.WriteLine(Strings.Program.NoFilesetsMatching);
                 }
@@ -519,7 +519,7 @@ namespace Duplicati.CommandLine
                         if (output.FullResults)
                             Library.Utility.Utility.PrintSerializeObject(res, outwriter);
 
-                        if (res.Warnings.Count() > 0)
+                        if (res.Warnings.Any())
                             return 2;
                     }
                 }
@@ -623,7 +623,7 @@ namespace Duplicati.CommandLine
                 output.MessageEvent(string.Format("  Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
                 output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
 
-                if (result.ExaminedFiles == 0 && (filter != null || !filter.Empty))
+                if (result.ExaminedFiles == 0 && (filter != null && !filter.Empty))
                     output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filters\" command");
 
                 output.MessageEvent("Backup completed successfully!");
@@ -694,8 +694,8 @@ namespace Duplicati.CommandLine
             }
             else
             {
-                var filtered = from n in result.Verifications where n.Value.Count() != 0 select n;
-                if (filtered.Count() == 0)
+                var filtered = from n in result.Verifications where n.Value.Any() select n;
+                if (!filtered.Any())
                 {
                     outwriter.WriteLine("Examined {0} files and found no errors", totalFiles);
                     return 0;
@@ -740,7 +740,7 @@ namespace Duplicati.CommandLine
             return 200;
         }
 
-        public static int PrintInvalidCommand(TextWriter outwriter, string command, List<string> args)
+        public static int PrintInvalidCommand(TextWriter outwriter, string command)
         {
             outwriter.WriteLine(Strings.Program.InvalidCommandError(command));
             return 200;
@@ -996,7 +996,7 @@ namespace Duplicati.CommandLine
 
 
             using (var console = new ConsoleOutput(outwriter, options))
-            using (var i = new Library.Main.Controller(args[0], options, console))
+            using (var i = new Library.Main.Controller(backend, options, console))
             {
                 setup(i);
                 i.PurgeFiles(filter);
@@ -1052,7 +1052,7 @@ namespace Duplicati.CommandLine
             using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
-                var res = i.PurgeBrokenFiles(filter);
+                i.PurgeBrokenFiles(filter);
             }
 
             return 0;

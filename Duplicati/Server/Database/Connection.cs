@@ -293,11 +293,12 @@ namespace Duplicati.Server.Database
                     (rd) => new Backup() {
                         ID = ConvertToInt64(rd, 0).ToString(),
                         Name = ConvertToString(rd, 1),
-                        Tags = (ConvertToString(rd, 2) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                        TargetURL = ConvertToString(rd, 3),
-                        DBPath = ConvertToString(rd, 4),
+                        Description = ConvertToString(rd, 2),
+                        Tags = (ConvertToString(rd, 3) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                        TargetURL = ConvertToString(rd, 4),
+                        DBPath = ConvertToString(rd, 5),
                     },
-                    @"SELECT ""ID"", ""Name"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" WHERE ID = ?", id)
+                    @"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" WHERE ID = ?", id)
                     .FirstOrDefault();
                     
                 if (bk != null)
@@ -506,8 +507,8 @@ namespace Duplicati.Server.Database
                         new object[] { long.Parse(item.ID ?? "-1") },
                         new IBackup[] { item },
                         update ?
-                            @"UPDATE ""Backup"" SET ""Name""=?, ""Tags""=?, ""TargetURL""=? WHERE ""ID""=?" :
-                            @"INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (?,?,?,?)",
+                            @"UPDATE ""Backup"" SET ""Name""=?, ""Description""=?, ""Tags""=?, ""TargetURL""=? WHERE ""ID""=?" :
+                            @"INSERT INTO ""Backup"" (""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (?,?,?,?,?)",
                         (n) => {
                         
                             if (n.TargetURL.IndexOf(Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER, StringComparison.Ordinal) >= 0)
@@ -517,6 +518,7 @@ namespace Duplicati.Server.Database
                            
                             return new object[] {
                                 n.Name,
+                                n.Description == null ? "" : n.Description, // Description is optional but the column is set to NOT NULL, an additional check is welcome
                                 string.Join(",", n.Tags ?? new string[0]),
                                 n.TargetURL,
                                 update ? (object)item.ID : (object)n.DBPath 
@@ -685,11 +687,12 @@ namespace Duplicati.Server.Database
                         (rd) => (IBackup)new Backup() {
                             ID = ConvertToInt64(rd, 0).ToString(),
                             Name = ConvertToString(rd, 1),
-                            Tags = (ConvertToString(rd, 2) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                            TargetURL = ConvertToString(rd, 3),
-                            DBPath = ConvertToString(rd, 4),
+                            Description = ConvertToString(rd, 2),
+                            Tags = (ConvertToString(rd, 3) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                            TargetURL = ConvertToString(rd, 4),
+                            DBPath = ConvertToString(rd, 5),
                         },
-                        @"SELECT ""ID"", ""Name"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" ")
+                        @"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" ")
                         .ToArray();
                         
                     foreach(var n in lst)
@@ -744,13 +747,13 @@ namespace Duplicati.Server.Database
             lock(m_lock)
             {
                 var notifications = GetNotifications();
-                var cur = notifications.Where(x => x.ID == id).FirstOrDefault();
+                var cur = notifications.FirstOrDefault(x => x.ID == id);
                 if (cur == null)
                     return false;
 
                 DeleteFromDb(typeof(Notification).Name, id);
-                Program.DataConnection.ApplicationSettings.UnackedError = notifications.Where(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Error).Any();
-                Program.DataConnection.ApplicationSettings.UnackedWarning = notifications.Where(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning).Any();
+                Program.DataConnection.ApplicationSettings.UnackedError = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Error);
+                Program.DataConnection.ApplicationSettings.UnackedWarning = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning);
             }
 
             System.Threading.Interlocked.Increment(ref Program.LastNotificationUpdateID);
@@ -1007,15 +1010,6 @@ namespace Duplicati.Server.Database
 
         }
 
-        private T ConvertToEnum<T>(System.Data.IDataReader rd, int index, T @default)
-            where T : struct
-        {
-            T res;
-            if (!Enum.TryParse<T>(ConvertToString(rd, index), true, out res))
-                return @default;
-            return res;
-        }
-
         private object ConvertToEnum(Type enumType, System.Data.IDataReader rd, int index, object @default)
         {
             try
@@ -1136,7 +1130,7 @@ namespace Duplicati.Server.Database
         private void OverwriteAndUpdateDb<T>(System.Data.IDbTransaction transaction, string deleteSql, object[] deleteArgs, IEnumerable<T> values, bool updateExisting)
         {
             var properties = GetORMFields<T>();
-            var idfield = properties.Where(x => x.Name == "ID").FirstOrDefault();
+            var idfield = properties.FirstOrDefault(x => x.Name == "ID");
             properties = properties.Where(x => x.Name != "ID").ToArray();
 
             string sql;

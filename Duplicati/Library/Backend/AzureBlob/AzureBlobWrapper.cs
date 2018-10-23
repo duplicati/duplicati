@@ -119,7 +119,6 @@ namespace Duplicati.Library.Backend.AzureBlob
                         if (x is CloudBlockBlob)
                         {
                             var cb = (CloudBlockBlob)x;
-                            var modified = cb.Properties.LastModified;
                             var lastModified = new System.DateTime();
                             if (cb.Properties.LastModified != null)
                                 lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);

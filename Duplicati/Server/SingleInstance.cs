@@ -120,17 +120,9 @@ namespace Duplicati.Server
         /// <summary>
         /// Constructs a new SingleInstance object
         /// </summary>
-        /// <param name="appname">The application name</param>
-        public SingleInstance(string appname)
-            : this(appname, System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), appname))
-        { }
-
-        /// <summary>
-        /// Constructs a new SingleInstance object
-        /// </summary>
-        /// <param name="appname">The application name</param>
         /// <param name="basefolder">The folder in which the control file structure is placed</param>
-        public SingleInstance(string appname, string basefolder)
+        ///
+        public SingleInstance(string basefolder)
         {
             if (!System.IO.Directory.Exists(basefolder))
                 System.IO.Directory.CreateDirectory(basefolder);

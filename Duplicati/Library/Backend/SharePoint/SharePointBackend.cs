@@ -169,8 +169,7 @@ namespace Duplicati.Library.Backend
             m_serverRelPath = u.Path;
             if (!m_serverRelPath.StartsWith("/", StringComparison.Ordinal))
                 m_serverRelPath = "/" + m_serverRelPath;
-            if (!m_serverRelPath.EndsWith("/", StringComparison.Ordinal))
-                m_serverRelPath += "/";
+            m_serverRelPath = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_serverRelPath, "/");
             // remove marker for SP-Web
             m_serverRelPath = m_serverRelPath.Replace("//", "/");
 

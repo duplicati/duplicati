@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Duplicati.Library.Main.Database
 {
-    internal partial class LocalRecreateDatabase : LocalRestoreDatabase
+    internal class LocalRecreateDatabase : LocalRestoreDatabase
     {
         /// <summary>
         /// The tag used for logging
@@ -289,20 +289,20 @@ namespace Duplicati.Library.Main.Database
         
         public void AddDirectoryEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid, System.Data.IDbTransaction transaction)
         {
-            AddEntry(FilelistEntryType.Folder, filesetid, pathprefixid, path, time, FOLDER_BLOCKSET_ID, metadataid, transaction);
+            AddEntry(filesetid, pathprefixid, path, time, FOLDER_BLOCKSET_ID, metadataid, transaction);
         }
 
         public void AddSymlinkEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid, System.Data.IDbTransaction transaction)
         {
-            AddEntry(FilelistEntryType.Symlink, filesetid, pathprefixid, path, time, SYMLINK_BLOCKSET_ID, metadataid, transaction);
+            AddEntry(filesetid, pathprefixid, path, time, SYMLINK_BLOCKSET_ID, metadataid, transaction);
         }
         
         public void AddFileEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
         {
-            AddEntry(FilelistEntryType.File, filesetid, pathprefixid, path, time, blocksetid, metadataid, transaction);
+            AddEntry(filesetid, pathprefixid, path, time, blocksetid, metadataid, transaction);
         }
-        
-        private void AddEntry(FilelistEntryType type, long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
+
+        private void AddEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
         {
             var fileid = -1L;
                         

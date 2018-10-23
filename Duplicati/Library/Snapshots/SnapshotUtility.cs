@@ -38,7 +38,7 @@ namespace Duplicati.Library.Snapshots
         {
             return
                 Utility.Utility.IsClientLinux
-                       ? CreateLinuxSnapshot(folders, options)
+                       ? CreateLinuxSnapshot(folders)
                        : CreateWindowsSnapshot(folders, options);
             
         }
@@ -51,10 +51,9 @@ namespace Duplicati.Library.Snapshots
         /// Loads a snapshot implementation for Linux
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots of</param>
-        /// <param name="options">A set of commandline options</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
+        private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders)
         {
             return new LinuxSnapshot(folders);
         }

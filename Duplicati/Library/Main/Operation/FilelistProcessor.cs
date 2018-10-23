@@ -33,10 +33,8 @@ namespace Duplicati.Library.Main.Operation
         /// Helper method that verifies uploaded volumes and updates their state in the database.
         /// Throws an error if there are issues with the remote storage
         /// </summary>
-        /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
-        /// <param name="log">The log instance to use</param>
-        public static void VerifyLocalList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log)
+        public static void VerifyLocalList(BackendManager backend, LocalDatabase database)
         {
             var locallist = database.GetRemoteVolumes();
             foreach(var i in locallist)

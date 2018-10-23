@@ -70,11 +70,6 @@ namespace Duplicati.Library.Main
                 get { return m_filehash; }
             }
                 
-            public long Size
-            {
-                get { return m_blob.Length; }
-            }
-    
             public byte[] Blob
             {
                 get { return m_blob; }

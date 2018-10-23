@@ -261,7 +261,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="meta">The metadata ti record</param>
         private static async Task AddSymlinkToOutputAsync(string filename, DateTime lastModified, IMetahash meta, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
-            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, streamblockchannel);
+            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, streamblockchannel).ConfigureAwait(false);
             await database.AddSymlinkEntryAsync(filename, metadataid.Item2, lastModified);
         }
 

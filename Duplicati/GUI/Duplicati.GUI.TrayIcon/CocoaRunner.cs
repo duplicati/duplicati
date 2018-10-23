@@ -33,7 +33,7 @@ namespace Duplicati.GUI.TrayIcon
             
             public NSMenuItem MenuItem { get { return m_item; } }
             
-            public MenuItemWrapper(string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
+            public MenuItemWrapper(string text, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
             {
                 if (text == "-")
                     m_item = NSMenuItem.SeparatorItem;
@@ -199,7 +199,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override Duplicati.GUI.TrayIcon.IMenuItem CreateMenuItem (string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, System.Collections.Generic.IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
         {
-            return new MenuItemWrapper(text, icon, callback, subitems);
+            return new MenuItemWrapper(text, callback, subitems);
         }
 
         protected override void Exit()

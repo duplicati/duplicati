@@ -155,6 +155,8 @@ namespace Duplicati.Library.Snapshots
                         Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ?
                             GetVMVhdPathsWMI((string)mObject[_vmIdField])
                                 .Union(GetVMConfigPathsWMI((string)mObject[_vmIdField]))
+                                .ToList()
+                                .ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1))
                                 .Distinct(Utility.Utility.ClientFilenameStringComparer)
                                 .OrderBy(a => a).ToList() : null));
         }
@@ -203,7 +205,7 @@ namespace Duplicati.Library.Snapshots
                                     paths.Add(Path.Combine(file.Path, file.FileSpecification));
                             }
 
-                        ret.Add(component.ComponentName, paths.Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList());
+                        ret.Add(component.ComponentName, paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1)).Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList());
                     }
                 }
                 finally

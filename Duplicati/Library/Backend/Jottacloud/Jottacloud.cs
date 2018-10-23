@@ -36,7 +36,6 @@ namespace Duplicati.Library.Backend
         private const string JFS_DEVICE_OPTION = "jottacloud-device";
         private const string JFS_MOUNT_POINT_OPTION = "jottacloud-mountpoint";
         private const string JFS_DATE_FORMAT = "yyyy'-'MM'-'dd-'T'HH':'mm':'ssK";
-        private const bool ALLOW_USER_DEFINED_MOUNT_POINTS = false;
         private readonly string m_device;
         private readonly bool m_device_builtin;
         private readonly string m_mountPoint;
@@ -115,8 +114,7 @@ namespace Duplicati.Library.Backend
             m_path = u.HostAndPath; // Host and path of "jottacloud://folder/subfolder" is "folder/subfolder", so the actual folder path within the mount point.
             if (string.IsNullOrEmpty(m_path)) // Require a folder. Actually it is possible to store files directly on the root level of the mount point, but that does not seem to be a good option.
                 throw new UserInformationException(Strings.Jottacloud.NoPathError, "JottaNoPath");
-            if (!m_path.EndsWith("/", StringComparison.Ordinal))
-                m_path += "/";
+            m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_path, "/");
             if (!string.IsNullOrEmpty(u.Username))
             {
                 m_userInfo = new System.Net.NetworkCredential();

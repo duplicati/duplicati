@@ -426,7 +426,6 @@ namespace Duplicati.Library.Main.Database
 
                                 // Add to table
                                 c3.ExecuteNonQuery(null, blocksetid, ix, blkeyfinal);
-                                ix++;
                             }
                         }
                     }

@@ -135,7 +135,7 @@ namespace Duplicati.Library.Backend
 #endif
                         // append the new data to the data already read-in
                         outputBuilder.Append(e.Data);
-                    };
+                    }
                 }
             );  
 

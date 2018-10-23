@@ -67,7 +67,6 @@ namespace Duplicati.Library
         private DateTime m_tokenExpires = DateTime.UtcNow;
 
         public const string DUPLICATI_OAUTH_SERVICE = "https://duplicati-oauth-handler.appspot.com/refresh";
-        private const string OAUTH_LOGIN_URL_TEMPLATE = "https://duplicati-oauth-handler.appspot.com/?type={0}";
 
         public static string OAUTH_LOGIN_URL(string modulename) 
         {
