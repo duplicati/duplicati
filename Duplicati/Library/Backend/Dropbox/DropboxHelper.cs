@@ -10,7 +10,6 @@ namespace Duplicati.Library.Backend
 {
     public class DropboxHelper : OAuthHelper
     {
-        internal const string CONTENT_API_URL = "https://content.dropboxapi.com/2";
         private const int DROPBOX_MAX_CHUNK_UPLOAD = 10 * 1024 * 1024; // 10 MB max upload
         private const string API_ARG_HEADER = "DROPBOX-API-arg";
 
@@ -76,8 +75,7 @@ namespace Duplicati.Library.Backend
 
             var chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, stream.Length);
 
-            var url = string.Format("{0}/files/upload_session/start", CONTENT_API_URL);
-            var req = CreateRequest(url, "POST");
+            var req = CreateRequest(WebApi.Dropbox.UploadSessionStartUrl(), "POST");
             req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(ussa);
             req.ContentType = "application/octet-stream";
             req.ContentLength = chunksize;
@@ -114,11 +112,10 @@ namespace Duplicati.Library.Backend
                 usaa.cursor.session_id = ussr.session_id;
                 usaa.cursor.offset = globalBytesRead;
                 usaa.close = remaining < DROPBOX_MAX_CHUNK_UPLOAD;
-                url = string.Format("{0}/files/upload_session/append_v2", CONTENT_API_URL);
 
                 chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, (long)remaining);
 
-                req = CreateRequest(url, "POST");
+                req = CreateRequest(WebApi.Dropbox.UploadSessionAppendUrl(), "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(usaa);
                 req.ContentType = "application/octet-stream";
                 req.ContentLength = chunksize;
@@ -154,8 +151,7 @@ namespace Duplicati.Library.Backend
                 usfa.cursor.offset = (ulong)globalBytesRead;
                 usfa.commit.path = path;
 
-                url = string.Format("{0}/files/upload_session/finish", CONTENT_API_URL);
-                req = CreateRequest(url, "POST");
+                req = CreateRequest(WebApi.Dropbox.UploadSessionFinishUrl(), "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(usfa);
                 req.ContentType = "application/octet-stream";
                 req.Timeout = 200000;
@@ -173,9 +169,9 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                var pa = new PathArg() { path = path };
-                var url = string.Format("{0}/files/download", CONTENT_API_URL);
-                var req = CreateRequest(url, "POST");
+                var pa = new PathArg { path = path };
+
+                var req = CreateRequest(WebApi.Dropbox.DownloadFilesUrl(), "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(pa);
 
                 using (var response = GetResponse(req))

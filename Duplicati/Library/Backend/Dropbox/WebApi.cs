@@ -41,6 +41,26 @@ namespace Duplicati.Library.Backend.WebApi
             return Uri.UriBuilder(Url.API, Path.DeleteFolder);
         }
 
+        public static string UploadSessionStartUrl()
+        {
+            return Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionStart);
+        }
+
+        public static string UploadSessionAppendUrl()
+        {
+            return Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionAppend);
+        }
+
+        public static string UploadSessionFinishUrl()
+        {
+            return Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionFinish);
+        }
+
+        public static string DownloadFilesUrl()
+        {
+            return Uri.UriBuilder(Url.CONTENT_API_URL, Path.DownloadFiles);
+        }
+
         public static string[] Hosts()
         {
             return new[] { new System.Uri(Url.API).Host, new System.Uri(Url.CONTENT_API_URL).Host };
@@ -59,6 +79,12 @@ namespace Duplicati.Library.Backend.WebApi
             public const string DeleteFolder = "files/delete";
             public const string ListFolder = "files/list_folder";
             public const string ListFolderContinue = "files/list_folder/continue";
+
+            public const string UploadSessionStart = "files/upload_session/start";
+            public const string UploadSessionAppend = "files/upload_session/append_v2";
+            public const string UploadSessionFinish = "files/upload_session/finish";
+
+            public const string DownloadFiles = "files/upload_session/finish";
         }
 
     }
