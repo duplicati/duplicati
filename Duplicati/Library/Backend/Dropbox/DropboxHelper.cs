@@ -10,7 +10,6 @@ namespace Duplicati.Library.Backend
 {
     public class DropboxHelper : OAuthHelper
     {
-        internal const string API_URL = "https://api.dropboxapi.com/2";
         internal const string CONTENT_API_URL = "https://content.dropboxapi.com/2";
         private const int DROPBOX_MAX_CHUNK_UPLOAD = 10 * 1024 * 1024; // 10 MB max upload
         private const string API_ARG_HEADER = "DROPBOX-API-arg";
@@ -43,11 +42,10 @@ namespace Duplicati.Library.Backend
         public ListFolderResult ListFilesContinue(string cursor)
         {
             var lfca = new ListFolderContinueArg() { cursor = cursor };
-            var url = string.Format("{0}/files/list_folder/continue", API_URL);
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(url, lfca);
+                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesContinueUrl(), lfca);
             }
             catch (Exception ex)
             {
@@ -195,8 +193,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 var pa = new PathArg() { path = path };
-                var url = string.Format("{0}/files/delete", API_URL);
-                using (var response = GetResponse(url, pa))
+                using (var response = GetResponse(WebApi.Dropbox.DeleteUrl(), pa))
                 using(var sr = new StreamReader(response.GetResponseStream()))
                     sr.ReadToEnd();
             }

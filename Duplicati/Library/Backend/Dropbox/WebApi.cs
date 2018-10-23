@@ -14,8 +14,7 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System.Collections.Generic;
-using System.Collections.Specialized;
+
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend.WebApi
@@ -29,7 +28,23 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string ListFilesUrl()
         {
-            return string.Format("{0}/files/list_folder", Url.API);
+            return Uri.UriBuilder(Url.API, Path.ListFolder);
+        }
+
+        public static string ListFilesContinueUrl()
+        {
+            return Uri.UriBuilder(Url.API, Path.ListFolderContinue);
+        }
+
+        public static string DeleteUrl()
+        {
+            return Uri.UriBuilder(Url.API, Path.DeleteFolder);
+        }
+
+        public static string[] Hosts()
+        {
+            return new[] { new System.Uri(Url.API).Host, new System.Uri(Url.CONTENT_API_URL).Host };
+
         }
 
         private static class Url
@@ -41,6 +56,10 @@ namespace Duplicati.Library.Backend.WebApi
         private static class Path
         {
             public const string CreateFolder = "files/create_folder";
+            public const string DeleteFolder = "files/delete";
+            public const string ListFolder = "files/list_folder";
+            public const string ListFolderContinue = "files/list_folder/continue";
         }
+
     }
 }
