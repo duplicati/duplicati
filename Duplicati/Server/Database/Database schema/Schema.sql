@@ -9,7 +9,7 @@
 CREATE TABLE "Backup" (
     "ID" INTEGER PRIMARY KEY AUTOINCREMENT,
     "Name" TEXT NOT NULL,
-    "Description" TEXT NOT NULL,
+    "Description" TEXT NOT NULL DEFAULT '',
     "Tags" TEXT NOT NULL,
     "TargetURL" TEXT NOT NULL,
     "DBPath" TEXT NOT NULL
