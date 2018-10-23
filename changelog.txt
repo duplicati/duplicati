@@ -1,3 +1,21 @@
+2018-10-23 - 2.0.3.12_canary_2018-10-23
+==========
+* Fixed translations not working for sub-cultures, thanks @LacunaSoftware
+* Improved error detection and reporting
+* Fixed progress bar not updating, thanks @LacunaSoftware
+* Improved LVM handling, thanks @jkellerer
+* Fixed issues with long paths and USN, thanks @dgehri
+* Numerous code quality improvements, thanks @warwickmm
+* Removal of unused code, thanks @Pectojin
+* Added backup description field to UI, thanks @sffetlio
+* Updated MegaApiClient to 1.6.3, thanks @Pectojin
+* Normalize paths by forcing Windows drive letters to upper case, thanks @mnaiman
+* Fixed progress stats gammar and consistency, thanks @lucascosti
+* Fixed server errors with empty form changes, thanks @LacunaSoftware
+* Improved error messages, thanks @warwickmm
+* Added US-West to Wasabi, thanks @gzzengwei
+* Added app manifest files for Windows, thanks @LacunaSoftware
+
 2018-09-05 - 2.0.3.11_canary_2018-09-05
 ==========
 * Cleanup of async methods and naming, thanks @warwickmm
