@@ -83,10 +83,10 @@ namespace Duplicati.Library.DynamicLoader
                             if (m_interfaces.ContainsKey(tmpscheme))
                             {
                                 var commands = m_interfaces[tmpscheme].SupportedCommands;
-                                if (commands != null && (commands.Where(x =>
+                                if (commands != null && (commands.Any(x =>
                                 x.Name.Equals("use-ssl", StringComparison.OrdinalIgnoreCase) ||
-                                (x.Aliases != null && x.Aliases.Where(y => y.Equals("use-ssl", StringComparison.OrdinalIgnoreCase)).Any())
-                                ).Any()))
+                                (x.Aliases != null && x.Aliases.Any(y => y.Equals("use-ssl", StringComparison.OrdinalIgnoreCase)))
+                                )))
                                 {
                                     newOpts["use-ssl"] = "true";
                                     return (IBackend)Activator.CreateInstance(m_interfaces[tmpscheme].GetType(), url, newOpts);

@@ -67,7 +67,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     var send_close = false;
                     var filesize = 0L;
-                    var filename = string.Empty;
 
                     var e = await self.Input.ReadAsync();
                     var cur = e.Result;
@@ -145,7 +144,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 }
 
                                 // Make sure the filehasher is done with the buf instance before we pass it on
-                                await pftask;
+                                await pftask.ConfigureAwait(false);
                                 await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, 0, lastread, e.Hint, false);
                                 buf = new byte[blocksize];
                             }

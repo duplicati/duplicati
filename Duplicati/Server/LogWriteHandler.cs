@@ -155,22 +155,6 @@ namespace Duplicati.Server
                 
             public int Length { get { return m_length; } }
 
-            public T Dequeue()
-            {
-                lock(m_lock)
-                {
-                    if (m_length == 0)
-                        throw new ArgumentOutOfRangeException(nameof(m_length), "Buffer is empty");
-                    
-                    m_key++;
-                    var ix = m_tail;
-                    m_tail = (m_tail + 1) % m_buffer.Length;
-                    m_length--;
-
-                    return m_buffer[ix];
-                }
-            }
-
             public void Enqueue(T item)
             {
                 lock(m_lock)
@@ -210,17 +194,6 @@ namespace Duplicati.Server
                         return this.ToArray();
                     else
                         return this.Where(filter).ToArray();
-            }
-
-            public void Clear()
-            {
-                lock(m_lock)
-                {
-                    m_length = 0;
-                    m_tail = 0;
-                    m_head = 0;
-                    m_buffer = new T[m_buffer.Length];
-                }
             }
 
             public int Size { get { return m_buffer.Length; } }

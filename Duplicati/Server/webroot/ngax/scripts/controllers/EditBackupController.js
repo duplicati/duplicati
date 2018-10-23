@@ -221,7 +221,6 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             return;
         }
 
-
         if (encryptionEnabled) {
             if ($scope.PassphraseScore === '') {
                 DialogService.dialog(gettextCatalog.getString('Missing passphrase'), gettextCatalog.getString('You must enter a passphrase or disable encryption'));
@@ -486,6 +485,13 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
         var filters = $scope.Backup.Filters;
         $scope.Backup.Filters = [];
+
+        // If Description is anything other than a string, we are either creating a new
+        // backup or something went wrong when retrieving an existing one
+        // Either way we should set it to an empty string
+        if (typeof $scope.Backup.Description !== 'string') {
+            $scope.Backup.Description = '';
+        }
 
         $scope.Backup.Sources = $scope.Backup.Sources || [];
 

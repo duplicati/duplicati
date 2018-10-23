@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Volumes
         {
         }
 
-        public static string GenerateGuid(Options options)
+        public static string GenerateGuid()
         {
             var s = Guid.NewGuid().ToString("N");
 
@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Volumes
 
         public void ResetRemoteFilename(Options options, DateTime timestamp)
         {
-            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
         }
 
         protected VolumeWriterBase(Options options, DateTime timestamp)

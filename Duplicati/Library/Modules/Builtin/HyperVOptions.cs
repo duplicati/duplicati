@@ -63,6 +63,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
+            // Do nothing.  Implementation needed for IGenericModule interface.
         }
 
         #endregion
@@ -218,7 +219,7 @@ namespace Duplicati.Library.Modules.Builtin
             if (paths == null || !Utility.Utility.IsClientWindows)
                 return false;
 
-            return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Any();
+            return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Any(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));
         }
 
         #endregion

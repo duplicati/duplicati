@@ -308,6 +308,7 @@ namespace Duplicati.Server
             }
             public void WriteMessage(Library.Logging.LogEntry entry)
             {
+                // Do nothing.  Implementation needed for ILogDestination interface.
             }
 
             public Duplicati.Library.Main.IBackendProgress BackendProgress
@@ -333,7 +334,7 @@ namespace Duplicati.Server
         {
             var backup = data.Backup;
 
-            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            var options = ApplyOptions(backup, GetCommonOptions());
             if (data.ExtraOptions != null)
                 foreach(var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
@@ -383,7 +384,7 @@ namespace Duplicati.Server
         {
             var backup = data.Backup;
 
-            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            var options = ApplyOptions(backup, GetCommonOptions());
             if (data.ExtraOptions != null)
                 foreach (var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
@@ -454,7 +455,7 @@ namespace Duplicati.Server
                     Program.StatusEventNotifyer.SignalNewEvent();
                 }
 
-                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+                var options = ApplyOptions(backup, GetCommonOptions());
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
@@ -495,7 +496,7 @@ namespace Duplicati.Server
                     {
                         case DuplicatiOperation.Backup:
                             {
-                                var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation));
+                                var filter = ApplyFilter(backup, GetCommonFilter());
                                 var sources =
                                     (from n in backup.Sources
                                         let p = SpecialFolders.ExpandEnvironmentVariables(n)
@@ -692,7 +693,7 @@ namespace Duplicati.Server
                 messageid,
                 null,
                 (n, a) => {
-                    return a.Where(x => x.BackupID == backup.ID).FirstOrDefault() ?? n;
+                    return a.FirstOrDefault(x => x.BackupID == backup.ID) ?? n;
                 }
             );
         }
@@ -713,37 +714,38 @@ namespace Duplicati.Server
             }
         }
 
-        private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, object o)
+        private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IBasicResults result)
         {
-            if (o is Duplicati.Library.Interface.IBasicResults)
+            if (result is Duplicati.Library.Interface.IRestoreResults)
             {
-                var r = (Duplicati.Library.Interface.IBasicResults)o;
-                backup.Metadata["LastDuration"] = r.Duration.ToString();
-                backup.Metadata["LastStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
-                backup.Metadata["LastFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
+                var r = (Duplicati.Library.Interface.IRestoreResults)result;
+                backup.Metadata["LastRestoreDuration"] = r.Duration.ToString();
+                backup.Metadata["LastRestoreStarted"] = Library.Utility.Utility.SerializeDateTime(result.BeginTime.ToUniversalTime());
+                backup.Metadata["LastRestoreFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
             }
 
-            if (o is Duplicati.Library.Interface.IParsedBackendStatistics)
+            if (result is Duplicati.Library.Interface.IParsedBackendStatistics)
             {
-                var r = (Duplicati.Library.Interface.IParsedBackendStatistics)o;
+                var r = (Duplicati.Library.Interface.IParsedBackendStatistics)result;
                 UpdateMetadata(backup, r);
             }
 
-            if (o is Duplicati.Library.Interface.IBackendStatsticsReporter)
+            if (result is Duplicati.Library.Interface.IBackendStatsticsReporter)
             {
-                var r = (Duplicati.Library.Interface.IBackendStatsticsReporter)o;
+                var r = (Duplicati.Library.Interface.IBackendStatsticsReporter)result;
                 if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
                     UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
             }
 
-            if (o is Duplicati.Library.Interface.IBackupResults)
+            if (result is Duplicati.Library.Interface.IBackupResults)
             {
-                var r = (Duplicati.Library.Interface.IBackupResults)o;
+                var r = (Duplicati.Library.Interface.IBackupResults)result;
                 backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
                 backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
-                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
-                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
+                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(result.BeginTime.ToUniversalTime());
+                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
+                backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
@@ -778,24 +780,23 @@ namespace Duplicati.Server
                     );
                 }
             }
-            else if (o is Duplicati.Library.Interface.IBasicResults)
+            else
             {
-                var r = (Duplicati.Library.Interface.IBasicResults)o;
-                if (r.ParsedResult != Library.Interface.ParsedResultType.Success)
+                if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
                 {
-                    var type = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                    var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
                                 ? NotificationType.Warning
                                 : NotificationType.Error;
 
-                    var title = r.ParsedResult == Library.Interface.ParsedResultType.Warning
+                    var title = result.ParsedResult == Library.Interface.ParsedResultType.Warning
                                  ? (backup.IsTemporary ?
                                     "Warning" : string.Format("Warning while running {0}", backup.Name))
                                 : (backup.IsTemporary ?
                                    "Error" : string.Format("Error while running {0}", backup.Name));
 
-                    var message = r.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                   ? string.Format("Got {0} warning(s) ", r.Warnings.Count())
-                                   : string.Format("Got {0} error(s) ", r.Errors.Count());
+                    var message = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                        ? string.Format("Got {0} warning(s) ", result.Warnings.Count())
+                                        : string.Format("Got {0} error(s) ", result.Errors.Count());
 
                     Program.DataConnection.RegisterNotification(
                         type,
@@ -819,7 +820,7 @@ namespace Duplicati.Server
             Program.StatusEventNotifyer.SignalNewEvent();
         }
 
-        private static bool TestIfOptionApplies(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, string filter)
+        private static bool TestIfOptionApplies()
         {
             //TODO: Implement to avoid warnings
             return true;
@@ -841,19 +842,19 @@ namespace Duplicati.Server
             options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.OrdinalIgnoreCase));
         }
 
-        internal static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
+        internal static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, Dictionary<string, string> options)
         {
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
 
             // Apply normal options
             foreach(var o in backup.Settings)
-                if (!o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
+                if (!o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name] = o.Value;
 
             // Apply override options
             foreach(var o in backup.Settings)
-                if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
+                if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name.Substring(2)] = o.Value;
 
 
@@ -863,7 +864,7 @@ namespace Duplicati.Server
             return options;
         }
 
-        private static Library.Utility.IFilter ApplyFilter(Serialization.Interface.IBackup backup, DuplicatiOperation mode, Library.Utility.IFilter filter)
+        private static Library.Utility.IFilter ApplyFilter(Serialization.Interface.IBackup backup, Library.Utility.IFilter filter)
         {
             var f2 = backup.Filters;
             if (f2 != null && f2.Length > 0)
@@ -884,15 +885,15 @@ namespace Duplicati.Server
             return filter;
         }
 
-        internal static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        internal static Dictionary<string, string> GetCommonOptions()
         {
             return
                 (from n in Program.DataConnection.Settings
-                 where TestIfOptionApplies(backup, mode, n.Filter)
+                 where TestIfOptionApplies()
                  select n).ToDictionary(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value);
         }
 
-        private static Duplicati.Library.Utility.IFilter GetCommonFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        private static Duplicati.Library.Utility.IFilter GetCommonFilter()
         {
             var filters = Program.DataConnection.Filters;
             if (filters == null || filters.Length == 0)
@@ -901,7 +902,7 @@ namespace Duplicati.Server
            return
                 (from n in filters
                 orderby n.Order
-                let exp = Library.Utility.Utility.ExpandEnvironmentVariables(n.Expression)
+                let exp = Environment.ExpandEnvironmentVariables(n.Expression)
                 select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }

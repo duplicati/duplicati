@@ -133,11 +133,6 @@ namespace Duplicati.Server
 
         private static System.Threading.Timer PurgeTempFilesTimer = null;
 
-        /// <summary>
-        /// Used to maintain a reference to initialized system settings.
-        /// </summary>
-        private static IDisposable SystemSettings;
-
         public static int ServerPort
         {
             get
@@ -209,7 +204,7 @@ namespace Duplicati.Server
             if (commandlineOptions.ContainsKey("tempdir") && !string.IsNullOrEmpty(commandlineOptions["tempdir"]))
                 Library.Utility.SystemContextSettings.DefaultTempPath = commandlineOptions["tempdir"];
             
-            SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
+            Library.Utility.SystemContextSettings.StartSession();
 
             // Check if a parameters-file was provided. Skip if help was already specified
             if (!commandlineOptions.ContainsKey("help"))
@@ -282,7 +277,7 @@ namespace Duplicati.Server
                 try
                 {
                     //This will also create DATAFOLDER if it does not exist
-                    Instance = new SingleInstance(Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName, DataFolder);
+                    Instance = new SingleInstance(DataFolder);
                 }
                 catch (Exception ex)
                 {
@@ -312,6 +307,10 @@ namespace Duplicati.Server
                     Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
 
                 Program.DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
+
+                if (commandlineOptions.ContainsKey("webservice-allowed-hostnames"))
+                    Program.DataConnection.ApplicationSettings.SetAllowedHostnames(commandlineOptions["webservice-allowed-hostnames"]);
+
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
 
@@ -571,7 +570,7 @@ namespace Duplicati.Server
 #endif
             }
             else
-                DataFolder = Library.Utility.Utility.AppendDirSeparator(Library.Utility.Utility.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
+                DataFolder = Library.Utility.Utility.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
 
             var sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
 
@@ -596,10 +595,9 @@ namespace Duplicati.Server
 #else
                 var useDatabaseEncryption = !commandlineOptions.ContainsKey("unencrypted-database") || !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
 #endif
-                con.ConnectionString = "Data Source=" + DatabasePath;
 
                 //Attempt to open the database, handling any encryption present
-                OpenDatabase(con, useDatabaseEncryption, dbPassword);
+                Duplicati.Library.SQLiteHelper.SQLiteLoader.OpenDatabase(con, DatabasePath, useDatabaseEncryption, dbPassword);
 
                 Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Database.Connection));
             }
@@ -692,77 +690,7 @@ namespace Duplicati.Server
 
             StatusEventNotifyer.SignalNewEvent();
         }
-
-        /// <summary>
-        /// Helper method with logic to handle opening a database in possibly encrypted format
-        /// </summary>
-        /// <param name="con">The SQLite connection object</param>
-        /// <param name="useDatabaseEncryption">Specify if database is encrypted</param>
-        /// <param name="password">Encryption password</param>
-        public static void OpenDatabase(System.Data.IDbConnection con, bool useDatabaseEncryption, string password)
-        {
-            System.Reflection.MethodInfo setPwdMethod = con.GetType().GetMethod("SetPassword", new Type[] { typeof(string) });
-            string attemptedPassword;
-
-            if (!useDatabaseEncryption || string.IsNullOrEmpty(password))
-                attemptedPassword = null; //No encryption specified, attempt to open without
-            else
-                attemptedPassword = password; //Encryption specified, attempt to open with
-
-            if (setPwdMethod != null)
-                setPwdMethod.Invoke(con, new object[] { attemptedPassword });
-
-            try
-            {
-                //Attempt to open in preferred state
-                con.Open();
-
-                // Do a dummy query to make sure we have a working db
-                using (var cmd = con.CreateCommand())
-                {
-                    cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
-                    cmd.ExecuteScalar();
-                }
-            }
-            catch
-            {
-                try
-                {
-                    //We can't try anything else without a password
-                    if (string.IsNullOrEmpty(password))
-                        throw;
-
-                    //Open failed, now try the reverse
-                    attemptedPassword = attemptedPassword == null ? password : null;
-
-                    con.Close();
-                    if (setPwdMethod != null)
-                        setPwdMethod.Invoke(con, new object[] { attemptedPassword });
-                    con.Open();
-
-                    // Do a dummy query to make sure we have a working db
-                    using (var cmd = con.CreateCommand())
-                    {
-                        cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
-                        cmd.ExecuteScalar();
-                    }
-                }
-                catch
-                {
-                    try { con.Close(); }
-                    catch { }
-                }
-
-                //If the db is not open now, it won't open
-                if (con.State != System.Data.ConnectionState.Open)
-                    throw; //Report original error
-
-                //The open method succeeded with the non-default method, now change the password
-                System.Reflection.MethodInfo changePwdMethod = con.GetType().GetMethod("ChangePassword", new Type[] { typeof(string) });
-                changePwdMethod.Invoke(con, new object[] { useDatabaseEncryption ? password : null });
-            }
-        }
-
+               
         /// <summary>
         /// Simple method for tracking if the server has crashed
         /// </summary>
@@ -813,6 +741,7 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILEPASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificatePasswordDescription, Strings.Program.WebserverCertificatePasswordDescription, Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILEPASSWORD),
                     new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_INTERFACE),
                     new Duplicati.Library.Interface.CommandLineArgument("webservice-password", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("webservice-allowed-hostnames", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverAllowedhostnamesDescription, Strings.Program.WebserverAllowedhostnamesDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
                     new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
                     new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),
@@ -830,7 +759,7 @@ namespace Duplicati.Server
         {
             try
             {
-                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Environment.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
                 var newsource = new List<string>();
                 string newtarget = null;
                 string prependfilter = null;

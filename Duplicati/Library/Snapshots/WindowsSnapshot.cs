@@ -76,6 +76,11 @@ namespace Duplicati.Library.Snapshots
         private static SystemIOWindows IO_WIN = new SystemIOWindows();
 
         /// <summary>
+        /// Commonly used string element
+        /// </summary>
+        private static string SLASH = Path.DirectorySeparatorChar.ToString();
+
+        /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sources">Sources to determine which volumes to include in snapshot</param>
@@ -95,10 +100,15 @@ namespace Duplicati.Library.Snapshots
                 if (vss == null)
                     throw new InvalidOperationException();
 
-                var excludedWriters = new Guid[0];
+                // Default to exclude the System State writer
+                var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
                 if (options.ContainsKey("vss-exclude-writers"))
                 {
-                    excludedWriters = options["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
+                    excludedWriters = options["vss-exclude-writers"]
+                        .Split(';')
+                        .Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0)
+                        .Select(x => new Guid(x))
+                        .ToArray();
                 }
 
                 //Check if we should map any drives
@@ -406,11 +416,18 @@ namespace Duplicati.Library.Snapshots
                 throw new InvalidOperationException();
 
             var root = AlphaFS.Path.GetPathRoot(localPath);
-
             if (!m_volumeMap.TryGetValue(root, out var volumePath))
                 throw new InvalidOperationException();
 
-            return Path.Combine(volumePath, localPath.Substring(root.Length));
+            // Note: Do NOT use Path.Combine as it strips the UNC path prefix
+            var subPath = localPath.Substring(root.Length);
+            if (!subPath.StartsWith(SLASH, StringComparison.Ordinal))
+            {
+                volumePath = Duplicati.Library.Utility.Utility.AppendDirSeparator(volumePath, SLASH);
+            }
+
+            var mappedPath = volumePath + subPath;
+            return mappedPath;
         }
 
         /// <inheritdoc />

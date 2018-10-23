@@ -78,7 +78,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
     function reloadTexts() {
         apputils.fileSizeMultipliers = [
-            {name: gettextCatalog.getString('byte'), value: ''},
+            {name: gettextCatalog.getString('byte'), value: 'b'},
             {name: gettextCatalog.getString('KByte'), value: 'KB'},
             {name: gettextCatalog.getString('MByte'), value: 'MB'},
             {name: gettextCatalog.getString('GByte'), value: 'GB'},
@@ -111,7 +111,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         ];
 
         apputils.speedMultipliers = [
-            {name: gettextCatalog.getString('byte/s'), value: ''},
+            {name: gettextCatalog.getString('byte/s'), value: 'b'},
             {name: gettextCatalog.getString('KByte/s'), value: 'KB'},
             {name: gettextCatalog.getString('MByte/s'), value: 'MB'},
             {name: gettextCatalog.getString('GByte/s'), value: 'GB'},

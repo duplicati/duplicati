@@ -284,10 +284,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 // Already running
             }
-            else if (Program.WorkThread.CurrentTasks.Where(x => { 
+            else if (Program.WorkThread.CurrentTasks.Any(x => { 
                 var bn = x == null ? null : x.Backup;
                 return bn == null || bn.ID == backup.ID;
-            }).Any())
+            }))
             {
                 // Already in queue
             }
@@ -309,11 +309,11 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 info.OutputOK(new { Status = "OK", Active = true });
                 return;
             }
-            else if (Program.WorkThread.CurrentTasks.Where(x =>
+            else if (Program.WorkThread.CurrentTasks.Any(x =>
             { 
                 var bn = x == null ? null : x.Backup;
                 return bn == null || bn.ID == backup.ID;
-            }).Any())
+            }))
             {
                 info.OutputOK(new { Status = "OK", Active = true });
                 return;
@@ -539,7 +539,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             return;
                         }
 
-                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase) && x.ID != data.Backup.ID).Any())
+                        if (Program.DataConnection.Backups.Any(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase) && x.ID != data.Backup.ID))
                         {
                             info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name, System.Net.HttpStatusCode.Conflict);
                             return;

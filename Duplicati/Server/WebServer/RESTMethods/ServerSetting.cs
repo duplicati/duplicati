@@ -69,7 +69,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 var settings = Program.DataConnection.Settings.ToList();
 
-                var prop = settings.Where(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var prop = settings.FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase));
                 if (prop == null)
                     settings.Add(prop = new Database.Setting() { Name = key, Value = info.Request.Form["data"].Value });
                 else

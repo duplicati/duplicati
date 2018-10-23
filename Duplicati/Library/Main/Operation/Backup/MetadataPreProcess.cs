@@ -67,6 +67,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
 
+                var CHECKFILETIMEONLY = options.CheckFiletimeOnly;
+                var DISABLEFILETIMECHECK = options.DisableFiletimeCheck;
+
                 while (true)
                 {
                     var path = await self.Input.ReadAsync();
@@ -92,20 +95,20 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // If we only have metadata, stop here
-                    if (await ProcessMetadata(path, attributes, lastwrite, options, snapshot, emptymetadata, database, self.StreamBlockChannel))
+                    if (await ProcessMetadata(path, attributes, lastwrite, options, snapshot, emptymetadata, database, self.StreamBlockChannel).ConfigureAwait(false))
                     {
                         try
                         {
-                            if (options.CheckFiletimeOnly || options.DisableFiletimeCheck)
+                            if (CHECKFILETIMEONLY || DISABLEFILETIMECHECK)
                             {
-                                var tmp = await database.GetFileLastModifiedAsync(path, lastfilesetid);
+                                var tmp = await database.GetFileLastModifiedAsync(path, lastfilesetid, false);
                                 await self.Output.WriteAsync(new FileEntry() {
-                                    OldId = tmp.Key < 0 ? -1 : tmp.Key,
+                                    OldId = tmp.Item1,
                                     Path = path,
                                     Attributes = attributes,
                                     LastWrite = lastwrite,
-                                    OldModified = tmp.Key < 0 ? new DateTime(0) : tmp.Value,
-                                    LastFileSize = -1 ,
+                                    OldModified = tmp.Item2,
+                                    LastFileSize = tmp.Item3 ,
                                     OldMetaHash = null,
                                     OldMetaSize = -1
                                 });
@@ -159,13 +162,13 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     if (options.SymlinkPolicy == Options.SymlinkStrategy.Store)
                     {
-                        var metadata = await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot);
+                        var metadata = MetadataGenerator.GenerateMetadata(path, attributes, options, snapshot);
 
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
                             metadata["CoreSymlinkTarget"] = symlinkTarget;
 
                         var metahash = Utility.WrapMetadata(metadata, options);
-                        await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, database, streamblockchannel);
+                        await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, database, streamblockchannel).ConfigureAwait(false);
 
                         Logging.Log.WriteVerboseMessage(FILELOGTAG, "StoreSymlink", "Stored symlink {0}", path);
                         // Don't process further
@@ -182,9 +185,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 IMetahash metahash;
 
-                if (options.StoreMetadata)
+                if (!options.SkipMetadata)
                 {
-                    metahash = Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(path, attributes, options, snapshot), options);
+                    metahash = Utility.WrapMetadata(MetadataGenerator.GenerateMetadata(path, attributes, options, snapshot), options);
                 }
                 else
                 {
@@ -192,7 +195,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
 
                 Logging.Log.WriteVerboseMessage(FILELOGTAG, "AddDirectory", "Adding directory {0}", path);
-                await AddFolderToOutputAsync(path, lastwrite, metahash, database, streamblockchannel);
+                await AddFolderToOutputAsync(path, lastwrite, metahash, database, streamblockchannel).ConfigureAwait(false);
                 return false;
             }
 
@@ -224,7 +227,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="lastModified">The value of the lastModified timestamp</param>
         private static async Task AddFolderToOutputAsync(string filename, DateTime lastModified, IMetahash meta, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
-            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, streamblockchannel);
+            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, streamblockchannel).ConfigureAwait(false);
             await database.AddDirectoryEntryAsync(filename, metadataid.Item2, lastModified);
         }
 
@@ -238,7 +241,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="meta">The metadata ti record</param>
         private static async Task AddSymlinkToOutputAsync(string filename, DateTime lastModified, IMetahash meta, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
-            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, streamblockchannel);
+            var metadataid = await AddMetadataToOutputAsync(filename, meta, database, streamblockchannel).ConfigureAwait(false);
             await database.AddSymlinkEntryAsync(filename, metadataid.Item2, lastModified);
         }
 

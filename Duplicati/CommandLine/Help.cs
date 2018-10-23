@@ -374,19 +374,6 @@ namespace Duplicati.CommandLine
             lines.Add("");
         }
 
-        private static string PrintArguments(IEnumerable<Duplicati.Library.Interface.ICommandLineArgument> args)
-        {
-            if (args == null)
-                return "";
-
-            List<string> lines = new List<string>();
-            foreach (Library.Interface.ICommandLineArgument arg in args)
-                Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
-
-            return string.Join(Environment.NewLine, lines.ToArray());
-
-        }
-
         private static void PrintFormatted(TextWriter outwriter, IEnumerable<string> lines)
         {
             int windowWidth = 80;

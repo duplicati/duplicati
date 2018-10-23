@@ -54,9 +54,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             var uri = new Utility.Uri(url);
 
             m_bucket = uri.Host;
-            m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator("/" + uri.Path, "/");
 
             // For GCS we do not use a leading slash
             if (m_prefix.StartsWith("/", StringComparison.Ordinal))
@@ -147,7 +145,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 if (string.IsNullOrWhiteSpace(token))
                     break;
                 url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix), token);
-            };
+            }
         }
 
         public void Put(string remotename, string filename)

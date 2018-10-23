@@ -203,6 +203,21 @@ namespace Duplicati.CommandLine
             string command = cargs[0];
             cargs.RemoveAt(0);
 
+            if (verboseErrors)
+            {
+                outwriter.WriteLine("Input command: {0}", command);
+                outwriter.WriteLine("Input arguments: ");
+                foreach (var a in cargs)
+                    outwriter.WriteLine("\t{0}", a);
+                outwriter.WriteLine();
+
+                outwriter.WriteLine("Input options: ");
+                foreach (var n in options)
+                    outwriter.WriteLine("{0}: {1}", n.Key, n.Value);
+                outwriter.WriteLine();
+            }
+
+
             if (CommandMap.ContainsKey(command))
             {
                 var autoupdate = Library.Utility.Utility.ParseBoolOption(options, "auto-update");
@@ -219,7 +234,7 @@ namespace Duplicati.CommandLine
             }
             else
             {
-                Commands.PrintInvalidCommand(outwriter, command, cargs);
+                Commands.PrintInvalidCommand(outwriter, command);
                 return 200;
             }
         }
@@ -241,6 +256,7 @@ namespace Duplicati.CommandLine
                 if (ex is Duplicati.Library.Interface.UserInformationException && !verboseErrors)
                 {
                     errwriter.WriteLine();
+                    errwriter.WriteLine("ErrorID: {0}", ((Duplicati.Library.Interface.UserInformationException)ex).HelpID);
                     errwriter.WriteLine(ex.Message);
                 }
                 else if (!(ex is Library.Interface.CancelException))
@@ -283,7 +299,7 @@ namespace Duplicati.CommandLine
         {
             try
             {
-                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Environment.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
                 var newsource = new List<string>();
                 string newtarget = null;
                 string prependfilter = null;

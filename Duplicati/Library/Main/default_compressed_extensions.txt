@@ -97,8 +97,11 @@
 .pspimage #PaintShopPro Image
 .tif #TIFF image
 .dng #Adobe Digital Negative
-.cr2 #Canon RAW Image Format
+.cr2 #Canon RAW Image Format (already compressed despite being "RAW")
 .webp #WebP Image
+.nef #Nikon RAW format
+.arw #Sony RAW format
+.heic #High Efficiency Image File Format
 
 
 # Compressed Font files

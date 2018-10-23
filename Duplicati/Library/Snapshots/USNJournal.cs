@@ -169,7 +169,7 @@ namespace Duplicati.Library.Snapshots
             if (path == null)
                 throw new Exception(Strings.USNHelper.UnexpectedPathFormat);
 
-            return new System.IO.DirectoryInfo(path).Root.FullName;
+            return System.IO.Path.GetPathRoot(path);
         }
 
         public static string GetDeviceNameFromPath(string path)
@@ -575,7 +575,16 @@ namespace Duplicati.Library.Snapshots
                 // perform binary search
                 int index = m_records.BinarySearch(usnRecord, 
                     Comparer<Record>.Create(
-                        (left, right) => left.UsnRecord.Usn.CompareTo(right.UsnRecord.Usn)));
+                        (left, right) =>
+                        {
+                            if (left == null && right == null)
+                                return 0;
+                            if (left == null)
+                                return -1;
+                            if (right == null)
+                                return 1;
+                            return left.UsnRecord.Usn.CompareTo(right.UsnRecord.Usn);
+                        }));
 
                 if (index >= 0)
                 {

@@ -139,5 +139,48 @@ namespace Duplicati.Library.Interface
         public CancelException(string message, Exception innerException)
             : base(message, "Cancelled", innerException)
         { }
-}
+    }
+
+    /// <summary>
+    /// The reason why an operation is aborted
+    /// </summary>
+    public enum OperationAbortReason
+    {
+        /// <summary>
+        /// The operation is aborted, but this is considered a normal operation
+        /// </summary>
+        Normal,
+        /// <summary>
+        /// The operation is aborted and this should give a warning
+        /// </summary>
+        Warning,
+        /// <summary>
+        /// The operation is aborted and this is an error
+        /// </summary>
+        Error
+    }
+
+    /// <summary>
+    /// A class that signals the operation should be aborted
+    /// </summary>
+    [Serializable]
+    public class OperationAbortException : UserInformationException
+    {
+        /// <summary>
+        /// The reason for the abort operation
+        /// </summary>
+        public readonly OperationAbortReason AbortReason;
+
+        public OperationAbortException(OperationAbortReason reason, string message)
+            : base(message, "OperationAborted")
+        {
+            AbortReason = reason;
+        }
+
+        public OperationAbortException(OperationAbortReason reason, string message, Exception innerException)
+            : base(message, "OperationAborted", innerException)
+        {
+            AbortReason = reason;
+        }
+    }
 }

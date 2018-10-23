@@ -1,3 +1,86 @@
+2018-10-23 - 2.0.3.12_canary_2018-10-23
+==========
+* Fixed translations not working for sub-cultures, thanks @LacunaSoftware
+* Improved error detection and reporting
+* Fixed progress bar not updating, thanks @LacunaSoftware
+* Improved LVM handling, thanks @jkellerer
+* Fixed issues with long paths and USN, thanks @dgehri
+* Numerous code quality improvements, thanks @warwickmm
+* Removal of unused code, thanks @Pectojin
+* Added backup description field to UI, thanks @sffetlio
+* Updated MegaApiClient to 1.6.3, thanks @Pectojin
+* Normalize paths by forcing Windows drive letters to upper case, thanks @mnaiman
+* Fixed progress stats gammar and consistency, thanks @lucascosti
+* Fixed server errors with empty form changes, thanks @LacunaSoftware
+* Improved error messages, thanks @warwickmm
+* Added US-West to Wasabi, thanks @gzzengwei
+* Added app manifest files for Windows, thanks @LacunaSoftware
+
+2018-09-05 - 2.0.3.11_canary_2018-09-05
+==========
+* Cleanup of async methods and naming, thanks @warwickmm
+* Added more non-compressible file extensions, thanks @ravisorg
+* Login password field is now auto-focused, thanks @ltGuillaume
+* Added more pause time options, thanks @bmendonca
+* Fixed filename comparer to support correct filename encoding, thanks @warwickmm
+* Changed the default filename query to fix reported slowdowns
+* Added additional experimental queries to possible speed things up even more with 
+
+2018-08-30 - 2.0.3.10_canary_2018-08-30
+==========
+* Updated the help text for no certificates found, thanks @jonmikeiv
+* Fixed logging details, thanks @mnaiman
+* Fixed error messages on repair, thanks @mnaiman
+* Refactored the FTP backend, thanks @verhoek
+* Rewrote the lock on database queries to be simpler and less CPU intensive
+* Removed some logging details in core performance areas (can be re-enabled with `--profile-all-database-queries`)
+* Removed automatic attempts to rebuild `dblock` files as it is slow and rarely finds all the missing pieces (can be enabled with `--rebuild-missing-dblock-files`).
+* Fixed the version number on MacOS builds
+* Updated the signing certificate for executables and Windows installers
+* Added a hostname check for the webserver
+* Fixed an issue where the number of remaining files would be negative
+* Updated localization files
+* Now emits a warning if the option is missing a suffix on sizes (b, kb, mb, gb, tb)
+* Added partially translated Romanian, Swedish, Thai, Hungarian, Slovakian, Catalan, Japanese, Bengali, and Korean to langauges
+* Fixed a number of issues with `--check-filetime-only`
+* Removed the `--store-metadata` option
+* Rewrote the query that fetches the previous information for a file or folder. Set the environment variable `TEST_QUERY_VERSION=1` to revert to the old version for speed comparison, or `TEST_QUERY_VERSION=2` for an alternate version.
+* Improved UI status messages, thanks @lucascosti
+* Failing to add a file will now give a warning instead of stopping the backup
+* Removed a hot-item cache for VSS
+* Added option `--disable-filelist-consistency-checks` to allow speeding up large backups
+* Now ignoring `ENODATA` error message when reading metadata on Linux/BSD
+* Added additional support for exit codes in `--run-script-before` to allow stopping the backup or emitting a warning 
+* Fixed an issue with Google Cloud Storage, thanks @warwickmm
+* Improved the B2 username field description, thanks @xfakt-pj
+* Removed some unused code, thanks @warwickmm
+* Improved source code documentation, thanks @mikaelmello
+
+2018-06-30 - 2.0.3.9_canary_2018-06-30
+==========
+* Fixed an issue with dectection HyperV, thanks @mnaiman
+* Default to exclude the System State VSS writers, thanks @mnaiman
+* Fixed an issue where restores from the GUI would not autodetect blocksize and other parameters
+* Fixed an issue with VSS failing to map the paths
+
+2018-06-28 - 2.0.3.8_canary_2018-06-28
+==========
+* Fixed MSI version number
+* Un-hid the Google GCS backend
+* Fixed file sizes reported as zero
+* Fixed a wrong display of sizes less than 1kb, thanks @fyndecano
+* Improvements to the build process, thanks @verhoek
+* Fixed a problem with the Amazon Cloud Drive delay, thanks @snamds
+* Fixed a potential deadlock/performance issue, thanks @warwickmm
+* Improved metadata reporting and UI, thanks @verhoek
+* Improved Hyper-V detection, thanks @mnaiman
+* Improved ways to handle the temporary folder, thanks @verhoek
+* Added logic to remove privileges from the database files, thanks @verhoek
+* Fixed a problem with USN support, thanks @dgehri
+* Fixed temporary files not being removed
+* Fixed no output from commandline on Windows
+* Enabled password input from console again
+
 2018-06-17 - 2.0.3.7_canary_2018-06-17
 ==========
 * Added option to exclude empty folders

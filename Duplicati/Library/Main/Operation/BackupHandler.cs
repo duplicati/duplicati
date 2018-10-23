@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (m_options.NoBackendverification)
                     {
-                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyLocalList(backend, m_database);
                         UpdateStorageStatsFromDatabase();
                     }
                     else
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.Operation
                     );
                 }
 
-                await all;
+                await all.ConfigureAwait(false);
 
                 if (options.ChangedFilelist != null && options.ChangedFilelist.Length >= 1)
                 {
@@ -269,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(m_database, null);
             }
 
-            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Count() > 0)
+            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Any())
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
@@ -354,7 +354,7 @@ namespace Duplicati.Library.Main.Operation
 
             // In case the uploader crashes, we grab the exception here
             if (await Task.WhenAny(uploader, flushReq.LastWriteSizeAync) == uploader)
-                await uploader;
+                await uploader.ConfigureAwait(false);
 
             // Grab the size of the last uploaded volume
             return await flushReq.LastWriteSizeAync;
@@ -421,7 +421,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
 
                                 // Make sure the database is sane
-                                await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, true);
+                                await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
 
                                 // Start the uploader process
                                 uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result, m_result.TaskReader, stats);
@@ -454,7 +454,7 @@ namespace Duplicati.Library.Main.Operation
                                 var lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
 
                                 // Rebuild any index files that are missing
-                                await Backup.RecreateMissingIndexFiles.Run(db, m_options, m_result, m_result.TaskReader);
+                                await Backup.RecreateMissingIndexFiles.Run(db, m_options, m_result.TaskReader);
 
                                 // This should be removed as the lookups are no longer used
                                 m_database.BuildLookupTable(m_options);
@@ -477,7 +477,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Run the backup operation
                                 if (await m_result.TaskReader.ProgressAsync)
-                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid);
+                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid).ConfigureAwait(false);
                             }
                             finally
                             {
@@ -496,7 +496,7 @@ namespace Duplicati.Library.Main.Operation
 
                         // Wait for upload completion
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-                        var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploader);
+                        var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploader).ConfigureAwait(false);
 
                         // Make sure we have the database up-to-date
                         await db.CommitTransactionAsync("CommitAfterUpload", false);

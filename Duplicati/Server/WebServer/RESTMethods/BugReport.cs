@@ -26,7 +26,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             long id;
             long.TryParse(key, out id);
 
-            var tf = Program.DataConnection.GetTempFiles().Where(x => x.ID == id).FirstOrDefault();
+            var tf = Program.DataConnection.GetTempFiles().FirstOrDefault(x => x.ID == id);
             if (tf == null)
             {
                 info.ReportClientError("Invalid or missing bugreport id", System.Net.HttpStatusCode.NotFound);

@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(FileEnumerationProcess));
 
-        public static Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, string[] changedfilelist, ITaskReader taskreader)
+        public static Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, string[] changedfilelist, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -77,21 +77,21 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                         }
 
-                        return AttributeFilterAsync(null, x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
+                        return AttributeFilter(x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
                     });
                 }
                 else
                 {
-					Library.Utility.Utility.EnumerationFilterDelegate AttributeFilter = (root, path, attr) =>
-					    AttributeFilterAsync(root, path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, attributeFilter, enumeratefilter, ignorenames, mixinqueue).WaitForTask().Result;
+                    Library.Utility.Utility.EnumerationFilterDelegate attributeFilter = (root, path, attr) =>
+                        AttributeFilter(path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
 
                     if (journalService != null)
                     {
                         // filter sources using USN journal, to obtain a sub-set of files / folders that may have been modified
-                        sources = journalService.GetModifiedSources(AttributeFilter);
+                        sources = journalService.GetModifiedSources(attributeFilter);
                     }
 
-                    worklist = snapshot.EnumerateFilesAndFolders(sources, AttributeFilter, (rootpath, errorpath, ex) =>
+                    worklist = snapshot.EnumerateFilesAndFolders(sources, attributeFilter, (rootpath, errorpath, ex) =>
                     {
                         Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", errorpath);
                     });
@@ -219,10 +219,9 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// Plugin filter for enumerating a list of files.
         /// </summary>
         /// <returns>True if the path should be returned, false otherwise.</returns>
-        /// <param name="rootpath">The root path that initiated this enumeration.</param>
         /// <param name="path">The current path.</param>
         /// <param name="attributes">The file or folder attributes.</param>
-        private static async Task<bool> AttributeFilterAsync(string rootpath, string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes attributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
+        private static bool AttributeFilter(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
         {
 			// Step 1, exclude block devices
 			try
@@ -304,7 +303,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             // If we exclude files based on attributes, filter that
-            if ((attributeFilter & attributes) != 0)
+            if ((fileAttributes & attributes) != 0)
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromAttributes", "Excluding path due to attribute filter: {0}", path);
                 return false;

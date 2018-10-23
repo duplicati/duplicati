@@ -23,7 +23,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
     {
         public void POST(string key, RequestInfo info)
         {
-            var m = Duplicati.Library.DynamicLoader.WebLoader.Modules.Where(x => x.Key.Equals(key, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            var m = Duplicati.Library.DynamicLoader.WebLoader.Modules.FirstOrDefault(x => x.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
             if (m == null)
             {
                 info.ReportClientError(string.Format("No such command {0}", key), System.Net.HttpStatusCode.NotFound);

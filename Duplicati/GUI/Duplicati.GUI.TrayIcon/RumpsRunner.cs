@@ -36,7 +36,7 @@ namespace Duplicati.GUI.TrayIcon
             private bool m_enabled;
             private bool m_default;
 
-            public MenuItemWrapper(RumpsRunner parent, string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
+            public MenuItemWrapper(RumpsRunner parent, string text, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
             {
                 m_parent = parent;
                 Key = Guid.NewGuid().ToString("N");
@@ -177,8 +177,10 @@ namespace Duplicati.GUI.TrayIcon
             m_toRumps = ch.AsWriteOnly();
 
             WriteChannel(m_rumpsProcess.StandardInput, ch.AsReadOnly());
-            var standardOutputTask = ReadChannel(m_rumpsProcess.StandardOutput);
-            var standardErrorTask = ReadChannel(m_rumpsProcess.StandardError);
+            #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            ReadChannel(m_rumpsProcess.StandardOutput);
+            ReadChannel(m_rumpsProcess.StandardError);
+            #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "background"}));
             //m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "setappicon", Image = GetIcon(m_lastIcon)}));
@@ -213,7 +215,7 @@ namespace Duplicati.GUI.TrayIcon
                         while(true)
                         {
                             var line = await self.Input.ReadAsync();
-                            await stream.WriteLineAsync(line);
+                            await stream.WriteLineAsync(line).ConfigureAwait(false);
                             //Console.WriteLine("Wrote {0}", line);
                         }
                     }
@@ -225,7 +227,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             string line;
             using(stream)
-                while ((line = await stream.ReadLineAsync()) != null)
+                while ((line = await stream.ReadLineAsync().ConfigureAwait(false)) != null)
                 {
                     //Console.WriteLine("Got message: {0}", line);
 
@@ -233,7 +235,7 @@ namespace Duplicati.GUI.TrayIcon
                     if (line.StartsWith("click:", StringComparison.OrdinalIgnoreCase))
                     {
                         var key = line.Substring("click:".Length);
-                        var menu = m_menus.Where(x => string.Equals(x.Key, key)).FirstOrDefault();
+                        var menu = m_menus.FirstOrDefault(x => string.Equals(x.Key, key));
                         if (menu == null)
                         {
                             Console.WriteLine("Menu not found: {0}", key);
@@ -323,7 +325,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override Duplicati.GUI.TrayIcon.IMenuItem CreateMenuItem (string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, System.Collections.Generic.IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
         {
-            return new MenuItemWrapper(this, text, icon, callback, subitems);
+            return new MenuItemWrapper(this, text, callback, subitems);
         }
 
         protected override void Exit()
@@ -331,9 +333,9 @@ namespace Duplicati.GUI.TrayIcon
             m_isQuitting = true;
             if (m_rumpsProcess != null && !m_rumpsProcess.HasExited)
             {
-                m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "shutdown"}));
                 if (m_toRumps != null)
                 {
+                    m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new { Action = "shutdown" }));
                     m_toRumps.Dispose();
                     m_toRumps = null;
                 }

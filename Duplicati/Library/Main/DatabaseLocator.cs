@@ -88,10 +88,9 @@ namespace Duplicati.Library.Main
             string type = uri.Scheme;
             int port = uri.Port;
             string username = uri.Username;
-            string password = uri.Password;
             string prefix = options.Prefix;
             
-            if (username == null || password == null)
+            if (username == null || uri.Password == null)
             {
                 var sopts = DynamicLoader.BackendLoader.GetSupportedCommands(backend);
                 var ropts = new Dictionary<string, string>(options.RawOptions);
@@ -104,23 +103,16 @@ namespace Duplicati.Library.Main
                     {
                         if (username == null && o.Aliases != null && o.Aliases.Contains("auth-username", StringComparer.OrdinalIgnoreCase) && ropts.ContainsKey(o.Name))
                             username = ropts[o.Name];
-                        if (password == null && o.Aliases != null && o.Aliases.Contains("auth-password", StringComparer.OrdinalIgnoreCase) && ropts.ContainsKey(o.Name))
-                            password = ropts[o.Name];
                     }
                 
                     foreach(var o in sopts)
                     {
                         if (username == null && o.Name.Equals("auth-username", StringComparison.OrdinalIgnoreCase) && ropts.ContainsKey("auth-username"))
                             username = ropts["auth-username"];
-                        if (password == null && o.Name.Equals("auth-password", StringComparison.OrdinalIgnoreCase) && ropts.ContainsKey("auth-password"))
-                            password = ropts["auth-password"];
                     }
                 }
             }
             
-            if (password != null)
-                password = Library.Utility.Utility.ByteArrayAsHexString(System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(password + "!" + uri.Scheme + "!" + uri.HostAndPath)));
-                
             //Now find the one that matches :)
             var matches = (from n in configs
                 where 

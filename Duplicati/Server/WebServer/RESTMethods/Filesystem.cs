@@ -55,7 +55,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 if (ix > 0)
                 {
                     var tk = path.Substring(0, ix + 1);
-                    var node = SpecialFolders.Nodes.Where(x => x.id.Equals(tk, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    var node = SpecialFolders.Nodes.FirstOrDefault(x => x.id.Equals(tk, StringComparison.OrdinalIgnoreCase));
                     if (node != null)
                     {
                         specialpath = node.resolvedpath;
@@ -221,8 +221,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     var isFile = !isFolder;
                     var isHidden = (attr & FileAttributes.Hidden) != 0;
 
-                    var accesible = isFile || canAccess(s);
-                    var isLeaf = isFile || !accesible || isEmptyFolder(s);
+                    var accessible = isFile || canAccess(s);
+                    var isLeaf = isFile || !accessible || isEmptyFolder(s);
 
                     var rawid = isFolder ? Library.Utility.Utility.AppendDirSeparator(s) : s;
                     if (skipFiles && !isFolder)
@@ -237,7 +237,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         text = systemIO.PathGetFileName(s),
                         hidden = isHidden,
                         symlink = isSymlink,
-                        iconCls = isFolder ? (accesible ? (isSymlink ? "x-tree-icon-symlink" : "x-tree-icon-parent") : "x-tree-icon-locked") : "x-tree-icon-leaf",
+                        iconCls = isFolder ? (accessible ? (isSymlink ? "x-tree-icon-symlink" : "x-tree-icon-parent") : "x-tree-icon-locked") : "x-tree-icon-leaf",
                         leaf = isLeaf
                     };
                 }

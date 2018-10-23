@@ -535,7 +535,7 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Appends the appropriate directory separator to paths, depending on OS.
+        /// Appends the specified directory separator to paths.
         /// Does not append the separator if the path already ends with it.
         /// </summary>
         /// <param name="path">The path to append to</param>
@@ -543,9 +543,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The path with the directory separator appended</returns>
         public static string AppendDirSeparator(string path, string separator)
         {
-            return !path.EndsWith(DirectorySeparatorString, StringComparison.Ordinal)
-                ? path + separator
-                : path;
+            return !path.EndsWith(separator, StringComparison.Ordinal) ? path + separator : path;
         }
 
         /// <summary>
@@ -596,7 +594,7 @@ namespace Duplicati.Library.Utility
             int index = 0;
             do
             {
-                a = await stream.ReadAsync(buf, index, count);
+                a = await stream.ReadAsync(buf, index, count).ConfigureAwait(false);
                 index += a;
                 count -= a;
             } while (a != 0 && count > 0);
@@ -651,17 +649,6 @@ namespace Duplicati.Library.Utility
             }
 
             return a1 == a2;
-        }
-
-        /// <summary>
-        /// Calculates the hash of a given file, and returns the results as an base64 encoded string
-        /// </summary>
-        /// <param name="path">The path to the file to calculate the hash for</param>
-        /// <returns>The base64 encoded hash</returns>
-        public static string CalculateHash(string path)
-        {
-            using (FileStream fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                return CalculateHash(fs);
         }
 
         /// <summary>
@@ -1063,63 +1050,14 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Gets the users default UI language
-        /// </summary>
-        public static System.Globalization.CultureInfo DefaultCulture => new System.Threading.Thread(() => { }).CurrentUICulture;
-
-        /// <summary>
         /// Gets a string comparer that matches the client filesystems case sensitivity
         /// </summary>
-        public static StringComparer ClientFilenameStringComparer => IsFSCaseSensitive ? StringComparer.CurrentCulture : StringComparer.CurrentCultureIgnoreCase;
+        public static StringComparer ClientFilenameStringComparer => IsFSCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
 
         /// <summary>
         /// Gets the string comparision that matches the client filesystems case sensitivity
         /// </summary>
-        public static StringComparison ClientFilenameStringComparison => IsFSCaseSensitive ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase;
-
-        /// <summary>
-        /// Searches the system paths for the file specified
-        /// </summary>
-        /// <param name="filename">The file to locate</param>
-        /// <returns>The full path to the file, or null if the file was not found</returns>
-        public static string LocateFileInSystemPath(string filename)
-        {
-            try
-            {
-                if (Path.IsPathRooted(filename))
-                    return File.Exists(filename) ? filename : null;
-
-                try
-                {
-                    filename = Path.GetFileName(filename);
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                string homedir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + Path.PathSeparator.ToString();
-
-                //Look in application base folder and all system path folders
-                foreach (string s in (homedir + Environment.GetEnvironmentVariable("PATH")).Split(Path.PathSeparator))
-                    if (!string.IsNullOrEmpty(s) && s.Trim().Length > 0)
-                        try
-                        {
-                            foreach (string sx in Directory.GetFiles(ExpandEnvironmentVariables(s), filename))
-                                return sx;
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-            }
-            catch
-            {
-                // ignored
-            }
-
-            return null;
-        }
+        public static StringComparison ClientFilenameStringComparison => IsFSCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
         /// <summary>
         /// The path to the users home directory
@@ -1127,24 +1065,9 @@ namespace Duplicati.Library.Utility
         public static readonly string HOME_PATH = Environment.GetFolderPath(IsClientLinux ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
 
         /// <summary>
-        /// Expands environment variables.
-        /// </summary>
-        /// <returns>The expanded string.</returns>
-        /// <param name="str">The string to expand.</param>
-        public static string ExpandEnvironmentVariables(string str)
-        {
-            return Environment.ExpandEnvironmentVariables(str);
-        }
-
-        /// <summary>
         /// Regexp for matching environment variables on Windows (%VAR%)
         /// </summary>
         private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_WINDOWS = new Regex(@"\%(?<name>\w+)\%");
-
-        /// <summary>
-        /// Regexp for matching environment variables on Linux ($VAR or ${VAR})
-        /// </summary>
-        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_LINUX = new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})");
 
         /// <summary>
         /// Expands environment variables in a RegExp safe format
@@ -1159,27 +1082,10 @@ namespace Duplicati.Library.Utility
 
             return
 
-                // TODO: Should we switch to using the native format, instead of following the Windows scheme?
-                //IsClientLinux ? ENVIRONMENT_VARIABLE_MATCHER_LINUX : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
+                // TODO: Should we switch to using the native format ($VAR or ${VAR}), instead of following the Windows scheme?
+                // IsClientLinux ? new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})") : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
 
                 ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value)));
-        }
-
-        /// <summary>
-        /// Checks that a hostname is valid
-        /// </summary>
-        /// <param name="hostname">The hostname to verify</param>
-        /// <returns>True if the hostname is valid, false otherwise</returns>
-        public static bool IsValidHostname(string hostname)
-        {
-            try
-            {
-                return System.Uri.CheckHostName(hostname) != UriHostNameType.Unknown;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         /// <summary>
@@ -1255,34 +1161,6 @@ namespace Duplicati.Library.Utility
             return uniqueItems;
         }
 
-        /// <summary>
-        /// Helper method that replaces one file with another
-        /// </summary>
-        /// <param name="target">The file to replace</param>
-        /// <param name="sourcefile">The file to replace with</param>
-        public static void ReplaceFile(string target, string sourcefile)
-        {
-            if (File.Exists(target))
-                File.Delete(target);
-
-            //Nasty workaround for the fact that a recently deleted file occasionally blocks a new write
-            long i = 5;
-            do
-            {
-                try
-                {
-                    File.Move(sourcefile, target);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    if (i == 0)
-                        throw new Exception(
-                            $"Failed to replace the file \"{target}\" volume with the \"{sourcefile}\", error: {ex.Message}");
-                    System.Threading.Thread.Sleep(250);
-                }
-            } while (i-- > 0);
-        }
         // <summary>
         // Returns the entry assembly or reasonable approximation if no entry assembly is available.
         // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
@@ -1329,17 +1207,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Decodes a &quot;base64 for url&quot; encoded string into the raw byte array.
-        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
-        /// </summary>
-        /// <param name="data">The data to decode</param>
-        /// <returns>The raw data</returns>
-        public static byte[] Base64UrlDecode(string data)
-        {
-            return Convert.FromBase64String(Base64UrlToBase64Plain(data));
-        }
-
-        /// <summary>
         /// Converts a DateTime instance to a Unix timestamp
         /// </summary>
         /// <returns>The Unix timestamp.</returns>
@@ -1351,16 +1218,6 @@ namespace Duplicati.Library.Utility
             input = new DateTime(ticks, DateTimeKind.Utc);
 
             return (long)Math.Floor((input - EPOCH).TotalSeconds);
-        }
-
-        /// <summary>
-        /// Converts a Unix timestamp to a DateTime instance
-        /// </summary>
-        /// <returns>The DateTime instance represented by the timestamp.</returns>
-        /// <param name="input">The Unix timestamp to use.</param>
-        public static DateTime ToUnixTimestamp(long input)
-        {
-            return EPOCH.AddSeconds(input);
         }
 
         /// <summary>
@@ -1444,6 +1301,11 @@ namespace Duplicati.Library.Utility
 
                     writer.Write("{0}{1}: ", indentstring, p.Name);
                     PrintSerializeIfPrimitive(p.GetValue(item, null), writer);
+                }
+                else if (typeof(Task).IsAssignableFrom(p.PropertyType) || p.Name == "TaskReader")
+                {
+                    // Ignore Task items
+                    continue;
                 }
                 else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(p.PropertyType))
                 {

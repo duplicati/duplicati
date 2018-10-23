@@ -49,9 +49,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         {
             var uri = new Utility.Uri(url);
 
-            m_path = uri.HostAndPath;
-            if (!m_path.EndsWith("/", StringComparison.Ordinal))
-                m_path += "/";
+            m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(uri.HostAndPath, "/");
 
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))

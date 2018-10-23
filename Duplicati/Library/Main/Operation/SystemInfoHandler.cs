@@ -49,10 +49,7 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Locale: {0}, {1}, {2}", System.Threading.Thread.CurrentThread.CurrentCulture, System.Threading.Thread.CurrentThread.CurrentUICulture, System.Globalization.CultureInfo.InstalledUICulture);
             yield return string.Format("Date/time strings: {0} - {1}", System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.LongDatePattern, System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.LongTimePattern);
             yield return string.Format("Tempdir: {0}", Library.Utility.TempFolder.SystemTempPath);
-            foreach(var e in new string[] {"TEMP", "TMP", "TMPDIR"})
-                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(e)))
-                    yield return string.Format("Environment variable: {0} = {1}", e, Environment.GetEnvironmentVariable(e));
-            
+
             Type sqlite = null;
             string sqliteversion = "";
 
