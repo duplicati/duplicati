@@ -25,6 +25,7 @@ namespace Duplicati.UnitTest
     public class UtilityTests
     {
         [Test]
+        [Category("Utility")]
         public static void AppendDirSeparator()
         {
             const string noTrailingSlash = @"/a\b/c";
