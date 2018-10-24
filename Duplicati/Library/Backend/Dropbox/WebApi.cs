@@ -84,7 +84,7 @@ namespace Duplicati.Library.Backend.WebApi
             public const string UploadSessionAppend = "files/upload_session/append_v2";
             public const string UploadSessionFinish = "files/upload_session/finish";
 
-            public const string DownloadFiles = "files/upload_session/finish";
+            public const string DownloadFiles = "files/download";
         }
 
     }
