@@ -686,4 +686,24 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         }
     };
 
+    this.formatDuration = function(duration) {
+        // parse days if timespan is over 24 hours long
+        var days = 0;
+        if (duration != null && duration.indexOf(".") < 7) {
+            days = duration.substring(0, duration.indexOf("."));
+            duration = duration.substring(duration.indexOf(".")+1, duration.length);
+        }
+
+        // strip miliseconds
+        if (duration != null && duration.indexOf(".") > 0)
+            duration = duration.substring(0, duration.indexOf("."));
+
+        // prefix the days if applicable
+        if (days != 0)
+            return days + ":" + duration;
+        else
+            return duration;
+    };
+
+
 });
