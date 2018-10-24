@@ -27,6 +27,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using Microsoft.Win32.SafeHandles;
+using AlphaFS = Alphaleonis.Win32.Filesystem;
+
 
 namespace Duplicati.Library.Snapshots
 {
@@ -169,7 +171,7 @@ namespace Duplicati.Library.Snapshots
             if (path == null)
                 throw new Exception(Strings.USNHelper.UnexpectedPathFormat);
 
-            return System.IO.Path.GetPathRoot(path);
+            return AlphaFS.Path.GetPathRoot(path);
         }
 
         public static string GetDeviceNameFromPath(string path)
