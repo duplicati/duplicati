@@ -1,4 +1,4 @@
-backupApp.controller('RestoreWizardController', function($scope, $location, BackupList, gettextCatalog) {
+backupApp.controller('RestoreWizardController', function($scope, $location, BackupList, AppUtils, gettextCatalog) {
     $scope.backups = BackupList.watch($scope);
 
     $scope.selection = {
@@ -13,4 +13,6 @@ backupApp.controller('RestoreWizardController', function($scope, $location, Back
         else
             $location.path('/restore/' + $scope.selection.backupid);
     };
+
+    $scope.formatDuration = AppUtils.formatDuration;
 });
