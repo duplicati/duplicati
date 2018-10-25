@@ -498,7 +498,7 @@ namespace Duplicati.Library.Snapshots
                 var path = m_volume;
                 foreach (var r in pathList)
                 {
-                    path = System.IO.Path.Combine(path, r.FileName);
+                    path = IO_WIN.PathCombine(path, r.FileName);
                 }
 
                 if (rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory))

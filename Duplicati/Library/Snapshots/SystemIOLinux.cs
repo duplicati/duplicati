@@ -257,7 +257,21 @@ namespace Duplicati.Library.Snapshots
         {
             return Directory.GetDirectories(path);
         }
-    }
 
+        public string[] GetFiles(string path)
+        {
+            return Directory.GetFiles(path);
+        }
+
+        public DateTime GetCreationTimeUtc(string path)
+        {
+            return File.GetCreationTimeUtc(path);
+        }
+
+        public DateTime GetLastWriteTimeUtc(string path)
+        {
+            return File.GetLastWriteTimeUtc(path);
+        }
+    }
 }
 

@@ -17,7 +17,6 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
-using Alphaleonis.Win32.Filesystem;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -99,7 +98,7 @@ namespace Duplicati.Library.Snapshots
                 try { return base.ListFiles(localFolderPath); }
                 catch (System.IO.PathTooLongException) { }
 
-            string[] tmp = Directory.GetFiles(SystemIOWindows.PrefixWithUNC(localFolderPath));
+            string[] tmp = IO_WIN.GetFiles(SystemIOWindows.PrefixWithUNC(localFolderPath));
             string[] res = new string[tmp.Length];
             for(int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);
@@ -119,7 +118,7 @@ namespace Duplicati.Library.Snapshots
                 try { return base.ListFolders(localFolderPath); }
                 catch (System.IO.PathTooLongException) { }
 
-            string[] tmp = Directory.GetDirectories(SystemIOWindows.PrefixWithUNC(localFolderPath));
+            string[] tmp = IO_WIN.GetDirectories(SystemIOWindows.PrefixWithUNC(localFolderPath));
             string[] res = new string[tmp.Length];
             for (int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);

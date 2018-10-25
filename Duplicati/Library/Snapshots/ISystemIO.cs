@@ -58,6 +58,9 @@ namespace Duplicati.Library.Snapshots
         string PathCombine(string path1, string path2);
         string GetPathRoot(string path);
         string[] GetDirectories(string path);
+        string[] GetFiles(string path);
+        DateTime GetCreationTimeUtc(string path);
+        DateTime GetLastWriteTimeUtc(string path);
         IEnumerable<string> EnumerateFileSystemEntries(string path);
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);

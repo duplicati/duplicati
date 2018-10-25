@@ -622,6 +622,21 @@ namespace Duplicati.Library.Snapshots
             return AlphaFS.Directory.GetDirectories(path);
         }
 
+        public string[] GetFiles(string path)
+        {
+            return AlphaFS.Directory.GetFiles(path);
+        }
+
+        public DateTime GetCreationTimeUtc(string path)
+        {
+            return AlphaFS.File.GetCreationTimeUtc(path);
+        }
+
+        public DateTime GetLastWriteTimeUtc(string path)
+        {
+            return AlphaFS.File.GetLastWriteTimeUtc(path);
+        }
+
         public static IVssBackupComponents CreateVssBackupComponents()
         {
             // Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
