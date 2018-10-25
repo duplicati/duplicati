@@ -16,11 +16,11 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.IO;
 
+using Alphaleonis.Win32.Vss;
 using AlphaFS = Alphaleonis.Win32.Filesystem;
 
 
@@ -615,6 +615,27 @@ namespace Duplicati.Library.Snapshots
         public string GetPathRoot(string path)
         {
             return AlphaFS.Path.GetPathRoot(path);
+        }
+
+        public string[] GetDirectories(string path)
+        {
+            return AlphaFS.Directory.GetDirectories(path);
+        }
+
+        public static IVssBackupComponents CreateVssBackupComponents()
+        {
+            // Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
+            var assemblyLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            if (assemblyLocation == null)
+                throw new InvalidOperationException();
+
+            var alphadir = Path.Combine(assemblyLocation, "alphavss");
+            var alphadll = Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
+            var vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
+            if (vss == null)
+                throw new InvalidOperationException();
+
+            return vss.CreateVssBackupComponents();
         }
 
         #endregion

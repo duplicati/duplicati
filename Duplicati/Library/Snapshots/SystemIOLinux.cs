@@ -247,6 +247,16 @@ namespace Duplicati.Library.Snapshots
             // This should not be required, but some versions of Mono apperently do not strip the trailing slash
             return p.Length > 1 && p[p.Length - 1] == Path.DirectorySeparatorChar ? p.Substring(0, p.Length - 1) : p;
         }
+
+        public string GetPathRoot(string path)
+        {
+            return Path.GetPathRoot(path);
+        }
+
+        public string[] GetDirectories(string path)
+        {
+            return Directory.GetDirectories(path);
+        }
     }
 
 }

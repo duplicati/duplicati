@@ -16,13 +16,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
-using System.Linq;
-
-
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+
 using Alphaleonis.Win32.Vss;
 using AlphaFS = Alphaleonis.Win32.Filesystem;
 
@@ -89,16 +89,11 @@ namespace Duplicati.Library.Snapshots
         {
             try
             {
-                // Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
-                var assemblyLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                if (assemblyLocation == null)
-                    throw new InvalidOperationException();
-
-                var alphadir = Path.Combine(assemblyLocation, "alphavss");
-                var alphadll = Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
-                var vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
-                if (vss == null)
-                    throw new InvalidOperationException();
+                //Prepare the backup
+                m_backup = SystemIOWindows.CreateVssBackupComponents();
+                m_backup.InitializeForBackup(null);
+                m_backup.SetContext(VssSnapshotContext.Backup);
+                m_backup.SetBackupState(false, true, VssBackupType.Full, false);
 
                 // Default to exclude the System State writer
                 var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
@@ -110,15 +105,6 @@ namespace Duplicati.Library.Snapshots
                         .Select(x => new Guid(x))
                         .ToArray();
                 }
-
-                //Check if we should map any drives
-                var useSubst = Utility.Utility.ParseBoolOption(options, "vss-use-mapping");
-
-                //Prepare the backup
-                m_backup = vss.CreateVssBackupComponents();
-                m_backup.InitializeForBackup(null);
-                m_backup.SetContext(VssSnapshotContext.Backup);
-                m_backup.SetBackupState(false, true, VssBackupType.Full, false);
 
                 if (excludedWriters.Length > 0)
                     m_backup.DisableWriterClasses(excludedWriters.ToArray());
@@ -164,8 +150,9 @@ namespace Duplicati.Library.Snapshots
 
                 m_volumeReverseMap = m_volumeMap.ToDictionary(x => x.Value, x => x.Key);
 
+
                 //If we should map the drives, we do that now and update the volumeMap
-                if (useSubst)
+                if (Utility.Utility.ParseBoolOption(options, "vss-use-mapping"))
                 {
                     m_mappedDrives = new List<DefineDosDevice>();
                     foreach (var k in new List<string>(m_volumeMap.Keys))
@@ -209,7 +196,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFolders(string localFolderPath)
         {
-            var root = Utility.Utility.AppendDirSeparator(AlphaFS.Path.GetPathRoot(localFolderPath));
+            var root = Utility.Utility.AppendDirSeparator(IO_WIN.GetPathRoot(localFolderPath));
             var volumePath = Utility.Utility.AppendDirSeparator(ConvertToSnapshotPath(root));
 
             string[] tmp = null;
