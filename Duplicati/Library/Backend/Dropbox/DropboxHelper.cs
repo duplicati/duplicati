@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
+
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -11,8 +10,6 @@ namespace Duplicati.Library.Backend
 {
     public class DropboxHelper : OAuthHelper
     {
-        internal const string API_URL = "https://api.dropboxapi.com/2";
-        internal const string CONTENT_API_URL = "https://content.dropboxapi.com/2";
         private const int DROPBOX_MAX_CHUNK_UPLOAD = 10 * 1024 * 1024; // 10 MB max upload
         private const string API_ARG_HEADER = "DROPBOX-API-arg";
 
@@ -25,18 +22,18 @@ namespace Duplicati.Library.Backend
 
         public ListFolderResult ListFiles(string path)
         {
-            var pa = new PathArg();
-            pa.path = path;
-
-            var url = string.Format("{0}/files/list_folder", API_URL);
+            var pa = new PathArg
+            {
+                path = path
+            };
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(url, pa);
+                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesUrl(), pa);
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, false);
+                HandleDropboxException(ex, false);
                 throw;
             }
         }
@@ -44,15 +41,14 @@ namespace Duplicati.Library.Backend
         public ListFolderResult ListFilesContinue(string cursor)
         {
             var lfca = new ListFolderContinueArg() { cursor = cursor };
-            var url = string.Format("{0}/files/list_folder/continue", API_URL);
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(url, lfca);
+                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesContinueUrl(), lfca);
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, false);
+                HandleDropboxException(ex, false);
                 throw;
             }
         }
@@ -60,15 +56,14 @@ namespace Duplicati.Library.Backend
         public FolderMetadata CreateFolder(string path)
         {
             var pa = new PathArg() { path = path };
-            var url = string.Format("{0}/files/create_folder", API_URL);
 
             try
             {
-                return PostAndGetJSONData<FolderMetadata>(url, pa);
+                return PostAndGetJSONData<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), pa);
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, false);
+                HandleDropboxException(ex, false);
                 throw;
             }
         }
@@ -80,8 +75,7 @@ namespace Duplicati.Library.Backend
 
             var chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, stream.Length);
 
-            var url = string.Format("{0}/files/upload_session/start", CONTENT_API_URL);
-            var req = CreateRequest(url, "POST");
+            var req = CreateRequest(WebApi.Dropbox.UploadSessionStartUrl(), "POST");
             req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(ussa);
             req.ContentType = "application/octet-stream";
             req.ContentLength = chunksize;
@@ -118,11 +112,10 @@ namespace Duplicati.Library.Backend
                 usaa.cursor.session_id = ussr.session_id;
                 usaa.cursor.offset = globalBytesRead;
                 usaa.close = remaining < DROPBOX_MAX_CHUNK_UPLOAD;
-                url = string.Format("{0}/files/upload_session/append_v2", CONTENT_API_URL);
 
                 chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, (long)remaining);
 
-                req = CreateRequest(url, "POST");
+                req = CreateRequest(WebApi.Dropbox.UploadSessionAppendUrl(), "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(usaa);
                 req.ContentType = "application/octet-stream";
                 req.ContentLength = chunksize;
@@ -158,8 +151,7 @@ namespace Duplicati.Library.Backend
                 usfa.cursor.offset = (ulong)globalBytesRead;
                 usfa.commit.path = path;
 
-                url = string.Format("{0}/files/upload_session/finish", CONTENT_API_URL);
-                req = CreateRequest(url, "POST");
+                req = CreateRequest(WebApi.Dropbox.UploadSessionFinishUrl(), "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(usfa);
                 req.ContentType = "application/octet-stream";
                 req.Timeout = 200000;
@@ -168,7 +160,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, true);
+                HandleDropboxException(ex, true);
                 throw;
             }
         }
@@ -177,9 +169,9 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                var pa = new PathArg() { path = path };
-                var url = string.Format("{0}/files/download", CONTENT_API_URL);
-                var req = CreateRequest(url, "POST");
+                var pa = new PathArg { path = path };
+
+                var req = CreateRequest(WebApi.Dropbox.DownloadFilesUrl(), "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(pa);
 
                 using (var response = GetResponse(req))
@@ -187,7 +179,7 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, true);
+                HandleDropboxException(ex, true);
                 throw;
             }
         }
@@ -197,19 +189,18 @@ namespace Duplicati.Library.Backend
             try
             {
                 var pa = new PathArg() { path = path };
-                var url = string.Format("{0}/files/delete", API_URL);
-                using (var response = GetResponse(url, pa))
+                using (var response = GetResponse(WebApi.Dropbox.DeleteUrl(), pa))
                 using(var sr = new StreamReader(response.GetResponseStream()))
                     sr.ReadToEnd();
             }
             catch (Exception ex)
             {
-                handleDropboxException(ex, true);
+                HandleDropboxException(ex, true);
                 throw;
             }
         }
 
-        private void handleDropboxException(Exception ex, bool filerequest)
+        private void HandleDropboxException(Exception ex, bool filerequest)
         {
             if (ex is WebException)
             {
