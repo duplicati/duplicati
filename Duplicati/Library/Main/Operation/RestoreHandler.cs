@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
+using Duplicati.Library.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 
@@ -19,7 +20,7 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options m_options;
         private byte[] m_blockbuffer;
         private readonly RestoreResults m_result;
-        private static readonly Snapshots.ISystemIO m_systemIO = Duplicati.Library.Utility.Utility.IsClientLinux ? (Snapshots.ISystemIO)new Snapshots.SystemIOLinux() : (Snapshots.ISystemIO)new Snapshots.SystemIOWindows();
+        private static readonly ISystemIO m_systemIO = SystemIO.IO_OS(Duplicati.Library.Utility.Utility.IsClientWindows);
         private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
 
         public RestoreHandler(string backendurl, Options options, RestoreResults result)

@@ -24,7 +24,7 @@ using Alphaleonis.Win32.Vss;
 using AlphaFS = Alphaleonis.Win32.Filesystem;
 
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.IO
 {
     public struct SystemIOWindows : ISystemIO
     {

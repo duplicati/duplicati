@@ -319,6 +319,10 @@
       <Project>{0797AA22-C5DD-4950-BB60-34765AB8C6DD}</Project>
       <Name>Duplicati.Tools</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\IO\Duplicati.Library.IO.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.IO</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />

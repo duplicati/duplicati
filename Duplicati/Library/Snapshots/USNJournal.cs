@@ -26,6 +26,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using Duplicati.Library.IO;
 using Microsoft.Win32.SafeHandles;
 
 namespace Duplicati.Library.Snapshots
@@ -35,11 +36,6 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public sealed class USNJournal : IDisposable
     {
-        /// <summary>
-        /// A cached lookup for windows methods for dealing with long filenames
-        /// </summary>
-        private static SystemIOWindows IO_WIN = new SystemIOWindows();
-
         [Flags]
         public enum ChangeReason
         {
@@ -174,7 +170,7 @@ namespace Duplicati.Library.Snapshots
             if (path == null)
                 throw new Exception(Strings.USNHelper.UnexpectedPathFormat);
 
-            return IO_WIN.GetPathRoot(path);
+            return SystemIO.IO_WIN.GetPathRoot(path);
         }
 
         public static string GetDeviceNameFromPath(string path)
@@ -498,7 +494,7 @@ namespace Duplicati.Library.Snapshots
                 var path = m_volume;
                 foreach (var r in pathList)
                 {
-                    path = IO_WIN.PathCombine(path, r.FileName);
+                    path = SystemIO.IO_WIN.PathCombine(path, r.FileName);
                 }
 
                 if (rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory))

@@ -75,9 +75,6 @@
     <Compile Include="WinNativeMethods.cs" />
     <Compile Include="NoSnapshotLinux.cs" />
     <Compile Include="NoSnapshotWindows.cs" />
-    <Compile Include="ISystemIO.cs" />
-    <Compile Include="SystemIOLinux.cs" />
-    <Compile Include="SystemIOWindows.cs" />
     <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -100,6 +97,10 @@
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj">
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
       <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\IO\Duplicati.Library.IO.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.IO</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

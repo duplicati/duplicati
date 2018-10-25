@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -206,9 +207,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return false;
             };
 
-            var systemIO = Library.Utility.Utility.IsClientLinux
-                ? (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOLinux()
-                : (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOWindows();
+            var systemIO = SystemIO.IO_OS(Library.Utility.Utility.IsClientWindows);
 
             foreach (var s in System.IO.Directory.EnumerateFileSystemEntries(entrypath))
             {

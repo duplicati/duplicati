@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 
 using Alphaleonis.Win32.Vss;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -68,11 +69,6 @@ namespace Duplicati.Library.Snapshots
         /// A list of mapped drives
         /// </summary>
         private List<DefineDosDevice> m_mappedDrives;
-
-        /// <summary>
-        /// A cached lookup for windows methods for dealing with long filenames
-        /// </summary>
-        private static SystemIOWindows IO_WIN = new SystemIOWindows();
 
         /// <summary>
         /// Commonly used string element
@@ -123,7 +119,7 @@ namespace Duplicati.Library.Snapshots
                 m_volumes = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
                 foreach (var s in sources)
                 {
-                    var drive = IO_WIN.GetPathRoot(s);
+                    var drive = SystemIO.IO_WIN.GetPathRoot(s);
                     if (!m_volumes.ContainsKey(drive))
                     {
                         //TODO: that seems a bit harsh... we could fall-back to not using VSS for that volume only
@@ -194,7 +190,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFolders(string localFolderPath)
         {
-            var root = Utility.Utility.AppendDirSeparator(IO_WIN.GetPathRoot(localFolderPath));
+            var root = Utility.Utility.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
             var volumePath = Utility.Utility.AppendDirSeparator(ConvertToSnapshotPath(root));
 
             string[] tmp = null;
@@ -202,7 +198,7 @@ namespace Duplicati.Library.Snapshots
 
             if (SystemIOWindows.IsPathTooLong(spath))
             {
-                try { tmp = IO_WIN.GetDirectories(spath); }
+                try { tmp = SystemIO.IO_WIN.GetDirectories(spath); }
                 catch (PathTooLongException) { }
                 catch (DirectoryNotFoundException) { }
             }
@@ -215,7 +211,7 @@ namespace Duplicati.Library.Snapshots
             if (tmp == null)
             {
                 spath = SystemIOWindows.PrefixWithUNC(spath);
-                tmp = IO_WIN.GetDirectories(spath);
+                tmp = SystemIO.IO_WIN.GetDirectories(spath);
             }
 
             volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
@@ -237,7 +233,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFiles(string localFolderPath)
         {
-            var root = Utility.Utility.AppendDirSeparator(IO_WIN.GetPathRoot(localFolderPath));
+            var root = Utility.Utility.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
             var volumePath = Utility.Utility.AppendDirSeparator(ConvertToSnapshotPath(root));
 
             string[] tmp = null;
@@ -245,7 +241,7 @@ namespace Duplicati.Library.Snapshots
 
             if (SystemIOWindows.IsPathTooLong(spath))
             {
-                try { tmp = IO_WIN.GetFiles(spath); }
+                try { tmp = SystemIO.IO_WIN.GetFiles(spath); }
                 catch (PathTooLongException) { }
                 catch (DirectoryNotFoundException) { }
             }
@@ -258,7 +254,7 @@ namespace Duplicati.Library.Snapshots
             if (tmp == null)
             {
                 spath = SystemIOWindows.PrefixWithUNC(spath);
-                tmp = IO_WIN.GetFiles(spath);
+                tmp = SystemIO.IO_WIN.GetFiles(spath);
             }
 
             volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
@@ -291,7 +287,7 @@ namespace Duplicati.Library.Snapshots
                 catch (PathTooLongException) { }
             }
 
-            return IO_WIN.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
+            return SystemIO.IO_WIN.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
 
         /// <summary>
@@ -311,7 +307,7 @@ namespace Duplicati.Library.Snapshots
                 catch (PathTooLongException) { }
             }
 
-            return IO_WIN.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
+            return SystemIO.IO_WIN.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
 
         /// <summary>
@@ -321,7 +317,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>An open filestream that can be read</returns>
         public override Stream OpenRead(string localPath)
         {
-            return IO_WIN.FileOpenRead(ConvertToSnapshotPath(localPath));
+            return SystemIO.IO_WIN.FileOpenRead(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -331,7 +327,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The lenth of the file</returns>
         public override long GetFileSize(string localPath)
         {
-            return IO_WIN.FileLength(ConvertToSnapshotPath(localPath));
+            return SystemIO.IO_WIN.FileLength(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -341,7 +337,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override FileAttributes GetAttributes(string localPath)
         {
-            return IO_WIN.GetFileAttributes(ConvertToSnapshotPath(localPath));
+            return SystemIO.IO_WIN.GetFileAttributes(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -352,7 +348,7 @@ namespace Duplicati.Library.Snapshots
         public override string GetSymlinkTarget(string localPath)
         {
             var spath = ConvertToSnapshotPath(localPath);
-            return IO_WIN.GetSymlinkTarget(spath);
+            return SystemIO.IO_WIN.GetSymlinkTarget(spath);
         }
 
         /// <summary>
@@ -364,7 +360,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return IO_WIN.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
+            return SystemIO.IO_WIN.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
         }
 
         /// <inheritdoc />
@@ -400,7 +396,7 @@ namespace Duplicati.Library.Snapshots
             if (!Path.IsPathRooted(localPath))
                 throw new InvalidOperationException();
 
-            var root = IO_WIN.GetPathRoot(localPath);
+            var root = SystemIO.IO_WIN.GetPathRoot(localPath);
             if (!m_volumeMap.TryGetValue(root, out var volumePath))
                 throw new InvalidOperationException();
 
@@ -418,13 +414,13 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public override bool FileExists(string localFilePath)
         {
-            return IO_WIN.FileExists(ConvertToSnapshotPath(localFilePath));
+            return SystemIO.IO_WIN.FileExists(ConvertToSnapshotPath(localFilePath));
         }
 
         /// <inheritdoc />
         public override bool DirectoryExists(string localFolderPath)
         {
-            return IO_WIN.DirectoryExists(ConvertToSnapshotPath(localFolderPath));
+            return SystemIO.IO_WIN.DirectoryExists(ConvertToSnapshotPath(localFolderPath));
         }
 
         /// <inheritdoc />

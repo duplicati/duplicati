@@ -20,7 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.IO
 {
     public struct SystemIOLinux : ISystemIO
     {

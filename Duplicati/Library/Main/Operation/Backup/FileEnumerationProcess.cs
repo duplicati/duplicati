@@ -23,6 +23,7 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -288,7 +289,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     foreach (var n in ignorenames)
                     {
-                        var ignorepath = SnapshotUtility.SystemIO.PathCombine(path, n);
+                        var ignorepath = SystemIO.IO_OS(Library.Utility.Utility.IsClientWindows).PathCombine(path, n);
                         if (snapshot.FileExists(ignorepath))
                         {
                             Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathDueToIgnoreFile", "Excluding path because ignore file was found: {0}", ignorepath);

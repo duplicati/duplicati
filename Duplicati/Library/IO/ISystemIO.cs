@@ -19,7 +19,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.IO
 {
     /// <summary>
     /// Interface for wrapping System.IO operations.

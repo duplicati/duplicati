@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using Duplicati.Library.Interface;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -309,7 +309,7 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                root = System.IO.Path.GetPathRoot(m_path);
+                root = SystemIO.IO_OS(Utility.Utility.IsClientWindows).GetPathRoot(m_path);
             }
 
             // On Windows, DriveInfo is only valid for lettered drives. (e.g., not for UNC paths and shares)

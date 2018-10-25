@@ -17,6 +17,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 using System.Collections.Generic;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -25,8 +26,6 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public sealed class NoSnapshotLinux : SnapshotBase
     {
-        private static SystemIOLinux SYS_IO = new SystemIOLinux();
-
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
         /// </summary>
@@ -34,7 +33,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string localPath)
         {
-            return SYS_IO.GetSymlinkTarget(localPath);
+            return SystemIO.IO_SYS.GetSymlinkTarget(localPath);
         }
         
         /// <summary>
@@ -46,7 +45,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return SYS_IO.GetMetadata(localPath, isSymlink, followSymlink);
+            return SystemIO.IO_SYS.GetMetadata(localPath, isSymlink, followSymlink);
         }
         
         /// <summary>

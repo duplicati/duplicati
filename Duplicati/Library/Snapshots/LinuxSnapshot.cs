@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -38,11 +39,6 @@ namespace Duplicati.Library.Snapshots
         /// The tag used for logging messages
         /// </summary>
         public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
-
-        /// <summary>
-        /// Helper to have access to the System.IO calls without the interface layer
-        /// </summary>
-        private static SystemIOLinux SYS_IO = new SystemIOLinux();
 
         /// <summary>
         /// This is a lookup, mapping each source folder to the corresponding snapshot
@@ -465,7 +461,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string localPath)
         {
-            return SYS_IO.GetSymlinkTarget(ConvertToSnapshotPath(localPath));
+            return SystemIO.IO_SYS.GetSymlinkTarget(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -477,7 +473,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return SYS_IO.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
+            return SystemIO.IO_SYS.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
         }
 
         /// <summary>

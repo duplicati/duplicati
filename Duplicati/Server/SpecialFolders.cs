@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Server
 {
@@ -147,7 +148,7 @@ namespace Duplicati.Server
 
         internal static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
         {
-            var systemIO = Duplicati.Library.Snapshots.SnapshotUtility.SystemIO;
+            var systemIO = SystemIO.IO_OS(Library.Utility.Utility.IsClientWindows);
 
             if (backup.Sources == null || backup.Sources.Length == 0)
                 return new Dictionary<string, string>();
