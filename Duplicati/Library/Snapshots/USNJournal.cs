@@ -27,8 +27,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using Microsoft.Win32.SafeHandles;
-using AlphaFS = Alphaleonis.Win32.Filesystem;
-
 
 namespace Duplicati.Library.Snapshots
 {
@@ -37,6 +35,11 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public sealed class USNJournal : IDisposable
     {
+        /// <summary>
+        /// A cached lookup for windows methods for dealing with long filenames
+        /// </summary>
+        private static SystemIOWindows IO_WIN = new SystemIOWindows();
+
         [Flags]
         public enum ChangeReason
         {
@@ -171,7 +174,7 @@ namespace Duplicati.Library.Snapshots
             if (path == null)
                 throw new Exception(Strings.USNHelper.UnexpectedPathFormat);
 
-            return AlphaFS.Path.GetPathRoot(path);
+            return IO_WIN.GetPathRoot(path);
         }
 
         public static string GetDeviceNameFromPath(string path)

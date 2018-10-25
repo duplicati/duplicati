@@ -138,7 +138,7 @@ namespace Duplicati.Library.Snapshots
                 m_volumes = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
                 foreach (var s in sources)
                 {
-                    var drive = AlphaFS.Path.GetPathRoot(s);
+                    var drive = IO_WIN.GetPathRoot(s);
                     if (!m_volumes.ContainsKey(drive))
                     {
                         //TODO: that seems a bit harsh... we could fall-back to not using VSS for that volume only

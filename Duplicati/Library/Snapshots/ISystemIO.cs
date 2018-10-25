@@ -56,6 +56,7 @@ namespace Duplicati.Library.Snapshots
         string PathGetExtension(string path);
         string PathChangeExtension(string path, string extension);
         string PathCombine(string path1, string path2);
+        string GetPathRoot(string path);
         IEnumerable<string> EnumerateFileSystemEntries(string path);
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);

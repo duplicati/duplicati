@@ -612,7 +612,12 @@ namespace Duplicati.Library.Snapshots
             }
         }
 
-        #endregion    
+        public string GetPathRoot(string path)
+        {
+            return AlphaFS.Path.GetPathRoot(path);
+        }
+
+        #endregion
     }
 }
 
