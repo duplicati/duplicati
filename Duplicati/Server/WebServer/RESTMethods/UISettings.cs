@@ -61,7 +61,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             if (data == null)
             {
-                info.ReportClientError(string.Format("Unable to parse settings object"), System.Net.HttpStatusCode.BadRequest);
+                info.ReportClientError("Unable to parse settings object", System.Net.HttpStatusCode.BadRequest);
                 return;
             }
 

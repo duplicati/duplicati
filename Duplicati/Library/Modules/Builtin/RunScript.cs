@@ -24,6 +24,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
 using System.Linq;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -220,7 +221,7 @@ namespace Duplicati.Library.Modules.Builtin
                 psi.EnvironmentVariables["DUPLICATI__REMOTEURL"] = remoteurl;
                 if (level != null)
                     psi.EnvironmentVariables["DUPLICATI__PARSED_RESULT"] = level.Value.ToString();
-                
+
                 if (localpath != null)
                     psi.EnvironmentVariables["DUPLICATI__LOCALPATH"] = string.Join(System.IO.Path.PathSeparator.ToString(), localpath);
 
@@ -230,9 +231,9 @@ namespace Duplicati.Library.Modules.Builtin
                 if (!string.IsNullOrEmpty(datafile))
                     psi.EnvironmentVariables["DUPLICATI__RESULTFILE"] = datafile;
 
-                using(System.Diagnostics.Process p = System.Diagnostics.Process.Start(psi))
+                using (System.Diagnostics.Process p = System.Diagnostics.Process.Start(psi))
                 {
-                    ConsoleDataHandler cs = new ConsoleDataHandler(p);
+                    var cs = new ConsoleDataHandler(p);
 
                     if (timeout <= 0)
                         p.WaitForExit();
@@ -249,14 +250,57 @@ namespace Duplicati.Library.Modules.Builtin
 
                     if (p.HasExited)
                     {
+                        cs.WaitForCompletion();
+
                         stderr = cs.StandardError;
                         stdout = cs.StandardOutput;
                         if (p.ExitCode != 0)
-                            Logging.Log.WriteWarningMessage(LOGTAG, "InvalidExitCode", null, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
+                        {
+                            if (!requiredScript)
+                            {
+                                // We log a warning or an error depending on the exit code
+                                switch (p.ExitCode)
+                                {
+                                    case 0:
+                                    case 1:
+                                        // No messages here
+                                        break;
+
+                                    case 2:
+                                    case 3:
+                                        Logging.Log.WriteWarningMessage(LOGTAG, "InvalidExitCode", null, Strings.RunScript.ExitCodeError(scriptpath, p.ExitCode, stderr));
+                                        stderr = null;
+                                        break;
+
+                                    case 4:
+                                    case 5:
+                                    default:
+                                        Logging.Log.WriteErrorMessage(LOGTAG, "InvalidExitCode", null, Strings.RunScript.ExitCodeError(scriptpath, p.ExitCode, stderr));
+                                        stderr = null;
+                                        break;
+                                }
+
+                                // If this is the start event, we abort the backup 
+                                if (eventname == "BEFORE")
+                                {
+                                    switch (p.ExitCode)
+                                    {
+                                        case 1:
+                                            throw new OperationAbortException(OperationAbortReason.Normal, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
+                                        case 3:
+                                            throw new OperationAbortException(OperationAbortReason.Warning, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
+                                        case 5:
+                                            throw new OperationAbortException(OperationAbortReason.Error, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
+                                    }
+                                }
+                            }
+                            else
+                                Logging.Log.WriteWarningMessage(LOGTAG, "InvalidExitCode", null, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
+                        }
                     }
                     else
                     {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "ScriptTimeout", null, Strings.RunScript.ScriptTimeoutError(scriptpath));
+                        Logging.Log.WriteWarningMessage(LOGTAG, "ScriptTimeout", null, Strings.RunScript.ScriptTimeoutError(scriptpath));
                     }
                 }
 
@@ -266,7 +310,7 @@ namespace Duplicati.Library.Modules.Builtin
                 //We only allow setting parameters on startup
                 if (eventname == "BEFORE" && stdout != null)
                 {
-                    foreach(string rawline in stdout.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach (string rawline in stdout.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                     {
                         string line = rawline.Trim();
                         if (!line.StartsWith("--", StringComparison.Ordinal))
@@ -303,7 +347,7 @@ namespace Duplicati.Library.Modules.Builtin
                             localpath = value.Split(System.IO.Path.PathSeparator);
                         }
                         else if (
-                            string.Equals(key, "eventname", StringComparison.OrdinalIgnoreCase) || 
+                            string.Equals(key, "eventname", StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(key, "operationname", StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(key, "main-action", StringComparison.OrdinalIgnoreCase) ||
                             key == ""
@@ -313,9 +357,13 @@ namespace Duplicati.Library.Modules.Builtin
                         }
                         else
                             options[key] = value;
-
                     }
                 }
+            }
+            catch (OperationAbortException)
+            {
+                // Do not log this, it is already logged
+                throw;
             }
             catch (Exception ex)
             {
@@ -325,49 +373,29 @@ namespace Duplicati.Library.Modules.Builtin
             }
         }
 
+        /// <summary>
+        /// Helper class to extract output from the program
+        /// </summary>
         private class ConsoleDataHandler
         {
             public ConsoleDataHandler(System.Diagnostics.Process p)
             {
-                p.OutputDataReceived += new System.Diagnostics.DataReceivedEventHandler(HandleOutputDataReceived);
-                p.ErrorDataReceived += new System.Diagnostics.DataReceivedEventHandler(HandleErrorDataReceived);
-
-                p.BeginErrorReadLine();
-                p.BeginOutputReadLine();
+                m_task = Task.WhenAll(
+                    Task.Run(async () => StandardOutput = await p.StandardOutput.ReadToEndAsync()),
+                    Task.Run(async () => StandardError = await p.StandardError.ReadToEndAsync())
+                );
             }
 
-            private readonly StringBuilder m_standardOutput = new StringBuilder();
-            private readonly StringBuilder m_standardError = new StringBuilder();
-            private readonly object m_lock = new object();
-
-            private void HandleOutputDataReceived (object sender, System.Diagnostics.DataReceivedEventArgs e)
+            private readonly Task m_task;
+            public string StandardOutput { get; private set; }
+            public string StandardError { get; private set; }
+            public void WaitForCompletion()
             {
-                lock(m_lock)
-                    m_standardOutput.AppendLine(e.Data);
-            }
-
-            private void HandleErrorDataReceived (object sender, System.Diagnostics.DataReceivedEventArgs e)
-            {
-                lock(m_lock)
-                    m_standardError.AppendLine(e.Data);
-            }
-
-            public string StandardOutput
-            {
-                get
-                {
-                    lock(m_lock)
-                        return m_standardOutput.ToString().Trim();
-                }
-            }
-
-            public string StandardError
-            {
-                get
-                {
-                    lock(m_lock)
-                        return m_standardError.ToString().Trim();
-                }
+                // NOTE: This is ugly, but there is a race where "HasExited" is set, 
+                // but the stdout/stderr streams have not yet completed.
+                // If we wait a little here, we eventually get the data.
+                // If the streams have completed we do not wait.
+                m_task.Wait(TimeSpan.FromSeconds(5));
             }
         }
     }

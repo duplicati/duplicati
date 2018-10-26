@@ -487,18 +487,28 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override bool IsBlockDevice(string localPath)
         {
-            var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
-            switch (n)
+            try
             {
-                case UnixSupport.File.FileType.Directory:
-                case UnixSupport.File.FileType.Symlink:
-                case UnixSupport.File.FileType.File:
+                var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
+                switch (n)
+                {
+                    case UnixSupport.File.FileType.Directory:
+                    case UnixSupport.File.FileType.Symlink:
+                    case UnixSupport.File.FileType.File:
+                        return false;
+                    default:
+                        return true;
+                }
+            } 
+            catch 
+            {
+                if (!System.IO.File.Exists(SystemIOLinux.NormalizePath(localPath)))
                     return false;
-                default:
-                    return true;
+
+                throw;
             }
         }
-
+        
         /// <summary>
         /// Gets a unique hardlink target ID
         /// </summary>

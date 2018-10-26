@@ -201,6 +201,8 @@ namespace Duplicati.Server.WebServer
         {
             HttpServer.HttpServer server = new HttpServer.HttpServer();
 
+            server.Add(new HostHeaderChecker());
+
             if (string.Equals(Environment.GetEnvironmentVariable("SYNO_DSM_AUTH") ?? string.Empty, "1"))
                 server.Add(new SynologyAuthenticationHandler());
 
@@ -318,6 +320,121 @@ namespace Duplicati.Server.WebServer
                 else
                     response.AddHeader("Cache-Control", "max-age=" + (60 * 60 * 24));
                 return base.Process(request, response, session);
+            }
+        }
+
+        /// <summary>
+        /// Module for injecting host header verification
+        /// </summary>
+        private class HostHeaderChecker : HttpModule
+        {
+            /// <summary>
+            /// The hostnames that we allow
+            /// </summary>
+            private string[] m_lastSplitNames;
+
+            /// <summary>
+            /// The string used to generate m_lastSplitNames;
+            /// </summary>
+            private string m_lastAllowed;
+
+            /// <summary>
+            /// A regex to detect potential IPv4 addresses.
+            /// Note that this also detects things that are not valid IPv4.
+            /// </summary>
+            private static readonly System.Text.RegularExpressions.Regex IPV4 = new System.Text.RegularExpressions.Regex(@"((\d){1,3}\.){3}(\d){1,3}");
+            /// <summary>
+            /// A regex to detect potential IPv6 addresses.
+            /// Note that this also detects things that are not valid IPv6.
+            /// </summary>
+            private static readonly System.Text.RegularExpressions.Regex IPV6 = new System.Text.RegularExpressions.Regex(@"(\:)?(\:?[A-Fa-f0-9]{1,4}\:?){1,8}(\:)?");
+
+            /// <summary>
+            /// The hostnames that are always allowed
+            /// </summary>
+            private static string[] DEFAULT_ALLOWED = new string[] { "localhost", "127.0.0.1", "::1", "localhost.localdomain" };
+
+            /// <summary>
+            /// Process the received request
+            /// </summary>
+            /// <returns>A flag indicating if the request is handled.</returns>
+            /// <param name="request">The received request.</param>
+            /// <param name="response">The response object.</param>
+            /// <param name="session">The session state.</param>
+            public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
+            {
+                string[] h = null;
+                var hstring = Program.DataConnection.ApplicationSettings.AllowedHostnames;
+
+                if (!string.IsNullOrWhiteSpace(hstring))
+                {
+                    h = m_lastSplitNames;
+                    if (hstring != m_lastAllowed)
+                    {
+                        m_lastAllowed = hstring;
+                        h = m_lastSplitNames = (hstring ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                    }
+
+                    if (h == null || h.Length == 0)
+                        h = null;
+                }
+
+                // For some reason, the web server strips out the host header
+                var host = request.Headers["Host"];
+                if (string.IsNullOrWhiteSpace(host))
+                    host = request.Uri.Host;
+
+                // This should not happen
+                if (string.IsNullOrWhiteSpace(host))
+                {
+                    response.Reason = "Invalid request, missing host header";
+                    response.Status = System.Net.HttpStatusCode.Forbidden;
+                    var msg = System.Text.Encoding.ASCII.GetBytes(response.Reason);
+                    response.ContentType = "text/plain";
+                    response.ContentLength = msg.Length;
+                    response.Body.Write(msg, 0, msg.Length);
+                    response.Send();
+                    return true;
+                }
+
+                // Check the hostnames we always allow
+                if (Array.IndexOf(DEFAULT_ALLOWED, host) >= 0)
+                    return false;
+
+                // Then the user specified ones
+                if (h != null && Array.IndexOf(h, host) >= 0)
+                    return false;
+
+                // Disable checks if we have an asterisk
+                if (h != null && Array.IndexOf(h, "*") >= 0)
+                    return false;
+
+                // Finally, check if we have a potential IP address
+                var v4 = IPV4.Match(host);
+                var v6 = IPV6.Match(host);
+
+                if ((v4.Success && v4.Length == host.Length) || (v6.Success && v6.Length == host.Length))
+                {
+                    try
+                    {
+                        // Verify that the hostname is indeed a valid IP address
+                        System.Net.IPAddress.Parse(host);
+                        return false;
+                    }
+                    catch
+                    { }
+                }
+
+                // Failed to find a valid header
+                response.Reason = $"The host header sent by the client is not allowed";
+                response.Status = System.Net.HttpStatusCode.Forbidden;
+                var txt = System.Text.Encoding.ASCII.GetBytes(response.Reason);
+                response.ContentType = "text/plain";
+                response.ContentLength = txt.Length;
+                response.Body.Write(txt, 0, txt.Length);
+                response.Send();
+                return true;
+
             }
         }
     }

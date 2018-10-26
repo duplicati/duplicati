@@ -34,6 +34,10 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         string Name { get; set; }
         /// <summary>
+        /// The backup description
+        /// </summary>
+        string Description { get; set; }
+        /// <summary>
         /// The backup tags
         /// </summary>
         string[] Tags { get; set; }

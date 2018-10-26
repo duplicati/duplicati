@@ -51,7 +51,7 @@ namespace Duplicati.Library.AutoUpdater
         private static readonly string INSTALLED_BASE_DIR =
             string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)))
             ? System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
-            : Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+            : Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
 
         private static readonly bool DISABLE_UPDATE_DOMAIN = !string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)));
 
@@ -169,7 +169,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 if (string.IsNullOrWhiteSpace(installdir))
                     foreach (var p in legacypaths)
-                        if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Count() > 0 && TestDirectoryIsWriteable(p))
+                        if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Any() && TestDirectoryIsWriteable(p))
                         {
                             installdir = p;
                             break;
@@ -187,7 +187,7 @@ namespace Duplicati.Library.AutoUpdater
             }
             else
             {
-                INSTALLDIR = Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+                INSTALLDIR = Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
             }
 
 
@@ -460,7 +460,7 @@ namespace Duplicati.Library.AutoUpdater
                             var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
                             using (var resp = areq.GetResponse())
                             using (var rss = areq.GetResponseStream())
-                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
+                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, cb))
                             {
                                 Duplicati.Library.Utility.Utility.CopyStream(pgs, tempfile);
                             }
@@ -1141,7 +1141,7 @@ namespace Duplicati.Library.AutoUpdater
                         Task.Run(async () => {
                             var stdin = new StreamReader(Console.OpenStandardInput());
                             var line = string.Empty;
-                            while ((line = await stdin.ReadLineAsync()) != null)
+                            while ((line = await stdin.ReadLineAsync().ConfigureAwait(false)) != null)
                                 await proc.StandardInput.WriteLineAsync(line);
                         }),
                         proc.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput()),

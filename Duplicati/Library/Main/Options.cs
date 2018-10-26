@@ -31,10 +31,6 @@ namespace Duplicati.Library.Main
     /// </summary>
     public class Options
     {
-        private const string DEFAULT_BLOCK_HASH_LOOKUP_SIZE = "64mb";
-        private const string DEFAULT_METADATA_HASH_LOOKUP_SIZE = "64mb";
-        private const string DEFAULT_FILE_HASH_LOOKUP_SIZE = "32mb";
-        
         private const string DEFAULT_BLOCK_HASH_ALGORITHM = "SHA256";
         private const string DEFAULT_FILE_HASH_ALGORITHM = "SHA256";
         
@@ -327,6 +323,7 @@ namespace Duplicati.Library.Main
                     "log-file-log-filter",
                     "console-log-level",
                     "console-log-filter",
+                    "profile-all-database-queries"
                 };
             }
         }
@@ -477,14 +474,16 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("debug-output", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugoutputShort, Strings.Options.DebugoutputLong, "false"),
                     new CommandLineArgument("debug-retry-errors", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DebugretryerrorsShort, Strings.Options.DebugretryerrorsLong, "false"),
 
-                    new CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileLong),
-                    new CommandLineArgument("log-file-log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LogfileloglevelShort, Strings.Options.LogfileloglevelShort, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
-                    new CommandLineArgument("log-file-log-filter", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Options.LogfilelogfiltersShort, Strings.Options.LogfilelogfiltersLong(System.IO.Path.PathSeparator.ToString()), null),
+                    new CommandLineArgument("log-file", CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileLong),
+                    new CommandLineArgument("log-file-log-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LogfileloglevelShort, Strings.Options.LogfileloglevelShort, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                    new CommandLineArgument("log-file-log-filter", CommandLineArgument.ArgumentType.String, Strings.Options.LogfilelogfiltersShort, Strings.Options.LogfilelogfiltersLong(System.IO.Path.PathSeparator.ToString()), null),
 
-                    new CommandLineArgument("console-log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ConsoleloglevelShort, Strings.Options.ConsoleloglevelShort, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
-                    new CommandLineArgument("console-log-filter", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Options.ConsolelogfiltersShort, Strings.Options.ConsolelogfiltersLong(System.IO.Path.PathSeparator.ToString()), null),
+                    new CommandLineArgument("console-log-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ConsoleloglevelShort, Strings.Options.ConsoleloglevelShort, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                    new CommandLineArgument("console-log-filter", CommandLineArgument.ArgumentType.String, Strings.Options.ConsolelogfiltersShort, Strings.Options.ConsolelogfiltersLong(System.IO.Path.PathSeparator.ToString()), null),
 
-                    new CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)), Strings.Options.LogLevelDeprecated("log-file-log-level", "console-log-level")),
+                    new CommandLineArgument("log-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)), Strings.Options.LogLevelDeprecated("log-file-log-level", "console-log-level")),
+
+                    new CommandLineArgument("profile-all-database-queries", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ProfilealldatabasequeriesShort, Strings.Options.ProfilealldatabasequeriesLong, "false"),
 
                     new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsShort, "false"),
                     new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepLong, "false"),
@@ -508,7 +507,6 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
                     new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb"),
-                    new CommandLineArgument("store-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadataShort, Strings.Options.StoremetadataLong, "true", null, null, Strings.Options.StoremetadataDeprecated),
                     new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipmetadataShort, Strings.Options.SkipmetadataLong, "false"),
                     new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
                     new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
@@ -558,11 +556,14 @@ namespace Duplicati.Library.Main
                     
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
+                    new CommandLineArgument("disable-filelist-consistency-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilelistconsistencychecksShort, Strings.Options.DisablefilelistconsistencychecksLong, "false"),
                     new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
 
                     new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
                     new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong),
                     new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
+                    new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
+
                 });
 
                 return lst;
@@ -1340,6 +1341,12 @@ namespace Duplicati.Library.Main
                 return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
+
+        /// <summary>
+        /// A value indicating if all database queries should be logged
+        /// </summary>
+        public bool ProfileAllDatabaseQueries { get { return GetBool("profile-all-database-queries"); } }
+
         /// <summary>
         /// Gets the attribute filter used to exclude files and folders.
         /// </summary>
@@ -1514,23 +1521,6 @@ namespace Duplicati.Library.Main
 
                 long t = Library.Utility.Sizeparser.ParseSize(tmp, "mb");                
                 return (int)t;
-            }
-        }
-        
-        /// <summary>
-        /// Gets a flag indicating if metadata for files and folders should be ignored
-        /// </summary>
-        public bool StoreMetadata
-        {
-            get 
-            { 
-                if (m_options.ContainsKey("skip-metadata"))
-                    return !Library.Utility.Utility.ParseBoolOption(m_options, "skip-metadata");
-
-                if (m_options.ContainsKey("store-metadata"))
-                    return Library.Utility.Utility.ParseBoolOption(m_options, "store-metadata"); 
-
-                return true;
             }
         }
 
@@ -1933,12 +1923,29 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets a flag indicating if the filelist consistency checks should be disabled
+        /// </summary>
+        /// <value><c>true</c> if the filelist consistency checks should be disabled; otherwise, <c>false</c>.</value>
+        public bool DisableFilelistConsistencyChecks
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-filelist-consistency-checks"); }
+        }
+
+        /// <summary>
         /// Gets a flag indicating whether the backup should be disabled when on battery power.
         /// </summary>
         /// <value><c>true</c> if the backup should be disabled when on battery power; otherwise, <c>false</c>.</value>
         public bool DisableOnBattery
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-on-battery"); }
+        }
+
+        /// <summary>
+        /// Gets a value indicating if missing dblock files are attempted created
+        /// </summary>
+        public bool RebuildMissingDblockFiles
+        {
+            get { return GetBool("rebuild-missing-dblock-files"); }
         }
 
         /// <summary>

@@ -158,7 +158,7 @@ namespace Duplicati.Library.Main
             return List((IEnumerable<string>)null, filter);
         }
 
-        public Duplicati.Library.Interface.IListResults List (string filterstring, Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults List(string filterstring)
         {
             return List(filterstring == null ? null : new string[] { filterstring }, null);
         }
@@ -430,14 +430,29 @@ namespace Duplicati.Library.Main
                 {
                     result.EndTime = DateTime.UtcNow;
 
-                    try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                    catch { }
+                    if (ex is Library.Interface.OperationAbortException oae)
+                    {
+                        // Perform the module shutdown
+                        OnOperationComplete(ex);
 
-                    OnOperationComplete(ex);
+                        // Log this as a normal operation, as the script rasing the exception,
+                        // has already populated either warning or log messages as required
+                        Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
 
-                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+                        return result;
+                    }
+                    else
+                    {
+                        try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                        catch { }
 
-                    throw;
+                        OnOperationComplete(ex);
+
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+
+                        throw;
+                    }
+
                 }
                 finally
                 {
@@ -527,7 +542,7 @@ namespace Duplicati.Library.Main
             m_options.LoadedModules.Clear();
 
             foreach (Library.Interface.IGenericModule m in DynamicLoader.GenericLoader.Modules)
-                m_options.LoadedModules.Add(new KeyValuePair<bool, Library.Interface.IGenericModule>(Array.IndexOf<string>(m_options.DisableModules, m.Key.ToLower()) < 0 && (m.LoadAsDefault || Array.IndexOf<string>(m_options.EnableModules, m.Key.ToLower()) >= 0), m));
+                m_options.LoadedModules.Add(new KeyValuePair<bool, Library.Interface.IGenericModule>(!m_options.DisableModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase) && (m.LoadAsDefault || m_options.EnableModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase)), m));
 
             // Make the filter read-n-write able in the generic modules
             var pristinefilter = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
@@ -542,7 +557,7 @@ namespace Duplicati.Library.Main
             //// Since Configure in RunScript can alter the RawOptions, make sure it is first in the list for Configure
             var LoadedModules = new List<KeyValuePair<bool, Interface.IGenericModule>>();
             foreach (var mx in m_options.LoadedModules)
-                if (mx.Value.ToString().ToLower().Contains("runscript"))
+                if (mx.Value.ToString().IndexOf("runscript", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     LoadedModules.Insert(0, mx);
                 }
@@ -652,7 +667,7 @@ namespace Duplicati.Library.Main
                 selectedRetentionOptions.Add("keep-versions");
             }
 
-            if (m_options.RetentionPolicy.Count() > 0)
+            if (m_options.RetentionPolicy.Any())
             {
                 selectedRetentionOptions.Add("retention-policy");
             }
@@ -729,7 +744,7 @@ namespace Duplicati.Library.Main
                 if (l != null)
                     foreach (Library.Interface.ICommandLineArgument a in l)
                     {
-                        if (supportedOptions.ContainsKey(a.Name) && Array.IndexOf(Options.KnownDuplicates, a.Name.ToLower()) < 0)
+                        if (supportedOptions.ContainsKey(a.Name) && !Options.KnownDuplicates.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
                             Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(a.Name));
 
                         supportedOptions[a.Name] = a;
@@ -737,7 +752,7 @@ namespace Duplicati.Library.Main
                         if (a.Aliases != null)
                             foreach (string s in a.Aliases)
                             {
-                                if (supportedOptions.ContainsKey(s) && Array.IndexOf(Options.KnownDuplicates, s.ToLower()) < 0)
+                                if (supportedOptions.ContainsKey(s) && !Options.KnownDuplicates.Contains(s, StringComparer.OrdinalIgnoreCase))
                                     Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(s));
 
                                 supportedOptions[s] = a;
@@ -1027,6 +1042,9 @@ namespace Duplicati.Library.Main
                 {
                     return Strings.Controller.UnsupportedSizeValue(optionname, value);
                 }
+
+                if (!string.IsNullOrWhiteSpace(value) && char.IsDigit(value.Last()))
+                    return Strings.Controller.NonQualifiedSizeValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan)
             {

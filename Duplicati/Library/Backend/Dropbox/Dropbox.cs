@@ -8,7 +8,6 @@ namespace Duplicati.Library.Backend
     public class Dropbox : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
-        private const int MAX_FILE_LIST = 10000;
 
         private readonly string m_accesToken;
         private readonly string m_path;
@@ -139,7 +138,7 @@ namespace Duplicati.Library.Backend
 
         public string[] DNSName
         {
-            get { return new string[] { new Uri(DropboxHelper.API_URL).Host, new Uri(DropboxHelper.CONTENT_API_URL).Host }; }
+            get { return WebApi.Dropbox.Hosts(); }
         }
 
         public void Test()

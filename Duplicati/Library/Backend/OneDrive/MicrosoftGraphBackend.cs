@@ -74,21 +74,23 @@ namespace Duplicati.Library.Backend
 
         private readonly JsonSerializer m_serializer = new JsonSerializer();
         private readonly OAuthHttpClient m_client;
-        private readonly string m_path;
         private readonly int fragmentSize;
         private readonly int fragmentRetryCount;
         private readonly int fragmentRetryDelay; // In milliseconds
 
         private string[] dnsNames = null;
 
+        private readonly Lazy<string> rootPathFromURL;
+        private string RootPath => this.rootPathFromURL.Value;
+
         protected MicrosoftGraphBackend() { } // Constructor needed for dynamic loading to find it
 
-        protected MicrosoftGraphBackend(string url, Dictionary<string, string> options)
+        protected MicrosoftGraphBackend(string url, string protocolKey, Dictionary<string, string> options)
         {
             string authid;
             options.TryGetValue(AUTHID_OPTION, out authid);
             if (string.IsNullOrEmpty(authid))
-                throw new UserInformationException(Strings.MicrosoftGraph.MissingAuthId(OAuthHelper.OAUTH_LOGIN_URL(this.ProtocolKey)), "MicrosoftGraphBackendMissingAuthId");
+                throw new UserInformationException(Strings.MicrosoftGraph.MissingAuthId(OAuthHelper.OAUTH_LOGIN_URL(protocolKey)), "MicrosoftGraphBackendMissingAuthId");
 
             string fragmentSizeStr;
             if (options.TryGetValue(UPLOAD_SESSION_FRAGMENT_SIZE_OPTION, out fragmentSizeStr) && int.TryParse(fragmentSizeStr, out this.fragmentSize))
@@ -117,11 +119,12 @@ namespace Duplicati.Library.Backend
                 this.fragmentRetryDelay = UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY;
             }
 
-            this.m_client = new OAuthHttpClient(authid, this.ProtocolKey);
+            this.m_client = new OAuthHttpClient(authid, protocolKey);
             this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
 
-            // Extract out the path to the backup root folder from the given URI
-            this.m_path = NormalizeSlashes(this.GetRootPathFromUrl(url));
+            // Extract out the path to the backup root folder from the given URI.  Since this can be an expensive operation, 
+            // we will cache the value using a lazy initializer.
+            this.rootPathFromURL = new Lazy<string>(() => this.GetRootPathFromUrl(url));
         }
 
         public abstract string ProtocolKey { get; }
@@ -167,7 +170,7 @@ namespace Duplicati.Library.Backend
                     // To get the upload session endpoint, we can start an upload session and then immediately cancel it.
                     // We pick a random file name (using a guid) to make sure we don't conflict with an existing file
                     string dnsTestFile = string.Format("DNSNameTest-{0}", Guid.NewGuid());
-                    UploadSession uploadSession = this.Post<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.m_path, NormalizeSlashes(dnsTestFile)), null);
+                    UploadSession uploadSession = this.Post<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(dnsTestFile)), null);
 
                     // Canceling an upload session is done by sending a DELETE to the upload URL
                     var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl);
@@ -240,7 +243,7 @@ namespace Duplicati.Library.Backend
         {
             string parentFolder = "root";
             string parentFolderPath = string.Empty;
-            foreach (string folder in this.m_path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (string folder in this.RootPath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 string nextPath = parentFolderPath + "/" + folder;
                 DriveItem folderItem;
@@ -268,7 +271,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                return this.Enumerate<DriveItem>(string.Format("{0}/root:{1}:/children", this.DrivePrefix, this.m_path))
+                return this.Enumerate<DriveItem>(string.Format("{0}/root:{1}:/children", this.DrivePrefix, this.RootPath))
                     .Where(item => item.IsFile && !item.IsDeleted) // Exclude non-files and deleted items (not sure if they show up in this listing, but make sure anyway)
                     .Select(item =>
                         new FileEntry(
@@ -296,7 +299,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                var response = this.m_client.GetAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename))).Await();
+                var response = this.m_client.GetAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename))).Await();
                 this.CheckResponse(response);
                 using (Stream responseStream = response.Content.ReadAsStreamAsync().Await())
                 {
@@ -314,7 +317,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                this.Patch(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.m_path, NormalizeSlashes(oldname)), new DriveItem() { Name = newname });
+                this.Patch(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.RootPath, NormalizeSlashes(oldname)), new DriveItem() { Name = newname });
             }
             catch (DriveItemNotFoundException ex)
             {
@@ -338,10 +341,10 @@ namespace Duplicati.Library.Backend
             {
                 StreamContent streamContent = new StreamContent(stream);
                 streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                var response = this.m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename)), streamContent).Await();
+                var response = this.m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)), streamContent).Await();
                 
                 // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
-                var result = this.ParseResponse<DriveItem>(response);
+                this.ParseResponse<DriveItem>(response);
             }
             else
             {
@@ -350,22 +353,22 @@ namespace Duplicati.Library.Backend
                 // The documentation seems somewhat contradictory - it states that uploads must be done sequentially,
                 // but also states that the nextExpectedRanges value returned may indicate multiple ranges...
                 // For now, this plays it safe and does a sequential upload.
-                HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename)));
+                HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)));
 
                 // Indicate that we want to replace any existing content with this new data we're uploading
-                StringContent createSessionContent = this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } });
+                this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } });
 
                 HttpResponseMessage createSessionResponse = this.m_client.SendAsync(createSessionRequest).Await();
                 UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
 
                 // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
-                int fragmentSize = (int)Math.Min(this.fragmentSize, stream.Length);
+                int bufferSize = (int)Math.Min(this.fragmentSize, stream.Length);
 
-                byte[] fragmentBuffer = new byte[fragmentSize];
+                byte[] fragmentBuffer = new byte[bufferSize];
                 int read = 0;
                 for (int offset = 0; offset < stream.Length; offset += read)
                 {
-                    read = stream.Read(fragmentBuffer, 0, fragmentSize);
+                    read = stream.Read(fragmentBuffer, 0, bufferSize);
 
                     int retryCount = this.fragmentRetryCount;
                     for (int attempt = 0; attempt < retryCount; attempt++)
@@ -384,7 +387,7 @@ namespace Duplicati.Library.Backend
                             response = this.m_client.SendAsync(request, false).Await();
 
                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
-                            var result = this.ParseResponse<UploadSession>(response);
+                            this.ParseResponse<UploadSession>(response);
                         }
                         catch (MicrosoftGraphException ex)
                         {
@@ -393,7 +396,7 @@ namespace Duplicati.Library.Backend
                             if (attempt >= retryCount - 1)
                             {
                                 // We've used up all our retry attempts
-                                throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
+                                throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                             }
                             else if ((int)ex.Response.StatusCode >= 500 && (int)ex.Response.StatusCode < 600)
                             {
@@ -406,7 +409,7 @@ namespace Duplicati.Library.Backend
                             {
                                 // 404 is a special case indicating the upload session no longer exists, so the fragment shouldn't be retried.
                                 // Instead we'll let the caller re-attempt the whole file.
-                                throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
+                                throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                             }
                             else if ((int)ex.Response.StatusCode >= 400 && (int)ex.Response.StatusCode < 500)
                             {
@@ -416,7 +419,7 @@ namespace Duplicati.Library.Backend
                             else
                             {
                                 // Other errors should be rethrown
-                                throw new UploadSessionException(createSessionResponse, offset / fragmentSize, (int)Math.Ceiling((double)stream.Length / fragmentSize), ex);
+                                throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                             }
                         }
 
@@ -429,7 +432,7 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            var response = this.m_client.DeleteAsync(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.m_path, NormalizeSlashes(remotename))).Await();
+            var response = this.m_client.DeleteAsync(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename))).Await();
             try
             {
                 this.CheckResponse(response);
@@ -445,8 +448,8 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                string rootPath = string.Format("{0}/root:{1}", this.DrivePrefix, this.m_path);
-                DriveItem rootFolder = this.Get<DriveItem>(rootPath);
+                string rootPath = string.Format("{0}/root:{1}", this.DrivePrefix, this.RootPath);
+                this.Get<DriveItem>(rootPath);
             }
             catch (DriveItemNotFoundException ex)
             {
@@ -476,12 +479,12 @@ namespace Duplicati.Library.Backend
             return this.SendRequest<T>(HttpMethod.Get, url);
         }
 
-        protected T Post<T>(string url, T body)
+        protected T Post<T>(string url, T body) where T : class
         {
             return this.SendRequest(HttpMethod.Post, url, body);
         }
 
-        protected T Patch<T>(string url, T body)
+        protected T Patch<T>(string url, T body) where T : class
         {
             return this.SendRequest(PatchMethod, url, body);
         }
@@ -492,7 +495,7 @@ namespace Duplicati.Library.Backend
             return this.SendRequest<T>(request);
         }
 
-        private T SendRequest<T>(HttpMethod method, string url, T body)
+        private T SendRequest<T>(HttpMethod method, string url, T body) where T : class
         {
             var request = new HttpRequestMessage(method, url);
             if (body != null)

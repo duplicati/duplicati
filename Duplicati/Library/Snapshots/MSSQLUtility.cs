@@ -173,7 +173,8 @@ namespace Duplicati.Library.Snapshots
                                     paths.Add(Path.Combine(file.Path, file.FileSpecification));
                             }
 
-                        m_DBs.Add(new MSSQLDB(component.ComponentName, component.LogicalPath + "\\" + component.ComponentName, paths.Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList()));
+                        m_DBs.Add(new MSSQLDB(component.ComponentName, component.LogicalPath + "\\" + component.ComponentName, 
+                            paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1)).Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList()));
                     }
                 }
                 finally

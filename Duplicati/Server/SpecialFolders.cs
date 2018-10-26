@@ -32,7 +32,7 @@ namespace Duplicati.Server
             foreach(var n in Nodes)
                 if (path.StartsWith(n.id, StringComparison.Ordinal))
                     path = path.Replace(n.id, n.resolvedpath);
-            return Library.Utility.Utility.ExpandEnvironmentVariables(path);
+            return Environment.ExpandEnvironmentVariables(path);
         }
 
         public static string ExpandEnvironmentVariablesRegexp(string path)

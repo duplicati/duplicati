@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Duplicati.Library.Main.Database
 {
-    internal partial class LocalRecreateDatabase : LocalRestoreDatabase
+    internal class LocalRecreateDatabase : LocalRestoreDatabase
     {
         /// <summary>
         /// The tag used for logging
@@ -294,20 +294,20 @@ namespace Duplicati.Library.Main.Database
         
         public void AddDirectoryEntry(long filesetid, string path, DateTime time, long metadataid, System.Data.IDbTransaction transaction)
         {
-            AddEntry(FilelistEntryType.Folder, filesetid, path, time, FOLDER_BLOCKSET_ID, metadataid, transaction);
+            AddEntry(filesetid, path, time, FOLDER_BLOCKSET_ID, metadataid, transaction);
         }
 
         public void AddSymlinkEntry(long filesetid, string path, DateTime time, long metadataid, System.Data.IDbTransaction transaction)
         {
-            AddEntry(FilelistEntryType.Symlink, filesetid, path, time, SYMLINK_BLOCKSET_ID, metadataid, transaction);
+            AddEntry(filesetid, path, time, SYMLINK_BLOCKSET_ID, metadataid, transaction);
         }
         
         public void AddFileEntry(long filesetid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
         {
-            AddEntry(FilelistEntryType.File , filesetid, path, time, blocksetid, metadataid, transaction);
+            AddEntry(filesetid, path, time, blocksetid, metadataid, transaction);
         }
         
-        private void AddEntry(FilelistEntryType type, long filesetid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
+        private void AddEntry(long filesetid, string path, DateTime time, long blocksetid, long metadataid, System.Data.IDbTransaction transaction)
         {
             var fileid = -1L;
                         

@@ -72,7 +72,7 @@ namespace Duplicati.Library.Localization
         {
             var filenames = new string[] { 
                 // Load the specialized version first
-                string.Format("localization-{0}.mo", ci.Name), 
+                string.Format("localization-{0}.mo", ci.Name.Replace('-', '_')), 
                 // Then try the generic language version
                 string.Format("localization-{0}.mo", ci.TwoLetterISOLanguageName) 
             };

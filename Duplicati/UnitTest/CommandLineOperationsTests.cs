@@ -199,10 +199,6 @@ namespace Duplicati.UnitTest
                     throw new Exception("Failed during final remote verification");
 
         }
-
-        protected void DeleteExistingData()
-        {
-        }
     }
 }
 

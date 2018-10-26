@@ -28,7 +28,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(RecreateMissingIndexFiles));
 
-        public static Task Run(BackupDatabase database, Options options, BackupResults result, ITaskReader taskreader)
+        public static Task Run(BackupDatabase database, Options options, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(new
             {

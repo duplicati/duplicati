@@ -41,7 +41,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         public void POST(string key, RequestInfo info)
         {
-            var input = info.Request.Form;
             switch ((key ?? "").ToLowerInvariant())
             {
                 case "suppressdonationmessages":

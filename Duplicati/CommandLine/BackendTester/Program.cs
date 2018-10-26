@@ -31,7 +31,9 @@ namespace Duplicati.CommandLine.BackendTester
         /// <summary>
         /// Used to maintain a reference to initialized system settings.
         /// </summary>
+        #pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
         private static IDisposable SystemSettings;
+        #pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
 
         class TempFile
         {
@@ -71,7 +73,7 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     try
                     {
-                        var p = Library.Utility.Utility.ExpandEnvironmentVariables(_args[0]);
+                        var p = Environment.ExpandEnvironmentVariables(_args[0]);
                         if (System.IO.File.Exists(p))
                             _args = (from x in System.IO.File.ReadLines(p)
                                 where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
@@ -86,7 +88,7 @@ namespace Duplicati.CommandLine.BackendTester
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
-                if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
+                if (args.Count != 1 || String.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase) || args[0] == "?")
                 {
                     Console.WriteLine("Usage: <protocol>://<username>:<password>@<path>");
                     Console.WriteLine("Example: ftp://user:pass@server/folder");
@@ -135,14 +137,6 @@ namespace Duplicati.CommandLine.BackendTester
 
         static bool Run(List<string> args, Dictionary<string, string> options, bool first)
         {
-            string allowedChars = ValidFilenameChars;
-            if (options.ContainsKey("extended-chars"))
-                allowedChars += options["extended-chars"];
-            else
-                allowedChars += ExtendedChars;
-
-            bool autoCreateFolders = Library.Utility.Utility.ParseBoolOption(options, "auto-create-folder");
-
             Library.Interface.IBackend backend = Library.DynamicLoader.BackendLoader.GetBackend(args[0], options);
             if (backend == null)
             {
@@ -151,6 +145,14 @@ namespace Duplicati.CommandLine.BackendTester
                 Console.WriteLine("Supported backends: " + string.Join(",", Duplicati.Library.DynamicLoader.BackendLoader.Keys));
                 return false;
             }
+
+            string allowedChars = ValidFilenameChars;
+            if (options.ContainsKey("extended-chars"))
+            {
+                allowedChars += String.IsNullOrEmpty(options["extended-chars"]) ? ExtendedChars : options["extended-chars"];
+            }
+
+            bool autoCreateFolders = Library.Utility.Utility.ParseBoolOption(options, "auto-create-folder");
 
             string disabledModulesValue;
             string enabledModulesValue;
@@ -161,7 +163,7 @@ namespace Duplicati.CommandLine.BackendTester
 
             List<Library.Interface.IGenericModule> loadedModules = new List<IGenericModule>();
             foreach (Library.Interface.IGenericModule m in Library.DynamicLoader.GenericLoader.Modules)
-                if (Array.IndexOf<string>(disabledModules, m.Key.ToLower()) < 0 && (m.LoadAsDefault || Array.IndexOf<string>(enabledModules, m.Key.ToLower()) >= 0))
+                if (!disabledModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase) && (m.LoadAsDefault || enabledModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase)))
                 {
                     m.Configure(options);
                     loadedModules.Add(m);

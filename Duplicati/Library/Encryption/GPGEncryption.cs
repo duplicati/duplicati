@@ -178,7 +178,7 @@ namespace Duplicati.Library.Encryption
                 m_decryption_args += " " + GPG_DECRYPTION_COMMAND;
 
             if (options.ContainsKey(COMMANDLINE_OPTIONS_PATH))
-                m_programpath = Library.Utility.Utility.ExpandEnvironmentVariables(options[COMMANDLINE_OPTIONS_PATH]);
+                m_programpath = Environment.ExpandEnvironmentVariables(options[COMMANDLINE_OPTIONS_PATH]);
 
         }
 
