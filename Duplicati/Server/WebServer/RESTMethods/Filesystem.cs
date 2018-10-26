@@ -55,7 +55,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 if (ix > 0)
                 {
                     var tk = path.Substring(0, ix + 1);
-                    var node = SpecialFolders.Nodes.Where(x => x.id.Equals(tk, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    var node = SpecialFolders.Nodes.FirstOrDefault(x => x.id.Equals(tk, StringComparison.OrdinalIgnoreCase));
                     if (node != null)
                     {
                         specialpath = node.resolvedpath;

@@ -52,7 +52,6 @@ namespace Duplicati.Library.Utility
 
         private readonly bool m_acceptAll = false;
         private readonly string[] m_validHashes = null;
-        private Exception m_uncastException = null;
 
         public bool ValidateServerCertficate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
@@ -79,7 +78,6 @@ namespace Duplicati.Library.Utility
                 throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
             }
 
-            m_uncastException = new InvalidCertificateException(certHash, sslPolicyErrors);
             return false;
         }
     }

@@ -281,8 +281,8 @@ namespace Duplicati.Server
                                     var entry = Program.DataConnection.GetBackup(id);
                                     if (entry != null)
                                     {
-                                        Dictionary<string, string> options = Duplicati.Server.Runner.GetCommonOptions(entry, Duplicati.Server.Serialization.DuplicatiOperation.Backup);
-                                        Duplicati.Server.Runner.ApplyOptions(entry, Duplicati.Server.Serialization.DuplicatiOperation.Backup, options);
+                                        Dictionary<string, string> options = Duplicati.Server.Runner.GetCommonOptions();
+                                        Duplicati.Server.Runner.ApplyOptions(entry, options);
                                         if ((new Duplicati.Library.Main.Options(options)).DisableOnBattery && (Duplicati.Library.Utility.Power.PowerSupply.GetSource() == Duplicati.Library.Utility.Power.PowerSupply.Source.Battery))
                                         {
                                             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "BackupDisabledOnBattery", "Scheduled backup disabled while on battery power.");

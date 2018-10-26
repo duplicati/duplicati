@@ -67,7 +67,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     var send_close = false;
                     var filesize = 0L;
-                    var filename = string.Empty;
 
                     var e = await self.Input.ReadAsync();
                     var cur = e.Result;

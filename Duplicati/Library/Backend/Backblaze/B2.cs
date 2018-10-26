@@ -56,9 +56,7 @@ namespace Duplicati.Library.Backend.Backblaze
             var uri = new Utility.Uri(url);
 
             m_bucketname = uri.Host;
-            m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator("/" + uri.Path, "/");
 
             // For B2 we do not use a leading slash
             while(m_prefix.StartsWith("/", StringComparison.Ordinal))
@@ -118,7 +116,7 @@ namespace Duplicati.Library.Backend.Backblaze
                     );
 
                     if (buckets != null && buckets.Buckets != null)
-                        m_bucket = buckets.Buckets.Where(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                        m_bucket = buckets.Buckets.FirstOrDefault(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase));
 
                     if (m_bucket == null)
                         throw new FolderMissingException();

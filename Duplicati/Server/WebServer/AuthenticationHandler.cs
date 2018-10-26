@@ -131,7 +131,7 @@ namespace Duplicati.Server.WebServer
 
         public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
         {
-            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            HttpServer.HttpInput input = String.Equals(request.Method, "POST", StringComparison.OrdinalIgnoreCase) ? request.Form : request.QueryString;
 
             var auth_token = FindAuthCookie(request);
             var xsrf_token = FindXSRFToken(request);

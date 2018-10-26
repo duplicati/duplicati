@@ -161,7 +161,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                     var chunkSize = Math.Min(UPLOAD_CHUNK_SIZE, stream.Length - offset);
 
                     req.ContentLength = chunkSize;
-                    req.Headers["Content-Range"] = string.Format("bytes {0}-{1}/{2}", offset, offset + chunkSize - 1, stream.Length);;
+                    req.Headers["Content-Range"] = string.Format("bytes {0}-{1}/{2}", offset, offset + chunkSize - 1, stream.Length);
 
                     // Upload the remaining data
                     var areq = new AsyncHttpRequest(req);

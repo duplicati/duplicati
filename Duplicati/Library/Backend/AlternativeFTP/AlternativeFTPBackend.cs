@@ -147,11 +147,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 _userInfo.Domain = "";
 
             _url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            if (!_url.EndsWith("/", StringComparison.Ordinal))
-            {
-                _url += "/";
-            }
-
+            _url = Duplicati.Library.Utility.Utility.AppendDirSeparator(_url, "/");
             _listVerify = !CoreUtility.ParseBoolOption(options, "disable-upload-verify");
 
             // Process the aftp-data-connection-type option

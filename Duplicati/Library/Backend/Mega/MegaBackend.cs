@@ -77,11 +77,11 @@ namespace Duplicati.Library.Backend.Mega
         {
             var parts = m_prefix.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
             var nodes = Client.GetNodes();
-            INode parent = nodes.Where(x => x.Type == NodeType.Root).First();
+            INode parent = nodes.First(x => x.Type == NodeType.Root);
 
             foreach(var n in parts)
             {
-                var item = nodes.Where(x => x.Name == n && x.Type == NodeType.Directory && x.ParentId == parent.Id).FirstOrDefault();
+                var item = nodes.FirstOrDefault(x => x.Name == n && x.Type == NodeType.Directory && x.ParentId == parent.Id);
                 if (item == null)
                 {
                     if (!autocreate)

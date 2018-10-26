@@ -308,7 +308,7 @@ namespace Duplicati.Library.Backend
                 string md5Hash = resp.Headers["ETag"];
                 Utility.Utility.CopyStream(mds, stream, true, m_copybuffer);
 
-                if (mds.GetFinalHashString().ToLower() != md5Hash.ToLower())
+                if (!String.Equals(mds.GetFinalHashString(), md5Hash, StringComparison.OrdinalIgnoreCase))
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
             }
         }
@@ -384,7 +384,7 @@ namespace Duplicati.Library.Backend
                 }
 
 
-                if (md5Hash == null || md5Hash.ToLower() != fileHash.ToLower())
+                if (md5Hash == null || !String.Equals(md5Hash, fileHash, StringComparison.OrdinalIgnoreCase))
                 {
                     //Remove the broken file
                     try { Delete(remotename); }

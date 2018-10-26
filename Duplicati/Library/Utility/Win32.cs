@@ -209,7 +209,7 @@ namespace Duplicati.Library.Utility
         /// <param name="processInformationLength">Process information length.</param>
         /// <param name="returnLength">The size of the result.</param>
         [DllImport("ntdll.dll", SetLastError = true)]
-        public static extern int NtQueryInformationProcess(IntPtr hProcess, PROCESS_INFORMATION_CLASS processInformationClass, ref IO_PRIORITY_HINT processInformation, int processInformationLength, IntPtr returnlen);
+        public static extern int NtQueryInformationProcess(IntPtr hProcess, PROCESS_INFORMATION_CLASS processInformationClass, ref IO_PRIORITY_HINT processInformation, int processInformationLength, IntPtr returnLength);
 
         /// <summary>
         /// Sets the priority class for the specified process. This value together with the priority value of each thread of the process determines each thread's base priority level.

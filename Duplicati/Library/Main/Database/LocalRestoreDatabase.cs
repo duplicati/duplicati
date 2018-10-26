@@ -6,7 +6,7 @@ using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Database
 {
-    internal partial class LocalRestoreDatabase : LocalDatabase
+    internal class LocalRestoreDatabase : LocalDatabase
     {
         /// <summary>
         /// The tag used for logging
@@ -100,7 +100,7 @@ namespace Duplicati.Library.Main.Database
                         , m_fileprogtable, m_tempfiletable, m_tempblocktable);
 
                     // Will be one row per file.
-                    int fileCnt = cmd.ExecuteNonQuery(sql);
+                    cmd.ExecuteNonQuery(sql);
 
                     sql = string.Format(
                           @"INSERT INTO ""{0}"" ("
@@ -115,7 +115,7 @@ namespace Duplicati.Library.Main.Database
                         , m_totalprogtable, m_fileprogtable);
 
                     // Will result in a single line (no support to also track metadata)
-                    int totalStatRowCount = cmd.ExecuteNonQuery(sql);
+                    cmd.ExecuteNonQuery(sql);
 
                     // Finally we create TRIGGERs to keep all our statistics up to date.
                     // This is lightning fast, as SQLite uses internal hooks and our indices to do the update magic.

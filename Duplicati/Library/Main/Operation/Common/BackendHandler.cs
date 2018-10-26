@@ -108,13 +108,13 @@ namespace Duplicati.Library.Main.Operation.Common
                 this.LocalTempfile = Library.Utility.TempFile.WrapExistingFile(name);
                 this.LocalTempfile.Protected = true;
             }
-                
+
             public void Encrypt(Options options)
             {
                 if (!this.Encrypted && !options.NoEncryption)
                 {
                     var tempfile = new Library.Utility.TempFile();
-                    using(var enc = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions))
+                    using (var enc = DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions))
                         enc.Encrypt(this.LocalFilename, tempfile);
 
                     this.DeleteLocalFile();
@@ -150,10 +150,10 @@ namespace Duplicati.Library.Main.Operation.Common
             {
                 if (this.LocalTempfile != null)
                 {
-                    try 
+                    try
                     {
                         this.LocalTempfile.Protected = false;
-                        this.LocalTempfile.Dispose(); 
+                        this.LocalTempfile.Dispose();
                     }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
                     finally { this.LocalTempfile = null; }
@@ -180,17 +180,17 @@ namespace Duplicati.Library.Main.Operation.Common
             m_stats = stats;
             m_taskreader = taskreader;
             m_backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, options.RawOptions);
-			
+
             var shortname = m_backendurl;
 
-			// Try not to leak hostnames or other information in the error messages
-			try { shortname = new Library.Utility.Uri(shortname).Scheme; }
-			catch { }
+            // Try not to leak hostnames or other information in the error messages
+            try { shortname = new Library.Utility.Uri(shortname).Scheme; }
+            catch { }
 
-			if (m_backend == null)
+            if (m_backend == null)
                 throw new Duplicati.Library.Interface.UserInformationException(string.Format("Backend not supported: {0}", shortname), "BackendNotSupported");
-		}
-            
+        }
+
         protected Task<T> RunRetryOnMain<T>(FileEntryItem fe, Func<Task<T>> method)
         {
             return RunOnMain<T>(() =>
@@ -213,7 +213,7 @@ namespace Duplicati.Library.Main.Operation.Common
             });
 
         }
-            
+
         public async Task UploadFileAsync(VolumeWriterBase item, Func<string, Task<IndexVolumeWriter>> createIndexFile = null)
         {
             var fe = new FileEntryItem(BackendActionType.Put, item.RemoteFilename);
@@ -231,7 +231,8 @@ namespace Duplicati.Library.Main.Operation.Common
             {
                 try
                 {
-                    await DoWithRetry(fe, async () => {
+                    await DoWithRetry(fe, async () =>
+                    {
                         if (fe.IsRetry)
                             await RenameFileAfterErrorAsync(fe).ConfigureAwait(false);
 
@@ -249,7 +250,8 @@ namespace Duplicati.Library.Main.Operation.Common
 
                         await m_database.UpdateRemoteVolumeAsync(indexFile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
 
-                        await DoWithRetry(indexFile, async () => {
+                        await DoWithRetry(indexFile, async () =>
+                        {
                             if (indexFile.IsRetry)
                                 await RenameFileAfterErrorAsync(indexFile).ConfigureAwait(false);
 
@@ -263,12 +265,12 @@ namespace Duplicati.Library.Main.Operation.Common
 
 
                             return res;
-                        });
+                        }).ConfigureAwait(false);
                     }
 
                     tcs.TrySetResult(true);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     if (ex is System.Threading.ThreadAbortException)
                         tcs.TrySetCanceled();
@@ -300,21 +302,22 @@ namespace Duplicati.Library.Main.Operation.Common
         public Task<IList<Library.Interface.IFileEntry>> ListFilesAsync()
         {
             var fe = new FileEntryItem(BackendActionType.List, null);
-            return RunRetryOnMain(fe, () => 
-                DoList(fe)
+            return RunRetryOnMain(fe, () =>
+                DoList()
             );
         }
 
         public Task<Library.Utility.TempFile> GetFileAsync(string remotename, long size, string remotehash)
         {
             var fe = new FileEntryItem(BackendActionType.Get, remotename, size, remotehash);
-            return RunRetryOnMain(fe, () => DoGet(fe) );
+            return RunRetryOnMain(fe, () => DoGet(fe));
         }
 
         public Task<Tuple<Library.Utility.TempFile, long, string>> GetFileWithInfoAsync(string remotename)
         {
             var fe = new FileEntryItem(BackendActionType.Get, remotename);
-            return RunRetryOnMain(fe, async () => {
+            return RunRetryOnMain(fe, async () =>
+            {
                 var res = await DoGet(fe).ConfigureAwait(false);
                 return new Tuple<Library.Utility.TempFile, long, string>(
                     res,
@@ -324,7 +327,7 @@ namespace Duplicati.Library.Main.Operation.Common
             });
         }
 
-        public Task<Library.Utility.TempFile> GetFileForTestingAsync(string remotename, long size, string remotehash)
+        public Task<Library.Utility.TempFile> GetFileForTestingAsync(string remotename)
         {
             var fe = new FileEntryItem(BackendActionType.Get, remotename);
             fe.VerifyHashOnly = true;
@@ -338,9 +341,9 @@ namespace Duplicati.Library.Main.Operation.Common
                 if (m_backend != null)
                     m_backend.Dispose();
             }
-            catch (Exception dex) 
-            { 
-                Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeError", dex, "Failed to dispose backend instance: {0}", ex.Message); 
+            catch (Exception dex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeError", dex, "Failed to dispose backend instance: {0}", ex.Message);
             }
             m_backend = null;
         }
@@ -355,8 +358,8 @@ namespace Duplicati.Library.Main.Operation.Common
 
             if (m_workerSource.IsCancellationRequested)
                 throw new OperationCanceledException();
-            
-            for(var i = 0; i < m_options.NumberOfRetries; i++)
+
+            for (var i = 0; i < m_options.NumberOfRetries; i++)
             {
                 if (m_options.RetryDelay.Ticks != 0 && i != 0)
                     await Task.Delay(m_options.RetryDelay).ConfigureAwait(false);
@@ -392,13 +395,13 @@ namespace Duplicati.Library.Main.Operation.Common
                     if (!m_uploadSuccess && ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
                     {
                         try
-                        { 
+                        {
                             // If we successfully create the folder, we can re-use the connection
-                            m_backend.CreateFolder(); 
+                            m_backend.CreateFolder();
                             recovered = true;
                         }
                         catch (Exception dex)
-                        { 
+                        {
                             Logging.Log.WriteWarningMessage(LOGTAG, "FolderCreateError", dex, "Failed to create folder: {0}", ex.Message);
                         }
                     }
@@ -419,7 +422,7 @@ namespace Duplicati.Library.Main.Operation.Common
         private async Task RenameFileAfterErrorAsync(FileEntryItem item)
         {
             var p = VolumeBase.ParseFilename(item.RemoteFilename);
-            var guid = VolumeWriterBase.GenerateGuid(m_options);
+            var guid = VolumeWriterBase.GenerateGuid();
             var time = p.Time.Ticks == 0 ? p.Time : p.Time.AddSeconds(1);
             var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
             var oldname = item.RemoteFilename;
@@ -447,7 +450,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 item.DeleteLocalFile();
                 return true;
             }
-            
+
             await m_database.LogRemoteOperationAsync("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
             await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
 
@@ -457,7 +460,7 @@ namespace Duplicati.Library.Main.Operation.Common
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
             else
@@ -473,20 +476,20 @@ namespace Duplicati.Library.Main.Operation.Common
 
             if (m_options.ListVerifyUploads)
             {
-                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var f = m_backend.List().FirstOrDefault(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase));
                 if (f == null)
                     throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
                 else if (f.Size != item.Size && f.Size >= 0)
                     throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
             }
-                
+
             item.DeleteLocalFile();
             await m_database.CommitTransactionAsync("CommitAfterUpload");
 
             return true;
         }
 
-        private async Task<IList<Library.Interface.IFileEntry>> DoList(FileEntryItem item)
+        private async Task<IList<Library.Interface.IFileEntry>> DoList()
         {
             await m_stats.SendEventAsync(BackendActionType.List, BackendEventType.Started, null, -1);
 
@@ -575,7 +578,7 @@ namespace Duplicati.Library.Main.Operation.Common
             try
             {
                 m_backend.CreateFolder();
-            } 
+            }
             catch (Exception ex)
             {
                 result = ex.ToString();
@@ -604,7 +607,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 {
                     using (var fs = System.IO.File.OpenWrite(tmpfile))
                     using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                    using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                    using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                         ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
                 }
                 else
@@ -641,14 +644,14 @@ namespace Duplicati.Library.Main.Operation.Common
                 // Fast exit
                 if (item.VerifyHashOnly)
                     return null;
-                
+
                 // Decrypt before returning
                 if (!m_options.NoEncryption)
                 {
                     try
                     {
-                        using(var tmpfile2 = tmpfile)
-                        { 
+                        using (var tmpfile2 = tmpfile)
+                        {
                             tmpfile = new Library.Utility.TempFile();
 
                             // Auto-guess the encryption module
@@ -658,11 +661,11 @@ namespace Duplicati.Library.Main.Operation.Common
                                 // Check if the file is encrypted with something else
                                 if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                                 {
-                                    using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions))
+                                    using (var encmodule = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions))
                                         if (encmodule != null)
                                         {
-                                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
-                                        encmodule.Decrypt(tmpfile2, tmpfile);
+                                            Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
+                                            encmodule.Decrypt(tmpfile2, tmpfile);
                                         }
                                 }
                                 // Check if the file is not encrypted
@@ -674,13 +677,13 @@ namespace Duplicati.Library.Main.Operation.Common
                                 else
                                 {
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule);
-                                    using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions))
+                                    using (var encmodule = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions))
                                         encmodule.Decrypt(tmpfile2, tmpfile);
                                 }
                             }
                             else
                             {
-                                using(var encmodule = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions))
+                                using (var encmodule = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions))
                                     encmodule.Decrypt(tmpfile2, tmpfile);
                             }
                         }
@@ -701,9 +704,9 @@ namespace Duplicati.Library.Main.Operation.Common
             }
             finally
             {
-                try 
-                { 
-                    if (tmpfile != null) 
+                try
+                {
+                    if (tmpfile != null)
                         tmpfile.Dispose();
                 }
                 catch
@@ -712,31 +715,31 @@ namespace Duplicati.Library.Main.Operation.Common
             }
         }
 
-		private string m_lastThrottleUploadValue = null;
-		private string m_lastThrottleDownloadValue = null;
+        private string m_lastThrottleUploadValue = null;
+        private string m_lastThrottleDownloadValue = null;
 
-		private void HandleProgress(ThrottledStream ts, long pg)
-		{
+        private void HandleProgress(ThrottledStream ts, long pg)
+        {
             if (!m_taskreader.TransferProgressAsync.WaitForTask().Result)
                 throw new OperationCanceledException();
 
-			// Update the throttle speeds if they have changed
-			string tmp;
-			m_options.RawOptions.TryGetValue("throttle-upload", out tmp);
-			if (tmp != m_lastThrottleUploadValue)
-			{
-				ts.WriteSpeed = m_options.MaxUploadPrSecond;
-				m_lastThrottleUploadValue = tmp;
-			}
+            // Update the throttle speeds if they have changed
+            string tmp;
+            m_options.RawOptions.TryGetValue("throttle-upload", out tmp);
+            if (tmp != m_lastThrottleUploadValue)
+            {
+                ts.WriteSpeed = m_options.MaxUploadPrSecond;
+                m_lastThrottleUploadValue = tmp;
+            }
 
-			m_options.RawOptions.TryGetValue("throttle-download", out tmp);
-			if (tmp != m_lastThrottleDownloadValue)
-			{
-				ts.ReadSpeed = m_options.MaxDownloadPrSecond;
-				m_lastThrottleDownloadValue = tmp;
-			}
+            m_options.RawOptions.TryGetValue("throttle-download", out tmp);
+            if (tmp != m_lastThrottleDownloadValue)
+            {
+                ts.ReadSpeed = m_options.MaxDownloadPrSecond;
+                m_lastThrottleDownloadValue = tmp;
+            }
 
-			m_stats.UpdateBackendProgress(pg);
+            m_stats.UpdateBackendProgress(pg);
         }
 
         protected override void Dispose(bool disposing)
@@ -745,7 +748,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
             if (m_backend != null)
                 try { m_backend.Dispose(); }
-                catch {}
+                catch { }
                 finally { m_backend = null; }
         }
     }

@@ -13,6 +13,13 @@
                 </a>
 
                 <dl class="taskmenu" ng-show="$parent.TaskMenuID == item.Backup.ID">
+                    <span ng-show="item.Backup.Description">
+                        <dt translate>Description:</dt>
+                        <dd>
+                            {{item.Backup.Description}}
+                        </dd>
+                    </span>
+
                     <dt translate>Operations:</dt>
                     <dd>
                         <p ng-click="doRun(item.Backup.ID)" translate>Run now</p>
