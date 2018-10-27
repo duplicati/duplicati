@@ -63,6 +63,10 @@
     <Compile Include="SystemIO.cs" />
     <Compile Include="SystemIOWindows.cs" />
     <Compile Include="SystemIOLinux.cs" />
+    <Compile Include="VssBackupComponents.cs" />
+    <Compile Include="Util.cs" />
+    <Compile Include="DefineDosDevice.cs" />
+    <Compile Include="WinNativeMethods.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -78,5 +82,11 @@
   </Target>
   -->
   <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets" Condition="Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" />
 </Project>
