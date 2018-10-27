@@ -21,7 +21,6 @@ using System.Security.AccessControl;
 
 #endregion
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
@@ -162,7 +161,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The opened backup filestream</returns>
         public static System.IO.Stream OpenAsBackupFile(string filename)
         {
-            SafeFileHandle hFile = CreateFile(filename, FileAccess.ReadControl, FileShare.None, IntPtr.Zero, CreationDisposition.OpenExisting, FileAttributes.BackupSemantics | FileAttributes.SequentialScan, IntPtr.Zero);
+            var hFile = CreateFile(filename, FileAccess.ReadControl, FileShare.None, IntPtr.Zero, CreationDisposition.OpenExisting, FileAttributes.BackupSemantics | FileAttributes.SequentialScan, IntPtr.Zero);
 
             if (hFile.IsInvalid)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
