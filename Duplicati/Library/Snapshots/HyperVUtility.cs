@@ -195,7 +195,7 @@ namespace Duplicati.Library.Snapshots
         {
             using (var vssBackupComponents = new VssBackupComponents())
             {
-                var writerGUIDS = new Guid[] { HyperVWriterGuid };
+                var writerGUIDS = new [] { HyperVWriterGuid };
 
                 try
                 {
@@ -203,7 +203,7 @@ namespace Duplicati.Library.Snapshots
                 }
                 catch (Exception)
                 {
-                    throw new Duplicati.Library.Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.", "NoHyperVVssWriter");
+                    throw new Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.", "NoHyperVVssWriter");
                 }
                 foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS)) {
                     yield return o;

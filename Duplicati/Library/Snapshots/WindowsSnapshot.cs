@@ -44,7 +44,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The main reference to the backup controller
         /// </summary>
-        private VssBackupComponents _vssBackupComponents;
+        private readonly VssBackupComponents _vssBackupComponents;
 
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
@@ -55,10 +55,7 @@ namespace Duplicati.Library.Snapshots
         {
             try
             {
-                //Prepare the backup
-                //m_backup = VssBackupComponentsHelper.GetVssBackupComponents();
                 _vssBackupComponents = new VssBackupComponents();
-
 
                 // Default to exclude the System State writer
                 var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };

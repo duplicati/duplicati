@@ -119,7 +119,7 @@ namespace Duplicati.Library.Snapshots
                     catch { }
              }
             
-            IsMSSQLInstalled = arrInstalledInstances == null ? false : arrInstalledInstances.Length > 0;
+            IsMSSQLInstalled = arrInstalledInstances != null && arrInstalledInstances.Length > 0;
 
             if (!IsMSSQLInstalled)
                 Logging.Log.WriteInformationMessage(LOGTAG, "NoMSSQLInstance", "Cannot find any MS SQL Server instance. MS SQL Server is probably not installed.");
@@ -138,7 +138,7 @@ namespace Duplicati.Library.Snapshots
 
             using (var vssBackupComponents = new VssBackupComponents())
             {
-                var writerGUIDS = new Guid[] { MSSQLWriterGuid };
+                var writerGUIDS = new [] { MSSQLWriterGuid };
                 try
                 {
                     vssBackupComponents.SetupWriters(writerGUIDS, null);

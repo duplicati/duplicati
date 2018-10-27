@@ -89,7 +89,7 @@ namespace Duplicati.Library.IO
             {
                 if (!_vssBackupComponents.WriterMetadata.Any(o => o.WriterId.Equals(writerGUID)))
                 {
-                    throw new Exception("bla");
+                    throw new Exception(string.Format("Writer with GUID {0} was not added to VSS writer set.", writerGUID.ToString()));
                 }
             }
         }
@@ -163,7 +163,7 @@ namespace Duplicati.Library.IO
             // check if writers got enabled
             foreach (var writerGUID in writers)
             {
-                var writer = _vssBackupComponents.WriterMetadata.Where(o => o.WriterId.Equals(writerGUID)).First();
+                var writer = _vssBackupComponents.WriterMetadata.First(o => o.WriterId.Equals(writerGUID));
                 foreach (var component in writer.Components)
                 {
                     yield return new WriterMetaData{ Guid = writerGUID,
