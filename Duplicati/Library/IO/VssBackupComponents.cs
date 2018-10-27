@@ -277,7 +277,7 @@ namespace Duplicati.Library.IO
 
     public static class VssBackupComponentsHelper
     {
-        public static IVssBackComponentsDuplicati GetVssBackupComponents()
+        public static IVssBackupComponents GetVssBackupComponents()
         {
             //Prepare the backup
             IVssBackupComponents m_backup = CreateVssBackupComponents();
@@ -285,7 +285,7 @@ namespace Duplicati.Library.IO
             m_backup.SetContext(VssSnapshotContext.Backup);
             m_backup.SetBackupState(false, true, VssBackupType.Full, false);
 
-            return (IVssBackComponentsDuplicati) m_backup;
+            return m_backup;
         }
 
         public static IVssBackupComponents CreateVssBackupComponents()
