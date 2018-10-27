@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using Alphaleonis.Win32.Vss;
 using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Snapshots
@@ -45,35 +44,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The main reference to the backup controller
         /// </summary>
-        private IVssBackupComponents m_backup;
-
-        /// <summary>
-        /// The list of snapshot ids for each volume, key is the path root, eg C:\.
-        /// The dictionary is case insensitive
-        /// </summary>
-        private readonly Dictionary<string, Guid> m_volumes;
-
-        /// <summary>
-        /// The mapping of snapshot sources to their snapshot entries , key is the path root, eg C:\.
-        /// The dictionary is case insensitive
-        /// </summary>
-        private readonly Dictionary<string, string> m_volumeMap;
-
-        /// <summary>
-        /// The mapping of snapshot sources to their snapshot entries , key is the path root, eg C:\.
-        /// The dictionary is case insensitive
-        /// </summary>
-        private readonly Dictionary<string, string> m_volumeReverseMap;
-
-        /// <summary>
-        /// A list of mapped drives
-        /// </summary>
-        private List<DefineDosDevice> m_mappedDrives;
-
-        /// <summary>
-        /// Commonly used string element
-        /// </summary>
-        private static string SLASH = Path.DirectorySeparatorChar.ToString();
+        private VssBackupComponents _vssBackupComponents;
 
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
@@ -85,10 +56,9 @@ namespace Duplicati.Library.Snapshots
             try
             {
                 //Prepare the backup
-                m_backup = SystemIOWindows.CreateVssBackupComponents();
-                m_backup.InitializeForBackup(null);
-                m_backup.SetContext(VssSnapshotContext.Backup);
-                m_backup.SetBackupState(false, true, VssBackupType.Full, false);
+                //m_backup = VssBackupComponentsHelper.GetVssBackupComponents();
+                _vssBackupComponents = new VssBackupComponents();
+
 
                 // Default to exclude the System State writer
                 var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
@@ -100,68 +70,16 @@ namespace Duplicati.Library.Snapshots
                         .Select(x => new Guid(x))
                         .ToArray();
                 }
+                _vssBackupComponents.SetupWriters(null, excludedWriters);
 
-                if (excludedWriters.Length > 0)
-                    m_backup.DisableWriterClasses(excludedWriters.ToArray());
-                
-                try
-                {
-                    m_backup.GatherWriterMetadata();
-                }
-                finally
-                {
-                    m_backup.FreeWriterMetadata();
-                }
+                _vssBackupComponents.InitShadowVolumes(sources);
 
-                m_backup.StartSnapshotSet();
-
-                //Figure out which volumes are in the set
-                m_volumes = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
-                foreach (var s in sources)
-                {
-                    var drive = SystemIO.IO_WIN.GetPathRoot(s);
-                    if (!m_volumes.ContainsKey(drive))
-                    {
-                        //TODO: that seems a bit harsh... we could fall-back to not using VSS for that volume only
-                        if (!m_backup.IsVolumeSupported(drive))
-                            throw new VssVolumeNotSupportedException(drive);
-
-                        m_volumes.Add(drive, m_backup.AddToSnapshotSet(drive));
-                    }
-                }
-
-                //Make all writers aware that we are going to do the backup
-                m_backup.PrepareForBackup();
-
-                //Create the shadow volumes
-                m_backup.DoSnapshotSet();
-
-                //Make a little lookup table for faster translation
-                m_volumeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var kvp in m_volumes)
-                {
-                    m_volumeMap.Add(kvp.Key, m_backup.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject);
-                }
-
-                m_volumeReverseMap = m_volumeMap.ToDictionary(x => x.Value, x => x.Key);
+                _vssBackupComponents.MapVolumesToSnapShots();
 
                 //If we should map the drives, we do that now and update the volumeMap
                 if (Utility.Utility.ParseBoolOption(options, "vss-use-mapping"))
                 {
-                    m_mappedDrives = new List<DefineDosDevice>();
-                    foreach (var k in new List<string>(m_volumeMap.Keys))
-                    {
-                        try
-                        {
-                            DefineDosDevice d;
-                            m_mappedDrives.Add(d = new DefineDosDevice(m_volumeMap[k]));
-                            m_volumeMap[k] = Utility.Utility.AppendDirSeparator(d.Drive);
-                        }
-						catch(Exception ex)
-                        {
-							Logging.Log.WriteVerboseMessage(LOGTAG, "SubstMappingfailed", ex, "Failed to map VSS path {0} to drive", k);
-                        }
-                    }
+                    _vssBackupComponents.MapDrives();
                 }
             }
             catch
@@ -190,8 +108,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFolders(string localFolderPath)
         {
-            var root = Utility.Utility.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
-            var volumePath = Utility.Utility.AppendDirSeparator(ConvertToSnapshotPath(root));
+            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
+            var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
 
             string[] tmp = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
@@ -233,8 +151,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFiles(string localFolderPath)
         {
-            var root = Utility.Utility.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
-            var volumePath = Utility.Utility.AppendDirSeparator(ConvertToSnapshotPath(root));
+            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
+            var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
 
             string[] tmp = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
@@ -381,7 +299,7 @@ namespace Duplicati.Library.Snapshots
             if (!Path.IsPathRooted(snapshotPath))
                 throw new InvalidOperationException();
 
-            foreach (var kvp in m_volumeReverseMap)
+            foreach (var kvp in _vssBackupComponents.SnapshotDeviceAndVolumes)
             {
 				if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparison))
                     return Path.Combine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
@@ -397,14 +315,13 @@ namespace Duplicati.Library.Snapshots
                 throw new InvalidOperationException();
 
             var root = SystemIO.IO_WIN.GetPathRoot(localPath);
-            if (!m_volumeMap.TryGetValue(root, out var volumePath))
-                throw new InvalidOperationException();
+            var volumePath = _vssBackupComponents.GetVolumeFromCache(root);
 
             // Note: Do NOT use Path.Combine as it strips the UNC path prefix
             var subPath = localPath.Substring(root.Length);
-            if (!subPath.StartsWith(SLASH, StringComparison.Ordinal))
+            if (!subPath.StartsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
             {
-                volumePath = Duplicati.Library.Utility.Utility.AppendDirSeparator(volumePath, SLASH);
+                volumePath = IO.Util.AppendDirSeparator(volumePath, Path.DirectorySeparatorChar.ToString());
             }
 
             var mappedPath = volumePath + subPath;
@@ -433,59 +350,7 @@ namespace Duplicati.Library.Snapshots
         {
             if (disposing)
             {
-                try
-                {
-                    if (m_mappedDrives != null)
-                    {
-                        foreach (var d in m_mappedDrives)
-                        {
-                            d.Dispose();
-                        }
-
-                        m_mappedDrives = null;
-                    }
-                }
-				catch (Exception ex)
-                {
-					Logging.Log.WriteVerboseMessage(LOGTAG, "MappedDriveCleanupError", ex, "Failed during VSS mapped drive unmapping");
-                }
-
-				try
-				{
-					m_backup?.BackupComplete();
-				}
-				catch (Exception ex)
-				{
-					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSTerminateError", ex, "Failed to signal VSS completion");
-				}
-
-                try
-                {
-                    if (m_backup != null)
-                    {
-                        foreach (var g in m_volumes.Values)
-                        {
-							try
-							{
-								m_backup.DeleteSnapshot(g, false);
-							}
-							catch (Exception ex)
-							{
-								Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteError", ex, "Failed to close VSS snapshot");
-							}
-                        }
-                    }
-                }
-				catch (Exception ex)
-                {
-					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteCleanError", ex, "Failed during VSS esnapshot closing");
-                }
-
-                if (m_backup != null)
-                {
-                    m_backup.Dispose();
-                    m_backup = null;
-                }
+                _vssBackupComponents.Dispose();
             }
 
             base.Dispose(disposing);
