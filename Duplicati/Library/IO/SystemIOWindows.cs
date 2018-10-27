@@ -636,23 +636,6 @@ namespace Duplicati.Library.IO
         {
             return AlphaFS.File.GetLastWriteTimeUtc(path);
         }
-
-        public static IVssBackupComponents CreateVssBackupComponents()
-        {
-            // Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
-            var assemblyLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            if (assemblyLocation == null)
-                throw new InvalidOperationException();
-
-            var alphadir = Path.Combine(assemblyLocation, "alphavss");
-            var alphadll = Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
-            var vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
-            if (vss == null)
-                throw new InvalidOperationException();
-
-            return vss.CreateVssBackupComponents();
-        }
-
         #endregion
     }
 }
