@@ -137,7 +137,7 @@ namespace Duplicati.Library.Snapshots
             public SnapShot(string path)
             {
                 m_name = $"duplicati-{Guid.NewGuid().ToString()}";
-                LocalPath = System.IO.Directory.Exists(path) ? Utility.Utility.AppendDirSeparator(path) : path;
+                LocalPath = System.IO.Directory.Exists(path) ? Util.AppendDirSeparator(path) : path;
                 Initialize(LocalPath);
             }
 
@@ -286,7 +286,7 @@ namespace Duplicati.Library.Snapshots
                 if (string.IsNullOrEmpty(MountPoint) || MountPoint.Trim().Length == 0)
                     throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("mountpoint", output));
 
-                MountPoint = Utility.Utility.AppendDirSeparator(MountPoint);
+                MountPoint = Util.AppendDirSeparator(MountPoint);
             }
 
             /// <summary>
@@ -301,7 +301,7 @@ namespace Duplicati.Library.Snapshots
                     throw new InvalidOperationException();
 
                 //Create the snapshot volume
-                var output = ExecuteCommand("create-lvm-snapshot.sh", $"\"{m_name}\" \"{DeviceName}\" \"{Utility.Utility.AppendDirSeparator(Utility.TempFolder.SystemTempPath)}\"", 0);
+                var output = ExecuteCommand("create-lvm-snapshot.sh", $"\"{m_name}\" \"{DeviceName}\" \"{Util.AppendDirSeparator(Utility.TempFolder.SystemTempPath)}\"", 0);
 
                 var rex = new System.Text.RegularExpressions.Regex("tmpdir=\"(?<tmpdir>[^\"]+)\"");
                 var m = rex.Match(output);
@@ -314,7 +314,7 @@ namespace Duplicati.Library.Snapshots
                 if (!System.IO.Directory.Exists(SnapshotPath))
                     throw new Exception(Strings.LinuxSnapshot.MountFolderMissingError(SnapshotPath, output));
 
-                SnapshotPath = Utility.Utility.AppendDirSeparator(SnapshotPath);
+                SnapshotPath = Util.AppendDirSeparator(SnapshotPath);
             }
         }
 
