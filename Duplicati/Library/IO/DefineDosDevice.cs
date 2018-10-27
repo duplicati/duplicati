@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.IO
 {
     /// <summary>
     /// Implements a convenient wrapping for mapping a path to a drive letter
