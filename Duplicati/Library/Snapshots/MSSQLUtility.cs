@@ -1,7 +1,6 @@
-﻿using Alphaleonis.Win32.Vss;
+﻿using Duplicati.Library.IO;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Duplicati.Library.Snapshots
@@ -136,50 +135,24 @@ namespace Duplicati.Library.Snapshots
                 return;
 
             m_DBs.Clear();
-            
-            //Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
-            string alphadir = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "alphavss");
-            string alphadll = Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
-            IVssImplementation vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
 
-            using (var m_backup = vss.CreateVssBackupComponents())
+            using (var vssBackupComponents = new VssBackupComponents())
             {
-                m_backup.InitializeForBackup(null);
-                m_backup.SetContext(VssSnapshotContext.Backup);
-                m_backup.SetBackupState(false, true, VssBackupType.Full, false);
-                m_backup.EnableWriterClasses(new Guid[] { MSSQLWriterGuid });
-
+                var writerGUIDS = new Guid[] { MSSQLWriterGuid };
                 try
                 {
-                    m_backup.GatherWriterMetadata();
-                    var writerMetaData = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(MSSQLWriterGuid));
-
-                    if (writerMetaData == null)
-                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.", "NoMsSqlVssWriter");
-
-                    foreach (var component in writerMetaData.Components)
-                    {
-                        var paths = new List<string>();
-
-                        foreach (var file in component.Files)
-                            if (file.FileSpecification.Contains("*"))
-                            {
-                                if (Directory.Exists(Utility.Utility.AppendDirSeparator(file.Path)))
-                                    paths.Add(Utility.Utility.AppendDirSeparator(file.Path));
-                            }
-                            else
-                            {
-                                if (File.Exists(Path.Combine(file.Path, file.FileSpecification)))
-                                    paths.Add(Path.Combine(file.Path, file.FileSpecification));
-                            }
-
-                        m_DBs.Add(new MSSQLDB(component.ComponentName, component.LogicalPath + "\\" + component.ComponentName, 
-                            paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1)).Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList()));
-                    }
+                    vssBackupComponents.SetupWriters(writerGUIDS, null);
                 }
-                finally
+                catch (Exception)
                 {
-                    m_backup.FreeWriterMetadata();
+                    throw new Interface.UserInformationException("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.", "NoMsSqlVssWriter");
+                }
+
+                foreach (var o in  vssBackupComponents.ParseWriterMetaData(writerGUIDS))
+                {
+                    m_DBs.Add(new MSSQLDB(o.Name, o.LogicalPath + "\\" + o.Name, o.Paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1))
+                                           .Distinct(Utility.Utility.ClientFilenameStringComparer)
+                                          .OrderBy(a => a).ToList()));
                 }
             }
         }
