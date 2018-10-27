@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -754,10 +754,10 @@ namespace Duplicati.Library.Main.Operation
                     // Find the largest common prefix
                     var largest_prefix = options.DontCompressRestorePaths ? "" : database.GetLargestPrefix();
 
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "MappingRestorePath", "Mapping restore path prefix to \"{0}\" to \"{1}\"", largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "MappingRestorePath", "Mapping restore path prefix to \"{0}\" to \"{1}\"", largest_prefix, Util.AppendDirSeparator(options.Restorepath));
     
                     // Set the target paths, special care with C:\ and /
-                    database.SetTargetPaths(largest_prefix, Library.Utility.Utility.AppendDirSeparator(options.Restorepath));
+                    database.SetTargetPaths(largest_prefix, Util.AppendDirSeparator(options.Restorepath));
                 }
                 else
                 {

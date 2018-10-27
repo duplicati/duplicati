@@ -25,6 +25,7 @@ using Newtonsoft.Json.Converters;
 using Duplicati.Library.Strings;
 using System.Net;
 using System.Text;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Backend.OpenStack
 {
@@ -319,7 +320,7 @@ namespace Duplicati.Library.Backend.OpenStack
             var uri = new Utility.Uri(url);
 
             m_container = uri.Host;
-            m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator("/" + uri.Path, "/");
+            m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             // For OpenStack we do not use a leading slash
             if (m_prefix.StartsWith("/", StringComparison.Ordinal))

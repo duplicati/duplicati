@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.IO;
 using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Utility
@@ -356,7 +357,7 @@ namespace Duplicati.Library.Utility
                     yield return windir;
 
                     // Also exclude "C:\Windows.old\"
-                    yield return Utility.AppendDirSeparator(windir.TrimEnd('\\', '/') + ".old");
+                    yield return Util.AppendDirSeparator(windir.TrimEnd('\\', '/') + ".old");
                 }
             }
 
@@ -581,7 +582,7 @@ namespace Duplicati.Library.Utility
                 // Meaning a filter for 'C:\Windows' won't match 'C:\Windows\'.
                 // So this makes sure special folder's filter's have a trailing directory separator.
                 // (Alternatively, this could append '*' to all folder filters.)
-                return Utility.AppendDirSeparator(filter);
+                return Util.AppendDirSeparator(filter);
             }
             else
             {

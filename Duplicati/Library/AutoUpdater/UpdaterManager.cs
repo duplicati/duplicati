@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -149,7 +150,7 @@ namespace Duplicati.Library.AutoUpdater
                 var attempts = new List<string>();
 
                 // We do not want to install anything in the basedir, if the application is installed in "ProgramFiles"
-                if (!string.IsNullOrWhiteSpace(programfiles) && !InstalledBaseDir.StartsWith(Library.Utility.Utility.AppendDirSeparator(programfiles), StringComparison.Ordinal))
+                if (!string.IsNullOrWhiteSpace(programfiles) && !InstalledBaseDir.StartsWith(Util.AppendDirSeparator(programfiles), StringComparison.Ordinal))
                     attempts.Add(System.IO.Path.Combine(InstalledBaseDir, "updates"));
 
                 if (Library.Utility.Utility.IsClientOSX)
@@ -510,7 +511,7 @@ namespace Duplicati.Library.AutoUpdater
 
                                     System.IO.Directory.CreateDirectory(targetfolder);
 
-                                    var tempfolderpath = Duplicati.Library.Utility.Utility.AppendDirSeparator(tempfolder);
+                                    var tempfolderpath = Util.AppendDirSeparator(tempfolder);
                                     var tempfolderlength = tempfolderpath.Length;
 
                                     // Would be nice, but does not work :(
@@ -605,9 +606,9 @@ namespace Duplicati.Library.AutoUpdater
                 var paths = update.Files.Where(x => !x.Ignore).ToDictionary(x => x.Path.Replace('/', System.IO.Path.DirectorySeparatorChar), Library.Utility.Utility.ClientFilenameStringComparer);
                 paths.Add(manifest.Path, manifest);
 
-                var ignores = (from x in update.Files where x.Ignore select Library.Utility.Utility.AppendDirSeparator(x.Path.Replace('/', System.IO.Path.DirectorySeparatorChar))).ToList();
+                var ignores = (from x in update.Files where x.Ignore select Util.AppendDirSeparator(x.Path.Replace('/', System.IO.Path.DirectorySeparatorChar))).ToList();
 
-                folder = Library.Utility.Utility.AppendDirSeparator(folder);
+                folder = Util.AppendDirSeparator(folder);
                 var baselen = folder.Length;
 
                 foreach (var file in Library.Utility.Utility.EnumerateFileSystemEntries(folder))
@@ -718,7 +719,7 @@ namespace Duplicati.Library.AutoUpdater
             var localManifest = remoteManifest.Clone();
             localManifest.RemoteURLS = null;
 
-            inputfolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(inputfolder);
+            inputfolder = Util.AppendDirSeparator(inputfolder);
             var baselen = inputfolder.Length;
             var dirsep = System.IO.Path.DirectorySeparatorChar.ToString();
 

@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Snapshots
             if (Utility.Utility.IsClientLinux)
                 throw new Interface.UserInformationException(Strings.USNHelper.LinuxNotSupportedError, "UsnOnLinuxNotSupported");
 
-            m_volume = Utility.Utility.AppendDirSeparator(volumeRoot);
+            m_volume = Util.AppendDirSeparator(volumeRoot);
 
             try
             {
@@ -148,7 +148,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of tuples with changed files and folders and their type</returns>
         public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long minUsn, ChangeReason reason)
         {
-            var isFolder = sourceFileOrFolder.EndsWith(Utility.Utility.DirectorySeparatorString, StringComparison.Ordinal);
+            var isFolder = sourceFileOrFolder.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal);
 
             foreach (var r in GetRecords(minUsn))
             {
@@ -499,7 +499,7 @@ namespace Duplicati.Library.Snapshots
 
                 if (rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory))
                 {
-                    path = Utility.Utility.AppendDirSeparator(path);
+                    path = Util.AppendDirSeparator(path);
                 }
 
                 // set resolved path

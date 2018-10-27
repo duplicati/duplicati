@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using HttpServer.HttpModules;
@@ -248,9 +248,9 @@ namespace Duplicati.Server.WebServer
                 if (!string.IsNullOrWhiteSpace(userroot)
                     &&
                     (
-                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison)
+                        userroot.StartsWith(Util.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison)
                         ||
-                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparison)
+                        userroot.StartsWith(Util.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparison)
                     )
                 )
 #endif

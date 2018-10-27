@@ -102,7 +102,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             try
             {
                 if (path != "" && path != "/")
-                    path = Duplicati.Library.Utility.Utility.AppendDirSeparator(path);
+                    path = Util.AppendDirSeparator(path);
 
                 IEnumerable<Serializable.TreeNode> res;
 
@@ -223,7 +223,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     var accessible = isFile || canAccess(s);
                     var isLeaf = isFile || !accessible || isEmptyFolder(s);
 
-                    var rawid = isFolder ? Library.Utility.Utility.AppendDirSeparator(s) : s;
+                    var rawid = isFolder ? Util.AppendDirSeparator(s) : s;
                     if (skipFiles && !isFolder)
                         continue;
 

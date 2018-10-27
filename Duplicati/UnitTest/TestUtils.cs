@@ -21,6 +21,7 @@ using Duplicati.Library.Utility;
 using System.Linq;
 using Duplicati.Library.Logging;
 using System.Reflection;
+using Duplicati.Library.IO;
 
 namespace Duplicati.UnitTest
 {
@@ -68,7 +69,7 @@ namespace Duplicati.UnitTest
         /// <param name="targetfolder">Destination directory path</param>
         public static void CopyDirectoryRecursive(string sourcefolder, string targetfolder)
         {
-            sourcefolder = Library.Utility.Utility.AppendDirSeparator(sourcefolder);
+            sourcefolder = Util.AppendDirSeparator(sourcefolder);
 
             var work = new Queue<string>();
             work.Enqueue(sourcefolder);
@@ -150,8 +151,8 @@ namespace Duplicati.UnitTest
         public static void VerifyDir(string f1, string f2, bool verifymetadata)
         {
             var anymissing = false;
-            f1 = Utility.AppendDirSeparator(f1);
-            f2 = Utility.AppendDirSeparator(f2);
+            f1 = Util.AppendDirSeparator(f1);
+            f2 = Util.AppendDirSeparator(f2);
 
             var folders1 = Utility.EnumerateFolders(f1);
             var folders2 = Utility.EnumerateFolders(f2).ToList();

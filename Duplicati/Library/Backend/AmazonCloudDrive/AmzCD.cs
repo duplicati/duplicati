@@ -21,6 +21,7 @@ using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using System.IO;
 using System.Net;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Backend.AmazonCloudDrive
 {
@@ -72,7 +73,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         public AmzCD(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
-            m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(uri.HostAndPath, "/");
+            m_path = Util.AppendDirSeparator(uri.HostAndPath, "/");
 
             if (options.ContainsKey(AUTHID_OPTION))
                 m_authid = options[AUTHID_OPTION];

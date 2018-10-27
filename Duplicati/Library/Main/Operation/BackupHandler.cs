@@ -32,6 +32,7 @@ using CoCoL;
 using System.Threading;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -376,7 +377,7 @@ namespace Duplicati.Library.Main.Operation
                 Utility.VerifyParameters(m_database, m_options);
 
                 var probe_path = m_database.GetFirstPath();
-                if (probe_path != null && Duplicati.Library.Utility.Utility.GuessDirSeparator(probe_path) != System.IO.Path.DirectorySeparatorChar.ToString())
+                if (probe_path != null && Util.GuessDirSeparator(probe_path) != System.IO.Path.DirectorySeparatorChar.ToString())
                     throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"), "CrossOsDatabaseReuseNotSupported");
 
                 if (m_database.PartiallyRecreated)

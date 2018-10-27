@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 //
@@ -23,6 +23,7 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Main
 {
@@ -898,7 +899,7 @@ namespace Duplicati.Library.Main
                         foundAnyPaths = true;
 
                         if (!fi.Exists)
-                            source = Library.Utility.Utility.AppendDirSeparator(source);
+                            source = Util.AppendDirSeparator(source);
 
                         sources.Add(source);
                     }

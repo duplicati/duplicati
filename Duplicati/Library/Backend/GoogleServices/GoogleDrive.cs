@@ -25,6 +25,7 @@ using Newtonsoft.Json;
 using Duplicati.Library.Backend.GoogleServices;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Backend.GoogleDrive
 {
@@ -49,7 +50,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         {
             var uri = new Utility.Uri(url);
 
-            m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(uri.HostAndPath, "/");
+            m_path = Util.AppendDirSeparator(uri.HostAndPath, "/");
 
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))

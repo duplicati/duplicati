@@ -1,4 +1,4 @@
-//  Copyright (C) 2013, The Duplicati Team
+﻿//  Copyright (C) 2013, The Duplicati Team
 
 //  http://www.duplicati.com, info@duplicati.com
 //
@@ -19,6 +19,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -107,7 +108,7 @@ namespace Duplicati.Library.Main.Database
                 else if (m_lookup != null)
                 {
                     //Maintain the hotpath lookup information
-                    prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.Combine(prefix, p));
+                    prefix = Util.AppendDirSeparator(System.IO.Path.Combine(prefix, p));
                     m_lookup.Add(new KeyValuePair<string, FolderEntry>(prefix, cur));
                 }
 
@@ -133,7 +134,7 @@ namespace Duplicati.Library.Main.Database
                 if (m_lookup != null)
                 {
                     //Maintain the hotpath lookup information
-                    prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.Combine(prefix, p));
+                    prefix = Util.AppendDirSeparator(System.IO.Path.Combine(prefix, p));
                     m_lookup.Add(new KeyValuePair<string, FolderEntry>(prefix, cur));
                 }
             }

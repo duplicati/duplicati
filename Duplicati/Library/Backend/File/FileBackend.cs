@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -297,14 +297,14 @@ namespace Duplicati.Library.Backend
             string root;
             if (Utility.Utility.IsClientLinux)
             {
-                string path = Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(m_path));
+                string path = Util.AppendDirSeparator(System.IO.Path.GetFullPath(m_path));
                 root = "/";
 
                 //Find longest common prefix from mounted devices
                 //TODO: Can trick this with symlinks, where the symlink is on one mounted volume,
                 // and the actual storage is on another
                 foreach (System.IO.DriveInfo di in System.IO.DriveInfo.GetDrives())
-                    if (path.StartsWith(Utility.Utility.AppendDirSeparator(di.Name), StringComparison.Ordinal) && di.Name.Length > root.Length)
+                    if (path.StartsWith(Util.AppendDirSeparator(di.Name), StringComparison.Ordinal) && di.Name.Length > root.Length)
                         root = di.Name;
             }
             else

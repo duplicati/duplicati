@@ -17,6 +17,7 @@
 using System;
 using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Net;
@@ -94,7 +95,7 @@ namespace Duplicati.Library.Backend.Box
         {
             var uri = new Utility.Uri(url);
 
-            m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(uri.HostAndPath, "/");
+            m_path = Util.AppendDirSeparator(uri.HostAndPath, "/");
 
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))

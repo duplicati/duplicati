@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 using System.Text.RegularExpressions;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Utility
 {
@@ -162,7 +163,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFiles(string basepath, IFilter filter)
         {
-            return EnumerateFileSystemEntries(basepath, filter).Where(x => !x.EndsWith(DirectorySeparatorString, StringComparison.Ordinal));
+            return EnumerateFileSystemEntries(basepath, filter).Where(x => !x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -174,7 +175,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full paths</returns>
         public static IEnumerable<string> EnumerateFolders(string basepath, IFilter filter)
         {
-            return EnumerateFileSystemEntries(basepath, filter).Where(x => x.EndsWith(DirectorySeparatorString, StringComparison.Ordinal));
+            return EnumerateFileSystemEntries(basepath, filter).Where(x => x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -260,7 +261,7 @@ namespace Duplicati.Library.Utility
 
             if (IsFolder(rootpath, attributeReader))
             {
-                rootpath = AppendDirSeparator(rootpath);
+                rootpath = Util.AppendDirSeparator(rootpath);
                 try
                 {
 
@@ -280,7 +281,7 @@ namespace Duplicati.Library.Utility
 
                 while (lst.Count > 0)
                 {
-                    var f = AppendDirSeparator(lst.Pop());
+                    var f = Util.AppendDirSeparator(lst.Pop());
 
                     yield return f;
 
@@ -288,7 +289,7 @@ namespace Duplicati.Library.Utility
                     {
                         foreach (var s in folderList(f))
                         {
-                            var sf = AppendDirSeparator(s);
+                            var sf = Util.AppendDirSeparator(s);
                             try
                             {
                                 var attr = attributeReader?.Invoke(sf) ?? FileAttributes.Directory;
@@ -412,7 +413,7 @@ namespace Duplicati.Library.Utility
         /// (note that this returns false if the two argument paths are identical!)</returns>
         public static bool IsPathBelowFolder(string fileOrFolderPath, string parentFolder)
         {
-            var sanitizedParentFolder = AppendDirSeparator(parentFolder);
+            var sanitizedParentFolder = Util.AppendDirSeparator(parentFolder);
             return fileOrFolderPath.StartsWith(sanitizedParentFolder, ClientFilenameStringComparison) && 
                    !fileOrFolderPath.Equals(sanitizedParentFolder, ClientFilenameStringComparison);
         }
@@ -434,9 +435,9 @@ namespace Duplicati.Library.Utility
             var last = path.LastIndexOf(Path.DirectorySeparatorChar, len);
             if (last == -1 || last == 0 && len == 0)
                 return null;
-
+            
             if (last == 0 && !IsClientWindows)
-                return DirectorySeparatorString;
+                return Util.DirectorySeparatorString;
 
             var parent = path.Substring(0, last);
 
@@ -518,43 +519,6 @@ namespace Duplicati.Library.Utility
             return EnumerateFolders(folder, filter).Sum((path) => new FileInfo(path).Length);
         }
 
-        /// <summary>
-        /// A cached instance of the directory separator as a string
-        /// </summary>
-        public static readonly string DirectorySeparatorString = Path.DirectorySeparatorChar.ToString();
-
-        /// <summary>
-        /// Appends the appropriate directory separator to paths, depending on OS.
-        /// Does not append the separator if the path already ends with it.
-        /// </summary>
-        /// <param name="path">The path to append to</param>
-        /// <returns>The path with the directory separator appended</returns>
-        public static string AppendDirSeparator(string path)
-        {
-            return AppendDirSeparator(path, DirectorySeparatorString);
-        }
-
-        /// <summary>
-        /// Appends the specified directory separator to paths.
-        /// Does not append the separator if the path already ends with it.
-        /// </summary>
-        /// <param name="path">The path to append to</param>
-        /// <param name="separator">The directory separator to use</param>
-        /// <returns>The path with the directory separator appended</returns>
-        public static string AppendDirSeparator(string path, string separator)
-        {
-            return !path.EndsWith(separator, StringComparison.Ordinal) ? path + separator : path;
-        }
-
-        /// <summary>
-        /// Guesses the directory separator from the path
-        /// </summary>
-        /// <param name="path">The path to guess the separator from</param>
-        /// <returns>The guessed directory separator</returns>
-        public static string GuessDirSeparator(string path)
-        {
-            return string.IsNullOrWhiteSpace(path) || path.StartsWith("/", StringComparison.Ordinal) ? "/" : "\\";
-        }
 
         /// <summary>
         /// Some streams can return a number that is less than the requested number of bytes.

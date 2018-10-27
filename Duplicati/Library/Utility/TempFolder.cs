@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 //
@@ -18,6 +18,7 @@
 //
 #endregion
 using System;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Utility
 {
@@ -37,7 +38,7 @@ namespace Duplicati.Library.Utility
         public TempFolder(string folder)
         {
             m_protect = false;
-            m_folder = Utility.AppendDirSeparator(folder);
+            m_folder = Util.AppendDirSeparator(folder);
             System.IO.Directory.CreateDirectory(m_folder);
         }
 

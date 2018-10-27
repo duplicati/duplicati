@@ -29,6 +29,7 @@ using Duplicati.Library.Interface;
 
 using SP = Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client; // Plain 'using' for extension methods
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -169,7 +170,7 @@ namespace Duplicati.Library.Backend
             m_serverRelPath = u.Path;
             if (!m_serverRelPath.StartsWith("/", StringComparison.Ordinal))
                 m_serverRelPath = "/" + m_serverRelPath;
-            m_serverRelPath = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_serverRelPath, "/");
+            m_serverRelPath = Util.AppendDirSeparator(m_serverRelPath, "/");
             // remove marker for SP-Web
             m_serverRelPath = m_serverRelPath.Replace("//", "/");
 

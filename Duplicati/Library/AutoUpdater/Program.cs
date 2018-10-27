@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -61,7 +62,7 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         var versions = UpdaterManager.FindInstalledVersions();
                         var selfdir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                        if (string.Equals(Library.Utility.Utility.AppendDirSeparator(selfdir), Library.Utility.Utility.AppendDirSeparator(UpdaterManager.InstalledBaseDir)))
+                        if (string.Equals(Util.AppendDirSeparator(selfdir), Util.AppendDirSeparator(UpdaterManager.InstalledBaseDir)))
                             versions = versions.Union(new KeyValuePair<string, UpdateInfo>[] { new KeyValuePair<string, UpdateInfo>(selfdir, UpdaterManager.SelfVersion) });
                         Console.WriteLine(string.Join(Environment.NewLine, versions.Select(x => string.Format(" {0} {1} ({2})", (x.Value.Version == UpdaterManager.SelfVersion.Version ? "*" : "-"), x.Value.Displayname, x.Value.Version))));
                         return 0;
@@ -71,7 +72,7 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         var versions = UpdaterManager.FindInstalledVersions();
                         var selfdir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                        if (string.Equals(Library.Utility.Utility.AppendDirSeparator(selfdir), Library.Utility.Utility.AppendDirSeparator(UpdaterManager.InstalledBaseDir)))
+                        if (string.Equals(Util.AppendDirSeparator(selfdir), Util.AppendDirSeparator(UpdaterManager.InstalledBaseDir)))
                             versions = versions.Union(new KeyValuePair<string, UpdateInfo>[] { new KeyValuePair<string, UpdateInfo>(selfdir, UpdaterManager.SelfVersion) });
 
                         Console.WriteLine(string.Join(Environment.NewLine, versions.Select(x => string.Format(" {0} {1} ({2}): {3}", (x.Value.Version == UpdaterManager.SelfVersion.Version ? "*" : "-"), x.Value.Displayname, x.Value.Version, UpdaterManager.VerifyUnpackedFolder(x.Key, x.Value) ? "Valid" : "*** Modified ***"))));
