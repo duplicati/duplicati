@@ -155,7 +155,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                 System.Threading.Thread.Sleep(wait);
         }
 
-        private string CacheFilePath { get { return Path.Combine(Utility.TempFolder.SystemTempPath, string.Format(CACHE_FILE_NAME_TEMPLATE, m_userid)); } }
+        private string CacheFilePath { get { return SystemIO.IO_OS(Utility.Utility.IsClientWindows).PathCombine(Utility.TempFolder.SystemTempPath, string.Format(CACHE_FILE_NAME_TEMPLATE, m_userid)); } }
                 
         private void RefreshMetadataAndContentUrl()
         {

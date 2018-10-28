@@ -299,7 +299,7 @@ namespace Duplicati.Library.Snapshots
             foreach (var kvp in _vssBackupComponents.SnapshotDeviceAndVolumes)
             {
 				if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparison))
-                    return Path.Combine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
+                    return SystemIO.IO_WIN.PathCombine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
             }
 
             throw new InvalidOperationException();

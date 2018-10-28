@@ -16,6 +16,8 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Linq;
+using Duplicati.Library.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -48,7 +50,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             try
             {
                 // Add install defaults/overrides, if present
-                var path = System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "newbackup.json");
+                var path = SystemIO.IO_OS(Utility.IsClientWindows).PathCombine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "newbackup.json");
                 if (System.IO.File.Exists(path))
                 {
                     Newtonsoft.Json.Linq.JObject n;

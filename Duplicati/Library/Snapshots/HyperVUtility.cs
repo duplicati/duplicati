@@ -227,7 +227,7 @@ namespace Duplicati.Library.Snapshots
             using (var mObject1 = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get().Cast<ManagementObject>().First())
                 if (_wmiv2Namespace)
                 {
-                    path = Path.Combine((string)mObject1["ConfigurationDataRoot"], (string)mObject1["ConfigurationFile"]);
+                    path = SystemIO.IO_WIN.PathCombine((string)mObject1["ConfigurationDataRoot"], (string)mObject1["ConfigurationFile"]);
                     if (File.Exists(path))
                         result.Add(path);
 
@@ -237,10 +237,10 @@ namespace Duplicati.Library.Snapshots
                     {
                         foreach (var snap in snaps)
                         {
-                            path = Path.Combine((string)snap["ConfigurationDataRoot"], (string)snap["ConfigurationFile"]);
+                            path = SystemIO.IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["ConfigurationFile"]);
                             if (File.Exists(path))
                                 result.Add(path);
-                            path = Util.AppendDirSeparator(Path.Combine((string)snap["ConfigurationDataRoot"], (string)snap["SuspendDataRoot"]));
+                            path = Util.AppendDirSeparator(SystemIO.IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["SuspendDataRoot"]));
                             if (Directory.Exists(path))
                                 result.Add(path);
                         }
@@ -248,10 +248,10 @@ namespace Duplicati.Library.Snapshots
                 }
                 else
                 {
-                    path = Path.Combine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID + ".xml");
+                    path = SystemIO.IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID + ".xml");
                     if (File.Exists(path))
                         result.Add(path);
-                    path = Util.AppendDirSeparator(Path.Combine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID));
+                    path = Util.AppendDirSeparator(SystemIO.IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID));
                     if (Directory.Exists(path))
                         result.Add(path);
 
@@ -261,10 +261,10 @@ namespace Duplicati.Library.Snapshots
 
                     foreach (var snapID in snapsIDs)
                     {
-                        path = Path.Combine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "") + ".xml");
+                        path = SystemIO.IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "") + ".xml");
                         if (File.Exists(path))
                             result.Add(path);
-                        path = Util.AppendDirSeparator(Path.Combine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "")));
+                        path = Util.AppendDirSeparator(SystemIO.IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "")));
                         if (Directory.Exists(path))
                             result.Add(path);
                     }

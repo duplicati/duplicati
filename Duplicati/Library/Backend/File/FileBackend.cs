@@ -145,7 +145,7 @@ namespace Duplicati.Library.Backend
             if (!System.IO.Directory.Exists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            return System.IO.Path.Combine(m_path, remotename);
+            return SystemIO.IO_OS(Utility.Utility.IsClientWindows).PathCombine(m_path, remotename);
         }
 
         #region IBackendInterface Members

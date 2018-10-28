@@ -144,8 +144,9 @@ namespace Duplicati.Library.IO
                 }
                 else
                 {
-                    if (File.Exists(Path.Combine(file.Path, file.FileSpecification)))
-                        paths.Add(Path.Combine(file.Path, file.FileSpecification));
+                    var fileWithSpec = SystemIO.IO_WIN.PathCombine(file.Path, file.FileSpecification);
+                    if (File.Exists(fileWithSpec))
+                        paths.Add(fileWithSpec);
                 }
             }
             return paths;
@@ -295,7 +296,8 @@ namespace Duplicati.Library.IO
             if (assemblyLocation == null)
                 throw new InvalidOperationException();
 
-            var alphadir = Path.Combine(assemblyLocation, "alphavss");
+            //Here we don't need a custom Path.Combine: we need unconditional access to alphaFS
+            var alphadir = Path.Combine(assemblyLocation, "alphavss"); 
             var alphadll = Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
             var vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
             if (vss == null)
