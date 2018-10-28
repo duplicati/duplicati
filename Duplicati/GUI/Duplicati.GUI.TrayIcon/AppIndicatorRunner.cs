@@ -18,8 +18,12 @@
 using System;
 using AppIndicator;
 using Gtk;
-using Duplicati.Server.Serialization;
 using System.Collections.Generic;
+
+using Duplicati.Library.IO;
+using Duplicati.Library.Utility;
+using Duplicati.Server.Serialization;
+
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -30,8 +34,8 @@ namespace Duplicati.GUI.TrayIcon
                 
         protected override void CreateTrayInstance()
         {
-            m_themeFolder = SystemIO.IO_OS(Utility.Utility.IsClientWindows).PathCombine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SVGIcons");
-            m_themeFolder = SystemIO.IO_OS(Utility.Utility.IsClientWindows).PathCombine(m_themeFolder, "dark");
+            m_themeFolder = SystemIO.IO_OS(Utility.IsClientWindows).PathCombine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SVGIcons");
+            m_themeFolder = SystemIO.IO_OS(Utility.IsClientWindows).PathCombine(m_themeFolder, "dark");
             
             m_appIndicator = new ApplicationIndicator("duplicati", "normal", Category.ApplicationStatus, m_themeFolder);
         }

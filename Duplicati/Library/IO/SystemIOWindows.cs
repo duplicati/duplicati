@@ -360,12 +360,11 @@ namespace Duplicati.Library.IO
                         {
                             combinedPath = Path.Combine(combinedPath, paths[i]);
                         }
-                        catch (System.IO.PathTooLongException) { }
-                        catch (System.ArgumentException) { }
+                        catch (Exception ex) when (ex is System.IO.PathTooLongException || ex is System.ArgumentException) { 
+                            //TODO: Explain why we need to keep prefixing and stripping UNC's.
+                            combinedPath = StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(combinedPath), paths[i]));
+                        }
                     }
-
-                    //TODO: Explain why we need to keep prefixing and stripping UNC's.
-                    combinedPath = StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(combinedPath), paths[i]));
                 }
             }
 
