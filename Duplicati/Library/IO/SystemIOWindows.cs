@@ -51,7 +51,7 @@ namespace Duplicati.Library.IO
 
             if (path.StartsWith(PATHPREFIX_SERVER, StringComparison.Ordinal))
                 return UNCPREFIX_SERVER + path.Remove(0, PATHPREFIX_SERVER.Length);
-            
+
             return UNCPREFIX + path;
         }
 
@@ -67,8 +67,8 @@ namespace Duplicati.Library.IO
         public void DirectoryDelete(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.Delete(path);
                     return;
                 }
@@ -81,8 +81,8 @@ namespace Duplicati.Library.IO
         public void DirectoryCreate(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.CreateDirectory(path);
                     return;
                 }
@@ -105,8 +105,8 @@ namespace Duplicati.Library.IO
         public void FileDelete(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.File.Delete(path);
                     return;
                 }
@@ -119,8 +119,8 @@ namespace Duplicati.Library.IO
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.File.SetLastWriteTimeUtc(path, time);
                     return;
                 }
@@ -133,8 +133,8 @@ namespace Duplicati.Library.IO
         public void FileSetCreationTimeUtc(string path, DateTime time)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.File.SetCreationTimeUtc(path, time);
                     return;
                 }
@@ -147,8 +147,8 @@ namespace Duplicati.Library.IO
         public DateTime FileGetLastWriteTimeUtc(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     return System.IO.File.GetLastWriteTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -160,8 +160,8 @@ namespace Duplicati.Library.IO
         public DateTime FileGetCreationTimeUtc(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     return System.IO.File.GetCreationTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -236,9 +236,9 @@ namespace Duplicati.Library.IO
         public void SetFileAttributes(string path, System.IO.FileAttributes attributes)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
-                    System.IO.File.SetAttributes(path, attributes); 
+                try
+                {
+                    System.IO.File.SetAttributes(path, attributes);
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -332,7 +332,7 @@ namespace Duplicati.Library.IO
 
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.GetExtension(PrefixWithUNC(path)));
         }
-        
+
         public string PathChangeExtension(string path, string extension)
         {
             if (!IsPathTooLong(path))
@@ -343,21 +343,40 @@ namespace Duplicati.Library.IO
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.ChangeExtension(PrefixWithUNC(path), extension));
         }
 
-        public string PathCombine(string path1, string path2)
+        public string PathCombine(params string[] paths)
         {
-            if (!IsPathTooLong(path1 + "\\" + path2))
-                try { return System.IO.Path.Combine(path1, path2); }
-                catch (System.IO.PathTooLongException) { }
-                catch (System.ArgumentException) { }
+            var combinedPath = "";
+            for (int i = 0; i < paths.Length; i++)
+            {
+                if (i == 0)
+                {
+                    combinedPath = paths[i];
+                }
+                else
+                {
+                    if (!IsPathTooLong(combinedPath + "\\" + paths[i]))
+                    {
+                        try
+                        {
+                            combinedPath = Path.Combine(combinedPath, paths[i]);
+                        }
+                        catch (System.IO.PathTooLongException) { }
+                        catch (System.ArgumentException) { }
+                    }
 
-            return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(path1), path2));
+                    //TODO: Explain why we need to keep prefixing and stripping UNC's.
+                    combinedPath = StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(combinedPath), paths[i]));
+                }
+            }
+
+            return combinedPath;
         }
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.SetLastWriteTimeUtc(path, time);
                     return;
                 }
@@ -371,8 +390,8 @@ namespace Duplicati.Library.IO
         public void DirectorySetCreationTimeUtc(string path, DateTime time)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.SetCreationTimeUtc(path, time);
                     return;
                 }
@@ -385,8 +404,8 @@ namespace Duplicati.Library.IO
         public DateTime DirectoryGetLastWriteTimeUtc(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     return System.IO.Directory.GetLastWriteTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -398,8 +417,8 @@ namespace Duplicati.Library.IO
         public DateTime DirectoryGetCreationTimeUtc(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     return System.IO.Directory.GetCreationTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -411,8 +430,8 @@ namespace Duplicati.Library.IO
         public void FileMove(string source, string target)
         {
             if (!IsPathTooLong(source) && !IsPathTooLong(target))
-                try 
-                { 
+                try
+                {
                     System.IO.File.Move(source, target);
                     return;
                 }
@@ -435,8 +454,8 @@ namespace Duplicati.Library.IO
         public void DirectoryDelete(string path, bool recursive)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.Delete(path, recursive);
                     return;
                 }
@@ -521,9 +540,9 @@ namespace Duplicati.Library.IO
         private void SetAccessControlFile(string path, FileSecurity rules)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
-                    System.IO.File.SetAccessControl(path, rules); 
+                try
+                {
+                    System.IO.File.SetAccessControl(path, rules);
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -535,9 +554,9 @@ namespace Duplicati.Library.IO
         private void SetAccessControlDir(string path, DirectorySecurity rules)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
-                    System.IO.Directory.SetAccessControl(path, rules); 
+                try
+                {
+                    System.IO.Directory.SetAccessControl(path, rules);
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -567,7 +586,7 @@ namespace Duplicati.Library.IO
 
             return dict;
         }
-            
+
         public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
         {
             var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
@@ -576,7 +595,7 @@ namespace Duplicati.Library.IO
             System.Security.AccessControl.FileSystemSecurity rules;
 
             if (isDirTarget)
-                rules = GetAccessControlDir(targetpath);                
+                rules = GetAccessControlDir(targetpath);
             else
                 rules = GetAccessControlFile(targetpath);
 
@@ -588,7 +607,7 @@ namespace Duplicati.Library.IO
                     rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
 
                 Exception ex = null;
-               
+
                 foreach (var r in content)
                 {
                     // Attempt to apply as many rules as we can

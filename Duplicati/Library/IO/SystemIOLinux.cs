@@ -135,9 +135,9 @@ namespace Duplicati.Library.IO
             return Path.ChangeExtension(path, extension);
         }
 
-        public string PathCombine(string path1, string path2)
+        public string PathCombine(params string[] paths)
         {
-            return Path.Combine(path1, path2);
+            return Path.Combine(paths);
         }
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)

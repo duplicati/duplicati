@@ -55,7 +55,7 @@ namespace Duplicati.Library.IO
         string PathGetFileName(string path);
         string PathGetExtension(string path);
         string PathChangeExtension(string path, string extension);
-        string PathCombine(string path1, string path2);
+        string PathCombine(params string[] paths);
         string GetPathRoot(string path);
         string[] GetDirectories(string path);
         string[] GetFiles(string path);
