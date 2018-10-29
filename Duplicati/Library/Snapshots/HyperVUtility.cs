@@ -191,7 +191,7 @@ namespace Duplicati.Library.Snapshots
         /// For all Hyper-V guests it enumerate all associated paths using VSS data
         /// </summary>
         /// <returns>A collection of VMs and paths</returns>
-        private IEnumerable<WriterMetaData> GetAllVMsPathsVSS()
+        private static IEnumerable<WriterMetaData> GetAllVMsPathsVSS()
         {
             using (var vssBackupComponents = new VssBackupComponents())
             {

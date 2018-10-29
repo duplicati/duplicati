@@ -101,8 +101,8 @@ namespace Duplicati.Library.IO
             {
                 try
                 {
-                    DefineDosDevice d;
-                    _mappedDrives.Add(d = new DefineDosDevice(_volumeMap[k]));
+                    DefineDosDevice d = new DefineDosDevice(_volumeMap[k]);
+                    _mappedDrives.Add(d);
                     _volumeMap[k] = Util.AppendDirSeparator(d.Drive);
                 }
                 catch (Exception ex)

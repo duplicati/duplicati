@@ -186,7 +186,7 @@ namespace Duplicati.Library.Main.Database
     
                     return 
                         new IFileversion[] {
-                            new FileversionFixed() { Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep) }
+                            new FileversionFixed { Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep) }
                         };
                 }
     
