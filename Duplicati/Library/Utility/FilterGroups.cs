@@ -295,7 +295,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/Safe Browsing*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/iPhoto Library/iPod Photo Cache/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Mozilla/Firefox/*cache*");
-                yield return FilterGroups.CreateRegexFilter(@".*/(cookies|permissions).sqllite(-.{3})?");
+                yield return FilterGroups.CreateRegexFilter(@".*/(cookies|permissions).sqlite(-.{3})?");
             }
 
             if (group.HasFlag(FilterGroup.TemporaryFiles))
