@@ -102,7 +102,7 @@ namespace Duplicati.Library.Snapshots
             }
 
             //Set the namespace depending off host OS
-            _wmiv2Namespace = Environment.OSVersion.Version.Major >= 6 && Environment.OSVersion.Version.Minor >= 2;
+            _wmiv2Namespace = Environment.OSVersion.Version.Major > 6 || (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor >= 2);
 
             //Set the scope to use in WMI. V2 for Server 2012 or newer.
             _wmiScope = _wmiv2Namespace
