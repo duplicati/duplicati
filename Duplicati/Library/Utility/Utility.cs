@@ -227,7 +227,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
         {
-            return EnumerateFileSystemEntries(rootpath, callback, Directory.GetDirectories, Directory.GetFiles);
+            return EnumerateFileSystemEntries(rootpath, callback, SystemIO.IO_OS(Utility.IsClientWindows).GetDirectories, Directory.GetFiles);
         }
 
         /// <summary>

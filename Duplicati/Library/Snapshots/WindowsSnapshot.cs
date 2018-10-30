@@ -119,7 +119,7 @@ namespace Duplicati.Library.Snapshots
             }
             else
             {
-                try { tmp = Directory.GetDirectories(spath); }
+                try { tmp = SystemIO.IO_WIN.GetDirectories(spath); }
                 catch (PathTooLongException) { }
             }
 

@@ -20,6 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.License
 {
@@ -49,8 +51,8 @@ namespace Duplicati.License
         public static List<LicenseEntry> ReadLicenses(string basefolder)
         {
             List<LicenseEntry> res = new List<LicenseEntry>();
-            
-            string[] folders = System.IO.Directory.GetDirectories(basefolder);
+
+            string[] folders = SystemIO.IO_OS(Utility.IsClientWindows).GetDirectories(basefolder);
             Array.Sort(folders);
 
             foreach (string folder in folders)

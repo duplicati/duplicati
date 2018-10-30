@@ -180,7 +180,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected virtual string[] ListFolders(string localFolderPath)
         {
-            return Directory.GetDirectories(localFolderPath);
+            return SystemIO.IO_OS(Utility.Utility.IsClientWindows).GetDirectories(localFolderPath);
         }
 
         /// <summary>

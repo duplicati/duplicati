@@ -406,7 +406,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             var res = new List<KeyValuePair<string, UpdateInfo>>();
             if (INSTALLDIR != null)
-                foreach (var folder in System.IO.Directory.GetDirectories(INSTALLDIR))
+                foreach (var folder in SystemIO.IO_OS(Utility.Utility.IsClientWindows).GetDirectories(INSTALLDIR))
                 {
                     var r = ReadInstalledManifest(folder);
                     if (r != null)
