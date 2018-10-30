@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Utility
 {
@@ -89,7 +90,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The application temp files.</returns>
         private static IEnumerable<string> GetApplicationTempFiles()
         {
-            return System.IO.Directory.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
+            return SystemIO.IO_OS(Utility.IsClientWindows).GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
         }
         
         /// <summary>

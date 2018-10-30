@@ -645,6 +645,11 @@ namespace Duplicati.Library.IO
             return AlphaFS.Directory.GetFiles(path);
         }
 
+        public string[] GetFiles(string path, string searchPattern)
+        {
+            return AlphaFS.Directory.GetFiles(path, searchPattern);
+        }
+
         public DateTime GetCreationTimeUtc(string path)
         {
             return AlphaFS.File.GetCreationTimeUtc(path);

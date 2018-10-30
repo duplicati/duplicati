@@ -190,7 +190,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected virtual string[] ListFiles(string localFolderPath)
         {
-            return Directory.GetFiles(localFolderPath);
+            return SystemIO.IO_OS(Utility.Utility.IsClientWindows).GetFiles(localFolderPath);
         }
 
         #region IDisposable interface

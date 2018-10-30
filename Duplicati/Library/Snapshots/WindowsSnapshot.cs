@@ -154,17 +154,10 @@ namespace Duplicati.Library.Snapshots
             string[] tmp = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
 
-            if (SystemIOWindows.IsPathTooLong(spath))
-            {
-                try { tmp = SystemIO.IO_WIN.GetFiles(spath); }
-                catch (PathTooLongException) { }
-                catch (DirectoryNotFoundException) { }
-            }
-            else
-            {
-                try { tmp = Directory.GetFiles(spath); }
-                catch (PathTooLongException) { }
-            }
+
+            try { tmp = SystemIO.IO_WIN.GetFiles(spath); }
+            catch (DirectoryNotFoundException) { }
+
 
             if (tmp == null)
             {

@@ -263,6 +263,11 @@ namespace Duplicati.Library.IO
             return Directory.GetFiles(path);
         }
 
+        public string[] GetFiles(string path, string searchPattern)
+        {
+            return Directory.GetFiles(path, searchPattern);
+        }
+
         public DateTime GetCreationTimeUtc(string path)
         {
             return File.GetCreationTimeUtc(path);
