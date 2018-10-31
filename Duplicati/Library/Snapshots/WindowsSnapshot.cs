@@ -1,21 +1,21 @@
 ﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
+//
 #endregion
 
 using System;
@@ -30,7 +30,7 @@ namespace Duplicati.Library.Snapshots
     /// <summary>
     /// This class encapsulates all access to the Windows Volume Shadow copy Services,
     /// implementing the disposable patterns to ensure correct release of resources.
-    /// 
+    ///
     /// The class presents all files and folders with their regular filenames to the caller,
     /// and internally handles the conversion to the shadow path.
     /// </summary>
@@ -148,31 +148,32 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFiles(string localFolderPath)
         {
-            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
-            var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
 
-            string[] tmp = null;
+            string[] files = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
 
-
-            try { tmp = SystemIO.IO_WIN.GetFiles(spath); }
-            catch (DirectoryNotFoundException) { }
-
-
-            if (tmp == null)
+            // First try without long UNC prefixed
+            try
+            {
+                files = SystemIO.IO_WIN.GetFiles(spath);
+            }
+            catch (DirectoryNotFoundException)
             {
                 spath = SystemIOWindows.PrefixWithUNC(spath);
-                tmp = SystemIO.IO_WIN.GetFiles(spath);
+                files = SystemIO.IO_WIN.GetFiles(spath);
             }
 
+            // convert back to non-shadow, i.e., non-vss version
+            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
+            var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
             volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
 
-            for (var i = 0; i < tmp.Length; i++)
+            for (var i = 0; i < files.Length; i++)
             {
-                tmp[i] = root + SystemIOWindows.PrefixWithUNC(tmp[i]).Substring(volumePath.Length);
+                files[i] = root + SystemIOWindows.PrefixWithUNC(files[i]).Substring(volumePath.Length);
             }
 
-            return tmp;
+            return files;
         }
         #endregion
 
@@ -186,14 +187,6 @@ namespace Duplicati.Library.Snapshots
         public override DateTime GetLastWriteTimeUtc(string localPath)
         {
             var spath = ConvertToSnapshotPath(localPath);
-            if (!SystemIOWindows.IsPathTooLong(spath))
-            {
-                try
-                {
-                    return File.GetLastWriteTimeUtc(spath);
-                }
-                catch (PathTooLongException) { }
-            }
 
             return SystemIO.IO_WIN.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
@@ -206,14 +199,6 @@ namespace Duplicati.Library.Snapshots
         public override DateTime GetCreationTimeUtc(string localPath)
         {
             var spath = ConvertToSnapshotPath(localPath);
-            if (!SystemIOWindows.IsPathTooLong(spath))
-            {
-                try
-                {
-                    return File.GetCreationTimeUtc(spath);
-                }
-                catch (PathTooLongException) { }
-            }
 
             return SystemIO.IO_WIN.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
