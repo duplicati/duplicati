@@ -93,11 +93,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected override string[] ListFiles (string localFolderPath)
         {
-            if (!SystemIOWindows.IsPathTooLong(localFolderPath))
-                try { return base.ListFiles(localFolderPath); }
-                catch (System.IO.PathTooLongException) { }
-
-            string[] tmp = SystemIO.IO_WIN.GetFiles(SystemIOWindows.PrefixWithUNC(localFolderPath));
+            string[] tmp = SystemIO.IO_WIN.GetFiles(localFolderPath);
             string[] res = new string[tmp.Length];
             for(int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);
