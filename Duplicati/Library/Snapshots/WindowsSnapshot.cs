@@ -105,30 +105,21 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFolders(string localFolderPath)
         {
-            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
-            var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
-
             string[] tmp = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
 
-            if (SystemIOWindows.IsPathTooLong(spath))
+            try
             {
-                try { tmp = SystemIO.IO_WIN.GetDirectories(spath); }
-                catch (PathTooLongException) { }
-                catch (DirectoryNotFoundException) { }
+                tmp = SystemIO.IO_WIN.GetDirectories(spath); 
             }
-            else
-            {
-                try { tmp = SystemIO.IO_WIN.GetDirectories(spath); }
-                catch (PathTooLongException) { }
-            }
-
-            if (tmp == null)
+            catch (DirectoryNotFoundException) //TODO: Do we really need this??
             {
                 spath = SystemIOWindows.PrefixWithUNC(spath);
                 tmp = SystemIO.IO_WIN.GetDirectories(spath);
             }
 
+            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
+            var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
             volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
 
             for (var i = 0; i < tmp.Length; i++)
@@ -157,7 +148,7 @@ namespace Duplicati.Library.Snapshots
             {
                 files = SystemIO.IO_WIN.GetFiles(spath);
             }
-            catch (DirectoryNotFoundException)
+            catch (DirectoryNotFoundException) //TODO: Do we really need this??
             {
                 spath = SystemIOWindows.PrefixWithUNC(spath);
                 files = SystemIO.IO_WIN.GetFiles(spath);
