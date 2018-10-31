@@ -52,12 +52,19 @@ namespace Duplicati.UnitTest
                 return;
             }
 
-            var root = @"C:\";
+            var root = @"C:";
             var filename = "test.txt";
-            var filePath = SystemIOWindows.PrefixWithUNC(root + filename);
+            var filePath = root + Util.DirectorySeparatorString + filename;
+            var filePathWithUNC = SystemIOWindows.PrefixWithUNC(filePath);
 
-            Assert.AreEqual(SystemIO.IO_WIN.GetPathRoot(filePath), root);
+            var filePathWithUNCRoot = SystemIO.IO_WIN.GetPathRoot(filePathWithUNC);
+
+            //Prefixed with UNC remains prefixed
+            Assert.AreEqual(SystemIOWindows.PrefixWithUNC(root), filePathWithUNCRoot);
+
+            //Without UNC prefixed, no prefix. 
+            var filePathRoot = SystemIO.IO_WIN.GetPathRoot(filePath);
+            Assert.AreEqual(root + Util.DirectorySeparatorString, filePathRoot);
         }
-
     }
 }
