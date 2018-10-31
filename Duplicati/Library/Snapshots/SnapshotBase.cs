@@ -180,7 +180,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected virtual string[] ListFolders(string localFolderPath)
         {
-            return SystemIO.IO_OS(Utility.Utility.IsClientWindows).GetDirectories(localFolderPath);
+            return Directory.GetDirectories(localFolderPath);
         }
 
         /// <summary>
@@ -190,7 +190,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected virtual string[] ListFiles(string localFolderPath)
         {
-            return SystemIO.IO_OS(Utility.Utility.IsClientWindows).GetFiles(localFolderPath);
+            return Directory.GetFiles(localFolderPath);
         }
 
         #region IDisposable interface
