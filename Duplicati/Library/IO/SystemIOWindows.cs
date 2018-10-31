@@ -33,7 +33,7 @@ namespace Duplicati.Library.IO
         private const string PATHPREFIX_SERVER = @"\\";
         private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
 
-        public static bool IsPathTooLong(string path)
+        private static bool IsPathTooLong(string path)
         {
             if (path.StartsWith(UNCPREFIX, StringComparison.Ordinal) || path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) || path.Length > 260)
                 return true;
@@ -632,31 +632,72 @@ namespace Duplicati.Library.IO
 
         public string GetPathRoot(string path)
         {
+            if (!IsPathTooLong(path))
+            {
+                try { return Path.GetPathRoot(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
             return AlphaFS.Path.GetPathRoot(path);
         }
 
         public string[] GetDirectories(string path)
         {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetDirectories(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
             return AlphaFS.Directory.GetDirectories(path);
         }
 
         public string[] GetFiles(string path)
         {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetFiles(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
             return AlphaFS.Directory.GetFiles(path);
         }
 
         public string[] GetFiles(string path, string searchPattern)
         {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetFiles(path, searchPattern); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
             return AlphaFS.Directory.GetFiles(path, searchPattern);
         }
 
         public DateTime GetCreationTimeUtc(string path)
         {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetCreationTimeUtc(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
             return AlphaFS.File.GetCreationTimeUtc(path);
         }
 
         public DateTime GetLastWriteTimeUtc(string path)
         {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetLastWriteTimeUtc(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
             return AlphaFS.File.GetLastWriteTimeUtc(path);
         }
         #endregion
