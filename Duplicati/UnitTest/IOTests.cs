@@ -43,5 +43,21 @@ namespace Duplicati.UnitTest
 
             return;
         }
+
+        [Test]
+        public void TestUncBehaviourOfAlphaFS()
+        {
+            if (!Utility.IsClientWindows)
+            {
+                return;
+            }
+
+            var root = @"C:\";
+            var filename = "test.txt";
+            var filePath = SystemIOWindows.PrefixWithUNC(root + filename);
+
+            Assert.AreEqual(SystemIO.IO_WIN.GetPathRoot(filePath), root);
+        }
+
     }
 }
