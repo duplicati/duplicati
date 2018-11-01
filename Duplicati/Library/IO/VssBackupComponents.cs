@@ -297,8 +297,7 @@ namespace Duplicati.Library.IO
                 throw new InvalidOperationException();
 
             //Here we don't need a custom Path.Combine: we need unconditional access to alphaFS
-            var alphadir = Path.Combine(assemblyLocation, "alphavss"); 
-            var alphadll = Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
+            var alphadll = Path.Combine(assemblyLocation, "alphavss", VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
             var vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
             if (vss == null)
                 throw new InvalidOperationException();
