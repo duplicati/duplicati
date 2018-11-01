@@ -66,5 +66,35 @@ namespace Duplicati.UnitTest
             var filePathRoot = SystemIO.IO_WIN.GetPathRoot(filePath);
             Assert.AreEqual(root + Util.DirectorySeparatorString, filePathRoot);
         }
+
+        [Test]
+        public void TestGetFilesWhenDirectoryDoesNotExist()
+        {
+            var pathRoot = Utility.IsClientWindows ? "C:\\" : "/";
+
+            var longPath = LongPath(pathRoot);
+            if (SystemIO.IO_OS(Utility.IsClientWindows).DirectoryExists(longPath))
+            {
+                return;
+            }
+
+            //In particular don't throw PathTooLongException
+            Assert.Throws<System.IO.DirectoryNotFoundException>(() => SystemIO.IO_OS(Utility.IsClientWindows).GetFiles(longPath));
+        }
+
+        [Test]
+        public void TestGetDirectoriesWhenDirectoryDoesNotExist()
+        {
+            var pathRoot = Utility.IsClientWindows ? "C:\\" : "/";
+
+            var longPath = LongPath(pathRoot);
+            if (SystemIO.IO_OS(Utility.IsClientWindows).DirectoryExists(longPath))
+            {
+                return;
+            }
+
+            //In particular don't throw PathTooLongException
+            Assert.Throws<System.IO.DirectoryNotFoundException>(() => SystemIO.IO_OS(Utility.IsClientWindows).GetDirectories(longPath));
+        }
     }
 }
