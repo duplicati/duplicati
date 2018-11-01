@@ -22,7 +22,7 @@ using System.IO;
 
 using Alphaleonis.Win32.Vss;
 using AlphaFS = Alphaleonis.Win32.Filesystem;
-
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.IO
 {
@@ -180,7 +180,7 @@ namespace Duplicati.Library.IO
             return Alphaleonis.Win32.Filesystem.File.Exists(PrefixWithUNC(path));
         }
 
-        public System.IO.Stream FileOpenRead(string path)
+        public System.IO.FileStream FileOpenRead(string path)
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite); }
@@ -190,7 +190,7 @@ namespace Duplicati.Library.IO
             return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         }
 
-        public System.IO.Stream FileOpenWrite(string path)
+        public System.IO.FileStream FileOpenWrite(string path)
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.OpenWrite(path); }
@@ -203,7 +203,7 @@ namespace Duplicati.Library.IO
                 return FileCreate(path);
         }
 
-        public System.IO.Stream FileOpenReadWrite(string path)
+        public System.IO.FileStream FileOpenReadWrite(string path)
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.Open(path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.Read); }
@@ -213,7 +213,7 @@ namespace Duplicati.Library.IO
             return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
         }
 
-        public System.IO.Stream FileCreate(string path)
+        public System.IO.FileStream FileCreate(string path)
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.Create(path); }
@@ -700,6 +700,83 @@ namespace Duplicati.Library.IO
 
             return AlphaFS.File.GetLastWriteTimeUtc(path);
         }
+
+        public IEnumerable<string> EnumerateDirectories(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.EnumerateDirectories(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            return AlphaFS.Directory.EnumerateDirectories(path);
+        }
+
+        public void FileCopy(string source, string target, bool overwrite)
+        {
+            if (!IsPathTooLong(source) && !IsPathTooLong(target))
+            {
+                try { File.Copy(source, target, overwrite); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            AlphaFS.File.Copy(source, target, overwrite);
+        }
+
+        public string PathGetFullPath(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return System.IO.Path.GetFullPath(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            return AlphaFS.Path.GetFullPath(path);
+        }
+
+        public IFileEntry DirectoryEntry(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try 
+                {
+                    var dInfo = new DirectoryInfo(path); 
+                    return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
+                    {
+                        IsFolder = true
+                    };
+                }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+        
+            var dInfoAlphaFS = new AlphaFS.DirectoryInfo(path);
+            return new FileEntry(dInfoAlphaFS.Name, 0, dInfoAlphaFS.LastAccessTime, dInfoAlphaFS.LastWriteTime)
+            {
+                IsFolder = true
+            };
+        }
+
+        public IFileEntry FileEntry(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try 
+                {
+                    var fileInfo = new FileInfo(path);
+                    return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
+                }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            var fInfoAlphaFS = new AlphaFS.FileInfo(path);
+            return new FileEntry(fInfoAlphaFS.Name, fInfoAlphaFS.Length, fInfoAlphaFS.LastAccessTime, fInfoAlphaFS.LastWriteTime);
+        }
+
         #endregion
     }
 }

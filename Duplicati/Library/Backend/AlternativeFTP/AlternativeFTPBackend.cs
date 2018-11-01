@@ -27,6 +27,7 @@ using System.Security.Authentication;
 using Duplicati.Library.Interface;
 using Uri = System.Uri;
 using CoreUtility = Duplicati.Library.Utility.Utility;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Backend.AlternativeFTP
 {

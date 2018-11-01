@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Net;
 using Duplicati.Library.Interface;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Backend
 {

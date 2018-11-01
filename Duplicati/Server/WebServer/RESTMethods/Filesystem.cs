@@ -209,7 +209,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             var systemIO = SystemIO.IO_OS(Library.Utility.Utility.IsClientWindows);
 
-            foreach (var s in System.IO.Directory.EnumerateFileSystemEntries(entrypath))
+            foreach (var s in systemIO.EnumerateFileSystemEntries(entrypath))
             {
                 Serializable.TreeNode tn = null;
                 try

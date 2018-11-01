@@ -19,6 +19,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.IO
 {
@@ -70,22 +71,22 @@ namespace Duplicati.Library.IO
             return File.Exists(path);
         }
 
-        public Stream FileOpenRead(string path)
+        public FileStream FileOpenRead(string path)
         {
             return File.OpenRead(path);
         }
 
-        public Stream FileOpenWrite(string path)
+        public FileStream FileOpenWrite(string path)
         {
             return File.OpenWrite(path);
         }
 
-        public Stream FileOpenReadWrite(string path)
+        public FileStream FileOpenReadWrite(string path)
         {
             return File.Open(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
         }
 
-        public Stream FileCreate(string path)
+        public FileStream FileCreate(string path)
         {
             return File.Create(path);
         }
@@ -233,20 +234,6 @@ namespace Duplicati.Library.IO
                 }
             }
         }
-        #endregion
-
-        /// <summary>
-        /// Normalizes a path, by removing any trailing slash, before calling system methods
-        /// </summary>
-        /// <returns>The path to normalize.</returns>
-        /// <param name="path">The normalized path.</param>
-        public static string NormalizePath(string path)
-        {
-            var p = Path.GetFullPath(path);
-
-            // This should not be required, but some versions of Mono apperently do not strip the trailing slash
-            return p.Length > 1 && p[p.Length - 1] == Path.DirectorySeparatorChar ? p.Substring(0, p.Length - 1) : p;
-        }
 
         public string GetPathRoot(string path)
         {
@@ -276,6 +263,51 @@ namespace Duplicati.Library.IO
         public DateTime GetLastWriteTimeUtc(string path)
         {
             return File.GetLastWriteTimeUtc(path);
+        }
+
+        public IEnumerable<string> EnumerateDirectories(string path)
+        {
+            return Directory.EnumerateDirectories(path);
+        }
+
+        public void FileCopy(string source, string target, bool overwrite)
+        {
+            File.Copy(source, target, overwrite);
+        }
+
+        public string PathGetFullPath(string path)
+        {
+            return Path.GetFullPath(path);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Normalizes a path, by removing any trailing slash, before calling system methods
+        /// </summary>
+        /// <returns>The path to normalize.</returns>
+        /// <param name="path">The normalized path.</param>
+        public static string NormalizePath(string path)
+        {
+            var p = Path.GetFullPath(path);
+
+            // This should not be required, but some versions of Mono apperently do not strip the trailing slash
+            return p.Length > 1 && p[p.Length - 1] == Path.DirectorySeparatorChar ? p.Substring(0, p.Length - 1) : p;
+        }
+
+        public IFileEntry DirectoryEntry(string path)
+        {
+            var dInfo = new DirectoryInfo(path);
+            return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
+            {
+                IsFolder = true
+            };
+        }
+
+        public IFileEntry FileEntry(string path)
+        {
+            var fileInfo = new FileInfo(path);
+            return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
         }
     }
 }

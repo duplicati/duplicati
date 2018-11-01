@@ -27,6 +27,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
 using System.IO;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Library.Backend
 {
