@@ -177,7 +177,7 @@
       <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
       <Name>Duplicati.Library.Backend.GoogleServices</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\IO\Duplicati.Library.IO.csproj">
+    <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj">
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
       <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
