@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-
+using Duplicati.Library.Common;
 using FilterGroup = Duplicati.Library.Utility.FilterGroup;
 
 namespace Duplicati.CommandLine
@@ -99,9 +99,9 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%MONO%", Library.Utility.Utility.IsMono ? "mono " : "");
                 tp = tp.Replace("%APP_PATH%", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());
-                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Library.Utility.Utility.IsClientLinux ? "/source" : @"D:\source");
-                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Library.Utility.Utility.IsClientLinux ? "/source/myfile.txt" : @"D:\source\file.txt");
-                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Library.Utility.Utility.IsClientLinux ? "/restore" : @"D:\restore");
+                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Platform.IsClientLinux ? "/source" : @"D:\source");
+                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Platform.IsClientLinux ? "/source/myfile.txt" : @"D:\source\file.txt");
+                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Platform.IsClientLinux ? "/restore" : @"D:\restore");
                 tp = tp.Replace("%ENCRYPTIONMODULES%", string.Join(", ", Library.DynamicLoader.EncryptionLoader.Keys));
                 tp = tp.Replace("%COMPRESSIONMODULES%", string.Join(", ", Library.DynamicLoader.CompressionLoader.Keys));
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
@@ -111,7 +111,7 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%FILTER_GROUPS_SHORT%", string.Join(Environment.NewLine + "  ", metaGroupNames.Concat(Enum.GetNames(typeof(FilterGroup)).Except(metaGroupNames, StringComparer.OrdinalIgnoreCase).OrderBy(x => x, StringComparer.OrdinalIgnoreCase)).Select(group => "{" + group + "}")));
                 tp = tp.Replace("%FILTER_GROUPS_LONG%", Library.Utility.FilterGroups.GetOptionDescriptions(4, true));
 
-                if (Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     // These properties are only valid for Windows
                     tp = tp.Replace("%EXAMPLE_WILDCARD_DRIVE_SOURCE_PATH%", @"*:\source");

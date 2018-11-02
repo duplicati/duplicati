@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -104,7 +105,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
                     }
 
                     Console.WriteLine("Creating snapshot for folder: {0}", args[0]);
-                    Console.WriteLine("If this fails, try to run as " + (Utility.Utility.IsClientLinux ? "root" : "Administrator"));
+                    Console.WriteLine("If this fails, try to run as " + (Platform.IsClientLinux ? "root" : "Administrator"));
                     using (ISnapshotService snapshot = SnapshotUtility.CreateSnapshot(new[] { args[0] }, options))
                     {
                         Console.WriteLine("Attempting to read locked file via snapshot");

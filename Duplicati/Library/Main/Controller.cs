@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Main
 {
@@ -826,7 +827,7 @@ namespace Duplicati.Library.Main
             {
                 List<string> expandedSources = new List<string>();
 
-                if (Library.Utility.Utility.IsClientWindows && (inputsource.StartsWith("*:", StringComparison.Ordinal) || inputsource.StartsWith("?:", StringComparison.Ordinal)))
+                if (Platform.IsClientWindows && (inputsource.StartsWith("*:", StringComparison.Ordinal) || inputsource.StartsWith("?:", StringComparison.Ordinal)))
                 {
                     // *: drive paths are only supported on Windows clients
                     // Lazily load the drive info
@@ -841,7 +842,7 @@ namespace Duplicati.Library.Main
                         expandedSources.Add(expandedSource);
                     }
                 }
-                else if (Library.Utility.Utility.IsClientWindows && inputsource.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
+                else if (Platform.IsClientWindows && inputsource.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
                 {
                     // In order to specify a drive by it's volume name, adopt the volume guid path syntax:
                     //   \\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}

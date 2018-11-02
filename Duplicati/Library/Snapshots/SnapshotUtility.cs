@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
@@ -38,7 +39,7 @@ namespace Duplicati.Library.Snapshots
         public static ISnapshotService CreateSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
             return
-                Utility.Utility.IsClientLinux
+                Platform.IsClientLinux
                        ? CreateLinuxSnapshot(folders)
                        : CreateWindowsSnapshot(folders, options);
             

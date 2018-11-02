@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Volumes;
 
@@ -389,14 +390,14 @@ namespace Duplicati.Library.Main.Database
                     // defaults when restoring cross OS, e.g. backup on Linux, restore on Windows
                     //This is mostly meaningless, and the user really should use --restore-path
 
-                    if (Library.Utility.Utility.IsClientLinux && dirsep == "\\")
+                    if (Platform.IsClientLinux && dirsep == "\\")
                     {
                         // For Win -> Linux, we remove the colon from the drive letter, and use the drive letter as root folder
                         cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN ""\\"" || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
                         cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == ""\\"" THEN ""\\"" || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable));
 
                     }
-                    else if (Library.Utility.Utility.IsClientWindows && dirsep == "/")
+                    else if (Platform.IsClientWindows && dirsep == "/")
                     {
                         // For Linux -> Win, we use the temporary folder's drive as the root path
                         cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == ""/"" THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable), Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"));
@@ -427,10 +428,10 @@ namespace Duplicati.Library.Main.Database
                 }
 
                 // Cross-os path remapping support
-                if (Library.Utility.Utility.IsClientLinux && dirsep == "\\")
+                if (Platform.IsClientLinux && dirsep == "\\")
                     // For Win paths on Linux
                     cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(""TargetPath"", ""\"", ""/"")", m_tempfiletable));
-                else if (Library.Utility.Utility.IsClientWindows && dirsep == "/")
+                else if (Platform.IsClientWindows && dirsep == "/")
                     // For Linux paths on Windows
                     cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(REPLACE(""TargetPath"", ""\"", ""_""), ""/"", ""\"")", m_tempfiletable));
 

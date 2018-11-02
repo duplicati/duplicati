@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management;
+using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
@@ -93,7 +94,7 @@ namespace Duplicati.Library.Snapshots
         {
             Guests = new List<HyperVGuest>();
 
-            if (!Utility.Utility.IsClientWindows)
+            if (!Platform.IsClientWindows)
             {
                 IsHyperVInstalled = false;
                 IsVSSWriterSupported = false;

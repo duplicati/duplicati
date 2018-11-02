@@ -20,6 +20,7 @@ using System.Linq;
 using System.IO;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -67,7 +68,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             path = SpecialFolders.ExpandEnvironmentVariables(path);
 
-            if (Duplicati.Library.Utility.Utility.IsClientLinux && !path.StartsWith("/", StringComparison.Ordinal))
+            if (Platform.IsClientLinux && !path.StartsWith("/", StringComparison.Ordinal))
             {
                 info.ReportClientError("The path parameter must start with a forward-slash", System.Net.HttpStatusCode.BadRequest);
                 return;
@@ -106,7 +107,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                 IEnumerable<Serializable.TreeNode> res;
 
-                if (!Library.Utility.Utility.IsClientLinux && (path.Equals("/") || path.Equals("")))
+                if (!Platform.IsClientLinux && (path.Equals("/") || path.Equals("")))
                 {
                     res = DriveInfo.GetDrives()
                             .Where(di =>

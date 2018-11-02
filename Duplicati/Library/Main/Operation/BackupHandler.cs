@@ -33,6 +33,7 @@ using System.Threading;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -84,7 +85,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
             }
 
-            return Library.Utility.Utility.IsClientLinux ?
+            return Platform.IsClientLinux ?
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux()
                     :
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows();

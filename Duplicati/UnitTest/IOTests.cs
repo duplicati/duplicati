@@ -20,6 +20,7 @@ using NUnit.Framework;
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Common;
 
 namespace Duplicati.UnitTest
 {
@@ -36,7 +37,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestGetPathRootWithLongPath()
         {
-            var pathRoot =  Utility.IsClientWindows ? "C:\\" : "/";
+            var pathRoot =  Platform.IsClientWindows ? "C:\\" : "/";
             var root = SystemIO.IO_OS.GetPathRoot(LongPath(pathRoot));
 
             Assert.AreEqual(pathRoot, root);
@@ -45,7 +46,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestUncBehaviourOfAlphaFS()
         {
-            if (!Utility.IsClientWindows)
+            if (!Platform.IsClientWindows)
             {
                 return;
             }
@@ -68,7 +69,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestGetFilesWhenDirectoryDoesNotExist()
         {
-            var pathRoot = Utility.IsClientWindows ? "C:\\" : "/";
+            var pathRoot = Platform.IsClientWindows ? "C:\\" : "/";
 
             var longPath = LongPath(pathRoot);
             if (SystemIO.IO_OS.DirectoryExists(longPath))
@@ -83,7 +84,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestGetDirectoriesWhenDirectoryDoesNotExist()
         {
-            var pathRoot = Utility.IsClientWindows ? "C:\\" : "/";
+            var pathRoot = Platform.IsClientWindows ? "C:\\" : "/";
 
             var longPath = LongPath(pathRoot);
             if (SystemIO.IO_OS.DirectoryExists(longPath))

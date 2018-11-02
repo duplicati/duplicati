@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Server
 {
@@ -113,7 +114,7 @@ namespace Duplicati.Server
         {
             var lst = new List<Serializable.TreeNode>();
             
-            if (Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
             {
                 TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
                 TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");

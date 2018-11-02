@@ -1,4 +1,5 @@
-﻿using Duplicati.Library.Common.IO;
+﻿using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,7 +85,7 @@ namespace Duplicati.Library.Snapshots
         {
             m_DBs = new List<MSSQLDB>();
 
-            if (!Utility.Utility.IsClientWindows)
+            if (!Platform.IsClientWindows)
             {
                 IsMSSQLInstalled = false;
                 return;

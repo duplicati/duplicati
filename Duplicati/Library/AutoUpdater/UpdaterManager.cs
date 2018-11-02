@@ -22,6 +22,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -124,14 +125,14 @@ namespace Duplicati.Library.AutoUpdater
                         System.IO.Path.Combine(InstalledBaseDir, "updates"),
                     });
 
-                if (Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
                     overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
                 }
                 else
                 {
-                    if (Library.Utility.Utility.IsClientOSX)
+                    if (Platform.IsClientOSX)
                         overrides.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME, "updates"));
 
                     overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
@@ -143,7 +144,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 if (!string.IsNullOrWhiteSpace(programfiles))
                     legacypaths.Add(System.IO.Path.Combine(programfiles, APPNAME, "updates"));
-                if (Library.Utility.Utility.IsClientLinux)
+                if (Platform.IsClientLinux)
                     legacypaths.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
 
                 // The real attempts that we probe for
@@ -153,7 +154,7 @@ namespace Duplicati.Library.AutoUpdater
                 if (!string.IsNullOrWhiteSpace(programfiles) && !InstalledBaseDir.StartsWith(Util.AppendDirSeparator(programfiles), StringComparison.Ordinal))
                     attempts.Add(System.IO.Path.Combine(InstalledBaseDir, "updates"));
 
-                if (Library.Utility.Utility.IsClientOSX)
+                if (Platform.IsClientOSX)
                     attempts.Add(System.IO.Path.Combine("/", "Library", "Application Support", APPNAME, "updates"));
                 else
                     attempts.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), APPNAME, "updates"));
@@ -1083,7 +1084,7 @@ namespace Duplicati.Library.AutoUpdater
             if (IsRunningInUpdateEnvironment)
             {
                 // For some reason this does not work
-                //if (Library.Utility.Utility.IsClientWindows)
+                //if (Platform.IsClientWindows)
                     //Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
 
                 int r = 0;
@@ -1124,7 +1125,7 @@ namespace Duplicati.Library.AutoUpdater
                 pi.EnvironmentVariables["LOCALIZATION_FOLDER"] = InstalledBaseDir;
 
                 // On Windows, we manually redirect the streams
-                if (Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     pi.RedirectStandardError = true;
                     pi.RedirectStandardInput = true;
@@ -1133,7 +1134,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 var proc = System.Diagnostics.Process.Start(pi);
                 Task tasks = null;
-                if (Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     // On Windows, we manually redirect the streams
                     tasks = Task.WhenAll(

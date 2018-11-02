@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -18,10 +18,9 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Utility
 {
@@ -37,7 +36,7 @@ namespace Duplicati.Library.Utility
             public SslPolicyErrors SslError { get { return m_errors; } }
 
             public InvalidCertificateException(string certificate, SslPolicyErrors error)
-                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate) + (Utility.IsClientLinux ? Strings.SslCertificateValidator.MonoHelpSSL : ""))
+                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate) + (Platform.IsClientLinux ? Strings.SslCertificateValidator.MonoHelpSSL : ""))
             {
                 m_certificate = certificate;
                 m_errors = error;

@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Utility
 {
@@ -54,7 +55,7 @@ namespace Duplicati.Library.Utility
                 browserprogram = SystemBrowser;
 
             //Fallback is to just show the window in a browser
-            if (Utility.IsClientOSX)
+            if (Platform.IsClientOSX)
             {
                 try
                 {
@@ -67,7 +68,7 @@ namespace Duplicati.Library.Utility
                         ErrorHandler(string.Format("Unable to open a browser window, please manually visit: \r\n{0}", url));
                 }
             }
-            else if (Utility.IsClientLinux)
+            else if (Platform.IsClientLinux)
             {
                 try
                 {

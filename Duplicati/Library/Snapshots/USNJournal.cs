@@ -26,6 +26,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Microsoft.Win32.SafeHandles;
 
@@ -91,7 +92,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="volumeRoot">The root volume where the USN lookup is performed</param>
         internal USNJournal(string volumeRoot)
         {
-            if (Utility.Utility.IsClientLinux)
+            if (Platform.IsClientLinux)
                 throw new Interface.UserInformationException(Strings.USNHelper.LinuxNotSupportedError, "UsnOnLinuxNotSupported");
 
             m_volume = Util.AppendDirSeparator(volumeRoot);

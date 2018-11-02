@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Backend
 {
@@ -73,7 +74,7 @@ namespace Duplicati.Library.Backend
                 paths.AddRange(options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
 
                 //On windows we expand the drive letter * to all drives
-                if (!Utility.Utility.IsClientLinux)
+                if (!Platform.IsClientLinux)
                 {
                     System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
                     
@@ -290,7 +291,7 @@ namespace Duplicati.Library.Backend
         private System.IO.DriveInfo GetDrive()
         {
             string root;
-            if (Utility.Utility.IsClientLinux)
+            if (Platform.IsClientLinux)
             {
                 string path = Util.AppendDirSeparator(systemIO.PathGetFullPath(m_path));
                 root = "/";
@@ -309,7 +310,7 @@ namespace Duplicati.Library.Backend
 
             // On Windows, DriveInfo is only valid for lettered drives. (e.g., not for UNC paths and shares)
             // So only attempt to get it if we aren't on Windows or if the root starts with a letter.
-            if (!Utility.Utility.IsClientWindows || (root.Length > 0 && char.IsLetter(root[0])))
+            if (!Platform.IsClientWindows || (root.Length > 0 && char.IsLetter(root[0])))
             {
                 try
                 {
@@ -334,7 +335,7 @@ namespace Duplicati.Library.Backend
                     return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
                 }
 
-                if (Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
                     // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path

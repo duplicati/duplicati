@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Utility
 {
@@ -436,13 +437,13 @@ namespace Duplicati.Library.Utility
             if (last == -1 || last == 0 && len == 0)
                 return null;
             
-            if (last == 0 && !IsClientWindows)
+            if (last == 0 && !Platform.IsClientWindows)
                 return Util.DirectorySeparatorString;
 
             var parent = path.Substring(0, last);
 
             if (forceTrailingDirectorySeparator ||
-                IsClientWindows && parent.Length == 2 && parent[1] == ':' && char.IsLetter(parent[0]))
+                Platform.IsClientWindows && parent.Length == 2 && parent[1] == ':' && char.IsLetter(parent[0]))
             {
                 parent += Path.DirectorySeparatorChar;
             }
@@ -824,7 +825,7 @@ namespace Duplicati.Library.Utility
 
         public static bool Which(string appname)
         {
-            if (!IsClientLinux)
+            if (!Platform.IsClientLinux)
                 return false;
 
             try
@@ -851,89 +852,6 @@ namespace Duplicati.Library.Utility
             return false;
         }
 
-        private static string UNAME;
-
-        /// <value>
-        /// Gets or sets a value indicating if the client is running OSX
-        /// </value>
-        public static bool IsClientOSX
-        {
-            get
-            {
-                // Sadly, Mono returns Unix when running on OSX
-                //return Environment.OSVersion.Platform == PlatformID.MacOSX;
-
-                if (!IsClientLinux)
-                    return false;
-
-                try
-                {
-                    if (UNAME == null)
-                    {
-                        var psi = new System.Diagnostics.ProcessStartInfo("uname")
-                        {
-                            RedirectStandardOutput = true,
-                            RedirectStandardInput = false,
-                            RedirectStandardError = false,
-                            UseShellExecute = false
-                        };
-
-                        var pi = System.Diagnostics.Process.Start(psi);
-                        pi.WaitForExit(5000);
-                        if (pi.HasExited)
-                            UNAME = pi.StandardOutput.ReadToEnd().Trim();
-                    }
-                }
-                catch
-                {
-                }
-
-                return "Darwin".Equals(UNAME);
-
-            }
-        }
-        /// <value>
-        /// Gets the output of "uname -a" on Linux, or null on Windows
-        /// </value>
-        public static string UnameAll
-        {
-            get
-            {
-                if (!IsClientLinux)
-                    return null;
-
-                try
-                {
-                    var psi = new System.Diagnostics.ProcessStartInfo("uname", "-a")
-                    {
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = false,
-                        RedirectStandardInput = false,
-                        UseShellExecute = false
-                    };
-
-                    var pi = System.Diagnostics.Process.Start(psi);
-                    pi.WaitForExit(5000);
-                    if (pi.HasExited)
-                        return pi.StandardOutput.ReadToEnd().Trim();
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                return null;
-            }
-        }
-        /// <value>
-        /// Gets or sets a value indicating if the client is Linux/Unix based
-        /// </value>
-        public static bool IsClientLinux => Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX;
-
-        /// <summary>
-        /// Gets a value indicating if the client is Windows based
-        /// </summary>
-        public static bool IsClientWindows => !IsClientLinux;
 
         /// <value>
         /// Returns a value indicating if the filesystem, is case sensitive 
@@ -948,7 +866,7 @@ namespace Duplicati.Library.Utility
 
                     // TODO: This should probably be determined by filesystem rather than OS,
                     // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
-                    CachedIsFSCaseSensitive = ParseBool(str, () => IsClientLinux && !IsClientOSX);
+                    CachedIsFSCaseSensitive = ParseBool(str, () => Platform.IsClientLinux && !Platform.IsClientOSX);
                 }
 
                 return CachedIsFSCaseSensitive.Value;
@@ -1026,7 +944,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The path to the users home directory
         /// </summary>
-        public static readonly string HOME_PATH = Environment.GetFolderPath(IsClientLinux ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
+        public static readonly string HOME_PATH = Environment.GetFolderPath(Platform.IsClientLinux ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
 
         /// <summary>
         /// Regexp for matching environment variables on Windows (%VAR%)
@@ -1495,7 +1413,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(arg))
                 return arg;
 
-            if (!IsClientWindows)
+            if (!Platform.IsClientWindows)
             {
                 // We could consider using single quotes that prevents all expansions
                 //if (!allowEnvExpansion)

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using System.Linq;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -39,7 +40,7 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Current Version folder {0}", System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
 
             yield return string.Format("OS: {0}", Environment.OSVersion);
-            yield return string.Format("Uname: {0}", Duplicati.Library.Utility.Utility.UnameAll);
+            yield return string.Format("Uname: {0}", Platform.UnameAll);
 
             yield return string.Format("64bit: {0} ({1})", Environment.Is64BitOperatingSystem, Environment.Is64BitProcess);
             yield return string.Format("Machinename: {0}", Environment.MachineName);

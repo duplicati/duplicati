@@ -1,7 +1,8 @@
-﻿﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Duplicati.Library.Common;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.GUI.TrayIcon
@@ -39,11 +40,11 @@ namespace Duplicati.GUI.TrayIcon
         private static string GetDefaultToolKit()
         {
             // No longer using Cocoa directly as it fails on 32bit as well            
-            if (Duplicati.Library.Utility.Utility.IsClientOSX)
+            if (Platform.IsClientOSX)
                 return TOOLKIT_RUMPS;
 
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
-            if (Duplicati.Library.Utility.Utility.IsClientLinux)
+            if (Platform.IsClientLinux)
             {
                 if (SupportsAppIndicator)
                     return TOOLKIT_GTK_APP_INDICATOR;
@@ -73,7 +74,7 @@ namespace Duplicati.GUI.TrayIcon
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
-            if (Duplicati.Library.Utility.Utility.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
+            if (Platform.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
                 Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
             
             foreach (string s in args)
@@ -111,7 +112,7 @@ namespace Duplicati.GUI.TrayIcon
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
             {
 #if !(__MonoCS__ || __WindowsGTK__ || ENABLE_GTK)
-                if (Library.Utility.Utility.IsClientLinux && !Library.Utility.Utility.IsClientOSX)
+                if (Platform.IsClientLinux && !Platform.IsClientOSX)
                     Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
 #endif
                 toolkit = GetDefaultToolKit();
@@ -444,7 +445,7 @@ namespace Duplicati.GUI.TrayIcon
                     new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
                 };
 
-                if (Duplicati.Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     args.Add(new Duplicati.Library.Interface.CommandLineArgument(DETACHED_PROCESS, CommandLineArgument.ArgumentType.String, "Runs the tray-icon detached", "This option runs the tray-icon in detached mode, meaning that the process will exit immediately and not send output to the console of the caller"));
                 }

@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -148,7 +149,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Restoring {0} files to {1}", filecount, string.IsNullOrWhiteSpace(targetpath) ? "original position" : targetpath);
 
-                if (Library.Utility.Utility.IsClientLinux || largestprefix.Length > 0)
+                if (Platform.IsClientLinux || largestprefix.Length > 0)
                     largestprefix = Util.AppendDirSeparator(largestprefix);
 
                 if (!string.IsNullOrEmpty(largestprefix))

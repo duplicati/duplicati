@@ -28,5 +28,81 @@ namespace Duplicati.Library.Common
         /// Gets a value indicating if the client is Windows based
         /// </summary>
         public static bool IsClientWindows => !IsClientLinux;
+
+
+        private static string UNAME;
+
+        /// <value>
+        /// Gets or sets a value indicating if the client is running OSX
+        /// </value>
+        public static bool IsClientOSX
+        {
+            get
+            {
+                // Sadly, Mono returns Unix when running on OSX
+                //return Environment.OSVersion.Platform == PlatformID.MacOSX;
+
+                if (!IsClientLinux)
+                    return false;
+
+                try
+                {
+                    if (UNAME == null)
+                    {
+                        var psi = new System.Diagnostics.ProcessStartInfo("uname")
+                        {
+                            RedirectStandardOutput = true,
+                            RedirectStandardInput = false,
+                            RedirectStandardError = false,
+                            UseShellExecute = false
+                        };
+
+                        var pi = System.Diagnostics.Process.Start(psi);
+                        pi.WaitForExit(5000);
+                        if (pi.HasExited)
+                            UNAME = pi.StandardOutput.ReadToEnd().Trim();
+                    }
+                }
+                catch
+                {
+                }
+
+                return "Darwin".Equals(UNAME);
+
+            }
+        }
+        /// <value>
+        /// Gets the output of "uname -a" on Linux, or null on Windows
+        /// </value>
+        public static string UnameAll
+        {
+            get
+            {
+                if (!IsClientLinux)
+                    return null;
+
+                try
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo("uname", "-a")
+                    {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = false,
+                        RedirectStandardInput = false,
+                        UseShellExecute = false
+                    };
+
+                    var pi = System.Diagnostics.Process.Start(psi);
+                    pi.WaitForExit(5000);
+                    if (pi.HasExited)
+                        return pi.StandardOutput.ReadToEnd().Trim();
+                }
+                catch
+                {
+                    // ignored
+                }
+
+                return null;
+            }
+        }
     }
 }

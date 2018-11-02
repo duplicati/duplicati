@@ -1,4 +1,4 @@
-//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 
 //  http://www.duplicati.com, info@duplicati.com
 //
@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Newtonsoft.Json.Serialization;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Main
 {
@@ -58,7 +59,7 @@ namespace Duplicati.Library.Main
 
 			var folder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duplicati");
 
-			if (Duplicati.Library.Utility.Utility.IsClientWindows)
+			if (Platform.IsClientWindows)
 			{
 				var newlocation = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Duplicati");
 

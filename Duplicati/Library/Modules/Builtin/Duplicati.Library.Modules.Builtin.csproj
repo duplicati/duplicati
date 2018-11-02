@@ -108,6 +108,10 @@
       <Project>{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}</Project>
       <Name>Duplicati.Library.OAuthHelper</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\IO\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
