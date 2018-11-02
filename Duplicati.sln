@@ -99,7 +99,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Rclone", "Duplicati\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj", "{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Common", "Duplicati\Library\IO\Duplicati.Library.Common.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Common", "Duplicati\Library\Common\Duplicati.Library.Common.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
