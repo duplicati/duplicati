@@ -139,7 +139,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                             else
                             {
                                 Array.Resize(ref largestprefixparts, ni - 1);
-                                largestprefix = string.Join(Path.DirectorySeparatorChar.ToString(), largestprefixparts);
+                                largestprefix = string.Join(Util.DirectorySeparatorString, largestprefixparts);
                             }
                         }
                     }

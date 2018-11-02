@@ -276,7 +276,7 @@ namespace Duplicati.UnitTest
 
                                             //Remove all folders from list
                                             for (int j = 0; j < sourcefiles.Count; j++)
-                                                if (sourcefiles[j].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                                                if (sourcefiles[j].EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
                                                 {
                                                     sourcefiles.RemoveAt(j);
                                                     j--;
@@ -317,15 +317,15 @@ namespace Duplicati.UnitTest
 
                                         if (partialFolders.ContainsKey(""))
                                             partialFolders.Remove("");
-                                        if (partialFolders.ContainsKey(System.IO.Path.DirectorySeparatorChar.ToString()))
-                                            partialFolders.Remove(System.IO.Path.DirectorySeparatorChar.ToString());
+                                        if (partialFolders.ContainsKey(Util.DirectorySeparatorString))
+                                            partialFolders.Remove(Util.DirectorySeparatorString);
 
                                         List<string> filterlist;
 
                                         var tfe = Util.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]);
 
                                         filterlist = (from n in partialFolders.Keys
-                                                      where !string.IsNullOrWhiteSpace(n) && n != System.IO.Path.DirectorySeparatorChar.ToString()
+                                                      where !string.IsNullOrWhiteSpace(n) && n != Util.DirectorySeparatorString
                                                       select Util.AppendDirSeparator(System.IO.Path.Combine(tfe, n)))
                                                       .Union(testfiles) //Add files with full path
                                                       .Union(new string[] { tfe }) //Ensure root folder is included

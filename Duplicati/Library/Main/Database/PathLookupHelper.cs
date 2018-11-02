@@ -26,10 +26,9 @@ namespace Duplicati.Library.Main.Database
     public class PathLookupHelper<T>
     {
         private static readonly char[] SPLIT_CHARS = new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
-        private static readonly string DIR_SEP = Path.DirectorySeparatorChar.ToString();
         private readonly FolderEntry m_root = new FolderEntry(); 
         private readonly List<KeyValuePair<string, FolderEntry>> m_lookup;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Database.PathLookupHelper{T}"/> class.
         /// </summary>
@@ -56,7 +55,7 @@ namespace Duplicati.Library.Main.Database
             c = m_root;
 
             paths = path.Split(SPLIT_CHARS, StringSplitOptions.RemoveEmptyEntries);
-            prefix = DIR_SEP;
+            prefix = Util.DirectorySeparatorString;
             
             if (m_lookup == null)
                 return;

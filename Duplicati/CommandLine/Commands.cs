@@ -453,7 +453,7 @@ namespace Duplicati.CommandLine
 
             // suffix all folders with "*" so we restore all contents in the folder
             for (var ix = 0; ix < args.Count; ix++)
-                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal) && args[ix].EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal) && args[ix].EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
                     args[ix] += "*";
 
             using(var output = new ConsoleOutput(outwriter, options))
