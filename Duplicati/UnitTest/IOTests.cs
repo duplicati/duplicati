@@ -40,8 +40,6 @@ namespace Duplicati.UnitTest
             var root = SystemIO.IO_OS(Utility.IsClientWindows).GetPathRoot(LongPath(pathRoot));
 
             Assert.AreEqual(pathRoot, root);
-
-            return;
         }
 
         [Test]
