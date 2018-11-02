@@ -21,7 +21,7 @@ namespace Duplicati.Library.Main.Operation
         private byte[] m_blockbuffer;
         private readonly RestoreResults m_result;
         private static readonly ISystemIO m_systemIO = SystemIO.IO_OS(Duplicati.Library.Utility.Utility.IsClientWindows);
-        private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
+        private static readonly string DIRSEP = Util.DirectorySeparatorString;
 
         public RestoreHandler(string backendurl, Options options, RestoreResults result)
         {

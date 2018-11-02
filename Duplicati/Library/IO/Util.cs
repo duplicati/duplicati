@@ -26,6 +26,7 @@ namespace Duplicati.Library.IO
         /// </summary>
         public static readonly string DirectorySeparatorString = Path.DirectorySeparatorChar.ToString();
 
+        public static readonly string AltDirectorySeparatorString = Path.AltDirectorySeparatorChar.ToString();
 
         /// <summary>
         /// Appends the appropriate directory separator to paths, depending on OS.

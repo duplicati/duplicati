@@ -1,4 +1,4 @@
-//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 
 //  http://www.duplicati.com, info@duplicati.com
 //
@@ -31,7 +31,7 @@ namespace Duplicati.Library.IO
         private const string UNCPREFIX = @"\\?\";
         private const string UNCPREFIX_SERVER = @"\\?\UNC\";
         private const string PATHPREFIX_SERVER = @"\\";
-        private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
+        private static readonly string DIRSEP = Util.DirectorySeparatorString;
 
         private static bool IsPathTooLong(string path)
         {

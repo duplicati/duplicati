@@ -66,7 +66,6 @@
     <Compile Include="VssBackupComponents.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="DefineDosDevice.cs" />
-    <Compile Include="WinNativeMethods.cs" />
     <Compile Include="FileEntry.cs" />
   </ItemGroup>
   <ItemGroup>

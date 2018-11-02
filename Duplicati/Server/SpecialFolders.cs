@@ -163,7 +163,7 @@ namespace Duplicati.Server
                 try
                 {
                     var nx = x;
-                    if (nx.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                    if (nx.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
                         nx = nx.Substring(0, nx.Length - 1);
                     var n = systemIO.PathGetFileName(nx);
                     if (!string.IsNullOrWhiteSpace(n))
@@ -173,7 +173,7 @@ namespace Duplicati.Server
                 {
                 }
 
-                if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) && x.Length > 1)
+                if (x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal) && x.Length > 1)
                     return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1).Substring(x.Substring(0, x.Length - 1).LastIndexOf("/", StringComparison.Ordinal) + 1));
                 else
                     return new KeyValuePair<string, string>(x, x);

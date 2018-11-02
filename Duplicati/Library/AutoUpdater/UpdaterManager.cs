@@ -524,7 +524,7 @@ namespace Duplicati.Library.AutoUpdater
                                             continue;
 
                                         var fullpath = System.IO.Path.Combine(targetfolder, relpath);
-                                        if (relpath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                                        if (relpath.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
                                             System.IO.Directory.CreateDirectory(fullpath);
                                         else
                                             System.IO.File.Copy(e, fullpath);
@@ -721,7 +721,7 @@ namespace Duplicati.Library.AutoUpdater
 
             inputfolder = Util.AppendDirSeparator(inputfolder);
             var baselen = inputfolder.Length;
-            var dirsep = System.IO.Path.DirectorySeparatorChar.ToString();
+            var dirsep = Util.DirectorySeparatorString;
 
             ignoreMap.Add(UPDATE_MANIFEST_FILENAME, "");
 

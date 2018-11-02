@@ -20,6 +20,7 @@ using System.Linq;
 using HttpServer;
 using HttpServer.HttpModules;
 using HttpServer.Exceptions;
+using Duplicati.Library.IO;
 
 namespace Duplicati.Server.WebServer
 {
@@ -28,7 +29,7 @@ namespace Duplicati.Server.WebServer
         private readonly string m_webroot;
 
         private static readonly string[] ForbiddenChars = new string[] {"\\", "..", ":"}.Union(from n in System.IO.Path.GetInvalidPathChars() select n.ToString()).Distinct().ToArray();
-        private static readonly string DirSep = System.IO.Path.DirectorySeparatorChar.ToString();
+        private static readonly string DirSep = Util.DirectorySeparatorString;
 
         public IndexHtmlHandler(string webroot) { m_webroot = webroot; }
 

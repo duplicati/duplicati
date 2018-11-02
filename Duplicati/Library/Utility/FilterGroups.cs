@@ -111,12 +111,12 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Regex escaped string for the AltDirectorySeparatorChar
         /// </summary>
-        private static readonly string RegexEscapedAltDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(System.IO.Path.AltDirectorySeparatorChar.ToString());
+        private static readonly string RegexEscapedAltDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(Util.AltDirectorySeparatorString);
 
         /// <summary>
         /// Regex escaped string for the DirectorySeparatorChar
         /// </summary>
-        private static readonly string RegexEscapedDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(System.IO.Path.DirectorySeparatorChar.ToString());
+        private static readonly string RegexEscapedDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(Util.DirectorySeparatorString);
 
         /// <summary>
         /// Gets the list of alternate aliases which can refer to this group.
@@ -269,7 +269,7 @@ namespace Duplicati.Library.Utility
 
                 if (n.Length > 2 && char.IsLetter(n[0]) && n[1] == ':' && wildcardRootWindowsPaths.Contains(n.Substring(2)))
                     continue;
-                else if (prev != null && prev.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) && n.StartsWith(prev, Utility.ClientFilenameStringComparison))
+                else if (prev != null && prev.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal) && n.StartsWith(prev, Utility.ClientFilenameStringComparison))
                     continue;
                 else
                     yield return prev = n;
