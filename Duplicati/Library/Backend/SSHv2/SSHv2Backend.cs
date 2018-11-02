@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 

@@ -17,7 +17,7 @@
 using System;
 using System.IO;
 
-namespace Duplicati.Library.IO
+namespace Duplicati.Library.Common.IO
 {
     public static class Util
     {

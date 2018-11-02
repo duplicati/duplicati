@@ -26,7 +26,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using Microsoft.Win32.SafeHandles;
 
 namespace Duplicati.Library.Snapshots

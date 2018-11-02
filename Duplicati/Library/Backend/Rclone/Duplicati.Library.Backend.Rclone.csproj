@@ -56,7 +56,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\IO\Duplicati.Library.IO.csproj">
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
-      <Name>Duplicati.Library.IO</Name>
+      <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

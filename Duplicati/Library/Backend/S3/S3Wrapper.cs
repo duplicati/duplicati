@@ -169,7 +169,7 @@ namespace Duplicati.Library.Backend
                 {
                     if (alreadyReturned.Add(obj.Key))
                     {
-                        yield return new IO.FileEntry(
+                        yield return new Common.IO.FileEntry(
                             obj.Key,
                             obj.Size,
                             obj.LastModified,

@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Duplicati.Library.Interface;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -41,7 +41,7 @@ namespace Duplicati.Library.Backend
 
         private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
-        private static ISystemIO systemIO = SystemIO.IO_OS(Utility.Utility.IsClientWindows);
+        private static ISystemIO systemIO = SystemIO.IO_OS;
 
         public File()
         {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HttpServer.HttpModules;
 using System.Security.Cryptography.X509Certificates;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Server.WebServer
 {

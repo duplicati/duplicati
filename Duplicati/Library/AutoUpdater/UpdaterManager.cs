@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -406,7 +406,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             var res = new List<KeyValuePair<string, UpdateInfo>>();
             if (INSTALLDIR != null)
-                foreach (var folder in SystemIO.IO_OS(Utility.Utility.IsClientWindows).GetDirectories(INSTALLDIR))
+                foreach (var folder in SystemIO.IO_OS.GetDirectories(INSTALLDIR))
                 {
                     var r = ReadInstalledManifest(folder);
                     if (r != null)

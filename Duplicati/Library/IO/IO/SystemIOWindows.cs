@@ -20,11 +20,10 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.IO;
 
-using Alphaleonis.Win32.Vss;
 using AlphaFS = Alphaleonis.Win32.Filesystem;
 using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.IO
+namespace Duplicati.Library.Common.IO
 {
     public struct SystemIOWindows : ISystemIO
     {

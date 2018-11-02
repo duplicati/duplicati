@@ -20,7 +20,7 @@ using System.IO;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.IO
+namespace Duplicati.Library.Common.IO
 {
     /// <summary>
     /// Interface for wrapping System.IO operations.

@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Duplicati.Library.Interface;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Net;

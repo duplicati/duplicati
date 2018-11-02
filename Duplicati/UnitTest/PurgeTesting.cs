@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 
@@ -184,7 +184,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(res.AddedFiles, round1.Length);
             }
 
-            var dblock_file = SystemIO.IO_OS(Utility.IsClientWindows)
+            var dblock_file = SystemIO.IO_OS
                 .GetFiles(TARGETFOLDER, "*.dblock.zip.aes")
                 .Select(x => new FileInfo(x))
                 .OrderBy(x => x.LastWriteTimeUtc)

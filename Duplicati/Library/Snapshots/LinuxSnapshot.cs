@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
 {

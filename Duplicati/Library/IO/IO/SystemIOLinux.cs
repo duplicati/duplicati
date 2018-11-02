@@ -21,7 +21,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.IO
+namespace Duplicati.Library.Common.IO
 {
     public struct SystemIOLinux : ISystemIO
     {

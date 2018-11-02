@@ -19,7 +19,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using Newtonsoft.Json;
 using System.Net;
 

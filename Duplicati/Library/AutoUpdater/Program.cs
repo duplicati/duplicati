@@ -18,7 +18,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.AutoUpdater
 {

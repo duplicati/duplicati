@@ -17,7 +17,7 @@
 using System;
 using System.IO;
 using System.Linq;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest

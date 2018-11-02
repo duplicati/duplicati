@@ -27,7 +27,7 @@ using System.Text;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using System.Linq;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.UnitTest
 {

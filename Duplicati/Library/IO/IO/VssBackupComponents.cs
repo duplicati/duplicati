@@ -20,7 +20,7 @@ using System.IO;
 using System.Linq;
 using Alphaleonis.Win32.Vss;
 
-namespace Duplicati.Library.IO
+namespace Duplicati.Library.Common.IO
 {
     public class WriterMetaData
     {

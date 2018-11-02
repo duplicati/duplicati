@@ -15,7 +15,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-namespace Duplicati.Library.IO
+namespace Duplicati.Library.Common.IO
 {
     public static class SystemIO
     {
@@ -44,11 +44,11 @@ namespace Duplicati.Library.IO
         }
 
 
-        public static ISystemIO IO_OS(bool useWindowsIO)
+        public static ISystemIO IO_OS
         {
-            {
-                return useWindowsIO ? _IO_WIN : _IO_SYS;
-            }
+                get {
+                    return Platform.IsClientWindows ? _IO_WIN : _IO_SYS;
+                }
         }
     }
 }

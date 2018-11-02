@@ -25,7 +25,7 @@ using Newtonsoft.Json.Converters;
 using Duplicati.Library.Strings;
 using System.Net;
 using System.Text;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend.OpenStack
 {

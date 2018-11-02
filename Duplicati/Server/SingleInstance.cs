@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Server
@@ -171,7 +171,7 @@ namespace Duplicati.Server
                 DateTime startup = System.IO.File.GetLastWriteTime(m_lockfilename);
 
                 //Clean up any files that were created before the app launched
-                foreach(string s in SystemIO.IO_OS(Utility.IsClientWindows).GetFiles(m_controldir))
+                foreach(string s in SystemIO.IO_OS.GetFiles(m_controldir))
                     if (s != m_lockfilename && System.IO.File.GetCreationTime(s) < startup)
                         try { System.IO.File.Delete(s); }
                         catch { }

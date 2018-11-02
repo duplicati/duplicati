@@ -19,7 +19,7 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using System.IO;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.UnitTest
 {

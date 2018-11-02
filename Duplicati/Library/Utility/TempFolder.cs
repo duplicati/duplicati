@@ -18,7 +18,7 @@
 //
 #endregion
 using System;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Utility
 {

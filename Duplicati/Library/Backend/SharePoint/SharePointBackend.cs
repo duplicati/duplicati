@@ -29,7 +29,7 @@ using Duplicati.Library.Interface;
 
 using SP = Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client; // Plain 'using' for extension methods
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {

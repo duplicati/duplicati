@@ -21,7 +21,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Microsoft.WindowsAzure.Storage;

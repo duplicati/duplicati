@@ -20,7 +20,7 @@ using System.Linq;
 using HttpServer;
 using HttpServer.HttpModules;
 using HttpServer.Exceptions;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Server.WebServer
 {

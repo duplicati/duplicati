@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Utility

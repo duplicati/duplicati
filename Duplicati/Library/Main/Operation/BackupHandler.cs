@@ -32,7 +32,7 @@ using CoCoL;
 using System.Threading;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Operation
 {

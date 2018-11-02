@@ -18,7 +18,7 @@
 using System.Text;
 using NUnit.Framework;
 
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
@@ -37,7 +37,7 @@ namespace Duplicati.UnitTest
         public void TestGetPathRootWithLongPath()
         {
             var pathRoot =  Utility.IsClientWindows ? "C:\\" : "/";
-            var root = SystemIO.IO_OS(Utility.IsClientWindows).GetPathRoot(LongPath(pathRoot));
+            var root = SystemIO.IO_OS.GetPathRoot(LongPath(pathRoot));
 
             Assert.AreEqual(pathRoot, root);
         }
@@ -71,13 +71,13 @@ namespace Duplicati.UnitTest
             var pathRoot = Utility.IsClientWindows ? "C:\\" : "/";
 
             var longPath = LongPath(pathRoot);
-            if (SystemIO.IO_OS(Utility.IsClientWindows).DirectoryExists(longPath))
+            if (SystemIO.IO_OS.DirectoryExists(longPath))
             {
                 return;
             }
 
             //In particular don't throw PathTooLongException
-            Assert.Throws<System.IO.DirectoryNotFoundException>(() => SystemIO.IO_OS(Utility.IsClientWindows).GetFiles(longPath));
+            Assert.Throws<System.IO.DirectoryNotFoundException>(() => SystemIO.IO_OS.GetFiles(longPath));
         }
 
         [Test]
@@ -86,13 +86,13 @@ namespace Duplicati.UnitTest
             var pathRoot = Utility.IsClientWindows ? "C:\\" : "/";
 
             var longPath = LongPath(pathRoot);
-            if (SystemIO.IO_OS(Utility.IsClientWindows).DirectoryExists(longPath))
+            if (SystemIO.IO_OS.DirectoryExists(longPath))
             {
                 return;
             }
 
             //In particular don't throw PathTooLongException
-            Assert.Throws<System.IO.DirectoryNotFoundException>(() => SystemIO.IO_OS(Utility.IsClientWindows).GetDirectories(longPath));
+            Assert.Throws<System.IO.DirectoryNotFoundException>(() => SystemIO.IO_OS.GetDirectories(longPath));
         }
     }
 }

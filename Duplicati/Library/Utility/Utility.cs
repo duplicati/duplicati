@@ -1,4 +1,4 @@
-// Copyright (C) 2015, The Duplicati Team
+﻿// Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
@@ -21,7 +21,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 using System.Text.RegularExpressions;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Utility
 {
@@ -227,7 +227,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
         {
-            return EnumerateFileSystemEntries(rootpath, callback, SystemIO.IO_OS(Utility.IsClientWindows).GetDirectories, Directory.GetFiles);
+            return EnumerateFileSystemEntries(rootpath, callback, SystemIO.IO_OS.GetDirectories, Directory.GetFiles);
         }
 
         /// <summary>

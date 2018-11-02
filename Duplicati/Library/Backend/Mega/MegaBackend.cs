@@ -19,7 +19,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using CG.Web.MegaApiClient;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend.Mega
 {

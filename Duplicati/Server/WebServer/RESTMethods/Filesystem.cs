@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using Duplicati.Library.Snapshots;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -207,15 +207,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return false;
             };
 
-            var systemIO = SystemIO.IO_OS(Library.Utility.Utility.IsClientWindows);
-
-            foreach (var s in systemIO.EnumerateFileSystemEntries(entrypath))
+            foreach (var s in SystemIO.IO_OS.EnumerateFileSystemEntries(entrypath))
             {
                 Serializable.TreeNode tn = null;
                 try
                 {
-                    var attr = systemIO.GetFileAttributes(s);
-                    var isSymlink = systemIO.IsSymlink(s, attr);
+                    var attr = SystemIO.IO_OS.GetFileAttributes(s);
+                    var isSymlink = SystemIO.IO_OS.IsSymlink(s, attr);
                     var isFolder = (attr & FileAttributes.Directory) != 0;
                     var isFile = !isFolder;
                     var isHidden = (attr & FileAttributes.Hidden) != 0;
@@ -233,7 +231,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     tn = new Serializable.TreeNode()
                     {
                         id = rawid,
-                        text = systemIO.PathGetFileName(s),
+                        text = SystemIO.IO_OS.PathGetFileName(s),
                         hidden = isHidden,
                         symlink = isSymlink,
                         iconCls = isFolder ? (accessible ? (isSymlink ? "x-tree-icon-symlink" : "x-tree-icon-parent") : "x-tree-icon-locked") : "x-tree-icon-leaf",

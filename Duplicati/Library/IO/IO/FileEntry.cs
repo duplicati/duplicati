@@ -20,7 +20,7 @@
 using System;
 using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.IO
+namespace Duplicati.Library.Common.IO
 {
     /// <summary>
     /// The primary implementation of the file interface

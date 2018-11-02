@@ -19,7 +19,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
 {

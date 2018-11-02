@@ -18,7 +18,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Server
 {
@@ -148,8 +148,6 @@ namespace Duplicati.Server
 
         internal static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
         {
-            var systemIO = SystemIO.IO_OS(Library.Utility.Utility.IsClientWindows);
-
             if (backup.Sources == null || backup.Sources.Length == 0)
                 return new Dictionary<string, string>();
 
@@ -165,7 +163,7 @@ namespace Duplicati.Server
                     var nx = x;
                     if (nx.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
                         nx = nx.Substring(0, nx.Length - 1);
-                    var n = systemIO.PathGetFileName(nx);
+                    var n = SystemIO.IO_OS.PathGetFileName(nx);
                     if (!string.IsNullOrWhiteSpace(n))
                         return new KeyValuePair<string, string>(x, n);
                 }

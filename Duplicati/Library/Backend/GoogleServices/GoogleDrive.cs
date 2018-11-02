@@ -25,7 +25,7 @@ using Newtonsoft.Json;
 using Duplicati.Library.Backend.GoogleServices;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend.GoogleDrive
 {

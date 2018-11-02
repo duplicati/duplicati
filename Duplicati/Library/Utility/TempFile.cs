@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Duplicati.Library.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Utility
 {
@@ -90,7 +90,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The application temp files.</returns>
         private static IEnumerable<string> GetApplicationTempFiles()
         {
-            return SystemIO.IO_OS(Utility.IsClientWindows).GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
+            return SystemIO.IO_OS.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
         }
         
         /// <summary>
