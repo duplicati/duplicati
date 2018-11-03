@@ -22,55 +22,27 @@ namespace Duplicati.Library.Common
         /// <value>
         /// Gets or sets a value indicating if the client is Linux/Unix based
         /// </value>
-        public static bool IsClientLinux => Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX;
+        public static readonly bool IsClientLinux;
+
 
         /// <summary>
         /// Gets a value indicating if the client is Windows based
         /// </summary>
-        public static bool IsClientWindows => !IsClientLinux;
+        public static readonly bool IsClientWindows;
 
-
-        private static string UNAME;
 
         /// <value>
         /// Gets or sets a value indicating if the client is running OSX
         /// </value>
-        public static bool IsClientOSX
+        public static readonly bool IsClientOSX;
+
+        static Platform()
         {
-            get
-            {
-                // Sadly, Mono returns Unix when running on OSX
-                //return Environment.OSVersion.Platform == PlatformID.MacOSX;
-
-                if (!IsClientLinux)
-                    return false;
-
-                try
-                {
-                    if (UNAME == null)
-                    {
-                        var psi = new System.Diagnostics.ProcessStartInfo("uname")
-                        {
-                            RedirectStandardOutput = true,
-                            RedirectStandardInput = false,
-                            RedirectStandardError = false,
-                            UseShellExecute = false
-                        };
-
-                        var pi = System.Diagnostics.Process.Start(psi);
-                        pi.WaitForExit(5000);
-                        if (pi.HasExited)
-                            UNAME = pi.StandardOutput.ReadToEnd().Trim();
-                    }
-                }
-                catch
-                {
-                }
-
-                return "Darwin".Equals(UNAME);
-
-            }
+            IsClientLinux = Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX;
+            IsClientWindows = !IsClientLinux;
+            IsClientOSX = IsClientLinux && "Darwin".Equals(_RetrieveUname(false));
         }
+
         /// <value>
         /// Gets the output of "uname -a" on Linux, or null on Windows
         /// </value>
@@ -81,28 +53,35 @@ namespace Duplicati.Library.Common
                 if (!IsClientLinux)
                     return null;
 
-                try
-                {
-                    var psi = new System.Diagnostics.ProcessStartInfo("uname", "-a")
-                    {
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = false,
-                        RedirectStandardInput = false,
-                        UseShellExecute = false
-                    };
+                return _RetrieveUname(true);
 
-                    var pi = System.Diagnostics.Process.Start(psi);
-                    pi.WaitForExit(5000);
-                    if (pi.HasExited)
-                        return pi.StandardOutput.ReadToEnd().Trim();
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                return null;
             }
         }
+
+        private static string _RetrieveUname(bool showAll)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("uname", showAll ? "-a" : null)
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = false,
+                    RedirectStandardInput = false,
+                    UseShellExecute = false
+                };
+
+                var pi = System.Diagnostics.Process.Start(psi);
+                pi.WaitForExit(5000);
+                if (pi.HasExited)
+                    return pi.StandardOutput.ReadToEnd().Trim();
+            }
+            catch
+            {
+                return null;
+            }
+
+            return null;
+        }
+
     }
 }
