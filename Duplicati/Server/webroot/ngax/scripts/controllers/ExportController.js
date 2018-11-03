@@ -13,12 +13,12 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
 
         if ($scope.ExportType == 'commandline') {
             $scope.Connecting = true;
-            AppService.get('/backup/' + $scope.BackupID + '/export?cmdline=true').then(
+            AppService.get('/backup/' + $scope.BackupID + '/export?cmdline=true&export-passwords=' + encodeURIComponent($scope.ExportPasswords)).then(
                 function(resp) {
                     $scope.Connecting = false;
                     $scope.Completed = true;
                     $scope.CommandLine = resp.data.Command;
-                }, 
+                },
                 function(resp) {
                     $scope.Connecting = false;
                     var message = resp.statusText;
@@ -29,7 +29,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
                 }
             );
         } else {
-            $scope.DownloadURL = AppService.get_export_url($scope.BackupID, $scope.UseEncryption ? $scope.Passphrase : null);
+            $scope.DownloadURL = AppService.get_export_url($scope.BackupID, $scope.UseEncryption ? $scope.Passphrase : null, $scope.ExportPasswords);
             $scope.Completed = true;
         }
 
