@@ -23,32 +23,17 @@ namespace Duplicati.Library.Common.IO
         /// <summary>
         /// A cached lookup for windows methods for dealing with long filenames
         /// </summary>
-        private static readonly ISystemIO _IO_WIN = new SystemIOWindows();
+        public static readonly ISystemIO IO_WIN;
 
-        private static readonly ISystemIO _IO_SYS = new SystemIOLinux();
+        public static readonly ISystemIO IO_SYS;
 
-        public static ISystemIO IO_WIN
+        public static readonly ISystemIO IO_OS;
+
+        static SystemIO()
         {
-            get
-            {
-                return _IO_WIN;
-            }
-        }
-
-        public static ISystemIO IO_SYS
-        {
-            get
-            {
-                return _IO_SYS;
-            }
-        }
-
-
-        public static ISystemIO IO_OS
-        {
-                get {
-                    return Platform.IsClientWindows ? _IO_WIN : _IO_SYS;
-                }
+            IO_WIN = new SystemIOWindows();
+            IO_SYS = new SystemIOLinux();
+            IO_OS = Platform.IsClientWindows ? IO_WIN : IO_SYS;
         }
     }
 }
