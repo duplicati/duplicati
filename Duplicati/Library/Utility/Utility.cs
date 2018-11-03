@@ -825,7 +825,7 @@ namespace Duplicati.Library.Utility
 
         public static bool Which(string appname)
         {
-            if (!Platform.IsClientLinux)
+            if (!Platform.IsClientPosix)
                 return false;
 
             try
@@ -866,7 +866,7 @@ namespace Duplicati.Library.Utility
 
                     // TODO: This should probably be determined by filesystem rather than OS,
                     // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
-                    CachedIsFSCaseSensitive = ParseBool(str, () => Platform.IsClientLinux && !Platform.IsClientOSX);
+                    CachedIsFSCaseSensitive = ParseBool(str, () => Platform.IsClientPosix && !Platform.IsClientOSX);
                 }
 
                 return CachedIsFSCaseSensitive.Value;
@@ -944,7 +944,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The path to the users home directory
         /// </summary>
-        public static readonly string HOME_PATH = Environment.GetFolderPath(Platform.IsClientLinux ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
+        public static readonly string HOME_PATH = Environment.GetFolderPath(Platform.IsClientPosix ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
 
         /// <summary>
         /// Regexp for matching environment variables on Windows (%VAR%)

@@ -92,7 +92,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="volumeRoot">The root volume where the USN lookup is performed</param>
         internal USNJournal(string volumeRoot)
         {
-            if (Platform.IsClientLinux)
+            if (Platform.IsClientPosix)
                 throw new Interface.UserInformationException(Strings.USNHelper.LinuxNotSupportedError, "UsnOnLinuxNotSupported");
 
             m_volume = Util.AppendDirSeparator(volumeRoot);

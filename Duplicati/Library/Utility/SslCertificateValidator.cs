@@ -36,7 +36,7 @@ namespace Duplicati.Library.Utility
             public SslPolicyErrors SslError { get { return m_errors; } }
 
             public InvalidCertificateException(string certificate, SslPolicyErrors error)
-                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate) + (Platform.IsClientLinux ? Strings.SslCertificateValidator.MonoHelpSSL : ""))
+                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate) + (Platform.IsClientPosix ? Strings.SslCertificateValidator.MonoHelpSSL : ""))
             {
                 m_certificate = certificate;
                 m_errors = error;

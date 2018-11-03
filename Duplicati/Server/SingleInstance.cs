@@ -141,7 +141,7 @@ namespace Duplicati.Server
 
             try
             {
-                if (Platform.IsClientLinux)
+                if (Platform.IsClientPosix)
                     temp_fs = UnixSupport.File.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
                 else
                     temp_fs = System.IO.File.Open(m_lockfilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
@@ -189,7 +189,7 @@ namespace Duplicati.Server
 
                 //HACK: the unix file lock does not allow us to read the file length when the file is locked
                 if (new System.IO.FileInfo(m_lockfilename).Length == 0)
-                    if (!Platform.IsClientLinux)
+                    if (!Platform.IsClientPosix)
                         throw new Exception("The file was locked, but had no data");
 
                 //Notify the other process that we have started
@@ -197,7 +197,7 @@ namespace Duplicati.Server
 
                 //Write out the commandline arguments
                 string[] cmdargs = System.Environment.GetCommandLineArgs();
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(Platform.IsClientLinux ? UnixSupport.File.OpenExclusive(filename, System.IO.FileAccess.Write) : new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None)))
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(Platform.IsClientPosix ? UnixSupport.File.OpenExclusive(filename, System.IO.FileAccess.Write) : new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None)))
                     for (int i = 1; i < cmdargs.Length; i++) //Skip the first, as that is the filename
                         sw.WriteLine(cmdargs[i]);
 
@@ -238,7 +238,7 @@ namespace Duplicati.Server
             // needs a little time to create+lock the file. This is not really a fix, but an
             // ugly workaround. This functionality is only used to allow a new instance to signal
             // the running instance, so errors here would only affect that functionality
-            if (Platform.IsClientLinux)
+            if (Platform.IsClientPosix)
                 System.Threading.Thread.Sleep(1000);
 
             do
@@ -250,7 +250,7 @@ namespace Duplicati.Server
                         return;
 
                     List<string> args = new List<string>();
-                    using (System.IO.StreamReader sr = new System.IO.StreamReader(Platform.IsClientLinux ? UnixSupport.File.OpenExclusive(e.FullPath, System.IO.FileAccess.ReadWrite) : new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)))
+                    using (System.IO.StreamReader sr = new System.IO.StreamReader(Platform.IsClientPosix ? UnixSupport.File.OpenExclusive(e.FullPath, System.IO.FileAccess.ReadWrite) : new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)))
                     while(!sr.EndOfStream)
                         args.Add(sr.ReadLine());
 

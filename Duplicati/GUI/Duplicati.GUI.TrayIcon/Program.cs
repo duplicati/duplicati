@@ -44,7 +44,7 @@ namespace Duplicati.GUI.TrayIcon
                 return TOOLKIT_RUMPS;
 
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
-            if (Platform.IsClientLinux)
+            if (Platform.IsClientPosix)
             {
                 if (SupportsAppIndicator)
                     return TOOLKIT_GTK_APP_INDICATOR;
@@ -112,7 +112,7 @@ namespace Duplicati.GUI.TrayIcon
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
             {
 #if !(__MonoCS__ || __WindowsGTK__ || ENABLE_GTK)
-                if (Platform.IsClientLinux && !Platform.IsClientOSX)
+                if (Platform.IsClientPosix && !Platform.IsClientOSX)
                     Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
 #endif
                 toolkit = GetDefaultToolKit();

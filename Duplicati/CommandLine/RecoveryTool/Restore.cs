@@ -149,7 +149,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Restoring {0} files to {1}", filecount, string.IsNullOrWhiteSpace(targetpath) ? "original position" : targetpath);
 
-                if (Platform.IsClientLinux || largestprefix.Length > 0)
+                if (Platform.IsClientPosix || largestprefix.Length > 0)
                     largestprefix = Util.AppendDirSeparator(largestprefix);
 
                 if (!string.IsNullOrEmpty(largestprefix))

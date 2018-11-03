@@ -74,7 +74,7 @@ namespace Duplicati.Library.Backend
                 paths.AddRange(options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
 
                 //On windows we expand the drive letter * to all drives
-                if (!Platform.IsClientLinux)
+                if (!Platform.IsClientPosix)
                 {
                     System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
                     
@@ -291,7 +291,7 @@ namespace Duplicati.Library.Backend
         private System.IO.DriveInfo GetDrive()
         {
             string root;
-            if (Platform.IsClientLinux)
+            if (Platform.IsClientPosix)
             {
                 string path = Util.AppendDirSeparator(systemIO.PathGetFullPath(m_path));
                 root = "/";

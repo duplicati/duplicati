@@ -37,7 +37,7 @@ namespace Duplicati.Library.Utility.Power
             {
                 state = new MacOSPowerSupplyState();
             }
-            else if (Platform.IsClientLinux)
+            else if (Platform.IsClientPosix)
             {
                 state = new LinuxPowerSupplyState();
             }

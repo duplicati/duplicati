@@ -211,7 +211,7 @@ namespace Duplicati.Server
 
             try
             {
-                if (!Platform.IsClientLinux)
+                if (!Platform.IsClientPosix)
                     RegisterHibernateMonitor();
             }
             catch { }

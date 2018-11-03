@@ -85,7 +85,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
             }
 
-            return Platform.IsClientLinux ?
+            return Platform.IsClientPosix ?
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux()
                     :
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows();

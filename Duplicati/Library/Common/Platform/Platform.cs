@@ -22,7 +22,7 @@ namespace Duplicati.Library.Common
         /// <value>
         /// Gets or sets a value indicating if the client is Linux/Unix based
         /// </value>
-        public static readonly bool IsClientLinux;
+        public static readonly bool IsClientPosix;
 
 
         /// <summary>
@@ -38,9 +38,9 @@ namespace Duplicati.Library.Common
 
         static Platform()
         {
-            IsClientLinux = Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX;
-            IsClientWindows = !IsClientLinux;
-            IsClientOSX = IsClientLinux && "Darwin".Equals(_RetrieveUname(false));
+            IsClientPosix = Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX;
+            IsClientWindows = !IsClientPosix;
+            IsClientOSX = IsClientPosix && "Darwin".Equals(_RetrieveUname(false));
         }
 
         /// <value>
@@ -50,7 +50,7 @@ namespace Duplicati.Library.Common
         {
             get
             {
-                if (!IsClientLinux)
+                if (!IsClientPosix)
                     return null;
 
                 return _RetrieveUname(true);

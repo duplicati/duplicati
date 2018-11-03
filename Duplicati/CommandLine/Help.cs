@@ -99,9 +99,9 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%MONO%", Library.Utility.Utility.IsMono ? "mono " : "");
                 tp = tp.Replace("%APP_PATH%", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());
-                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Platform.IsClientLinux ? "/source" : @"D:\source");
-                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Platform.IsClientLinux ? "/source/myfile.txt" : @"D:\source\file.txt");
-                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Platform.IsClientLinux ? "/restore" : @"D:\restore");
+                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Platform.IsClientPosix ? "/source" : @"D:\source");
+                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Platform.IsClientPosix ? "/source/myfile.txt" : @"D:\source\file.txt");
+                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Platform.IsClientPosix ? "/restore" : @"D:\restore");
                 tp = tp.Replace("%ENCRYPTIONMODULES%", string.Join(", ", Library.DynamicLoader.EncryptionLoader.Keys));
                 tp = tp.Replace("%COMPRESSIONMODULES%", string.Join(", ", Library.DynamicLoader.CompressionLoader.Keys));
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);

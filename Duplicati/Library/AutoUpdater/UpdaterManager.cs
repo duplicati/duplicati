@@ -144,7 +144,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 if (!string.IsNullOrWhiteSpace(programfiles))
                     legacypaths.Add(System.IO.Path.Combine(programfiles, APPNAME, "updates"));
-                if (Platform.IsClientLinux)
+                if (Platform.IsClientPosix)
                     legacypaths.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
 
                 // The real attempts that we probe for

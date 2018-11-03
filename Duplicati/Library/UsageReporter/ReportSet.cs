@@ -47,7 +47,7 @@ namespace Duplicati.Library.UsageReporter
         {
             if (Platform.IsClientOSX)
                 Cached_OSType = "OSX";
-            else if (Platform.IsClientLinux)
+            else if (Platform.IsClientPosix)
                 Cached_OSType = "Linux";
             else if (new PlatformID[] {
                 PlatformID.Win32NT,

@@ -39,7 +39,7 @@ namespace Duplicati.Library.Snapshots
         public static ISnapshotService CreateSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
             return
-                Platform.IsClientLinux
+                Platform.IsClientPosix
                        ? CreateLinuxSnapshot(folders)
                        : CreateWindowsSnapshot(folders, options);
             

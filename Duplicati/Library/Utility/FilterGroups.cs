@@ -233,7 +233,7 @@ namespace Duplicati.Library.Utility
 
             if (Platform.IsClientOSX)
                 osFilters = CreateOSXFilters(group);
-            else if (Platform.IsClientLinux)
+            else if (Platform.IsClientPosix)
                 osFilters = CreateLinuxFilters(group);
             else if (Platform.IsClientWindows)
                 osFilters = CreateWindowsFilters(group);

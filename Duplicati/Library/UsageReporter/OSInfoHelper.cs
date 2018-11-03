@@ -72,7 +72,7 @@ namespace Duplicati.Library.UsageReporter
         {
             get
             {
-                if (!Platform.IsClientLinux)
+                if (!Platform.IsClientPosix)
                 {
                     return Environment.OSVersion.ToString();
                 }

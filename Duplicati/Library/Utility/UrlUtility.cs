@@ -68,7 +68,7 @@ namespace Duplicati.Library.Utility
                         ErrorHandler(string.Format("Unable to open a browser window, please manually visit: \r\n{0}", url));
                 }
             }
-            else if (Platform.IsClientLinux)
+            else if (Platform.IsClientPosix)
             {
                 try
                 {

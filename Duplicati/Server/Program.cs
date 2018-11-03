@@ -514,7 +514,7 @@ namespace Duplicati.Server
             //If you change the key, please note that you need to supply the same
             // key when restoring the setup, as the setup being backed up will
             // be encrypted as well.
-            if (!Platform.IsClientLinux && string.IsNullOrEmpty(dbPassword))
+            if (!Platform.IsClientPosix && string.IsNullOrEmpty(dbPassword))
                 dbPassword = Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42";
 
             // Allow override of the environment variables from the commandline
@@ -750,7 +750,7 @@ namespace Duplicati.Server
 
                 });
 
-                if (!Platform.IsClientLinux)
+                if (!Platform.IsClientPosix)
                     lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42"));
 
                 return lst.ToArray();
