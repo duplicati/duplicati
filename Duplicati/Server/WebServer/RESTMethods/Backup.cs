@@ -125,6 +125,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             if (!exportPasswords)
             {
                 backup.Settings = (Duplicati.Server.Serialization.Interface.ISetting[])backup.Settings.Where((setting) => !passwordFields.Contains(setting.Name)).ToArray();
+                backup.SanitizeTargetUrl();
             }
 
             if (cmdline)

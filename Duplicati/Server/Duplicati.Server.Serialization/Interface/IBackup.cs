@@ -42,7 +42,7 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         string[] Tags { get; set; }
         /// <summary>
-        /// The backup target url, excluding username/password
+        /// The backup target url
         /// </summary>
         string TargetURL { get; set; }
         /// <summary>
@@ -74,6 +74,8 @@ namespace Duplicati.Server.Serialization.Interface
         /// Gets a value indicating if this instance is not persisted to the database
         /// </summary>
         bool IsTemporary { get; }
+
+        void SanitizeTargetUrl();
     }
 }
 

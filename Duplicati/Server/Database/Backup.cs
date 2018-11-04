@@ -18,6 +18,7 @@
 using System;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Duplicati.Server.Database
 {
@@ -65,7 +66,7 @@ namespace Duplicati.Server.Database
         /// </summary>
         public string[] Tags { get; set; }
         /// <summary>
-        /// The backup target url, excluding username/password
+        /// The backup target url
         /// </summary>
         public string TargetURL { get; set; }
         /// <summary>
@@ -98,6 +99,24 @@ namespace Duplicati.Server.Database
         /// </summary>        
         public bool IsTemporary { get { return ID == null ? false : ID.IndexOf("-", StringComparison.Ordinal) > 0; } }
 
+        /// <summary>
+        /// Sanitizes the backup TargetUrl
+        /// </summary>
+        public void SanitizeTargetUrl()
+        {
+            var url = this.TargetURL;
+            // Remove authid
+            url = Regex.Replace(url, "(!?authid)=[^&\n]+[&]?", "");
+            // remove auth-password
+            url = Regex.Replace(url, "(!?auth-password)=[^&\n]+[&]?", "");
+            // Remove edge case of '?&'
+            url = Regex.Replace(url, Regex.Escape("?&"), "");
+            // Remove edge case of '&' at end of line
+            url = Regex.Replace(url, "&$", "");
+            // Remove edge case of '?' at end of line
+            url = Regex.Replace(url, Regex.Escape("?"), "");
+            this.TargetURL = url;
+        }
     }
 }
 
