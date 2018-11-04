@@ -9,9 +9,9 @@ backupApp.controller("ExportController", function($scope, $routeParams, AppServi
     $scope.doExport = function() {
         // Helper function(s)
         function warnUnencryptedPasswords(continuation) {
-            if ($scope.ExportType == "file" && $scope.ExportPasswords && !$scope.fileEncrypted) {
+            if ($scope.ExportType === "file" && $scope.ExportPasswords && !$scope.fileEncrypted) {
                 DialogService.dialog(gettextCatalog.getString("Not using encryption"), gettextCatalog.getString("The configuration should be kept safe. Are you sure you want to save an unencrypted file containing your passwords?"), [gettextCatalog.getString("Cancel"), gettextCatalog.getString("Yes, I understand the risk")], function(ix) {
-                    if (ix == 0) {
+                    if (ix === 0) {
                         $scope.CurrentStep = 0;
                     } else {
                         continuation();
@@ -25,7 +25,7 @@ backupApp.controller("ExportController", function($scope, $routeParams, AppServi
 
         // The actual export function to call after all checks pass
         function getExport() {
-            if ($scope.ExportType == "commandline") {
+            if ($scope.ExportType === "commandline") {
                 $scope.Connecting = true;
                 AppService.get("/backup/" + $scope.BackupID + "/export?cmdline=true&export-passwords=" + encodeURIComponent($scope.ExportPasswords)).then(
                     function(resp) {
@@ -52,8 +52,8 @@ backupApp.controller("ExportController", function($scope, $routeParams, AppServi
 
         // Make checks that do not require user input
         $scope.fileEncrypted = false;
-        if ($scope.UseEncryption && $scope.ExportType == "file") {
-            if (($scope.Passphrase || "").trim().length == 0) {
+        if ($scope.UseEncryption && $scope.ExportType === "file") {
+            if (($scope.Passphrase || "").trim().length === 0) {
                 DialogService.dialog(gettextCatalog.getString("No passphrase entered"), gettextCatalog.getString("To export without a passphrase, uncheck the \"Encrypt file\" box"));
                 return;
             } else {
