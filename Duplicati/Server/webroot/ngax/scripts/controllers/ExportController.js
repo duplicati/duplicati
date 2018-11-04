@@ -11,10 +11,11 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
         function warnUnencryptedPasswords(continuation) {
             if ($scope.ExportType == 'file' && $scope.ExportPasswords && !$scope.fileEncrypted) {
                 DialogService.dialog(gettextCatalog.getString('Not using encryption'), gettextCatalog.getString('The configuration should be kept safe. Are you sure you want to save an unencrypted file containing your passwords?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('Yes, I understand the risk')], function(ix) {
-                    if (ix == 0)
-                            $scope.CurrentStep = 0;
-                        else
-                            continuation();
+                    if (ix == 0) {
+                        $scope.CurrentStep = 0;
+                    } else {
+                        continuation();
+                    }
                 });
             } else {
                 continuation();
@@ -35,8 +36,9 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
                     function(resp) {
                         $scope.Connecting = false;
                         var message = resp.statusText;
-                        if (resp.data != null && resp.data.Message != null)
+                        if (resp.data != null && resp.data.Message != null) {
                             message = resp.data.Message;
+                        }
 
                         DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
                     }
@@ -46,7 +48,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
                 $scope.Completed = true;
             }
 
-        };
+        }
 
         // Make checks that do not require user input
         $scope.fileEncrypted = false;
@@ -54,8 +56,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
             if (($scope.Passphrase || '').trim().length == 0) {
                 DialogService.dialog(gettextCatalog.getString('No passphrase entered'), gettextCatalog.getString('To export without a passphrase, uncheck the "Encrypt file" box'));
                 return;
-            }
-            else {
+            } else {
                $scope.fileEncrypted = true;
             }
         }
