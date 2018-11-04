@@ -106,9 +106,11 @@ namespace Duplicati.Server.Database
         {
             var url = this.TargetURL;
             // Remove authid
-            url = Regex.Replace(url, "(!?authid)=[^&\n]+[&]?", "");
+            url = Regex.Replace(url, "authid=[^&\n]+[&]?", "");
             // remove auth-password
-            url = Regex.Replace(url, "(!?auth-password)=[^&\n]+[&]?", "");
+            url = Regex.Replace(url, "auth-password=[^&\n]+[&]?", "");
+            // remove backupsia-password
+            url = Regex.Replace(url, "backupsia-password=[^&\n]+[&]?", "");
             // Remove edge case of '?&'
             url = Regex.Replace(url, Regex.Escape("?&"), "");
             // Remove edge case of '&' at end of line
