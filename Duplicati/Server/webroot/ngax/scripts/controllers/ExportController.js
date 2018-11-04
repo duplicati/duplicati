@@ -8,7 +8,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
 
     $scope.doExport = function() {
         // Helper function(s)
-        warnUnencryptedPasswords = function(continuation) {
+        function warnUnencryptedPasswords(continuation) {
             if ($scope.ExportType == 'file' && $scope.ExportPasswords && !$scope.fileEncrypted) {
                 DialogService.dialog(gettextCatalog.getString('Not using encryption'), gettextCatalog.getString('The configuration should be kept safe. Are you sure you want to save an unencrypted file containing your passwords?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('Yes, I understand the risk')], function(ix) {
                     if (ix == 0)
@@ -23,7 +23,7 @@ backupApp.controller('ExportController', function($scope, $routeParams, AppServi
         }
 
         // The actual export function to call after all checks pass
-        getExport = function() {
+        function getExport() {
             if ($scope.ExportType == 'commandline') {
                 $scope.Connecting = true;
                 AppService.get('/backup/' + $scope.BackupID + '/export?cmdline=true&export-passwords=' + encodeURIComponent($scope.ExportPasswords)).then(
