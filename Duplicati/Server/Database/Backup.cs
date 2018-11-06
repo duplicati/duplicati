@@ -110,13 +110,13 @@ namespace Duplicati.Server.Database
             // remove auth-password
             url = Regex.Replace(url, "auth-password=[^&\n]+[&]?", "");
             // remove backupsia-password
-            url = Regex.Replace(url, "backupsia-password=[^&\n]+[&]?", "");
+            url = Regex.Replace(url, "sia-password=[^&\n]+[&]?", "");
             // Remove edge case of '?&'
             url = Regex.Replace(url, Regex.Escape("?&"), "");
             // Remove edge case of '&' at end of line
             url = Regex.Replace(url, "&$", "");
             // Remove edge case of '?' at end of line
-            url = Regex.Replace(url, Regex.Escape("?"), "");
+            url = Regex.Replace(url, Regex.Escape("?") + "$", "");
             this.TargetURL = url;
         }
     }
