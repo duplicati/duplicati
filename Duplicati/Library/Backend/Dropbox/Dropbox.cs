@@ -138,7 +138,7 @@ namespace Duplicati.Library.Backend
 
         public string[] DNSName
         {
-            get { return new string[] { new Uri(DropboxHelper.API_URL).Host, new Uri(DropboxHelper.CONTENT_API_URL).Host }; }
+            get { return WebApi.Dropbox.Hosts(); }
         }
 
         public void Test()

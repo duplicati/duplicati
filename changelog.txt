@@ -1,3 +1,58 @@
+2018-11-08 - 2.0.4.1_experimental_2018-11-08
+==========
+This is a collection release that is based on the 2.0.3.14 canary build.
+
+The major changes in this version are:
+
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
+2018-11-08 - 2.0.3.14_canary_2018-11-08
+==========
+* Removed unused icons, thanks @Pectojin
+* Updated AWS libraries, thanks @Pectojin
+* Removed the WindowsService restart fix as it did not work as expected
+
+2018-10-31 - 2.0.3.13_canary_2018-10-31
+==========
+* Added more tests, thanks @warwickmm
+* Fixed duration display in restore, thanks @verhoek
+* Refactored Dropbox backend, thanks @verhoek
+* Fixed a typo in the filter for excluding Firefox data, thanks @warwickmm
+* Fixed problem with OneDrive "eating" leading slashes, thanks @warwickmm
+* Improved Windows version detection for HyperV, thanks @mnaiman
+* Added code to allow the Windows Service to correctly autoupdate
+
+2018-10-23 - 2.0.3.12_canary_2018-10-23
+==========
+* Fixed translations not working for sub-cultures, thanks @LacunaSoftware
+* Improved error detection and reporting
+* Fixed progress bar not updating, thanks @LacunaSoftware
+* Improved LVM handling, thanks @jkellerer
+* Fixed issues with long paths and USN, thanks @dgehri
+* Numerous code quality improvements, thanks @warwickmm
+* Removal of unused code, thanks @Pectojin
+* Added backup description field to UI, thanks @sffetlio
+* Updated MegaApiClient to 1.6.3, thanks @Pectojin
+* Normalize paths by forcing Windows drive letters to upper case, thanks @mnaiman
+* Fixed progress stats gammar and consistency, thanks @lucascosti
+* Fixed server errors with empty form changes, thanks @LacunaSoftware
+* Improved error messages, thanks @warwickmm
+* Added US-West to Wasabi, thanks @gzzengwei
+* Added app manifest files for Windows, thanks @LacunaSoftware
+
 2018-09-05 - 2.0.3.11_canary_2018-09-05
 ==========
 * Cleanup of async methods and naming, thanks @warwickmm

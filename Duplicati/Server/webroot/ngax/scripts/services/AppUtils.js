@@ -101,12 +101,12 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         ];
 
         apputils.daysOfWeek = [
-            {name: gettextCatalog.getString('Mon'), value: 'mon'}, 
-            {name: gettextCatalog.getString('Tue'), value: 'tue'}, 
-            {name: gettextCatalog.getString('Wed'), value: 'wed'}, 
-            {name: gettextCatalog.getString('Thu'), value: 'thu'}, 
-            {name: gettextCatalog.getString('Fri'), value: 'fri'}, 
-            {name: gettextCatalog.getString('Sat'), value: 'sat'}, 
+            {name: gettextCatalog.getString('Mon'), value: 'mon'},
+            {name: gettextCatalog.getString('Tue'), value: 'tue'},
+            {name: gettextCatalog.getString('Wed'), value: 'wed'},
+            {name: gettextCatalog.getString('Thu'), value: 'thu'},
+            {name: gettextCatalog.getString('Fri'), value: 'fri'},
+            {name: gettextCatalog.getString('Sat'), value: 'sat'},
             {name: gettextCatalog.getString('Sun'), value: 'sun'}
         ];
 
@@ -180,7 +180,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             key: '-',
             prefix: '-'
         }];
-        
+
         apputils.filterGroups = [{
             name: gettextCatalog.getString('Default excludes'),
             value: 'DefaultExcludes'
@@ -207,17 +207,17 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
         apputils.filterTypeMap = {};
         for (var i = apputils.filterClasses.length - 1; i >= 0; i--)
-            apputils.filterTypeMap[apputils.filterClasses[i].key] = apputils.filterClasses[i];        
+            apputils.filterTypeMap[apputils.filterClasses[i].key] = apputils.filterClasses[i];
 
-        $rootScope.$broadcast('apputillookupschanged');        
+        $rootScope.$broadcast('apputillookupschanged');
     };
 
     reloadTexts();
-    $rootScope.$on('gettextLanguageChanged', reloadTexts); 
+    $rootScope.$on('gettextLanguageChanged', reloadTexts);
 
     this.parseBoolString = function(txt, def) {
         txt = (txt || '').toLowerCase();
-        if (txt == '0' || txt == 'false' || txt == 'off' || txt == 'no' || txt == 'f') 
+        if (txt == '0' || txt == 'false' || txt == 'off' || txt == 'no' || txt == 'f')
             return false;
         else if (txt == '1' || txt == 'true' || txt == 'on' || txt == 'yes' || txt == 't')
             return true;
@@ -255,7 +255,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         }
         else
             return new Date(dt);
-    };    
+    };
 
     this.parseOptionStrings = function(val, dict, validateCallback) {
         dict = dict || {};
@@ -390,7 +390,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             pwd[pos] = t;
         }
 
-        return pwd.join('');        
+        return pwd.join('');
     }
 
     this.nl2br = function(str, is_xhtml) {
@@ -533,7 +533,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
                 x.splice(i, 1);
         };
 
-        return x;       
+        return x;
     };
 
     this.splitFilterIntoTypeAndBody = function(src, dirsep) {
@@ -599,18 +599,18 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
         for(var i = 0; i < filters.length; i++) {
             var f = filters[i];
-            
+
             if (f == null || f.length == 0)
                 continue;
 
             var flag = f.substr(0, 1);
             var filter = f.substr(1);
             var rx = filter.substr(0, 1) == '[' && filter.substr(filter.length - 1, 1) == ']';
-            if (rx) 
+            if (rx)
                 filter = filter.substr(1, filter.length - 2);
             else
                 filter = this.replace_all(this.replace_all(this.preg_quote(filter), '*', '.*'), '?', '.');
-            
+
             try {
                 res.push([flag == '+', new RegExp(filter, caseSensitive ? 'g' : 'gi')]);
             } catch (e) {
@@ -641,7 +641,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         function copyToList(lst, key) {
             if (key != null && typeof(key) != typeof(''))
                 key = null;
-            
+
             for(var n in lst)
             {
                 if (key == null || key.toLowerCase() == lst[n].Key.toLowerCase())
@@ -684,6 +684,30 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
                 }
             }
         }
+    };
+
+    this.formatDuration = function(duration) {
+        // duration is a timespan string in format (dd.)hh:mm:ss.sss
+        // the part (dd.) is as indicated optional
+
+        if (duration == null) {
+            return;
+        }
+
+        var timespanArray = duration.split(':');
+
+        if (timespanArray.length < 3) {
+            return;
+        }
+
+        if (timespanArray[0].indexOf('.') > 0) {
+            timespanArray[0] = timespanArray[0].replace('.', " day(s) and ");
+        }
+
+        // remove ms
+        timespanArray[2] = timespanArray[2].substring(0, timespanArray[2].indexOf("."));
+
+        return timespanArray.join(':');
     };
 
 });

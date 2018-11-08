@@ -124,7 +124,7 @@ namespace Duplicati.Library.Backend
 
             // Extract out the path to the backup root folder from the given URI.  Since this can be an expensive operation, 
             // we will cache the value using a lazy initializer.
-            this.rootPathFromURL = new Lazy<string>(() => this.GetRootPathFromUrl(url));
+            this.rootPathFromURL = new Lazy<string>(() => MicrosoftGraphBackend.NormalizeSlashes(this.GetRootPathFromUrl(url)));
         }
 
         public abstract string ProtocolKey { get; }
