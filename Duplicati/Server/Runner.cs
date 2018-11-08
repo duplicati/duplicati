@@ -780,7 +780,7 @@ namespace Duplicati.Server
                     );
                 }
             }
-            else if (result.ParsedResult != Library.Interface.ParsedResultType.Success && (result.Warnings.Any() || result.Errors.Any()))
+            else if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
             {
                 var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
                             ? NotificationType.Warning
