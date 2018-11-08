@@ -1,4 +1,4 @@
-//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //  
 //  This library is free software; you can redistribute it and/or modify
@@ -17,6 +17,7 @@
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.Common;
 using Gdk;
 using Gtk;
 
@@ -93,7 +94,7 @@ namespace Duplicati.GUI.TrayIcon
                 else
                 {
                     m_item = new ImageMenuItem(text);
-                    if (!Duplicati.Library.Utility.Utility.IsClientOSX)
+                    if (!Platform.IsClientOSX)
                         if (icon != MenuIcons.None) {
                             ((ImageMenuItem)m_item).Image = GetIcon(icon);
 
@@ -268,7 +269,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             if (!_images.ContainsKey(icon))
             {
-                if (Duplicati.Library.Utility.Utility.IsClientOSX)
+                if (Platform.IsClientOSX)
                 {
                     switch (icon)
                     {

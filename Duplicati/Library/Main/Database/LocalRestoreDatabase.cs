@@ -1,7 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Database
@@ -343,7 +345,7 @@ namespace Duplicati.Library.Main.Database
                 if (v0 != null && v0 != DBNull.Value)
                     maxpath = v0.ToString();
 
-                var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(maxpath);
+                var dirsep = Util.GuessDirSeparator(maxpath);
 
                 cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}""", m_tempfiletable);
                 var filecount = cmd.ExecuteScalarInt64(-1);
@@ -356,7 +358,7 @@ namespace Duplicati.Library.Main.Database
 
                 while (filecount != foundfiles && maxpath.Length > 0)
                 {
-                    var mp = Library.Utility.Utility.AppendDirSeparator(maxpath, dirsep);
+                    var mp = Util.AppendDirSeparator(maxpath, dirsep);
                     cmd.SetParameterValue(0, mp.Length);
                     cmd.SetParameterValue(1, mp);
                     foundfiles = cmd.ExecuteScalarInt64(-1);
@@ -372,13 +374,13 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
-                return maxpath == "" ? "" : Library.Utility.Utility.AppendDirSeparator(maxpath, dirsep);
+                return maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep);
             }
         }
 
         public void SetTargetPaths(string largest_prefix, string destination)
         {
-            var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(string.IsNullOrWhiteSpace(largest_prefix) ? GetFirstPath() : largest_prefix);
+            var dirsep = Util.GuessDirSeparator(string.IsNullOrWhiteSpace(largest_prefix) ? GetFirstPath() : largest_prefix);
 
             using(var cmd = m_connection.CreateCommand())
             {
@@ -388,17 +390,17 @@ namespace Duplicati.Library.Main.Database
                     // defaults when restoring cross OS, e.g. backup on Linux, restore on Windows
                     //This is mostly meaningless, and the user really should use --restore-path
 
-                    if (Library.Utility.Utility.IsClientLinux && dirsep == "\\")
+                    if (Platform.IsClientPosix && dirsep == "\\")
                     {
                         // For Win -> Linux, we remove the colon from the drive letter, and use the drive letter as root folder
                         cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN ""\\"" || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
                         cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == ""\\"" THEN ""\\"" || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable));
 
                     }
-                    else if (Library.Utility.Utility.IsClientWindows && dirsep == "/")
+                    else if (Platform.IsClientWindows && dirsep == "/")
                     {
                         // For Linux -> Win, we use the temporary folder's drive as the root path
-                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == ""/"" THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable), Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"));
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == ""/"" THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable), Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"));
                     }
                     else
                     {
@@ -420,16 +422,16 @@ namespace Duplicati.Library.Main.Database
                     }
                     else
                     {
-                        largest_prefix = Library.Utility.Utility.AppendDirSeparator(largest_prefix, dirsep);
+                        largest_prefix = Util.AppendDirSeparator(largest_prefix, dirsep);
                         cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = SUBSTR(""Path"", ?)", m_tempfiletable), largest_prefix.Length + 1);
                     }
                 }
 
                 // Cross-os path remapping support
-                if (Library.Utility.Utility.IsClientLinux && dirsep == "\\")
+                if (Platform.IsClientPosix && dirsep == "\\")
                     // For Win paths on Linux
                     cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(""TargetPath"", ""\"", ""/"")", m_tempfiletable));
-                else if (Library.Utility.Utility.IsClientWindows && dirsep == "/")
+                else if (Platform.IsClientWindows && dirsep == "/")
                     // For Linux paths on Windows
                     cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(REPLACE(""TargetPath"", ""\"", ""_""), ""/"", ""\"")", m_tempfiletable));
 
@@ -438,7 +440,7 @@ namespace Duplicati.Library.Main.Database
                     // Paths are now relative with target-os naming system
                     // so we prefix them with the target path
 
-                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = ? || ""TargetPath"" ", m_tempfiletable), Library.Utility.Utility.AppendDirSeparator(destination));
+                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = ? || ""TargetPath"" ", m_tempfiletable), Util.AppendDirSeparator(destination));
                 }
 
 

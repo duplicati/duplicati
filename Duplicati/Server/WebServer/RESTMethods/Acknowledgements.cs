@@ -16,6 +16,8 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -29,7 +31,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         public void GET(string key, RequestInfo info)
         {
-            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "acknowledgements.txt");
+            var path = SystemIO.IO_OS.PathCombine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "acknowledgements.txt");
             info.OutputOK(new GetResponse() {
                 Status = "OK",
                 Acknowledgements = System.IO.File.ReadAllText(path)

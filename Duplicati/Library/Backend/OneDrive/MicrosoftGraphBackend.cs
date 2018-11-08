@@ -10,6 +10,7 @@ using System.Threading;
 
 using Duplicati.Library.Backend.MicrosoftGraph;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 
 using Newtonsoft.Json;

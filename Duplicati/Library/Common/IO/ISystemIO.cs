@@ -18,14 +18,16 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Common.IO
 {
     /// <summary>
     /// Interface for wrapping System.IO operations.
     /// </summary>
     public interface ISystemIO
     {
+        IFileEntry DirectoryEntry(string path);
         void DirectoryDelete(string path);
         void DirectoryDelete(string path, bool recursive);
         void DirectoryCreate(string path);
@@ -35,18 +37,21 @@ namespace Duplicati.Library.Snapshots
         DateTime DirectoryGetLastWriteTimeUtc(string path);
         DateTime DirectoryGetCreationTimeUtc(string path);
 
+
+        IFileEntry FileEntry(string path);
         void FileMove(string source, string target);
         void FileDelete(string path);
+        void FileCopy(string source, string target, bool overwrite);
         void FileSetLastWriteTimeUtc(string path, DateTime time);
         void FileSetCreationTimeUtc(string path, DateTime time);
         DateTime FileGetLastWriteTimeUtc(string path);
         DateTime FileGetCreationTimeUtc(string path);
         bool FileExists(string path);
         long FileLength(string path);
-        Stream FileOpenRead(string path);
-        Stream FileOpenWrite(string path);
-        Stream FileOpenReadWrite(string path);
-        Stream FileCreate(string path);
+        FileStream FileOpenRead(string path);
+        FileStream FileOpenWrite(string path);
+        FileStream FileOpenReadWrite(string path);
+        FileStream FileCreate(string path);
         FileAttributes GetFileAttributes(string path);
         void SetFileAttributes(string path, FileAttributes attributes);
         void CreateSymlink(string symlinkfile, string target, bool asDir);
@@ -55,11 +60,20 @@ namespace Duplicati.Library.Snapshots
         string PathGetFileName(string path);
         string PathGetExtension(string path);
         string PathChangeExtension(string path, string extension);
-        string PathCombine(string path1, string path2);
+        string PathCombine(params string[] paths);
+        string PathGetFullPath(string path);
+        string GetPathRoot(string path);
+        string[] GetDirectories(string path);
+        string[] GetFiles(string path);
+        string[] GetFiles(string path, string searchPattern);
+        DateTime GetCreationTimeUtc(string path);
+        DateTime GetLastWriteTimeUtc(string path);
         IEnumerable<string> EnumerateFileSystemEntries(string path);
+        IEnumerable<string> EnumerateDirectories(string path);
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
         Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink);
     }
+
 }
 

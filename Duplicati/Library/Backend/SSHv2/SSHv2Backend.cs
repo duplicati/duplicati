@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 
@@ -80,7 +81,7 @@ namespace Duplicati.Library.Backend
 
             if (!string.IsNullOrWhiteSpace(m_path))
             {
-                m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_path, "/");
+                m_path = Util.AppendDirSeparator(m_path, "/");
             }
 
             if (!m_path.StartsWith("/", StringComparison.Ordinal))
@@ -293,7 +294,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(path))
                 return;
 
-            string working_dir = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_con.WorkingDirectory, "/");
+            string working_dir = Util.AppendDirSeparator(m_con.WorkingDirectory, "/");
             if (working_dir == path)
                 return;
 
