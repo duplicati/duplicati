@@ -1,3 +1,24 @@
+2018-11-08 - 2.0.4.1_experimental_2018-11-08
+==========
+This is a collection release that is based on the 2.0.3.14 canary build.
+
+The major changes in this version are:
+
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
 2018-11-08 - 2.0.3.14_canary_2018-11-08
 ==========
 * Removed unused icons, thanks @Pectojin
