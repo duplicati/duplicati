@@ -121,10 +121,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var cmdline = Library.Utility.Utility.ParseBool(info.Request.QueryString["cmdline"].Value, false);
             var argsonly = Library.Utility.Utility.ParseBool(info.Request.QueryString["argsonly"].Value, false);
             var exportPasswords = Library.Utility.Utility.ParseBool(info.Request.QueryString["export-passwords"].Value, false);
-            var passwordFields = new [] { "passphrase", "--send-mail-password", "--send-xmpp-password" };
             if (!exportPasswords)
             {
-                backup.Settings = (Duplicati.Server.Serialization.Interface.ISetting[])backup.Settings.Where((setting) => !passwordFields.Contains(setting.Name)).ToArray();
+                backup.SanitizeSettings();
                 backup.SanitizeTargetUrl();
             }
 

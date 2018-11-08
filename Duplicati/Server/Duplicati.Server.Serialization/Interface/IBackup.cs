@@ -76,6 +76,8 @@ namespace Duplicati.Server.Serialization.Interface
         bool IsTemporary { get; }
 
         void SanitizeTargetUrl();
+
+        void SanitizeSettings();
     }
 }
 

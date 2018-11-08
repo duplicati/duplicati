@@ -19,12 +19,27 @@ using System;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace Duplicati.Server.Database
 {
     public class Backup : IBackup
     {
-    
+        // Sensitive information that may be stored in TargetUrl
+        private readonly string[] UrlPasswords = new[]{
+            "authid",
+            "auth-password",
+            "sia-password",
+        };
+
+        // Sensitive information that may be stored in Settings
+        private readonly string[] SettingPasswords = new[]{
+            "passphrase",
+            "--authid",
+            "--send-mail-password",
+            "--send-xmpp-password"
+        };
+
         public Backup()
         {
             this.ID = null;
@@ -100,24 +115,25 @@ namespace Duplicati.Server.Database
         public bool IsTemporary { get { return ID == null ? false : ID.IndexOf("-", StringComparison.Ordinal) > 0; } }
 
         /// <summary>
-        /// Sanitizes the backup TargetUrl
+        /// Sanitizes the backup TargetUrl from any fields in the PasswordFields list.
         /// </summary>
         public void SanitizeTargetUrl()
         {
-            var url = this.TargetURL;
-            // Remove authid
-            url = Regex.Replace(url, "authid=[^&\n]+[&]?", "");
-            // remove auth-password
-            url = Regex.Replace(url, "auth-password=[^&\n]+[&]?", "");
-            // remove backupsia-password
-            url = Regex.Replace(url, "sia-password=[^&\n]+[&]?", "");
-            // Remove edge case of '?&'
-            url = Regex.Replace(url, Regex.Escape("?&"), "");
-            // Remove edge case of '&' at end of line
-            url = Regex.Replace(url, "&$", "");
-            // Remove edge case of '?' at end of line
-            url = Regex.Replace(url, Regex.Escape("?") + "$", "");
-            this.TargetURL = url;
+            var url = new Duplicati.Library.Utility.Uri(this.TargetURL);
+            var filteredParameters = url.QueryParameters;
+            foreach (string field in UrlPasswords) {
+                filteredParameters.Remove(field);
+            }
+            url = url.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(url.QueryParameters));
+            this.TargetURL = url.ToString();
+        }
+
+        /// <summary>
+        /// Sanitizes the settings from any fields in the PassworldFields list.
+        /// </summary>
+        public void SanitizeSettings()
+        {
+            this.Settings = this.Settings.Where((setting) => !SettingPasswords.Contains(setting.Name)).ToArray();
         }
     }
 }
