@@ -37,7 +37,7 @@ namespace Duplicati.Server.Database
             "passphrase",
             "--authid",
             "--send-mail-password",
-            "--send-xmpp-password"
+            "--send-xmpp-password",
         };
 
         public Backup()
