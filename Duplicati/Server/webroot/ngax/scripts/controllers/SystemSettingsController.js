@@ -108,7 +108,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
                 if ($scope.updateChannel != $scope.originalUpdateChannel)
                     AppService.post('/updates/check');
 
-                $location.path('/');
+                $route.reload();
             },
             AppUtils.connectionError(gettextCatalog.getString('Failed to save:') + ' ')
         );
