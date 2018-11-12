@@ -14,3 +14,13 @@ backupApp.filter('parsetimestamp', function(AppUtils) {
       return AppUtils.toDisplayDateAndTime(value);
   }
 });
+
+backupApp.filter('parseForceActualDate', function(parsetimestampFilter, momentFilter) {
+  return function(value, force) {
+    if (force) {
+      return parsetimestampFilter(value);    
+    }
+    
+    return momentFilter(value, 'calendar');
+  }
+});
