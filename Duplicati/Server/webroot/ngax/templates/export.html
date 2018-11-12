@@ -13,6 +13,10 @@
                 <input type="radio" name="export-type" value="file" id="type-file" ng-model="ExportType"/>
                 <label for="type-file" translate>To File</label>
             </div>
+            <div class="input checkbox multiple">
+                <input type="checkbox" name="encrypt-passwords" id="encrypt-passwords" ng-model="ExportPasswords"  />
+                <label for="encrypt-passwords" translate>Export passwords</label>
+            </div>
             <div class="input checkbox multiple" ng-show="ExportType == 'file'">
                 <input type="checkbox" name="use-encryption" id="use-encryption" ng-model="UseEncryption"  />
                 <label for="use-encryption" translate>Encrypt file</label>

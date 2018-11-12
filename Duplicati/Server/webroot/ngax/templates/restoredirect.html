@@ -71,7 +71,7 @@
 
                     <div ng-show="showAdvanced">
                         <div class="input textarea">
-                            <label for="options">{{'Advanced Options' | translate}}<span class="info">i</span></label>
+                            <label for="options">{{'Advanced Options' | translate}}</label>
                             <textarea id="options" name="options" ng-model="ExtendedOptions" placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--prefix')}}"></textarea>
                         </div>
                     </div>
@@ -88,7 +88,7 @@
             </div>
             <!-- .steps-boxes -->
         </div>
-        
+
         <div ng-show="connecting == true &amp;&amp; taskid == null">
             {{ConnectionProgress}}
             <div ng-show="serverstate.programState == 'Paused'">

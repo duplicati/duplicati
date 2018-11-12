@@ -1,4 +1,4 @@
-//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 
 //  http://www.duplicati.com, info@duplicati.com
 //
@@ -16,24 +16,23 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.IO;
 
 using AlphaFS = Alphaleonis.Win32.Filesystem;
+using Duplicati.Library.Interface;
 
-
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Common.IO
 {
     public struct SystemIOWindows : ISystemIO
     {
         private const string UNCPREFIX = @"\\?\";
         private const string UNCPREFIX_SERVER = @"\\?\UNC\";
         private const string PATHPREFIX_SERVER = @"\\";
-        private static readonly string DIRSEP = System.IO.Path.DirectorySeparatorChar.ToString();
+        private static readonly string DIRSEP = Util.DirectorySeparatorString;
 
-        public static bool IsPathTooLong(string path)
+        private static bool IsPathTooLong(string path)
         {
             if (path.StartsWith(UNCPREFIX, StringComparison.Ordinal) || path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) || path.Length > 260)
                 return true;
@@ -51,7 +50,7 @@ namespace Duplicati.Library.Snapshots
 
             if (path.StartsWith(PATHPREFIX_SERVER, StringComparison.Ordinal))
                 return UNCPREFIX_SERVER + path.Remove(0, PATHPREFIX_SERVER.Length);
-            
+
             return UNCPREFIX + path;
         }
 
@@ -67,8 +66,8 @@ namespace Duplicati.Library.Snapshots
         public void DirectoryDelete(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.Delete(path);
                     return;
                 }
@@ -81,8 +80,8 @@ namespace Duplicati.Library.Snapshots
         public void DirectoryCreate(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.CreateDirectory(path);
                     return;
                 }
@@ -105,8 +104,8 @@ namespace Duplicati.Library.Snapshots
         public void FileDelete(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.File.Delete(path);
                     return;
                 }
@@ -119,8 +118,8 @@ namespace Duplicati.Library.Snapshots
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.File.SetLastWriteTimeUtc(path, time);
                     return;
                 }
@@ -133,8 +132,8 @@ namespace Duplicati.Library.Snapshots
         public void FileSetCreationTimeUtc(string path, DateTime time)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.File.SetCreationTimeUtc(path, time);
                     return;
                 }
@@ -147,8 +146,8 @@ namespace Duplicati.Library.Snapshots
         public DateTime FileGetLastWriteTimeUtc(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     return System.IO.File.GetLastWriteTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -160,8 +159,8 @@ namespace Duplicati.Library.Snapshots
         public DateTime FileGetCreationTimeUtc(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     return System.IO.File.GetCreationTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -180,7 +179,7 @@ namespace Duplicati.Library.Snapshots
             return Alphaleonis.Win32.Filesystem.File.Exists(PrefixWithUNC(path));
         }
 
-        public System.IO.Stream FileOpenRead(string path)
+        public System.IO.FileStream FileOpenRead(string path)
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.Open(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite); }
@@ -190,7 +189,7 @@ namespace Duplicati.Library.Snapshots
             return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         }
 
-        public System.IO.Stream FileOpenWrite(string path)
+        public System.IO.FileStream FileOpenWrite(string path)
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.OpenWrite(path); }
@@ -203,7 +202,7 @@ namespace Duplicati.Library.Snapshots
                 return FileCreate(path);
         }
 
-        public System.IO.Stream FileOpenReadWrite(string path)
+        public System.IO.FileStream FileOpenReadWrite(string path)
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.Open(path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.Read); }
@@ -213,7 +212,7 @@ namespace Duplicati.Library.Snapshots
             return Alphaleonis.Win32.Filesystem.File.Open(PrefixWithUNC(path), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
         }
 
-        public System.IO.Stream FileCreate(string path)
+        public System.IO.FileStream FileCreate(string path)
         {
             if (!IsPathTooLong(path))
                 try { return System.IO.File.Create(path); }
@@ -236,9 +235,9 @@ namespace Duplicati.Library.Snapshots
         public void SetFileAttributes(string path, System.IO.FileAttributes attributes)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
-                    System.IO.File.SetAttributes(path, attributes); 
+                try
+                {
+                    System.IO.File.SetAttributes(path, attributes);
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -332,7 +331,7 @@ namespace Duplicati.Library.Snapshots
 
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.GetExtension(PrefixWithUNC(path)));
         }
-        
+
         public string PathChangeExtension(string path, string extension)
         {
             if (!IsPathTooLong(path))
@@ -343,21 +342,39 @@ namespace Duplicati.Library.Snapshots
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.ChangeExtension(PrefixWithUNC(path), extension));
         }
 
-        public string PathCombine(string path1, string path2)
+        public string PathCombine(params string[] paths)
         {
-            if (!IsPathTooLong(path1 + "\\" + path2))
-                try { return System.IO.Path.Combine(path1, path2); }
-                catch (System.IO.PathTooLongException) { }
-                catch (System.ArgumentException) { }
+            var combinedPath = "";
+            for (int i = 0; i < paths.Length; i++)
+            {
+                if (i == 0)
+                {
+                    combinedPath = paths[i];
+                }
+                else
+                {
+                    if (!IsPathTooLong(combinedPath + "\\" + paths[i]))
+                    {
+                        try
+                        {
+                            combinedPath = Path.Combine(combinedPath, paths[i]);
+                        }
+                        catch (Exception ex) when (ex is System.IO.PathTooLongException || ex is System.ArgumentException) { 
+                            //TODO: Explain why we need to keep prefixing and stripping UNC's.
+                            combinedPath = StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(combinedPath), paths[i]));
+                        }
+                    }
+                }
+            }
 
-            return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(path1), path2));
+            return combinedPath;
         }
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.SetLastWriteTimeUtc(path, time);
                     return;
                 }
@@ -371,8 +388,8 @@ namespace Duplicati.Library.Snapshots
         public void DirectorySetCreationTimeUtc(string path, DateTime time)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.SetCreationTimeUtc(path, time);
                     return;
                 }
@@ -385,8 +402,8 @@ namespace Duplicati.Library.Snapshots
         public DateTime DirectoryGetLastWriteTimeUtc(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     return System.IO.Directory.GetLastWriteTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -398,8 +415,8 @@ namespace Duplicati.Library.Snapshots
         public DateTime DirectoryGetCreationTimeUtc(string path)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     return System.IO.Directory.GetCreationTimeUtc(path);
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -411,8 +428,8 @@ namespace Duplicati.Library.Snapshots
         public void FileMove(string source, string target)
         {
             if (!IsPathTooLong(source) && !IsPathTooLong(target))
-                try 
-                { 
+                try
+                {
                     System.IO.File.Move(source, target);
                     return;
                 }
@@ -435,8 +452,8 @@ namespace Duplicati.Library.Snapshots
         public void DirectoryDelete(string path, bool recursive)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
+                try
+                {
                     System.IO.Directory.Delete(path, recursive);
                     return;
                 }
@@ -521,9 +538,9 @@ namespace Duplicati.Library.Snapshots
         private void SetAccessControlFile(string path, FileSecurity rules)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
-                    System.IO.File.SetAccessControl(path, rules); 
+                try
+                {
+                    System.IO.File.SetAccessControl(path, rules);
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -535,9 +552,9 @@ namespace Duplicati.Library.Snapshots
         private void SetAccessControlDir(string path, DirectorySecurity rules)
         {
             if (!IsPathTooLong(path))
-                try 
-                { 
-                    System.IO.Directory.SetAccessControl(path, rules); 
+                try
+                {
+                    System.IO.Directory.SetAccessControl(path, rules);
                     return;
                 }
                 catch (System.IO.PathTooLongException) { }
@@ -567,7 +584,7 @@ namespace Duplicati.Library.Snapshots
 
             return dict;
         }
-            
+
         public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
         {
             var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
@@ -576,7 +593,7 @@ namespace Duplicati.Library.Snapshots
             System.Security.AccessControl.FileSystemSecurity rules;
 
             if (isDirTarget)
-                rules = GetAccessControlDir(targetpath);                
+                rules = GetAccessControlDir(targetpath);
             else
                 rules = GetAccessControlFile(targetpath);
 
@@ -588,7 +605,7 @@ namespace Duplicati.Library.Snapshots
                     rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
 
                 Exception ex = null;
-               
+
                 foreach (var r in content)
                 {
                     // Attempt to apply as many rules as we can
@@ -612,7 +629,154 @@ namespace Duplicati.Library.Snapshots
             }
         }
 
-        #endregion    
+        public string GetPathRoot(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return Path.GetPathRoot(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+            return AlphaFS.Path.GetPathRoot(path);
+        }
+
+        public string[] GetDirectories(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetDirectories(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            return AlphaFS.Directory.GetDirectories(path);
+        }
+
+        public string[] GetFiles(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetFiles(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            return AlphaFS.Directory.GetFiles(path);
+        }
+
+        public string[] GetFiles(string path, string searchPattern)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetFiles(path, searchPattern); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            return AlphaFS.Directory.GetFiles(path, searchPattern);
+        }
+
+        public DateTime GetCreationTimeUtc(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetCreationTimeUtc(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            return AlphaFS.File.GetCreationTimeUtc(path);
+        }
+
+        public DateTime GetLastWriteTimeUtc(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.GetLastWriteTimeUtc(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            return AlphaFS.File.GetLastWriteTimeUtc(path);
+        }
+
+        public IEnumerable<string> EnumerateDirectories(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return Directory.EnumerateDirectories(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            return AlphaFS.Directory.EnumerateDirectories(path);
+        }
+
+        public void FileCopy(string source, string target, bool overwrite)
+        {
+            if (!IsPathTooLong(source) && !IsPathTooLong(target))
+            {
+                try { File.Copy(source, target, overwrite); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            AlphaFS.File.Copy(source, target, overwrite);
+        }
+
+        public string PathGetFullPath(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return System.IO.Path.GetFullPath(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            return AlphaFS.Path.GetFullPath(path);
+        }
+
+        public IFileEntry DirectoryEntry(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try 
+                {
+                    var dInfo = new DirectoryInfo(path); 
+                    return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
+                    {
+                        IsFolder = true
+                    };
+                }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+        
+            var dInfoAlphaFS = new AlphaFS.DirectoryInfo(path);
+            return new FileEntry(dInfoAlphaFS.Name, 0, dInfoAlphaFS.LastAccessTime, dInfoAlphaFS.LastWriteTime)
+            {
+                IsFolder = true
+            };
+        }
+
+        public IFileEntry FileEntry(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try 
+                {
+                    var fileInfo = new FileInfo(path);
+                    return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
+                }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            var fInfoAlphaFS = new AlphaFS.FileInfo(path);
+            return new FileEntry(fInfoAlphaFS.Name, fInfoAlphaFS.Length, fInfoAlphaFS.LastAccessTime, fInfoAlphaFS.LastWriteTime);
+        }
+
+        #endregion
     }
 }
 

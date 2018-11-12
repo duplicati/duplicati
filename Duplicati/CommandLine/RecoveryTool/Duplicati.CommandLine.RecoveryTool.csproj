@@ -171,6 +171,10 @@
       <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
       <Name>Duplicati.Library.Backend.Dropbox</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="help.txt" />

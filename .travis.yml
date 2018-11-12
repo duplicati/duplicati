@@ -58,6 +58,7 @@ jobs:
     - env: CATEGORY=Utility
     - env: CATEGORY=UriUtility
     - env: CATEGORY=WebApi
+    - env: CATEGORY=IO
 
     - env: CATEGORY=GUI
       addons:

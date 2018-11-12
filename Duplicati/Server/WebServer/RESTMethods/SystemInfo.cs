@@ -18,6 +18,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -75,7 +76,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 DefaultUpdateChannel = Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel,
                 DefaultUsageReportLevel = Duplicati.Library.UsageReporter.Reporter.DefaultReportLevel,
                 ServerTime = DateTime.Now,
-                OSType = Library.Utility.Utility.IsClientLinux ? (Library.Utility.Utility.IsClientOSX ? "OSX" : "Linux") : "Windows",
+                OSType = Platform.IsClientPosix ? (Platform.IsClientOSX ? "OSX" : "Linux") : "Windows",
                 DirectorySeparator = System.IO.Path.DirectorySeparatorChar,
                 PathSeparator = System.IO.Path.PathSeparator,
                 CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,

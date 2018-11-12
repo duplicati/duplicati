@@ -24,6 +24,7 @@ using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -105,7 +106,7 @@ namespace Duplicati.Library.Backend
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             m_url = u.SetScheme(m_useSSL ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
-            m_url = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_url, "/");
+            m_url = Util.AppendDirSeparator(m_url, "/");
         }
 
         private System.Net.HttpWebRequest CreateRequest(string remotename, string queryparams)

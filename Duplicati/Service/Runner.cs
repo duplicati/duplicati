@@ -109,22 +109,6 @@ namespace Duplicati.Service
                                     PingProcess();
                             }
                         }
-
-                        // Check if the child process is signalling an update
-                        if (m_process.ExitCode == Duplicati.Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE)
-                        {
-                            // If we are a spawned update process, our parent process will restart us
-                            if (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment)
-                            {
-                                // Hard exit from here
-                                Environment.Exit(Duplicati.Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE);
-                            }
-                            else
-                            {
-                                // Log this to help in debugging
-                                m_reportMessage("Child process stopped with an update code, but we are not running in an update environment. Ignoring update request", true);
-                            }
-                        }
                     }
                     catch (Exception ex)
                     {

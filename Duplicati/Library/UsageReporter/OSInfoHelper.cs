@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -71,11 +72,11 @@ namespace Duplicati.Library.UsageReporter
         {
             get
             {
-                if (!Utility.Utility.IsClientLinux)
+                if (!Platform.IsClientPosix)
                 {
                     return Environment.OSVersion.ToString();
                 }
-                else if (Utility.Utility.IsClientOSX)
+                else if (Platform.IsClientOSX)
                 {
                     var m = RunProgramAndReadOutput("sw_vers", null);
                     if (m != null)

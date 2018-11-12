@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -114,7 +115,7 @@ namespace Duplicati.Library.Backend
             m_path = u.HostAndPath; // Host and path of "jottacloud://folder/subfolder" is "folder/subfolder", so the actual folder path within the mount point.
             if (string.IsNullOrEmpty(m_path)) // Require a folder. Actually it is possible to store files directly on the root level of the mount point, but that does not seem to be a good option.
                 throw new UserInformationException(Strings.Jottacloud.NoPathError, "JottaNoPath");
-            m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_path, "/");
+            m_path = Util.AppendDirSeparator(m_path, "/");
             if (!string.IsNullOrEmpty(u.Username))
             {
                 m_userInfo = new System.Net.NetworkCredential();

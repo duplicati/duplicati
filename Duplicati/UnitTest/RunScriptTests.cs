@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Duplicati.Library.Common;
 using Duplicati.Library.Interface;
 using NUnit.Framework;
 
@@ -158,7 +159,7 @@ namespace Duplicati.UnitTest
         private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0)
         {
             var id = Guid.NewGuid().ToString("N").Substring(0, 6);
-            if (Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
             {
                 var commands = new List<string>();
                 if (!string.IsNullOrWhiteSpace(stdout))

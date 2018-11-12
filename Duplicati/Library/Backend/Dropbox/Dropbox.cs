@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -49,7 +50,7 @@ namespace Duplicati.Library.Backend
             get { return "dropbox"; }
         }
 
-        private FileEntry ParseEntry(MetaData md)
+        private IFileEntry ParseEntry(MetaData md)
         {
             var ife = new FileEntry(md.name);
             if (md.IsFile)

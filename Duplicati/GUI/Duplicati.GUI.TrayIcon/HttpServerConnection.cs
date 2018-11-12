@@ -1,8 +1,9 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using Duplicati.Library.Common.IO;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 
@@ -76,7 +77,7 @@ namespace Duplicati.GUI.TrayIcon
 
         public HttpServerConnection(Uri server, string password, bool saltedpassword, Program.PasswordSource passwordSource, bool disableTrayIconLogin, Dictionary<string, string> options)
         {
-            m_baseUri = Duplicati.Library.Utility.Utility.AppendDirSeparator(server.ToString(), "/");
+            m_baseUri = Util.AppendDirSeparator(server.ToString(), "/");
 
             m_apiUri = m_baseUri + "api/v1";
 
