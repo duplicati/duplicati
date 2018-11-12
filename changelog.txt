@@ -1,3 +1,7 @@
+2018-11-12 - 2.0.4.2_experimental_2018-11-12
+==========
+* Rebuild of 2.0.4.1 due to errors in the Docker images
+
 2018-11-08 - 2.0.4.1_experimental_2018-11-08
 ==========
 This is a collection release that is based on the 2.0.3.14 canary build.
