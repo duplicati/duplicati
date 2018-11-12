@@ -21,7 +21,7 @@
                 <input type="checkbox" name="use-encryption" id="use-encryption" ng-model="UseEncryption"  />
                 <label for="use-encryption" translate>Encrypt file</label>
             </div>
-            <div class="input text" ng-show="UseEncryption">
+            <div class="input text" ng-show="UseEncryption && ExportType == 'file'">
                 <label for="encryption-passphrase" translate>Passphrase</label>
                 <input type="password" name="encryption-password" id="encryption-passphrase" ng-model="Passphrase" placeholder="{{'Enter encryption passphrase' | translate}}" >
             </div>
