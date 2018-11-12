@@ -547,6 +547,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
+                    new CommandLineArgument("force-actual-date", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ForceActualDateShort, Strings.Options.ForceActualDateLong, "false"),
 
                     new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
 
@@ -752,8 +753,7 @@ namespace Duplicati.Library.Main
 
                 return m_options["tempdir"];
             }
-        }
-
+        }   
 
         /// <summary>
         /// Gets a value indicating whether the user has forced the locale
