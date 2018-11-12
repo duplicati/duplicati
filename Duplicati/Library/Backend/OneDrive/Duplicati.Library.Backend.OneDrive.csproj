@@ -54,7 +54,6 @@
     <Compile Include="MicrosoftGraphBackend.cs" />
     <Compile Include="MicrosoftGraphTypes.cs" />
     <Compile Include="MicrosoftGroup.cs" />
-    <Compile Include="OneDrive.cs" />
     <Compile Include="OneDriveV2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SharePointV2.cs" />
