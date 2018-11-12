@@ -120,6 +120,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             var cmdline = Library.Utility.Utility.ParseBool(info.Request.QueryString["cmdline"].Value, false);
             var argsonly = Library.Utility.Utility.ParseBool(info.Request.QueryString["argsonly"].Value, false);
+            var exportPasswords = Library.Utility.Utility.ParseBool(info.Request.QueryString["export-passwords"].Value, false);
+            if (!exportPasswords)
+            {
+                backup.SanitizeSettings();
+                backup.SanitizeTargetUrl();
+            }
+
             if (cmdline)
             {
                 info.OutputOK(new { Command = Runner.GetCommandLine(Runner.CreateTask(DuplicatiOperation.Backup, backup)) });
