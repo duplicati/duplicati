@@ -30,7 +30,7 @@ namespace UpdateVersionStamp
             
             public void Fixup()
             {
-                sourcefolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sourcefolder.Replace("/", DIR_SEP)));
+                sourcefolder = Duplicati.Library.Common.IO.Util.AppendDirSeparator(System.IO.Path.GetFullPath(sourcefolder.Replace("/", DIR_SEP)));
                 if (ignorefilter != null)
                     ignorefilter =ignorefilter.Replace("/", DIR_SEP);
             }
