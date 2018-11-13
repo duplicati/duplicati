@@ -1,4 +1,4 @@
-backupApp.controller('SystemSettingsController', function($rootScope, $scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
+backupApp.controller('SystemSettingsController', function($rootScope, $scope, $route, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);    
     $scope.theme = $scope.$parent.$parent.saved_theme;
