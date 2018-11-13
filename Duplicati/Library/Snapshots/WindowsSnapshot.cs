@@ -79,16 +79,19 @@ namespace Duplicati.Library.Snapshots
                     _vssBackupComponents.MapDrives();
                 }
             }
-            catch
+            catch (Exception ex1)
             {
+
+                Logging.Log.WriteVerboseMessage(LOGTAG, "WindowsSnapshotCreation", ex1, "Failed to initialize windows snapshot instance");
+
                 //In case we fail in the constructor, we do not want a snapshot to be active
                 try
                 {
                     Dispose();
                 }
-				catch(Exception ex)
+				catch(Exception ex2)
                 {
-					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSCleanupOnError", ex, "Failed during VSS error cleanup");
+					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSCleanupOnError", ex2, "Failed during VSS error cleanup");
                 }
 
                 throw;
