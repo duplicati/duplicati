@@ -2,9 +2,42 @@
 
 function build_installer_debian () {
 	check_docker
+	DEBNAME="duplicati_${VERSION}-1_all.deb"
+	echo "DEBName: ${DEBNAME}"
 	exit 0
 }
 
+function build_file_signatures() {
+	if [ "z${GPGID}" != "z" ]; then
+		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--output" "$2.sig" "--detach-sig" "$1"
+		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--armor" "--output" "$2.sig.asc" "--detach-sig" "$1"
+	fi
+
+	md5 "$1" | awk -F ' ' '{print $NF}' > "$2.md5"
+	shasum -a 1 "$1" | awk -F ' ' '{print $1}' > "$2.sha1"
+	shasum -a 256 "$1" | awk -F ' ' '{print $1}'  > "$2.sha256"
+}
+
+function set_gpg_data () {
+	if [ -f "${GPG_KEYFILE}" ]; then
+		if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
+			echo -n "Enter keyfile password: "
+			read -s KEYFILE_PASSWORD
+			echo
+		fi
+
+		GPGDATA=$("${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}")
+		if [ ! $? -eq 0 ]; then
+			echo "Decrypting GPG keyfile failed"
+			exit 1
+		fi
+		GPGID=$(echo "${GPGDATA}" | head -n 1)
+		GPGKEY=$(echo "${GPGDATA}" | head -n 2 | tail -n 1)
+	else
+		echo "No GPG keyfile found, exiting"
+		exit 1
+	fi
+}
 
 function check_docker () {
 	retries=10
@@ -27,6 +60,8 @@ function check_docker () {
 	fi
 }
 
+UNSIGNED=false
+
 while true ; do
     case "$1" in
     --debian)
@@ -39,6 +74,10 @@ while true ; do
         ;;
 	--local)
 		BUILD_LOCAL=true
+		shift
+		;;
+	--unsigned)
+		UNSIGNED=true
 		shift
 		;;
     --* | -* )
@@ -78,7 +117,7 @@ BUILDTAG_RAW=$(echo "${ZIPFILE}" | cut -d "." -f 1-4 | cut -d "-" -f 2-4)
 BUILDTAG="${BUILDTAG_RAW//-}"
 
 RPMNAME="duplicati-${VERSION}-${BUILDTAG}.noarch.rpm"
-DEBNAME="duplicati_${VERSION}-1_all.deb"
+
 MSI64NAME="duplicati-${BUILDTAG_RAW}-x64.msi"
 MSI32NAME="duplicati-${BUILDTAG_RAW}-x86.msi"
 DMGNAME="duplicati-${BUILDTAG_RAW}.dmg"
@@ -93,37 +132,13 @@ echo "Version: ${VERSION}"
 echo "Buildtype: ${BUILDTYPE}"
 echo "Buildtag: ${BUILDTAG}"
 echo "RPMName: ${RPMNAME}"
-echo "DEBName: ${DEBNAME}"
+
 echo "SPKName: ${SPKNAME}"
 
-build_file_signatures() {
-	if [ "z${GPGID}" != "z" ]; then
-		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--output" "$2.sig" "--detach-sig" "$1"
-		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--armor" "--output" "$2.sig.asc" "--detach-sig" "$1"
-	fi
-
-	md5 "$1" | awk -F ' ' '{print $NF}' > "$2.md5"
-	shasum -a 1 "$1" | awk -F ' ' '{print $1}' > "$2.sha1"
-	shasum -a 256 "$1" | awk -F ' ' '{print $1}'  > "$2.sha256"
-}
-
-if [ -f "${GPG_KEYFILE}" ]; then
-	if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
-		echo -n "Enter keyfile password: "
-		read -s KEYFILE_PASSWORD
-		echo
-	fi
-
-	GPGDATA=$("${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}")
-	if [ ! $? -eq 0 ]; then
-		echo "Decrypting GPG keyfile failed"
-		exit 1
-	fi
-	GPGID=$(echo "${GPGDATA}" | head -n 1)
-	GPGKEY=$(echo "${GPGDATA}" | head -n 2 | tail -n 1)
-else
-	echo "No GPG keyfile found, skipping gpg signatures"
+if [ !$UNSIGNED ]; then
+	set_gpg_data
 fi
+
 
 # Pre-boot virtual machine
 echo "Booting Win10 build instance"
