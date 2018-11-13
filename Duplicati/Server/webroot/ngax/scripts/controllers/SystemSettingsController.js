@@ -92,7 +92,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
             }
             patchdata['server-passphrase-salt'] =  CryptoJS.lib.WordArray.random(256/8).toString(CryptoJS.enc.Base64);
             patchdata['server-passphrase'] = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(CryptoJS.enc.Utf8.parse($scope.remotePassword) + CryptoJS.enc.Base64.parse(patchdata['server-passphrase-salt']))).toString(CryptoJS.enc.Base64);
-        } else {
+        } else if (!$scope.requireRemotePassword) {
             patchdata['server-passphrase-salt'] = null;
             patchdata['server-passphrase'] = null;
         }
