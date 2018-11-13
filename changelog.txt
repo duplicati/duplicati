@@ -1,3 +1,11 @@
+2018-11-13 - 2.0.4.3_canary_2018-11-13
+==========
+* Removed "Got o warning(s)" message, thanks @LacunaSoftware
+* Rewrote path handling across the project to better support long paths, thanks @verhoek
+* Added missing assemblies to Docker images
+* Removed OneDrive v1 as it no longer works
+* Added support for exporting passwords, thanks @Pectojin
+
 2018-11-12 - 2.0.4.2_experimental_2018-11-12
 ==========
 * Rebuild of 2.0.4.1 due to errors in the Docker images
