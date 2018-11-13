@@ -1,9 +1,29 @@
 #!/bin/bash
 
+quit_on_error() {
+    echo "Error on line $1, stopping build of installer(s)."
+    exit 1
+}
+
+trap 'quit_on_error $LINENO' ERR
+
 function build_installer_debian () {
 	check_docker
 	DEBNAME="duplicati_${VERSION}-1_all.deb"
 	echo "DEBName: ${DEBNAME}"
+
+	echo ""
+	echo ""
+	echo "Building Debian deb with Docker ..."
+
+	cd "Installer/debian"
+	bash "docker-build-binary.sh" "../../$1"
+	cd "../.."
+
+	mv "Installer/debian/${DEBNAME}" "${UPDATE_TARGET}"
+
+	echo "Done building deb package"
+
 	exit 0
 }
 
@@ -167,20 +187,6 @@ cd Installer/Synology
 bash "make-binary-package.sh" "../../$1"
 mv "${SPKNAME}" "../../${UPDATE_TARGET}/"
 cd ../..
-
-
-echo ""
-echo ""
-echo "Building Debian deb with Docker ..."
-
-cd "Installer/debian"
-bash "docker-build-binary.sh" "../../$1"
-cd "../.."
-
-mv "Installer/debian/${DEBNAME}" "${UPDATE_TARGET}"
-
-echo "Done building deb package"
-
 
 
 echo ""
