@@ -1,22 +1,67 @@
 #!/bin/bash
 
-if [ ! -f "$1" ]
-then
-  echo "Please supply the path to an existing zip binary as the first argument"
-  exit 1
-fi
+function build_installer_debian () {
+	check_docker
+	exit 0
+}
 
-while true
-do
-  DOCKER_RESULT=$(docker ps)
-  if [ "$?" != "0" ]
-  then
-    echo "It appears the Docker daemon is not running, make sure you started it"
-    read -p "Press [Enter] key to AFTER you started Docker"
-    continue
-  fi
-  break
+
+function check_docker () {
+	retries=10
+	while [[ $retries -ge 1 ]]
+	do
+		DOCKER_RESULT=$(docker ps)
+		if [ "$?" != "0" ]
+		then
+			echo "It appears the Docker daemon is not running, make sure you started it ($retries tries left)"
+		else
+			break
+		fi
+		retries=$(($retries - 1))
+		sleep 1
+	done
+
+	if [ $retries -eq 0 ]
+	then
+		exit 1
+	fi
+}
+
+while true ; do
+    case "$1" in
+    --debian)
+		build_installer_debian
+        shift
+        ;;
+    --help)
+        show_help
+        exit 0
+        ;;
+	--local)
+		BUILD_LOCAL=true
+		shift
+		;;
+    --* | -* )
+        echo "unknown option $1, please use --help."
+        exit 1
+        ;;
+    * )
+		if [ ! -f "$1" ]
+		then
+			echo "Please supply the path to an existing zip binary as the first argument"
+			exit 1
+		fi
+
+		if [ ! -f "$2" ]
+		then
+			echo "Please supply the format as the second argument"
+			exit 1
+		fi
+        ;;
+    esac
+    shift
 done
+
 
 GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
 GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
@@ -324,4 +369,5 @@ else
 fi
 
 VBoxManage controlvm "Duplicati-Win10-Build" poweroff
+
 
