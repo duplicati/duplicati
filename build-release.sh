@@ -1,7 +1,9 @@
 function release_to_github () {
 	# Using the tool from https://github.com/aktau/github-release
 
+	GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
 	GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
+	RELEASE_MESSAGE=$(printf "Changes in this version:\n${RELEASE_CHANGEINFO_NEWS}")
 
 	if [ "x${GITHUB_TOKEN}" == "x" ]; then
 		echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
@@ -25,6 +27,7 @@ function release_to_github () {
 }
 
 function post_to_forum () {
+	DISCOURSE_TOKEN_FILE="${HOME}/.config/discourse-api-token"
 	DISCOURSE_TOKEN=$(cat "${DISCOURSE_TOKEN_FILE}")
 
 	if [ "x${DISCOURSE_TOKEN}" == "x" ]; then
@@ -86,6 +89,9 @@ EOF
 
 
 function sign_with_authenticode () {
+	AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
+	AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
+
 	if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 		echo "Performing authenticode signing of executables and libraries"
 
@@ -128,7 +134,10 @@ function sign_with_authenticode () {
 }
 
 function prepare_update_target_folder () {
+	UPDATER_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-release.key"
 	UPDATE_TARGET=Updates/build/${RELEASE_TYPE}_target-${RELEASE_VERSION}
+	UPDATE_ZIP_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;https://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
+
 	if [ -e "${UPDATE_TARGET}" ]; then rm -rf "${UPDATE_TARGET}"; fi
 	mkdir "${UPDATE_TARGET}"
 
@@ -199,6 +208,11 @@ function prepare_update_source_folder () {
 }
 
 function clean_and_build () {
+	XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
+	NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
+	MONO=/Library/Frameworks/Mono.framework/Commands/mono
+
+
 	rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 	"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
@@ -256,6 +270,8 @@ function check_prerequisites() {
 }
 
 function update_text_files_with_new_version() {
+	UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
+
 	if ! $AUTO_RELEASE
 	then
 		RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt" # never in repo due to .gitignore
@@ -332,18 +348,8 @@ RELEASE_CHANGELOG_FILE="changelog.txt"
 RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
 
-UPDATE_ZIP_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;https://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
-UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
-UPDATER_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-release.key"
 GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
-AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
-AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
 
-GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
-DISCOURSE_TOKEN_FILE="${HOME}/.config/discourse-api-token"
-XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
-NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
-MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
 
 check_prerequisites
@@ -396,8 +402,6 @@ if [ "${RELEASE_TYPE}" == "stable" ]; then
 	PRE_RELEASE_LABEL=""
 fi
 
-RELEASE_MESSAGE=$(printf "Changes in this version:\n${RELEASE_CHANGEINFO_NEWS}")
-
 $LOCAL || release_to_github
 
 $LOCAL || post_to_forum
@@ -413,5 +417,3 @@ echo "Building installers ..."
 export KEYFILE_PASSWORD
 
 bash "build-installers.sh" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
-
-
