@@ -73,7 +73,7 @@ namespace Duplicati.Library.Common.IO
                 _vssBackupComponents.EnableWriterClasses(includedWriters);
 
             if (excludedWriters != null && excludedWriters.Length > 0)
-                _vssBackupComponents.DisableWriterClasses(excludedWriters.ToArray());
+                _vssBackupComponents.DisableWriterClasses(excludedWriters);
 
             try
             {
@@ -82,6 +82,11 @@ namespace Duplicati.Library.Common.IO
             finally
             {
                 _vssBackupComponents.FreeWriterMetadata();
+            }
+
+            if (includedWriters == null)
+            {
+                return;
             }
 
             // check if writers got enabled
@@ -128,7 +133,6 @@ namespace Duplicati.Library.Common.IO
             get {
                 return _volumeReverseMap;
             }
-
         }
 
         private List<string> GetPathsFromComponent(IVssWMComponent component)
@@ -196,7 +200,6 @@ namespace Duplicati.Library.Common.IO
 
             return volumePath;
         }
-
 
         public void CheckSupportedVolumes(IEnumerable<string> sources)
         {
@@ -281,12 +284,12 @@ namespace Duplicati.Library.Common.IO
         public static IVssBackupComponents GetVssBackupComponents()
         {
             //Prepare the backup
-            IVssBackupComponents m_backup = CreateVssBackupComponents();
-            m_backup.InitializeForBackup(null);
-            m_backup.SetContext(VssSnapshotContext.Backup);
-            m_backup.SetBackupState(false, true, VssBackupType.Full, false);
+            IVssBackupComponents vssBackupComponents = CreateVssBackupComponents();
+            vssBackupComponents.InitializeForBackup(null);
+            vssBackupComponents.SetContext(VssSnapshotContext.Backup);
+            vssBackupComponents.SetBackupState(false, true, VssBackupType.Full, false);
 
-            return m_backup;
+            return vssBackupComponents;
         }
 
         public static IVssBackupComponents CreateVssBackupComponents()
