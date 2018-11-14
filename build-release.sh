@@ -191,7 +191,7 @@ function prepare_update_target_folder () {
 	"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
 
 	if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
-		"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
+		"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="2.0.0.7"
 
 		echo "Something went wrong while building the package, no output found"
 		exit 5
@@ -232,7 +232,7 @@ function prepare_update_source_folder () {
 	done
 
 	# Install the assembly redirects for all Duplicati .exe files
-	find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Installer/AssemblyRedirects.xml {}.config \;
+	find "${UPDATE_SOURCE}" -maxdepth 1 -type f -name Duplicati.*.exe -exec cp Installer/AssemblyRedirects.xml {}.config \;
 
 	# Clean some unwanted build files
 	for FILE in "control_dir" "Duplicati-server.sqlite" "Duplicati.debug.log" "updates"; do
@@ -267,7 +267,9 @@ function clean_and_build () {
 
 	"${XBUILD}" /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 
+	find "Duplicati" -type d -name "Release" | xargs rm -rf
 	"${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
+
 	find "Duplicati" -type d -name "Release" | xargs rm -rf
 	"${XBUILD}" /p:DefineConstants=__MonoCS__ /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
 }
@@ -276,31 +278,27 @@ function update_text_files_with_new_version() {
 	UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 
 
-	if [[ $AUTO_RELEASE || ! -f "${RELEASE_CHANGELOG_NEWS_FILE}" ]]; then
-		echo "No updates to changelog file found"
+	if [[ ! -f "${RELEASE_CHANGELOG_NEWS_FILE}" ]]; then
+		echo "No updates to add to changelog found"
 		echo
 		echo "To make a build without changelog news, run:"
 		echo "    touch ""${RELEASE_CHANGELOG_NEWS_FILE}"" "
 		exit 0
 	fi
 
+	RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt" # never in repo due to .gitignore
+	RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}" 2>/dev/null)
+	if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 
-	if ! $AUTO_RELEASE
-	then
-		RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt" # never in repo due to .gitignore
-		RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}" 2>/dev/null)
-		if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
-
-			echo "${RELEASE_TIMESTAMP} - ${RELEASE_NAME}" > "tmp_changelog.txt"
-			echo "==========" >> "tmp_changelog.txt"
-			echo "${RELEASE_CHANGEINFO_NEWS}" >> "tmp_changelog.txt"
-			echo >> "tmp_changelog.txt"
-			cat "${RELEASE_CHANGELOG_FILE}" >> "tmp_changelog.txt"
-			cp "tmp_changelog.txt" "${RELEASE_CHANGELOG_FILE}"
-			rm "tmp_changelog.txt"
-		fi
-		rm "${RELEASE_CHANGELOG_NEWS_FILE}"
+		echo "${RELEASE_TIMESTAMP} - ${RELEASE_NAME}" > "tmp_changelog.txt"
+		echo "==========" >> "tmp_changelog.txt"
+		echo "${RELEASE_CHANGEINFO_NEWS}" >> "tmp_changelog.txt"
+		echo >> "tmp_changelog.txt"
+		cat "${RELEASE_CHANGELOG_FILE}" >> "tmp_changelog.txt"
+		cp "tmp_changelog.txt" "${RELEASE_CHANGELOG_FILE}"
+		rm "tmp_changelog.txt"
 	fi
+	rm "${RELEASE_CHANGELOG_NEWS_FILE}"
 
 	echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
 	echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
@@ -378,9 +376,9 @@ $SIGNED && set_keyfile_password
 
 $SIGNED && sign_with_authenticode
 
-prepare_update_target_folder
+$SIGNED && prepare_update_target_folder
 
-"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
+"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="2.0.0.7"
 
 $LOCAL || upload_binaries_to_aws
 
