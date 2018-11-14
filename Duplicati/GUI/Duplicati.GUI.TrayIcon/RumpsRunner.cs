@@ -21,6 +21,7 @@ using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Common;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -130,7 +131,7 @@ namespace Duplicati.GUI.TrayIcon
 
         public static bool CanRun()
         {
-            if (!Library.Utility.Utility.IsClientOSX)
+            if (!Platform.IsClientOSX)
                 return false;
             
             if (!File.Exists(SCRIPT_PATH) || !File.Exists(RUMPS_PYTHON))

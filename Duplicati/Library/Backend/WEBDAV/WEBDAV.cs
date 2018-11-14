@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -93,12 +94,12 @@ namespace Duplicati.Library.Backend
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             m_url = u.SetScheme(m_useSSL ? "https" : "http").SetCredentials(null, null).SetQuery(null).ToString();
-            m_url = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_url, "/");
+            m_url = Util.AppendDirSeparator(m_url, "/");
 
             m_path = u.Path;
             if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
-            m_path = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_path, "/");
+            m_path = Util.AppendDirSeparator(m_path, "/");
 
             m_path = Library.Utility.Uri.UrlDecode(m_path);
             m_rawurl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();

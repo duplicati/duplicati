@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 //
@@ -24,6 +24,7 @@ using System.Linq;
 using Duplicati.Library.Localization.Short;
 using Duplicati.Library.Utility;
 using System.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.CommandLine
 {
@@ -51,7 +52,7 @@ namespace Duplicati.CommandLine
             {
                 //If we are on Windows, append the bundled "win-tools" programs to the search path
                 //We add it last, to allow the user to override with other versions
-                if (Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     string wintools = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "win-tools");
                     Environment.SetEnvironmentVariable("PATH",

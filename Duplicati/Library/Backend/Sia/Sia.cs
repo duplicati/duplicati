@@ -6,6 +6,7 @@ using System.Net;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend.Sia
 {
@@ -296,9 +297,11 @@ namespace Duplicati.Library.Backend.Sia
                     // in our target path
                     if (f.Siapath.StartsWith(m_targetpath, StringComparison.Ordinal))
                     {
-                        FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1));
-                        fe.Size = f.Filesize;
-                        fe.IsFolder = false;
+                        FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1))
+                        {
+                            Size = f.Filesize,
+                            IsFolder = false
+                        };
                         yield return fe;
                     }
                 }

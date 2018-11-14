@@ -610,7 +610,7 @@ namespace Duplicati.Library.Main
             {
                 if (Errors != null && Errors.Any())
                     return ParsedResultType.Error;
-                else if ((Warnings != null && Warnings.Any()) || FilesRestored == 0)
+                else if (Warnings != null && Warnings.Any())
                     return ParsedResultType.Warning;
                 else
                     return ParsedResultType.Success;

@@ -17,6 +17,8 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <UseMSBuildEngine>false</UseMSBuildEngine>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -108,6 +110,10 @@
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

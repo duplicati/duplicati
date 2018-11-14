@@ -19,8 +19,9 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Common.IO
 {
     public struct SystemIOLinux : ISystemIO
     {
@@ -70,22 +71,22 @@ namespace Duplicati.Library.Snapshots
             return File.Exists(path);
         }
 
-        public Stream FileOpenRead(string path)
+        public FileStream FileOpenRead(string path)
         {
             return File.OpenRead(path);
         }
 
-        public Stream FileOpenWrite(string path)
+        public FileStream FileOpenWrite(string path)
         {
             return File.OpenWrite(path);
         }
 
-        public Stream FileOpenReadWrite(string path)
+        public FileStream FileOpenReadWrite(string path)
         {
             return File.Open(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
         }
 
-        public Stream FileCreate(string path)
+        public FileStream FileCreate(string path)
         {
             return File.Create(path);
         }
@@ -135,9 +136,9 @@ namespace Duplicati.Library.Snapshots
             return Path.ChangeExtension(path, extension);
         }
 
-        public string PathCombine(string path1, string path2)
+        public string PathCombine(params string[] paths)
         {
-            return Path.Combine(path1, path2);
+            return Path.Combine(paths);
         }
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
@@ -233,6 +234,52 @@ namespace Duplicati.Library.Snapshots
                 }
             }
         }
+
+        public string GetPathRoot(string path)
+        {
+            return Path.GetPathRoot(path);
+        }
+
+        public string[] GetDirectories(string path)
+        {
+            return Directory.GetDirectories(path);
+        }
+
+        public string[] GetFiles(string path)
+        {
+            return Directory.GetFiles(path);
+        }
+
+        public string[] GetFiles(string path, string searchPattern)
+        {
+            return Directory.GetFiles(path, searchPattern);
+        }
+
+        public DateTime GetCreationTimeUtc(string path)
+        {
+            return File.GetCreationTimeUtc(path);
+        }
+
+        public DateTime GetLastWriteTimeUtc(string path)
+        {
+            return File.GetLastWriteTimeUtc(path);
+        }
+
+        public IEnumerable<string> EnumerateDirectories(string path)
+        {
+            return Directory.EnumerateDirectories(path);
+        }
+
+        public void FileCopy(string source, string target, bool overwrite)
+        {
+            File.Copy(source, target, overwrite);
+        }
+
+        public string PathGetFullPath(string path)
+        {
+            return Path.GetFullPath(path);
+        }
+
         #endregion
 
         /// <summary>
@@ -247,7 +294,21 @@ namespace Duplicati.Library.Snapshots
             // This should not be required, but some versions of Mono apperently do not strip the trailing slash
             return p.Length > 1 && p[p.Length - 1] == Path.DirectorySeparatorChar ? p.Substring(0, p.Length - 1) : p;
         }
-    }
 
+        public IFileEntry DirectoryEntry(string path)
+        {
+            var dInfo = new DirectoryInfo(path);
+            return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
+            {
+                IsFolder = true
+            };
+        }
+
+        public IFileEntry FileEntry(string path)
+        {
+            var fileInfo = new FileInfo(path);
+            return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
+        }
+    }
 }
 
