@@ -1,3 +1,74 @@
+function prepare_update_target_folder () {
+	UPDATE_TARGET=Updates/build/${RELEASE_TYPE}_target-${RELEASE_VERSION}
+	if [ -e "${UPDATE_TARGET}" ]; then rm -rf "${UPDATE_TARGET}"; fi
+	mkdir "${UPDATE_TARGET}"
+
+	# Newer GPG needs this to allow input from a non-terminal
+	export GPG_TTY=$(tty)
+	"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
+
+	if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
+		"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
+
+		echo "Something went wrong while building the package, no output found"
+		exit 5
+	fi
+
+	echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
+
+	mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/latest.zip"
+	mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
+	mv "${UPDATE_TARGET}/package.zip.sig" "${UPDATE_TARGET}/latest.zip.sig"
+	mv "${UPDATE_TARGET}/package.zip.sig.asc" "${UPDATE_TARGET}/latest.zip.sig.asc"
+	cp "${UPDATE_TARGET}/latest.zip" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
+	cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest"
+	cp "${UPDATE_TARGET}/latest.zip.sig" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
+	cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
+}
+
+
+function prepare_update_source_folder () {
+	UPDATE_SOURCE=Updates/build/${RELEASE_TYPE}_source-${RELEASE_VERSION}
+	if [ -e "${UPDATE_SOURCE}" ]; then rm -rf "${UPDATE_SOURCE}"; fi
+	mkdir "${UPDATE_SOURCE}"
+
+	cp -R Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/* "${UPDATE_SOURCE}"
+	cp -R Duplicati/Server/webroot "${UPDATE_SOURCE}"
+
+	# We copy some files for alphavss manually as they are not picked up by xbuild
+	mkdir "${UPDATE_SOURCE}/alphavss"
+	for FN in Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll; do
+		cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
+	done
+
+	# Fix for some support libraries not being picked up
+	for BACKEND in Duplicati/Library/Backend/*; do
+		if [ -d "${BACKEND}/bin/Release/" ]; then
+			cp "${BACKEND}/bin/Release/"*.dll "${UPDATE_SOURCE}"
+		fi
+	done
+
+	# Install the assembly redirects for all Duplicati .exe files
+	find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Installer/AssemblyRedirects.xml {}.config \;
+
+	# Clean some unwanted build files
+	for FILE in "control_dir" "Duplicati-server.sqlite" "Duplicati.debug.log" "updates"; do
+		if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
+	done
+
+	# Clean the localization spam from Azure
+	for FILE in "de" "es" "fr" "it" "ja" "ko" "ru" "zh-Hans" "zh-Hant"; do
+		if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
+	done
+
+	# Clean debug files, if any
+	rm -rf "${UPDATE_SOURCE}/"*.mdb;
+	rm -rf "${UPDATE_SOURCE}/"*.pdb;
+
+	# Remove all library docs files
+	rm -rf "${UPDATE_SOURCE}/"*.xml;
+}
+
 function clean_and_build () {
 	rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
@@ -121,7 +192,6 @@ RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt" # never in repo due to .gitigno
 RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
 
-
 UPDATE_ZIP_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;https://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 UPDATER_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-release.key"
@@ -145,55 +215,13 @@ update_text_files_with_new_version
 
 clean_and_build
 
+prepare_update_source_folder
 
 if [ ! -d "Updates/build" ]; then
 	mkdir "Updates/build"
 fi
 
-UPDATE_SOURCE=Updates/build/${RELEASE_TYPE}_source-${RELEASE_VERSION}
-UPDATE_TARGET=Updates/build/${RELEASE_TYPE}_target-${RELEASE_VERSION}
 
-if [ -e "${UPDATE_SOURCE}" ]; then rm -rf "${UPDATE_SOURCE}"; fi
-if [ -e "${UPDATE_TARGET}" ]; then rm -rf "${UPDATE_TARGET}"; fi
-
-mkdir "${UPDATE_SOURCE}"
-mkdir "${UPDATE_TARGET}"
-
-cp -R Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/* "${UPDATE_SOURCE}"
-cp -R Duplicati/Server/webroot "${UPDATE_SOURCE}"
-
-# We copy some files for alphavss manually as they are not picked up by xbuild
-mkdir "${UPDATE_SOURCE}/alphavss"
-for FN in Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll; do
-	cp "${FN}" "${UPDATE_SOURCE}/alphavss/"
-done
-
-# Fix for some support libraries not being picked up
-for BACKEND in Duplicati/Library/Backend/*; do
-	if [ -d "${BACKEND}/bin/Release/" ]; then
-		cp "${BACKEND}/bin/Release/"*.dll "${UPDATE_SOURCE}"
-	fi
-done
-
-# Install the assembly redirects for all Duplicati .exe files
-find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Installer/AssemblyRedirects.xml {}.config \;
-
-# Clean some unwanted build files
-for FILE in "control_dir" "Duplicati-server.sqlite" "Duplicati.debug.log" "updates"; do
-	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
-done
-
-# Clean the localization spam from Azure
-for FILE in "de" "es" "fr" "it" "ja" "ko" "ru" "zh-Hans" "zh-Hant"; do
-	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
-done
-
-# Clean debug files, if any
-rm -rf "${UPDATE_SOURCE}/"*.mdb;
-rm -rf "${UPDATE_SOURCE}/"*.pdb;
-
-# Remove all library docs files
-rm -rf "${UPDATE_SOURCE}/"*.xml;
 
 # Remove all .DS_Store and Thumbs.db files
 find  . -type f -name ".DS_Store" | xargs rm -rf
@@ -250,27 +278,9 @@ fi
 echo
 echo "Building signed package ..."
 
-# Newer GPG needs this to allow input from a non-terminal
-export GPG_TTY=$(tty)
-"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
 
-if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
-	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
+prepare_update_target_folder
 
-	echo "Something went wrong while building the package, no output found"
-	exit 5
-fi
-
-echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
-
-mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/latest.zip"
-mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
-mv "${UPDATE_TARGET}/package.zip.sig" "${UPDATE_TARGET}/latest.zip.sig"
-mv "${UPDATE_TARGET}/package.zip.sig.asc" "${UPDATE_TARGET}/latest.zip.sig.asc"
-cp "${UPDATE_TARGET}/latest.zip" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
-cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest"
-cp "${UPDATE_TARGET}/latest.zip.sig" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
-cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
 
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
 
