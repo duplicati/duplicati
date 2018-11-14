@@ -5,6 +5,16 @@ quit_on_error() {
 
 trap 'quit_on_error $LINENO' ERR
 
+function set_keyfile_password () {
+	echo -n "Enter keyfile password: "
+	read -s KEYFILE_PASSWORD
+	echo
+
+	if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
+		echo "No password entered, quitting"
+		exit 0
+	fi
+}
 
 function release_to_github () {
 	# Using the tool from https://github.com/aktau/github-release
@@ -147,7 +157,7 @@ function prepare_update_target_folder () {
 	UPDATE_ZIP_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;https://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
 
 	if [ -e "${UPDATE_TARGET}" ]; then rm -rf "${UPDATE_TARGET}"; fi
-	mkdir "${UPDATE_TARGET}"
+	mkdir -p "${UPDATE_TARGET}"
 
 	# Newer GPG needs this to allow input from a non-terminal
 	export GPG_TTY=$(tty)
@@ -179,7 +189,7 @@ function prepare_update_target_folder () {
 function prepare_update_source_folder () {
 	UPDATE_SOURCE=Updates/build/${RELEASE_TYPE}_source-${RELEASE_VERSION}
 	if [ -e "${UPDATE_SOURCE}" ]; then rm -rf "${UPDATE_SOURCE}"; fi
-	mkdir "${UPDATE_SOURCE}"
+	mkdir -p "${UPDATE_SOURCE}"
 
 	cp -R Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/* "${UPDATE_SOURCE}"
 	cp -R Duplicati/Server/webroot "${UPDATE_SOURCE}"
@@ -340,10 +350,7 @@ RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
 check_prerequisites
 
-
-
-GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
-git stash save "${GIT_STASH_NAME}"
+$LOCAL || git stash save "auto-build-${RELEASE_TIMESTAMP}"
 
 update_text_files_with_new_version
 
@@ -351,22 +358,11 @@ clean_and_build
 
 prepare_update_source_folder
 
-if [ ! -d "Updates/build" ]; then
-	mkdir "Updates/build"
-fi
-
 # Remove all .DS_Store and Thumbs.db files
 find  . -type f -name ".DS_Store" | xargs rm -rf
 find  . -type f -name "Thumbs.db" | xargs rm -rf
 
-echo -n "Enter keyfile password: "
-read -s KEYFILE_PASSWORD
-echo
-
-if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
-	echo "No password entered, quitting"
-	exit 0
-fi
+set_keyfile_password
 
 sign_with_authenticode
 
