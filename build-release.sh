@@ -257,20 +257,18 @@ function clean_and_build () {
 	NUGET=`which nuget || /Library/Frameworks/Mono.framework/Commands/nuget`
 	MONO=`which mono || /Library/Frameworks/Mono.framework/Commands/mono`
 
-	rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
-
 	"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
 	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
+	# build autoupdate
 	"${NUGET}" restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 	"${NUGET}" restore "Duplicati.sln"
+	"${XBUILD}" /p:Configuration=Release "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 
-	"${XBUILD}" /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
-
+	# clean
 	find "Duplicati" -type d -name "Release" | xargs rm -rf
 	"${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
 
-	find "Duplicati" -type d -name "Release" | xargs rm -rf
 	"${XBUILD}" /p:DefineConstants=__MonoCS__ /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
 }
 
