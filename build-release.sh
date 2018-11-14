@@ -1,22 +1,45 @@
-RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
+while true ; do
+    case "$1" in
+    --help)
+        show_help
+        exit 0
+        ;;
+	--local)
+		BUILD_LOCAL=true
+		shift
+		;;
+	--unsigned)
+		UNSIGNED=true
+		shift
+		;;
+    --* | -* )
+        echo "unknown option $1, please use --help."
+        exit 1
+        ;;
+    * )
+		if [ "x$1" == "x" ]; then
+			RELEASE_TYPE="canary"
+			echo "No release type specified, using ${RELEASE_TYPE}"
+		else
+			RELEASE_TYPE=$1
+		fi
+        ;;
+    esac
+    shift
+done
 
+
+RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
 RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
 RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
-
-if [ "x$1" == "x" ]; then
-	RELEASE_TYPE="canary"
-	echo "No release type specified, using ${RELEASE_TYPE}"
-else
-	RELEASE_TYPE=$1
-fi
-
 RELEASE_VERSION="2.0.4.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
-
 RELEASE_CHANGELOG_FILE="changelog.txt"
 RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt"
-
 RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
+
+
+
 
 GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 
@@ -174,12 +197,12 @@ find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Insta
 
 # Clean some unwanted build files
 for FILE in "control_dir" "Duplicati-server.sqlite" "Duplicati.debug.log" "updates"; do
-	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
 done
 
 # Clean the localization spam from Azure
 for FILE in "de" "es" "fr" "it" "ja" "ko" "ru" "zh-Hans" "zh-Hant"; do
-	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
 done
 
 # Clean debug files, if any
@@ -237,8 +260,8 @@ echo "Building signed package ..."
 "${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
 
 if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
-	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"	
-	
+	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
+
 	echo "Something went wrong while building the package, no output found"
 	exit 5
 fi
