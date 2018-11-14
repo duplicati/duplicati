@@ -1,3 +1,8 @@
+2018-11-14 - 2.0.4.4_canary_2018-11-14
+==========
+* Added password confirmation on change, thanks @LacunaSoftware
+* Fixed a crash with VSS, thanks @verhoek
+
 2018-11-13 - 2.0.4.3_canary_2018-11-13
 ==========
 * Removed "Got o warning(s)" message, thanks @LacunaSoftware
