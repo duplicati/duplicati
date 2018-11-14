@@ -1,3 +1,53 @@
+function release_to_github () {
+	# Using the tool from https://github.com/aktau/github-release
+
+	GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
+
+	if [ "x${GITHUB_TOKEN}" == "x" ]; then
+		echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
+	else
+		github-release release ${PRE_RELEASE_LABEL} \
+			--tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
+			--name "v${RELEASE_VERSION}-${RELEASE_NAME}" \
+			--repo "duplicati" \
+			--user "duplicati" \
+			--security-token "${GITHUB_TOKEN}" \
+			--description "${RELEASE_MESSAGE}" \
+
+		github-release upload \
+			--tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
+			--name "${RELEASE_FILE_NAME}.zip" \
+			--repo "duplicati" \
+			--user "duplicati" \
+			--security-token "${GITHUB_TOKEN}" \
+			--file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
+	fi
+}
+
+function post_to_forum () {
+	DISCOURSE_TOKEN=$(cat "${DISCOURSE_TOKEN_FILE}")
+
+	if [ "x${DISCOURSE_TOKEN}" == "x" ]; then
+		echo "No DISCOURSE_TOKEN found in environment, you can manually create the post on the forum"
+	else
+
+		body="# [${RELEASE_VERSION}-${RELEASE_NAME}](https://github.com/duplicati/duplicati/releases/tag/v${RELEASE_VERSION}-${RELEASE_NAME})
+
+	${RELEASE_CHANGEINFO_NEWS}
+	"
+
+		DISCOURSE_USERNAME=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 1)
+		DISCOURSE_APIKEY=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 2)
+
+		curl -X POST "https://forum.duplicati.com/posts" \
+			-F "api_key=${DISCOURSE_APIKEY}" \
+			-F "api_username=${DISCOURSE_USERNAME}" \
+			-F "category=Releases" \
+			-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
+			-F "raw=${body}"
+	fi
+}
+
 function upload_binaries_to_aws () {
 	echo "Uploading binaries"
 	aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
@@ -196,7 +246,7 @@ function check_prerequisites() {
 		exit 0
 	fi
 
-	if [ ! -f "${RELEASE_CHANGELOG_NEWS_FILE}" ]; then
+	if [[ $AUTO_RELEASE || ! -f "${RELEASE_CHANGELOG_NEWS_FILE}" ]]; then
 		echo "No updates to changelog file found"
 		echo
 		echo "To make a build without changelog news, run:"
@@ -206,16 +256,21 @@ function check_prerequisites() {
 }
 
 function update_text_files_with_new_version() {
-	RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
-	if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
+	if ! $AUTO_RELEASE
+	then
+		RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt" # never in repo due to .gitignore
+		RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}" 2>/dev/null)
+		if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 
-		echo "${RELEASE_TIMESTAMP} - ${RELEASE_NAME}" > "tmp_changelog.txt"
-		echo "==========" >> "tmp_changelog.txt"
-		echo "${RELEASE_CHANGEINFO_NEWS}" >> "tmp_changelog.txt"
-		echo >> "tmp_changelog.txt"
-		cat "${RELEASE_CHANGELOG_FILE}" >> "tmp_changelog.txt"
-		cp "tmp_changelog.txt" "${RELEASE_CHANGELOG_FILE}"
-		rm "tmp_changelog.txt"
+			echo "${RELEASE_TIMESTAMP} - ${RELEASE_NAME}" > "tmp_changelog.txt"
+			echo "==========" >> "tmp_changelog.txt"
+			echo "${RELEASE_CHANGEINFO_NEWS}" >> "tmp_changelog.txt"
+			echo >> "tmp_changelog.txt"
+			cat "${RELEASE_CHANGELOG_FILE}" >> "tmp_changelog.txt"
+			cp "tmp_changelog.txt" "${RELEASE_CHANGELOG_FILE}"
+			rm "tmp_changelog.txt"
+		fi
+		rm "${RELEASE_CHANGELOG_NEWS_FILE}"
 	fi
 
 	echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
@@ -223,6 +278,7 @@ function update_text_files_with_new_version() {
 	echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
 	cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
 
+	# TODO: in case of auto releasing, put some git log in changelog.
 	RELEASE_CHANGEINFO=$(cat ${RELEASE_CHANGELOG_FILE})
 	if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
 		echo "No information in changelog file"
@@ -232,8 +288,8 @@ function update_text_files_with_new_version() {
 
 
 #set default options
-UPLOAD=true
-
+LOCAL=false
+AUTO_RELEASE=false
 
 while true ; do
     case "$1" in
@@ -242,12 +298,13 @@ while true ; do
         exit 0
         ;;
 	--local)
-		UPLOAD=false
-		shift
+		LOCAL=true
+		;;
+	--auto)
+		AUTO_RELEASE=true
 		;;
 	--unsigned)
 		UNSIGNED=true
-		shift
 		;;
     --* | -* )
         echo "unknown option $1, please use --help."
@@ -272,7 +329,6 @@ RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
 RELEASE_VERSION="2.0.4.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
 RELEASE_CHANGELOG_FILE="changelog.txt"
-RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt" # never in repo due to .gitignore
 RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
 
@@ -324,10 +380,7 @@ prepare_update_target_folder
 
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
 
-$UPLOAD && upload_binaries_to_aws
-
-
-rm "${RELEASE_CHANGELOG_NEWS_FILE}"
+$LOCAL || upload_binaries_to_aws
 
 git checkout "Duplicati/License/VersionTag.txt"
 git checkout "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
@@ -345,52 +398,9 @@ fi
 
 RELEASE_MESSAGE=$(printf "Changes in this version:\n${RELEASE_CHANGEINFO_NEWS}")
 
-# Using the tool from https://github.com/aktau/github-release
+$LOCAL || release_to_github
 
-GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
-
-if [ "x${GITHUB_TOKEN}" == "x" ]; then
-	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
-else
-	github-release release ${PRE_RELEASE_LABEL} \
-	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
-	    --name "v${RELEASE_VERSION}-${RELEASE_NAME}" \
-	    --repo "duplicati" \
-	    --user "duplicati" \
-	    --security-token "${GITHUB_TOKEN}" \
-	    --description "${RELEASE_MESSAGE}" \
-
-	github-release upload \
-	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
-	    --name "${RELEASE_FILE_NAME}.zip" \
-	    --repo "duplicati" \
-	    --user "duplicati" \
-	    --security-token "${GITHUB_TOKEN}" \
-	    --file "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
-fi
-
-
-DISCOURSE_TOKEN=$(cat "${DISCOURSE_TOKEN_FILE}")
-
-if [ "x${DISCOURSE_TOKEN}" == "x" ]; then
-	echo "No DISCOURSE_TOKEN found in environment, you can manually create the post on the forum"
-else
-
-	body="# [${RELEASE_VERSION}-${RELEASE_NAME}](https://github.com/duplicati/duplicati/releases/tag/v${RELEASE_VERSION}-${RELEASE_NAME})
-
-${RELEASE_CHANGEINFO_NEWS}
-"
-
-	DISCOURSE_USERNAME=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 1)
-	DISCOURSE_APIKEY=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 2)
-
-	curl -X POST "https://forum.duplicati.com/posts" \
-		-F "api_key=${DISCOURSE_APIKEY}" \
-		-F "api_username=${DISCOURSE_USERNAME}" \
-		-F "category=Releases" \
-		-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
-		-F "raw=${body}"
-fi
+$LOCAL || post_to_forum
 
 echo
 echo "Built ${RELEASE_TYPE} version: ${RELEASE_VERSION} - ${RELEASE_NAME}"
