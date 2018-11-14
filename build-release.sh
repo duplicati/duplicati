@@ -1,3 +1,6 @@
+
+
+
 quit_on_error() {
   local parent_lineno="$1"
   local message="$2"
@@ -8,13 +11,18 @@ quit_on_error() {
     echo "Error on or near line ${parent_lineno}; exiting with status ${code}"
   fi
 
-  reset_version
+  eval reset_version $REDIRECT
   exit "${code}"
 }
 
 set -eE
 trap 'quit_on_error $LINENO' ERR
+
 MONO=`which mono || /Library/Frameworks/Mono.framework/Commands/mono`
+LOCAL=false
+AUTO_RELEASE=false
+SIGNED=true
+REDIRECT=" > /dev/null"
 
 function update_git_repo () {
 	git checkout "Duplicati/License/VersionTag.txt"
@@ -28,7 +36,7 @@ function update_git_repo () {
 }
 
 function reset_version () {
-	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="2.0.0.7"  > /dev/null
+	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="2.0.0.7"
 }
 
 function set_keyfile_password () {
@@ -227,7 +235,7 @@ function generate_package () {
 
 function prepare_update_source_folder () {
 	UPDATE_SOURCE=Updates/build/${RELEASE_TYPE}_source-${RELEASE_VERSION}
-	if [ -e "${UPDATE_SOURCE}" ]; then rm -rf "${UPDATE_SOURCE}"; fi
+	rm -rf "${UPDATE_SOURCE}"
 	mkdir -p "${UPDATE_SOURCE}"
 
 	cp -R Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/* "${UPDATE_SOURCE}"
@@ -260,11 +268,7 @@ function prepare_update_source_folder () {
 	done
 
 	# Clean debug files, if any
-	rm -rf "${UPDATE_SOURCE}/"*.mdb;
-	rm -rf "${UPDATE_SOURCE}/"*.pdb;
-
-	# Remove all library docs files
-	rm -rf "${UPDATE_SOURCE}/"*.xml;
+	rm -rf "${UPDATE_SOURCE}/"*.mdb "${UPDATE_SOURCE}/"*.pdb "${UPDATE_SOURCE}/"*.xml
 }
 
 function clean_and_build () {
@@ -325,18 +329,15 @@ function update_text_files_with_new_version() {
 	fi
 }
 
-
-#set default options
-LOCAL=false
-AUTO_RELEASE=false
-SIGNED=true
-
 while true ; do
     case "$1" in
     --help)
         show_help
         exit 0
         ;;
+	--debug)
+		REDIRECT=""
+		;;
 	--local)
 		LOCAL=true
 		;;
@@ -363,7 +364,6 @@ while true ; do
     shift
 done
 
-
 RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
 RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
 RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
@@ -376,26 +376,25 @@ $LOCAL || git stash save "auto-build-${RELEASE_TIMESTAMP}"
 
 $LOCAL || update_text_files_with_new_version
 
-#clean_and_build
+echo "+ compiling binaries" && eval clean_and_build $REDIRECT
 
-prepare_update_source_folder
+echo "+ copying binaries for packaging" && prepare_update_source_folder
 
 # Remove all .DS_Store and Thumbs.db files
-find  . -type f -name ".DS_Store" | xargs rm -rf
-find  . -type f -name "Thumbs.db" | xargs rm -rf
+find  . -type f -name ".DS_Store" | xargs rm -rf && find  . -type f -name "Thumbs.db" | xargs rm -rf
 
-$SIGNED && set_keyfile_password
+$SIGNED && echo "+ getting key to sign" && set_keyfile_password
 
-$SIGNED && sign_with_authenticode
+$SIGNED && echo "+ signing with authenticode" && sign_with_authenticode
 
-generate_package
+echo "generating package zipfile" && eval generate_package $REDIRECT
 
-reset_version
+eval reset_version $REDIRECT
 
-$LOCAL || upload_binaries_to_aws
+$LOCAL || echo "+ uploading to AWS" && upload_binaries_to_aws
 
-$LOCAL || update_git_repo
+$LOCAL || echo "+ updating git repo" && update_git_repo
 
-$LOCAL || release_to_github
+$LOCAL || echo "+ releasing to github" && release_to_github
 
-$LOCAL || post_to_forum
+$LOCAL || echo "+ posting to forum" && post_to_forum
