@@ -7,11 +7,14 @@ quit_on_error() {
   else
     echo "Error on or near line ${parent_lineno}; exiting with status ${code}"
   fi
+
+  reset_version
   exit "${code}"
 }
 
 set -eE
 trap 'quit_on_error $LINENO' ERR
+MONO=`which mono || /Library/Frameworks/Mono.framework/Commands/mono`
 
 function update_git_repo () {
 	git checkout "Duplicati/License/VersionTag.txt"
@@ -22,6 +25,10 @@ function update_git_repo () {
 	git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: " -m "Binaries: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
 	git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"                       -m "You can download this build from: " -m "Binaries: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
 	git push --tags
+}
+
+function reset_version () {
+	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="2.0.0.7"  > /dev/null
 }
 
 function set_keyfile_password () {
@@ -175,7 +182,7 @@ function sign_with_authenticode () {
 	echo "Building signed package ..."
 }
 
-function prepare_update_target_folder () {
+function generate_package () {
 	UPDATER_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-release.key"
 	UPDATE_TARGET=Updates/build/${RELEASE_TYPE}_target-${RELEASE_VERSION}
 	UPDATE_ZIP_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;https://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
@@ -188,25 +195,33 @@ function prepare_update_target_folder () {
 	GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
 	GPG=/usr/local/bin/gpg2
 
-	"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
+	auto_update_options="--input=\"${UPDATE_SOURCE}\" --output=\"${UPDATE_TARGET}\"  \
+	 --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo=\"${RELEASE_CHANGEINFO}\" --displayname=\"${RELEASE_NAME}\" \
+	 --remoteurls=\"${UPDATE_ZIP_URLS}\" --version=\"${RELEASE_VERSION}\""
 
-	if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
-		"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="2.0.0.7"
-
-		echo "Something went wrong while building the package, no output found"
-		exit 5
+	if $SIGNED
+	then
+		auto_update_options="$auto_update_options --gpgkeyfile=\"${GPG_KEYFILE}\" --gpgpath=\"${GPG}\" \
+		--keyfile-password=\"${KEYFILE_PASSWORD}\" --keyfile=\"${UPDATER_KEYFILE}\""
 	fi
+
+	# if zip is not written, non-zero return code will cause script to stop
+	"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Release/AutoUpdateBuilder.exe" $auto_update_options
 
 	echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
 
 	mv "${UPDATE_TARGET}/package.zip" "${UPDATE_TARGET}/latest.zip"
 	mv "${UPDATE_TARGET}/autoupdate.manifest" "${UPDATE_TARGET}/latest.manifest"
-	mv "${UPDATE_TARGET}/package.zip.sig" "${UPDATE_TARGET}/latest.zip.sig"
-	mv "${UPDATE_TARGET}/package.zip.sig.asc" "${UPDATE_TARGET}/latest.zip.sig.asc"
 	cp "${UPDATE_TARGET}/latest.zip" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
 	cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest"
-	cp "${UPDATE_TARGET}/latest.zip.sig" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
-	cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
+
+	if $SIGNED
+	then
+		mv "${UPDATE_TARGET}/package.zip.sig" "${UPDATE_TARGET}/latest.zip.sig"
+		mv "${UPDATE_TARGET}/package.zip.sig.asc" "${UPDATE_TARGET}/latest.zip.sig.asc"
+		cp "${UPDATE_TARGET}/latest.zip.sig" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
+		cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
+	fi
 }
 
 
@@ -255,7 +270,6 @@ function prepare_update_source_folder () {
 function clean_and_build () {
 	XBUILD=`which msbuild || /Library/Frameworks/Mono.framework/Commands/msbuild`
 	NUGET=`which nuget || /Library/Frameworks/Mono.framework/Commands/nuget`
-	MONO=`which mono || /Library/Frameworks/Mono.framework/Commands/mono`
 
 	"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
 	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
@@ -362,7 +376,7 @@ $LOCAL || git stash save "auto-build-${RELEASE_TIMESTAMP}"
 
 $LOCAL || update_text_files_with_new_version
 
-clean_and_build
+#clean_and_build
 
 prepare_update_source_folder
 
@@ -374,9 +388,9 @@ $SIGNED && set_keyfile_password
 
 $SIGNED && sign_with_authenticode
 
-$SIGNED && prepare_update_target_folder
+generate_package
 
-"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="2.0.0.7"
+reset_version
 
 $LOCAL || upload_binaries_to_aws
 
@@ -385,15 +399,3 @@ $LOCAL || update_git_repo
 $LOCAL || release_to_github
 
 $LOCAL || post_to_forum
-
-echo
-echo "Built ${RELEASE_TYPE} version: ${RELEASE_VERSION} - ${RELEASE_NAME}"
-echo "    in folder: ${UPDATE_TARGET}"
-echo
-echo
-echo "Building installers ..."
-
-# Send the password along to avoid typing it again
-export KEYFILE_PASSWORD
-
-bash "build-installers.sh" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip"
