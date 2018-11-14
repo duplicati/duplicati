@@ -1,7 +1,5 @@
-backupApp.controller('BackupLogController', function($scope, $routeParams, $timeout, SystemInfo, LogService, ServerStatus, AppService, DialogService, BackupList, gettextCatalog) {
-    $scope.state = ServerStatus.watch($scope);
+backupApp.controller('BackupLogController', function($scope, $routeParams, LogService, BackupList) {
     $scope.BackupID = $routeParams.backupid;
-    $scope.SystemInfo = SystemInfo.watch($scope);
     
     const PAGE_SIZE = 100;
 
@@ -10,7 +8,7 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, $time
             $scope.LoadMoreRemoteData();
     });
     
-    $scope.Page = 'general';        
+    $scope.Page = 'general';  
 
     $scope.LoadMoreGeneralData = function() { 
         LogService.LoadMoreData('/backup/' + $scope.BackupID + '/log', $scope.GeneralData, 'ID', PAGE_SIZE)
@@ -22,6 +20,7 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, $time
                 $scope.GeneralData = current;
                 $scope.GeneralDataComplete = complete;
                 $scope.Backup = BackupList.lookup[$scope.BackupID];
+                $scope.$digest();
             }); 
     };
     $scope.LoadMoreRemoteData = function() { 
@@ -34,6 +33,7 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, $time
                 $scope.RemoteData = current;
                 $scope.RemoteDataComplete = complete;
                 $scope.Backup = BackupList.lookup[$scope.BackupID];
+                $scope.$digest();
             }); 
     };
     

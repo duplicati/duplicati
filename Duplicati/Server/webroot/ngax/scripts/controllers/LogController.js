@@ -1,6 +1,4 @@
-backupApp.controller('LogController', function($scope, $routeParams, $timeout, SystemInfo, ServerStatus, AppService, LogService) {
-    $scope.state = ServerStatus.watch($scope);
-    $scope.SystemInfo = SystemInfo.watch($scope);
+backupApp.controller('LogController', function($scope, $timeout, AppService, LogService) {
 
     var liveRefreshTimer = null;
     const PAGE_SIZE = 100;
