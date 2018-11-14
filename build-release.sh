@@ -1,3 +1,11 @@
+quit_on_error() {
+    echo "Error on line $1, stopping build of release."
+    exit 1
+}
+
+trap 'quit_on_error $LINENO' ERR
+
+
 function release_to_github () {
 	# Using the tool from https://github.com/aktau/github-release
 
@@ -143,6 +151,9 @@ function prepare_update_target_folder () {
 
 	# Newer GPG needs this to allow input from a non-terminal
 	export GPG_TTY=$(tty)
+	GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
+	GPG=/usr/local/bin/gpg2
+
 	"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
 
 	if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
@@ -235,26 +246,6 @@ function clean_and_build () {
 }
 
 function check_prerequisites() {
-	if [ ! -f "$GPG" ]; then
-		echo "gpg executable not found: $GPG"
-		exit 1
-	fi
-
-	if [ ! -f "$XBUILD" ]; then
-		echo "xbuild/msbuild executable not found: $XBUILD"
-		exit 1
-	fi
-
-	if [ ! -f "$MONO" ]; then
-		echo "mono executable not found: $MONO"
-		exit 1
-	fi
-
-	if [ ! -f "$NUGET" ]; then
-		echo "NuGet executable not found: $NUGET"
-		exit 1
-	fi
-
 	if [ ! -f "${RELEASE_CHANGELOG_FILE}" ]; then
 		echo "Changelog file is missing..."
 		exit 0
@@ -347,12 +338,9 @@ RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
 RELEASE_CHANGELOG_FILE="changelog.txt"
 RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
-
-GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
-
-GPG=/usr/local/bin/gpg2
-
 check_prerequisites
+
+
 
 GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 git stash save "${GIT_STASH_NAME}"
