@@ -80,22 +80,6 @@ if [ ! -f "$NUGET" ]; then
 	exit 1
 fi
 
-# The "OTHER_UPLOADS" setting is no longer used
-if [ "${RELEASE_TYPE}" == "nightly" ]; then
-	OTHER_UPLOADS=""
-elif [ "${RELEASE_TYPE}" == "canary" ]; then
-	OTHER_UPLOADS="nightly"
-elif [ "${RELEASE_TYPE}" == "experimental" ]; then
-	OTHER_UPLOADS="nightly canary"
-elif [ "${RELEASE_TYPE}" == "beta" ]; then
-	OTHER_UPLOADS="experimental canary nightly"
-elif [ "${RELEASE_TYPE}" == "stable" ]; then
-	OTHER_UPLOADS="beta experimental canary nightly"
-else
-	echo "Unsupported release type: ${RELEASE_TYPE}, supported types are: nightly, canary, experimental, beta, stable"
-	exit 0
-fi
-
 
 if [ ! -f "${RELEASE_CHANGELOG_FILE}" ]; then
 	echo "Changelog file is missing..."
@@ -312,12 +296,6 @@ echo ";" >> "latest.js"
 
 aws --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
 aws --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
-
-# echo "Propagating to other build types"
-# for OTHER in ${OTHER_UPLOADS}; do
-# 	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${OTHER}/latest.manifest"
-# 	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json" "s3://updates.duplicati.com/${OTHER}/latest.json"
-# done
 
 rm "${RELEASE_CHANGELOG_NEWS_FILE}"
 
