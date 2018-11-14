@@ -307,6 +307,7 @@ function update_text_files_with_new_version() {
 #set default options
 LOCAL=false
 AUTO_RELEASE=false
+SIGNED=true
 
 while true ; do
     case "$1" in
@@ -321,7 +322,7 @@ while true ; do
 		AUTO_RELEASE=true
 		;;
 	--unsigned)
-		UNSIGNED=true
+		SIGNED=false
 		;;
     --* | -* )
         echo "unknown option $1, please use --help."
@@ -362,9 +363,9 @@ prepare_update_source_folder
 find  . -type f -name ".DS_Store" | xargs rm -rf
 find  . -type f -name "Thumbs.db" | xargs rm -rf
 
-set_keyfile_password
+$SIGNED && set_keyfile_password
 
-sign_with_authenticode
+$SIGNED && sign_with_authenticode
 
 prepare_update_target_folder
 
