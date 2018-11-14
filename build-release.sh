@@ -1,3 +1,25 @@
+function clean_and_build () {
+	rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
+
+	"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
+	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+
+	"${NUGET}" restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+	"${NUGET}" restore "Duplicati.sln"
+
+	"${XBUILD}" /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+
+	"${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
+	find "Duplicati" -type d -name "Release" | xargs rm -rf
+	"${XBUILD}" /p:DefineConstants=__MonoCS__ /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
+	BUILD_STATUS=$?
+
+	if [ "${BUILD_STATUS}" -ne 0 ]; then
+		echo "Failed to build, xbuild gave ${BUILD_STATUS}, exiting"
+		exit 4
+	fi
+}
+
 function check_prerequisites() {
 	if [ ! -f "$GPG" ]; then
 		echo "gpg executable not found: $GPG"
@@ -121,28 +143,12 @@ git stash save "${GIT_STASH_NAME}"
 
 update_text_files_with_new_version
 
+clean_and_build
 
-rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
-"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
-"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
-
-"${NUGET}" restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
-"${NUGET}" restore "Duplicati.sln"
-
-"${XBUILD}" /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
-
-"${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
-find "Duplicati" -type d -name "Release" | xargs rm -rf
-"${XBUILD}" /p:DefineConstants=__MonoCS__ /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
-BUILD_STATUS=$?
-
-if [ "${BUILD_STATUS}" -ne 0 ]; then
-    echo "Failed to build, xbuild gave ${BUILD_STATUS}, exiting"
-    exit 4
+if [ ! -d "Updates/build" ]; then
+	mkdir "Updates/build"
 fi
-
-if [ ! -d "Updates/build" ]; then mkdir "Updates/build"; fi
 
 UPDATE_SOURCE=Updates/build/${RELEASE_TYPE}_source-${RELEASE_VERSION}
 UPDATE_TARGET=Updates/build/${RELEASE_TYPE}_target-${RELEASE_VERSION}
