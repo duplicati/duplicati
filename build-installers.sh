@@ -86,7 +86,6 @@ while true ; do
     case "$1" in
     --debian)
 		build_installer_debian
-        shift
         ;;
     --help)
         show_help
@@ -94,11 +93,9 @@ while true ; do
         ;;
 	--local)
 		BUILD_LOCAL=true
-		shift
 		;;
 	--unsigned)
 		UNSIGNED=true
-		shift
 		;;
     --* | -* )
         echo "unknown option $1, please use --help."
