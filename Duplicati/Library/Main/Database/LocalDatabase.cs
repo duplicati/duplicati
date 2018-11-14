@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -1403,20 +1404,9 @@ ORDER BY
                 if (m_result.EndTime.Ticks == 0)
                     m_result.EndTime = DateTime.UtcNow;
 
-                LogMessage("Result", 
-                    Library.Utility.Utility.PrintSerializeObject(
-                        m_result, 
-                        (StringBuilder)null, 
-                        (prop, item) => 
-                            !typeof(IBackendProgressUpdater).IsAssignableFrom(prop.PropertyType) && 
-                            !typeof(IMessageSink).IsAssignableFrom(prop.PropertyType) && 
-                           !(prop.Name == "MainOperation" && item is BackendWriter) &&
-                           !(prop.Name == "EndTime" && item is BackendWriter) &&
-                           !(prop.Name == "Duration" && item is BackendWriter) &&
-                           !(prop.Name == "BeginTime" && item is BackendWriter), 
-                        recurseobjects: true, 
-                        collectionlimit: 5
-                    ).ToString(),
+                var serializer = new JsonFormatSerializer();
+                LogMessage("Result",
+                    serializer.SerializeResults(m_result),
                     null,
                     null
                 );
