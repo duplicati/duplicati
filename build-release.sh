@@ -1,3 +1,40 @@
+function upload_binaries_to_aws () {
+	echo "Uploading binaries"
+	aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
+	aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig"
+	aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc"
+	aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest"
+
+	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
+
+	ZIP_MD5=$(md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}')
+	ZIP_SHA1=$(shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}')
+	ZIP_SHA256=$(shasum -a 256 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}')
+
+cat > "latest.json" <<EOF
+{
+	"version": "${RELEASE_VERSION}",
+	"zip": "${RELEASE_FILE_NAME}.zip",
+	"zipsig": "${RELEASE_FILE_NAME}.zip.sig",
+	"zipsigasc": "${RELEASE_FILE_NAME}.zip.sig.asc",
+	"manifest": "${RELEASE_FILE_NAME}.manifest",
+	"urlbase": "https://updates.duplicati.com/${RELEASE_TYPE}/",
+	"link": "https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip",
+	"zipmd5": "${ZIP_MD5}",
+	"zipsha1": "${ZIP_SHA1}",
+	"zipsha256": "${ZIP_SHA256}"
+}
+EOF
+
+	echo "duplicati_version_info =" > "latest.js"
+	cat "latest.json" >> "latest.js"
+	echo ";" >> "latest.js"
+
+	aws --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
+	aws --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
+}
+
+
 function sign_with_authenticode () {
 	if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 		echo "Performing authenticode signing of executables and libraries"
@@ -193,6 +230,11 @@ function update_text_files_with_new_version() {
 	fi
 }
 
+
+#set default options
+UPLOAD=true
+
+
 while true ; do
     case "$1" in
     --help)
@@ -200,7 +242,7 @@ while true ; do
         exit 0
         ;;
 	--local)
-		BUILD_LOCAL=true
+		UPLOAD=false
 		shift
 		;;
 	--unsigned)
@@ -280,42 +322,10 @@ sign_with_authenticode
 
 prepare_update_target_folder
 
-
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
 
-echo "Uploading binaries"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest"
+$UPLOAD && upload_binaries_to_aws
 
-aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
-
-ZIP_MD5=$(md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}')
-ZIP_SHA1=$(shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}')
-ZIP_SHA256=$(shasum -a 256 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}')
-
-cat > "latest.json" <<EOF
-{
-	"version": "${RELEASE_VERSION}",
-	"zip": "${RELEASE_FILE_NAME}.zip",
-	"zipsig": "${RELEASE_FILE_NAME}.zip.sig",
-	"zipsigasc": "${RELEASE_FILE_NAME}.zip.sig.asc",
-	"manifest": "${RELEASE_FILE_NAME}.manifest",
-	"urlbase": "https://updates.duplicati.com/${RELEASE_TYPE}/",
-	"link": "https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip",
-	"zipmd5": "${ZIP_MD5}",
-	"zipsha1": "${ZIP_SHA1}",
-	"zipsha256": "${ZIP_SHA256}"
-}
-EOF
-
-echo "duplicati_version_info =" > "latest.js"
-cat "latest.json" >> "latest.js"
-echo ";" >> "latest.js"
-
-aws --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
-aws --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
 
 rm "${RELEASE_CHANGELOG_NEWS_FILE}"
 
