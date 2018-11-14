@@ -5,6 +5,17 @@ quit_on_error() {
 
 trap 'quit_on_error $LINENO' ERR
 
+function update_git_repo () {
+	git checkout "Duplicati/License/VersionTag.txt"
+	git checkout "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
+	git checkout "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
+	git add "Updates/build_version.txt"
+	git add "${RELEASE_CHANGELOG_FILE}"
+	git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: " -m "Binaries: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
+	git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"                       -m "You can download this build from: " -m "Binaries: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
+	git push --tags
+}
+
 function set_keyfile_password () {
 	echo -n "Enter keyfile password: "
 	read -s KEYFILE_PASSWORD
@@ -22,6 +33,11 @@ function release_to_github () {
 	GITHUB_TOKEN_FILE="${HOME}/.config/github-api-token"
 	GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
 	RELEASE_MESSAGE=$(printf "Changes in this version:\n${RELEASE_CHANGEINFO_NEWS}")
+
+	PRE_RELEASE_LABEL="--pre-release"
+	if [ "${RELEASE_TYPE}" == "stable" ]; then
+		PRE_RELEASE_LABEL=""
+	fi
 
 	if [ "x${GITHUB_TOKEN}" == "x" ]; then
 		echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
@@ -233,7 +249,6 @@ function clean_and_build () {
 	NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 	MONO=/Library/Frameworks/Mono.framework/Commands/mono
 
-
 	rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 	"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
@@ -353,7 +368,7 @@ check_prerequisites
 
 $LOCAL || git stash save "auto-build-${RELEASE_TIMESTAMP}"
 
-update_text_files_with_new_version
+$LOCAL || update_text_files_with_new_version
 
 clean_and_build
 
@@ -373,19 +388,7 @@ prepare_update_target_folder
 
 $LOCAL || upload_binaries_to_aws
 
-git checkout "Duplicati/License/VersionTag.txt"
-git checkout "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
-git checkout "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
-git add "Updates/build_version.txt"
-git add "${RELEASE_CHANGELOG_FILE}"
-git commit -m "Version bump to v${RELEASE_VERSION}-${RELEASE_NAME}" -m "You can download this build from: " -m "Binaries: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
-git tag "v${RELEASE_VERSION}-${RELEASE_NAME}"                       -m "You can download this build from: " -m "Binaries: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip" -m "Signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig" -m "ASCII signature file: https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc" -m "MD5: ${ZIP_MD5}" -m "SHA1: ${ZIP_SHA1}" -m "SHA256: ${ZIP_SHA256}"
-git push --tags
-
-PRE_RELEASE_LABEL="--pre-release"
-if [ "${RELEASE_TYPE}" == "stable" ]; then
-	PRE_RELEASE_LABEL=""
-fi
+$LOCAL || update_git_repo
 
 $LOCAL || release_to_github
 
