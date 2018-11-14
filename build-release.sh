@@ -33,6 +33,30 @@ function check_prerequisites() {
 	fi
 }
 
+function update_text_files_with_new_version() {
+	RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
+	if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
+
+		echo "${RELEASE_TIMESTAMP} - ${RELEASE_NAME}" > "tmp_changelog.txt"
+		echo "==========" >> "tmp_changelog.txt"
+		echo "${RELEASE_CHANGEINFO_NEWS}" >> "tmp_changelog.txt"
+		echo >> "tmp_changelog.txt"
+		cat "${RELEASE_CHANGELOG_FILE}" >> "tmp_changelog.txt"
+		cp "tmp_changelog.txt" "${RELEASE_CHANGELOG_FILE}"
+		rm "tmp_changelog.txt"
+	fi
+
+	echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
+	echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
+	echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
+	cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
+
+	RELEASE_CHANGEINFO=$(cat ${RELEASE_CHANGELOG_FILE})
+	if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
+		echo "No information in changelog file"
+		exit 0
+	fi
+}
 
 while true ; do
     case "$1" in
@@ -76,8 +100,6 @@ RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
 
 
-
-
 UPDATE_ZIP_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;https://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 UPDATER_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-release.key"
@@ -94,41 +116,11 @@ GPG=/usr/local/bin/gpg2
 
 check_prerequisites
 
-echo -n "Enter keyfile password: "
-read -s KEYFILE_PASSWORD
-echo
-
-if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
-	echo "No password entered, quitting"
-	exit 0
-fi
-
-RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
-
 GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 git stash save "${GIT_STASH_NAME}"
 
-if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
+update_text_files_with_new_version
 
-	echo "${RELEASE_TIMESTAMP} - ${RELEASE_NAME}" > "tmp_changelog.txt"
-	echo "==========" >> "tmp_changelog.txt"
-	echo "${RELEASE_CHANGEINFO_NEWS}" >> "tmp_changelog.txt"
-	echo >> "tmp_changelog.txt"
-	cat "${RELEASE_CHANGELOG_FILE}" >> "tmp_changelog.txt"
-	cp "tmp_changelog.txt" "${RELEASE_CHANGELOG_FILE}"
-	rm "tmp_changelog.txt"
-fi
-
-echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
-echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
-echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
-cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
-
-RELEASE_CHANGEINFO=$(cat ${RELEASE_CHANGELOG_FILE})
-if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
-    echo "No information in changeinfo file"
-    exit 0
-fi
 
 rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
@@ -200,6 +192,16 @@ rm -rf "${UPDATE_SOURCE}/"*.xml;
 # Remove all .DS_Store and Thumbs.db files
 find  . -type f -name ".DS_Store" | xargs rm -rf
 find  . -type f -name "Thumbs.db" | xargs rm -rf
+
+
+echo -n "Enter keyfile password: "
+read -s KEYFILE_PASSWORD
+echo
+
+if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
+	echo "No password entered, quitting"
+	exit 0
+fi
 
 # Sign all files with Authenticode
 if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
