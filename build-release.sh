@@ -1,8 +1,16 @@
 quit_on_error() {
-    echo "Error on line $1, stopping build of release."
-    exit 1
+  local parent_lineno="$1"
+  local message="$2"
+  local code="${3:-1}"
+  if [[ -n "$message" ]] ; then
+    echo "Error on or near line ${parent_lineno}: ${message}; exiting with status ${code}"
+  else
+    echo "Error on or near line ${parent_lineno}; exiting with status ${code}"
+  fi
+  exit "${code}"
 }
 
+set -eE
 trap 'quit_on_error $LINENO' ERR
 
 function update_git_repo () {
@@ -245,9 +253,9 @@ function prepare_update_source_folder () {
 }
 
 function clean_and_build () {
-	XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
-	NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
-	MONO=/Library/Frameworks/Mono.framework/Commands/mono
+	XBUILD=`which msbuild || /Library/Frameworks/Mono.framework/Commands/msbuild`
+	NUGET=`which nuget || /Library/Frameworks/Mono.framework/Commands/nuget`
+	MONO=`which mono || /Library/Frameworks/Mono.framework/Commands/mono`
 
 	rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
@@ -262,19 +270,11 @@ function clean_and_build () {
 	"${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
 	find "Duplicati" -type d -name "Release" | xargs rm -rf
 	"${XBUILD}" /p:DefineConstants=__MonoCS__ /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
-	BUILD_STATUS=$?
-
-	if [ "${BUILD_STATUS}" -ne 0 ]; then
-		echo "Failed to build, xbuild gave ${BUILD_STATUS}, exiting"
-		exit 4
-	fi
 }
 
-function check_prerequisites() {
-	if [ ! -f "${RELEASE_CHANGELOG_FILE}" ]; then
-		echo "Changelog file is missing..."
-		exit 0
-	fi
+function update_text_files_with_new_version() {
+	UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
+
 
 	if [[ $AUTO_RELEASE || ! -f "${RELEASE_CHANGELOG_NEWS_FILE}" ]]; then
 		echo "No updates to changelog file found"
@@ -283,10 +283,7 @@ function check_prerequisites() {
 		echo "    touch ""${RELEASE_CHANGELOG_NEWS_FILE}"" "
 		exit 0
 	fi
-}
 
-function update_text_files_with_new_version() {
-	UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 
 	if ! $AUTO_RELEASE
 	then
@@ -347,6 +344,7 @@ while true ; do
 		if [ "x$1" == "x" ]; then
 			RELEASE_TYPE="canary"
 			echo "No release type specified, using ${RELEASE_TYPE}"
+			break
 		else
 			RELEASE_TYPE=$1
 		fi
@@ -363,8 +361,6 @@ RELEASE_VERSION="2.0.4.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
 RELEASE_CHANGELOG_FILE="changelog.txt"
 RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
-
-check_prerequisites
 
 $LOCAL || git stash save "auto-build-${RELEASE_TIMESTAMP}"
 
