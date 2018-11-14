@@ -5,8 +5,12 @@
         <h2 translate>Access to user interface</h2>
         <div class="input mixed multiple">
             <input type="checkbox" class="checkbox" id="hasPassword" name="hasPassword" ng-model="requireRemotePassword" />
-            <label for="password" translate>Password</label>
+            <label for="password" translate>Password</label><br>
             <input type="password" id="password" name="password" ng-model="remotePassword" />
+        </div>
+        <div class="input mixed multiple">
+            <label for="confirm-password" translate>Confirm password</label><br>
+            <input type="password" id="confirm-password" name="confirm-password" ng-model="confirmPassword" autocomplete="new-password" />
         </div>
         <div class="input checkbox">
             <input type="checkbox" class="checkbox" id="remote" name="remote" ng-model="allowRemoteAccess" />
