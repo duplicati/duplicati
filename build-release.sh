@@ -1,3 +1,39 @@
+function check_prerequisites() {
+	if [ ! -f "$GPG" ]; then
+		echo "gpg executable not found: $GPG"
+		exit 1
+	fi
+
+	if [ ! -f "$XBUILD" ]; then
+		echo "xbuild/msbuild executable not found: $XBUILD"
+		exit 1
+	fi
+
+	if [ ! -f "$MONO" ]; then
+		echo "mono executable not found: $MONO"
+		exit 1
+	fi
+
+	if [ ! -f "$NUGET" ]; then
+		echo "NuGet executable not found: $NUGET"
+		exit 1
+	fi
+
+	if [ ! -f "${RELEASE_CHANGELOG_FILE}" ]; then
+		echo "Changelog file is missing..."
+		exit 0
+	fi
+
+	if [ ! -f "${RELEASE_CHANGELOG_NEWS_FILE}" ]; then
+		echo "No updates to changelog file found"
+		echo
+		echo "To make a build without changelog news, run:"
+		echo "    touch ""${RELEASE_CHANGELOG_NEWS_FILE}"" "
+		exit 0
+	fi
+}
+
+
 while true ; do
     case "$1" in
     --help)
@@ -35,13 +71,12 @@ RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
 RELEASE_VERSION="2.0.4.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
 RELEASE_CHANGELOG_FILE="changelog.txt"
-RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt"
+RELEASE_CHANGELOG_NEWS_FILE="changelog-news.txt" # never in repo due to .gitignore
 RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
 
 
 
-GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 
 UPDATE_ZIP_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;https://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
@@ -57,42 +92,7 @@ NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
 
-# Newer GPG needs this to allow input from a non-terminal
-export GPG_TTY=$(tty)
-
-if [ ! -f "$GPG" ]; then
-	echo "gpg executable not found: $GPG"
-	exit 1
-fi
-
-if [ ! -f "$XBUILD" ]; then
-	echo "xbuild/msbuild executable not found: $XBUILD"
-	exit 1
-fi
-
-if [ ! -f "$MONO" ]; then
-	echo "mono executable not found: $MONO"
-	exit 1
-fi
-
-if [ ! -f "$NUGET" ]; then
-	echo "NuGet executable not found: $NUGET"
-	exit 1
-fi
-
-
-if [ ! -f "${RELEASE_CHANGELOG_FILE}" ]; then
-	echo "Changelog file is missing..."
-	exit 0
-fi
-
-if [ ! -f "${RELEASE_CHANGELOG_NEWS_FILE}" ]; then
-	echo "No updates to changelog file found"
-	echo
-	echo "To make a build without changelog news, run:"
-	echo "    touch ""${RELEASE_CHANGELOG_NEWS_FILE}"" "
-	exit 0
-fi
+check_prerequisites
 
 echo -n "Enter keyfile password: "
 read -s KEYFILE_PASSWORD
@@ -105,6 +105,7 @@ fi
 
 RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
 
+GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 git stash save "${GIT_STASH_NAME}"
 
 if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
@@ -241,6 +242,8 @@ fi
 echo
 echo "Building signed package ..."
 
+# Newer GPG needs this to allow input from a non-terminal
+export GPG_TTY=$(tty)
 "${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
 
 if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
