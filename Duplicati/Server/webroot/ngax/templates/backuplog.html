@@ -1,0 +1,71 @@
+<div ng-controller="BackupLogController" class="logpage">
+
+    <h1 ng-show="BackupID == null" translate>Log data from the server</h1>
+    <h1 ng-show="BackupID != null" translate>Log data for <b>{{Backup.Backup.Name}}</b></h1>
+
+    <ul class="tabs">
+        <li ng-show="BackupID == null" ng-class="{active: Page=='stored'}"><a href ng-click="Page='stored'" translate>Stored</a></li>
+        <li ng-show="BackupID == null" ng-class="{active: Page=='live'}"><a href ng-click="Page='live'" translate>Live</a></li>
+        <li ng-show="BackupID != null" ng-class="{active: Page=='general'}"><a href ng-click="Page='general'" translate>General</a></li>
+        <li ng-show="BackupID != null" ng-class="{active: Page=='remote'}"><a href ng-click="Page='remote'" translate>Remote</a></li>
+    </ul>
+
+    <div ng-show="Page=='stored'">
+        <ul class="entries">
+            <li ng-show="LogData == null" translate>Loading ...</li>
+            <li ng-repeat="item in LogData">
+                <div ng-click="expanded = !expanded" class="entryline">{{item.Timestamp | parsetimestamp}}: {{item.Message}}</div>
+                <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
+            </li>
+        </ul>
+        <div ng-show="LogData != null &amp;&amp; !LogDataComplete" class="button" ng-click="LoadMoreStoredData()">
+            <span ng-show="LoadingData" translate>Loading ...</span>
+            <span ng-hide="LoadingData" translate>Load older data</span>
+        </div>
+    </div>
+
+    <div ng-show="Page=='live'">
+        <div>
+            <div translate>Select a log level and see messages as they happen:</div>
+            <select ng-model="LiveLogLevel" ng-options="x for x in SystemInfo.LogLevels">
+                <option value="" translate>Disabled</option>
+            </select>
+        </div>
+
+        <ul class="entries livedata">
+            <li ng-repeat="item in LiveData" ng-class="{expanded: expanded}">
+                <div ng-click="expanded = !expanded" class="entryline" ng-class="{noexception: item.Exception == null, clickable: item.Exception != null}">{{item.When | parsetimestamp}}: {{item.Message}}</div>
+                <div ng-show="expanded &amp;&amp; item.Exception != null" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
+            </li>
+        </ul>
+    </div>
+
+    <div ng-show="Page == 'general'">
+        <ul class="entries">
+            <li ng-show="GeneralData == null" translate>Loading ...</li>
+            <li ng-repeat="item in GeneralData">
+                <div ng-click="expanded = !expanded" class="entryline">{{item.Timestamp | parsetimestamp}}: {{item.Type}}</div>
+                <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Message}}</div>
+                <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
+            </li>
+        </ul>
+        <div ng-show="GeneralData != null &amp;&amp; !GeneralDataComplete" class="button" ng-click="LoadMoreGeneralData()">
+            <span ng-show="LoadingData" translate>Loading ...</span>
+            <span ng-hide="LoadingData" translate>Load older data</span>
+        </div>
+    </div>
+
+    <div ng-show="Page == 'remote'">
+        <ul class="entries">
+            <li ng-show="RemoteData == null" translate>Loading ...</li>
+            <li ng-repeat="item in RemoteData">
+                <div ng-click="expanded = !expanded" class="entryline">{{item.Timestamp | parsetimestamp}}: {{item.Operation}} {{item.Path}}</div>
+                <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Data}}</div>
+            </li>
+        </ul>
+        <div ng-show="RemoteData != null &amp;&amp; !RemoteDataComplete" class="button" ng-click="LoadMoreRemoteData()">
+            <span ng-show="LoadingData" translate>Loading ...</span>
+            <span ng-hide="LoadingData" translate>Load older data</span>
+        </div>
+    </div>
+</div>
