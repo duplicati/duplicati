@@ -804,7 +804,7 @@ namespace Duplicati.Server
                         message,
                         null,
                         backup.ID,
-                        null,
+                        "backup:show-log",
                         null,
                         null,
                         "backup:show-log",
