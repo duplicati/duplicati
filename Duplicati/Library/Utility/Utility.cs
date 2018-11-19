@@ -451,7 +451,6 @@ namespace Duplicati.Library.Utility
             return EnumerateFolders(folder).Sum((path) => new FileInfo(path).Length);
         }
 
-
         /// <summary>
         /// Some streams can return a number that is less than the requested number of bytes.
         /// This is usually due to fragmentation, and is solved by issuing a new read.
