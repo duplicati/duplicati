@@ -29,6 +29,8 @@ namespace Duplicati.Library.Encryption
     /// </summary>
     public class GPGEncryption : EncryptionBase
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<GPGEncryption>();
+
         #region Commandline option constants
         /// <summary>
         /// The commandline option supplied if armor should be disabled (--gpg-encryption-disable-armor)
@@ -221,7 +223,7 @@ namespace Duplicati.Library.Encryption
 #if DEBUG
             psi.CreateNoWindow = false;
             psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-            Console.Error.WriteLine(string.Format("Running command: \"{0}\" {1}", m_programpath, args));
+            Console.Error.WriteLine(string.Format("Running command: {0} {1}", m_programpath, args));
 #endif
 
             System.Diagnostics.Process p;
@@ -238,26 +240,25 @@ namespace Duplicati.Library.Encryption
             }
             catch (Exception ex)
             {
+                Logging.Log.WriteErrorMessage(LOGTAG, "GPGEncryptFailure", ex, "Error occurred while encrypting with GPG:" + ex.Message);
                 throw new Exception(Strings.GPGEncryption.GPGExecuteError(m_programpath, args, ex.Message), ex);
             }
 
-
+            System.Threading.Thread t;
             if (encrypt)
             {
                 //Prevent blocking of the output buffer
-                System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
+                t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
                 t.Start(new object[] { p.StandardOutput.BaseStream, input });
 
                 return new GPGStreamWrapper(p, t, p.StandardInput.BaseStream);
             }
-            else
-            {
-                //Prevent blocking of the input buffer
-                System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
-                t.Start(new object[] { input, p.StandardInput.BaseStream });
 
-                return new GPGStreamWrapper(p, t, p.StandardOutput.BaseStream);
-            }
+            //Prevent blocking of the input buffer
+            t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
+            t.Start(new object[] { input, p.StandardInput.BaseStream });
+
+            return new GPGStreamWrapper(p, t, p.StandardOutput.BaseStream);
         }
 
         /// <summary>
