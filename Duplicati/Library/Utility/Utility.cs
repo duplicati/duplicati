@@ -513,11 +513,10 @@ namespace Duplicati.Library.Utility
         /// Calculates the size of files in a given folder
         /// </summary>
         /// <param name="folder">The folder to examine</param>
-        /// <param name="filter">A filter to apply</param>
         /// <returns>The combined size of all files that match the filter</returns>
-        public static long GetDirectorySize(string folder, IFilter filter)
+        public static long GetDirectorySize(string folder)
         {
-            return EnumerateFolders(folder, filter).Sum((path) => new FileInfo(path).Length);
+            return EnumerateFolders(folder).Sum((path) => new FileInfo(path).Length);
         }
 
 

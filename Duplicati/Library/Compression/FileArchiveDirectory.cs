@@ -133,7 +133,7 @@ namespace Duplicati.Library.Compression
         /// </summary>
         public long Size
         {
-            get { return Utility.Utility.GetDirectorySize(m_folder, null); }
+            get { return Utility.Utility.GetDirectorySize(m_folder); }
         }
 
         /// <summary>
