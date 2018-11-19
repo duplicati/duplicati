@@ -152,7 +152,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string basepath)
         {
-            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => true);
+            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => true, SystemIO.IO_OS.GetDirectories, Directory.GetFiles, null);
         }
 
         /// <summary>
@@ -176,18 +176,6 @@ namespace Duplicati.Library.Utility
         /// <param name="path">The path that produced the error</param>
         /// <param name="ex">The exception for the error</param>
         public delegate void ReportAccessError(string rootpath, string path, Exception ex);
-
-        /// <summary>
-        /// Returns a list of all files found in the given folder.
-        /// The search is recursive.
-        /// </summary>
-        /// <param name="rootpath">The folder to look in</param>
-        /// <param name="callback">The function to call with the filenames</param>
-        /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
-        {
-            return EnumerateFileSystemEntries(rootpath, callback, SystemIO.IO_OS.GetDirectories, Directory.GetFiles, null);
-        }
 
         /// <summary>
         /// Returns a list of all files found in the given folder.
