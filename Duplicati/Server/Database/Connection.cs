@@ -373,9 +373,11 @@ namespace Duplicati.Server.Database
             
             var disabled_encryption = false;
             var passphrase = string.Empty;
+            var gpgAsymmetricEncryption = false;
             if (item.Settings != null)
             {
                 foreach (var s in item.Settings)
+
                     if (string.Equals(s.Name, "--no-encryption", StringComparison.OrdinalIgnoreCase))
                         disabled_encryption = string.IsNullOrWhiteSpace(s.Value) ? true : Library.Utility.Utility.ParseBool(s.Value, false);
                     else if (string.Equals(s.Name, "passphrase", StringComparison.OrdinalIgnoreCase))
@@ -430,9 +432,12 @@ namespace Duplicati.Server.Database
                         if (!string.IsNullOrWhiteSpace(s.Value) && s.Value.Contains("-"))
                             return "The prefix cannot contain hyphens (-)";
                     }
+                    else if (string.Equals(s.Name, "--gpg-encryption-command", StringComparison.OrdinalIgnoreCase)) {
+                        gpgAsymmetricEncryption = string.Equals(s.Value, "--encrypt", StringComparison.OrdinalIgnoreCase);
+                    }
             }
 
-            if (!disabled_encryption && string.IsNullOrWhiteSpace(passphrase))
+            if (!disabled_encryption && !gpgAsymmetricEncryption && string.IsNullOrWhiteSpace(passphrase))
                 return "Missing passphrase";
 
             if (schedule != null)
