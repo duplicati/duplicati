@@ -130,7 +130,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFiles(string basepath)
         {
-            return EnumerateFiles(basepath, null);
+            return EnumerateFileSystemEntries(basepath).Where(x => !x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full paths</returns>
         public static IEnumerable<string> EnumerateFolders(string basepath)
         {
-            return EnumerateFolders(basepath, null);
+            return EnumerateFileSystemEntries(basepath).Where(x => x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -152,49 +152,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string basepath)
         {
-            return EnumerateFileSystemEntries(basepath, (IFilter)null);
-        }
-
-        /// <summary>
-        /// Returns a list of all files found in the given folder.
-        /// The search is recursive.
-        /// </summary>
-        /// <param name="basepath">The folder to look in</param>
-        /// <param name="filter">The filter to apply.</param>
-        /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFiles(string basepath, IFilter filter)
-        {
-            return EnumerateFileSystemEntries(basepath, filter).Where(x => !x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
-        }
-
-        /// <summary>
-        /// Returns a list of folder names found in the given folder.
-        /// The search is recursive.
-        /// </summary>
-        /// <param name="basepath">The folder to look in</param>
-        /// <param name="filter">The filter to apply.</param>
-        /// <returns>A list of the full paths</returns>
-        public static IEnumerable<string> EnumerateFolders(string basepath, IFilter filter)
-        {
-            return EnumerateFileSystemEntries(basepath, filter).Where(x => x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
-        }
-
-        /// <summary>
-        /// Returns a list of all files and subfolders found in the given folder.
-        /// The search is recursive.
-        /// </summary>
-        /// <param name="basepath">The folder to look in.</param>
-        /// <param name="filter">The filter to apply.</param>
-        /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string basepath, IFilter filter)
-        {
-            filter = filter ?? new FilterExpression();
-            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => {
-                if (!filter.Matches(path, out var result, out _))
-                    result = true;
-
-                return result;
-            });
+            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => true, SystemIO.IO_OS.GetDirectories, Directory.GetFiles, null);
         }
 
         /// <summary>
@@ -218,32 +176,6 @@ namespace Duplicati.Library.Utility
         /// <param name="path">The path that produced the error</param>
         /// <param name="ex">The exception for the error</param>
         public delegate void ReportAccessError(string rootpath, string path, Exception ex);
-
-        /// <summary>
-        /// Returns a list of all files found in the given folder.
-        /// The search is recursive.
-        /// </summary>
-        /// <param name="rootpath">The folder to look in</param>
-        /// <param name="callback">The function to call with the filenames</param>
-        /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
-        {
-            return EnumerateFileSystemEntries(rootpath, callback, SystemIO.IO_OS.GetDirectories, Directory.GetFiles);
-        }
-
-        /// <summary>
-        /// Returns a list of all files found in the given folder.
-        /// The search is recursive.
-        /// </summary>
-        /// <param name="rootpath">The folder to look in</param>
-        /// <param name="callback">The function to call with the filenames</param>
-        /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
-        /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
-        /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
-        {
-            return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null);
-        }
 
         /// <summary>
         /// Returns a list of all files found in the given folder.
@@ -513,13 +445,11 @@ namespace Duplicati.Library.Utility
         /// Calculates the size of files in a given folder
         /// </summary>
         /// <param name="folder">The folder to examine</param>
-        /// <param name="filter">A filter to apply</param>
         /// <returns>The combined size of all files that match the filter</returns>
-        public static long GetDirectorySize(string folder, IFilter filter)
+        public static long GetDirectorySize(string folder)
         {
-            return EnumerateFolders(folder, filter).Sum((path) => new FileInfo(path).Length);
+            return EnumerateFolders(folder).Sum((path) => new FileInfo(path).Length);
         }
-
 
         /// <summary>
         /// Some streams can return a number that is less than the requested number of bytes.
