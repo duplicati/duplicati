@@ -130,7 +130,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFiles(string basepath)
         {
-            return EnumerateFiles(basepath, null);
+            return EnumerateFileSystemEntries(basepath).Where(x => !x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -153,18 +153,6 @@ namespace Duplicati.Library.Utility
         public static IEnumerable<string> EnumerateFileSystemEntries(string basepath)
         {
             return EnumerateFileSystemEntries(basepath, (IFilter)null);
-        }
-
-        /// <summary>
-        /// Returns a list of all files found in the given folder.
-        /// The search is recursive.
-        /// </summary>
-        /// <param name="basepath">The folder to look in</param>
-        /// <param name="filter">The filter to apply.</param>
-        /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFiles(string basepath, IFilter filter)
-        {
-            return EnumerateFileSystemEntries(basepath, filter).Where(x => !x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
         }
 
         /// <summary>
