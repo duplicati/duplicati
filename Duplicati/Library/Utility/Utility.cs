@@ -194,21 +194,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback)
         {
-            return EnumerateFileSystemEntries(rootpath, callback, SystemIO.IO_OS.GetDirectories, Directory.GetFiles);
-        }
-
-        /// <summary>
-        /// Returns a list of all files found in the given folder.
-        /// The search is recursive.
-        /// </summary>
-        /// <param name="rootpath">The folder to look in</param>
-        /// <param name="callback">The function to call with the filenames</param>
-        /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
-        /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
-        /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList)
-        {
-            return EnumerateFileSystemEntries(rootpath, callback, folderList, fileList, null);
+            return EnumerateFileSystemEntries(rootpath, callback, SystemIO.IO_OS.GetDirectories, Directory.GetFiles, null);
         }
 
         /// <summary>
