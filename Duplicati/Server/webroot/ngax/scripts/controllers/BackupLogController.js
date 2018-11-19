@@ -17,9 +17,13 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, LogSe
                     return;
 
                 const { current, complete } = result;
-                $scope.GeneralData = current;
                 $scope.GeneralDataComplete = complete;
                 $scope.Backup = BackupList.lookup[$scope.BackupID];
+                for (let i in current) {
+                    try { current[i].Result = JSON.parse(current[i].Message) }
+                    catch {}
+                }
+                $scope.GeneralData = current;
                 $scope.$digest();
             }); 
     };
