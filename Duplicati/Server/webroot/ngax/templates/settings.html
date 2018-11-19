@@ -5,12 +5,16 @@
         <h2 translate>Access to user interface</h2>
         <div class="input mixed multiple">
             <input type="checkbox" class="checkbox" id="hasPassword" name="hasPassword" ng-model="requireRemotePassword" />
-            <label for="password" translate>Password</label>
+            <label for="password" translate>Password</label><br>
             <input type="password" id="password" name="password" ng-model="remotePassword" />
+        </div>
+        <div class="input mixed multiple">
+            <label for="confirm-password" translate>Confirm password</label><br>
+            <input type="password" id="confirm-password" name="confirm-password" ng-model="confirmPassword" autocomplete="new-password" />
         </div>
         <div class="input checkbox">
             <input type="checkbox" class="checkbox" id="remote" name="remote" ng-model="allowRemoteAccess" />
-            <label for="remote" translate>Allow remote access (requires restart)</label>     
+            <label for="remote" translate>Allow remote access (requires restart)</label>
             <div class="sublabel" translate>By allowing remote access, the server listens to requests from any machine on your network. If you enable this option, make sure you are always using the computer on a secure firewall protected network.</div>
         </div>
         <div class="input mixed multiple" ng-show="allowRemoteAccess">
@@ -26,7 +30,7 @@
         </div>
 
 
-        <h2>{{'Pause after startup or hibernation' | translate}}<span class="info">i</span></h2>
+        <h2>{{'Pause after startup or hibernation' | translate}}</h2>
         <div class="input mixed multiple">
             <label for="pauseTime" translate>Pause</label>
             <select id="pauseTime" name="pauseTime" ng-model="startupDelayDurationValue">
@@ -46,6 +50,7 @@
                 <option value="m" translate>Minutes</option>
                 <option value="h" translate>Hours</option>
             </select>
+            <div class="sublabel" translate>Duplicati will run when started, but will remain in a paused state for the duration. Duplicati will occupy minimal system resources and no backups will be run.</div>
         </div>
 
         <h2 translate>User interface settings</h2>

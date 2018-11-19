@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Compression
 {
@@ -41,7 +42,7 @@ namespace Duplicati.Library.Compression
         /// <param name="basefolder">The folder to base the archive on</param>
         public FileArchiveDirectory(string basefolder)
         {
-            m_folder = Utility.Utility.AppendDirSeparator(basefolder);
+            m_folder = Util.AppendDirSeparator(basefolder);
         }
 
         #region IFileArchive Members
@@ -132,7 +133,7 @@ namespace Duplicati.Library.Compression
         /// </summary>
         public long Size
         {
-            get { return Utility.Utility.GetDirectorySize(m_folder, null); }
+            get { return Utility.Utility.GetDirectorySize(m_folder); }
         }
 
         /// <summary>

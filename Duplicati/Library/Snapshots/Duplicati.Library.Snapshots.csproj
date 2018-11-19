@@ -48,18 +48,11 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Transactions" />
-    <Reference Include="AlphaVSS.Common">
-      <HintPath>..\..\..\packages\AlphaVSS.1.4.0\lib\net45\AlphaVSS.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="AlphaFS">
-      <HintPath>..\..\..\packages\AlphaFS.2.1.3\lib\net45\AlphaFS.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DefineDosDevice.cs" />
     <Compile Include="MSSQLUtility.cs" />
     <Compile Include="HyperVUtility.cs" />
     <Compile Include="ISnapshotService.cs" />
@@ -72,12 +65,8 @@
     <Compile Include="USNJournal.cs" />
     <Compile Include="Win32USN.cs" />
     <Compile Include="WindowsSnapshot.cs" />
-    <Compile Include="WinNativeMethods.cs" />
     <Compile Include="NoSnapshotLinux.cs" />
     <Compile Include="NoSnapshotWindows.cs" />
-    <Compile Include="ISystemIO.cs" />
-    <Compile Include="SystemIOLinux.cs" />
-    <Compile Include="SystemIOWindows.cs" />
     <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -100,6 +89,10 @@
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj">
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
       <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

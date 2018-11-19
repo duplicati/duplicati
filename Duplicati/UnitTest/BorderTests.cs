@@ -219,8 +219,7 @@ namespace Duplicati.UnitTest
         {
             var testopts = TestOptions;
             testopts["blocksize"] = blocksize.ToString() + "b";
-            if (modifyOptions != null)
-                modifyOptions(testopts);
+            modifyOptions?.Invoke(testopts);
 
             var filenames = WriteTestFilesToFolder(DATAFOLDER, blocksize, basedatasize);
 

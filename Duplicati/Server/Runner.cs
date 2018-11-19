@@ -780,37 +780,34 @@ namespace Duplicati.Server
                     );
                 }
             }
-            else
+            else if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
             {
-                if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
-                {
-                    var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                ? NotificationType.Warning
-                                : NotificationType.Error;
+                var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                            ? NotificationType.Warning
+                            : NotificationType.Error;
 
-                    var title = result.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                 ? (backup.IsTemporary ?
-                                    "Warning" : string.Format("Warning while running {0}", backup.Name))
-                                : (backup.IsTemporary ?
-                                   "Error" : string.Format("Error while running {0}", backup.Name));
+                var title = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                ? (backup.IsTemporary ?
+                                "Warning" : string.Format("Warning while running {0}", backup.Name))
+                            : (backup.IsTemporary ?
+                                "Error" : string.Format("Error while running {0}", backup.Name));
 
-                    var message = result.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                        ? string.Format("Got {0} warning(s) ", result.Warnings.Count())
-                                        : string.Format("Got {0} error(s) ", result.Errors.Count());
+                var message = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                    ? string.Format("Got {0} warning(s)", result.Warnings.Count())
+                                    : string.Format("Got {0} error(s)", result.Errors.Count());
 
-                    Program.DataConnection.RegisterNotification(
-                        type,
-                        title,
-                        message,
-                        null,
-                        backup.ID,
-                        "backup:show-log",
-                        null,
-                        null,
-                        "backup:show-log",
-                        (n, a) => n
-                    );
-                }
+                Program.DataConnection.RegisterNotification(
+                    type,
+                    title,
+                    message,
+                    null,
+                    backup.ID,
+                    "backup:show-log",
+                    null,
+                    null,
+                    "backup:show-log",
+                    (n, a) => n
+                );
             }
 
             if (!backup.IsTemporary)

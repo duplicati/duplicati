@@ -1,7 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Server
 {
@@ -172,7 +174,7 @@ namespace Duplicati.Server
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
-            if (Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
             {
                 Environment.SetEnvironmentVariable("PATH",
                     Environment.GetEnvironmentVariable("PATH") +
@@ -512,7 +514,7 @@ namespace Duplicati.Server
             //If you change the key, please note that you need to supply the same
             // key when restoring the setup, as the setup being backed up will
             // be encrypted as well.
-            if (!Library.Utility.Utility.IsClientLinux && string.IsNullOrEmpty(dbPassword))
+            if (!Platform.IsClientPosix && string.IsNullOrEmpty(dbPassword))
                 dbPassword = Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42";
 
             // Allow override of the environment variables from the commandline
@@ -551,7 +553,7 @@ namespace Duplicati.Server
                     //
 
                     serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
-                    if (Duplicati.Library.Utility.Utility.IsClientWindows)
+                    if (Platform.IsClientWindows)
                     {
                         var localappdata = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
 
@@ -570,7 +572,7 @@ namespace Duplicati.Server
 #endif
             }
             else
-                DataFolder = Library.Utility.Utility.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
+                DataFolder = Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
 
             var sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
 
@@ -748,7 +750,7 @@ namespace Duplicati.Server
 
                 });
 
-                if (!Duplicati.Library.Utility.Utility.IsClientLinux)
+                if (!Platform.IsClientPosix)
                     lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42"));
 
                 return lst.ToArray();

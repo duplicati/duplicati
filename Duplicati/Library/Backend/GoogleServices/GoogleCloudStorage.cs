@@ -24,8 +24,7 @@ using Newtonsoft.Json;
 using Duplicati.Library.Backend.GoogleServices;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-
-
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
@@ -54,7 +53,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             var uri = new Utility.Uri(url);
 
             m_bucket = uri.Host;
-            m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator("/" + uri.Path, "/");
+            m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             // For GCS we do not use a leading slash
             if (m_prefix.StartsWith("/", StringComparison.Ordinal))
