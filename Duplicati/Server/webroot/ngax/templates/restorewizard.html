@@ -26,7 +26,7 @@
 
                 <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastRestoreFinished == null"
                 class="subtext"
-                translate translate-params-time="item.Backup.Metadata.LastRestoreFinished | parseForceActualDate:forceActualDate "
+                translate translate-params-time="item.Backup.Metadata.LastRestoreFinished | parseDate:forceActualDate "
                 translate-params-duration="formatDuration(item.Backup.Metadata.LastRestoreDuration)">Last successful restore: {{time}} (took {{duration || '0 seconds'}})
                 </div>
     		</li>

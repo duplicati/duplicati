@@ -15,7 +15,7 @@ backupApp.filter('parsetimestamp', function(AppUtils) {
   }
 });
 
-backupApp.filter('parseForceActualDate', function(parsetimestampFilter, momentFilter) {
+backupApp.filter('parseDate', function(parsetimestampFilter, momentFilter) {
   return function(value, force) {
     if (force) {
       return parsetimestampFilter(value);    

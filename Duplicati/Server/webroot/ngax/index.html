@@ -182,7 +182,7 @@
                             <strong translate>Next task:</strong> {{nextTask.Backup.Name}}
                         </div>
 
-                        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong translate>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | parseForceActualDate:forceActualDate }}</span></div>
+                        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong translate>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | parseDate:forceActualDate }}</span></div>
 
                         <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null" translate>No scheduled tasks</div>
                     </div>
