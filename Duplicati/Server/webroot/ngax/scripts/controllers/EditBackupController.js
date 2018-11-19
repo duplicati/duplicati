@@ -49,6 +49,27 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
     $scope.$watch('Options["passphrase"]', computePassPhraseStrength);
     $scope.$watch('RepeatPasshrase', computePassPhraseStrength);
 
+    $scope.checkGpgAsymmetric = function() {
+
+        if (!this.Options) {
+            return false;
+        }
+
+        if (!('encryption-module' in this.Options)) {
+            return false;
+        }
+
+        if (!this.Options['encryption-module']) {
+            return false;
+        }
+
+        if (this.Options['encryption-module'].indexOf('gpg') < 0) {
+            return false;
+        }
+
+        return this.ExtendedOptions.includes('--gpg-encryption-command=--encrypt');
+    }
+
     $scope.generatePassphrase = function() {
         this.Options["passphrase"] = this.RepeatPasshrase = AppUtils.generatePassphrase();
         this.ShowPassphrase = true;
@@ -221,15 +242,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             return;
         }
 
-        function checkGpgAsymmetric() {
-            if ($scope.Options['encryption-module'].indexOf('gpg') < 0) {
-                return false;
-            }
-
-            return $scope.ExtendedOptions.includes('--gpg-encryption-command=--encrypt');
-        }
-
-        if (encryptionEnabled && !checkGpgAsymmetric()) {
+        if (encryptionEnabled && !$scope.checkGpgAsymmetric()) {
             if ($scope.PassphraseScore === '') {
                 DialogService.dialog(gettextCatalog.getString('Missing passphrase'), gettextCatalog.getString('You must enter a passphrase or disable encryption'));
                 $scope.CurrentStep = 0;
