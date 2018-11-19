@@ -152,22 +152,12 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string basepath)
         {
-            return EnumerateFileSystemEntries(basepath, (IFilter)null);
-        }
-
-        /// <summary>
-        /// Returns a list of all files and subfolders found in the given folder.
-        /// The search is recursive.
-        /// </summary>
-        /// <param name="basepath">The folder to look in.</param>
-        /// <param name="filter">The filter to apply.</param>
-        /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string basepath, IFilter filter)
-        {
-            filter = filter ?? new FilterExpression();
+            IFilter filter = new FilterExpression();
             return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => {
                 if (!filter.Matches(path, out var result, out _))
+                {
                     result = true;
+                }
 
                 return result;
             });
