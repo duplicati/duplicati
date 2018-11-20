@@ -18,7 +18,6 @@
 using System;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Linq;
 
 namespace Duplicati.Server.Database
