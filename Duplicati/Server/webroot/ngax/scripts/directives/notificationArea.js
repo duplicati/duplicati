@@ -2,7 +2,7 @@ backupApp.directive('notificationArea', function() {
   return {
     restrict: 'E',
     templateUrl: 'templates/notificationarea.html',
-    controller: function($scope, $location, $timeout, NotificationService, ServerStatus, AppService, AppUtils, DialogService) {
+    controller: function($scope, $location, $timeout, gettextCatalog, NotificationService, ServerStatus, AppService, AppUtils, DialogService) {
         $scope.Notifications = NotificationService.watch($scope);
         $scope.state = ServerStatus.watch($scope);
         $scope.doDismiss = function(id) {
