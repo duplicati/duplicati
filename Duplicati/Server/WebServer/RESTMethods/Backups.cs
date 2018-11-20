@@ -26,6 +26,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
     {
         public class AddOrUpdateBackupData
         {
+            public Boolean HasPassphraseStored { get; set;}
             public Database.Schedule Schedule { get; set;}
             public Database.Backup Backup { get; set;}
         }
@@ -36,7 +37,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var backups = Program.DataConnection.Backups;
 
             var all = from n in backups
-                select new AddOrUpdateBackupData() {
+                select new AddOrUpdateBackupData {
+                HasPassphraseStored = Program.DataConnection.IsPassphraseStored(long.Parse(n.ID)),
                 Backup = (Database.Backup)n,
                 Schedule = 
                     (from x in schedules

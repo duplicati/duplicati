@@ -309,7 +309,7 @@ namespace Duplicati.Server.Database
             lock(m_lock)
             {
                 var bk = ReadFromDb(
-                    (rd) => new Schedule() {
+                    (rd) => new Schedule {
                         ID = ConvertToInt64(rd, 0),
                         Tags = (ConvertToString(rd, 1) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                         Time = ConvertToDateTime(rd, 2),
@@ -322,7 +322,19 @@ namespace Duplicati.Server.Database
 
                 return bk;
             }
-        }        
+        }
+
+        internal Boolean IsPassphraseStored(long id)
+        {
+            lock (m_lock)
+            {
+                return ReadFromDb(
+                    (rd) => ConvertToBoolean(rd, 0)
+                    ,
+                    @"SELECT VALUE != """" FROM ""Option"" WHERE BackupID = ? AND NAME='passphrase'", id)
+                .FirstOrDefault();
+            }
+        }
 
         internal long[] GetScheduleIDsFromTags(string[] tags)
         {

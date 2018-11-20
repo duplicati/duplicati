@@ -183,18 +183,21 @@ namespace Duplicati.Server
                 filters);
         }
 
-        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, DateTime time, string restoreTarget, bool overwrite, bool restore_permissions, bool skip_metadata)
+        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, 
+                                                    DateTime time, string restoreTarget, bool overwrite, bool restore_permissions, 
+                                                    bool skip_metadata, string passphrase = null)
         {
-            var dict = new Dictionary<string, string>();
-            dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
+            var dict = new Dictionary<string, string>
+            {
+                ["time"] = Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime()),
+                ["overwrite"] = overwrite? Boolean.TrueString : Boolean.FalseString,
+                ["restore-permissions"] = restore_permissions ? Boolean.TrueString : Boolean.FalseString,
+                ["skip-metadata"] = skip_metadata ? Boolean.TrueString : Boolean.FalseString,
+                ["passphrase"] = passphrase,
+                ["allow-passphrase-change"] = Boolean.TrueString
+            };
             if (!string.IsNullOrWhiteSpace(restoreTarget))
                 dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
-            if (overwrite)
-                dict["overwrite"] = "true";
-            if (restore_permissions)
-                dict["restore-permissions"] = "true";
-            if (skip_metadata)
-                dict["skip-metadata"] = "true";
 
             return CreateTask(
                 DuplicatiOperation.Restore,

@@ -187,7 +187,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var input = info.Request.Form;
 
             string[] filters = parsePaths(input["paths"].Value ?? string.Empty);
-            
+
+            var passphrase = string.IsNullOrEmpty(input["passphrase"].Value) ? null : input["passphrase"].Value;
+
             var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
             var restoreTarget = input["restore-path"].Value;
             var overwrite = Duplicati.Library.Utility.Utility.ParseBool(input["overwrite"].Value, false);
@@ -195,7 +197,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var permissions = Duplicati.Library.Utility.Utility.ParseBool(input["permissions"].Value, false);
             var skip_metadata = Duplicati.Library.Utility.Utility.ParseBool(input["skip-metadata"].Value, false);
 
-            var task = Runner.CreateRestoreTask(backup, filters, time, restoreTarget, overwrite, permissions, skip_metadata);
+            var task = Runner.CreateRestoreTask(backup, filters, time, restoreTarget, overwrite, permissions, skip_metadata, passphrase);
 
             Program.WorkThread.AddTask(task);
 
