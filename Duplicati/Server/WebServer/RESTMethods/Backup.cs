@@ -74,8 +74,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void ListFileSets(IBackup backup, RequestInfo info)
         {
             var input = info.Request.QueryString;
-            var extra = new Dictionary<string, string>();
-            extra["list-sets-only"] = "true";
+            var extra = new Dictionary<string, string>
+            {
+                ["list-sets-only"] = "true"
+            };
             if (input["include-metadata"].Value != null)
                 extra["list-sets-only"] = (!Library.Utility.Utility.ParseBool(input["include-metadata"].Value, false)).ToString();
             if (input["from-remote-only"].Value != null)
@@ -310,7 +312,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void IsActive(IBackup backup, RequestInfo info)
         {
             var t = Program.WorkThread.CurrentTask;
-            var bt = t == null ? null : t.Backup;
+            var bt = t?.Backup;
             if (bt != null && backup.ID == bt.ID)
             {
                 info.OutputOK(new { Status = "OK", Active = true });
@@ -318,7 +320,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             else if (Program.WorkThread.CurrentTasks.Any(x =>
             { 
-                var bn = x == null ? null : x.Backup;
+                var bn = x?.Backup;
                 return bn == null || bn.ID == backup.ID;
             }))
             {
@@ -409,7 +411,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 info.OutputOK(new GetResponse()
                 {
                     success = true,
-                    data = new GetResponse.GetResponseData() {
+                    data = new GetResponse.GetResponseData {
                         Schedule = schedule,
                         Backup = bk,
                         DisplayNames = sourcenames

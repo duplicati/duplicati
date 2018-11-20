@@ -425,7 +425,7 @@ namespace Duplicati.Server
                 try
                 {
                     var sink = new MessageSink(data.TaskID, null);
-                    Program.GenerateProgressState = () => sink.Copy();
+                    Program.GenerateProgressState = sink.Copy;
                     Program.StatusEventNotifyer.SignalNewEvent();
 
                     ((CustomRunnerTask)data).Run(sink);

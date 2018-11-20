@@ -277,12 +277,8 @@ namespace Duplicati.Server.Database
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentNullException(nameof(id));
-            
-            long lid;
-            if (long.TryParse(id, out lid))
-                return GetBackup(lid);
-            else
-                return GetTemporaryBackup(id);
+
+            return long.TryParse(id, out long lid) ? GetBackup(lid) : GetTemporaryBackup(id);
         }
 
         internal IBackup GetBackup(long id)
@@ -290,7 +286,7 @@ namespace Duplicati.Server.Database
             lock(m_lock)
             {
                 var bk = ReadFromDb(
-                    (rd) => new Backup() {
+                    (rd) => new Backup {
                         ID = ConvertToInt64(rd, 0).ToString(),
                         Name = ConvertToString(rd, 1),
                         Description = ConvertToString(rd, 2),
@@ -379,7 +375,7 @@ namespace Duplicati.Server.Database
                 foreach (var s in item.Settings)
 
                     if (string.Equals(s.Name, "--no-encryption", StringComparison.OrdinalIgnoreCase))
-                        disabled_encryption = string.IsNullOrWhiteSpace(s.Value) ? true : Library.Utility.Utility.ParseBool(s.Value, false);
+                        disabled_encryption = string.IsNullOrWhiteSpace(s.Value) || Library.Utility.Utility.ParseBool(s.Value, false);
                     else if (string.Equals(s.Name, "passphrase", StringComparison.OrdinalIgnoreCase))
                         passphrase = s.Value;
                     else if (string.Equals(s.Name, "keep-versions", StringComparison.OrdinalIgnoreCase))
@@ -962,12 +958,9 @@ namespace Duplicati.Server.Database
         private static DateTime ConvertToDateTime(System.Data.IDataReader rd, int index)
         {
             var unixTime = ConvertToInt64(rd, index);
-            if (unixTime == 0)
-                return new DateTime(0);
-            
-            return Library.Utility.Utility.EPOCH.AddSeconds(unixTime);
+            return unixTime == 0 ? new DateTime(0) : Library.Utility.Utility.EPOCH.AddSeconds(unixTime);
         }
-        
+
         private static bool ConvertToBoolean(System.Data.IDataReader rd, int index)
         {
             return ConvertToInt64(rd, index) == 1;
@@ -976,10 +969,7 @@ namespace Duplicati.Server.Database
         private static string ConvertToString(System.Data.IDataReader rd, int index)
         {
             var r = rd.GetValue(index);
-            if (r == null || r == DBNull.Value)
-                return null;
-            else
-                return r.ToString();
+            return r == null || r == DBNull.Value ? null : r.ToString();
         }
 
         private static long ConvertToInt64(System.Data.IDataReader rd, int index)
@@ -999,19 +989,13 @@ namespace Duplicati.Server.Database
         private static long ExecuteScalarInt64(System.Data.IDbCommand cmd, long defaultValue = -1)
         {
             using(var rd = cmd.ExecuteReader())
-                if (rd.Read())
-                    return ConvertToInt64(rd, 0);
-                else
-                    return defaultValue;
+                return rd.Read() ? ConvertToInt64(rd, 0) : defaultValue;
         }
 
         private static string ExecuteScalarString(System.Data.IDbCommand cmd)
         {
             using(var rd = cmd.ExecuteReader())
-                if (rd.Read())
-                    return ConvertToString(rd, 0);
-                else
-                    return null;
+                return rd.Read() ? ConvertToString(rd, 0) : null;
 
         }
 
