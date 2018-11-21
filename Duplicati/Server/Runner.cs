@@ -185,7 +185,7 @@ namespace Duplicati.Server
 
         public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, 
                                                     DateTime time, string restoreTarget, bool overwrite, bool restore_permissions, 
-                                                    bool skip_metadata, string passphrase = null)
+                                                    bool skip_metadata, string passphrase)
         {
             var dict = new Dictionary<string, string>
             {
