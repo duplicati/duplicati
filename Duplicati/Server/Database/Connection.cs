@@ -324,13 +324,22 @@ namespace Duplicati.Server.Database
             }
         }
 
-        internal Boolean IsPassphraseStored(long id)
+        internal Boolean IsUnencryptedOrPassphraseStored(long id)
         {
             lock (m_lock)
             {
+                var usesEncryption = ReadFromDb(
+                    (rd) => ConvertToBoolean(rd, 0),
+                    @"SELECT VALUE != """" FROM ""Option"" WHERE BackupID = ? AND NAME='encryption-module'", id)
+                    .FirstOrDefault();
+
+                if (!usesEncryption)
+                {
+                    return true;
+                }
+
                 return ReadFromDb(
-                    (rd) => ConvertToBoolean(rd, 0)
-                    ,
+                    (rd) => ConvertToBoolean(rd, 0),
                     @"SELECT VALUE != """" FROM ""Option"" WHERE BackupID = ? AND NAME='passphrase'", id)
                 .FirstOrDefault();
             }

@@ -434,16 +434,15 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     };
 
     $scope.showInputPassphrase = function () {
-
         if (!this.Backup) {
             return false;
         }
 
-        if (!'HasPassphraseStored' in this.Backup) {
+        if (!'IsUnencryptedOrPassphraseStored' in this.Backup) {
             return false;
         }
 
-        return !this.Backup['HasPassphraseStored'];
+        return !this.Backup['IsUnencryptedOrPassphraseStored'];
     }
 
     $scope.BackupID = $routeParams.backupid;

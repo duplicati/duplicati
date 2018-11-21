@@ -26,7 +26,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
     function computePassPhraseStrength() {
 
         var strengthMap = {
-            'x': gettextCatalog.getString("Passwords do not match"),
+            'x': gettextCatalog.getString("Passphrases do not match"),
             0: gettextCatalog.getString("Useless"),
             1: gettextCatalog.getString("Very weak"),
             2: gettextCatalog.getString("Weak"),
