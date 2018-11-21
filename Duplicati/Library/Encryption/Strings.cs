@@ -19,7 +19,7 @@ namespace Duplicati.Library.Encryption.Strings {
         public static string GpgencryptiondisablearmorShort { get { return LC.L(@"Don't use GPG Armor"); } }
         public static string GpgencryptionencryptionswitchesLong { get { return LC.L(@"Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --encrypt option is always specified."); } }
         public static string GpgencryptionencryptionswitchesShort { get { return LC.L(@"Extra GPG commandline options for encryption"); } }
-        public static string GPGExecuteError(string program, string args, string message) { return LC.L(@"Failed to execute GPG at """"{0}"" {1}"": {2}", program, args, message); }
+        public static string GPGExecuteError(string program, string args, string message) { return LC.L(@"Failed to execute GPG with ""{0} {1}"": {2}", program, args, message); }
         public static string GpgprogrampathLong { get { return LC.L(@"The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program ""gpg"" is available in the system path."); } }
         public static string GpgprogrampathShort { get { return LC.L(@"The path to GnuPG"); } }
         public static string Gpgencryptiondisablearmordeprecated(string optionname) { return LC.L(@"This option has non-standard handling, please use the --{0} option instead.", optionname); }

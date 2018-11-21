@@ -106,10 +106,12 @@ namespace Duplicati.Library.Main
 
         internal static void VerifyParameters(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
         {
-            var newDict = new Dictionary<string, string>();
-            newDict.Add("blocksize", options.Blocksize.ToString());
-            newDict.Add("blockhash", options.BlockHashAlgorithm);
-            newDict.Add("filehash", options.FileHashAlgorithm);
+            var newDict = new Dictionary<string, string>
+            {
+                { "blocksize", options.Blocksize.ToString() },
+                { "blockhash", options.BlockHashAlgorithm },
+                { "filehash", options.FileHashAlgorithm }
+            };
             var opts = db.GetDbOptions(transaction);
             
             if (options.NoEncryption)
