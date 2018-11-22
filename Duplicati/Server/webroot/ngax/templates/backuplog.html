@@ -11,7 +11,7 @@
         <ul class="entries backuplog">
             <li ng-show="GeneralData == null" translate>Loading ...</li>
             <li ng-repeat="item in GeneralData">
-                <div ng-click="expanded = !expanded" class="entryline">
+                <div ng-click="expanded = !expanded" class="entryline clickable">
                     {{(expanded ? "▼" : "►")}} {{item.Timestamp | parsetimestamp}} - {{"Operation" | translate}}: {{item.Result ? item.Result.MainOperation : item.Type | translate}}
                 </div>
                 <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Result ? item.Result : item.Message}}</div>
@@ -28,7 +28,7 @@
         <ul class="entries">
             <li ng-show="RemoteData == null" translate>Loading ...</li>
             <li ng-repeat="item in RemoteData">
-                <div ng-click="expanded = !expanded" class="entryline">{{item.Timestamp | parsetimestamp}}: {{item.Operation}} {{item.Path}}</div>
+                <div ng-click="expanded = !expanded" class="entryline clickable">{{item.Timestamp | parsetimestamp}}: {{item.Operation}} {{item.Path}}</div>
                 <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Data}}</div>
             </li>
         </ul>

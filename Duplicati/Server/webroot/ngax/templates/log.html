@@ -11,7 +11,7 @@
         <ul class="entries">
             <li ng-show="LogData == null" translate>Loading ...</li>
             <li ng-repeat="item in LogData">
-                <div ng-click="expanded = !expanded" class="entryline">{{item.Timestamp | parsetimestamp}}: {{item.Message}}</div>
+                <div ng-click="expanded = !expanded" class="entryline clickable">{{item.Timestamp | parsetimestamp}}: {{item.Message}}</div>
                 <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
             </li>
         </ul>
