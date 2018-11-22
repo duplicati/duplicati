@@ -115,7 +115,25 @@ namespace Duplicati.Library.Backend
         public void CreateFolder()
         {
             CreateConnection();
-            m_con.CreateDirectory(m_path);
+
+            // Since the SftpClient.CreateDirectory method does not create all the parent directories
+            // as needed, this has to be done manually.
+            string partialPath = String.Empty;
+            foreach (string part in m_path.Split('/').Where(x => !String.IsNullOrEmpty(x)))
+            {
+                partialPath += $"/{part}";
+                if (this.m_con.Exists(partialPath))
+                {
+                    if (!this.m_con.GetAttributes(partialPath).IsDirectory)
+                    {
+                        throw new ArgumentException($"The path {partialPath} already exists and is not a directory.");
+                    }
+                }
+                else
+                {
+                    this.m_con.CreateDirectory(partialPath);
+                }
+            }
         }
 
         public string DisplayName
