@@ -124,8 +124,7 @@ namespace Duplicati.Library.Backend
                 partialPath += $"/{part}";
                 if (this.m_con.Exists(partialPath))
                 {
-                    Renci.SshNet.Sftp.SftpFileAttributes attributes = this.m_con.GetAttributes(partialPath);
-                    if (!attributes.IsDirectory)
+                    if (!this.m_con.GetAttributes(partialPath).IsDirectory)
                     {
                         throw new ArgumentException($"The path {partialPath} already exists and is not a directory.");
                     }
