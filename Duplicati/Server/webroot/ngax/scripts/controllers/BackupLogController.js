@@ -1,4 +1,4 @@
-backupApp.controller('BackupLogController', function($scope, $routeParams, LogService, BackupList) {
+backupApp.controller('BackupLogController', function($scope, $routeParams, AppUtils, LogService, BackupList) {
     $scope.BackupID = $routeParams.backupid;
     
     const PAGE_SIZE = 100;
@@ -7,6 +7,13 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, LogSe
         if ($scope.Page == 'remote' && $scope.RemoteData == null)
             $scope.LoadMoreRemoteData();
     });
+
+    $scope.parseTimestampToSeconds = function(ts) {
+        return moment(ts).format('YYYY-MM-DD HH:mm:ss');
+    }
+
+    $scope.formatDuration = AppUtils.formatDuration;
+    $scope.formatSize = AppUtils.formatSizeString;
     
     $scope.Page = 'general';  
 
@@ -20,7 +27,10 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, LogSe
                 $scope.GeneralDataComplete = complete;
                 $scope.Backup = BackupList.lookup[$scope.BackupID];
                 for (let i in current) {
-                    try { current[i].Result = JSON.parse(current[i].Message) }
+                    try { 
+                        current[i].Result = JSON.parse(current[i].Message);
+                        current[i].Formatted = JSON.stringify(current[i].Result, null, 2);
+                    }
                     catch {}
                 }
                 $scope.GeneralData = current;
