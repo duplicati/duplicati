@@ -122,9 +122,9 @@ namespace Duplicati.Library.Backend
             foreach (string part in m_path.Split('/').Where(x => !String.IsNullOrEmpty(x)))
             {
                 partialPath += $"/{part}";
-                if (m_con.Exists(partialPath))
+                if (this.m_con.Exists(partialPath))
                 {
-                    Renci.SshNet.Sftp.SftpFileAttributes attributes = m_con.GetAttributes(partialPath);
+                    Renci.SshNet.Sftp.SftpFileAttributes attributes = this.m_con.GetAttributes(partialPath);
                     if (!attributes.IsDirectory)
                     {
                         throw new ArgumentException($"The path {partialPath} already exists and is not a directory.");
@@ -132,7 +132,7 @@ namespace Duplicati.Library.Backend
                 }
                 else
                 {
-                    m_con.CreateDirectory(partialPath);
+                    this.m_con.CreateDirectory(partialPath);
                 }
             }
         }
