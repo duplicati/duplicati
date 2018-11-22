@@ -146,6 +146,65 @@ wait-area {
     color: black;
 }
 
+.backup-result {
+    border: 1px solid black;
+    width: 90%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: minmax(50px, auto);
+    margin: 0 auto;
+
+    div {
+        margin: 10px;
+        margin-bottom: 0px;
+    }
+
+    .item {
+        display: block;
+
+        .title {
+            color: @hColor;
+            font-weight: bold;
+        }
+
+        .value {
+            color: @tColor;
+        }
+    }
+
+    .one {
+        border-right: 1px solid @border;
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .two {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .three {
+        grid-column: span 2;
+        grid-row: 2;
+        align-items: center;
+        border-top: 1px solid @border;
+        padding-top: 10px;
+    }
+
+    .four {
+        grid-column: span 2;
+        grid-row: 3;
+        border-top: 1px solid @border;
+        padding-top: 10px;
+        margin-bottom: 10px;
+        
+        .prewrapped-text {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    }
+}
+
 ul.tabs {
     margin-bottom: 10px;
 

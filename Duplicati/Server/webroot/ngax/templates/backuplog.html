@@ -14,8 +14,69 @@
                 <div ng-click="expanded = !expanded" class="entryline clickable">
                     {{(expanded ? "▼" : "►")}} {{item.Timestamp | parsetimestamp}} - {{"Operation" | translate}}: {{item.Result ? item.Result.MainOperation : item.Type | translate}}
                 </div>
-                <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Result ? item.Result : item.Message}}</div>
-                <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
+                <div ng-show="expanded && item.Result" class="backup-result">
+                    <div class="one">
+                        <span class="item">
+                            <span class="title">{{ "Start" | translate }} </span>
+                            <span class="value">{{ parseTimestampToSeconds(item.Result.BeginTime) }}</span>
+                        </span>
+                        <span class="item">
+                            <span class="title">{{ "End" | translate }} </span>
+                            <span class="value">{{ parseTimestampToSeconds(item.Result.EndTime) }}</span>
+                        </span>
+                        <span class="item">
+                            <span class="title">{{ "Duration" | translate }} </span>
+                            <span class="value">{{ formatDuration(item.Result.Duration) }}</span>
+                        </span>
+                    </div>
+                    <div class="two"> 
+                        <span class="item">
+                            <span class="title">{{ "Examined" | translate }} </span>
+                            <span class="value">{{ item.Result.ExaminedFiles }} ({{ formatSize(item.Result.SizeOfExaminedFiles) }})</span>
+                        </span>
+                        <span class="item">
+                            <span class="title">{{ "Opened" | translate }} </span>
+                            <span class="value">{{ item.Result.OpenedFiles }} ({{ formatSize(item.Result.SizeOfOpenedFiles) }})</span>
+                        </span>
+                        <span class="item">
+                            <span class="title">{{ "Added" | translate }} </span>
+                            <span class="value">{{ item.Result.AddedFiles }} ({{ formatSize(item.Result.SizeOfAddedFiles) }})</span>
+                        </span>
+                        <span class="item">
+                            <span class="title">{{ "Modified" | translate }} </span>
+                            <span class="value">{{ item.Result.ModifiedFiles }} ({{ formatSize(item.Result.SizeOfModifiedFiles) }})</span>
+                        </span>
+                        <span class="item">
+                            <span class="title">{{ "Deleted" | translate }} </span>
+                            <span class="value">{{ item.Result.DeletedFiles }} ({{ formatSize(item.Result.SizeOfDeletedFiles) }})</span>
+                        </span>
+                    </div>
+                    <div class="three">
+                            <span class="item">
+                                <span class="title">{{ "Warnings" | translate }} </span>
+                                <span class="value" ng-click="w_expanded = !w_expanded" ng-style="{ cursor: (item.Result.Warnings.length > 0) ? 'pointer' : '' }">
+                                    {{ item.Result.Warnings.length }} {{item.Result.Warnings.length > 0 ? (w_expanded ? "▼" : "►") : ""}}
+                                </span>
+                                <div ng-show="w_expanded" style="margin: 10px;" class="prewrapped-text exceptiontext">
+                                        {{item.Result.Warnings}}
+                                </div>
+                            </span>
+                            <span class="item">
+                                <span class="title">{{ "Errors" | translate }} </span>
+                                <span class="value" ng-click="e_expanded = !e_expanded" ng-style="{ cursor: (item.Result.Errors.length > 0) ? 'pointer' : '' }">
+                                    {{ item.Result.Errors.length }} {{item.Result.Errors.length > 0 ? (e_expanded ? "▼" : "►") : ""}}
+                                </span>
+                                <div ng-show="e_expanded" style="margin: 10px;" class="prewrapped-text exceptiontext">
+                                        {{item.Result.Errors}}
+                                </div>
+                            </span>  
+                    </div>
+                    <div class="four item">
+                        <span class="title">{{ "Complete log" | translate }}</span>
+                        <div class="prewrapped-text exceptiontext">{{ item.Formatted }}</div>
+                    </div>
+                </div>
+                <div ng-show="expanded && !item.Result" class="prewrapped-text exceptiontext">{{item.Message}}</div>
             </li>
         </ul>
         <div ng-show="GeneralData != null &amp;&amp; !GeneralDataComplete" class="button" ng-click="LoadMoreGeneralData()">
