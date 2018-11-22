@@ -17,7 +17,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     $rootScope.$on('ui_language_changed', setMomentLocale);
 
     this.formatSizes = ['TB', 'GB', 'MB', 'KB'];
-    this.formatSizeString = function(val) {
+    this.formatSizeString = (val) => {
         val = parseInt(val || 0);
         var max = this.formatSizes.length;
         for(var i = 0; i < this.formatSizes.length; i++) {
