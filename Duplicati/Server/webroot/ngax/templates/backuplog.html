@@ -12,9 +12,9 @@
             <li ng-show="GeneralData == null" translate>Loading ...</li>
             <li ng-repeat="item in GeneralData">
                 <div ng-click="expanded = !expanded" class="entryline clickable">
-                    <i ng-show="item.Result && item.Result.ParsedResult == 'Success'" class="fa fa-check-circle green"></i>
-                    <i ng-show="item.Result && item.Result.ParsedResult == 'Warning'" class="fa fa-exclamation-circle yellow"></i>
-                    <i ng-show="item.Result && item.Result.ParsedResult == 'Error'" class="fa fa-times-circle red"></i>
+                    <i ng-show="item.Result && item.Result.ParsedResult == 'Success'" class="fa fa-check-circle success-color"></i>
+                    <i ng-show="item.Result && item.Result.ParsedResult == 'Warning'" class="fa fa-exclamation-circle warning-color"></i>
+                    <i ng-show="item.Result && item.Result.ParsedResult == 'Error'" class="fa fa-times-circle error-color"></i>
                     {{item.Timestamp | parsetimestamp}} - {{"Operation" | translate}}: {{item.Result ? item.Result.MainOperation : item.Type | translate}}
                 </div>
                 <div ng-show="expanded && item.Result" class="backup-result">
