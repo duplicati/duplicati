@@ -159,10 +159,16 @@ wait-area {
         margin-bottom: 0px;
     }
 
+    .title {
+        color: darken(@hColor, 10%);
+        font-weight: bold;
+        font-size: 30px;
+    }
+
     .item {
         display: block;
 
-        .title {
+        .key {
             color: @hColor;
             font-weight: bold;
         }
@@ -183,19 +189,18 @@ wait-area {
         grid-row: 1;
     }
 
-    .three {
+    .wide {
         grid-column: span 2;
-        grid-row: 2;
-        align-items: center;
         border-top: 1px solid @border;
         padding-top: 10px;
     }
+       
+    .three {
+        grid-row: 2;
+    }
 
     .four {
-        grid-column: span 2;
         grid-row: 3;
-        border-top: 1px solid @border;
-        padding-top: 10px;
         margin-bottom: 10px;
         
         .prewrapped-text {
@@ -203,6 +208,7 @@ wait-area {
             overflow-y: auto;
         }
     }
+
 }
 
 ul.tabs {
