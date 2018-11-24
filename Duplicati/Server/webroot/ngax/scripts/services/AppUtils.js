@@ -655,7 +655,6 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         }
 
         copyToList(sysinfo.GenericModules);
-        copyToList(sysinfo.ConnectionModules);
 
         if (encmodule !== false)
             copyToList(sysinfo.EncryptionModules, encmodule);
