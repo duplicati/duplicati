@@ -35,7 +35,7 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
     $scope.$watchCollection("ExtendedOptions", reloadOptionsList);
     $scope.$watch("TargetURL", reloadOptionsList);
     $scope.$on('systeminfochanged', reloadOptionsList);
-    
+
     reloadOptionsList();
 
     var scope = $scope;
@@ -48,7 +48,7 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
 
         var opts = AppUtils.parseOptionStrings($scope.ExtendedOptions || []);
         var combined = angular.copy($scope.Arguments || []);
-        
+
         if (($scope.TargetURL || '').trim().length != 0)
             combined.unshift($scope.TargetURL);
 
@@ -79,7 +79,7 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
     $scope.Abort = function()
     {
         AppService.post('/commandline/' + viewid + '/abort' ).then(function(resp) {
-            
+
         }, function() {
             AppUtils.connectionError.apply(AppUtils, arguments);
         });
@@ -155,13 +155,13 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
     }
 
     if ($routeParams.backupid != null) {
-        AppService.get('/backup/' + $routeParams.backupid + '/export?argsonly=true').then(
+        AppService.get('/backup/' + $routeParams.backupid + '/export?argsonly=true&export-passwords=true').then(
             function(resp) {
                 $scope.TargetURL = resp.data.Backend;
                 $scope.Arguments = resp.data.Arguments;
                 $scope.ExtendedOptions = resp.data.Options;
                 $scope.Command = 'backup';
-            }, 
+            },
             function(resp) {
                 var message = resp.statusText;
                 if (resp.data != null && resp.data.Message != null)
