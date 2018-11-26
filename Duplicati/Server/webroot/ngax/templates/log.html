@@ -11,7 +11,11 @@
         <ul class="entries">
             <li ng-show="LogData == null" translate>Loading ...</li>
             <li ng-repeat="item in LogData">
-                <div ng-click="expanded = !expanded" class="entryline clickable">{{item.Timestamp | parsetimestamp}}: {{item.Message}}</div>
+                <div ng-click="expanded = !expanded" class="entryline clickable">
+                    {{item.Timestamp | parsetimestamp}}: {{item.Message}}
+                    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+                    <div style="clear: both;"></div>
+                </div>
                 <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
             </li>
         </ul>
@@ -31,7 +35,11 @@
 
         <ul class="entries livedata">
             <li ng-repeat="item in LiveData" ng-class="{expanded: expanded}">
-                <div ng-click="expanded = !expanded" class="entryline" ng-class="{noexception: item.Exception == null, clickable: item.Exception != null}">{{item.When | parsetimestamp}}: {{item.Message}}</div>
+                <div ng-click="expanded = !expanded" class="entryline" ng-class="{noexception: item.Exception == null, clickable: item.Exception != null}">
+                    {{item.When | parsetimestamp}}: {{item.Message}}
+                    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+                    <div style="clear: both;"></div>
+                </div>
                 <div ng-show="expanded &amp;&amp; item.Exception != null" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
             </li>
         </ul>
