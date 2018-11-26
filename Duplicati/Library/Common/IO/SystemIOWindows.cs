@@ -302,6 +302,23 @@ namespace Duplicati.Library.Common.IO
             return r;
         }
 
+        public IEnumerable<string> EnumerateFiles(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return System.IO.Directory.EnumerateFiles(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            var r = Alphaleonis.Win32.Filesystem.Directory.GetFiles(PrefixWithUNC(path));
+            for (var i = 0; i < r.Length; i++)
+                r[i] = StripUNCPrefix(r[i]);
+
+            return r;
+        }
+
+
         public string PathGetFileName(string path)
         {
             if (!IsPathTooLong(path))

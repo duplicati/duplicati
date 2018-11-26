@@ -69,6 +69,7 @@ namespace Duplicati.Library.Common.IO
         DateTime GetCreationTimeUtc(string path);
         DateTime GetLastWriteTimeUtc(string path);
         IEnumerable<string> EnumerateFileSystemEntries(string path);
+        IEnumerable<string> EnumerateFiles(string path);
         IEnumerable<string> EnumerateDirectories(string path);
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
