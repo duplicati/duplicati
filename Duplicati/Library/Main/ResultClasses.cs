@@ -339,9 +339,9 @@ namespace Duplicati.Library.Main
 
         }
 
-        public IEnumerable<string> Messages { get { return m_parent == null ? m_messages : m_parent.Messages; } }
-        public IEnumerable<string> Warnings { get { return m_parent == null ? m_warnings : m_parent.Warnings; } }
-        public IEnumerable<string> Errors { get { return m_parent == null ?  m_errors : m_parent.Errors; } }
+        public IEnumerable<string> Messages { get { return m_messages; } }
+        public IEnumerable<string> Warnings { get { return m_warnings; } }
+        public IEnumerable<string> Errors { get { return m_errors; } }
 
         protected Operation.Common.TaskControl m_taskController;
         public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
@@ -369,16 +369,7 @@ namespace Duplicati.Library.Main
         }
 
         protected IBackendStatstics m_backendStatistics;
-        public IBackendStatstics BackendStatistics
-        {
-            get
-            {
-                if (this.m_parent != null)
-                    return this.m_parent.BackendStatistics;
-
-                return m_backendStatistics;
-            }
-        }
+        public IBackendStatstics BackendStatistics { get { return m_backendStatistics; } }
 
         [JsonIgnore]
         public IBackendWriter BackendWriter { get { return (IBackendWriter)this.BackendStatistics; } }
@@ -579,12 +570,26 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if ((Errors != null && Errors.Any()) || FilesWithError > 0)
+                if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Error) ||
+                    (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Error) ||
+                    (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Error) || 
+                    (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()) || FilesWithError > 0)
+                {
                     return ParsedResultType.Error;
-                else if ((Warnings != null && Warnings.Any()) || PartialBackup)
+                }
+                else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Warning) ||
+                         (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Warning) ||
+                         (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Warning) ||
+                         (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()) || PartialBackup)
+                {
                     return ParsedResultType.Warning;
+                }
                 else
+                {
                     return ParsedResultType.Success;
+                }
             }
         }
     }
@@ -608,12 +613,20 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (Errors != null && Errors.Any())
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()))
+                {
                     return ParsedResultType.Error;
-                else if ((Warnings != null && Warnings.Any()) || FilesRestored == 0)
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()) || FilesRestored == 0)
+                {
                     return ParsedResultType.Warning;
+                }
                 else
+                {
                     return ParsedResultType.Success;
+                }
             }
         }
     }
