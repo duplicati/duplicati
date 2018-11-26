@@ -10,78 +10,82 @@
     <div ng-show="Page == 'general'">
         <ul class="entries backuplog">
             <li ng-show="GeneralData == null" translate>Loading ...</li>
-            <li ng-repeat="item in GeneralData">
+            <li ng-repeat="item in GeneralData" style="width: 100%">
                 <div ng-click="expanded = !expanded" class="entryline clickable">
                     <i ng-show="item.Result && item.Result.ParsedResult == 'Success'" class="fa fa-check-circle success-color"></i>
                     <i ng-show="item.Result && item.Result.ParsedResult == 'Warning'" class="fa fa-exclamation-circle warning-color"></i>
                     <i ng-show="item.Result && item.Result.ParsedResult == 'Error'" class="fa fa-times-circle error-color"></i>
                     {{item.Timestamp | parsetimestamp}} - {{"Operation" | translate}}: {{item.Result ? item.Result.MainOperation : item.Type | translate}}
+                    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+                    <div style="clear: both;"></div>
                 </div>
                 <div ng-show="expanded && item.Result" class="backup-result">
                     <div class="one">
-                        <span class="title">Time</span>
+                        <span class="title" translate>Time</span>
                         <span class="item">
-                            <span class="key">{{ "Start" | translate }} </span>
+                            <span class="key" translate>Start </span>
                             <span class="value">{{ parseTimestampToSeconds(item.Result.BeginTime) }}</span>
                         </span>
                         <span class="item">
-                            <span class="key">{{ "End" | translate }} </span>
+                            <span class="key" translate>End </span>
                             <span class="value">{{ parseTimestampToSeconds(item.Result.EndTime) }}</span>
                         </span>
                         <span class="item">
-                            <span class="key">{{ "Duration" | translate }} </span>
+                            <span class="key" translate>Duration </span>
                             <span class="value">{{ formatDuration(item.Result.Duration) }}</span>
                         </span>
                     </div>
                     <div class="two"> 
-                        <span class="title">Files</span>
+                        <span class="title" translate>Files</span>
                         <span class="item">
-                            <span class="key">{{ "Examined" | translate }} </span>
+                            <span class="key" translate>Examined </span>
                             <span class="value">{{ item.Result.ExaminedFiles }} ({{ formatSize(item.Result.SizeOfExaminedFiles) }})</span>
                         </span>
                         <span class="item">
-                            <span class="key">{{ "Opened" | translate }} </span>
+                            <span class="key" translate>Opened </span>
                             <span class="value">{{ item.Result.OpenedFiles }} ({{ formatSize(item.Result.SizeOfOpenedFiles) }})</span>
                         </span>
                         <span class="item">
-                            <span class="key">{{ "Added" | translate }} </span>
+                            <span class="key" translate>Added </span>
                             <span class="value">{{ item.Result.AddedFiles }} ({{ formatSize(item.Result.SizeOfAddedFiles) }})</span>
                         </span>
                         <span class="item">
-                            <span class="key">{{ "Modified" | translate }} </span>
+                            <span class="key" translate>Modified </span>
                             <span class="value">{{ item.Result.ModifiedFiles }} ({{ formatSize(item.Result.SizeOfModifiedFiles) }})</span>
                         </span>
                         <span class="item">
-                            <span class="key">{{ "Deleted" | translate }} </span>
+                            <span class="key" translate>Deleted</span>
                             <span class="value">{{ item.Result.DeletedFiles }} ({{ formatSize(item.Result.SizeOfDeletedFiles) }})</span>
                         </span>
                     </div>
                     <div class="wide three">
                             <span class="item">
-                                <span class="key">{{ "Warnings" | translate }} </span>
+                                <span class="key" translate>Warnings </span>
                                 <span class="value" ng-click="w_expanded = !w_expanded" ng-style="{ cursor: (item.Result.Warnings.length > 0) ? 'pointer' : '' }">
-                                    {{ item.Result.Warnings.length }} {{item.Result.Warnings.length > 0 ? (w_expanded ? "▼" : "►") : ""}}
+                                    {{ item.Result.Warnings.length }} 
+                                    <i ng-if="item.Result.Warnings.length > 0" class="fa fa-angle-{{w_expanded ? 'up': 'down'}}"></i>
                                 </span>
                                 <div ng-show="w_expanded" style="margin: 10px;">
                                     <ul>
-                                        <li ng-repeat="warning in item.Result.Warnings">{{warning}}</li>
+                                        <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
                                     </ul>
                                 </div>
                             </span>
                             <span class="item">
-                                <span class="key">{{ "Errors" | translate }} </span>
+                                <span class="key" translate>Errors </span>
                                 <span class="value" ng-click="e_expanded = !e_expanded" ng-style="{ cursor: (item.Result.Errors.length > 0) ? 'pointer' : '' }">
-                                    {{ item.Result.Errors.length }} {{item.Result.Errors.length > 0 ? (e_expanded ? "▼" : "►") : ""}}
+                                    {{ item.Result.Errors.length }} 
+                                    <i ng-if="item.Result.Errors.length > 0" class="fa fa-angle-{{e_expanded ? 'up': 'down'}}"></i>
                                 </span>
                                 <div ng-show="e_expanded" style="margin: 10px;">
                                     <ul>
-                                        <li ng-repeat="warning in item.Result.Warnings">{{warning}}</li>
+                                        <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
                                     </ul>
                                 </div>
                             </span>  
                     </div>
                     <div class="item wide four">
-                        <span class="key">{{ "Complete log" | translate }}</span>
+                        <span class="key" translate>Complete log</span>
                         <div class="prewrapped-text exceptiontext">{{ item.Formatted }}</div>
                     </div>
                 </div>
