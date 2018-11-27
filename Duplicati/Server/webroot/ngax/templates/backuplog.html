@@ -57,30 +57,86 @@
                         </span>
                     </div>
                     <div class="wide three">
-                            <span class="item">
-                                <span class="key" translate>Warnings </span>
-                                <span class="value" ng-click="w_expanded = !w_expanded" ng-style="{ cursor: (item.Result.Warnings.length > 0) ? 'pointer' : '' }">
-                                    {{ item.Result.Warnings.length }} 
-                                    <i ng-if="item.Result.Warnings.length > 0" class="fa fa-angle-{{w_expanded ? 'up': 'down'}}"></i>
-                                </span>
-                                <div ng-show="w_expanded" style="margin: 10px;">
-                                    <ul>
-                                        <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
-                                    </ul>
-                                </div>
+                        <span ng-show="item.Result.TestResults" class="item">
+                            <span ng-click="tr_expanded = !tr_expanded" style="cursor: pointer">
+                                <i class="{{ResultIcon(item.Result.TestResults.ParsedResult)}}"></i>
+                                <span class="key" translate>Test Phase</span>
+                                <span class="value"><i class="fa fa-angle-{{tr_expanded ? 'up': 'down'}}"></i></span>
                             </span>
-                            <span class="item">
-                                <span class="key" translate>Errors </span>
-                                <span class="value" ng-click="e_expanded = !e_expanded" ng-style="{ cursor: (item.Result.Errors.length > 0) ? 'pointer' : '' }">
-                                    {{ item.Result.Errors.length }} 
-                                    <i ng-if="item.Result.Errors.length > 0" class="fa fa-angle-{{e_expanded ? 'up': 'down'}}"></i>
-                                </span>
-                                <div ng-show="e_expanded" style="margin: 10px;">
-                                    <ul>
-                                        <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
-                                    </ul>
-                                </div>
-                            </span>  
+                            <div ng-show="tr_expanded" style="margin: 10px;">
+                            </div>
+                        </span>
+                        <span ng-show="item.Result.CompactResults" class="item">
+                            <span ng-click="cr_expanded = !cr_expanded" style="cursor: pointer">
+                                <i class="{{ResultIcon(item.Result.CompactResults.ParsedResult)}}"></i>
+                                <span class="key" translate>Compact Phase</span>
+                                <span class="value"><i class="fa fa-angle-{{cr_expanded ? 'up': 'down'}}"></i></span>
+                            </span>
+                            <div ng-show="cr_expanded" style="margin: 10px;">
+                            </div>
+                        </span>
+                        <span ng-show="item.Result.DeleteResults" class="item">
+                            <span ng-click="dr_expanded = !dr_expanded" style="cursor: pointer">
+                                <i class="{{ResultIcon(item.Result.DeleteResults.ParsedResult)}}"></i>
+                                <span class="key" translate>Delete Phase</span>
+                                <span class="value"><i class="fa fa-angle-{{dr_expanded ? 'up': 'down'}}"></i></span>
+                            </span>
+                            <div ng-show="dr_expanded" style="margin: 10px;">
+                            </div>
+                        </span>
+                        <span ng-show="item.Result.RepairResults" class="item">
+                            <span ng-click="rr_expanded = !rr_expanded" style="cursor: pointer">
+                                <i class="{{ResultIcon(item.Result.RepairResults.ParsedResult)}}"></i>
+                                <span class="key" translate>Repair Phase</span>
+                                <span class="value"><i class="fa fa-angle-{{rr_expanded ? 'up': 'down'}}"></i></span>
+                            </span>
+                            <div ng-show="rr_expanded" style="margin: 10px;">
+                            </div>
+                        </span>
+                        <span ng-show="item.Result.RecreateDatabaseResults" class="item">
+                            <span ng-click="rdr_expanded = !rdr_expanded" style="cursor: pointer">
+                                <i class="{{ResultIcon(item.Result.RecreateDatabaseResults.ParsedResult)}}"></i>
+                                <span class="key" translate>Recreate Database Phase</span>
+                                <span class="value"><i class="fa fa-angle-{{rdr_expanded ? 'up': 'down'}}"></i></span>
+                            </span>
+                            <div ng-show="rdr_expanded" style="margin: 10px;">
+                            </div>
+                        </span>
+                        <span ng-show="item.Result.PurgeResults" class="item">
+                            <span ng-click="pr_expanded = !pr_expanded" style="cursor: pointer">
+                                <i class="{{ResultIcon(item.Result.PurgeResults.ParsedResult)}}"></i>
+                                <span class="key" translate>Compact Phase</span>
+                                <span class="value"><i class="fa fa-angle-{{pr_expanded ? 'up': 'down'}}"></i></span>
+                            </span>
+                            <div ng-show="pr_expanded" style="margin: 10px;">
+                            </div>
+                        </span>
+                        <span class="item">
+                            <i class="{{ResultIcon(item.Result.Warnings.length > 0 ? 'Warning' : 'Success')}}"></i>
+                            <span class="key" translate>General Warnings </span>
+                            <span class="value" ng-click="w_expanded = !w_expanded" ng-style="{ cursor: (item.Result.Warnings.length > 0) ? 'pointer' : '' }">
+                                {{ item.Result.Warnings.length }} 
+                                <i ng-if="item.Result.Warnings.length > 0" class="fa fa-angle-{{w_expanded ? 'up': 'down'}}"></i>
+                            </span>
+                            <div ng-show="w_expanded" style="margin: 10px;">
+                                <ul>
+                                    <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
+                                </ul>
+                            </div>
+                        </span>
+                        <span class="item">
+                            <i class="{{ResultIcon(item.Result.Errors.length > 0 ? 'Error' : 'Success')}}"></i>
+                            <span class="key" translate>General Errors </span>
+                            <span class="value" ng-click="e_expanded = !e_expanded" ng-style="{ cursor: (item.Result.Errors.length > 0) ? 'pointer' : '' }">
+                                {{ item.Result.Errors.length }} 
+                                <i ng-if="item.Result.Errors.length > 0" class="fa fa-angle-{{e_expanded ? 'up': 'down'}}"></i>
+                            </span>
+                            <div ng-show="e_expanded" style="margin: 10px;">
+                                <ul>
+                                    <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
+                                </ul>
+                            </div>
+                        </span>  
                     </div>
                     <div class="item wide four">
                         <span class="key" translate>Complete log</span>
