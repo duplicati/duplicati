@@ -628,7 +628,7 @@ namespace Duplicati.Library.Main
                     return ParsedResultType.Error;
                 }
                 else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
-                         (Warnings != null && Warnings.Any()) || FilesRestored == 0)
+                         (Warnings != null && Warnings.Any()))
                 {
                     return ParsedResultType.Warning;
                 }

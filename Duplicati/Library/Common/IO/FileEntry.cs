@@ -18,10 +18,9 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
+using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.Interface
+namespace Duplicati.Library.Common.IO
 {
     /// <summary>
     /// The primary implementation of the file interface

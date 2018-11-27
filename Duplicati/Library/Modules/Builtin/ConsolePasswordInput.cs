@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -62,7 +63,7 @@ namespace Duplicati.Library.Modules.Builtin
                 catch (InvalidOperationException)
                 {
                     // Handle redirect issues on Windows only
-                    if (!Library.Utility.Utility.IsClientWindows)
+                    if (!Platform.IsClientWindows)
                         throw;
 
                     commandlineOptions["passphrase"] = ReadPassphraseFromStdin(confirm);

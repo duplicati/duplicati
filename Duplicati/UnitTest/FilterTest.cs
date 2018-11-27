@@ -17,6 +17,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Duplicati.Library.Common.IO;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -71,8 +72,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 7)
                     throw new Exception($"Initial condition not satisfied, found {folders} folders, but expected 7");
@@ -90,8 +91,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 6)
                     throw new Exception($"Initial condition not satisfied, found {folders} folders, but expected 6");
@@ -109,8 +110,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 4)
                     throw new Exception($"Empty not satisfied, found {folders} folders, but expected 4");
@@ -128,8 +129,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 3)
                     throw new Exception($"Empty not satisfied, found {folders} folders, but expected 3");
@@ -147,8 +148,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 1)
                     throw new Exception($"Empty not satisfied, found {folders} folders, but expected 1");

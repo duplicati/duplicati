@@ -19,7 +19,7 @@
         </div>
     </div>
     <!-- .steps -->
-    
+
     <ol class="steps-legend">
         <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>General</li>
         <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Destination</li>
@@ -50,15 +50,15 @@
                         </select>
                     </div>
 
-                    <div class="input encryptionhint" ng-show="(Options['encryption-module'] || '').length == 0">
+                    <div class="input encryptionhint" ng-show="!checkGpgAsymmetric() && (Options['encryption-module'] || '').length == 0">
                         <h3 class="warning" translate>We recommend that you encrypt all backups stored outside your system</h3>
                     </div>
 
-                    <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                    <div class="input password" ng-hide="checkGpgAsymmetric() || (Options['encryption-module'] || '').length == 0">
                         <label for="passphrase" translate>Passphrase</label>
                         <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" ng-model="Options['passphrase']" />
                     </div>
-                    <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                    <div class="input password" ng-hide="checkGpgAsymmetric() || (Options['encryption-module'] || '').length == 0">
                         <label for="repeat-passphrase" translate>Repeat Passphrase</label>
                         <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" ng-model="RepeatPasshrase"/>
 
@@ -116,7 +116,7 @@
             </form>
         </div>
         <!-- .step2 -->
-        
+
         <div class="step step3" ng-class="{active: CurrentStep == 2}">
             <form class="styled">
                 <div class="box browser">
@@ -199,7 +199,7 @@
                                         <select parse-filter-content ng-model="Backup.Filters[$index]" ng-options="item.value as item.name for item in AppUtils.filterGroups">
                                         </select>
                                     </div>
-                                    
+
                                     <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
                                 </li>
 
@@ -249,7 +249,7 @@
             </form>
         </div>
         <!-- .step3 -->
-        
+
         <div class="step step4" ng-class="{active: CurrentStep == 3}">
             <form class="styled">
                 <h2 translate>Schedule</h2>
@@ -288,7 +288,7 @@
                             ng-click="toggleAllowedDays(day.value)"
                           />
                           <label for="dayofweek_{{day.value}}">{{day.name}}</label>
-                        </div>                
+                        </div>
                     </div>
                 </div>
 
@@ -299,7 +299,7 @@
             </form>
         </div>
         <!-- .step4 -->
-        
+
         <div class="step step5" ng-class="{active: CurrentStep == 4}">
             <form class="styled">
                 <h2 translate>General options</h2>
@@ -343,7 +343,7 @@
                     <div class="retention-options" ng-show="KeepType == 'versions'">
                         <input type="number" ng-model="Options['keep-versions']"  min="1" />
                     </div>
-                    <div class="hint" ng-show="KeepType == 'versions'" translate>Once there are more backups than the specified number, the oldest backups are deleted.</div> 
+                    <div class="hint" ng-show="KeepType == 'versions'" translate>Once there are more backups than the specified number, the oldest backups are deleted.</div>
 
                     <div class="retention-options" ng-show="KeepType == 'time'">
                         <input type="text" class="number" parse-size-number ng-model="Options['keep-time']" />
@@ -364,7 +364,7 @@
 
                 <div ng-repeat="module in ServerModules">
                     <h2 title="{{module.Description}}">{{module.DisplayName}}</h2>
-                    
+
                     <div class="input" ng-repeat="opt in module.SupportedLocalCommands">
                         <label for="{{module.Key}}-{{opt.Name}}" title="{{opt.LongDescription}}">{{opt.ShortDescription}}</label>
                         <input type="text" title="{{opt.LongDescription}}" name="{{module.Key}}-{{opt.Name}}" id="{{module.Key}}-{{opt.Name}}" ng-model="servermodulesettings[opt.Name]" />

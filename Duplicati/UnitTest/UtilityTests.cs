@@ -15,6 +15,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using Duplicati.Library.Utility;
+using Duplicati.Library.Common.IO;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -29,26 +30,26 @@ namespace Duplicati.UnitTest
         public static void AppendDirSeparator()
         {
             const string noTrailingSlash = @"/a\b/c";
-            string hasTrailingSlash = noTrailingSlash + Utility.DirectorySeparatorString;
+            string hasTrailingSlash = noTrailingSlash + Util.DirectorySeparatorString;
 
             string alternateSeparator = null;
-            if (String.Equals(Utility.DirectorySeparatorString, "/", StringComparison.Ordinal))
+            if (String.Equals(Util.DirectorySeparatorString, "/", StringComparison.Ordinal))
             {
                 alternateSeparator = @"\";
             }
-            if (String.Equals(Utility.DirectorySeparatorString, @"\", StringComparison.Ordinal))
+            if (String.Equals(Util.DirectorySeparatorString, @"\", StringComparison.Ordinal))
             {
                 alternateSeparator = "/";
             }
 
-            Assert.AreEqual(hasTrailingSlash, Utility.AppendDirSeparator(noTrailingSlash));
-            Assert.AreEqual(hasTrailingSlash, Utility.AppendDirSeparator(hasTrailingSlash));
-            Assert.AreEqual(hasTrailingSlash, Utility.AppendDirSeparator(noTrailingSlash), Utility.DirectorySeparatorString);
-            Assert.AreEqual(hasTrailingSlash, Utility.AppendDirSeparator(hasTrailingSlash), Utility.DirectorySeparatorString);
+            Assert.AreEqual(hasTrailingSlash, Util.AppendDirSeparator(noTrailingSlash));
+            Assert.AreEqual(hasTrailingSlash, Util.AppendDirSeparator(hasTrailingSlash));
+            Assert.AreEqual(hasTrailingSlash, Util.AppendDirSeparator(noTrailingSlash), Util.DirectorySeparatorString);
+            Assert.AreEqual(hasTrailingSlash, Util.AppendDirSeparator(hasTrailingSlash), Util.DirectorySeparatorString);
 
-            Assert.AreEqual(noTrailingSlash + alternateSeparator, Utility.AppendDirSeparator(noTrailingSlash, alternateSeparator));
-            Assert.AreEqual(noTrailingSlash + alternateSeparator, Utility.AppendDirSeparator(noTrailingSlash + alternateSeparator, alternateSeparator));
-            Assert.AreEqual(hasTrailingSlash + alternateSeparator, Utility.AppendDirSeparator(hasTrailingSlash, alternateSeparator));
+            Assert.AreEqual(noTrailingSlash + alternateSeparator, Util.AppendDirSeparator(noTrailingSlash, alternateSeparator));
+            Assert.AreEqual(noTrailingSlash + alternateSeparator, Util.AppendDirSeparator(noTrailingSlash + alternateSeparator, alternateSeparator));
+            Assert.AreEqual(hasTrailingSlash + alternateSeparator, Util.AppendDirSeparator(hasTrailingSlash, alternateSeparator));
         }
 
         [Test]

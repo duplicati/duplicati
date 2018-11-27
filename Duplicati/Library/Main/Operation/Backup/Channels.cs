@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         public static readonly ChannelMarkerWrapper<IUploadRequest> BackendRequest = new ChannelMarkerWrapper<IUploadRequest>(new ChannelNameAttribute("BackendRequests"));
         /// <summary>
-        /// When the backup completes, all in-progress archives are sent from the <see cref="DataBlockProcessor"/> to the <see cref="SpillCollector"/>
+        /// When the backup completes, all in-progress archives are sent from the <see cref="DataBlockProcessor"/> to the <see cref="SpillCollectorProcess"/>
         /// </summary>
         public static readonly ChannelMarkerWrapper<VolumeUploadRequest> SpillPickup = new ChannelMarkerWrapper<VolumeUploadRequest>(new ChannelNameAttribute("SpillPickup"));
         /// <summary>
