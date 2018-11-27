@@ -50,6 +50,18 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, AppUt
                 $scope.$digest();
             }); 
     };
+
+    $scope.ResultIcon = function(parsedResult) {
+        if (parsedResult == 'Success') {
+            return 'fa fa-check-circle success-color';
+        } else if (parsedResult == 'Warning') {
+            return 'fa fa-exclamation-circle warning-color';
+        } else if (parsedResult == 'Error') {
+            return 'fa fa-times-circle error-color';
+        } else {
+            return 'fa fa-question-circle';
+        }
+    }
     
     $scope.LoadMoreGeneralData();
     $scope.Backup = BackupList.lookup[$scope.BackupID];
