@@ -1,0 +1,7 @@
+<span ng-click="dr_expanded = !dr_expanded" style="cursor: pointer">
+    <i class="{{ResultIcon(item.Result.DeleteResults.ParsedResult)}}"></i>
+    <span class="key" translate>Delete Phase</span>
+    <span class="value"><i class="fa fa-angle-{{dr_expanded ? 'up': 'down'}}"></i></span>
+</span>
+<div ng-show="dr_expanded" style="margin: 10px;">
+</div>

@@ -1,0 +1,78 @@
+<div class="backup-result">
+    <div class="one">
+        <span class="title" translate>Time</span>
+        <span class="item">
+            <span class="key" translate>Start </span>
+            <span class="value">{{ parseTimestampToSeconds(item.Result.BeginTime) }}</span>
+        </span>
+        <span class="item">
+            <span class="key" translate>End </span>
+            <span class="value">{{ parseTimestampToSeconds(item.Result.EndTime) }}</span>
+        </span>
+        <span class="item">
+            <span class="key" translate>Duration </span>
+            <span class="value">{{ formatDuration(item.Result.Duration) }}</span>
+        </span>
+    </div>
+    <div class="two"> 
+        <span class="title" translate>Files</span>
+        <span class="item">
+            <span class="key" translate>Examined </span>
+            <span class="value">{{ item.Result.ExaminedFiles }} ({{ formatSize(item.Result.SizeOfExaminedFiles) }})</span>
+        </span>
+        <span class="item">
+            <span class="key" translate>Opened </span>
+            <span class="value">{{ item.Result.OpenedFiles }} ({{ formatSize(item.Result.SizeOfOpenedFiles) }})</span>
+        </span>
+        <span class="item">
+            <span class="key" translate>Added </span>
+            <span class="value">{{ item.Result.AddedFiles }} ({{ formatSize(item.Result.SizeOfAddedFiles) }})</span>
+        </span>
+        <span class="item">
+            <span class="key" translate>Modified </span>
+            <span class="value">{{ item.Result.ModifiedFiles }} ({{ formatSize(item.Result.SizeOfModifiedFiles) }})</span>
+        </span>
+        <span class="item">
+            <span class="key" translate>Deleted</span>
+            <span class="value">{{ item.Result.DeletedFiles }} ({{ formatSize(item.Result.SizeOfDeletedFiles) }})</span>
+        </span>
+    </div>
+    <div class="wide three">
+        <span ng-show="item.Result.TestResults"             class="item" ng-include="'templates/backup-result/phases/test.html'"></span>
+        <span ng-show="item.Result.CompactResults"          class="item" ng-include="'templates/backup-result/phases/compact.html'"></span>
+        <span ng-show="item.Result.DeleteResults"           class="item" ng-include="'templates/backup-result/phases/delete.html'"></span>
+        <span ng-show="item.Result.RepairResults"           class="item" ng-include="'templates/backup-result/phases/repair.html'"></span>
+        <span ng-show="item.Result.RecreateDatabaseResults" class="item" ng-include="'templates/backup-result/phases/recreate-database.html'"></span>
+        <span ng-show="item.Result.PurgeResults"            class="item" ng-include="'templates/backup-result/phases/purge.html'"></span>
+        <span class="item">
+            <i class="{{ResultIcon(item.Result.Warnings.length > 0 ? 'Warning' : 'Success')}}"></i>
+            <span class="key" translate>General Warnings </span>
+            <span class="value" ng-click="w_expanded = !w_expanded" ng-style="{ cursor: (item.Result.Warnings.length > 0) ? 'pointer' : '' }">
+                {{ item.Result.Warnings.length }} 
+                <i ng-if="item.Result.Warnings.length > 0" class="fa fa-angle-{{w_expanded ? 'up': 'down'}}"></i>
+            </span>
+            <div ng-show="w_expanded" style="margin: 10px;">
+                <ul>
+                    <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
+                </ul>
+            </div>
+        </span>
+        <span class="item">
+            <i class="{{ResultIcon(item.Result.Errors.length > 0 ? 'Error' : 'Success')}}"></i>
+            <span class="key" translate>General Errors </span>
+            <span class="value" ng-click="e_expanded = !e_expanded" ng-style="{ cursor: (item.Result.Errors.length > 0) ? 'pointer' : '' }">
+                {{ item.Result.Errors.length }} 
+                <i ng-if="item.Result.Errors.length > 0" class="fa fa-angle-{{e_expanded ? 'up': 'down'}}"></i>
+            </span>
+            <div ng-show="e_expanded" style="margin: 10px;">
+                <ul>
+                    <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
+                </ul>
+            </div>
+        </span>  
+    </div>
+    <div class="item wide four">
+        <span class="key" translate>Complete log</span>
+        <div class="prewrapped-text exceptiontext">{{ item.Formatted }}</div>
+    </div>
+</div>

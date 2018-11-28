@@ -1,0 +1,7 @@
+<span ng-click="rdr_expanded = !rdr_expanded" style="cursor: pointer">
+    <i class="{{ResultIcon(item.Result.RecreateDatabaseResults.ParsedResult)}}"></i>
+    <span class="key" translate>Recreate Database Phase</span>
+    <span class="value"><i class="fa fa-angle-{{rdr_expanded ? 'up': 'down'}}"></i></span>
+</span>
+<div ng-show="rdr_expanded" style="margin: 10px;">
+</div>

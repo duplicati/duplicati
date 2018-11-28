@@ -1,0 +1,7 @@
+<span ng-click="cr_expanded = !cr_expanded" style="cursor: pointer">
+    <i class="{{ResultIcon(item.Result.TestResults.ParsedResult)}}"></i>
+    <span class="key" translate>Test Phase</span>
+    <span class="value"><i class="fa fa-angle-{{cr_expanded ? 'up': 'down'}}"></i></span>
+</span>
+<div ng-show="cr_expanded" style="margin: 10px;">
+</div>
