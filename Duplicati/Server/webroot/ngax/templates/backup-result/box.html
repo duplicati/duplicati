@@ -12,7 +12,7 @@
             <i class="{{ResultIcon(item.Result.Warnings.length > 0 ? 'Warning' : 'Success')}}"></i>
             <span class="key" translate>General Warnings </span>
             <span class="value" ng-click="w_expanded = !w_expanded" ng-style="{ cursor: (item.Result.Warnings.length > 0) ? 'pointer' : '' }">
-                {{ item.Result.Warnings.length }} 
+                {{ item.Result.Warnings.length || '0' }} 
                 <i ng-if="item.Result.Warnings.length > 0" class="fa fa-angle-{{w_expanded ? 'up': 'down'}}"></i>
             </span>
             <div ng-show="w_expanded" style="margin: 10px;">
@@ -25,7 +25,7 @@
             <i class="{{ResultIcon(item.Result.Errors.length > 0 ? 'Error' : 'Success')}}"></i>
             <span class="key" translate>General Errors </span>
             <span class="value" ng-click="e_expanded = !e_expanded" ng-style="{ cursor: (item.Result.Errors.length > 0) ? 'pointer' : '' }">
-                {{ item.Result.Errors.length }} 
+                {{ item.Result.Errors.length || '0' }} 
                 <i ng-if="item.Result.Errors.length > 0" class="fa fa-angle-{{e_expanded ? 'up': 'down'}}"></i>
             </span>
             <div ng-show="e_expanded" style="margin: 10px;">
