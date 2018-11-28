@@ -30,7 +30,7 @@
             </span>
             <div ng-show="e_expanded" style="margin: 10px;">
                 <ul>
-                    <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
+                    <li ng-repeat="error in item.Result.Errors track by $index">{{error}}</li>
                 </ul>
             </div>
         </span>  
