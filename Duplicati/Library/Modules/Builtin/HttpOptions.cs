@@ -24,7 +24,7 @@ using System.Linq;
 
 namespace Duplicati.Library.Modules.Builtin
 {
-    public class HttpOptions : Duplicati.Library.Interface.IGenericModule, Duplicati.Library.Interface.IConnectionModule, IDisposable
+    public class HttpOptions : Duplicati.Library.Interface.IConnectionModule, IDisposable
     {
         private const string OPTION_DISABLE_EXPECT100 = "disable-expect100-continue";
         private const string OPTION_DISABLE_NAGLING = "disable-nagling";
