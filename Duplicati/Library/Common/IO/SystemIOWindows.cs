@@ -56,6 +56,85 @@ namespace Duplicati.Library.Common.IO
             return path.StartsWith(UNCPREFIX, StringComparison.Ordinal) ? path.Substring(UNCPREFIX.Length) : path;
         }
 
+        private class FileSystemAccess
+        {
+            public FileSystemRights Rights;
+            public AccessControlType ControlType;
+            public string SID;
+            public bool Inherited;
+            public InheritanceFlags Inheritance;
+            public PropagationFlags Propagation;
+
+            public FileSystemAccess()
+            {
+            }
+
+            public FileSystemAccess(FileSystemAccessRule rule)
+            {
+                Rights = rule.FileSystemRights;
+                ControlType = rule.AccessControlType;
+                SID = rule.IdentityReference.Value;
+                Inherited = rule.IsInherited;
+                Inheritance = rule.InheritanceFlags;
+                Propagation = rule.PropagationFlags;
+            }
+
+            public FileSystemAccessRule Create(System.Security.AccessControl.FileSystemSecurity owner)
+            {
+                return (FileSystemAccessRule)owner.AccessRuleFactory(
+                    new System.Security.Principal.SecurityIdentifier(SID),
+                    (int)Rights,
+                    Inherited,
+                    Inheritance,
+                    Propagation,
+                    ControlType);
+            }
+        }
+
+        private string SerializeObject<T>(T o)
+        {
+            using (var tw = new System.IO.StringWriter())
+            {
+                Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture }).Serialize(tw, o);
+                tw.Flush();
+                return tw.ToString();
+            }
+        }
+
+        private T DeserializeObject<T>(string data)
+        {
+            using (var tr = new System.IO.StringReader(data))
+                return (T)Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture }).Deserialize(tr, typeof(T));
+
+        }
+
+        private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
+        {
+            return PathTooLongFuncWrapper(System.IO.Directory.GetAccessControl,
+                                          Alphaleonis.Win32.Filesystem.Directory.GetAccessControl, path, true);
+        }
+
+        private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
+        {
+            return PathTooLongFuncWrapper(System.IO.File.GetAccessControl,
+                                          Alphaleonis.Win32.Filesystem.File.GetAccessControl, path, true);
+        }
+
+        private void SetAccessControlFile(string path, FileSecurity rules)
+        {
+            PathTooLongActionWrapper(p => System.IO.File.SetAccessControl(p, rules),
+                                     p => Alphaleonis.Win32.Filesystem.File.SetAccessControl(p, rules, AccessControlSections.All),
+                                     path, true);
+        }
+
+        private void SetAccessControlDir(string path, DirectorySecurity rules)
+        {
+            PathTooLongActionWrapper(p => System.IO.Directory.SetAccessControl(p, rules),
+                                     p => Alphaleonis.Win32.Filesystem.Directory.SetAccessControl(p, rules, AccessControlSections.All),
+                                     path, true);
+        }
+
+
         private static void PathTooLongVoidFuncWrapper<U, T>(Func<string, T> nativeIOFunc,
                                                     Func<string, U> alternativeIOFunc,
                                                     string path, bool prefixWithUnc = false)
@@ -258,35 +337,6 @@ namespace Duplicati.Library.Common.IO
                                                          path, true));
         }
 
-        public string PathCombine(params string[] paths)
-        {
-            var combinedPath = "";
-            for (int i = 0; i < paths.Length; i++)
-            {
-                if (i == 0)
-                {
-                    combinedPath = paths[i];
-                }
-                else
-                {
-                    if (!IsPathTooLong(combinedPath + "\\" + paths[i]))
-                    {
-                        try
-                        {
-                            combinedPath = Path.Combine(combinedPath, paths[i]);
-                        }
-                        catch (Exception ex) when (ex is System.IO.PathTooLongException || ex is System.ArgumentException)
-                        {
-                            //TODO: Explain why we need to keep prefixing and stripping UNC's.
-                            combinedPath = StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(combinedPath), paths[i]));
-                        }
-                    }
-                }
-            }
-
-            return combinedPath;
-        }
-
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
         {
             PathTooLongActionWrapper(p => System.IO.Directory.SetLastWriteTimeUtc(p, time),
@@ -331,138 +381,6 @@ namespace Duplicati.Library.Common.IO
             PathTooLongActionWrapper(p => System.IO.Directory.Delete(p, recursive),
                                      p => Alphaleonis.Win32.Filesystem.Directory.Delete(p, recursive),
                                      path, true);
-        }
-
-        private class FileSystemAccess
-        {
-            public FileSystemRights Rights;
-            public AccessControlType ControlType;
-            public string SID;
-            public bool Inherited;
-            public InheritanceFlags Inheritance;
-            public PropagationFlags Propagation;
-
-            public FileSystemAccess()
-            {
-            }
-
-            public FileSystemAccess(FileSystemAccessRule rule)
-            {
-                Rights = rule.FileSystemRights;
-                ControlType = rule.AccessControlType;
-                SID = rule.IdentityReference.Value;
-                Inherited = rule.IsInherited;
-                Inheritance = rule.InheritanceFlags;
-                Propagation = rule.PropagationFlags;
-            }
-
-            public FileSystemAccessRule Create(System.Security.AccessControl.FileSystemSecurity owner)
-            {
-                return (FileSystemAccessRule)owner.AccessRuleFactory(
-                    new System.Security.Principal.SecurityIdentifier(SID),
-                    (int)Rights,
-                    Inherited,
-                    Inheritance,
-                    Propagation,
-                    ControlType);
-            }
-        }
-
-        private string SerializeObject<T>(T o)
-        {
-            using (var tw = new System.IO.StringWriter())
-            {
-                Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture }).Serialize(tw, o);
-                tw.Flush();
-                return tw.ToString();
-            }
-        }
-
-        private T DeserializeObject<T>(string data)
-        {
-            using (var tr = new System.IO.StringReader(data))
-                return (T)Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture }).Deserialize(tr, typeof(T));
-
-        }
-
-        private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
-        {
-            return PathTooLongFuncWrapper(System.IO.Directory.GetAccessControl,
-                                          Alphaleonis.Win32.Filesystem.Directory.GetAccessControl, path, true);
-        }
-
-        private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
-        {
-            return PathTooLongFuncWrapper(System.IO.File.GetAccessControl,
-                                          Alphaleonis.Win32.Filesystem.File.GetAccessControl, path, true);
-        }
-
-        private void SetAccessControlFile(string path, FileSecurity rules)
-        {
-            PathTooLongActionWrapper(p => System.IO.File.SetAccessControl(p, rules),
-                                     p => Alphaleonis.Win32.Filesystem.File.SetAccessControl(p, rules, AccessControlSections.All),
-                                     path, true);
-        }
-
-        private void SetAccessControlDir(string path, DirectorySecurity rules)
-        {
-            PathTooLongActionWrapper(p => System.IO.Directory.SetAccessControl(p, rules),
-                                     p => Alphaleonis.Win32.Filesystem.Directory.SetAccessControl(p, rules, AccessControlSections.All),
-                                     path, true);
-        }
-
-        public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)
-        {
-            var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
-            var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
-            var dict = new Dictionary<string, string>();
-
-            FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
-            var objs = new List<FileSystemAccess>();
-            foreach (var f in rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier)))
-                objs.Add(new FileSystemAccess((FileSystemAccessRule)f));
-
-            dict["win-ext:accessrules"] = SerializeObject(objs);
-
-            return dict;
-        }
-
-        public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
-        {
-            var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
-            var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
-
-            FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
-            if (restorePermissions && data.ContainsKey("win-ext:accessrules"))
-            {
-                var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
-                var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));
-                for (var i = c.Count - 1; i >= 0; i--)
-                    rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
-
-                Exception ex = null;
-
-                foreach (var r in content)
-                {
-                    // Attempt to apply as many rules as we can
-                    try
-                    {
-                        rules.AddAccessRule((System.Security.AccessControl.FileSystemAccessRule)r.Create(rules));
-                    }
-                    catch (Exception e)
-                    {
-                        ex = e;
-                    }
-                }
-
-                if (ex != null)
-                    throw ex;
-
-                if (isDirTarget)
-                    SetAccessControlDir(targetpath, (DirectorySecurity)rules);
-                else
-                    SetAccessControlFile(targetpath, (FileSecurity)rules);
-            }
         }
 
         public string GetPathRoot(string path)
@@ -550,6 +468,88 @@ namespace Duplicati.Library.Common.IO
             return PathTooLongFuncWrapper(FileEntryNative, FileEntryAlphaFS, path, false);
         }
 
+        public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)
+        {
+            var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
+            var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
+            var dict = new Dictionary<string, string>();
+
+            FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
+            var objs = new List<FileSystemAccess>();
+            foreach (var f in rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier)))
+                objs.Add(new FileSystemAccess((FileSystemAccessRule)f));
+
+            dict["win-ext:accessrules"] = SerializeObject(objs);
+
+            return dict;
+        }
+
+        public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
+        {
+            var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
+            var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
+
+            FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
+            if (restorePermissions && data.ContainsKey("win-ext:accessrules"))
+            {
+                var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
+                var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));
+                for (var i = c.Count - 1; i >= 0; i--)
+                    rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
+
+                Exception ex = null;
+
+                foreach (var r in content)
+                {
+                    // Attempt to apply as many rules as we can
+                    try
+                    {
+                        rules.AddAccessRule((System.Security.AccessControl.FileSystemAccessRule)r.Create(rules));
+                    }
+                    catch (Exception e)
+                    {
+                        ex = e;
+                    }
+                }
+
+                if (ex != null)
+                    throw ex;
+
+                if (isDirTarget)
+                    SetAccessControlDir(targetpath, (DirectorySecurity)rules);
+                else
+                    SetAccessControlFile(targetpath, (FileSecurity)rules);
+            }
+        }
+
+        public string PathCombine(params string[] paths)
+        {
+            var combinedPath = "";
+            for (int i = 0; i < paths.Length; i++)
+            {
+                if (i == 0)
+                {
+                    combinedPath = paths[i];
+                }
+                else
+                {
+                    if (!IsPathTooLong(combinedPath + "\\" + paths[i]))
+                    {
+                        try
+                        {
+                            combinedPath = Path.Combine(combinedPath, paths[i]);
+                        }
+                        catch (Exception ex) when (ex is System.IO.PathTooLongException || ex is System.ArgumentException)
+                        {
+                            //TODO: Explain why we need to keep prefixing and stripping UNC's.
+                            combinedPath = StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(combinedPath), paths[i]));
+                        }
+                    }
+                }
+            }
+
+            return combinedPath;
+        }
         #endregion
     }
 }
