@@ -153,7 +153,13 @@ wait-area {
     grid-auto-rows: minmax(50px, auto);
     margin: 0 auto;
 
-    div {
+    div .horizontal-rule {
+        width: 100%;
+        border-bottom: 1px solid @border;
+        margin: 5px 0 5px 0;
+    }
+
+    .box {
         margin: 10px;
         margin-bottom: 0px;
     }
@@ -174,6 +180,11 @@ wait-area {
 
         .value {
             color: @tColor;
+        }
+
+        .expanded {
+            padding: 0 10px 0 10px;
+            margin-bottom: 10px;
         }
     }
 

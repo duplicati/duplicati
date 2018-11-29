@@ -1,7 +1,7 @@
 <div class="backup-result">
-    <div class="one" ng-include="'templates/backup-result/top-left-box.html'"></div>
-    <div class="two" ng-include="'templates/backup-result/top-right-box.html'"></div>
-    <div class="wide three">
+    <div class="box one" ng-include="'templates/backup-result/top-left-box.html'"></div>
+    <div class="box two" ng-include="'templates/backup-result/top-right-box.html'"></div>
+    <div class="box wide three">
         <span ng-show="item.Result.TestResults"             class="item" ng-include="'templates/backup-result/phases/test.html'"></span>
         <span ng-show="item.Result.CompactResults"          class="item" ng-include="'templates/backup-result/phases/compact.html'"></span>
         <span ng-show="item.Result.DeleteResults"           class="item" ng-include="'templates/backup-result/phases/delete.html'"></span>
@@ -16,7 +16,7 @@
         <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.Errors, 'type': 'Error', 'title': 'General Errors'}"
             ng-include="'templates/backup-result/message-list.html'"></span>
     </div>
-    <div class="item wide four">
+    <div class="box item wide four">
         <span class="key" translate>Complete log</span>
         <div class="prewrapped-text exceptiontext">{{ item.Formatted }}</div>
     </div>
