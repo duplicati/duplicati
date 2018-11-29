@@ -288,19 +288,46 @@ namespace Duplicati.Library.Common.IO
             return null;
         }
 
-        public IEnumerable<string> EnumerateFileSystemEntries(string path)
+        private static T TryNativeFirst<T>(Func<string, T> nativeIOFunc, Func<string, T> alternativeIOFunc, string path)
         {
             if (!IsPathTooLong(path))
-                try { return System.IO.Directory.EnumerateFileSystemEntries(path); }
+                try { return nativeIOFunc(path); }
                 catch (System.IO.PathTooLongException) { }
                 catch (System.ArgumentException) { }
 
-            var r = Alphaleonis.Win32.Filesystem.Directory.GetFileSystemEntries(PrefixWithUNC(path));
+            return alternativeIOFunc(path);
+        }
+
+        public IEnumerable<string> EnumerateFileSystemEntries(string path)
+        {
+            IEnumerable<string> alphaFS(string _path)
+            {
+                var r = Alphaleonis.Win32.Filesystem.Directory.GetFileSystemEntries(PrefixWithUNC(_path));
+                for (var i = 0; i < r.Length; i++)
+                    r[i] = StripUNCPrefix(r[i]);
+
+                return r;
+            }
+
+            return TryNativeFirst(System.IO.Directory.EnumerateFileSystemEntries, alphaFS, path);
+        }
+
+        public IEnumerable<string> EnumerateFiles(string path)
+        {
+            if (!IsPathTooLong(path))
+            {
+                try { return System.IO.Directory.EnumerateFiles(path); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+            }
+
+            var r = Alphaleonis.Win32.Filesystem.Directory.GetFiles(PrefixWithUNC(path));
             for (var i = 0; i < r.Length; i++)
                 r[i] = StripUNCPrefix(r[i]);
 
             return r;
         }
+
 
         public string PathGetFileName(string path)
         {
