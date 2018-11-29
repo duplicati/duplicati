@@ -8,32 +8,13 @@
         <span ng-show="item.Result.RepairResults"           class="item" ng-include="'templates/backup-result/phases/repair.html'"></span>
         <span ng-show="item.Result.RecreateDatabaseResults" class="item" ng-include="'templates/backup-result/phases/recreate-database.html'"></span>
         <span ng-show="item.Result.PurgeResults"            class="item" ng-include="'templates/backup-result/phases/purge.html'"></span> 
-        <span class="item">
-            <i class="{{ResultIcon(item.Result.Warnings.length > 0 ? 'Warning' : 'Success')}}"></i>
-            <span class="key" translate>General Warnings </span>
-            <span class="value" ng-click="w_expanded = !w_expanded" ng-style="{ cursor: (item.Result.Warnings.length > 0) ? 'pointer' : '' }">
-                {{ item.Result.Warnings.length || '0' }} 
-                <i ng-if="item.Result.Warnings.length > 0" class="fa fa-angle-{{w_expanded ? 'up': 'down'}}"></i>
-            </span>
-            <div ng-show="w_expanded" style="margin: 10px;">
-                <ul>
-                    <li ng-repeat="warning in item.Result.Warnings track by $index">{{warning}}</li>
-                </ul>
-            </div>
-        </span>
-        <span class="item">
-            <i class="{{ResultIcon(item.Result.Errors.length > 0 ? 'Error' : 'Success')}}"></i>
-            <span class="key" translate>General Errors </span>
-            <span class="value" ng-click="e_expanded = !e_expanded" ng-style="{ cursor: (item.Result.Errors.length > 0) ? 'pointer' : '' }">
-                {{ item.Result.Errors.length || '0' }} 
-                <i ng-if="item.Result.Errors.length > 0" class="fa fa-angle-{{e_expanded ? 'up': 'down'}}"></i>
-            </span>
-            <div ng-show="e_expanded" style="margin: 10px;">
-                <ul>
-                    <li ng-repeat="error in item.Result.Errors track by $index">{{error}}</li>
-                </ul>
-            </div>
-        </span>  
+
+        <!-- ng-if="true" isolates the scope of 'data' in ng-init, this way we can include the same template using the same variable more than one time
+        without them intercepting each other's data. Similar to passing a parameter to the included template -->
+        <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.Warnings, 'type': 'Warning', 'title': 'General Warnings'}"
+            ng-include="'templates/backup-result/message-list.html'"></span>
+        <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.Errors, 'type': 'Error', 'title': 'General Errors'}"
+            ng-include="'templates/backup-result/message-list.html'"></span>
     </div>
     <div class="item wide four">
         <span class="key" translate>Complete log</span>
