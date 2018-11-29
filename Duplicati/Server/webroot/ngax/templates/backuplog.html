@@ -12,7 +12,7 @@
             <li ng-show="GeneralData == null" translate>Loading ...</li>
             <li ng-repeat="item in GeneralData" style="width: 100%">
                 <div ng-click="expanded = !expanded" class="entryline clickable">
-                    <i ng-show="item.Result" class="{{ResultIcon(item.Result.ParsedResult)}}"></i>
+                    <i class="{{ResultIcon(item.Result ? item.Result.ParsedResult : 'None')}}"></i>
                     {{item.Timestamp | parsetimestamp}} - {{"Operation" | translate}}: {{item.Result ? item.Result.MainOperation : item.Type | translate}}
                     <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
                     <div style="clear: both;"></div>
