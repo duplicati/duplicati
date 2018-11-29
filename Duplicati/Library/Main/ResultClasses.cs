@@ -782,6 +782,27 @@ namespace Duplicati.Library.Main
         public RepairResults() : base() { }
         public RepairResults(BasicResults p) : base(p) { }
         public Library.Interface.IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
+
+        public override ParsedResultType ParsedResult
+        {
+            get
+            {
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()))
+                {
+                    return ParsedResultType.Error;
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()))
+                {
+                    return ParsedResultType.Warning;
+                }
+                else
+                {
+                    return ParsedResultType.Success;
+                }
+            }
+        }
     }
 
     internal class CompactResults : BasicResults, Library.Interface.ICompactResults
