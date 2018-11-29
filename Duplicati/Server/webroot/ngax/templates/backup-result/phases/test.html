@@ -6,15 +6,15 @@
 <div ng-show="cr_expanded" class="expanded">
     <span class="item">
         <span class="key" translate>Start </span>
-        <span class="value">{{ parseTimestampToSeconds(item.Result.BeginTime) }}</span>
+        <span class="value">{{ parseTimestampToSeconds(item.Result.TestResults.BeginTime) }}</span>
     </span>
     <span class="item">
         <span class="key" translate>End </span>
-        <span class="value">{{ parseTimestampToSeconds(item.Result.EndTime) }}</span>
+        <span class="value">{{ parseTimestampToSeconds(item.Result.TestResults.EndTime) }}</span>
     </span>
     <span class="item">
         <span class="key" translate>Duration </span>
-        <span class="value">{{ formatDuration(item.Result.Duration) }}</span>
+        <span class="value">{{ formatDuration(item.Result.TestResults.Duration) }}</span>
     </span>
     <span class="item">
         <span class="key" translate>Verifications </span>
