@@ -91,11 +91,29 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+        private static Newtonsoft.Json.JsonSerializer _cachedSerializer;
+
+        private Newtonsoft.Json.JsonSerializer Serializer
+        {
+            get
+            {
+                if (_cachedSerializer != null)
+                {
+                    return _cachedSerializer;
+                }
+
+                _cachedSerializer = Newtonsoft.Json.JsonSerializer.Create(
+                    new Newtonsoft.Json.JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture });
+
+                return _cachedSerializer;
+            }
+        }
+
         private string SerializeObject<T>(T o)
         {
             using (var tw = new System.IO.StringWriter())
             {
-                Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture }).Serialize(tw, o);
+                Serializer.Serialize(tw, o);
                 tw.Flush();
                 return tw.ToString();
             }
@@ -104,8 +122,9 @@ namespace Duplicati.Library.Common.IO
         private T DeserializeObject<T>(string data)
         {
             using (var tr = new System.IO.StringReader(data))
-                return (T)Newtonsoft.Json.JsonSerializer.Create(new Newtonsoft.Json.JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture }).Deserialize(tr, typeof(T));
-
+            {
+                return (T)Serializer.Deserialize(tr, typeof(T));
+            }
         }
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
@@ -133,7 +152,6 @@ namespace Duplicati.Library.Common.IO
                                      p => Alphaleonis.Win32.Filesystem.Directory.SetAccessControl(p, rules, AccessControlSections.All),
                                      path, true);
         }
-
 
         private static void PathTooLongVoidFuncWrapper<U, T>(Func<string, T> nativeIOFunc,
                                                     Func<string, U> alternativeIOFunc,
