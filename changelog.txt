@@ -1,15 +1,40 @@
-2018-11-14 - 2.0.4.4_canary_2018-11-14
+2018-11-28 - 2.0.4.5_beta_2018-11-28
 ==========
-* Added password confirmation on change, thanks @LacunaSoftware
-* Fixed a crash with VSS, thanks @verhoek
+The major changes in this version are:
 
-2018-11-13 - 2.0.4.3_canary_2018-11-13
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
+2018-11-28 - 2.0.4.3_beta_2018-11-28
 ==========
-* Removed "Got o warning(s)" message, thanks @LacunaSoftware
-* Rewrote path handling across the project to better support long paths, thanks @verhoek
-* Added missing assemblies to Docker images
-* Removed OneDrive v1 as it no longer works
-* Added support for exporting passwords, thanks @Pectojin
+The major changes in this version are:
+
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
 
 2018-11-12 - 2.0.4.2_experimental_2018-11-12
 ==========
@@ -35,6 +60,17 @@ The major changes in this version are:
 And of course many, many, other updates and fixes contributed by the Duplicati community.
 
 A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
+2018-11-14 - 2.0.4.4_canary_2018-11-14
+ ==========
+* Added password confirmation on change, thanks @LacunaSoftware
+* Fixed a crash with VSS, thanks @verhoek
+
+2018-11-14 - 2.0.4.4_canary_2018-11-14
+ ==========
+* Added password confirmation on change, thanks @LacunaSoftware
+* Fixed a crash with VSS, thanks @verhoek
+
 
 2018-11-08 - 2.0.3.14_canary_2018-11-08
 ==========
@@ -734,368 +770,3 @@ https://www.microsoft.com/en-us/download/details.aspx?id=48145
 * Added "list-broken-files" and "purge-broken-files" to aid in recovering from remote data loss
 * Added additional trace log messages to debug some consistency issues
 * Fixed support for operations across different operating systems
-
-2016-12-27 - 2.0.1.38_canary_2016-12-27
-==========
-* Fixed a problem with login no longer working
-* Updated the login page to use blue colors
-
-2016-12-27 - 2.0.1.37_canary_2016-12-27
-==========
-* Added a check for administrator privileges to avoid HyperV error messages
-
-2016-12-24 - 2.0.1.36_canary_2016-12-24
-==========
-* Fixed a case where excluded gave a warning
-* Removed the "No LSB Modules" messages on Linux
-* Fixed a problem with lon UNC paths on Windows, thanks @quincunx
-* Removed the Greeno theme as it was not maintained
-* Removed some unused options for setting in-memory buffers
-* Added debug output if we hit issue #1400
-
-2016-12-05 - 2.0.1.34_canary_2016-12-05
-==========
-* Fixed an issue with spurious errors in the UI mentioning Hyper-V
-* Fixed an issue where requesting deletion of remote files did not work
-* Improved the status results reported in the log files
-* Fixed some issues with the usage reporter
-* Fixed an issue with the SSH fingerprint not being accepted in URL encoded format
-
-2016-11-27 - 2.0.1.33_canary_2016-11-27
-==========
-* Updated Linux certificate warnings to mention cert-sync instead of Mozroots
-* Added option to run the Duplicati server as a Linux service, thanks @a1ezzz
-* Updated LVM snapshot size parameters, thanks @kakoskin1
-* Fixed schedule time being skewed towards UTC, thanks @tianqiaoxiangzhe
-* Improved notification area layout, thanks @tudacs
-* Fixed a case where it would be impossible to edit the weekdays in the schedule, thanks @tudacs
-* Added support for choosing time values in seconds range from the UI
-* Fixed issues with the scheduler not re-scheduling entries until after a restart
-* Fixed a case where sizes chosen from the advanced options editor would be invalid
-
-2016-11-12 - 2.0.1.32_canary_2016-11-12
-==========
-* Fixed an issue with deleting a backup
-* Fixed an issue with creating a backup without encryption
-* Fixed storing symlink metadata to not follow symlinks unless specified
-* Updated AlphaFS, AWS (S3), SSH, Azure, Mega and mailkit libraries
-* Fixed an issue with XFS-LVM snapshots, thanks @kakoskin1
-* Updated languages, added Chinese
-* Added a GUI for MSSQL databases, thanks @mnaiman
-* Fixed an issue with metadata being reported as being too large if the blocksize is 1mb or or more
-* Fixed escaping exported commandline for Windows
-* Fixes to the UI, thanks @agrajaghh
-
-2016-11-03 - 2.0.1.31_canary_2016-11-03
-==========
-* Fixed autoupdater choosing old update if the base version was replaced
-* Improved the UI for adding a backup, thanks @agrajaghh
-* Added MSSQL to potential backup targets, thanks @mnaiman
-
-2016-11-03 - 2.0.1.30_experimental_2016-11-03
-==========
-* Experimental release; includes all canary changes
-* Updated translations
-* Rebuilt UnixSupport to fix OSX metadata issues
-
-2016-10-27 - 2.0.1.29_canary_2016-10-27
-==========
-* Better support for LVM snapshots, thanks @a1ezzz
-* Fixed additional Debian dependencies, thanks @a1ezzz
-* Additional translation files, Spanish and French
-* Improved HyperV support from CLI and UI, thanks @mnaiman and @agrajaghh
-* Fixed a bug with log-spam from Windows Service, thanks @mnaiman
-* Fixed issue with backup metadata and user that do not exist locally, thanks @gerco
-* Improved screen reading support
-* Fixed OSX icon on dark statusbar
-* Fixed crashes on Linux related to icon format
-* Updated GTK support and switched to SVG icons
-
-2016-10-19
-==========
-* Some additions to the translation system
-* Fixed setting current working dir, thanks @mnaiman
-* Fixed an issue where deleting a backup would not work
-* Updated the throttle computation algorithm
-* Suppressing the "No LSB modules found" error message on Ubuntu
-* Added support for metadata larger than 100kb
-* NOTE: The large metadata support changes the remote file format for all newly written files
-* Added support for HyperV on CLI and in the UI, thanks @mnaiman and @agrajaghh
-* Fixed an issue with the Debian package requiring AlphaVSS.Common.dll when performing LVM snapshots
-* Fixed an issue with Amazon Cloud Drive, thanks @AndersGron
-* Fixed an incorrect warning when using the commandline and GPG
-
-2016-10-14
-==========
-* Work on the translation system, thanks @agrajaghh
-* Added tray-icon context menu icons, thanks @agrajaghh
-* Added support for "caffeinate" on OSX to prevent sleep during backups
-* Work on Hyper-V support, thanks @mnaiman
-* Fixed an issue with Windows service running from the wrong start folder
-* Changed dependencies in packages to require Mono 3.0
-* Added a new delete dialog to assist in deleting the local database and optionally the remote data
-* UI tweaks
-* Added validation when saving/importing backups
-* Fixed some issues with choosing the home folder on Windows
-
-2016-09-29
-==========
-* Updated help file for commandline
-* Fixed a problem with showing progress / crashing UI
-* Support for localization
-* Added messages in the log when finishing an operation
-* Added log message after starting the webserver
-* Support for the --asynchronous-upload-folder setting
-* Added a dialog in the UI when clicking Run and the server is paused
-* Improved formating of the logged result message
-* Updated bundled GPG for Windows
-
-2016-09-26
-==========
-* Fixed some issues in commandline help (thanks @agrajaghh)
-* Added support for backing up HyperV machines (thanks @GNicho)
-* Fixed showing backend statistics when --no-remote-verification is specified
-* Fixed global options not being applied
-
-2016-09-21
-==========
-* Change default TrayIcon on OSX to work on 32bit Mono
-* Added localization support calls to all strings in the UI
-
-2016-09-16
-==========
-* Fixed a restore issue from a partially reconstructed database
-* Implemented Auhtenticode signing for all executables and libraries
-* Implemented Authenticode signing for Windows MSI files
-* Implmented Codesign for OSX pkg and dmg files
-* Updated Mono check for existing certificates, to avoid showing mozroots message
-* Added support for installing Duplicati.WindowsService.exe as a service from the commandline
-
-2016-09-12
-==========
-* Fixed a problem with restoring from the UI, thanks @4m1g0
-
-2016-09-09
-==========
-* Fixes to the Dropbox backend
-* Fixed restore of files/folders with semicolon and plus characters from the UI
-* Added visual feedback when clicking the restore button
-* Added assembly redirects to solve issues with loading SharpAESCrypt and Mega backend
-* Changed the label for dblocksize in the UI
-
-2016-09-01
-==========
-* Fixed VSS based backups not working after 2.0.1.17
-* Prevent including temporary files in verification file, thanks @mnaiman
-* Added host-key verification for SSH connections, thanks @mnaiman
-
-2016-08-27
-==========
-* Fixed issue with files not being listed on Windows (AlphaFS and AlphaVSS issue)
-* Updated B2 API URL
-* Added compact command to WebUI
-
-2016-08-10
-==========
-* OneDrive for Business now uploads files in chunks to prevent timeout, thanks @ReneHezer
-* Prevent using both --keep-version and --keep-time to avoid confusion
-* Fixed a number of usability issues with the WebUI
-* Fixed encoding of special characters for Amazon Cloud Drive, thanks @Xelio
-* Fixed an issue with the recovery tool not respecting the restore folder target, thanks @mnaiman
-* Fixed issues when including the "home" folder on Windows
-* Fixed expanding environment variables and special folder names for filters
-* Changed displaying the dates in the WebUI with the browser locale
-* Added option to re-compress and re-encrypt from the recovery tool, thanks @mnaiman
-* Updated AWS S3 library to latests version
-* Added option to create an un-priviledged S3 user via IAM, if the current user has permissions
-* Fixed an issue with the scheduler that cause high CPU usage for invalid schedules
-* Fixed an issue with the WebUI forgetting SSL settings in some cases
-* Upgraded support for sending email to use a new library with proper SSL support, thanks @mnaiman
-* Fixed spurious failures in SSH connections, caused by leaking open connections, thanks @mnaiman
-* Fixed a Mono dependency in the Debian package that has been renamed
-* Added a DropBox backend, thanks @wvc
-* Added option to serve the WebUI with an SSL certificate, thanks @mnaiman
-* Improments to the recovery tool, thanks @mnaiman
-* Fixed an issue where deleting a backup and creating a new could cause data to be pre-set from the delete backup on the new, thanks @4m1g0
-* Fixed an issue with LVM not working on newer versions of Ubuntu
-* Fixed an issue where Mono could not be located by the OSX app bundle
-* Fixes to WebUI layout, thansk @Vaporizer8
-
-2016-05-14
-==========
-* Fixes for UI on Safari, thanks @alexfran
-* Speed and space improvement for backups, thanks @footstark
-* Added a Synology package
-
-2016-05-04
-==========
-* Updated Renci.SSH to latest build
-* Added duration to the UI (thanks @trampi)
-* Fixed a bug in recreate database with specially crafted index files
-
-2016-04-27
-==========
-* Improved support for OEM customization
-* Updated tray icons on OSX
-* Added support for choosing SSL protocols
-* Added suppresion of reparsepoint errors
-* Improved restoring folder symlinks
-
-2016-04-21
-==========
-* Added a new TrayIcon runner for OSX, so it now works on 64bit mono
-* Fixed some error messages
-* Updated App icon on Windows
-* Added a Windows service
-* Fixed an issue with IE caching data in the UI
-* Fixed an issue with restoring from multi-drive backups in Windows
-* Fixed an issue with spaces in the path on B2 backend
-* Changed how the autoupdater attempts to find a folder for storing updates
-* Updated NGAX, thanks AlexFRAN
-
-2016-04-10
-==========
-* Added a new FTP backend, thanks @mylemans
-* Fixed an issue with AWS crashing in initializer
-* Updated list of compressed extensions
-
-2016-04-08
-==========
-* Fixed a problem with symlink policy not being honored for folders
-* Fixed disposing database commands and connections, which should fix all "database is locked" errors on Windows
-* Updates to handling scenarios where the user is not logged in, thanks @mylemans
-* Added an OSX TrayIcon for 64-bit, based on rumps
-
-2016-03-31
-==========
-* Fixed some issues with non-standard block sizes
-* Fixed a number of issues with recreating the database from remote data, thanks @footstark
-* Fixed an issue where filelists with no files would cause an error message
-* Added an import link to the NGAX theme
-* Fixed loading and saving additional properties from NGAX theme
-* Improved login redirect logic in NGAX theme, thanks @mylemans
-* Improved layout for the NGAX theme, thanks @AlexFran
-* Improved image quality for the TrayIcon on OSX and Windows, thanks @FootStark and @agrajaghh
-
-2016-03-26
-==========
-* Fixed a problem with recreating database from backup data
-* Added a OneDrive for business backend
-* Fixed tray icons on all platforms
-* Fixed an issue with running on .Net 4.0
-
-2016-03-20
-==========
-* New icons, thanks to @agrajaghh
-* Multithreading is now enabled by default
-
-2016-03-18
-==========
-* Improved rebuild of the local database
-
-2016-03-16
-==========
-* Improvements to database size, thanks to @FootStark
-* Reduced storage for large backup sets, thanks to @FootStark
-* Update version of SharpAESCrypt with utilization of hardware support for encryption/decryption if available
-
-2016-03-14
-==========
-* Added options to run AES encryption with two threads, and decryption with up to four
-* Fixed some minor issues with the UI introduced in the previous build
-
-2016-03-13
-==========
-* Updated icons for Windows and Linux
-* Improvements to selecting update channels
-* Showing drive labels on Windows
-* Fixed selecting expire intervals with the Ngax theme
-* Minor display fixes
-* Fixes to Amazon Cloud Drive backend
-
-2016-03-12
-==========
-* Added feature to select update channel in the UI
-* Added feature to select usage reporter level in the UI
-
-2016-03-11
-==========
-* Added support for additional configuration parameters for S3
-* Added download piping for optional parallel hash checking, thanks to Stefan Lück 
-* Drastic improvements for restore speeds, especially on large dataset, thanks to Stefan Lück
-
-2016-02-15
-==========
-* Added expansion of environment variables in filters
-* Numerous fixes for Windows
-* Added error message for attempting to restore encrypted backup without a passphrase
-* Added two substantial performance fixes for restoring, thanks to @FootStark and @kunom.
-
-2016-01-27
-==========
-- Added option for more thorough verification during remote volume test
-- Added support for backing up the filesystem root ( i.e. / ), thanks @mach-o
-- Added fixes to ensure that a failed rebuild of a database cannot be used
-- Added an update to SharpCompress to fix a special case where some bytes could be lost on extraction
-- Updated the NGAX UI with the latest fixes from Alexander
-
-2016-01-12
-==========
-* Fixed the autoupdate popup
-* Added feature to suppress donation messages
-* Fixed an issue with PARSEDRESULT being empty in emails
-* Fixed an issue with paths that contains spaces not being listed for restore
-* Added support for modifying filters through scripts and the parameters file
-* Added check for duplicate files from the backend and updated Google Drive to not report multiple versions of the same file
-* Fixed an unhelpful error message when authid was not supplied
-* Added workaround for Mono 2.11 where get_DefinedTypes is missing
-
-2015-12-17
-==========
-* Bugfix for Backblaze backend
-* Added faster fail for OAuth backends with wrong credentials
-
-2015-12-14
-==========
-* Fixed a few issues with the new theme
-* Added a system info page in the new theme
-
-2015-12-08
-==========
-* New favicon
-* Numerous fixes to the ngax theme
-* Method for editing path to local database
-
-2015-12-07
-==========
-* Added signed GPG signatures to each build
-* Fixed an issue with notifications
-* Numerous fixes and additions to the ngax UI
-* Added Amazon Cloud Drive backend
-* Added Backblaze Cloud Storage backend
-* Added Mega.co.nz backend
-* Added Box.com backend
-
-2015-11-30
-==========
-* Added a check after repairing to test if more damages are done than fixed
-* Implemented correct escaping of environment variables when used in regular expressions
-* Improved the Greeno WebUI when picking file paths
-* Added the new Angular code and the UI by Alexander
-* Added a theme switcher
-
-2015-11-18
-==========
-* Improved CLI output when there are no results
-* Fixed a filtering issue with case-sensitive systems
-* Improved restore by guessing the encryption and compression modules based on their filenames
-* Improved robustness by checking if a file really exists when the server returns 404
-* Fixed an issue where a deleted file would be repeatedly attempted verified
-* Improvements to various CLI inputs
-* Added a fix for a bug where pausing the server would keep it paused
-* Bugfixes for the REST API
-* Added some indexes to speed up the restore process
-* Fixed a bug where backing up a folder and a subfolder would lead to all files being excluded
-* Fixed an issue with compacting that would cause the database to require a repair if the compacting was interrupted
-* Added mentions of the mozroots utility on Linux in various places
-* Added the storage-class option to S3
