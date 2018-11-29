@@ -3,5 +3,30 @@
     <span class="key" translate>Repair Phase</span>
     <span class="value"><i class="fa fa-angle-{{rr_expanded ? 'up': 'down'}}"></i></span>
 </span>
-<div ng-show="rr_expanded" style="margin: 10px;">
+<div ng-show="rr_expanded" class="expanded">
+        <span class="item">
+            <span class="key" translate>Start </span>
+            <span class="value">{{ parseTimestampToSeconds(item.Result.RepairResults.BeginTime) }}</span>
+        </span>
+        <span class="item">
+            <span class="key" translate>End </span>
+            <span class="value">{{ parseTimestampToSeconds(item.Result.RepairResults.EndTime) }}</span>
+        </span>
+        <span class="item">
+            <span class="key" translate>Duration </span>
+            <span class="value">{{ formatDuration(item.Result.RepairResults.Duration) }}</span>
+        </span>
+    
+        <div class="horizontal-rule"></div>
+    
+        <!-- ng-if="true" isolates the scope of 'data' in ng-init, this way we can include the same template using the same variable more than one time
+            without them intercepting each other's data. Similar to passing a parameter to the included template -->
+        <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.RepairResults.Warnings, 'type': 'Warning', 'title': 'Warnings'}"
+            ng-include="'templates/backup-result/message-list.html'"></span>
+        <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.RepairResults.Errors, 'type': 'Error', 'title': 'Errors'}"
+            ng-include="'templates/backup-result/message-list.html'"></span>
+        <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.RepairResults.RecreateDatabaseResults.Warnings, 'type': 'Warning', 'title': 'Database Recreation Warnings'}"
+            ng-include="'templates/backup-result/message-list.html'"></span>
+        <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.RepairResults.RecreateDatabaseResults.Errors, 'type': 'Error', 'title': 'Database Recreation Errors'}"
+            ng-include="'templates/backup-result/message-list.html'"></span>
 </div>
