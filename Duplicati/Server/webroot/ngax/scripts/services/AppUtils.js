@@ -703,8 +703,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             timespanArray[0] = timespanArray[0].replace('.', " day(s) and ");
         }
 
-        // remove ms
-        timespanArray[2] = timespanArray[2].substring(0, timespanArray[2].indexOf("."));
+        // round second according to ms
+        timespanArray[2] = Math.round(parseFloat(timespanArray[2])).toString();
+        // zero-padding
+        if (timespanArray[2].length == 1) timespanArray[2] = '0' + timespanArray[2];
 
         return timespanArray.join(':');
     };
