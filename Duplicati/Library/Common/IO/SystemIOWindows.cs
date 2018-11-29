@@ -273,26 +273,6 @@ namespace Duplicati.Library.Common.IO
                                       p => Alphaleonis.Win32.Filesystem.File.SetAttributes(p, attributes), path, true);
         }
 
-        public void CreateSymlink(string symlinkfile, string target, bool asDir)
-        {
-            if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
-                throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
-
-            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile),
-                                                                 target,
-                                                                 asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File,
-                                                                 AlphaFS.PathFormat.LongFullPath);
-
-            //Sadly we do not get a notification if the creation fails :(
-            System.IO.FileAttributes attr = 0;
-            if ((!asDir && FileExists(symlinkfile)) || (asDir && DirectoryExists(symlinkfile)))
-                try { attr = GetFileAttributes(symlinkfile); }
-                catch { }
-
-            if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
-                throw new System.IO.IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
-        }
-
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
         /// </summary>
@@ -567,6 +547,26 @@ namespace Duplicati.Library.Common.IO
             }
 
             return combinedPath;
+        }
+
+        public void CreateSymlink(string symlinkfile, string target, bool asDir)
+        {
+            if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
+                throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
+
+            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile),
+                                                                 target,
+                                                                 asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File,
+                                                                 AlphaFS.PathFormat.LongFullPath);
+
+            //Sadly we do not get a notification if the creation fails :(
+            System.IO.FileAttributes attr = 0;
+            if ((!asDir && FileExists(symlinkfile)) || (asDir && DirectoryExists(symlinkfile)))
+                try { attr = GetFileAttributes(symlinkfile); }
+                catch { }
+
+            if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
+                throw new System.IO.IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
         }
         #endregion
     }
