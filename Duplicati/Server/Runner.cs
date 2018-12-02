@@ -594,7 +594,7 @@ namespace Duplicati.Server
                                 if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-local-db"))
                                 {
                                     string dbpath;
-                                    options.TryGetValue("db-path", out dbpath);
+                                    options.TryGetValue("dbpath", out dbpath);
 
                                     if (!string.IsNullOrWhiteSpace(dbpath) && System.IO.File.Exists(dbpath))
                                         System.IO.File.Delete(dbpath);
