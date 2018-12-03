@@ -1089,7 +1089,7 @@ ORDER BY
                     var metablocklisthash = rd.GetValue(7).ToString();
 
                     if (path == lastpath)
-                        Logging.Log.WriteWarningMessage(LOGTAG, "DuplicatePathFound", null, "Duplicate path detected: {0}!", path);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DuplicatePathFound", null, "Duplicate path detected: {0}", path);
 
                     lastpath = path;
 
