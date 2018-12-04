@@ -181,6 +181,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         protected static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(BasicResults));
 
+        /// <summary>
+        /// Max number of elements to be serialized to JSON
+        /// </summary>
+        protected static readonly int SERIALIZATION_LIMIT = 1;
+
         protected class DbMessage
         {
             public readonly string Type;
@@ -228,7 +233,7 @@ namespace Duplicati.Library.Main
         protected Library.Utility.FileBackedStringList m_warnings;
         protected Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
-
+        
         protected IMessageSink m_messageSink;
 
         [JsonIgnore]
@@ -339,9 +344,19 @@ namespace Duplicati.Library.Main
 
         }
 
+        [JsonIgnore]
         public IEnumerable<string> Messages { get { return m_messages; } }
+        [JsonIgnore]
         public IEnumerable<string> Warnings { get { return m_warnings; } }
+        [JsonIgnore]
         public IEnumerable<string> Errors { get { return m_errors; } }
+
+        [JsonProperty(PropertyName = "Messages")]
+        public IEnumerable<string> LimitedMessages { get { return Messages?.Take(SERIALIZATION_LIMIT); } }
+        [JsonProperty(PropertyName = "Warnings")]
+        public IEnumerable<string> LimitedWarnings { get { return Warnings?.Take(SERIALIZATION_LIMIT); } }
+        [JsonProperty(PropertyName = "Errors")]
+        public IEnumerable<string> LimitedErrors { get { return Errors?.Take(SERIALIZATION_LIMIT); } }
 
         protected Operation.Common.TaskControl m_taskController;
         public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
@@ -709,7 +724,12 @@ namespace Duplicati.Library.Main
 
     internal class DeleteResults : BasicResults, Duplicati.Library.Interface.IDeleteResults
     {
+        [JsonIgnore]
         public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
+
+        [JsonProperty(PropertyName = "DeletedSets")]
+        public IEnumerable<Tuple<long, DateTime>> LimitedDeletedSets { get { return DeletedSets?.Take(SERIALIZATION_LIMIT); } }
+
         public bool Dryrun { get; private set; }
 
         public void SetResults(IEnumerable<Tuple<long, DateTime>> deletedSets, bool dryrun)
@@ -892,8 +912,13 @@ namespace Duplicati.Library.Main
         public TestResults(BasicResults p) : base(p) { }
 
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
-        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+
         private readonly List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        [JsonIgnore]
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+
+        [JsonProperty(PropertyName = "Verifications")]
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> LimitedVerifications { get { return Verifications?.Take(SERIALIZATION_LIMIT); } }
 
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {
