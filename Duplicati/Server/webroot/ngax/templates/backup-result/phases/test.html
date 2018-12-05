@@ -18,15 +18,25 @@
     </span>
     <span class="item">
         <span class="key" translate>Verifications </span>
-        <span class="value">{{ item.Result.TestResults.Verifications.length || '0' }}</span>
+        <span class="value">{{ item.Result.TestResults.VerificationsActualLength }}</span>
     </span>
 
     <div class="horizontal-rule"></div>
     
     <!-- ng-if="true" isolates the scope of 'data' in ng-init, this way we can include the same template using the same variable more than one time
-    without them intercepting each other's data. Similar to passing a parameter to the included template -->
-    <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.TestResults.Warnings, 'type': 'Warning', 'title': 'Warnings'}"
+        without them intercepting each other's data. Similar to passing a parameter to the included template -->
+    <span class="item" ng-if="true" 
+        ng-init="data = {
+            'messages': item.Result.TestResults.Warnings,
+            'length': item.Result.TestResults.WarningsActualLength,
+            'type': 'Warning',
+            'title': 'Warnings' }"
         ng-include="'templates/backup-result/message-list.html'"></span>
-    <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.TestResults.Errors, 'type': 'Error', 'title': 'Errors'}"
+    <span class="item" ng-if="true"
+        ng-init="data = {
+            'messages': item.Result.TestResults.Errors,
+            'length': item.Result.TestResults.ErrorsActualLength,
+            'type': 'Error',
+            'title': 'Errors'}"
         ng-include="'templates/backup-result/message-list.html'"></span>
 </div>

@@ -1,12 +1,12 @@
-<span ng-click="child_expanded = !child_expanded" ng-style="{ cursor: (data.messages.length > 0) ? 'pointer' : '' }">
-    <i class="{{ResultIcon(data.messages.length > 0 ? data.type : 'Success')}}"></i>
+<span ng-click="child_expanded = !child_expanded" ng-style="{ cursor: (data.length > 0) ? 'pointer' : '' }">
+    <i class="{{ResultIcon(data.length > 0 ? data.type : 'Success')}}"></i>
     <span class="key" translate>{{data.title}} </span>
     <span class="value">
-        {{ data.messages.length || '0' }}
-        <i ng-if="data.messages.length > 0" class="fa fa-angle-{{child_expanded ? 'up': 'down'}}"></i>
+        {{ data.length }}
+        <i ng-if="data.length > 0" class="fa fa-angle-{{child_expanded ? 'up': 'down'}}"></i>
     </span>
 </span>
-<div ng-show="child_expanded && data.messages.length > 0" class="expanded"">
+<div ng-show="child_expanded && data.length > 0" class="expanded"">
     <ul>
         <li ng-repeat="elem in data.messages track by $index">{{elem}}</li>
     </ul>

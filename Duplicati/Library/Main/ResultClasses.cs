@@ -346,10 +346,13 @@ namespace Duplicati.Library.Main
 
         [JsonIgnore]
         public IEnumerable<string> Messages { get { return m_messages; } }
+        public int MessagesActualLength { get { return Messages == null ? 0 : Messages.Count();  } }
         [JsonIgnore]
         public IEnumerable<string> Warnings { get { return m_warnings; } }
+        public int WarningsActualLength { get { return Warnings == null ? 0 : Warnings.Count(); } }
         [JsonIgnore]
         public IEnumerable<string> Errors { get { return m_errors; } }
+        public int ErrorsActualLength { get { return Errors == null ? 0 : Errors.Count(); } }
 
         [JsonProperty(PropertyName = "Messages")]
         public IEnumerable<string> LimitedMessages { get { return Messages?.Take(SERIALIZATION_LIMIT); } }
@@ -726,6 +729,7 @@ namespace Duplicati.Library.Main
     {
         [JsonIgnore]
         public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
+        public int DeletedSetsActualLength { get { return DeletedSets == null ? 0 : DeletedSets.Count(); } }
 
         [JsonProperty(PropertyName = "DeletedSets")]
         public IEnumerable<Tuple<long, DateTime>> LimitedDeletedSets { get { return DeletedSets?.Take(SERIALIZATION_LIMIT); } }
@@ -916,6 +920,7 @@ namespace Duplicati.Library.Main
         private readonly List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
         [JsonIgnore]
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+        public int VerificationsActualLength { get { return Verifications == null ? 0 : Verifications.Count(); } }
 
         [JsonProperty(PropertyName = "Verifications")]
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> LimitedVerifications { get { return Verifications?.Take(SERIALIZATION_LIMIT); } }

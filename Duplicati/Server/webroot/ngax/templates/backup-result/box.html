@@ -10,10 +10,20 @@
         <span ng-show="item.Result.PurgeResults"            class="item" ng-include="'templates/backup-result/phases/purge.html'"></span> 
 
         <!-- ng-if="true" isolates the scope of 'data' in ng-init, this way we can include the same template using the same variable more than one time
-        without them intercepting each other's data. Similar to passing a parameter to the included template -->
-        <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.Warnings, 'type': 'Warning', 'title': 'General Warnings'}"
+            without them intercepting each other's data. Similar to passing a parameter to the included template -->
+        <span class="item" ng-if="true" 
+            ng-init="data = {
+                'messages': item.Result.Warnings,
+                'length': item.Result.WarningsActualLength,
+                'type': 'Warning',
+                'title': 'Warnings' }"
             ng-include="'templates/backup-result/message-list.html'"></span>
-        <span class="item" ng-if="true" ng-init="data = {'messages': item.Result.Errors, 'type': 'Error', 'title': 'General Errors'}"
+        <span class="item" ng-if="true"
+            ng-init="data = {
+                'messages': item.Result.Errors,
+                'length': item.Result.ErrorsActualLength,
+                'type': 'Error',
+                'title': 'Errors'}"
             ng-include="'templates/backup-result/message-list.html'"></span>
     </div>
     <div class="box item wide four">
