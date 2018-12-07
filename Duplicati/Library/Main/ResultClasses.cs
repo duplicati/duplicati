@@ -184,7 +184,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Max number of elements to be serialized to JSON
         /// </summary>
-        protected static readonly int SERIALIZATION_LIMIT = 1;
+        protected static readonly int SERIALIZATION_LIMIT = 20;
 
         protected class DbMessage
         {
