@@ -145,10 +145,9 @@ namespace Duplicati.GUI.TrayIcon
             }
             */
             
-            public string Text
+            public void SetText(string text)
             {
-                get { return ((Gtk.Label)m_item.Child).Text; }
-                set { ((Gtk.Label)m_item.Child).Text = value; }
+                ((Gtk.Label) m_item.Child).Text = text;
             }
             
             public MenuIcons Icon

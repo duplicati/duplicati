@@ -57,18 +57,15 @@ namespace Duplicati.GUI.TrayIcon
             public IList<MenuItemWrapper> Subitems { get; private set; }
             
             #region IMenuItem implementation
-            public string Text
+            public void SetText(string text)
             {
-                get { return m_text; }
-                set
+                if (m_text != text)
                 {
-                    if (m_text != value)
-                    {
-                        m_text = value;
-                        m_parent.UpdateMenu(this);
-                    }
+                    m_text = text;
+                    m_parent.UpdateMenu(this);
                 }
             }
+
             public MenuIcons Icon
             {
                 get { return m_icon; }

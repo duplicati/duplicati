@@ -78,10 +78,9 @@ namespace Duplicati.GUI.TrayIcon.Windows
             }
 
             #region IMenuItem implementation
-            public string Text {
-                set {
-                    m_menu.Text = value;
-                }
+            public void SetText(string text)
+            {
+                m_menu.Text = text;
             }
 
             public MenuIcons Icon {

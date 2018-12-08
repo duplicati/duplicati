@@ -55,10 +55,10 @@ namespace Duplicati.GUI.TrayIcon
     
     public interface IMenuItem
     {
-        string Text { set; }
         MenuIcons Icon { set; }
         bool Enabled { set; }
         bool Default { set; }
+        void SetText(string text);
     }
     
     public abstract class TrayIconBase : IDisposable
@@ -208,13 +208,13 @@ namespace Duplicati.GUI.TrayIcon
                 if (status.ProgramState == LiveControlState.Running)
                 {
                     m_pauseMenu.Icon = MenuIcons.Pause;
-                    m_pauseMenu.Text = "Pause";
+                    m_pauseMenu.SetText("Pause");
                     m_stateIsPaused = false;
                 }
                 else
                 {
                     m_pauseMenu.Icon = MenuIcons.Resume;
-                    m_pauseMenu.Text = "Resume";
+                    m_pauseMenu.SetText("Resume");
                     m_stateIsPaused = true;
                 }
             });
