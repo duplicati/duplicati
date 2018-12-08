@@ -68,16 +68,14 @@ namespace Duplicati.GUI.TrayIcon
                 }
             }
 
-            public void SetEnabled(bool enabled)
+            public void SetEnabled(bool isEnabled)
             {
-                m_item.Enabled = enabled;
+                m_item.Enabled = isEnabled;
             }
 
-            public bool Default
+            public void SetDefault(bool isDefault)
             {
-                set
-                {
-                }
+                // Not implemented.
             }
             #endregion
         }

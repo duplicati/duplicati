@@ -79,25 +79,21 @@ namespace Duplicati.GUI.TrayIcon
                 }
             }
 
-            public void SetEnabled(bool enabled)
+            public void SetEnabled(bool isEnabled)
             {
-                if (m_enabled != enabled)
+                if (m_enabled != isEnabled)
                 {
-                    m_enabled = enabled;
+                    m_enabled = isEnabled;
                     m_parent.UpdateMenu(this);
                 }
             }
 
-            public bool Default
+            public void SetDefault(bool isDefault)
             {
-                get { return m_default; }
-                set
+                if (m_default != isDefault)
                 {
-                    if (m_default != value)
-                    {
-                        m_default = value;
-                        m_parent.UpdateMenu(this);
-                    }
+                    m_default = isDefault;
+                    m_parent.UpdateMenu(this);
                 }
             }
             #endregion

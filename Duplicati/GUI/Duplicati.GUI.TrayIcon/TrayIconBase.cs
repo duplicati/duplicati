@@ -56,8 +56,8 @@ namespace Duplicati.GUI.TrayIcon
     public interface IMenuItem
     {
         MenuIcons Icon { set; }
-        bool Default { set; }
-        void SetEnabled(bool enabled);
+        void SetDefault(bool isDefault);
+        void SetEnabled(bool isEnabled);
         void SetText(string text);
     }
     
@@ -142,7 +142,7 @@ namespace Duplicati.GUI.TrayIcon
         protected IEnumerable<IMenuItem> BuildMenu() 
         {
             var tmp = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
-            tmp.Default = true;
+            tmp.SetDefault(true);
             return new IMenuItem[] {
                 tmp,
                 m_pauseMenu = CreateMenuItem("Pause", MenuIcons.Pause, OnPauseClicked, null ),

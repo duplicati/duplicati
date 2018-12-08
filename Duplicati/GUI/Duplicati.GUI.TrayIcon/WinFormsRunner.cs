@@ -89,15 +89,14 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 }
             }
 
-            public void SetEnabled(bool enabled)
+            public void SetEnabled(bool isEnabled)
             {
-                m_menu.Enabled = enabled;
+                m_menu.Enabled = isEnabled;
             }
 
-            public bool Default {
-                set {
-                    m_menu.Font = new System.Drawing.Font(m_menu.Font, System.Drawing.FontStyle.Bold);
-                }
+            public void SetDefault(bool value)
+            {
+                m_menu.Font = new System.Drawing.Font(m_menu.Font, System.Drawing.FontStyle.Bold);
             }
             #endregion
         }
