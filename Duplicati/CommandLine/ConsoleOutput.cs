@@ -38,11 +38,10 @@ namespace Duplicati.CommandLine
             this.VerboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
             this.FullResults = Library.Utility.Utility.ParseBoolOption(options, "full-results");
         }
-    
+
         #region IMessageSink implementation
-       
-        private IOperationProgress m_operationProgress;
-        public IOperationProgress OperationProgress => m_operationProgress;
+
+        public IOperationProgress OperationProgress { get; private set; }
 
         private void InvokePhaseChanged(OperationPhase p1, OperationPhase p2)
         {
@@ -85,13 +84,13 @@ namespace Duplicati.CommandLine
 
         public void SetOperationProgress(IOperationProgress progress)
         {
-            if (m_operationProgress != null)
-                m_operationProgress.PhaseChanged -= InvokePhaseChanged;
+            if (OperationProgress != null)
+                this.OperationProgress.PhaseChanged -= InvokePhaseChanged;
 
-            m_operationProgress = progress;
+            OperationProgress = progress;
 
             if (progress != null)
-                m_operationProgress.PhaseChanged += InvokePhaseChanged;
+                this.OperationProgress.PhaseChanged += InvokePhaseChanged;
         }
 
         public void WriteMessage(Library.Logging.LogEntry entry)
