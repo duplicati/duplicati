@@ -40,9 +40,7 @@ namespace Duplicati.CommandLine
         }
     
         #region IMessageSink implementation
-        
-        public IBackendProgress BackendProgress { get; set; }
-        
+       
         private IOperationProgress m_operationProgress;
         public IOperationProgress OperationProgress
         {
@@ -91,6 +89,11 @@ namespace Duplicati.CommandLine
                             break;
                     }
                 }
+        }
+
+        public void SetBackendProgress(IBackendProgress progress)
+        {
+            // Not implemented.
         }
 
         public void WriteMessage(Library.Logging.LogEntry entry)

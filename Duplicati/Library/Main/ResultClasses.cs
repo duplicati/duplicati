@@ -241,7 +241,7 @@ namespace Duplicati.Library.Main
                 if (value != null)
                 {
                     m_messageSink.OperationProgress = this.OperationProgressUpdater;
-                    m_messageSink.BackendProgress = this.BackendProgressUpdater;
+                    m_messageSink.SetBackendProgress(this.BackendProgressUpdater);
                 }
             }
         }
