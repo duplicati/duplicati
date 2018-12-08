@@ -42,21 +42,8 @@ namespace Duplicati.CommandLine
         #region IMessageSink implementation
        
         private IOperationProgress m_operationProgress;
-        public IOperationProgress OperationProgress
-        {
-            get { return m_operationProgress; }
-            set 
-            { 
-                if (m_operationProgress != null)
-                    m_operationProgress.PhaseChanged -= InvokePhaseChanged;
-                    
-                m_operationProgress = value; 
-                
-                if (value != null)
-                    m_operationProgress.PhaseChanged += InvokePhaseChanged;
-            }
-        }
-        
+        public IOperationProgress OperationProgress => m_operationProgress;
+
         private void InvokePhaseChanged(OperationPhase p1, OperationPhase p2)
         {
             if (PhaseChanged != null)
@@ -94,6 +81,17 @@ namespace Duplicati.CommandLine
         public void SetBackendProgress(IBackendProgress progress)
         {
             // Not implemented.
+        }
+
+        public void SetOperationProgress(IOperationProgress progress)
+        {
+            if (m_operationProgress != null)
+                m_operationProgress.PhaseChanged -= InvokePhaseChanged;
+
+            m_operationProgress = progress;
+
+            if (progress != null)
+                m_operationProgress.PhaseChanged += InvokePhaseChanged;
         }
 
         public void WriteMessage(Library.Logging.LogEntry entry)

@@ -40,12 +40,12 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <value>The backend progress update object</value>
         void SetBackendProgress(IBackendProgress progress);
-        
+
         /// <summary>
         /// Sets the operation progress update object
         /// </summary>
         /// <value>The operation progress update object</value>
-        IOperationProgress OperationProgress { set; }
+        void SetOperationProgress(IOperationProgress progress);
     }
 
     /// <summary>
@@ -88,13 +88,10 @@ namespace Duplicati.Library.Main
                 s.SetBackendProgress(progress);
         }
 
-        public IOperationProgress OperationProgress
+        public void SetOperationProgress(IOperationProgress progress)
         {
-            set
-            {
-                foreach (var s in m_sinks)
-                    s.OperationProgress = value;
-            }
+            foreach (var s in m_sinks)
+                s.SetOperationProgress(progress);
         }
 
         public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
