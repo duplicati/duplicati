@@ -63,9 +63,9 @@ namespace Duplicati.GUI.TrayIcon
                 m_item.Title = text;
             }
 
-            public Duplicati.GUI.TrayIcon.MenuIcons Icon {
-                set {
-                }
+            public void SetIcon(MenuIcons icons)
+            {
+                // Not implemented.
             }
 
             public void SetEnabled(bool isEnabled)

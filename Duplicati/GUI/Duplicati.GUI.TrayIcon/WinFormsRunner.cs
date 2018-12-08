@@ -83,10 +83,9 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 m_menu.Text = text;
             }
 
-            public MenuIcons Icon {
-                set {
-                    m_menu.Image = GetIcon(value);
-                }
+            public void SetIcon(MenuIcons icon)
+            {
+                m_menu.Image = GetIcon(icon);
             }
 
             public void SetEnabled(bool isEnabled)

@@ -150,9 +150,9 @@ namespace Duplicati.GUI.TrayIcon
                 ((Gtk.Label) m_item.Child).Text = text;
             }
             
-            public MenuIcons Icon
+            public void SetIcon(MenuIcons icon)
             {
-                set { ((ImageMenuItem)m_item).Image = GetIcon(value); }
+                ((ImageMenuItem) m_item).Image = GetIcon(icon);
             }
             
             public void SetEnabled(bool isEnabled)

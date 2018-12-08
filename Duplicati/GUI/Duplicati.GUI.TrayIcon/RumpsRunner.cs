@@ -66,16 +66,12 @@ namespace Duplicati.GUI.TrayIcon
                 }
             }
 
-            public MenuIcons Icon
+            public void SetIcon(MenuIcons icon)
             {
-                get { return m_icon; }
-                set
+                if (m_icon != icon)
                 {
-                    if (m_icon != value)
-                    {
-                        m_icon = value;
-                        m_parent.UpdateMenu(this);
-                    }
+                    m_icon = icon;
+                    m_parent.UpdateMenu(this);
                 }
             }
 
