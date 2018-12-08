@@ -305,15 +305,13 @@ namespace Duplicati.GUI.TrayIcon
             
             return _images[icon];
         }
-        
-        protected override TrayIcons Icon 
+
+        protected override void SetIcon(TrayIcons icon)
         {
-            set 
-            {
-                m_trayIcon.Pixbuf = GetIcon(value);
-            }
+            m_trayIcon.Pixbuf = GetIcon(icon);
         }
-        
+       
+
         protected override void SetMenu (IEnumerable<IMenuItem> items)
         {
             m_popupMenu = new Menu();

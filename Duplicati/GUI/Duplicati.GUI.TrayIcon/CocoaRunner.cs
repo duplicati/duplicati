@@ -189,14 +189,6 @@ namespace Duplicati.GUI.TrayIcon
                 action();
         }
 
-        protected override Duplicati.GUI.TrayIcon.TrayIcons Icon 
-        {
-            set 
-            {
-                m_statusItem.Image = GetIcon(value);
-            }
-        }
-
         protected override Duplicati.GUI.TrayIcon.IMenuItem CreateMenuItem (string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, System.Collections.Generic.IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
         {
             return new MenuItemWrapper(text, callback, subitems);
@@ -214,7 +206,12 @@ namespace Duplicati.GUI.TrayIcon
                     0, 0, 0, null, 0, 0, 0), true);
             }
         }
-        
+
+        protected override void SetIcon(TrayIcons icon)
+        {
+            m_statusItem.Image = GetIcon(icon);
+        }
+
         protected override void SetMenu(System.Collections.Generic.IEnumerable<Duplicati.GUI.TrayIcon.IMenuItem> items)
         {
             m_statusItem.Menu = new NSMenu();

@@ -315,15 +315,6 @@ namespace Duplicati.GUI.TrayIcon
             return m_images[icon];
         }
 
-        protected override Duplicati.GUI.TrayIcon.TrayIcons Icon 
-        {
-            set 
-            {
-                m_lastIcon = value;
-                m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "seticon", Image = GetIcon(value)}));
-            }
-        }
-
         protected override Duplicati.GUI.TrayIcon.IMenuItem CreateMenuItem (string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, System.Collections.Generic.IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
         {
             return new MenuItemWrapper(this, text, callback, subitems);
@@ -346,6 +337,12 @@ namespace Duplicati.GUI.TrayIcon
                 m_rumpsProcess = null;
             }
 
+        }
+
+        protected override void SetIcon(TrayIcons icon)
+        {
+            m_lastIcon = icon;
+            m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new { Action = "seticon", Image = GetIcon(icon) }));
         }
 
         protected override void SetMenu(System.Collections.Generic.IEnumerable<Duplicati.GUI.TrayIcon.IMenuItem> items)

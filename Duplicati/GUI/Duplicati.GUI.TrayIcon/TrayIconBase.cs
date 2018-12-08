@@ -90,11 +90,11 @@ namespace Duplicati.GUI.TrayIcon
             action();
         }
         
-        protected abstract TrayIcons Icon { set; }
-        
         protected abstract IMenuItem CreateMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems);
         
         protected abstract void Exit();
+
+        protected abstract void SetIcon(TrayIcons icon);
         
         protected abstract void SetMenu(IEnumerable<IMenuItem> items);
 
@@ -184,23 +184,23 @@ namespace Duplicati.GUI.TrayIcon
                 switch(status.SuggestedStatusIcon)
                 {
                     case SuggestedStatusIcon.Active:
-                        Icon = TrayIcons.Running;
+                        this.SetIcon(TrayIcons.Running);
                         break;
                     case SuggestedStatusIcon.ActivePaused:
-                        Icon = TrayIcons.Paused;
+                        this.SetIcon(TrayIcons.Paused);
                         break;
                     case SuggestedStatusIcon.ReadyError:
-                        Icon = TrayIcons.IdleError;
+                        this.SetIcon(TrayIcons.IdleError);
                         break;
                     case SuggestedStatusIcon.ReadyWarning:
-                        Icon = TrayIcons.IdleError;
+                        this.SetIcon(TrayIcons.IdleError);
                         break;
                     case SuggestedStatusIcon.Paused:
-                        Icon = TrayIcons.Paused;
+                        this.SetIcon(TrayIcons.Paused);
                         break;
                     case SuggestedStatusIcon.Ready:
                     default:    
-                        Icon = TrayIcons.Idle;
+                        this.SetIcon(TrayIcons.Idle);
                         break;
                     
                 }
