@@ -155,10 +155,9 @@ namespace Duplicati.GUI.TrayIcon
                 set { ((ImageMenuItem)m_item).Image = GetIcon(value); }
             }
             
-            public bool Enabled
+            public void SetEnabled(bool enabled)
             {
-                get { return m_item.Sensitive; }
-                set { m_item.Sensitive = value; }
+                m_item.Sensitive = enabled;
             }
 
             public bool Default

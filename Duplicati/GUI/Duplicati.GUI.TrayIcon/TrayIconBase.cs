@@ -56,8 +56,8 @@ namespace Duplicati.GUI.TrayIcon
     public interface IMenuItem
     {
         MenuIcons Icon { set; }
-        bool Enabled { set; }
         bool Default { set; }
+        void SetEnabled(bool enabled);
         void SetText(string text);
     }
     

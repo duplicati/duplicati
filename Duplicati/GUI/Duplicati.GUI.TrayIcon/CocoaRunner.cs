@@ -68,10 +68,9 @@ namespace Duplicati.GUI.TrayIcon
                 }
             }
 
-            public bool Enabled {
-                set {
-                    m_item.Enabled = value;
-                }
+            public void SetEnabled(bool enabled)
+            {
+                m_item.Enabled = enabled;
             }
 
             public bool Default

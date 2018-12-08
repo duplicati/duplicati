@@ -89,10 +89,9 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 }
             }
 
-            public bool Enabled {
-                set {
-                    m_menu.Enabled = value;
-                }
+            public void SetEnabled(bool enabled)
+            {
+                m_menu.Enabled = enabled;
             }
 
             public bool Default {
