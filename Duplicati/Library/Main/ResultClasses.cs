@@ -60,11 +60,10 @@ namespace Duplicati.Library.Main
     {
         DateTime EndTime { get; set; }
         DateTime BeginTime { get; set; }
+        IMessageSink MessageSink { get; set; }
+        OperationMode MainOperation { get; }
 
         void SetDatabase(LocalDatabase db);
-
-        OperationMode MainOperation { get; }
-        IMessageSink MessageSink { set; }
     }
 
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics
