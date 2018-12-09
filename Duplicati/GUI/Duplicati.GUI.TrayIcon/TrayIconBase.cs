@@ -156,7 +156,7 @@ namespace Duplicati.GUI.TrayIcon
             if (window != null)
             {
                 window.Icon = WindowIcons.Regular;
-                window.Title = "Duplicati status";
+                window.SetTitle("Duplicati status");
             }
         }
 
