@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main
     internal interface ISetCommonOptions
     {
         DateTime EndTime { get; set; }
-        DateTime BeginTime { set; }
+        DateTime BeginTime { get; set; }
 
         void SetDatabase(LocalDatabase db);
 
