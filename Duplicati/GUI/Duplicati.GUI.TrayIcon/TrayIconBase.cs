@@ -155,7 +155,7 @@ namespace Duplicati.GUI.TrayIcon
             var window = ShowUrlInWindow(Program.Connection.StatusWindowURL);
             if (window != null)
             {
-                window.Icon = WindowIcons.Regular;
+                window.SetIcon(WindowIcons.Regular);
                 window.SetTitle("Duplicati status");
             }
         }

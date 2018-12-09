@@ -8,6 +8,6 @@ namespace Duplicati.GUI.TrayIcon
     public interface IBrowserWindow
     {
         void SetTitle(string title);
-        WindowIcons Icon { set; }
+        void SetIcon(WindowIcons icon);
     }
 }
