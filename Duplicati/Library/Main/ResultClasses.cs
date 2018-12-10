@@ -25,18 +25,8 @@ using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main
 {
-    internal interface IBackendWriter
+    internal interface IBackendWriter : IParsedBackendStatistics
     {
-        long UnknownFileSize { set; }
-        long UnknownFileCount { set; }
-        long KnownFileCount { set; }
-        long KnownFileSize { set; }
-        DateTime LastBackupDate { set; }
-        long BackupListCount { set; }
-        long TotalQuotaSpace { set; }
-        long FreeQuotaSpace { set; }
-        long AssignedQuotaSpace { set; }
-
         bool ReportedQuotaError { get; set; }
         bool ReportedQuotaWarning { get; set; }
 
