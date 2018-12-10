@@ -162,7 +162,7 @@ namespace Duplicati.GUI.TrayIcon
 
             public void SetDefault(bool isDefault)
             {
-                // Not implemented.
+                // Do nothing.  Implementation needed for TrayIconBase interface.
             }
         }
         

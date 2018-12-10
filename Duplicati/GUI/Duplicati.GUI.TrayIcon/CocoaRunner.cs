@@ -65,7 +65,7 @@ namespace Duplicati.GUI.TrayIcon
 
             public void SetIcon(MenuIcons icons)
             {
-                // Not implemented.
+                // Do nothing.  Implementation needed for IMenuItem interface.
             }
 
             public void SetEnabled(bool isEnabled)
@@ -75,7 +75,7 @@ namespace Duplicati.GUI.TrayIcon
 
             public void SetDefault(bool isDefault)
             {
-                // Not implemented.
+                // Do nothing.  Implementation needed for IMenuItem interface.
             }
             #endregion
         }
