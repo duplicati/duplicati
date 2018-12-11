@@ -1,3 +1,19 @@
+2018-12-11 - 2.0.4.6_canary_2018-12-11
+==========
+* Improved code quality and documentation, thanks @warwickmm
+* Don't ask for password for an unencrypted backup, thanks @verhoek
+* SFTP can now create missing folder tree, thanks @warwickmm
+* Removed duplicati http options, thanks @warwickmm
+* Fixed an issue with exporting passwords, thanks @Pectojin
+* Added notificaiton button for warnings, thanks @LacunaSoftware
+* Added cache-buster for all local static files, thanks @LacunaSoftware
+* Improved code quality, thanks @verhoek
+* Fixed an issue where the GUI would not delete the local database, even on request, thanks @warwickmm
+* Fixed a misleading path error message, thanks @mikaelmello
+* Fixed scheduler checking allowed days in local timezone, thanks @LacunaSoftware
+* Reworked the log UI, thanks @LacunaSoftware
+* Fixed an issue where local times were reported as clashing if times overlapped due to DST
+
 2018-11-28 - 2.0.4.5_beta_2018-11-28
 ==========
 The major changes in this version are:
