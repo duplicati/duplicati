@@ -1,10 +1,7 @@
-backupApp.controller('LogController', function($scope, $routeParams, $timeout, SystemInfo, ServerStatus, AppService, DialogService, BackupList, gettextCatalog) {
-    $scope.state = ServerStatus.watch($scope);
-    $scope.BackupID = $routeParams.backupid;
-    $scope.SystemInfo = SystemInfo.watch($scope);
+backupApp.controller('LogController', function($scope, $timeout, AppService, LogService) {
 
     var liveRefreshTimer = null;
-    var PAGE_SIZE = 100;
+    const PAGE_SIZE = 100;
 
     function updateLivePoll() {
         if ($scope.LiveRefreshing) {
@@ -47,63 +44,30 @@ backupApp.controller('LogController', function($scope, $routeParams, $timeout, S
                     liveRefreshTimer = $timeout(updateLivePoll, 3000);
             }
         );
-
-    };
-
-    function LoadMoreData(url, key, idfield) {
-        if ($scope.LoadingData)
-            return;
-
-        var last = null;
-        if ($scope[key] != null && $scope[key].length > 0 )
-            last = $scope[key][$scope[key].length - 1][idfield];
-
-        $scope.LoadingData = true;
-        AppService.get(url + '?pagesize=' + PAGE_SIZE + (last == null ? '' : ('&offset=' + last))).then(
-            function(resp) { 
-                if ($scope[key] == null)
-                    $scope[key] = [];
-                $scope[key].push.apply($scope[key], resp.data);
-                $scope.LoadingData = false;
-                $scope[key + 'Complete'] = resp.data.length < PAGE_SIZE;
-                if ($scope.BackupID != null)
-                    $scope.Backup = BackupList.lookup[$scope.BackupID];
-
-            }, function(resp) {
-                var message = resp.statusText;
-                if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
-
-                $scope.LoadingData = false;
-                DialogService.dialog('Error', gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
-            });        
     };
 
 
     $scope.$watch('LiveLogLevel', updateLivePoll);
     $scope.$watch('Page', updateLivePoll);
-    $scope.$watch('Page', function() {
-        if ($scope.Page == 'remote' && $scope.RemoteData == null)
-            $scope.LoadMoreRemoteData();
-    });
 
-    if ($scope.BackupID == null) {
-        $scope.Page = 'stored';
-        $scope.LiveLogLevel = '';
-        $scope.LiveRefreshID = 0;
-        $scope.LiveRefreshing = false;
-        $scope.LiveRefreshPending = false;
+    $scope.Page = 'stored';
+    $scope.LiveLogLevel = '';
+    $scope.LiveRefreshID = 0;
+    $scope.LiveRefreshing = false;
+    $scope.LiveRefreshPending = false;
 
-        $scope.LoadMoreStoredData = function() { LoadMoreData('/logdata/log', 'LogData', 'Timestamp'); };
-        $scope.LoadMoreStoredData();
-    } else {
-        $scope.Page = 'general';        
-
-        $scope.LoadMoreGeneralData = function() { LoadMoreData('/backup/' + $scope.BackupID + '/log', 'GeneralData', 'ID'); };
-        $scope.LoadMoreRemoteData = function() { LoadMoreData('/backup/' + $scope.BackupID + '/remotelog', 'RemoteData', 'ID'); };
-        
-        $scope.LoadMoreGeneralData();
-        $scope.Backup = BackupList.lookup[$scope.BackupID];
-    }
+    $scope.LoadMoreStoredData = function() { 
+        LogService.LoadMoreData('/logdata/log', $scope.LogData, 'Timestamp', PAGE_SIZE)
+            .then(function(result) {
+                if (!result)
+                    return;
+                
+                const { current, complete } = result;
+                $scope.LogData = current;
+                $scope.LogDataComplete = complete;
+            }); 
+    };
+    $scope.LoadMoreStoredData();
+    
 
 });

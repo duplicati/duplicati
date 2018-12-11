@@ -181,6 +181,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         protected static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(BasicResults));
 
+        /// <summary>
+        /// Max number of elements to be serialized to JSON
+        /// </summary>
+        protected static readonly int SERIALIZATION_LIMIT = 20;
+
         protected class DbMessage
         {
             public readonly string Type;
@@ -228,7 +233,7 @@ namespace Duplicati.Library.Main
         protected Library.Utility.FileBackedStringList m_warnings;
         protected Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
-
+        
         protected IMessageSink m_messageSink;
 
         [JsonIgnore]
@@ -339,9 +344,22 @@ namespace Duplicati.Library.Main
 
         }
 
-        public IEnumerable<string> Messages { get { return m_parent == null ? m_messages : m_parent.Messages; } }
-        public IEnumerable<string> Warnings { get { return m_parent == null ? m_warnings : m_parent.Warnings; } }
-        public IEnumerable<string> Errors { get { return m_parent == null ?  m_errors : m_parent.Errors; } }
+        [JsonIgnore]
+        public IEnumerable<string> Messages { get { return m_messages; } }
+        public int MessagesActualLength { get { return Messages == null ? 0 : Messages.Count();  } }
+        [JsonIgnore]
+        public IEnumerable<string> Warnings { get { return m_warnings; } }
+        public int WarningsActualLength { get { return Warnings == null ? 0 : Warnings.Count(); } }
+        [JsonIgnore]
+        public IEnumerable<string> Errors { get { return m_errors; } }
+        public int ErrorsActualLength { get { return Errors == null ? 0 : Errors.Count(); } }
+
+        [JsonProperty(PropertyName = "Messages")]
+        public IEnumerable<string> LimitedMessages { get { return Messages?.Take(SERIALIZATION_LIMIT); } }
+        [JsonProperty(PropertyName = "Warnings")]
+        public IEnumerable<string> LimitedWarnings { get { return Warnings?.Take(SERIALIZATION_LIMIT); } }
+        [JsonProperty(PropertyName = "Errors")]
+        public IEnumerable<string> LimitedErrors { get { return Errors?.Take(SERIALIZATION_LIMIT); } }
 
         protected Operation.Common.TaskControl m_taskController;
         public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
@@ -579,12 +597,26 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if ((Errors != null && Errors.Any()) || FilesWithError > 0)
+                if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Error) ||
+                    (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Error) ||
+                    (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Error) || 
+                    (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()) || FilesWithError > 0)
+                {
                     return ParsedResultType.Error;
-                else if ((Warnings != null && Warnings.Any()) || PartialBackup)
+                }
+                else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Warning) ||
+                         (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Warning) ||
+                         (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Warning) ||
+                         (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()) || PartialBackup)
+                {
                     return ParsedResultType.Warning;
+                }
                 else
+                {
                     return ParsedResultType.Success;
+                }
             }
         }
     }
@@ -608,12 +640,20 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (Errors != null && Errors.Any())
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()))
+                {
                     return ParsedResultType.Error;
-                else if (Warnings != null && Warnings.Any())
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()))
+                {
                     return ParsedResultType.Warning;
+                }
                 else
+                {
                     return ParsedResultType.Success;
+                }
             }
         }
     }
@@ -687,7 +727,13 @@ namespace Duplicati.Library.Main
 
     internal class DeleteResults : BasicResults, Duplicati.Library.Interface.IDeleteResults
     {
+        [JsonIgnore]
         public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
+        public int DeletedSetsActualLength { get { return DeletedSets == null ? 0 : DeletedSets.Count(); } }
+
+        [JsonProperty(PropertyName = "DeletedSets")]
+        public IEnumerable<Tuple<long, DateTime>> LimitedDeletedSets { get { return DeletedSets?.Take(SERIALIZATION_LIMIT); } }
+
         public bool Dryrun { get; private set; }
 
         public void SetResults(IEnumerable<Tuple<long, DateTime>> deletedSets, bool dryrun)
@@ -760,6 +806,27 @@ namespace Duplicati.Library.Main
         public RepairResults() : base() { }
         public RepairResults(BasicResults p) : base(p) { }
         public Library.Interface.IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
+
+        public override ParsedResultType ParsedResult
+        {
+            get
+            {
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()))
+                {
+                    return ParsedResultType.Error;
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()))
+                {
+                    return ParsedResultType.Warning;
+                }
+                else
+                {
+                    return ParsedResultType.Success;
+                }
+            }
+        }
     }
 
     internal class CompactResults : BasicResults, Library.Interface.ICompactResults
@@ -849,8 +916,14 @@ namespace Duplicati.Library.Main
         public TestResults(BasicResults p) : base(p) { }
 
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
-        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+
         private readonly List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        [JsonIgnore]
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+        public int VerificationsActualLength { get { return Verifications == null ? 0 : Verifications.Count(); } }
+
+        [JsonProperty(PropertyName = "Verifications")]
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> LimitedVerifications { get { return Verifications?.Take(SERIALIZATION_LIMIT); } }
 
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {
