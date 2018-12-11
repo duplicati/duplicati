@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-05 11:19+0200\n"
+"POT-Creation-Date: 2018-12-11 12:26+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -308,7 +308,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:22
 #, csharp-format
-msgid "Failed to execute GPG at \"\"{0}\" {1}\": {2}"
+msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr ""
 
 #: Library/Encryption/Strings.cs:23
@@ -795,7 +795,7 @@ msgstr ""
 #: Library/Backend/AmazonCloudDrive/Strings.cs:24
 #: Library/Backend/GoogleServices/Strings.cs:26
 #: Library/Backend/GoogleServices/Strings.cs:43
-#: Library/Backend/Box/Strings.cs:24 Library/Backend/OneDrive/Strings.cs:11
+#: Library/Backend/Box/Strings.cs:24 Library/Backend/OneDrive/Strings.cs:6
 #: Library/Backend/HubiC/Strings.cs:24 Library/Backend/Dropbox/Strings.cs:24
 #: Library/Backend/OAuthHelper/Strings.cs:9
 msgid "The authorization code"
@@ -804,7 +804,7 @@ msgstr ""
 #: Library/Backend/AmazonCloudDrive/Strings.cs:25
 #: Library/Backend/GoogleServices/Strings.cs:27
 #: Library/Backend/GoogleServices/Strings.cs:44
-#: Library/Backend/Box/Strings.cs:25 Library/Backend/OneDrive/Strings.cs:12
+#: Library/Backend/Box/Strings.cs:25 Library/Backend/OneDrive/Strings.cs:7
 #: Library/Backend/HubiC/Strings.cs:25 Library/Backend/Dropbox/Strings.cs:25
 #: Library/Backend/OAuthHelper/Strings.cs:10
 #, csharp-format
@@ -1625,54 +1625,16 @@ msgstr ""
 msgid "Minimum value is 3."
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:5
-#, csharp-format
-msgid ""
-"Failed to authorize using the WLID service: {0}. If the problem persists, "
-"try generating a new authid token from: {1}"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:6
-msgid "Autocreated folder"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:7
-#: Library/Backend/OAuthHelper/Strings.cs:8
-#, csharp-format
-msgid "Unexpected error code: {0} - {1}"
-msgstr ""
-
 #: Library/Backend/OneDrive/Strings.cs:8
-#, csharp-format
-msgid "Missing the folder: {0}"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:13
-#, csharp-format
-msgid "File not found: {0}"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:10
-msgid "Microsoft OneDrive"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:13
-#, csharp-format
-msgid ""
-"Stores files on Microsoft OneDrive. Usage of this backend requires that you "
-"agree to the terms in {0} ({1}) and {2} ({3})"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:20
 #, csharp-format
 msgid "No Auth-ID was provided - you can get one from {0}"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:21
+#: Library/Backend/OneDrive/Strings.cs:9
 msgid "Fragment size for large uploads"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:22
+#: Library/Backend/OneDrive/Strings.cs:10
 msgid ""
 "Size of individual fragments which are uploaded separately for large files. "
 "It is recommended to be between 5-10 MiB (though a smaller value may work "
@@ -1680,31 +1642,31 @@ msgid ""
 "KiB."
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:23
+#: Library/Backend/OneDrive/Strings.cs:11
 msgid "Number of retries for each fragment"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:24
+#: Library/Backend/OneDrive/Strings.cs:12
 msgid ""
 "Number of retry attempts made for each fragment before failing the overall "
 "file upload"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:25
+#: Library/Backend/OneDrive/Strings.cs:13
 msgid "Millisecond delay between fragment errors"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:26
+#: Library/Backend/OneDrive/Strings.cs:14
 msgid ""
 "Amount of time (in milliseconds) to wait between failures when uploading "
 "fragments"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:31
+#: Library/Backend/OneDrive/Strings.cs:19
 msgid "Microsoft OneDrive v2"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:32
+#: Library/Backend/OneDrive/Strings.cs:20
 #, csharp-format
 msgid ""
 "Stores files in Microsoft OneDrive or Microsoft OneDrive for Business via "
@@ -1712,22 +1674,22 @@ msgid ""
 "the terms in {0} ({1}) and {2} ({3})"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:33
+#: Library/Backend/OneDrive/Strings.cs:21
 msgid "Optional ID of the drive"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:34
+#: Library/Backend/OneDrive/Strings.cs:22
 #, csharp-format
 msgid ""
 "ID of the drive to store data in. If no drive is specified, the default "
 "OneDrive or OneDrive for Business drive will be used via '{0}'."
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:39
+#: Library/Backend/OneDrive/Strings.cs:27
 msgid "Microsoft SharePoint v2"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:40
+#: Library/Backend/OneDrive/Strings.cs:28
 #, csharp-format
 msgid ""
 "Stores files in a Microsoft SharePoint site via the Microsoft Graph API. "
@@ -1735,28 +1697,28 @@ msgid ""
 "{2} ({3})"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:41
+#: Library/Backend/OneDrive/Strings.cs:29
 msgid "ID of the site"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:42
+#: Library/Backend/OneDrive/Strings.cs:30
 msgid "ID of the site to store data in"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:43
+#: Library/Backend/OneDrive/Strings.cs:31
 msgid "No site ID was provided"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:44
+#: Library/Backend/OneDrive/Strings.cs:32
 #, csharp-format
 msgid "Conflicting site IDs used: given {0} but found {1}"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:49
+#: Library/Backend/OneDrive/Strings.cs:37
 msgid "Microsoft Office 365 Group"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:50
+#: Library/Backend/OneDrive/Strings.cs:38
 #, csharp-format
 msgid ""
 "Stores files in a Microsoft Office 365 Group via the Microsoft Graph API. "
@@ -1768,37 +1730,37 @@ msgid ""
 "({3})"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:51
+#: Library/Backend/OneDrive/Strings.cs:39
 msgid "ID of the group"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:52
+#: Library/Backend/OneDrive/Strings.cs:40
 msgid "ID of the group to store data in"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:53
+#: Library/Backend/OneDrive/Strings.cs:41
 msgid "Email address of the group"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:54
+#: Library/Backend/OneDrive/Strings.cs:42
 msgid "Email address of the group to store data in"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:55
+#: Library/Backend/OneDrive/Strings.cs:43
 msgid "No group ID or group email address was provided"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:56
+#: Library/Backend/OneDrive/Strings.cs:44
 #, csharp-format
 msgid "No groups were found with the given email address: {0}"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:57
+#: Library/Backend/OneDrive/Strings.cs:45
 #, csharp-format
 msgid "Multiple groups were found with the given email address: {0}"
 msgstr ""
 
-#: Library/Backend/OneDrive/Strings.cs:58
+#: Library/Backend/OneDrive/Strings.cs:46
 #, csharp-format
 msgid "Conflicting group IDs used: given {0} but found {1}"
 msgstr ""
@@ -2111,6 +2073,11 @@ msgid ""
 "try generating a new authid token from: {1}"
 msgstr ""
 
+#: Library/Backend/OAuthHelper/Strings.cs:8
+#, csharp-format
+msgid "Unexpected error code: {0} - {1}"
+msgstr ""
+
 #: Library/Backend/OAuthHelper/Strings.cs:11
 msgid "The OAuth service is currently over quota, try again in a few hours"
 msgstr ""
@@ -2170,6 +2137,11 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:12
 msgid "Zip compression"
+msgstr ""
+
+#: Library/Compression/Strings.cs:13
+#, csharp-format
+msgid "File not found: {0}"
 msgstr ""
 
 #: Library/Compression/Strings.cs:16
@@ -2249,14 +2221,14 @@ msgid ""
 "Database is NOT upgraded."
 msgstr ""
 
-#: Library/Main/Operation/Common/BackendHandler.cs:538
-#: Library/Main/BackendManager.cs:1108
+#: Library/Main/Operation/Common/BackendHandler.cs:540
+#: Library/Main/BackendManager.cs:1107
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 
-#: Library/Main/Operation/Common/BackendHandler.cs:551
-#: Library/Main/BackendManager.cs:1121
+#: Library/Main/Operation/Common/BackendHandler.cs:553
+#: Library/Main/BackendManager.cs:1120
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr ""
@@ -3583,7 +3555,7 @@ msgid "Applies filters to the console log data"
 msgstr ""
 
 #: Library/Main/Strings.cs:262
-msgid "Sets the processe to use low IO priority"
+msgid "Sets the process to use low IO priority"
 msgstr ""
 
 #: Library/Main/Strings.cs:263
@@ -3639,17 +3611,17 @@ msgstr ""
 msgid "Failed to create a snapshot: {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:592
+#: Library/Main/BackendManager.cs:590
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:598
+#: Library/Main/BackendManager.cs:596
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 
-#: Library/Main/BackendManager.cs:603
+#: Library/Main/BackendManager.cs:601
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr ""
@@ -3720,9 +3692,9 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash to approve it anyway. The "
-"hash value must be entered in hex format without spaces. You can enter "
-"multiple hashes separated by commas."
+"certificates), you can supply the certificate hash (SHA256) to approve it "
+"anyway. The hash value must be entered in hex format without spaces or "
+"colons. You can enter multiple hashes separated by commas."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:25
@@ -4360,27 +4332,27 @@ msgid ""
 "are: {1}"
 msgstr ""
 
-#: Library/Utility/FilterGroups.cs:182
+#: Library/Utility/FilterGroups.cs:185
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr ""
 
-#: Library/Utility/FilterGroups.cs:183
+#: Library/Utility/FilterGroups.cs:186
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr ""
 
-#: Library/Utility/FilterGroups.cs:184
+#: Library/Utility/FilterGroups.cs:187
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr ""
 
-#: Library/Utility/FilterGroups.cs:195
+#: Library/Utility/FilterGroups.cs:198
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr ""
 
-#: Library/Utility/FilterGroups.cs:208
+#: Library/Utility/FilterGroups.cs:211
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -4388,26 +4360,26 @@ msgid ""
 "least apply these filters."
 msgstr ""
 
-#: Library/Utility/FilterGroups.cs:210
+#: Library/Utility/FilterGroups.cs:213
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
 "when the operating system is re-installed."
 msgstr ""
 
-#: Library/Utility/FilterGroups.cs:212
+#: Library/Utility/FilterGroups.cs:215
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr ""
 
-#: Library/Utility/FilterGroups.cs:214
+#: Library/Utility/FilterGroups.cs:217
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
 "system and various applications"
 msgstr ""
 
-#: Library/Utility/FilterGroups.cs:216
+#: Library/Utility/FilterGroups.cs:219
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr ""
@@ -4540,11 +4512,11 @@ msgstr ""
 msgid "This link may provide additional information: {0}"
 msgstr ""
 
-#: CommandLine/Program.cs:292
+#: CommandLine/Program.cs:294
 msgid "Toggle automatic updates"
 msgstr ""
 
-#: CommandLine/Program.cs:292
+#: CommandLine/Program.cs:294
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
