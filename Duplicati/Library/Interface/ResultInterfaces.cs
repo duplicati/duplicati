@@ -55,15 +55,15 @@ namespace Duplicati.Library.Interface
 
     public interface IParsedBackendStatistics : IBackendStatstics
     {
-        long UnknownFileSize { get; }
-        long UnknownFileCount { get; }
-        long KnownFileCount { get; }
-        long KnownFileSize { get; }
-        DateTime LastBackupDate { get; }
-        long BackupListCount { get; }
-        long TotalQuotaSpace { get; }
-        long FreeQuotaSpace { get; }
-        long AssignedQuotaSpace { get; }
+        long UnknownFileSize { get; set; }
+        long UnknownFileCount { get; set; }
+        long KnownFileCount { get; set; }
+        long KnownFileSize { get; set; }
+        DateTime LastBackupDate { get; set; }
+        long BackupListCount { get; set; }
+        long TotalQuotaSpace { get; set; }
+        long FreeQuotaSpace { get; set; }
+        long AssignedQuotaSpace { get; set; }
     }
 
     public interface IBackendStatsticsReporter

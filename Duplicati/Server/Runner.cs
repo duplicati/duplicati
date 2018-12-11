@@ -309,26 +309,22 @@ namespace Duplicati.Server
                     }
                 }
             }
+
+            public void SetBackendProgress(Library.Main.IBackendProgress progress)
+            {
+                lock (m_lock)
+                    m_backendProgress = progress;
+            }
+
+            public void SetOperationProgress(Library.Main.IOperationProgress progress)
+            {
+                lock (m_lock)
+                    m_operationProgress = progress;
+            }
+
             public void WriteMessage(Library.Logging.LogEntry entry)
             {
                 // Do nothing.  Implementation needed for ILogDestination interface.
-            }
-
-            public Duplicati.Library.Main.IBackendProgress BackendProgress
-            {
-                set
-                {
-                    lock(m_lock)
-                        m_backendProgress = value;
-                }
-            }
-            public Duplicati.Library.Main.IOperationProgress OperationProgress
-            {
-                set
-                {
-                    lock(m_lock)
-                        m_operationProgress = value;
-                }
             }
             #endregion
         }

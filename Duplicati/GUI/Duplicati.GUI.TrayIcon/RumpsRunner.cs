@@ -57,52 +57,39 @@ namespace Duplicati.GUI.TrayIcon
             public IList<MenuItemWrapper> Subitems { get; private set; }
             
             #region IMenuItem implementation
-            public string Text
+            public void SetText(string text)
             {
-                get { return m_text; }
-                set
+                if (m_text != text)
                 {
-                    if (m_text != value)
-                    {
-                        m_text = value;
-                        m_parent.UpdateMenu(this);
-                    }
+                    m_text = text;
+                    m_parent.UpdateMenu(this);
                 }
             }
-            public MenuIcons Icon
+
+            public void SetIcon(MenuIcons icon)
             {
-                get { return m_icon; }
-                set
+                if (m_icon != icon)
                 {
-                    if (m_icon != value)
-                    {
-                        m_icon = value;
-                        m_parent.UpdateMenu(this);
-                    }
+                    m_icon = icon;
+                    m_parent.UpdateMenu(this);
                 }
             }
-            public bool Enabled
+
+            public void SetEnabled(bool isEnabled)
             {
-                get { return m_enabled; }
-                set
+                if (m_enabled != isEnabled)
                 {
-                    if (m_enabled != value)
-                    {
-                        m_enabled = value;
-                        m_parent.UpdateMenu(this);
-                    }
+                    m_enabled = isEnabled;
+                    m_parent.UpdateMenu(this);
                 }
             }
-            public bool Default
+
+            public void SetDefault(bool isDefault)
             {
-                get { return m_default; }
-                set
+                if (m_default != isDefault)
                 {
-                    if (m_default != value)
-                    {
-                        m_default = value;
-                        m_parent.UpdateMenu(this);
-                    }
+                    m_default = isDefault;
+                    m_parent.UpdateMenu(this);
                 }
             }
             #endregion
@@ -315,15 +302,6 @@ namespace Duplicati.GUI.TrayIcon
             return m_images[icon];
         }
 
-        protected override Duplicati.GUI.TrayIcon.TrayIcons Icon 
-        {
-            set 
-            {
-                m_lastIcon = value;
-                m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new {Action = "seticon", Image = GetIcon(value)}));
-            }
-        }
-
         protected override Duplicati.GUI.TrayIcon.IMenuItem CreateMenuItem (string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, System.Collections.Generic.IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
         {
             return new MenuItemWrapper(this, text, callback, subitems);
@@ -346,6 +324,12 @@ namespace Duplicati.GUI.TrayIcon
                 m_rumpsProcess = null;
             }
 
+        }
+
+        protected override void SetIcon(TrayIcons icon)
+        {
+            m_lastIcon = icon;
+            m_toRumps.WriteNoWait(JsonConvert.SerializeObject(new { Action = "seticon", Image = GetIcon(icon) }));
         }
 
         protected override void SetMenu(System.Collections.Generic.IEnumerable<Duplicati.GUI.TrayIcon.IMenuItem> items)

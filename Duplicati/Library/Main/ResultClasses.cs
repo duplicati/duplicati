@@ -25,18 +25,8 @@ using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main
 {
-    internal interface IBackendWriter
+    internal interface IBackendWriter : IParsedBackendStatistics
     {
-        long UnknownFileSize { set; }
-        long UnknownFileCount { set; }
-        long KnownFileCount { set; }
-        long KnownFileSize { set; }
-        DateTime LastBackupDate { set; }
-        long BackupListCount { set; }
-        long TotalQuotaSpace { set; }
-        long FreeQuotaSpace { set; }
-        long AssignedQuotaSpace { set; }
-
         bool ReportedQuotaError { get; set; }
         bool ReportedQuotaWarning { get; set; }
 
@@ -59,12 +49,11 @@ namespace Duplicati.Library.Main
     internal interface ISetCommonOptions
     {
         DateTime EndTime { get; set; }
-        DateTime BeginTime { set; }
+        DateTime BeginTime { get; set; }
+        IMessageSink MessageSink { get; set; }
+        OperationMode MainOperation { get; }
 
         void SetDatabase(LocalDatabase db);
-
-        OperationMode MainOperation { get; }
-        IMessageSink MessageSink { set; }
     }
 
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics
@@ -245,8 +234,8 @@ namespace Duplicati.Library.Main
                 m_messageSink = value;
                 if (value != null)
                 {
-                    m_messageSink.OperationProgress = this.OperationProgressUpdater;
-                    m_messageSink.BackendProgress = this.BackendProgressUpdater;
+                    m_messageSink.SetOperationProgress(this.OperationProgressUpdater);
+                    m_messageSink.SetBackendProgress(this.BackendProgressUpdater);
                 }
             }
         }
