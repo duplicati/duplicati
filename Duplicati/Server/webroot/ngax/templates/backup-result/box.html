@@ -2,6 +2,9 @@
     <div class="box one" ng-include="'templates/backup-result/top-left-box.html'"></div>
     <div class="box two" ng-include="'templates/backup-result/top-right-box.html'"></div>
     <div class="box wide three">
+        <span ng-show="item.Result.MainOperation === 'Restore'" ng-include="'templates/backup-result/restore-items.html'"></span> 
+        <span ng-show="item.Result.MainOperation === 'Test'" ng-include="'templates/backup-result/test-items.html'"></span>
+
         <span ng-show="item.Result.TestResults"             class="item" ng-include="'templates/backup-result/phases/test.html'"></span>
         <span ng-show="item.Result.CompactResults"          class="item" ng-include="'templates/backup-result/phases/compact.html'"></span>
         <span ng-show="item.Result.DeleteResults"           class="item" ng-include="'templates/backup-result/phases/delete.html'"></span>
