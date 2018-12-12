@@ -22,6 +22,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using System.Globalization;
 
 namespace Duplicati.Library.Main
 {
@@ -1096,7 +1097,7 @@ namespace Duplicati.Library.Main
             get
             {
                 if (m_options.ContainsKey("enable-module"))
-                    return m_options["enable-module"].Trim().ToLower().Split(',');
+                    return m_options["enable-module"].Trim().ToLower(CultureInfo.InvariantCulture).Split(',');
                 else
                     return new string[0];
             }
@@ -1110,7 +1111,7 @@ namespace Duplicati.Library.Main
             get
             {
                 if (m_options.ContainsKey("disable-module"))
-                    return m_options["disable-module"].Trim().ToLower().Split(',');
+                    return m_options["disable-module"].Trim().ToLower(CultureInfo.InvariantCulture).Split(',');
                 else
                     return new string[0];
             }

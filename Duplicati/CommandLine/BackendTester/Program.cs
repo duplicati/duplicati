@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
 using System.Linq;
+using System.Globalization;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -158,8 +159,8 @@ namespace Duplicati.CommandLine.BackendTester
             string enabledModulesValue;
             options.TryGetValue("enable-module", out enabledModulesValue);
             options.TryGetValue("disable-module", out disabledModulesValue);
-            string[] enabledModules = enabledModulesValue == null ? new string[0] : enabledModulesValue.Trim().ToLower().Split(',');
-            string[] disabledModules = disabledModulesValue == null ? new string[0] : disabledModulesValue.Trim().ToLower().Split(',');
+            string[] enabledModules = enabledModulesValue == null ? new string[0] : enabledModulesValue.Trim().ToLower(CultureInfo.InvariantCulture).Split(',');
+            string[] disabledModules = disabledModulesValue == null ? new string[0] : disabledModulesValue.Trim().ToLower(CultureInfo.InvariantCulture).Split(',');
 
             List<Library.Interface.IGenericModule> loadedModules = new List<IGenericModule>();
             foreach (Library.Interface.IGenericModule m in Library.DynamicLoader.GenericLoader.Modules)
