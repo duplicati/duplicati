@@ -31,7 +31,7 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, AppUt
                         current[i].Result = JSON.parse(current[i].Message);
                         current[i].Formatted = JSON.stringify(current[i].Result, null, 2);
                     }
-                    catch {}
+                    catch (err) {}
                 }
                 $scope.GeneralData = current;
                 $scope.$digest();
