@@ -25,6 +25,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Renci.SshNet;
 using Renci.SshNet.Common;
+using System.Globalization;
 
 namespace Duplicati.Library.Backend
 {
@@ -289,10 +290,10 @@ namespace Duplicati.Library.Backend
                 string hostFingerprint = e.HostKeyName + " " + e.KeyLength.ToString() + " " + BitConverter.ToString(e.FingerPrint).Replace('-', ':');
 
                 if (string.IsNullOrEmpty(m_fingerprint))
-                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower(), SSH_FINGERPRINT_OPTION, SSH_FINGERPRINT_ACCEPT_ANY_OPTION), hostFingerprint, m_fingerprint);
+                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower(CultureInfo.InvariantCulture), SSH_FINGERPRINT_OPTION, SSH_FINGERPRINT_ACCEPT_ANY_OPTION), hostFingerprint, m_fingerprint);
 
                 if (!String.Equals(hostFingerprint, m_fingerprint, StringComparison.OrdinalIgnoreCase))
-                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower()), hostFingerprint, m_fingerprint);
+                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower(CultureInfo.InvariantCulture)), hostFingerprint, m_fingerprint);
                 else
                     e.CanTrust = true;
             };

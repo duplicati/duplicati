@@ -327,7 +327,7 @@ namespace Duplicati.Library.Backend
             /*if (stream.CanSeek)
             {
                 System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
-                req.Headers["ETag"] = Core.Utility.ByteArrayAsHexString(md5.ComputeHash(stream)).ToLower();
+                req.Headers["ETag"] = Core.Utility.ByteArrayAsHexString(md5.ComputeHash(stream)).ToLower(System.Globalization.CultureInfo.InvariantCulture);
                 stream.Seek(0, System.IO.SeekOrigin.Begin);
 
                 using (System.IO.Stream s = req.GetRequestStream())
