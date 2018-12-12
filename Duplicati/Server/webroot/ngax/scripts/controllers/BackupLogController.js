@@ -1,4 +1,4 @@
-backupApp.controller('BackupLogController', function($scope, $routeParams, AppUtils, LogService, BackupList) {
+backupApp.controller('BackupLogController', function($scope, $routeParams, AppUtils, LogService, BackupList, gettextCatalog) {
     $scope.BackupID = $routeParams.backupid;
     
     const PAGE_SIZE = 100;
@@ -11,6 +11,8 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, AppUt
     $scope.parseTimestampToSeconds = function(ts) {
         return moment(ts).format('YYYY-MM-DD HH:mm:ss');
     }
+
+    $scope.gettextCatalog = gettextCatalog;
 
     $scope.formatDuration = AppUtils.formatDuration;
     $scope.formatSize = AppUtils.formatSizeString;

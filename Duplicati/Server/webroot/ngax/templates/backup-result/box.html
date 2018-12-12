@@ -16,19 +16,19 @@
                 'messages': item.Result.Warnings,
                 'length': item.Result.WarningsActualLength,
                 'type': 'Warning',
-                'title': 'Warnings' }"
+                'title': gettextCatalog.getString('Warnings') }"
             ng-include="'templates/backup-result/message-list.html'"></span>
         <span class="item" ng-if="true"
             ng-init="data = {
                 'messages': item.Result.Errors,
                 'length': item.Result.ErrorsActualLength,
                 'type': 'Error',
-                'title': 'Errors'}"
+                'title': gettextCatalog.getString('Errors') }"
             ng-include="'templates/backup-result/message-list.html'"></span>
     </div>
     <div class="box item wide four">
-        <span ng-click="log_expanded = !log_expanded" class="key" ng-style="{ cursor: 'pointer' }" translate>
-            Complete log
+        <span ng-click="log_expanded = !log_expanded" class="key" ng-style="{ cursor: 'pointer' }">
+            {{ 'Complete log' | translate }}
             <i class="fa fa-angle-{{log_expanded ? 'up': 'down'}}"></i>
         </span>
         
