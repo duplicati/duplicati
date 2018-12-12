@@ -444,7 +444,7 @@ namespace Duplicati.Library.Main.Operation
     
                                 if (key != file.Hash)
                                     throw new Exception(string.Format("Failed to restore file: \"{0}\". File hash is {1}, expected hash is {2}", file.Path, key, file.Hash));
-                                result.FilesRestored++;
+                                result.RestoredFiles++;
                                 result.SizeOfRestoredFiles += size;
                             }
                             catch (Exception ex)
@@ -461,7 +461,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles));
                 else if (fileErrors > 0)
                     Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files", fileErrors);
-                else if (result.FilesRestored == 0)
+                else if (result.RestoredFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
 
                 // Drop the temp tables
@@ -797,7 +797,7 @@ namespace Duplicati.Library.Main.Operation
                     
                     if (!SystemIO.IO_OS.DirectoryExists(folder))
                     {
-                        result.FoldersRestored++;
+                        result.RestoredFolders++;
                         
                         Logging.Log.WriteVerboseMessage(LOGTAG, "CreateFolder", "Creating folder: {0}", folder);
                             
