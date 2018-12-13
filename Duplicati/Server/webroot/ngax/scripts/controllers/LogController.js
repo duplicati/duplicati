@@ -62,9 +62,8 @@ backupApp.controller('LogController', function($scope, $timeout, AppService, Log
                 if (!result)
                     return;
                 
-                const { current, complete } = result;
-                $scope.LogData = current;
-                $scope.LogDataComplete = complete;
+                $scope.LogData = result.current;
+                $scope.LogDataComplete = result.complete;
             }); 
     };
     $scope.LoadMoreStoredData();

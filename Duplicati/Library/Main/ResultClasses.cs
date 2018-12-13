@@ -612,14 +612,14 @@ namespace Duplicati.Library.Main
 
     internal class RestoreResults : BasicResults, Library.Interface.IRestoreResults
     {
-        public long FilesRestored { get; internal set; }
+        public long RestoredFiles { get; internal set; }
         public long SizeOfRestoredFiles { get; internal set; }
-        public long FoldersRestored { get; internal set; }
-        public long SymlinksRestored { get; internal set; }
-        public long FilesPatched { get; internal set; }
-        public long FilesDeleted { get; internal set; }
-        public long FoldersDeleted { get; internal set; }
-        public long SymlinksDeleted { get; internal set; }
+        public long RestoredFolders { get; internal set; }
+        public long RestoredSymlinks { get; internal set; }
+        public long PatchedFiles { get; internal set; }
+        public long DeletedFiles { get; internal set; }
+        public long DeletedFolders { get; internal set; }
+        public long DeletedSymlinks { get; internal set; }
 
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
 

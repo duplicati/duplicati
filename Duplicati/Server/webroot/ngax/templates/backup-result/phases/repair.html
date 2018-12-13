@@ -26,27 +26,27 @@
             'messages': item.Result.RepairResults.Warnings,
             'length': item.Result.RepairResults.WarningsActualLength,
             'type': 'Warning',
-            'title': 'Warnings' }"
+            'title': gettextCatalog.getString('Warnings') }"
         ng-include="'templates/backup-result/message-list.html'"></span>
     <span class="item" ng-if="true"
         ng-init="data = {
             'messages': item.Result.RepairResults.Errors,
             'length': item.Result.RepairResults.ErrorsActualLength,
             'type': 'Error',
-            'title': 'Errors'}"
+            'title': gettextCatalog.getString('Errors') }"
         ng-include="'templates/backup-result/message-list.html'"></span>
     <span class="item" ng-if="true" 
         ng-init="data = {
             'messages': item.Result.RepairResults.RecreateDatabaseResults.Warnings,
             'length': item.Result.RepairResults.RecreateDatabaseResults.WarningsActualLength,
             'type': 'Warning',
-            'title': 'Database Recreation Warnings' }"
+            'title': gettextCatalog.getString('Database Recreation Warnings') }"
         ng-include="'templates/backup-result/message-list.html'"></span>
     <span class="item" ng-if="true"
         ng-init="data = {
             'messages': item.Result.RepairResults.RecreateDatabaseResults.Errors,
             'length': item.Result.RepairResults.RecreateDatabaseResults.ErrorsActualLength,
             'type': 'Error',
-            'title': 'Database Recreation Errors'}"
+            'title': gettextCatalog.getString('Database Recreation Errors') }"
         ng-include="'templates/backup-result/message-list.html'"></span>
 </div>
