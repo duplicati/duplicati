@@ -1,3 +1,7 @@
+2018-12-13 - 2.0.4.7_canary_2018-12-13
+==========
+* Fixed an issue that broke IE, thanks @mikaelmello
+
 2018-12-11 - 2.0.4.6_canary_2018-12-11
 ==========
 * Improved code quality and documentation, thanks @warwickmm
