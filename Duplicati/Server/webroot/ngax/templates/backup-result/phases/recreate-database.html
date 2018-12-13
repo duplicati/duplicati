@@ -26,7 +26,7 @@
             'messages': item.Result.RecreateDatabaseResults.Warnings,
             'length': item.Result.RecreateDatabaseResults.WarningsActualLength,
             'type': 'Warning',
-            'title': 'Warnings' }"
+            'title': gettextCatalog.getString('Warnings') }"
         ng-include="'templates/backup-result/message-list.html'">
     </span>
     <span class="item" ng-if="true"
@@ -34,7 +34,7 @@
             'messages': item.Result.RecreateDatabaseResults.Errors,
             'length': item.Result.RecreateDatabaseResults.ErrorsActualLength,
             'type': 'Error',
-            'title': 'Errors'}"
+            'title': gettextCatalog.getString('Errors') }"
         ng-include="'templates/backup-result/message-list.html'">
     </span>
 </div>

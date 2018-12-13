@@ -2,6 +2,9 @@
     <div class="box one" ng-include="'templates/backup-result/top-left-box.html'"></div>
     <div class="box two" ng-include="'templates/backup-result/top-right-box.html'"></div>
     <div class="box wide three">
+        <span ng-show="item.Result.MainOperation === 'Restore'" ng-include="'templates/backup-result/restore-items.html'"></span> 
+        <span ng-show="item.Result.MainOperation === 'Test'" ng-include="'templates/backup-result/test-items.html'"></span>
+
         <span ng-show="item.Result.TestResults"             class="item" ng-include="'templates/backup-result/phases/test.html'"></span>
         <span ng-show="item.Result.CompactResults"          class="item" ng-include="'templates/backup-result/phases/compact.html'"></span>
         <span ng-show="item.Result.DeleteResults"           class="item" ng-include="'templates/backup-result/phases/delete.html'"></span>
@@ -16,25 +19,25 @@
                 'messages': item.Result.Warnings,
                 'length': item.Result.WarningsActualLength,
                 'type': 'Warning',
-                'title': 'Warnings' }"
+                'title': gettextCatalog.getString('Warnings') }"
             ng-include="'templates/backup-result/message-list.html'"></span>
         <span class="item" ng-if="true"
             ng-init="data = {
                 'messages': item.Result.Errors,
                 'length': item.Result.ErrorsActualLength,
                 'type': 'Error',
-                'title': 'Errors'}"
+                'title': gettextCatalog.getString('Errors') }"
             ng-include="'templates/backup-result/message-list.html'"></span>
     </div>
     <div class="box item wide four">
-        <span ng-click="log_expanded = !log_expanded" class="key" ng-style="{ cursor: 'pointer' }" translate>
-            Complete log
+        <span ng-click="log_expanded = !log_expanded" class="key" ng-style="{ cursor: 'pointer' }">
+            {{ 'Complete log' | translate }}
             <i class="fa fa-angle-{{log_expanded ? 'up': 'down'}}"></i>
         </span>
         
-        <a href ng-show="log_expanded" ngclipboard data-clipboard-action="copy" data-clipboard-target="#result-log-{{item.Result.ID}}">
+        <a href ng-show="log_expanded" ngclipboard data-clipboard-action="copy" data-clipboard-target="#result-log-{{$index}}">
             <i class="fa fa-clipboard"></i> 
         </a>
-        <div ng-show="log_expanded" id="result-log-{{item.Result.ID}}" class="prewrapped-text exceptiontext">{{ item.Formatted }}</div>
+        <div ng-show="log_expanded" id="result-log-{{$index}}" class="prewrapped-text exceptiontext">{{ item.Formatted }}</div>
     </div>
 </div>

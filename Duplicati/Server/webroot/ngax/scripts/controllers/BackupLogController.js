@@ -1,4 +1,4 @@
-backupApp.controller('BackupLogController', function($scope, $routeParams, AppUtils, LogService, BackupList) {
+backupApp.controller('BackupLogController', function($scope, $routeParams, AppUtils, LogService, BackupList, gettextCatalog) {
     $scope.BackupID = $routeParams.backupid;
     
     const PAGE_SIZE = 100;
@@ -12,6 +12,8 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, AppUt
         return moment(ts).format('YYYY-MM-DD HH:mm:ss');
     }
 
+    $scope.gettextCatalog = gettextCatalog;
+
     $scope.formatDuration = AppUtils.formatDuration;
     $scope.formatSize = AppUtils.formatSizeString;
     
@@ -23,15 +25,20 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, AppUt
                 if (!result)
                     return;
 
-                const { current, complete } = result;
-                $scope.GeneralDataComplete = complete;
+                var current = result.current;
+                $scope.GeneralDataComplete = result.complete;
                 $scope.Backup = BackupList.lookup[$scope.BackupID];
-                for (let i in current) {
+                for (var i in current) {
                     try { 
                         current[i].Result = JSON.parse(current[i].Message);
                         current[i].Formatted = JSON.stringify(current[i].Result, null, 2);
                     }
-                    catch {}
+                    catch (err) {
+                        // catch block meant to be empty (avoiding eslint warning)
+                        // it is empty because if a result fails to be parsed, it was
+                        // probably stored in the old format and thus should be displayed
+                        // with a single gray code box.
+                    }
                 }
                 $scope.GeneralData = current;
                 $scope.$digest();
@@ -43,9 +50,8 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, AppUt
                 if (!result)
                     return;
                 
-                const { current, complete } = result;
-                $scope.RemoteData = current;
-                $scope.RemoteDataComplete = complete;
+                $scope.RemoteData = result.current;
+                $scope.RemoteDataComplete = result.complete;
                 $scope.Backup = BackupList.lookup[$scope.BackupID];
                 $scope.$digest();
             }); 

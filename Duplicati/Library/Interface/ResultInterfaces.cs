@@ -148,14 +148,14 @@ namespace Duplicati.Library.Interface
     
     public interface IRestoreResults : IBasicResults
     {
-        long FilesRestored { get; }
+        long RestoredFiles { get; }
         long SizeOfRestoredFiles { get; }
-        long FoldersRestored { get; }
-        long SymlinksRestored { get; }
-        long FilesPatched { get; }
-        long FilesDeleted { get; }
-        long FoldersDeleted { get; }
-        long SymlinksDeleted { get; }
+        long RestoredFolders { get; }
+        long RestoredSymlinks { get; }
+        long PatchedFiles { get; }
+        long DeletedFiles { get; }
+        long DeletedFolders { get; }
+        long DeletedSymlinks { get; }
         
         IRecreateDatabaseResults RecreateDatabaseResults { get; }
     }

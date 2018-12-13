@@ -34,6 +34,13 @@
     <script type="text/javascript" src="scripts/libs/oldbrowsersupport.js"></script>
     <script type="text/javascript" src="scripts/libs/cryptojs.js"></script>
     <script type="text/javascript" src="scripts/libs/zxcvbn.js"></script>
+    <script>
+        if (navigator.userAgent.indexOf('MSIE') !== -1 || navigator.appVersion.indexOf('Trident/') > -1) {
+            /* Microsoft Internet Explorer detected in. */
+            /* Bluebird is necessary to make Promises work in IE */
+            document.write('<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.3.4/bluebird.min.js" ></scr' + 'ipt>');
+        }
+    </script>
 
     <script type="text/javascript" src="scripts/libs/jquery.min.js"></script>
     <script type="text/javascript" src="scripts/libs/jquery-ui.min.js"></script>

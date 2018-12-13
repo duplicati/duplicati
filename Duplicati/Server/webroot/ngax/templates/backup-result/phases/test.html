@@ -30,13 +30,13 @@
             'messages': item.Result.TestResults.Warnings,
             'length': item.Result.TestResults.WarningsActualLength,
             'type': 'Warning',
-            'title': 'Warnings' }"
+            'title': gettextCatalog.getString('Warnings') }"
         ng-include="'templates/backup-result/message-list.html'"></span>
     <span class="item" ng-if="true"
         ng-init="data = {
             'messages': item.Result.TestResults.Errors,
             'length': item.Result.TestResults.ErrorsActualLength,
             'type': 'Error',
-            'title': 'Errors'}"
+            'title': gettextCatalog.getString('Errors') }"
         ng-include="'templates/backup-result/message-list.html'"></span>
 </div>
