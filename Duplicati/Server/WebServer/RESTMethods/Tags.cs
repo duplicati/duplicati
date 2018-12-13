@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Duplicati.Server.WebServer.RESTMethods
@@ -30,10 +31,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     .Union(Serializable.ServerSettings.EncryptionModules)
                     .Union(Serializable.ServerSettings.BackendModules)
                     .Union(Serializable.ServerSettings.GenericModules)
-                    select n.Key.ToLower();
+                    select n.Key.ToLower(CultureInfo.InvariantCulture);
 
             // Append all known tags
-            r = r.Union(from n in Program.DataConnection.Backups select n.Tags into p from x in p select x.ToLower());
+            r = r.Union(from n in Program.DataConnection.Backups select n.Tags into p from x in p select x.ToLower(CultureInfo.InvariantCulture));
             info.OutputOK(r);       
         }
 
