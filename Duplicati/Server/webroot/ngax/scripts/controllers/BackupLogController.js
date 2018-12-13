@@ -33,7 +33,12 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, AppUt
                         current[i].Result = JSON.parse(current[i].Message);
                         current[i].Formatted = JSON.stringify(current[i].Result, null, 2);
                     }
-                    catch (err) {}
+                    catch (err) {
+                        // catch block meant to be empty (avoiding eslint warning)
+                        // it is empty because if a result fails to be parsed, it was
+                        // probably stored in the old format and thus should be displayed
+                        // with a single gray code box.
+                    }
                 }
                 $scope.GeneralData = current;
                 $scope.$digest();

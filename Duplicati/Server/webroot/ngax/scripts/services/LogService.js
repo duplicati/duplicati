@@ -32,4 +32,4 @@ backupApp.service('LogService', function(AppService, DialogService, gettextCatal
                 });   
         });
     };
-})
+});
