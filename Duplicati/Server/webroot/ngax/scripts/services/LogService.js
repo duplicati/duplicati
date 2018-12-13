@@ -24,8 +24,8 @@ backupApp.service('LogService', function(AppService, DialogService, gettextCatal
                     resolve({ current: current, complete: resp.data.length < pageSize });
                 }, function(resp) {	
                     var message = resp.statusText;	
-                    if (err.data != null && err.data.Message != null)
-                    message = err.data.Message;
+                    if (resp.data != null && resp.data.Message != null)
+                    message = resp.data.Message;
                     
                     loadingData = false;
                     DialogService.dialog('Error', gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));	
