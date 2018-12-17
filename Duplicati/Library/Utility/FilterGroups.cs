@@ -297,7 +297,8 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/Safe Browsing*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/iPhoto Library/iPod Photo Cache/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Mozilla/Firefox/*cache*");
-                yield return FilterGroups.CreateRegexFilter(@".*/(cookies|permissions).sqlite(-.{3})?");
+                yield return FilterGroups.CreateWildcardFilter(@"*/cookies.sqlite-*"); // Journal for database used to store Firefox cookies between sessions
+                yield return FilterGroups.CreateWildcardFilter(@"*/permissions.sqlite-*"); // Journal for database used to store Firefox site-specific permissions
             }
 
             if (group.HasFlag(FilterGroup.TemporaryFiles))
