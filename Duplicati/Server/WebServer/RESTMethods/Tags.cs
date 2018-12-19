@@ -14,11 +14,41 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;using System.Collections.Generic;using System.Linq;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class Tags : IRESTMethodGET, IRESTMethodDocumented
-    {        public void GET(string key, RequestInfo info)        {            var r =                 from n in                 Serializable.ServerSettings.CompressionModules                    .Union(Serializable.ServerSettings.EncryptionModules)                    .Union(Serializable.ServerSettings.BackendModules)                    .Union(Serializable.ServerSettings.GenericModules)                    select n.Key.ToLower();            // Append all known tags            r = r.Union(from n in Program.DataConnection.Backups select n.Tags into p from x in p select x.ToLower());            info.OutputOK(r);               }        public string Description { get { return "Gets the list of tags"; } }        public IEnumerable<KeyValuePair<string, Type>> Types        {            get            {                return new KeyValuePair<string, Type>[] {                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(string[])),                };            }        }    }
+    {
+        public void GET(string key, RequestInfo info)
+        {
+            var r = 
+                from n in 
+                Serializable.ServerSettings.CompressionModules
+                    .Union(Serializable.ServerSettings.EncryptionModules)
+                    .Union(Serializable.ServerSettings.BackendModules)
+                    .Union(Serializable.ServerSettings.GenericModules)
+                    select n.Key.ToLower(CultureInfo.InvariantCulture);
+
+            // Append all known tags
+            r = r.Union(from n in Program.DataConnection.Backups select n.Tags into p from x in p select x.ToLower(CultureInfo.InvariantCulture));
+            info.OutputOK(r);       
+        }
+
+        public string Description { get { return "Gets the list of tags"; } }
+
+        public IEnumerable<KeyValuePair<string, Type>> Types
+        {
+            get
+            {
+                return new KeyValuePair<string, Type>[] {
+                    new KeyValuePair<string, Type>(HttpServer.Method.Get, typeof(string[])),
+                };
+            }
+        }
+    }
 }
 

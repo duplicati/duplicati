@@ -24,12 +24,12 @@ namespace Duplicati.Library.Main.Volumes
             m_volumename = name;
         }
 
-        public VolumeWriterBase(Options options)
+        protected VolumeWriterBase(Options options)
             : this(options, DateTime.UtcNow)
         {
         }
 
-        public static string GenerateGuid(Options options)
+        public static string GenerateGuid()
         {
             var s = Guid.NewGuid().ToString("N");
 
@@ -41,16 +41,19 @@ namespace Duplicati.Library.Main.Volumes
 
         public void ResetRemoteFilename(Options options, DateTime timestamp)
         {
-            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
         }
 
-        public VolumeWriterBase(Options options, DateTime timestamp)
+        protected VolumeWriterBase(Options options, DateTime timestamp)
             : base(options)
         {
             if (!string.IsNullOrWhiteSpace(options.AsynchronousUploadFolder))
-                m_localfile = Library.Utility.TempFile.CreateInFolder(options.AsynchronousUploadFolder);
+                m_localfile = Library.Utility.TempFile.CreateInFolder(options.AsynchronousUploadFolder, true);
             else
                 m_localfile = new Library.Utility.TempFile();
+
+            // TODO(danstahr): This is a hack! Figure out why the file is being disposed of prematurely.
+            m_localfile.Protected = true;
 
             ResetRemoteFilename(options, timestamp);
 
@@ -58,7 +61,7 @@ namespace Duplicati.Library.Main.Volumes
             m_compression = DynamicLoader.CompressionLoader.GetModule(options.CompressionModule, m_localFileStream, ArchiveMode.Write, options.RawOptions);
 
             if (m_compression == null)
-                throw new UserInformationException(string.Format("Unsupported compression module: {0}", options.CompressionModule));
+                throw new UserInformationException(string.Format("Unsupported compression module: {0}", options.CompressionModule), "UnsupportedCompressionModule");
 
             if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && m_compression is Library.Interface.ICompressionHinting)
                 ((Library.Interface.ICompressionHinting)m_compression).LowOverheadMode = true;
@@ -78,6 +81,7 @@ namespace Duplicati.Library.Main.Volumes
                 try { m_compression.Dispose(); }
                 finally { m_compression = null; }
 
+            m_localfile.Protected = false;
             if (m_localFileStream != null)
                 try { m_localFileStream.Dispose(); }
                 finally { m_localFileStream = null; }

@@ -29,6 +29,7 @@ using Duplicati.Library.Interface;
 
 using SP = Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client; // Plain 'using' for extension methods
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -54,15 +55,15 @@ namespace Duplicati.Library.Backend
         #region [Variables and constants declarations]
 
         /// <summary> Auth-stripped HTTPS-URI as passed to constructor. </summary>
-        private Utility.Uri m_orgUrl;
+        private readonly Utility.Uri m_orgUrl;
         /// <summary> Server relative path to backup folder. </summary>
-        private string m_serverRelPath;
+        private readonly string m_serverRelPath;
         /// <summary> User's credentials to create client context </summary>
         private System.Net.ICredentials m_userInfo;
         /// <summary> Flag indicating to move files to recycler on deletion. </summary>
-        private bool m_deleteToRecycler = false;
+        private readonly bool m_deleteToRecycler = false;
         /// <summary> Flag indicating to use UploadBinaryDirect. </summary>
-        private bool m_useBinaryDirectMode = false;
+        private readonly bool m_useBinaryDirectMode = false;
 
         /// <summary> URL to SharePoint web. Will be determined from m_orgUri on first use. </summary>
         private string m_spWebUrl;
@@ -70,10 +71,10 @@ namespace Duplicati.Library.Backend
         private SP.ClientContext m_spContext;
 
         /// <summary> The chunk size for uploading files. </summary>
-        private int m_fileChunkSize = 4 << 20; // Default: 4MB
+        private readonly int m_fileChunkSize = 4 << 20; // Default: 4MB
 
         /// <summary> The chunk size for uploading files. </summary>
-        private int m_useContextTimeoutMs = -1; // default: do not touch original setting
+        private readonly int m_useContextTimeoutMs = -1; // default: do not touch original setting
 
         #endregion
 
@@ -113,6 +114,11 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("chunk-size", CommandLineArgument.ArgumentType.Size, Strings.SharePoint.DescriptionChunkSizeShort, Strings.SharePoint.DescriptionChunkSizeLong, "4mb"),
                 });
             }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { m_orgUrl.Host, string.IsNullOrWhiteSpace(m_spWebUrl) ? null : new Utility.Uri(m_spWebUrl).Host }; }
         }
 
         #endregion
@@ -164,8 +170,7 @@ namespace Duplicati.Library.Backend
             m_serverRelPath = u.Path;
             if (!m_serverRelPath.StartsWith("/", StringComparison.Ordinal))
                 m_serverRelPath = "/" + m_serverRelPath;
-            if (!m_serverRelPath.EndsWith("/", StringComparison.Ordinal))
-                m_serverRelPath += "/";
+            m_serverRelPath = Util.AppendDirSeparator(m_serverRelPath, "/");
             // remove marker for SP-Web
             m_serverRelPath = m_serverRelPath.Replace("//", "/");
 
@@ -412,7 +417,7 @@ namespace Duplicati.Library.Backend
             public CustomWebRequestExecutorFactory(WebRequestExecutorFactory parent)
             {
                 if (parent == null)
-                    throw new ArgumentNullException("parent");
+                    throw new ArgumentNullException(nameof(parent));
                 m_parent = parent;
             }
 
@@ -426,7 +431,7 @@ namespace Duplicati.Library.Backend
             {
                 var req = m_parent.CreateWebRequestExecutor(context, requestUrl);
                 if (string.IsNullOrWhiteSpace(req.WebRequest.UserAgent))
-                    req.WebRequest.UserAgent = "Duplicati OD4B v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                    req.WebRequest.UserAgent = "Duplicati OD4B v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                 return req;
             }
         }
@@ -661,12 +666,14 @@ namespace Duplicati.Library.Backend
                 string[] folderNames = m_serverRelPath.Substring(0, m_serverRelPath.Length - 1).Split('/');
                 folderNames = Array.ConvertAll(folderNames, fold => System.Net.WebUtility.UrlDecode(fold));
                 var spfolders = new SP.Folder[folderNames.Length];
-                string folderRelPath = "";
+                StringBuilder relativePathBuilder = new StringBuilder();
                 int fi = 0;
                 for (; fi < folderNames.Length; fi++)
                 {
-                    folderRelPath += System.Web.HttpUtility.UrlPathEncode(folderNames[fi]) + "/";
+                    relativePathBuilder.Append(System.Web.HttpUtility.UrlPathEncode(folderNames[fi])).Append("/");
                     if (fi < pathLengthToWeb) continue;
+
+                    string folderRelPath = relativePathBuilder.ToString();
                     var folder = ctx.Web.GetFolderByServerRelativeUrl(folderRelPath);
                     spfolders[fi] = folder;
                     ctx.Load(folder, f => f.Exists);

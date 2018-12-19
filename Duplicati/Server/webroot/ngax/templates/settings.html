@@ -1,19 +1,36 @@
 <div class="settings" ng-controller="SystemSettingsController">
     <h1 translate>Settings</h1>
-    
+
     <form class="styled">
         <h2 translate>Access to user interface</h2>
         <div class="input mixed multiple">
             <input type="checkbox" class="checkbox" id="hasPassword" name="hasPassword" ng-model="requireRemotePassword" />
-            <label for="password" translate>Password</label>
+            <label for="password" translate>Password</label><br>
             <input type="password" id="password" name="password" ng-model="remotePassword" />
+        </div>
+        <div class="input mixed multiple">
+            <label for="confirm-password" translate>Confirm password</label><br>
+            <input type="password" id="confirm-password" name="confirm-password" ng-model="confirmPassword" autocomplete="new-password" />
         </div>
         <div class="input checkbox">
             <input type="checkbox" class="checkbox" id="remote" name="remote" ng-model="allowRemoteAccess" />
             <label for="remote" translate>Allow remote access (requires restart)</label>
+            <div class="sublabel" translate>By allowing remote access, the server listens to requests from any machine on your network. If you enable this option, make sure you are always using the computer on a secure firewall protected network.</div>
         </div>
-        
-        <h2>{{'Pause after startup or hibernation' | translate}}<span class="info">i</span></h2>
+        <div class="input mixed multiple" ng-show="allowRemoteAccess">
+            <label for="hostnames" translate>Hostnames</label>
+            <input type="text" id="hostnames" name="hostnames" ng-model="remoteHostnames" />
+            <div class="sublabel" translate>To prevent various DNS based attacks, Duplicati limits the allowed hostnames to the ones listed here. Direct IP access and localhost is always allowed. Multiple hostnames can be supplied with a semicolon separator. If any of the allowed hostnames is an asterisk (*), all hostnames are allowed and this feature is disabled. If the field is empty, only IP address and localhost access is allowed.</div>
+        </div>
+
+        <div class="input checkbox">
+            <input type="checkbox" class="checkbox" id="trayiconlogin" name="trayiconlogin" ng-model="disableTrayIconLogin" />
+            <label for="trayiconlogin" translate>Prevent tray icon automatic log-in</label>
+            <div class="sublabel" translate>By default, the tray icon will open the user interface with a token than unlocks the user interface. This ensures that you can access the user interface from the tray icon, while requiring others to enter a password. If you prefer having to type in the password, even when accessing the user interface from the tray icon, enable this option.</div>
+        </div>
+
+
+        <h2>{{'Pause after startup or hibernation' | translate}}</h2>
         <div class="input mixed multiple">
             <label for="pauseTime" translate>Pause</label>
             <select id="pauseTime" name="pauseTime" ng-model="startupDelayDurationValue">
@@ -33,6 +50,7 @@
                 <option value="m" translate>Minutes</option>
                 <option value="h" translate>Hours</option>
             </select>
+            <div class="sublabel" translate>Duplicati will run when started, but will remain in a paused state for the duration. Duplicati will occupy minimal system resources and no backups will be run.</div>
         </div>
 
         <h2 translate>User interface settings</h2>
@@ -54,7 +72,7 @@
                 <option value="dark" translate>The dark theme (by Michal)</option>
             </select>
         </div>
-        
+
         <h2 translate>Donation messages</h2>
         <div class="input checkbox">
             <label for="suppresDonationMessages" translate>Donation messages</label>
@@ -68,7 +86,7 @@
             <label for="updateChannelDefault" translate translate-params-channelname="SystemInfo.DefaultUpdateChannel">Default ({{channelname}})</label>
             <div class="sublabel" class="" translate translate-params-channelname="SystemInfo.BaseVersionName">Same as the base install version: {{channelname}}</div>
         </div>
-        
+
         <!--
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelStable" value="stable" name="updateChannel" ng-model="updateChannel" />
@@ -79,22 +97,22 @@
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelBeta" value="beta" name="updateChannel" ng-model="updateChannel" />
             <label for="updateChannelBeta" translate>Beta</label>
-            <div class="sublabel" translate>Try out the new features we are working on. Don't use with important data.</div>
+            <div class="sublabel" translate>Try out the new features that we are working on. Currently the most stable version available. Test Restore data before using this in production environments.</div>
         </div>
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelExperimental" value="experimental" name="updateChannel" ng-model="updateChannel" />
             <label for="updateChannelExperimental" translate>Experimental</label>
-            <div class="sublabel" translate>Specific builds for developers only.</div>
+            <div class="sublabel" translate>Specific builds for developers only. Not for use with important data.</div>
         </div>
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelCanary" value="canary" name="updateChannel" ng-model="updateChannel" />
             <label for="updateChannelCanary" translate>Canary</label>
-            <div class="sublabel" translate>Individual builds for developers only.</div>
+            <div class="sublabel" translate>Individual builds for developers only. Not for use with important data.</div>
         </div>
         <!--
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelNightly" value="nightly" name="updateChannel" ng-model="updateChannel" />
-            <label for="updateChannelNightly" translate>Nightly</label>            
+            <label for="updateChannelNightly" translate>Nightly</label>
             <div class="sublabel" translate>Regular builds for developers only</div>
         </div>
         -->
@@ -112,13 +130,13 @@
                 <option value="none" translate>None / disabled</option>
             </select>
             <div class="sublabel"><p translate translate-params-link="'https://usage-reporter.duplicati.com/'">Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <external-link link="link">public usage statistics</external-link></p>
-            
+
             <p translate>All usage reports are sent anonymously and do not contain any personal information. They contain information about hardware and operating system, the type of backend, backup duration, overall size of source data and similar data. They do not contain paths, filenames, usernames, passwords or similar sensitive information.</p></div>
         </div>
 
         <div ng-repeat="module in ServerModules">
             <h2>{{module.DisplayName}}</h2>
-            
+
             <p ng-show="(module.ServiceLink || '').length > 0"><external-link link="module.ServiceLink">{{module.Description}}</external-link></p>
             <p ng-show="(module.ServiceLink || '').length == 0">{{module.Description}}</p>
 
@@ -127,7 +145,7 @@
                 <input type="text" title="{{opt.LongDescription}}" name="{{module.Key}}-{{opt.Name}}" id="{{module.Key}}-{{opt.Name}}" ng-model="servermodulesettings[opt.Name]" />
             </div>
         </div>
-                    
+
         <h2 translate>Default options</h2>
         <div class="sublabel"><p translate>Options added here are applied to all backups, but can be overridden in each individual backup</p></div>
         <div class="input textarea" ng-show="ShowAdvancedTextArea">
@@ -141,7 +159,7 @@
             <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle" translate>Edit as text</a>
             <advanced-options-editor ng-option-list="advancedOptionList" ng-model="advancedOptions"></advanced-options-editor>
         </div>
-        
+
         <div class="buttons">
             <a href="#" id="cancel" class="submit" translate>Cancel</a>
             <input type="button" id="save" class="submit" value="{{'OK' | translate}}" ng-click="save()" />

@@ -148,14 +148,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 if (!key.EndsWith("/abort", StringComparison.OrdinalIgnoreCase))
                 {
-                    info.ReportClientError("Only abort commands are allowed");
+                    info.ReportClientError("Only abort commands are allowed", System.Net.HttpStatusCode.BadRequest);
                     return;
                 }
 
                 key = key.Substring(0, key.Length - "/abort".Length);
                 if (string.IsNullOrWhiteSpace(key))
                 {
-                    info.ReportClientError("No task key found");
+                    info.ReportClientError("No task key found", System.Net.HttpStatusCode.BadRequest);
                     return;
                 }
 
@@ -198,7 +198,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     continue;
                 }
 
-                await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(60));
+                await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(60)).ConfigureAwait(false);
             }
         }
 

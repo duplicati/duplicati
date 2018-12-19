@@ -21,11 +21,17 @@ using Duplicati.Library.Utility;
 using System.Linq;
 using Duplicati.Library.Logging;
 using System.Reflection;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.UnitTest
 {
     public static class TestUtils
     {
+        /// <summary>
+        /// The log tag
+        /// </summary>
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType(typeof(TestUtils));
+
         public static Dictionary<string, string> DefaultOptions
         {
             get
@@ -63,7 +69,7 @@ namespace Duplicati.UnitTest
         /// <param name="targetfolder">Destination directory path</param>
         public static void CopyDirectoryRecursive(string sourcefolder, string targetfolder)
         {
-            sourcefolder = Library.Utility.Utility.AppendDirSeparator(sourcefolder);
+            sourcefolder = Util.AppendDirSeparator(sourcefolder);
 
             var work = new Queue<string>();
             work.Enqueue(sourcefolder);
@@ -128,7 +134,7 @@ namespace Duplicati.UnitTest
         /// <param name='m'>The string to find</param>
         private static int IndexOf(List<string> lst, string m)
         {
-            StringComparison sc = Duplicati.Library.Utility.Utility.ClientFilenameStringComparision;
+            StringComparison sc = Duplicati.Library.Utility.Utility.ClientFilenameStringComparison;
             for(int i = 0; i < lst.Count; i++)
                 if (lst[i].Equals(m, sc))
                     return i;
@@ -145,8 +151,8 @@ namespace Duplicati.UnitTest
         public static void VerifyDir(string f1, string f2, bool verifymetadata)
         {
             var anymissing = false;
-            f1 = Utility.AppendDirSeparator(f1);
-            f2 = Utility.AppendDirSeparator(f2);
+            f1 = Util.AppendDirSeparator(f1);
+            f2 = Util.AppendDirSeparator(f2);
 
             var folders1 = Utility.EnumerateFolders(f1);
             var folders2 = Utility.EnumerateFolders(f2).ToList();
@@ -158,7 +164,7 @@ namespace Duplicati.UnitTest
                 int ix = IndexOf(folders2, target);
                 if (ix < 0)
                 {
-                    Log.WriteMessage("Missing folder: " + relpath, LogMessageType.Error);
+                    Log.WriteErrorMessage(LOGTAG, "MissingFolder", null, "Missing folder: {0}", relpath);
                     Console.WriteLine("Missing folder: " + relpath);
                     anymissing = true;
                 }
@@ -168,7 +174,7 @@ namespace Duplicati.UnitTest
 
             foreach (string s in folders2)
             {
-                Log.WriteMessage("Extra folder: " + s.Substring(f2.Length), LogMessageType.Error);
+                Log.WriteErrorMessage(LOGTAG, "ExtraFolder", null, "Extra folder: {0}", s.Substring(f2.Length));
                 Console.WriteLine("Extra folder: " + s.Substring(f2.Length));
             }
 
@@ -181,7 +187,7 @@ namespace Duplicati.UnitTest
                 int ix = IndexOf(files2, target);
                 if (ix < 0)
                 {
-                    Log.WriteMessage("Missing file: " + relpath, LogMessageType.Error);
+                    Log.WriteErrorMessage(LOGTAG, "MissingFile", null, "Missing file: {0}", relpath);
                     Console.WriteLine("Missing file: " + relpath);
                     anymissing = true;
                 }
@@ -190,7 +196,7 @@ namespace Duplicati.UnitTest
                     files2.RemoveAt(ix);
                     if (!CompareFiles(s, target, relpath, verifymetadata))
                     {
-                        Log.WriteMessage("File differs: " + relpath, LogMessageType.Error);
+                        Log.WriteErrorMessage(LOGTAG, "FileDiffers", null, "File differs: {0}", relpath);
                         Console.WriteLine("File differs: " + relpath);
                     }
                 }
@@ -198,7 +204,7 @@ namespace Duplicati.UnitTest
 
             foreach (string s in files2)
             {
-                Log.WriteMessage("Extra file: " + s.Substring(f2.Length), LogMessageType.Error);
+                Log.WriteErrorMessage(LOGTAG, "ExtraFile", null, "Extra file: {0}", s.Substring(f2.Length));
                 Console.WriteLine("Extra file: " + s.Substring(f2.Length));
             }
 
@@ -219,7 +225,7 @@ namespace Duplicati.UnitTest
             using (System.IO.FileStream fs2 = System.IO.File.OpenRead(f2))
                 if (fs1.Length != fs2.Length)
                 {
-                    Log.WriteMessage("Lengths differ: " + display + ", " + fs1.Length.ToString() + " vs. " + fs2.Length.ToString(), LogMessageType.Error);
+                    Log.WriteErrorMessage(LOGTAG, "LengthsDiffer", null, "Lengths differ: {0}, {1} vs {2}", display, fs1.Length.ToString(), fs2.Length.ToString());
                     Console.WriteLine("Lengths differ: " + display + ", " + fs1.Length.ToString() + " vs. " + fs2.Length.ToString());
                     return false;
                 }
@@ -234,7 +240,7 @@ namespace Duplicati.UnitTest
                         for(long l = 0; l < len; l++)
                             if (fs1.ReadByte() != fs2.ReadByte())
                             {
-                                Log.WriteMessage("Mismatch in byte " + l.ToString() + " in file " + display, LogMessageType.Error);
+                                Log.WriteErrorMessage(LOGTAG, "MismatchInFile", null, "Mismatch in byte {0} in file {1}", l.ToString(), display);
                                 Console.WriteLine("Mismatch in byte " + l.ToString() + " in file " + display);
                                 return false;
                             }
@@ -245,13 +251,13 @@ namespace Duplicati.UnitTest
             {
                 if (System.IO.File.GetLastWriteTime(f1) != System.IO.File.GetLastWriteTime(f2))
                 {
-                    Log.WriteMessage("Mismatch in lastmodified for " + f2 + ", " + System.IO.File.GetLastWriteTimeUtc(f1) + " vs. " + System.IO.File.GetLastWriteTimeUtc(f2), LogMessageType.Warning);
+                    Log.WriteWarningMessage(LOGTAG, "MismatchInLastModified", null, "Mismatch in lastmodified for {0}, {1} vs {2}", f2, System.IO.File.GetLastWriteTimeUtc(f1), System.IO.File.GetLastWriteTimeUtc(f2));
                     Console.WriteLine("Mismatch in lastmodified for " + f2 + ", " + System.IO.File.GetLastWriteTimeUtc(f1) + " vs. " + System.IO.File.GetLastWriteTimeUtc(f2));
                 }
 
                 if (System.IO.File.GetCreationTimeUtc(f1) != System.IO.File.GetCreationTimeUtc(f2))
                 {
-                    Log.WriteMessage("Mismatch in create-time for " + f2 + ", " + System.IO.File.GetCreationTimeUtc(f1) + " vs. " + System.IO.File.GetCreationTimeUtc(f2), LogMessageType.Warning);
+                    Log.WriteWarningMessage(LOGTAG, "MismatchInCreateTime", null, "Mismatch in create-time for {0}, {1} vs {2}", f2, System.IO.File.GetCreationTimeUtc(f1), System.IO.File.GetCreationTimeUtc(f2));
                     Console.WriteLine("Mismatch in create-time for " + f2 + ", " + System.IO.File.GetCreationTimeUtc(f1) + " vs. " + System.IO.File.GetCreationTimeUtc(f2));
                 }
             }

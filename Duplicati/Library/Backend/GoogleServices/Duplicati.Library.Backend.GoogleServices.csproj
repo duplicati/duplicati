@@ -41,6 +41,7 @@
     <Compile Include="GoogleCommon.cs" />
     <Compile Include="GoogleDrive.cs" />
     <Compile Include="GCSConfig.cs" />
+    <Compile Include="WebApi.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -59,6 +60,10 @@
     <ProjectReference Include="..\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
       <Project>{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}</Project>
       <Name>Duplicati.Library.OAuthHelper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

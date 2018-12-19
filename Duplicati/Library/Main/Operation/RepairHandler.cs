@@ -10,9 +10,13 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class RepairHandler
     {
-        private string m_backendurl;
-        private Options m_options;
-        private RepairResults m_result;
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<RepairHandler>();
+        private readonly string m_backendurl;
+        private readonly Options m_options;
+        private readonly RepairResults m_result;
 
         public RepairHandler(string backend, Options options, RepairResults result)
         {
@@ -21,7 +25,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
             
             if (options.AllowPassphraseChange)
-                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported);
+                throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
         
         public void Run(Library.Utility.IFilter filter = null)
@@ -42,14 +46,14 @@ namespace Duplicati.Library.Main.Operation
             }
             catch (Exception ex)
             {
-                m_result.AddWarning(string.Format("Failed to read local db {0}, error: {1}", m_options.Dbpath, ex.Message), ex);
+                Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadLocalDatabase", ex, "Failed to read local db {0}, error: {1}", m_options.Dbpath, ex.Message);
             }
             
             if (knownRemotes <= 0)
             {                
                 if (m_options.Dryrun)
                 {
-                    m_result.AddDryrunMessage("Performing dryrun recreate");
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "PerformingDryrunRecreate", "Performing dryrun recreate");
                 }
                 else
                 {
@@ -58,7 +62,7 @@ namespace Duplicati.Library.Main.Operation
                     while (System.IO.File.Exists(baseName) && i++ < 1000)
                         baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup-" + i.ToString());
                         
-                    m_result.AddMessage(string.Format("Renaming existing db from {0} to {1}", m_options.Dbpath, baseName));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RenamingDatabase", "Renaming existing db from {0} to {1}", m_options.Dbpath, baseName);
                     System.IO.File.Move(m_options.Dbpath, baseName);
                 }
                 
@@ -78,7 +82,7 @@ namespace Duplicati.Library.Main.Operation
         public void RunRepairLocal(Library.Utility.IFilter filter = null)
         {
             m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
-            using(new Logging.Timer("Recreate database for repair"))
+            using(new Logging.Timer(LOGTAG, "RecreateDbForRepair", "Recreate database for repair"))
             using(var f = m_options.Dryrun ? new Library.Utility.TempFile() : null)
             {
                 if (f != null && System.IO.File.Exists(f))
@@ -94,7 +98,7 @@ namespace Duplicati.Library.Main.Operation
         public void RunRepairRemote()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "RepairDatabaseFileDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
@@ -106,10 +110,10 @@ namespace Duplicati.Library.Main.Operation
                 Utility.VerifyParameters(db, m_options);
 
                 if (db.PartiallyRecreated)
-                    throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                    throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
 
                 if (db.RepairInProgress)
-                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.");
+                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
 
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter, null);
                 var buffer = new byte[m_options.Blocksize];
@@ -117,29 +121,29 @@ namespace Duplicati.Library.Main.Operation
                 var hashsize = blockhasher.HashSize / 8;
 
                 if (blockhasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
                 if (!blockhasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm));
+                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
                 
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
 
                 if (m_options.Dryrun)
                 {
-                    if (tp.ParsedVolumes.Count() == 0 && tp.OtherVolumes.Count() > 0)
+                    if (!tp.ParsedVolumes.Any() && tp.OtherVolumes.Any())
                     {
                         if (tp.BackupPrefixes.Length == 1)
-                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup prefix?", m_options.Prefix, tp.BackupPrefixes[0]));
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup prefix?", m_options.Prefix, tp.BackupPrefixes[0]), "RemoteFolderEmptyWithPrefix");
                         else
-                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)));
+                            throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)), "RemoteFolderEmptyWithPrefix");
                     }
-                    else if (tp.ParsedVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
+                    else if (!tp.ParsedVolumes.Any() && tp.ExtraVolumes.Any())
                     {
-                        throw new UserInformationException(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()));
+                        throw new UserInformationException(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()), "NoRemoteFilesMissing");
                     }
                 }
 
-                if (tp.ExtraVolumes.Count() > 0 || tp.MissingVolumes.Count() > 0 || tp.VerificationRequiredVolumes.Count() > 0)
+                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any())
                 {
                     if (tp.VerificationRequiredVolumes.Any())
                     {
@@ -162,21 +166,21 @@ namespace Duplicati.Library.Main.Operation
                                     KeyValuePair<string, IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>>> res;
                                    
                                     using (var tf = backend.GetWithInfo(n.Name, out size, out hash))
-                                        res = TestHandler.TestVolumeInternals(testdb, n, tf, m_options, m_result, 1);
+                                        res = TestHandler.TestVolumeInternals(testdb, n, tf, m_options, 1);
 
                                     if (res.Value.Any())
                                         throw new Exception(string.Format("Remote verification failure: {0}", res.Value.First()));
 
                                     if (!m_options.Dryrun)
                                     {
-                                        m_result.AddMessage(string.Format("Sucessfully captured hash for {0}, updating database", n.Name));
+                                        Logging.Log.WriteInformationMessage(LOGTAG, "CapturedRemoteFileHash", "Sucessfully captured hash for {0}, updating database", n.Name);
                                         db.UpdateRemoteVolume(n.Name, RemoteVolumeState.Verified, size, hash);
                                     }
 
                                 }
                                 catch (Exception ex)
                                 {
-                                    m_result.AddError(string.Format("Failed to perform verification for file: {0}, please run verify; message: {1}", n.Name, ex.Message), ex);
+                                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileVerificationError", ex, "Failed to perform verification for file: {0}, please run verify; message: {1}", n.Name, ex.Message);
                                     if (ex is System.Threading.ThreadAbortException)
                                         throw;
                                 }
@@ -209,18 +213,15 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         foreach(var rv in ifr.Volumes)
                                         {
-                                            string cmphash;
-                                            long cmpsize;
-                                            RemoteVolumeType cmptype;
-                                            RemoteVolumeState cmpstate;
-                                            if (!db.GetRemoteVolume(rv.Filename, out cmphash, out cmpsize, out cmptype, out cmpstate))
+                                            var entry = db.GetRemoteVolume(rv.Filename);
+                                            if (entry.ID < 0)
                                                 throw new Exception(string.Format("Unknown remote file {0} detected", rv.Filename));
                                             
-                                            if (!new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(cmpstate))
-                                                throw new Exception(string.Format("Volume {0} has local state {1}", rv.Filename, cmpstate));
+                                            if (!new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
+                                                throw new Exception(string.Format("Volume {0} has local state {1}", rv.Filename, entry.State));
                                         
-                                            if (cmphash != rv.Hash || cmpsize != rv.Length || ! new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(cmpstate))
-                                                throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, cmphash, cmpsize, rv.Hash, rv.Length));
+                                            if (entry.Hash != rv.Hash || entry.Size != rv.Length || ! new [] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
+                                                throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, entry.Hash, entry.Size, rv.Hash, rv.Length));
 
                                             db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks);
                                         }
@@ -235,14 +236,14 @@ namespace Duplicati.Library.Main.Operation
                                     }
                                     
                                     // All checks fine, we accept the new index file
-                                    m_result.AddMessage(string.Format("Accepting new index file {0}", n.File.Name));
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "AcceptNewIndexFile", "Accepting new index file {0}", n.File.Name);
                                     db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, size, RemoteVolumeState.Uploading);
                                     db.UpdateRemoteVolume(n.File.Name, RemoteVolumeState.Verified, size, hash);
                                     continue;
                                 }
                                 catch (Exception rex)
                                 {
-                                    m_result.AddError(string.Format("Failed to accept new index file: {0}, message: {1}", n.File.Name, rex.Message), rex);
+                                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedNewIndexFile", rex, "Failed to accept new index file: {0}, message: {1}", n.File.Name, rex.Message);
                                 }
                             }
                         
@@ -252,14 +253,21 @@ namespace Duplicati.Library.Main.Operation
                                 backend.Delete(n.File.Name, n.File.Size);
                             }
                             else
-                                m_result.AddDryrunMessage(string.Format("would delete file {0}", n.File.Name));
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteFile", "would delete file {0}", n.File.Name);
                         }
                         catch (Exception ex)
                         {
-                            m_result.AddError(string.Format("Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message), ex);
+                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedExtraFileCleanup", ex, "Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message);
                             if (ex is System.Threading.ThreadAbortException)
                                 throw;
                         }
+
+                    if (!m_options.RebuildMissingDblockFiles)
+                    {
+                        var missingDblocks = tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Blocks).ToArray();
+                        if (missingDblocks.Length > 0)
+                            throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
+                    }
                             
                     foreach(var n in tp.MissingVolumes)
                     {
@@ -282,12 +290,12 @@ namespace Duplicati.Library.Main.Operation
                                 var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
-                                
-                                db.WriteFileset(w, null, filesetId);
-    
+
+                                db.WriteFileset(w, filesetId, null);
+	
                                 w.Close();
                                 if (m_options.Dryrun)
-                                    m_result.AddDryrunMessage(string.Format("would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
                                 else
                                 {
                                     db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -326,7 +334,7 @@ namespace Duplicati.Library.Main.Operation
                                 w.Close();
                                 
                                 if (m_options.Dryrun)
-                                    m_result.AddDryrunMessage(string.Format("would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadIndexFile", "would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
                                 else
                                 {
                                     db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -372,7 +380,7 @@ namespace Duplicati.Library.Main.Operation
                                             }
                                             catch (Exception ex)
                                             {
-                                                m_result.AddError(string.Format("Failed to access file: {0}", file), ex);
+                                                Logging.Log.WriteErrorMessage(LOGTAG, "FileAccessError", ex, "Failed to access file: {0}", file);
                                             }
                                         }
                                     }
@@ -391,7 +399,7 @@ namespace Duplicati.Library.Main.Operation
                                         }
                                         catch (Exception ex)
                                         {
-                                            m_result.AddError(string.Format("Failed to access remote file: {0}", vol.Name), ex);
+                                            Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileAccessError", ex, "Failed to access remote file: {0}", vol.Name);
                                         }
                                     }
                                     
@@ -399,27 +407,27 @@ namespace Duplicati.Library.Main.Operation
                                     var missingBlocks = mbl.GetMissingBlocks().Count();
                                     if (missingBlocks > 0)
                                     {                                    
-                                        m_result.AddMessage(string.Format("Repair cannot acquire {0} required blocks for volume {1}, which are required by the following filesets: ", missingBlocks, n.Name));
+                                        Logging.Log.WriteInformationMessage(LOGTAG, "RepairMissingBlocks", "Repair cannot acquire {0} required blocks for volume {1}, which are required by the following filesets: ", missingBlocks, n.Name);
                                         foreach(var f in mbl.GetFilesetsUsingMissingBlocks())
-                                            m_result.AddMessage(f.Name);
+                                            Logging.Log.WriteInformationMessage(LOGTAG, "AffectedFilesetName", f.Name);
 
                                         var recoverymsg = string.Format("If you want to continue working with the database, you can use the \"{0}\" and \"{1}\" commands to purge the missing data from the database and the remote storage.", "list-broken-files", "purge-broken-files");
 
                                         if (!m_options.Dryrun)
                                         {
-                                            m_result.AddMessage("This may be fixed by deleting the filesets and running repair again");
+                                            Logging.Log.WriteInformationMessage(LOGTAG, "RecoverySuggestion", "This may be fixed by deleting the filesets and running repair again");
 
-                                            throw new UserInformationException(string.Format("Repair not possible, missing {0} blocks.\n" + recoverymsg, missingBlocks));
+                                            throw new UserInformationException(string.Format("Repair not possible, missing {0} blocks.\n" + recoverymsg, missingBlocks), "RepairIsNotPossible");
                                         }
                                         else
                                         {
-                                            m_result.AddMessage(recoverymsg);
+                                            Logging.Log.WriteInformationMessage(LOGTAG, "RecoverySuggestion", recoverymsg);
                                         }
                                     }
                                     else
                                     {
                                         if (m_options.Dryrun)
-                                            m_result.AddDryrunMessage(string.Format("would re-upload block file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size)));
+                                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadBlockFile", "would re-upload block file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
                                         else
                                         {
                                             db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
@@ -436,7 +444,7 @@ namespace Duplicati.Library.Main.Operation
                                 catch { }
                                 finally { newEntry = null; }
                                 
-                            m_result.AddError(string.Format("Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message), ex);
+                            Logging.Log.WriteErrorMessage(LOGTAG, "CleanupMissingFileError", ex, "Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message);
                             
                             if (ex is System.Threading.ThreadAbortException)
                                 throw;
@@ -445,7 +453,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    m_result.AddMessage("Destination and database are synchronized, not making any changes");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DatabaseIsSynchronized", "Destination and database are synchronized, not making any changes");
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);                
@@ -457,7 +465,7 @@ namespace Duplicati.Library.Main.Operation
         public void RunRepairCommon()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath));
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
@@ -468,7 +476,7 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(db, m_options);
 
                 if (db.RepairInProgress || db.PartiallyRecreated)
-                    m_result.AddWarning("The database is marked as \"in-progress\" and may be incomplete.", null);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "InProgressDatabase", null, "The database is marked as \"in-progress\" and may be incomplete.");
 
                 db.FixDuplicateMetahash();
                 db.FixDuplicateFileentries();

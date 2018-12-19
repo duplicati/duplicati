@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -17,9 +17,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-using System;
+
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -34,11 +36,11 @@ namespace Duplicati.Library.Snapshots
         /// <param name="folders">The list of folders to create snapshots of</param>
         /// <param name="options">A set of commandline options</param>
         /// <returns>The ISnapshotService implementation</returns>
-        public static ISnapshotService CreateSnapshot(string[] folders, Dictionary<string, string> options)
+        public static ISnapshotService CreateSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
             return
-                Utility.Utility.IsClientLinux
-                       ? CreateLinuxSnapshot(folders, options)
+                Platform.IsClientPosix
+                       ? CreateLinuxSnapshot(folders)
                        : CreateWindowsSnapshot(folders, options);
             
         }
@@ -51,12 +53,11 @@ namespace Duplicati.Library.Snapshots
         /// Loads a snapshot implementation for Linux
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots of</param>
-        /// <param name="options">A set of commandline options</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static ISnapshotService CreateLinuxSnapshot(string[] folders, Dictionary<string, string> options)
+        private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders)
         {
-            return new LinuxSnapshot(folders, options);
+            return new LinuxSnapshot(folders);
         }
 
         /// <summary>
@@ -66,20 +67,63 @@ namespace Duplicati.Library.Snapshots
         /// <param name="options">A set of commandline options</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static ISnapshotService CreateWindowsSnapshot(string[] folders, Dictionary<string, string> options)
+        private static ISnapshotService CreateWindowsSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
             return new WindowsSnapshot(folders, options);
         }
 
         /// <summary>
-        /// Gets an interface for System.IO, which wraps all operations in a platform consistent manner.
+        /// Extension method for ISnapshotService which determines whether the given path is a symlink.
         /// </summary>
-        public static ISystemIO SystemIO
+        /// <param name="snapshot">ISnapshotService implementation</param>
+        /// <param name="path">File or folder path</param>
+        /// <returns>Whether the path is a symlink</returns>
+        public static bool IsSymlink(this ISnapshotService snapshot, string path)
         {
-            get
-            {
-                return Utility.Utility.IsClientLinux ? (ISystemIO)new SystemIOLinux() : (ISystemIO)new SystemIOWindows();
-            }
+            return snapshot.IsSymlink(path, snapshot.GetAttributes(path));
+        }
+
+        /// <summary>
+        /// Extension method for ISnapshotService which determines whether the given path is a symlink.
+        /// </summary>
+        /// <param name="snapshot">ISnapshotService implementation</param>
+        /// <param name="path">File or folder path</param>
+        /// <param name="attributes">File attributes</param>
+        /// <returns>Whether the path is a symlink</returns>
+        public static bool IsSymlink(this ISnapshotService snapshot, string path, FileAttributes attributes)
+        {
+            // Not all reparse points are symlinks.
+            // For example, on Windows 10 Fall Creator's Update, the OneDrive folder (and all subfolders)
+            // are reparse points, which allows the folder to hook into the OneDrive service and download things on-demand.
+            // If we can't find a symlink target for the current path, we won't treat it as a symlink.
+            return (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint && !string.IsNullOrEmpty(snapshot.GetSymlinkTarget(path));
+        }
+
+        /// <summary>
+        /// Extension method for ISystemIO which determines whether the given path is a symlink.
+        /// </summary>
+        /// <param name="systemIO">ISystemIO implementation</param>
+        /// <param name="path">File or folder path</param>
+        /// <returns>Whether the path is a symlink</returns>
+        public static bool IsSymlink(this ISystemIO systemIO, string path)
+        {
+            return systemIO.IsSymlink(path, systemIO.GetFileAttributes(path));
+        }
+
+        /// <summary>
+        /// Extension method for ISystemIO which determines whether the given path is a symlink.
+        /// </summary>
+        /// <param name="systemIO">ISystemIO implementation</param>
+        /// <param name="path">File or folder path</param>
+        /// <param name="attributes">File attributes</param>
+        /// <returns>Whether the path is a symlink</returns>
+        public static bool IsSymlink(this ISystemIO systemIO, string path, FileAttributes attributes)
+        {
+            // Not all reparse points are symlinks.
+            // For example, on Windows 10 Fall Creator's Update, the OneDrive folder (and all subfolders)
+            // are reparse points, which allows the folder to hook into the OneDrive service and download things on-demand.
+            // If we can't find a symlink target for the current path, we won't treat it as a symlink.
+            return (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint && !string.IsNullOrEmpty(systemIO.GetSymlinkTarget(path));
         }
     }
 }

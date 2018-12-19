@@ -22,6 +22,10 @@ namespace Duplicati.Library.Main.Operation
 {
     public class RestoreHandlerMetadataStorage : IDisposable
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<RestoreHandlerMetadataStorage>();
         private TempFile m_temp;
         private FileStream m_stream;
         private long m_entries;
@@ -60,17 +64,12 @@ namespace Duplicati.Library.Main.Operation
             m_entries++;
         }
 
-        private void CheckedRead(byte[] buffer, int offset, int count)
+        private void CheckedRead(byte[] buffer, int bytesToRead)
         {
-            int r;
-            while (count > 0 && (r = m_stream.Read(buffer, offset, count)) > 0)
+            if (Duplicati.Library.Utility.Utility.ForceStreamRead(m_stream, buffer, bytesToRead) != bytesToRead)
             {
-                offset += r;
-                count -= r;
-            }
-
-            if (count != 0)
                 throw new Exception("Bad file read");
+            }
         }
 
         public IEnumerable<KeyValuePair<string, Stream>> Records
@@ -81,26 +80,26 @@ namespace Duplicati.Library.Main.Operation
                 var bf = BitConverter.GetBytes(0L);
                 var buf = new byte[8 * 1024];
 
-                Logging.Log.WriteMessage(string.Format("The metadata storage file has {0} entries and takes up {1}", m_entries, Library.Utility.Utility.FormatSizeString(m_stream.Length)), Duplicati.Library.Logging.LogMessageType.Profiling);
+                Logging.Log.WriteProfilingMessage(LOGTAG, "MetadataStorageSize", "The metadata storage file has {0} entries and takes up {1}", m_entries, Library.Utility.Utility.FormatSizeString(m_stream.Length));
 
-                using(new Logging.Timer("Read metadata from file"))
+                using(new Logging.Timer(LOGTAG, "ReadMetadata", "Read metadata from file"))
                     for(var e = 0L; e < m_entries; e++)
                     {
                         m_stream.Position = pos;
-                        CheckedRead(bf, 0, bf.Length);
+                        CheckedRead(bf, bf.Length);
                         var stringlen = BitConverter.ToInt64(bf, 0);
 
                         var strbuf = stringlen > buf.Length ? new byte[stringlen] : buf;
-                        CheckedRead(strbuf, 0, (int)stringlen);
+                        CheckedRead(strbuf, (int)stringlen);
                         var path = System.Text.Encoding.UTF8.GetString(strbuf, 0, (int)stringlen);
 
-                        CheckedRead(bf, 0, bf.Length);
+                        CheckedRead(bf, bf.Length);
                         var datalen = BitConverter.ToInt64(bf, 0);
                         if (datalen > Int32.MaxValue)
                             throw new ArgumentOutOfRangeException(nameof(datalen), "Metadata is larger than int32");
 
                         var databuf = datalen > buf.Length ? new byte[datalen] : buf;
-                        CheckedRead(databuf, 0, (int)datalen);
+                        CheckedRead(databuf, (int)datalen);
 
                         pos += datalen + stringlen + bf.Length + bf.Length;
 
@@ -116,12 +115,12 @@ namespace Duplicati.Library.Main.Operation
         {
             if (m_stream != null)
                 try { m_stream.Dispose(); }
-                catch { }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Failed to dispose stream"); }
                 finally { m_stream = null; }
 
             if (m_temp != null)
                 try { m_temp.Dispose(); }
-                catch { }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Failed to temp file stream"); }
                 finally { m_temp = null; }
 
         }

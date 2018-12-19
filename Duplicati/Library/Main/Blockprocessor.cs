@@ -15,10 +15,10 @@ namespace Duplicati.Library.Main
         public Blockprocessor(Stream stream, byte[] buffer)
         {
             if (stream == null)
-                throw new ArgumentNullException("stream");
+                throw new ArgumentNullException(nameof(stream));
 
             if (buffer == null)
-                throw new ArgumentNullException("buffer");
+                throw new ArgumentNullException(nameof(buffer));
 
             m_stream = stream;
             m_buffer = buffer;
@@ -29,20 +29,10 @@ namespace Duplicati.Library.Main
             if (m_depleted)
                 return 0;
             
-            var bytesleft = m_buffer.Length;
-            var bytesread = 0;
-            var read = 1;
+            int bytesRead = Duplicati.Library.Utility.Utility.ForceStreamRead(this.m_stream, this.m_buffer, this.m_buffer.Length);
+            m_depleted = this.m_buffer.Length > bytesRead;
 
-            while (bytesleft > 0 && read > 0)
-            {
-                read = m_stream.Read(m_buffer, bytesread, bytesleft);
-                bytesleft -= read;
-                bytesread += read;
-            }
-
-            m_depleted = bytesleft != 0;
-
-            return bytesread;
+            return bytesRead;
         }
         
         public long Length { get { return m_stream.Length; } }

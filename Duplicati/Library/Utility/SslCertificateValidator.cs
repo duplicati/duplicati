@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -18,10 +18,9 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Utility
 {
@@ -30,14 +29,14 @@ namespace Duplicati.Library.Utility
         [Serializable]
         public class InvalidCertificateException : Exception
         {
-            private string m_certificate = null;
-            private SslPolicyErrors m_errors = SslPolicyErrors.None;
+            private readonly string m_certificate = null;
+            private readonly SslPolicyErrors m_errors = SslPolicyErrors.None;
 
             public string Certificate { get { return m_certificate; } }
             public SslPolicyErrors SslError { get { return m_errors; } }
 
             public InvalidCertificateException(string certificate, SslPolicyErrors error)
-                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate) + (Utility.IsClientLinux ? Strings.SslCertificateValidator.MonoHelpSSL : ""))
+                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate) + (Platform.IsClientPosix ? Strings.SslCertificateValidator.MonoHelpSSL : ""))
             {
                 m_certificate = certificate;
                 m_errors = error;
@@ -50,9 +49,8 @@ namespace Duplicati.Library.Utility
             m_validHashes = validHashes;
         }
 
-        private bool m_acceptAll = false;
-        private string[] m_validHashes = null;
-        private Exception m_uncastException = null;
+        private readonly bool m_acceptAll = false;
+        private readonly string[] m_validHashes = null;
 
         public bool ValidateServerCertficate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
@@ -79,7 +77,6 @@ namespace Duplicati.Library.Utility
                 throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
             }
 
-            m_uncastException = new InvalidCertificateException(certHash, sslPolicyErrors);
             return false;
         }
     }

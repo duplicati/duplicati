@@ -18,6 +18,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -86,7 +88,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             if (blocksize <= 0)
             {
-                Console.WriteLine("Invalid blocksize: {0}, try setting --blocksize manually");
+                Console.WriteLine("Invalid blocksize: {0}, try setting --blocksize manually", blocksize);
                 return 100;
             }
 
@@ -94,9 +96,9 @@ namespace Duplicati.CommandLine.RecoveryTool
             var filehasher = string.IsNullOrWhiteSpace(filehash_str) ? null : Library.Utility.HashAlgorithmHelper.Create(filehash_str);
 
             if (blockhasher == null)
-                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Block hash algorithm not valid: {0}", blockhash_str));
+                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Block hash algorithm not valid: {0}", blockhash_str), "BlockHashAlgorithmNotSupported");
             if (filehasher == null)
-                throw new Duplicati.Library.Interface.UserInformationException(string.Format("File hash algorithm not valid: {0}", filehash_str));
+                throw new Duplicati.Library.Interface.UserInformationException(string.Format("File hash algorithm not valid: {0}", filehash_str), "FileHashAlgorithmNotSupported");
 
             var hashesprblock = blocksize / (blockhasher.HashSize / 8);
 
@@ -138,7 +140,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                             else
                             {
                                 Array.Resize(ref largestprefixparts, ni - 1);
-                                largestprefix = string.Join(Path.DirectorySeparatorChar.ToString(), largestprefixparts);
+                                largestprefix = string.Join(Util.DirectorySeparatorString, largestprefixparts);
                             }
                         }
                     }
@@ -147,8 +149,8 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Restoring {0} files to {1}", filecount, string.IsNullOrWhiteSpace(targetpath) ? "original position" : targetpath);
 
-                if (Library.Utility.Utility.IsClientLinux || largestprefix.Length > 0)
-                    largestprefix = Library.Utility.Utility.AppendDirSeparator(largestprefix);
+                if (Platform.IsClientPosix || largestprefix.Length > 0)
+                    largestprefix = Util.AppendDirSeparator(largestprefix);
 
                 if (!string.IsNullOrEmpty(largestprefix))
                     Console.WriteLine("Removing common prefix {0} from files", largestprefix);
@@ -268,14 +270,14 @@ namespace Duplicati.CommandLine.RecoveryTool
         {
             private const int LOOKUP_TABLE_SIZE = 2048;
 
-            private CompressedFileMRUCache m_cache;
-            private int m_hashsize;
-            private int m_blocksize;
+            private readonly CompressedFileMRUCache m_cache;
+            private readonly int m_hashsize;
+            private readonly int m_blocksize;
             private Stream m_indexfile;
-            private List<string> m_lookup = new List<string>();
-            private List<long> m_offsets = new List<long>();
-            private byte[] m_linebuf = new byte[128];
-            private byte[] m_newline = Environment.NewLine.Select(x => (byte)x).ToArray();
+            private readonly List<string> m_lookup = new List<string>();
+            private readonly List<long> m_offsets = new List<long>();
+            private readonly byte[] m_linebuf = new byte[128];
+            private readonly byte[] m_newline = Environment.NewLine.Select(x => (byte)x).ToArray();
 
             public HashLookupHelper(string indexfile, CompressedFileMRUCache cache, int blocksize, int hashsize)
             {
@@ -398,7 +400,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         using (var fs = m_cache.ReadBlock(v.Value, hash))
                         {
                             var buf = new byte[m_blocksize];
-                            var l = fs.Read(buf, 0, buf.Length);
+                            var l = Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
                             Array.Resize(ref buf, l);
 
                             return buf;
@@ -432,7 +434,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             private Dictionary<string, Library.Interface.ICompression> m_lookup = new Dictionary<string, Duplicati.Library.Interface.ICompression>();
             private Dictionary<string, Stream> m_streams = new Dictionary<string, Stream>();
             private List<string> m_mru = new List<string>();
-            private Dictionary<string, string> m_options;
+            private readonly Dictionary<string, string> m_options;
 
             private const int MAX_OPEN_ARCHIVES = 20;
 

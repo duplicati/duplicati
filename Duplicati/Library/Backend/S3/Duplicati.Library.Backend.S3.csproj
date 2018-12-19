@@ -38,13 +38,13 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="AWSSDK.Core">
-      <HintPath>..\..\..\..\packages\AWSSDK.Core.3.3.17.10\lib\net45\AWSSDK.Core.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.Core.3.3.29.3\lib\net45\AWSSDK.Core.dll</HintPath>
     </Reference>
     <Reference Include="AWSSDK.IdentityManagement">
-      <HintPath>..\..\..\..\packages\AWSSDK.IdentityManagement.3.3.5\lib\net45\AWSSDK.IdentityManagement.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.IdentityManagement.3.3.7.18\lib\net45\AWSSDK.IdentityManagement.dll</HintPath>
     </Reference>
     <Reference Include="AWSSDK.S3">
-      <HintPath>..\..\..\..\packages\AWSSDK.S3.3.3.11\lib\net45\AWSSDK.S3.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.S3.3.3.26.5\lib\net45\AWSSDK.S3.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +67,14 @@
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
       <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

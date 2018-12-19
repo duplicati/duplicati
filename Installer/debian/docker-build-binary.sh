@@ -5,10 +5,10 @@ if [ ! -f "$1" ]; then
 	exit
 fi
 
-FILENAME=`basename $1`
-DIRNAME=`echo "${FILENAME}" | cut -d "_" -f 1`
-VERSION=`echo "${DIRNAME}" | cut -d "-" -f 2`
-DATE_STAMP=`LANG=C date -R`
+FILENAME=$(basename $1)
+DIRNAME=$(echo "${FILENAME}" | cut -d "_" -f 1)
+VERSION=$(echo "${DIRNAME}" | cut -d "-" -f 2)
+DATE_STAMP=$(LANG=C date -R)
 
 if [ -d "${DIRNAME}" ]; then
 	rm -rf "${DIRNAME}"

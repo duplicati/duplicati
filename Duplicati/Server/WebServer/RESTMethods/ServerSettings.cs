@@ -56,7 +56,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             if (string.IsNullOrWhiteSpace(str))
             {
-                info.ReportClientError("Missing data object");
+                info.ReportClientError("Missing data object", System.Net.HttpStatusCode.BadRequest);
                 return;
             }
 
@@ -66,7 +66,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 data = Serializer.Deserialize<Dictionary<string, string>>(new StringReader(str));
                 if (data == null)
                 {
-                    info.ReportClientError("Data object had no entry");
+                    info.ReportClientError("Data object had no entry", System.Net.HttpStatusCode.BadRequest);
                     return;
                 }
 
@@ -104,9 +104,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
             catch (Exception ex)
             {
                 if (data == null)
-                    info.ReportClientError(string.Format("Unable to parse data object: {0}", ex.Message));
+                    info.ReportClientError(string.Format("Unable to parse data object: {0}", ex.Message), System.Net.HttpStatusCode.BadRequest);
                 else
-                    info.ReportClientError(string.Format("Unable to save settings: {0}", ex.Message));
+                    info.ReportClientError(string.Format("Unable to save settings: {0}", ex.Message), System.Net.HttpStatusCode.InternalServerError);
             }            
         }
 

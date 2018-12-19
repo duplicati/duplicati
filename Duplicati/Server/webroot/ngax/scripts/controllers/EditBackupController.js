@@ -1,5 +1,7 @@
 backupApp.controller('EditBackupController', function ($rootScope, $scope, $routeParams, $location, $timeout, AppService, AppUtils, SystemInfo, DialogService, EditBackupService, gettext, gettextCatalog) {
 
+    var SMART_RETENTION = '1W:1D,4W:1W,12M:1M';
+
     $scope.SystemInfo = SystemInfo.watch($scope);
     $scope.AppUtils = AppUtils;
 
@@ -10,21 +12,12 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
     $scope.EditSourceAdvanced = false;
     $scope.EditFilterAdvanced = false;
 
-    $scope.DefaultFilters = [];
     $scope.ExcludeAttributes = [];
     $scope.ExcludeLargeFiles = false;
 
-    $scope.defaultFilterSetAll = 'All';
-    $scope.defaultFilterSets = [
-        { 'name': gettextCatalog.getString('Windows'), 'value': 'Windows' },
-        { 'name': gettextCatalog.getString('OSX'), 'value': 'OSX' },
-        { 'name': gettextCatalog.getString('Linux'), 'value': 'Linux' },
-        { 'name': gettextCatalog.getString('All'), 'value': $scope.defaultFilterSetAll },
-    ];
-
     $scope.fileAttributes = [
-        {'name': gettextCatalog.getString('Hidden files'), 'value': 'hidden'}, 
-        {'name': gettextCatalog.getString('System files'), 'value': 'system'}, 
+        {'name': gettextCatalog.getString('Hidden files'), 'value': 'hidden'},
+        {'name': gettextCatalog.getString('System files'), 'value': 'system'},
         {'name': gettextCatalog.getString('Temporary files'), 'value': 'temporary'}
     ];
 
@@ -33,7 +26,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
     function computePassPhraseStrength() {
 
         var strengthMap = {
-            'x': gettextCatalog.getString("Passwords do not match"),
+            'x': gettextCatalog.getString("Passphrases do not match"),
             0: gettextCatalog.getString("Useless"),
             1: gettextCatalog.getString("Very weak"),
             2: gettextCatalog.getString("Weak"),
@@ -43,18 +36,38 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
         var passphrase = scope.Options == null ? '' : scope.Options['passphrase'];
 
-        if (scope.RepeatPasshrase != passphrase) 
+        if (scope.RepeatPasshrase != passphrase)
             scope.PassphraseScore = 'x';
         else if ((passphrase || '') == '')
             scope.PassphraseScore = '';
         else
-            scope.PassphraseScore = (zxcvbn(passphrase) || {'score': -1}).score;
+            scope.PassphraseScore = (zxcvbn(passphrase.substring(0, 100)) || {'score': -1}).score;
 
         scope.PassphraseScoreString = strengthMap[scope.PassphraseScore];
     }
 
     $scope.$watch('Options["passphrase"]', computePassPhraseStrength);
     $scope.$watch('RepeatPasshrase', computePassPhraseStrength);
+
+    $scope.checkGpgAsymmetric = function() {
+        if (!this.Options) {
+            return false;
+        }
+
+        if (!('encryption-module' in this.Options)) {
+            return false;
+        }
+
+        if (!this.Options['encryption-module']) {
+            return false;
+        }
+
+        if (this.Options['encryption-module'].indexOf('gpg') < 0) {
+            return false;
+        }
+
+        return this.ExtendedOptions.includes('--gpg-encryption-command=--encrypt');
+    }
 
     $scope.generatePassphrase = function() {
         this.Options["passphrase"] = this.RepeatPasshrase = AppUtils.generatePassphrase();
@@ -171,49 +184,6 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         toggleArraySelection($scope.Schedule.AllowedDays, value);
     };
 
-    $scope.isDefaultFilterSetEnabled = function (value) {
-        if ($scope.DefaultFilters == null)
-            $scope.DefaultFilters = [];
-        if (value != $scope.defaultFilterSetAll && $scope.isDefaultFilterSetEnabled($scope.defaultFilterSetAll))
-        {
-            return true;
-        }
-
-        return $scope.DefaultFilters.indexOf(value) > -1;
-    };
-
-    $scope.toggleDefaultFilters = function (value) {
-        if ($scope.DefaultFilters == null)
-            $scope.DefaultFilters = [];
-        if (value == $scope.defaultFilterSetAll)
-        {
-            var wasAllEnabled = $scope.isDefaultFilterSetEnabled($scope.defaultFilterSetAll);
-            $scope.DefaultFilters = [];
-            if (!wasAllEnabled)
-            {
-                for (var index = 0; index < $scope.defaultFilterSets.length; index++)
-                {
-                    $scope.DefaultFilters.push($scope.defaultFilterSets[index].value);
-                }
-            }
-        }
-        else
-        {
-            if ($scope.isDefaultFilterSetEnabled($scope.defaultFilterSetAll))
-            {
-                toggleArraySelection($scope.DefaultFilters, $scope.defaultFilterSetAll);
-            }
-
-            toggleArraySelection($scope.DefaultFilters, value);
-
-            // If everything but the 'all' group is enabled, enable it
-            if ($scope.DefaultFilters.length >= $scope.defaultFilterSets.length - 1)
-            {
-                toggleArraySelection($scope.DefaultFilters, $scope.defaultFilterSetAll);
-            }
-        }
-    };
-
     $scope.toggleExcludeAttributes = function(value) {
         if ($scope.ExcludeAttributes == null)
             $scope.ExcludeAttributes = [];
@@ -247,27 +217,6 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         for (var n in $scope.servermodulesettings)
             opts['--' + n] = $scope.servermodulesettings[n];
 
-        var defaultFilters = ($scope.DefaultFilters || []).concat((opts['--default-filters'] || '').split(/[,;\|]+/));
-        var filterMap = { '': true };
-
-        // Remove duplicates
-        for (var i = defaultFilters.length - 1; i >= 0; i--) {
-            defaultFilters[i] = (defaultFilters[i] || '').trim();
-            var cmp = defaultFilters[i].toLowerCase();
-            if (filterMap[cmp])
-                defaultFilters.splice(i, 1);
-            else
-                filterMap[cmp] = true;
-        }
-
-        if (defaultFilters.length == 0)
-            delete opts['--default-filters'];
-        else
-            if (filterMap[$scope.defaultFilterSetAll.toLowerCase()])
-                opts['--default-filters'] = $scope.defaultFilterSetAll;
-            else
-                opts['--default-filters'] = defaultFilters.join(',');
-
         var exclattr = ($scope.ExcludeAttributes || []).concat((opts['--exclude-files-attributes'] || '').split(','));
         var exclmap = { '': true };
 
@@ -292,8 +241,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             return;
         }
 
-
-        if (encryptionEnabled) {
+        if (encryptionEnabled && !$scope.checkGpgAsymmetric()) {
             if ($scope.PassphraseScore === '') {
                 DialogService.dialog(gettextCatalog.getString('Missing passphrase'), gettextCatalog.getString('You must enter a passphrase or disable encryption'));
                 $scope.CurrentStep = 0;
@@ -313,10 +261,27 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             return;
         }
 
-        if ($scope.KeepType == 'time' || $scope.KeepType == '')
-            delete opts['keep-versions'];
-        if ($scope.KeepType == 'versions' || $scope.KeepType == '')
-            delete opts['keep-time'];
+        // Retention options are mutual exclusive -> allow only one to be selected at a time
+        function resetAllRetentionOptionsExcept(optionToKeep) {
+            ['keep-versions', 'keep-time', 'retention-policy'].forEach(function(entry) {
+                if (entry != optionToKeep) {
+                    delete opts[entry];
+                }
+            });
+        }
+
+        if ($scope.KeepType == 'time') {
+            resetAllRetentionOptionsExcept('keep-time');
+
+        } else if ($scope.KeepType == 'versions') {
+            resetAllRetentionOptionsExcept('keep-versions');
+
+        } else if ($scope.KeepType == 'smart' || $scope.KeepType == 'custom') {
+            resetAllRetentionOptionsExcept('retention-policy');
+
+        } else {
+            resetAllRetentionOptionsExcept(); // keep none
+        }
 
         if ($scope.KeepType == 'time' && (opts['keep-time'] || '').trim().length == 0)
         {
@@ -331,6 +296,16 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             $scope.CurrentStep = 4;
             return;
         }
+
+        if ($scope.KeepType == 'custom' && (opts['retention-policy'] || '').indexOf(':') <= 0)
+        {
+            DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a valid rentention policy string'));
+            $scope.CurrentStep = 4;
+            return;
+        }
+
+        if ($scope.KeepType == 'smart')
+            opts['retention-policy'] = SMART_RETENTION;
 
 
         result.Backup.Settings = [];
@@ -417,14 +392,14 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
                         $scope.CurrentStep = 0;
                     else
                         continuation();
-                });                
+                });
             }
             else if (encryptionEnabled != previousEncryptionEnabled || encryptionModule != previousEncryptionModule)
             {
                 DialogService.dialog(gettextCatalog.getString('Encryption changed'), gettextCatalog.getString('You have changed the encryption mode. This may break stuff. You are encouraged to create a new backup instead'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('Yes, I\'m brave!')], function(ix) {
                     if (ix == 1)
                         continuation();
-                });    
+                });
             }
             else
                 continuation();
@@ -462,7 +437,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             function postDb() {
                 AppService.post('/backups', result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
                     $location.path('/');
-                }, AppUtils.connectionError);                                
+                }, AppUtils.connectionError);
             };
 
             function checkForExistingDb(continuation) {
@@ -531,6 +506,13 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         var filters = $scope.Backup.Filters;
         $scope.Backup.Filters = [];
 
+        // If Description is anything other than a string, we are either creating a new
+        // backup or something went wrong when retrieving an existing one
+        // Either way we should set it to an empty string
+        if (typeof $scope.Backup.Description !== 'string') {
+            $scope.Backup.Description = '';
+        }
+
         $scope.Backup.Sources = $scope.Backup.Sources || [];
 
         for(var ix in filters)
@@ -540,45 +522,13 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         if ($scope.ExcludeLargeFiles)
             $scope.Options['--skip-files-larger-than'] = extopts['--skip-files-larger-than'];
 
-        var defaultFilters = (extopts['--default-filters'] || '').split(/[,;\|]+/);
-        var defaultFiltersActive = [];
-        var filterMap = {};
-
-        for (var i = defaultFilters.length - 1; i >= 0; i--) {
-            var cmp = (defaultFilters[i] || '').trim().toLowerCase();
-
-            // Remove empty entries
-            if (cmp.length == 0) {
-                defaultFilters.splice(i, 1);
-                continue;
-            }
-
-            for (var j = scope.defaultFilterSets.length - 1; j >= 0; j--) {
-                if (scope.defaultFilterSets[j].value.toLowerCase() == cmp) {
-                    // Remote duplicates
-                    if (filterMap[cmp] == null) {
-                        defaultFiltersActive.push(scope.defaultFilterSets[j].value);
-                        filterMap[cmp] = true;
-                    }
-                    defaultFilters.splice(i, 1);
-                    break;
-                }
-            }
-        }
-
-        $scope.DefaultFilters = defaultFiltersActive;
-        if (defaultFilters.length == 0)
-            delete extopts['--default-filters'];
-        else
-            extopts['--default-filters'] = defaultFilters.join(',');
-
         var exclattr = (extopts['--exclude-files-attributes'] || '').split(',');
         var dispattr = [];
         var dispmap = {};
 
-        for (var i = exclattr.length - 1; i >= 0; i--) {            
+        for (var i = exclattr.length - 1; i >= 0; i--) {
             var cmp = (exclattr[i] || '').trim().toLowerCase();
-            
+
             // Remove empty entries
             if (cmp.length == 0) {
                 exclattr.splice(i, 1);
@@ -593,7 +543,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
                         dispmap[cmp] = true;
                     }
                     exclattr.splice(i, 1);
-                    break;                    
+                    break;
                 }
             }
         }
@@ -616,13 +566,20 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             $scope.Options['keep-versions'] = parseInt($scope.Options['keep-versions']);
             $scope.KeepType = 'versions';
         }
+        else if (($scope.Options['retention-policy'] || '').trim().length != 0)
+        {
+            if (($scope.Options['retention-policy'] || '').trim() == SMART_RETENTION)
+                $scope.KeepType = 'smart';
+            else
+                $scope.KeepType = 'custom';
+        }
 
         var delopts = ['--skip-files-larger-than', '--no-encryption'];
         for(var n in delopts)
             delete extopts[delopts[n]];
 
         $scope.ExtendedOptions = AppUtils.serializeAdvancedOptionsToArray(extopts);
-        
+
         $scope.servermodulesettings = {};
         AppUtils.extractServerModuleOptions($scope.ExtendedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedLocalCommands');
 
@@ -685,10 +642,10 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         if (ix > 0)
             backmodule = backmodule.substr(0, ix);
 
-        $scope.ExtendedOptionList = AppUtils.buildOptionList($scope.SystemInfo, encmodule, compmodule, backmodule);        
+        $scope.ExtendedOptionList = AppUtils.buildOptionList($scope.SystemInfo, encmodule, compmodule, backmodule);
         setupServerModules();
-        
-        AppUtils.extractServerModuleOptions($scope.ExtendedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedLocalCommands');        
+
+        AppUtils.extractServerModuleOptions($scope.ExtendedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedLocalCommands');
     };
 
     function checkAllowedDaysConfig()

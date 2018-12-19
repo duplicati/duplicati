@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using System.Linq;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -39,7 +40,7 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Current Version folder {0}", System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
 
             yield return string.Format("OS: {0}", Environment.OSVersion);
-            yield return string.Format("Uname: {0}", Duplicati.Library.Utility.Utility.UnameAll);
+            yield return string.Format("Uname: {0}", Platform.UnameAll);
 
             yield return string.Format("64bit: {0} ({1})", Environment.Is64BitOperatingSystem, Environment.Is64BitProcess);
             yield return string.Format("Machinename: {0}", Environment.MachineName);
@@ -49,10 +50,7 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Locale: {0}, {1}, {2}", System.Threading.Thread.CurrentThread.CurrentCulture, System.Threading.Thread.CurrentThread.CurrentUICulture, System.Globalization.CultureInfo.InstalledUICulture);
             yield return string.Format("Date/time strings: {0} - {1}", System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.LongDatePattern, System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.LongTimePattern);
             yield return string.Format("Tempdir: {0}", Library.Utility.TempFolder.SystemTempPath);
-            foreach(var e in new string[] {"TEMP", "TMP", "TMPDIR"})
-                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(e)))
-                    yield return string.Format("Environment variable: {0} = {1}", e, Environment.GetEnvironmentVariable(e));
-            
+
             Type sqlite = null;
             string sqliteversion = "";
 

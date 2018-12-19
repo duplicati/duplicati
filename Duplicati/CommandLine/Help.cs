@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.Common;
+using FilterGroup = Duplicati.Library.Utility.FilterGroup;
 
 namespace Duplicati.CommandLine
 {
@@ -97,21 +99,19 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%MONO%", Library.Utility.Utility.IsMono ? "mono " : "");
                 tp = tp.Replace("%APP_PATH%", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());
-                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Library.Utility.Utility.IsClientLinux ? "/source" : @"D:\source");
-                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Library.Utility.Utility.IsClientLinux ? "/source/myfile.txt" : @"D:\source\file.txt");
-                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Library.Utility.Utility.IsClientLinux ? "/restore" : @"D:\restore");
+                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Platform.IsClientPosix ? "/source" : @"D:\source");
+                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Platform.IsClientPosix ? "/source/myfile.txt" : @"D:\source\file.txt");
+                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Platform.IsClientPosix ? "/restore" : @"D:\restore");
                 tp = tp.Replace("%ENCRYPTIONMODULES%", string.Join(", ", Library.DynamicLoader.EncryptionLoader.Keys));
                 tp = tp.Replace("%COMPRESSIONMODULES%", string.Join(", ", Library.DynamicLoader.CompressionLoader.Keys));
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
                 tp = tp.Replace("%DEFAULTCOMPRESSIONMODULE%", opts.CompressionModule);
                 tp = tp.Replace("%GENERICMODULES%", string.Join(", ", Library.DynamicLoader.GenericLoader.Keys));
-                
-                tp = tp.Replace("%COMMON_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Common.OrderBy(x => x)));
-                tp = tp.Replace("%WINDOWS_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Windows.OrderBy(x => x)));
-                tp = tp.Replace("%OSX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.OSX.OrderBy(x => x)));
-                tp = tp.Replace("%LINUX_FILTERS%", string.Join(Environment.NewLine + "    ", Library.Utility.DefaultFilters.Linux.OrderBy(x => x)));
+                var metaGroupNames = new[] { nameof(FilterGroup.None), nameof(FilterGroup.DefaultExcludes), nameof(FilterGroup.DefaultIncludes), };
+                tp = tp.Replace("%FILTER_GROUPS_SHORT%", string.Join(Environment.NewLine + "  ", metaGroupNames.Concat(Enum.GetNames(typeof(FilterGroup)).Except(metaGroupNames, StringComparer.OrdinalIgnoreCase).OrderBy(x => x, StringComparer.OrdinalIgnoreCase)).Select(group => "{" + group + "}")));
+                tp = tp.Replace("%FILTER_GROUPS_LONG%", Library.Utility.FilterGroups.GetOptionDescriptions(4, true));
 
-                if (Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     // These properties are only valid for Windows
                     tp = tp.Replace("%EXAMPLE_WILDCARD_DRIVE_SOURCE_PATH%", @"*:\source");
@@ -374,19 +374,6 @@ namespace Duplicati.CommandLine
             lines.Add("");
         }
 
-        private static string PrintArguments(IEnumerable<Duplicati.Library.Interface.ICommandLineArgument> args)
-        {
-            if (args == null)
-                return "";
-
-            List<string> lines = new List<string>();
-            foreach (Library.Interface.ICommandLineArgument arg in args)
-                Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
-
-            return string.Join(Environment.NewLine, lines.ToArray());
-
-        }
-
         private static void PrintFormatted(TextWriter outwriter, IEnumerable<string> lines)
         {
             int windowWidth = 80;
@@ -409,10 +396,10 @@ namespace Duplicati.CommandLine
 
                 string c = s;
 
-                string leadingSpaces = "";
+                StringBuilder leadingSpaces = new StringBuilder();
                 while (c.Length > 0 && c.StartsWith(" ", StringComparison.Ordinal))
                 {
-                    leadingSpaces += " ";
+                    leadingSpaces.Append(" ");
                     c = c.Remove(0, 1);
                 }
 
@@ -434,7 +421,7 @@ namespace Duplicati.CommandLine
                     if (extraIndent)
                     {
                         extraIndent = false;
-                        leadingSpaces += "  ";
+                        leadingSpaces.Append("  ");
                     }
                 }
             }
@@ -442,13 +429,15 @@ namespace Duplicati.CommandLine
 
         private class Matcher
         {
-            Dictionary<string, Library.Interface.ICommandLineArgument> args = new Dictionary<string, Library.Interface.ICommandLineArgument>(StringComparer.OrdinalIgnoreCase);
+            readonly Dictionary<string, Library.Interface.ICommandLineArgument> args = new Dictionary<string, Library.Interface.ICommandLineArgument>(StringComparer.OrdinalIgnoreCase);
 
             public Matcher()
             {
-                List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>();
-                foundArgs.Add(new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands);
-                foundArgs.Add(Program.SupportedOptions);
+                List<IList<Library.Interface.ICommandLineArgument>> foundArgs = new List<IList<Library.Interface.ICommandLineArgument>>
+                {
+                    new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands,
+                    Program.SupportedOptions
+                };
 
                 foreach (Duplicati.Library.Interface.IBackend backend in Library.DynamicLoader.BackendLoader.Backends)
                     if (backend.SupportedCommands != null)

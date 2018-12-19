@@ -140,9 +140,9 @@ namespace Duplicati.Library
         /// <returns>The deserialized JSON data.</returns>
         /// <param name="url">The remote URL</param>
         /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
-        /// <param name="setupreq">A callback method that can be used to submit data into the body of the request.</param>
+        /// <param name="setupbodyreq">A callback method that can be used to submit data into the body of the request.</param>
         /// <typeparam name="T">The type of data to return.</typeparam>
-        public virtual T GetJSONData<T>(string url, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupreq = null)
+        public virtual T GetJSONData<T>(string url, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupbodyreq = null)
         {
             var req = CreateRequest(url);
 
@@ -151,8 +151,8 @@ namespace Duplicati.Library
 
             var areq = new AsyncHttpRequest(req);
 
-            if (setupreq != null)
-                setupreq(areq);
+            if (setupbodyreq != null)
+                setupbodyreq(areq);
 
             return ReadJSONResponse<T>(areq);
         }
@@ -163,10 +163,9 @@ namespace Duplicati.Library
         /// <returns>The deserialized JSON data.</returns>
         /// <param name="url">The remote URL</param>
         /// <param name="item">The data to json-serialize and POST in the request</param>
-        /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
-        /// <param name="setupreq">A callback method that can be used to submit data into the body of the request.</param>
+        /// <param name="method">Alternate HTTP method to use</param>
         /// <typeparam name="T">The type of data to return.</typeparam>
-        public virtual T PostAndGetJSONData<T>(string url, object item, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupreq = null)
+        public virtual T PostAndGetJSONData<T>(string url, object item, string method = null)
         {
             var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item));
 
@@ -174,7 +173,7 @@ namespace Duplicati.Library
                 url,
                 req =>
                 {
-                    req.Method = "POST";
+                    req.Method = method ?? "POST";
                     req.ContentType = "application/json; charset=utf-8";
                     req.ContentLength = data.Length;
                 },

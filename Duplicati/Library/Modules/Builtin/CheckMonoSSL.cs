@@ -22,6 +22,8 @@ namespace Duplicati.Library.Modules.Builtin
 {
     public class CheckMonoSSL : Duplicati.Library.Interface.IGenericModule, Duplicati.Library.Interface.IWebModule
     {
+		private static readonly string LOGTAG = Logging.Log.LogTagFromType<CheckMonoSSL>();
+
         public CheckMonoSSL()
         {
         }
@@ -91,8 +93,8 @@ namespace Duplicati.Library.Modules.Builtin
             if (!commandlineOptions.ContainsKey("main-action") || !Library.Utility.Utility.IsMono)
                 return;
 
-            if (CheckForInstalledCerts() == 0)
-                Console.WriteLine(Strings.CheckMonoSSL.ErrorMessage);
+			if (CheckForInstalledCerts() == 0)
+				Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "MissingCerts", null, Strings.CheckMonoSSL.ErrorMessage);
         }
 #endregion
 
@@ -127,8 +129,10 @@ namespace Duplicati.Library.Modules.Builtin
                     try
                     {
                         var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "mozroots.exe");
-                        var pi = new System.Diagnostics.ProcessStartInfo(path, "--import --sync --quiet");
-                        pi.UseShellExecute = false;
+                        var pi = new System.Diagnostics.ProcessStartInfo(path, "--import --sync --quiet")
+                        {
+                            UseShellExecute = false
+                        };
                         var p = System.Diagnostics.Process.Start(pi);
                         p.WaitForExit((int)TimeSpan.FromMinutes(5).TotalMilliseconds);
                     }

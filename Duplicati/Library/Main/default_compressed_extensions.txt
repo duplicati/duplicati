@@ -82,6 +82,7 @@
 .webm #WebM Video File
 .wmv #Windows Media Video File
 .wtv #Windows Recorded TV Show
+.m2ts # Blu-ray Disc MPEG-2 Transport Stream
 
 
 # Compressed image files
@@ -96,8 +97,11 @@
 .pspimage #PaintShopPro Image
 .tif #TIFF image
 .dng #Adobe Digital Negative
-.cr2 #Canon RAW Image Format
+.cr2 #Canon RAW Image Format (already compressed despite being "RAW")
 .webp #WebP Image
+.nef #Nikon RAW format
+.arw #Sony RAW format
+.heic #High Efficiency Image File Format
 
 
 # Compressed Font files

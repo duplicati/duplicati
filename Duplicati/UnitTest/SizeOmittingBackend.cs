@@ -19,6 +19,7 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using System.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.UnitTest
 {
@@ -56,7 +57,7 @@ namespace Duplicati.UnitTest
             return
                 from n in m_backend.List()
                 where !n.IsFolder
-                select new Library.Interface.FileEntry(n.Name);
+                select new FileEntry(n.Name);
         }
         public void Put(string remotename, string filename)
         {
@@ -77,6 +78,13 @@ namespace Duplicati.UnitTest
         public void CreateFolder()
         {
             m_backend.CreateFolder();
+        }
+        public string[] DNSName
+        {
+            get
+            {
+                return m_backend.DNSName;
+            }
         }
         public string DisplayName
         {

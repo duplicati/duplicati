@@ -27,6 +27,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
 using System.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -40,11 +41,11 @@ namespace Duplicati.Library.Backend
         private const string RCLONE_ERROR_DIRECTORY_NOT_FOUND = "directory not found";
         private const string RCLONE_ERROR_CONFIG_NOT_FOUND = "didn't find section in config file";
 
-        private string local_repo;
-        private string remote_repo;
-        private string remote_path;
-        private string opt_rclone;
-        private string rclone_executable;
+        private readonly string local_repo;
+        private readonly string remote_repo;
+        private readonly string remote_path;
+        private readonly string opt_rclone;
+        private readonly string rclone_executable;
 
         public Rclone()
         {
@@ -104,7 +105,7 @@ namespace Duplicati.Library.Backend
 
             ProcessStartInfo psi = new ProcessStartInfo
             {
-                Arguments = arguments,
+                Arguments = String.Format("{0} {1}", arguments, opt_rclone),
                 CreateNoWindow = true,
                 FileName = command,
                 RedirectStandardError = true,
@@ -135,7 +136,7 @@ namespace Duplicati.Library.Backend
 #endif
                         // append the new data to the data already read-in
                         outputBuilder.Append(e.Data);
-                    };
+                    }
                 }
             );  
 
@@ -172,20 +173,19 @@ namespace Duplicati.Library.Backend
 
             if (errorBuilder.ToString().Contains(RCLONE_ERROR_CONFIG_NOT_FOUND))
             {
-                throw new Exception(String.Format("Missing config file? {0}", errorBuilder.ToString()));
+                throw new Exception(String.Format("Missing config file? {0}", errorBuilder));
             }
 
             if (errorBuilder.Length > 0) {
                 throw new Exception(errorBuilder.ToString());
             }
-            Console.Error.WriteLine(errorBuilder.ToString());
+            Console.Error.WriteLine(errorBuilder);
             return outputBuilder.ToString();
         }
 
 
         public IEnumerable<IFileEntry> List()
         {
-            JArray files;
             String str_result;
 
             try
@@ -209,7 +209,7 @@ namespace Duplicati.Library.Backend
                 foreach (JObject item in array)
                 {
 #if DEBUG
-                    Console.Error.WriteLine(item.ToString());
+                    Console.Error.WriteLine(item);
 #endif
                     FileEntry fe = new FileEntry(
                         item.GetValue("Name").Value<string>(),
@@ -283,6 +283,15 @@ namespace Duplicati.Library.Backend
                 return Strings.Rclone.Description;
             }
         }
+
+
+
+        public string[] DNSName
+        {
+            get { return new string[] { remote_repo }; }
+        }
+
+
 
         public void Test()
         {

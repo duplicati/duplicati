@@ -19,7 +19,6 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using Duplicati.Library.Interface;
 
@@ -30,6 +29,8 @@ namespace Duplicati.Library.Encryption
     /// </summary>
     public class GPGEncryption : EncryptionBase
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<GPGEncryption>();
+
         #region Commandline option constants
         /// <summary>
         /// The commandline option supplied if armor should be disabled (--gpg-encryption-disable-armor)
@@ -94,17 +95,17 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// The PGP program to use, should be with absolute path
         /// </summary>
-        private string m_programpath = "gpg";
+        private readonly string m_programpath = "gpg";
 
         /// <summary>
         /// Commandline switches for encryption
         /// </summary>
-        private string m_encryption_args;
+        private readonly string m_encryption_args;
 
         /// <summary>
         /// Commandline switches for decryption
         /// </summary>
-        private string m_decryption_args;
+        private readonly string m_decryption_args;
 
         /// <summary>
         /// The key used for cryptographic operations
@@ -151,34 +152,17 @@ namespace Duplicati.Library.Encryption
                 m_decryption_args += GPG_ARMOR_OPTION;
             }
 
-            //--passphrase-fd is an option
-            m_encryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS;
-            m_decryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS;
+            var encryptOptions = options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS) ? options[COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS] : GPG_ENCRYPTION_DEFAULT_OPTIONS;
+            var encryptCmd = options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND) ? options[COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND] : GPG_ENCRYPTION_COMMAND;
+            m_encryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS + " " + encryptOptions +  " " + encryptCmd;
 
-            if (options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS))
-                m_encryption_args += " " + options[COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS];
-            else
-                m_encryption_args += " " + GPG_ENCRYPTION_DEFAULT_OPTIONS;
+            var decryptOptions = options.ContainsKey(COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS) ? options[COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS] : GPG_DECRYPTION_DEFAULT_OPTIONS;
+            var decryptCmd = options.ContainsKey(COMMANDLINE_OPTIONS_DECRYPTION_COMMAND) ? options[COMMANDLINE_OPTIONS_DECRYPTION_COMMAND] : GPG_DECRYPTION_COMMAND;
+            m_decryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS + " " +  decryptOptions + " "  + decryptCmd;
 
-            if (options.ContainsKey(COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS))
-                m_decryption_args += " " + options[COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS];
-            else
-                m_decryption_args += " " + GPG_DECRYPTION_DEFAULT_OPTIONS;
-
-            //These are commands and thus inserted last
-
-            if (options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND))
-                m_encryption_args += " " + options[COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND];
-            else
-                m_encryption_args += " " + GPG_ENCRYPTION_COMMAND;
-
-            if (options.ContainsKey(COMMANDLINE_OPTIONS_DECRYPTION_COMMAND))
-                m_decryption_args += " " + options[COMMANDLINE_OPTIONS_DECRYPTION_COMMAND];
-            else
-                m_decryption_args += " " + GPG_DECRYPTION_COMMAND;
 
             if (options.ContainsKey(COMMANDLINE_OPTIONS_PATH))
-                m_programpath = Library.Utility.Utility.ExpandEnvironmentVariables(options[COMMANDLINE_OPTIONS_PATH]);
+                m_programpath = Environment.ExpandEnvironmentVariables(options[COMMANDLINE_OPTIONS_PATH]);
 
         }
 
@@ -224,20 +208,22 @@ namespace Duplicati.Library.Encryption
         /// <param name="input">The input stream</param>
         private System.IO.Stream Execute(string args, System.IO.Stream input, bool encrypt)
         {
-            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-            psi.Arguments = args;
-            psi.CreateNoWindow = true;
-            psi.FileName = m_programpath;
-            psi.RedirectStandardError = true;
-            psi.RedirectStandardInput = true;
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
-            psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                Arguments = args,
+                CreateNoWindow = true,
+                FileName = m_programpath,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+            };
 
 #if DEBUG
             psi.CreateNoWindow = false;
             psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-            Console.Error.WriteLine(string.Format("Running command: \"{0}\" {1}", m_programpath, args));
+            Console.Error.WriteLine(string.Format("Running command: {0} {1}", m_programpath, args));
 #endif
 
             System.Diagnostics.Process p;
@@ -254,26 +240,25 @@ namespace Duplicati.Library.Encryption
             }
             catch (Exception ex)
             {
+                Logging.Log.WriteErrorMessage(LOGTAG, "GPGEncryptFailure", ex, "Error occurred while encrypting with GPG:" + ex.Message);
                 throw new Exception(Strings.GPGEncryption.GPGExecuteError(m_programpath, args, ex.Message), ex);
             }
 
-
+            System.Threading.Thread t;
             if (encrypt)
             {
                 //Prevent blocking of the output buffer
-                System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
+                t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
                 t.Start(new object[] { p.StandardOutput.BaseStream, input });
 
                 return new GPGStreamWrapper(p, t, p.StandardInput.BaseStream);
             }
-            else
-            {
-                //Prevent blocking of the input buffer
-                System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
-                t.Start(new object[] { input, p.StandardInput.BaseStream });
 
-                return new GPGStreamWrapper(p, t, p.StandardOutput.BaseStream);
-            }
+            //Prevent blocking of the input buffer
+            t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
+            t.Start(new object[] { input, p.StandardInput.BaseStream });
+
+            return new GPGStreamWrapper(p, t, p.StandardOutput.BaseStream);
         }
 
         /// <summary>

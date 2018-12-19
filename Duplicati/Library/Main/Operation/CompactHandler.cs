@@ -26,6 +26,10 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class CompactHandler
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<CompactHandler>();
         protected string m_backendurl;
         protected Options m_options;
         protected CompactResults m_result;
@@ -58,7 +62,7 @@ namespace Duplicati.Library.Main.Operation
                     
                     if (!m_options.Dryrun)
                     {
-                        using(new Logging.Timer("CommitCompact"))
+                        using(new Logging.Timer(LOGTAG, "CommitCompact", "CommitCompact"))
                             tr.Commit();
                         if (changed)
                         {
@@ -86,7 +90,7 @@ namespace Duplicati.Library.Main.Operation
         internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, ref System.Data.IDbTransaction transaction, BackendManager sharedBackend)
         {
             var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
-            report.ReportCompactData(m_result);
+            report.ReportCompactData();
             
             if (report.ShouldReclaim || report.ShouldCompact)
             {
@@ -137,76 +141,78 @@ namespace Duplicati.Library.Main.Operation
                                                  where report.CompactableVolumes.Contains(v.Name)
                                                  select (IRemoteVolume)v).ToList();
                         
-                        using(var q = db.CreateBlockQueryHelper(m_options, transaction))
+                        using(var q = db.CreateBlockQueryHelper(transaction))
                         {
-                            foreach(var entry in new AsyncDownloader(volumesToDownload, backend))
-                            using(var tmpfile = entry.TempFile)
+                            foreach (var entry in new AsyncDownloader(volumesToDownload, backend))
                             {
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                using (var tmpfile = entry.TempFile)
                                 {
-                                    backend.WaitForComplete(db, transaction);
-                                    return false;
-                                }
-                                    
-                                downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Name, entry.Size));
-                                var inst = VolumeBase.ParseFilename(entry.Name);
-                                using(var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))
-                                {
-                                    foreach(var e in f.Blocks)
+                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                                     {
-                                        if (q.UseBlock(e.Key, e.Value, transaction))
+                                        backend.WaitForComplete(db, transaction);
+                                        return false;
+                                    }
+
+                                    downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Name, entry.Size));
+                                    var inst = VolumeBase.ParseFilename(entry.Name);
+                                    using (var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))
+                                    {
+                                        foreach (var e in f.Blocks)
                                         {
-                                            //TODO: How do we get the compression hint? Reverse query for filename in db?
-                                            var s = f.ReadBlock(e.Key, buffer);
-                                            if (s != e.Value)
-                                                throw new Exception(string.Format("Size mismatch problem for block {0}, {1} vs {2}", e.Key, s, e.Value));
-                                                
-                                            newvol.AddBlock(e.Key, buffer, 0, s, Duplicati.Library.Interface.CompressionHint.Compressible);
-                                            if (newvolindex != null)
-                                                newvolindex.AddBlock(e.Key, e.Value);
-                                                
-                                            db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID, transaction);
-                                            blocksInVolume++;
-                                            
-                                            if (newvol.Filesize > m_options.VolumeSize)
+                                            if (q.UseBlock(e.Key, e.Value, transaction))
                                             {
-                                                uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
+                                                //TODO: How do we get the compression hint? Reverse query for filename in db?
+                                                var s = f.ReadBlock(e.Key, buffer);
+                                                if (s != e.Value)
+                                                    throw new Exception(string.Format("Size mismatch problem for block {0}, {1} vs {2}", e.Key, s, e.Value));
+
+                                                newvol.AddBlock(e.Key, buffer, 0, s, Duplicati.Library.Interface.CompressionHint.Compressible);
                                                 if (newvolindex != null)
-                                                    uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
-    
-                                                if (!m_options.Dryrun)
-                                                    backend.Put(newvol, newvolindex);
-                                                else
-                                                    m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize)));
-                                                
-                                                
-                                                newvol = new BlockVolumeWriter(m_options);
-                                                newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
-                
-                                                if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                                                    newvolindex.AddBlock(e.Key, e.Value);
+
+                                                db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID, transaction);
+                                                blocksInVolume++;
+
+                                                if (newvol.Filesize > m_options.VolumeSize)
                                                 {
-                                                    newvolindex = new IndexVolumeWriter(m_options);
-                                                    newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
-                                                    db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
-                                                    newvolindex.StartVolume(newvol.RemoteFilename);
+                                                    uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
+                                                    if (newvolindex != null)
+                                                        uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
+
+                                                    if (!m_options.Dryrun)
+                                                        backend.Put(newvol, newvolindex);
+                                                    else
+                                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
+
+
+                                                    newvol = new BlockVolumeWriter(m_options);
+                                                    newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
+
+                                                    if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                                                    {
+                                                        newvolindex = new IndexVolumeWriter(m_options);
+                                                        newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
+                                                        db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
+                                                        newvolindex.StartVolume(newvol.RemoteFilename);
+                                                    }
+
+                                                    blocksInVolume = 0;
+
+                                                    //After we upload this volume, we can delete all previous encountered volumes
+                                                    deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
+                                                    deleteableVolumes = new List<IRemoteVolume>();
                                                 }
-                                                
-                                                blocksInVolume = 0;
-                                                
-                                                //After we upload this volume, we can delete all previous encountered volumes
-                                                deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
-                                                deleteableVolumes = new List<IRemoteVolume>();
+                                            }
+                                            else
+                                            {
+                                                discardedBlocks++;
+                                                discardedSize += e.Value;
                                             }
                                         }
-                                        else
-                                        {
-                                            discardedBlocks++;
-                                            discardedSize += e.Value;
-                                        }
                                     }
+
+                                    deleteableVolumes.Add(entry);
                                 }
-    
-                                deleteableVolumes.Add(entry);
                             }
                             
                             if (blocksInVolume > 0)
@@ -217,7 +223,7 @@ namespace Duplicati.Library.Main.Operation
                                 if (!m_options.Dryrun)
                                     backend.Put(newvol, newvolindex);
                                 else
-                                    m_result.AddDryrunMessage(string.Format("Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize)));
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
                             }
                             else
                             {
@@ -248,23 +254,23 @@ namespace Duplicati.Library.Main.Operation
                     if (m_result.Dryrun)
                     {
                         if (downloadedVolumes.Count == 0)
-                            m_result.AddDryrunMessage(string.Format("Would delete {0} files, which would reduce storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "CompactResults", "Would delete {0} files, which would reduce storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize));
                         else
-                            m_result.AddDryrunMessage(string.Format("Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", 
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "CompactResults", "Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", 
                                                                     m_result.DownloadedFileCount, 
                                                                     Library.Utility.Utility.FormatSizeString(m_result.DownloadedFileSize), 
                                                                     m_result.DeletedFileCount, 
                                                                     Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, 
                                                                     Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), 
                                                                     m_result.DeletedFileCount - m_result.UploadedFileCount, 
-                                                                    Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
+                                                                    Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize));
                     }
                     else
                     {
                         if (m_result.DownloadedFileCount == 0)
-                            m_result.AddMessage(string.Format("Deleted {0} files, which reduced storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize)));
+                            Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Deleted {0} files, which reduced storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize));
                         else
-                            m_result.AddMessage(string.Format("Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", 
+                            Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", 
                                                               m_result.DownloadedFileCount, 
                                                               Library.Utility.Utility.FormatSizeString(downloadSize), 
                                                               m_result.DeletedFileCount, 
@@ -272,7 +278,7 @@ namespace Duplicati.Library.Main.Operation
                                                               m_result.UploadedFileCount, 
                                                               Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), 
                                                               m_result.DeletedFileCount - m_result.UploadedFileCount, 
-                                                              Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize)));
+                                                              Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize));
                     }
                             
                     backend.WaitForComplete(db, transaction);
@@ -314,7 +320,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.Dryrun)
                     backend.Delete(f.Name, f.Size);
                 else
-                    m_result.AddDryrunMessage(string.Format("Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size)));
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFile", "Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size));
 
                 yield return new KeyValuePair<string, long>(f.Name, f.Size);
             }               

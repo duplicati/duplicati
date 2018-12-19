@@ -21,33 +21,14 @@ using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Logging;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main
 {
-    public interface ILogWriter
+    internal interface IBackendWriter : IParsedBackendStatistics
     {
-        bool VerboseOutput { get; }
-        void AddVerboseMessage(string message, params object[] args);
-        void AddMessage(string message);
-        void AddWarning(string message, Exception ex);
-        void AddError(string message, Exception ex);
-        void AddDryrunMessage(string message);
-        void WriteLogMessageDirect(string message, LogMessageType type, Exception ex);
-    }
-
-    internal interface IBackendWriter : ILogWriter
-    {
-        void AddRetryAttempt(string message, Exception ex);
-
-        long UnknownFileSize { set; }
-        long UnknownFileCount { set; }
-        long KnownFileCount { set; }
-        long KnownFileSize { set; }
-        DateTime LastBackupDate { set; }
-        long BackupListCount { set; }
-        long TotalQuotaSpace { set; }
-        long FreeQuotaSpace { set; }
-        long AssignedQuotaSpace { set; }
+        bool ReportedQuotaError { get; set; }
+        bool ReportedQuotaWarning { get; set; }
 
         /// <summary>
         /// The backend sends this event when performing an action
@@ -65,18 +46,14 @@ namespace Duplicati.Library.Main
         IBackendProgressUpdater BackendProgressUpdater { get; }
     }
 
-    internal interface ISetCommonOptions : ILogWriter
+    internal interface ISetCommonOptions
     {
-        new bool VerboseOutput { set; }
-        bool VerboseErrors { set; }
-
         DateTime EndTime { get; set; }
-        DateTime BeginTime { set; }
+        DateTime BeginTime { get; set; }
+        IMessageSink MessageSink { get; set; }
+        OperationMode MainOperation { get; }
 
         void SetDatabase(LocalDatabase db);
-
-        OperationMode MainOperation { get; }
-        IMessageSink MessageSink { set; }
     }
 
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics
@@ -125,6 +102,9 @@ namespace Duplicati.Library.Main
         public long TotalQuotaSpace { get; set; }
         public long FreeQuotaSpace { get; set; }
         public long AssignedQuotaSpace { get; set; }
+
+        public bool ReportedQuotaError { get; set; }
+        public bool ReportedQuotaWarning { get; set; }
 
         public override OperationMode MainOperation { get { return m_parent.MainOperation; } }
 
@@ -183,8 +163,18 @@ namespace Duplicati.Library.Main
         Abort
     }
 
-    internal abstract class BasicResults : IBasicResults, ILogWriter, ISetCommonOptions, ITaskControl, Logging.ILog
+    internal abstract class BasicResults : IBasicResults, ISetCommonOptions, ITaskControl, Logging.ILogDestination
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        protected static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(BasicResults));
+
+        /// <summary>
+        /// Max number of elements to be serialized to JSON
+        /// </summary>
+        protected static readonly int SERIALIZATION_LIMIT = 20;
+
         protected class DbMessage
         {
             public readonly string Type;
@@ -206,46 +196,7 @@ namespace Duplicati.Library.Main
         protected Queue<DbMessage> m_dbqueue;
 
         private TaskControlState m_controlState = TaskControlState.Run;
-        private System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
-
-        private bool m_verboseOutput;
-        private bool m_verboseErrors;
-
-        public bool VerboseOutput
-        {
-            get
-            {
-                if (m_parent != null)
-                    return m_parent.VerboseOutput;
-                else
-                    return m_verboseOutput;
-            }
-            set
-            {
-                if (m_parent != null)
-                    m_parent.VerboseOutput = value;
-                else
-                    m_verboseOutput = value;
-            }
-        }
-
-        public bool VerboseErrors
-        {
-            get
-            {
-                if (m_parent != null)
-                    return m_parent.VerboseErrors;
-                else
-                    return m_verboseErrors;
-            }
-            set
-            {
-                if (m_parent != null)
-                    m_parent.VerboseErrors = value;
-                else
-                    m_verboseErrors = value;
-            }
-        }
+        private readonly System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
 
         public virtual ParsedResultType ParsedResult
         {
@@ -260,6 +211,7 @@ namespace Duplicati.Library.Main
             }
         }
 
+        public string Version { get { return string.Format("{0} ({1})", AutoUpdater.UpdaterManager.SelfVersion.Version, AutoUpdater.UpdaterManager.SelfVersion.Displayname); } }
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
         public TimeSpan Duration { get { return EndTime.Ticks == 0 ? new TimeSpan(0) : EndTime - BeginTime; } }
@@ -270,8 +222,10 @@ namespace Duplicati.Library.Main
         protected Library.Utility.FileBackedStringList m_warnings;
         protected Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
-
+        
         protected IMessageSink m_messageSink;
+
+        [JsonIgnore]
         public IMessageSink MessageSink
         {
             get { return m_messageSink; }
@@ -280,8 +234,8 @@ namespace Duplicati.Library.Main
                 m_messageSink = value;
                 if (value != null)
                 {
-                    m_messageSink.OperationProgress = this.OperationProgressUpdater;
-                    m_messageSink.BackendProgress = this.BackendProgressUpdater;
+                    m_messageSink.SetOperationProgress(this.OperationProgressUpdater);
+                    m_messageSink.SetBackendProgress(this.BackendProgressUpdater);
                 }
             }
         }
@@ -344,19 +298,6 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private void LogDbMessage(string type, string message, Exception ex)
-        {
-            if (System.Threading.Thread.CurrentThread != m_callerThread)
-            {
-                m_dbqueue.Enqueue(new DbMessage(type, message, ex));
-            }
-            else
-            {
-                FlushLog();
-                m_db.LogMessage("Message", message, ex, null);
-            }
-        }
-
         private static bool m_is_reporting = false;
 
         public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size)
@@ -378,7 +319,7 @@ namespace Duplicati.Library.Main
                         if (type == BackendEventType.Started)
                             this.BackendProgressUpdater.StartAction(action, path, size);
 
-                        Logging.Log.WriteMessage(string.Format("Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size)), Duplicati.Library.Logging.LogMessageType.Information, null);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "BackendEvent", "Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size));
 
                         if (MessageSink != null)
                             MessageSink.BackendEvent(action, type, path, size);
@@ -392,205 +333,27 @@ namespace Duplicati.Library.Main
 
         }
 
-        public void AddDryrunMessage(string message)
-        {
-            if (m_parent != null)
-                m_parent.AddDryrunMessage(message);
-            else
-            {
-                lock (Logging.Log.Lock)
-                {
-                    if (m_is_reporting)
-                        return;
-
-                    try
-                    {
-                        m_is_reporting = true;
-                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
-                        if (MessageSink != null)
-                            MessageSink.DryrunEvent(message);
-                    }
-                    finally
-                    {
-                        m_is_reporting = false;
-                    }
-                }
-            }
-        }
-
-        public void AddVerboseMessage(string message, params object[] args)
-        {
-            if (m_parent != null)
-            {
-                if ((args != null) && (args.Length > 0)) m_parent.AddVerboseMessage(message, args);
-                else m_parent.AddMessage(message);
-            }
-            else
-            {
-                lock (Logging.Log.Lock)
-                {
-                    if (m_is_reporting)
-                        return;
-
-                    try
-                    {
-                        m_is_reporting = true;
-                        Logging.Log.WriteMessage((((args != null) && (args.Length > 0)) ? string.Format(message, args) : message), Duplicati.Library.Logging.LogMessageType.Profiling, null);
-
-                        if (MessageSink != null)
-                        {
-                            if ((args != null) && (args.Length > 0)) MessageSink.VerboseEvent(message, args);
-                            else MessageSink.MessageEvent(message);
-                        }
-                    }
-                    finally
-                    {
-                        m_is_reporting = false;
-                    }
-                }
-            }
-        }
-
-        public void AddMessage(string message)
-        {
-            if (m_parent != null)
-                m_parent.AddMessage(message);
-            else
-            {
-                lock (Logging.Log.Lock)
-                {
-                    if (m_is_reporting)
-                        return;
-
-                    try
-                    {
-                        m_is_reporting = true;
-                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Information, null);
-
-                        m_messages.Add(message);
-
-                        if (MessageSink != null)
-                            MessageSink.MessageEvent(message);
-
-                        lock (m_lock)
-                            if (m_db != null && !m_db.IsDisposed)
-                                LogDbMessage("Message", message, null);
-                    }
-                    finally
-                    {
-                        m_is_reporting = false;
-                    }
-                }
-            }
-        }
-
-        public void AddWarning(string message, Exception ex)
-        {
-            if (m_parent != null)
-                m_parent.AddWarning(message, ex);
-            else
-            {
-                lock (Logging.Log.Lock)
-                {
-                    if (m_is_reporting)
-                        return;
-
-                    try
-                    {
-                        m_is_reporting = true;
-                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
-
-                        var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
-                        m_warnings.Add(s);
-
-                        if (MessageSink != null)
-                            MessageSink.WarningEvent(message, ex);
-
-                        lock (m_lock)
-                            if (m_db != null && !m_db.IsDisposed)
-                                LogDbMessage("Warning", message, ex);
-                    }
-                    finally
-                    {
-                        m_is_reporting = false;
-                    }
-                }
-            }
-        }
-
-        public void AddRetryAttempt(string message, Exception ex)
-        {
-            if (m_parent != null)
-                m_parent.AddRetryAttempt(message, ex);
-            else
-            {
-                lock (Logging.Log.Lock)
-                {
-                    if (m_is_reporting)
-                        return;
-
-                    try
-                    {
-                        m_is_reporting = true;
-                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Warning, ex);
-
-                        var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
-                        m_retryAttempts.Add(s);
-
-                        if (MessageSink != null)
-                            MessageSink.RetryEvent(message, ex);
-
-                        lock (m_lock)
-                            if (m_db != null && !m_db.IsDisposed)
-                                LogDbMessage("Retry", message, ex);
-                    }
-                    finally
-                    {
-                        m_is_reporting = false;
-                    }
-                }
-            }
-        }
-
-        public void AddError(string message, Exception ex)
-        {
-            if (m_parent != null)
-                m_parent.AddError(message, ex);
-            else
-            {
-                lock (Logging.Log.Lock)
-                {
-                    if (m_is_reporting)
-                        return;
-
-                    try
-                    {
-                        m_is_reporting = true;
-                        Logging.Log.WriteMessage(message, Duplicati.Library.Logging.LogMessageType.Error, ex);
-
-                        var s = ex == null ? message : string.Format("{0} => {1}", message, VerboseErrors ? ex.ToString() : ex.Message);
-                        m_errors.Add(s);
-
-                        if (MessageSink != null)
-                            MessageSink.ErrorEvent(message, ex);
-
-                        lock (m_lock)
-                            if (m_db != null && !m_db.IsDisposed)
-                                LogDbMessage("Error", message, ex);
-                    }
-                    finally
-                    {
-                        m_is_reporting = false;
-                    }
-                }
-            }
-        }
-
+        [JsonIgnore]
         public IEnumerable<string> Messages { get { return m_messages; } }
+        public int MessagesActualLength { get { return Messages == null ? 0 : Messages.Count();  } }
+        [JsonIgnore]
         public IEnumerable<string> Warnings { get { return m_warnings; } }
+        public int WarningsActualLength { get { return Warnings == null ? 0 : Warnings.Count(); } }
+        [JsonIgnore]
         public IEnumerable<string> Errors { get { return m_errors; } }
+        public int ErrorsActualLength { get { return Errors == null ? 0 : Errors.Count(); } }
 
-        public BasicResults()
+        [JsonProperty(PropertyName = "Messages")]
+        public IEnumerable<string> LimitedMessages { get { return Messages?.Take(SERIALIZATION_LIMIT); } }
+        [JsonProperty(PropertyName = "Warnings")]
+        public IEnumerable<string> LimitedWarnings { get { return Warnings?.Take(SERIALIZATION_LIMIT); } }
+        [JsonProperty(PropertyName = "Errors")]
+        public IEnumerable<string> LimitedErrors { get { return Errors?.Take(SERIALIZATION_LIMIT); } }
+
+        protected Operation.Common.TaskControl m_taskController;
+        public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
+
+        protected BasicResults()
         {
             this.BeginTime = DateTime.UtcNow;
             this.m_parent = null;
@@ -603,9 +366,10 @@ namespace Duplicati.Library.Main
             m_callerThread = System.Threading.Thread.CurrentThread;
             m_backendProgressUpdater = new BackendProgressUpdater();
             m_operationProgressUpdater = new OperationProgressUpdater();
+            m_taskController = new Duplicati.Library.Main.Operation.Common.TaskControl();
         }
 
-        public BasicResults(BasicResults p)
+        protected BasicResults(BasicResults p)
         {
             this.BeginTime = DateTime.UtcNow;
             this.m_parent = p;
@@ -623,6 +387,7 @@ namespace Duplicati.Library.Main
             }
         }
 
+        [JsonIgnore]
         public IBackendWriter BackendWriter { get { return (IBackendWriter)this.BackendStatistics; } }
 
         public event Action<TaskControlState> StateChangedEvent;
@@ -757,9 +522,6 @@ namespace Duplicati.Library.Main
                 filter: (prop, item) =>
                     !typeof(IBackendProgressUpdater).IsAssignableFrom(prop.PropertyType) &&
                     !typeof(IMessageSink).IsAssignableFrom(prop.PropertyType) &&
-                    !typeof(ILogWriter).IsAssignableFrom(prop.PropertyType) &&
-                    prop.Name != "VerboseOutput" &&
-                    prop.Name != "VerboseErrors" &&
                     !(prop.Name == "MainOperation" && item is BackendWriter) &&
                     !(prop.Name == "EndTime" && item is BackendWriter) &&
                     !(prop.Name == "Duration" && item is BackendWriter) &&
@@ -768,53 +530,26 @@ namespace Duplicati.Library.Main
             ).ToString();
         }
 
-        public void WriteMessage(string message, LogMessageType type, Exception exception)
-        {
-            switch (type)
-            {
-                case LogMessageType.Error:
-                    AddError(message, exception);
-                    break;
-                case LogMessageType.Warning:
-                    AddWarning(message, exception);
-                    break;
-                case LogMessageType.Profiling:
-                    if (Log.LogLevel == LogMessageType.Profiling && VerboseOutput)
-                        AddVerboseMessage(message, new object[0]);
-                    break;
-                default:
-                    AddMessage(message);
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Writes a message to the log, bypassing injection as normal messages
-        /// </summary>
-        /// <param name="message">The message to write to the log.</param>
-        /// <param name="type">Type.</param>
-        /// <param name="exception">Exception.</param>
-        public void WriteLogMessageDirect(string message, LogMessageType type, Exception exception)
+        public void WriteMessage(LogEntry entry)
         {
             if (m_parent != null)
-                m_parent.WriteLogMessageDirect(message, type, exception);
+                m_parent.WriteMessage(entry);
             else
             {
-                lock (Logging.Log.Lock)
+                switch (entry.Level)
                 {
-                    try
-                    {
-                        m_is_reporting = true;
-                        WriteMessage(message, type, exception);
-                    }
-                    finally
-                    {
-                        m_is_reporting = false;
-                    }
+                    case LogMessageType.Error:
+                        m_errors.Add(entry.AsString(false));
+                        break;
+                    case LogMessageType.Warning:
+                        m_warnings.Add(entry.AsString(false));
+                        break;
+                    case LogMessageType.Information:
+                        m_messages.Add(entry.AsString(false));
+                        break;
                 }
             }
         }
-
     }
 
     internal class BackupResults : BasicResults, IBackupResults
@@ -851,26 +586,40 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if ((Errors != null && Errors.Any()) || FilesWithError > 0)
+                if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Error) ||
+                    (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Error) ||
+                    (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Error) || 
+                    (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()) || FilesWithError > 0)
+                {
                     return ParsedResultType.Error;
-                else if ((Warnings != null && Warnings.Any()) || PartialBackup)
+                }
+                else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Warning) ||
+                         (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Warning) ||
+                         (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Warning) ||
+                         (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()) || PartialBackup)
+                {
                     return ParsedResultType.Warning;
+                }
                 else
+                {
                     return ParsedResultType.Success;
+                }
             }
         }
     }
 
     internal class RestoreResults : BasicResults, Library.Interface.IRestoreResults
     {
-        public long FilesRestored { get; internal set; }
+        public long RestoredFiles { get; internal set; }
         public long SizeOfRestoredFiles { get; internal set; }
-        public long FoldersRestored { get; internal set; }
-        public long SymlinksRestored { get; internal set; }
-        public long FilesPatched { get; internal set; }
-        public long FilesDeleted { get; internal set; }
-        public long FoldersDeleted { get; internal set; }
-        public long SymlinksDeleted { get; internal set; }
+        public long RestoredFolders { get; internal set; }
+        public long RestoredSymlinks { get; internal set; }
+        public long PatchedFiles { get; internal set; }
+        public long DeletedFiles { get; internal set; }
+        public long DeletedFolders { get; internal set; }
+        public long DeletedSymlinks { get; internal set; }
 
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
 
@@ -880,12 +629,20 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (Errors != null && Errors.Any())
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()))
+                {
                     return ParsedResultType.Error;
-                else if ((Warnings != null && Warnings.Any()) || FilesRestored == 0)
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()))
+                {
                     return ParsedResultType.Warning;
+                }
                 else
+                {
                     return ParsedResultType.Success;
+                }
             }
         }
     }
@@ -959,7 +716,13 @@ namespace Duplicati.Library.Main
 
     internal class DeleteResults : BasicResults, Duplicati.Library.Interface.IDeleteResults
     {
+        [JsonIgnore]
         public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
+        public int DeletedSetsActualLength { get { return DeletedSets == null ? 0 : DeletedSets.Count(); } }
+
+        [JsonProperty(PropertyName = "DeletedSets")]
+        public IEnumerable<Tuple<long, DateTime>> LimitedDeletedSets { get { return DeletedSets?.Take(SERIALIZATION_LIMIT); } }
+
         public bool Dryrun { get; private set; }
 
         public void SetResults(IEnumerable<Tuple<long, DateTime>> deletedSets, bool dryrun)
@@ -1032,6 +795,27 @@ namespace Duplicati.Library.Main
         public RepairResults() : base() { }
         public RepairResults(BasicResults p) : base(p) { }
         public Library.Interface.IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
+
+        public override ParsedResultType ParsedResult
+        {
+            get
+            {
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()))
+                {
+                    return ParsedResultType.Error;
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()))
+                {
+                    return ParsedResultType.Warning;
+                }
+                else
+                {
+                    return ParsedResultType.Success;
+                }
+            }
+        }
     }
 
     internal class CompactResults : BasicResults, Library.Interface.ICompactResults
@@ -1121,8 +905,14 @@ namespace Duplicati.Library.Main
         public TestResults(BasicResults p) : base(p) { }
 
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
+
+        private readonly List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        [JsonIgnore]
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
-        private List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        public int VerificationsActualLength { get { return Verifications == null ? 0 : Verifications.Count(); } }
+
+        [JsonProperty(PropertyName = "Verifications")]
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> LimitedVerifications { get { return Verifications?.Take(SERIALIZATION_LIMIT); } }
 
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {

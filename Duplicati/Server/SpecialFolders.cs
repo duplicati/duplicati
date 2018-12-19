@@ -18,6 +18,8 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Server
 {
@@ -32,7 +34,7 @@ namespace Duplicati.Server
             foreach(var n in Nodes)
                 if (path.StartsWith(n.id, StringComparison.Ordinal))
                     path = path.Replace(n.id, n.resolvedpath);
-            return Library.Utility.Utility.ExpandEnvironmentVariables(path);
+            return Environment.ExpandEnvironmentVariables(path);
         }
 
         public static string ExpandEnvironmentVariablesRegexp(string path)
@@ -112,7 +114,7 @@ namespace Duplicati.Server
         {
             var lst = new List<Serializable.TreeNode>();
             
-            if (Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
             {
                 TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
                 TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");
@@ -147,8 +149,6 @@ namespace Duplicati.Server
 
         internal static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
         {
-            var systemIO = Duplicati.Library.Snapshots.SnapshotUtility.SystemIO;
-
             if (backup.Sources == null || backup.Sources.Length == 0)
                 return new Dictionary<string, string>();
 
@@ -162,9 +162,9 @@ namespace Duplicati.Server
                 try
                 {
                     var nx = x;
-                    if (nx.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                    if (nx.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
                         nx = nx.Substring(0, nx.Length - 1);
-                    var n = systemIO.PathGetFileName(nx);
+                    var n = SystemIO.IO_OS.PathGetFileName(nx);
                     if (!string.IsNullOrWhiteSpace(n))
                         return new KeyValuePair<string, string>(x, n);
                 }
@@ -172,7 +172,7 @@ namespace Duplicati.Server
                 {
                 }
 
-                if (x.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) && x.Length > 1)
+                if (x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal) && x.Length > 1)
                     return new KeyValuePair<string, string>(x, x.Substring(0, x.Length - 1).Substring(x.Substring(0, x.Length - 1).LastIndexOf("/", StringComparison.Ordinal) + 1));
                 else
                     return new KeyValuePair<string, string>(x, x);

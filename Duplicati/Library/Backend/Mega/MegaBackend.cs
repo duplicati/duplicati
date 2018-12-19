@@ -19,16 +19,17 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using CG.Web.MegaApiClient;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend.Mega
 {
     public class MegaBackend: IBackend, IStreamingBackend
     {
-        private string m_username = null;
-        private string m_password = null;
+        private readonly string m_username = null;
+        private readonly string m_password = null;
         private Dictionary<string, List<INode>> m_filecache;
         private INode m_currentFolder = null;
-        private string m_prefix = null;
+        private readonly string m_prefix = null;
 
         private MegaApiClient m_client;
 
@@ -66,9 +67,9 @@ namespace Duplicati.Library.Backend.Mega
                 m_password = uri.Password;
 
             if (string.IsNullOrEmpty(m_username))
-                throw new UserInformationException(Strings.MegaBackend.NoUsernameError);
+                throw new UserInformationException(Strings.MegaBackend.NoUsernameError, "MegaNoUsername");
             if (string.IsNullOrEmpty(m_password))
-                throw new UserInformationException(Strings.MegaBackend.NoPasswordError);
+                throw new UserInformationException(Strings.MegaBackend.NoPasswordError, "MegaNoPassword");
 
             m_prefix = uri.HostAndPath ?? "";
         }
@@ -77,11 +78,11 @@ namespace Duplicati.Library.Backend.Mega
         {
             var parts = m_prefix.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
             var nodes = Client.GetNodes();
-            INode parent = nodes.Where(x => x.Type == NodeType.Root).First();
+            INode parent = nodes.First(x => x.Type == NodeType.Root);
 
             foreach(var n in parts)
             {
-                var item = nodes.Where(x => x.Name == n && x.Type == NodeType.Directory && x.ParentId == parent.Id).FirstOrDefault();
+                var item = nodes.FirstOrDefault(x => x.Name == n && x.Type == NodeType.Directory && x.ParentId == parent.Id);
                 if (item == null)
                 {
                     if (!autocreate)
@@ -258,6 +259,11 @@ namespace Duplicati.Library.Backend.Mega
             {
                 return Strings.MegaBackend.Description;
             }
+        }
+
+        public string[] DNSName
+        {
+            get { return null; }
         }
 
         #endregion

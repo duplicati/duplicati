@@ -67,6 +67,7 @@
     <Compile Include="HyperVOptions.cs" />
     <Compile Include="HttpOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResultExportFormat.cs" />
     <Compile Include="SendHttpMessage.cs" />
     <Compile Include="SendMail.cs" />
     <Compile Include="RunScript.cs" />
@@ -76,6 +77,11 @@
     <Compile Include="..\..\..\..\thirdparty\DnsLite\DnsLite.cs">
       <Link>DnsLite.cs</Link>
     </Compile>
+    <Compile Include="ReportHelper.cs" />
+    <Compile Include="ResultSerialization\ResultFormatSerializerProvider.cs" />
+    <Compile Include="ResultSerialization\IResultFormatSerializer.cs" />
+    <Compile Include="ResultSerialization\DuplicatiFormatSerializer.cs" />
+    <Compile Include="ResultSerialization\JsonFormatSerializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
@@ -102,6 +108,10 @@
       <Project>{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}</Project>
       <Name>Duplicati.Library.OAuthHelper</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
@@ -127,5 +137,8 @@
     <Content Include="run-script-example.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ResultSerialization\" />
   </ItemGroup>
 </Project>

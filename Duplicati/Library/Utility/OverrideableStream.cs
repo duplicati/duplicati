@@ -36,7 +36,7 @@ namespace Duplicati.Library.Utility
         public OverrideableStream(Stream basestream)
         {
             if (basestream == null)
-                throw new ArgumentNullException("basestream");
+                throw new ArgumentNullException(nameof(basestream));
             m_basestream = basestream;
         }
 

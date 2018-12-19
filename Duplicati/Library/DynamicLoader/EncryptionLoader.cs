@@ -62,10 +62,7 @@ namespace Duplicati.Library.DynamicLoader
             public IEncryption GetModule(string fileExtension, string passphrase, Dictionary<string, string> options)
             {
                 if (string.IsNullOrEmpty(fileExtension))
-                    throw new ArgumentNullException("fileExtension");
-
-                if (string.IsNullOrEmpty(passphrase))
-                    throw new ArgumentNullException("passphrase");
+                    throw new ArgumentNullException(nameof(fileExtension));
 
                 LoadInterfaces();
 
@@ -86,7 +83,7 @@ namespace Duplicati.Library.DynamicLoader
             public IList<ICommandLineArgument> GetSupportedCommands(string key)
             {
                 if (string.IsNullOrEmpty(key))
-                    throw new ArgumentNullException("key");
+                    throw new ArgumentNullException(nameof(key));
 
                 LoadInterfaces();
 
@@ -104,7 +101,7 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// The static instance used to access encryption module information
         /// </summary>
-        private static EncryptionLoaderSub _encryptionLoader = new EncryptionLoaderSub();
+        private static readonly EncryptionLoaderSub _encryptionLoader = new EncryptionLoaderSub();
 
         #region Public static API
 

@@ -146,6 +146,88 @@ wait-area {
     color: black;
 }
 
+.backup-result {
+    width: 90%;
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-auto-rows: minmax(50px, auto);
+    margin: 0 auto;
+
+    div .horizontal-rule {
+        width: 100%;
+        border-bottom: 1px solid @border;
+        margin: 5px 0 5px 0;
+    }
+
+    .box {
+        margin: 10px;
+        margin-bottom: 0px;
+    }
+
+    .title {
+        color: darken(@hColor, 10%);
+        font-weight: bold;
+        font-size: 30px;
+    }
+
+    .item {
+        display: block;
+
+        .key {
+            color: @hColor;
+            font-weight: bold;
+        }
+
+        .value {
+            color: @tColor;
+        }
+
+        .expanded {
+            padding: 0 10px 0 18px;
+            margin-bottom: 10px;
+        }
+    }
+
+    .one {
+        border-right: 1px solid @border;
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .two {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .wide {
+        grid-column: span 2;
+        border-top: 1px solid @border;
+        padding-top: 10px;
+    }
+       
+    .three {
+        grid-row: 2;
+    }
+
+    .four {
+        grid-row: 3;
+        margin-bottom: 10px;
+    }
+
+}
+
+.success-color {
+    color: #339900;
+}
+
+.error-color {
+    color: #cc0000;
+}
+
+.warning-color {
+    color: #ffcc00;
+}
+
 ul.tabs {
     margin-bottom: 10px;
 
@@ -204,20 +286,14 @@ ul.tabs {
     }
 
     .entries {
-        div.entryline {
+        div.entryline.clickable {
             cursor: pointer;
         }
     }
 
     .entries.livedata {
-        li {
-            height: 1.2em;
-            overflow: hidden;
-        }
-
         li.expanded {
             height: auto;
-            overflow: auto;
         }
     }
 
@@ -502,7 +578,7 @@ body {
             .state {
                 float: left;
                 color: darken(@hColor, 10%);
-                width: 580px;
+                width: 595px;
                 padding: 13px 15px;
                 margin: 10px 20px;
                 border: 1px darken(@hColor, 10%) solid;
@@ -521,7 +597,7 @@ body {
                     margin-right: 10px;
                 }
 
-                span { 
+                span {
                     display: inline;
                 }
 
@@ -574,6 +650,16 @@ body {
                     left: 0px;
                     background: fade(@hColor, 25%);
                     z-index: 5;
+                }
+
+                .task-name {
+                    overflow:hidden;
+                    text-overflow:ellipsis;
+                    cursor: help;
+                }
+
+                .task-state-info {
+                    display: flex;
                 }
             }
 
@@ -678,6 +764,7 @@ body {
                 width: 260px;
                 padding-left: 40px;
                 float: left;
+                position: fixed;
 
                 > ul {
                     > li {
@@ -777,7 +864,7 @@ body {
                             > span {
                                 background: url('../img/mainmenu/over/arrow_down.png') right center no-repeat;
                             }
-                        }                        
+                        }
 
                         > a.add:hover {
                             background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
@@ -884,9 +971,9 @@ body {
 
             .content {
                 float: left;
-                padding-left: 50px;
+                padding-left: 350px;
                 padding-bottom: 50px;
-                max-width: 700px;
+                max-width: 70%;
 
                 ul.tabs > li {
                     display: inline-block;
@@ -911,10 +998,19 @@ body {
                             border-top: 0px none;
                         }
 
+			.progress-small {
+                            text-align: center;
+                            height: 18px;
+                            background: rgba(164, 209,235, 0.50);
+                        }
+
+                        .progress-small-bg {
+                            border: 1px #65b1dd solid;
+                            width: 200px;
+                        }
+
                         a {
                             font-size: 30px;
-                            padding-left: 55px;
-                            background: url('../img/backup.png') no-repeat 5px 6px;
                             font-weight: 300;
                             display: inline-block;
 
@@ -1180,6 +1276,19 @@ body {
                                 width: 60px;
                             }
 
+                            .hint, .retention-options {
+                                clear: both;
+                                margin-left: 190px;
+                                margin-top: 50px;
+                                font-style: italic;
+                            }
+
+                            .retention-options {
+                                input {
+                                    margin-bottom: 10px;
+                                }
+                            }
+
                             .advancedoptions {
                                 padding-top: 15px;
                                 clear: both;
@@ -1383,7 +1492,7 @@ body {
                             width: @step-width;
                         }
                     }
-                }                
+                }
 
                 div.restore.restore-direct {
                     @legends-steps: 4;
@@ -1479,8 +1588,13 @@ body {
 
                     ul.entries {
                         li {
-                            padding-top: 15px;
+                            padding: 10px 0 10px 0;
+                            border-bottom: 1px solid @border;
                         }
+                    }
+
+                    ul.backuplog {
+                        list-style: none;
                     }
                 }
 
@@ -1807,6 +1921,15 @@ div.modal-dialog {
     }
 }
 
+.importpage {
+    form.styled {
+        input {
+            margin-top: 11px;
+            margin-bottom: 11px;
+        }
+    }
+}
+
 .restorewizard,
 .addwizard {
     form.styled {
@@ -1909,6 +2032,7 @@ div.modal-dialog {
         transition: width .6s ease;
         height: 100%;
         position: absolute;
+        top:0;
 
         &.active {
             -webkit-animation: progress-bar-stripes 2s linear infinite;
@@ -2033,7 +2157,7 @@ div.modal-dialog {
                 &.x-tree-icon-hypervmachine {
                     background-position: -96px 0px;
                 }
-				
+
 				&.x-tree-icon-mssql {
                     background-position: -96px -32px;
                 }
@@ -2209,7 +2333,7 @@ div.modal-dialog {
 
                 .donate {
                     display: none;
-                }                
+                }
             }
 
             .body {
@@ -2283,7 +2407,7 @@ div.modal-dialog {
 
     body {
         .container {
-            
+
             .header {
                 .logo {
                     padding-left: 10px;

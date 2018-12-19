@@ -1,13 +1,20 @@
-﻿﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Duplicati.Library.Common;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.GUI.TrayIcon
 {
     public static class Program
     {
+        public enum PasswordSource
+        {
+            Database,
+            HostedServer
+        }
+
         public static HttpServerConnection Connection;
     
         private const string TOOLKIT_OPTION = "toolkit";
@@ -30,14 +37,14 @@ namespace Duplicati.GUI.TrayIcon
         public static string BrowserCommand { get { return _browser_command; } }
         public static Server.Database.Connection databaseConnection = null;
 
-        private static string GetDefaultToolKit(bool printwarnings)
+        private static string GetDefaultToolKit()
         {
             // No longer using Cocoa directly as it fails on 32bit as well            
-            if (Duplicati.Library.Utility.Utility.IsClientOSX)
-                    return TOOLKIT_RUMPS;
+            if (Platform.IsClientOSX)
+                return TOOLKIT_RUMPS;
 
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
-            if (Duplicati.Library.Utility.Utility.IsClientLinux)
+            if (Platform.IsClientPosix)
             {
                 if (SupportsAppIndicator)
                     return TOOLKIT_GTK_APP_INDICATOR;
@@ -67,7 +74,7 @@ namespace Duplicati.GUI.TrayIcon
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
-            if (Duplicati.Library.Utility.Utility.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
+            if (Platform.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
                 Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
             
             foreach (string s in args)
@@ -105,10 +112,10 @@ namespace Duplicati.GUI.TrayIcon
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
             {
 #if !(__MonoCS__ || __WindowsGTK__ || ENABLE_GTK)
-                if (Library.Utility.Utility.IsClientLinux && !Library.Utility.Utility.IsClientOSX)
+                if (Platform.IsClientPosix && !Platform.IsClientOSX)
                     Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
 #endif
-                toolkit = GetDefaultToolKit(true);
+                toolkit = GetDefaultToolKit();
             }
             else 
             {
@@ -125,7 +132,7 @@ namespace Duplicati.GUI.TrayIcon
                 else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_RUMPS;
                 else
-                    toolkit = GetDefaultToolKit(true);
+                    toolkit = GetDefaultToolKit();
             }
 
             HostedInstanceKeeper hosted = null;
@@ -150,28 +157,33 @@ namespace Duplicati.GUI.TrayIcon
                 openui = Duplicati.Server.Program.IsFirstRun || Duplicati.Server.Program.ServerPortChanged;
                 password = Duplicati.Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
                 saltedpassword = true;
-                serverURL = (new UriBuilder(serverURL) { Port = Duplicati.Server.Program.ServerPort }).Uri;
+                // Tell the hosted server it was started by the TrayIcon
+                Duplicati.Server.Program.Origin = "Tray icon";
+
+                var cert = Duplicati.Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
+                var scheme = "http";
+
+                if (cert != null && cert.HasPrivateKey)
+                    scheme = "https";
+
+                serverURL = (new UriBuilder(serverURL)
+                {
+                    Port = Duplicati.Server.Program.ServerPort,
+                    Scheme = scheme
+                }).Uri;
             }
             
             if (Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) && Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
                 databaseConnection = Server.Program.GetDatabaseConnection(options);
 
-            string pwd;
-
-            if (options.TryGetValue("webserver-password", out pwd))
-            {
-                password = pwd;
-                saltedpassword = false;
-            }
+            var disableTrayIconLogin = false;
 
             if (databaseConnection != null)
             {
+                disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
                 password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                 saltedpassword = false;
-            }
 
-            if (databaseConnection != null)
-            {
                 var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
                 var scheme = "http";
 
@@ -183,6 +195,14 @@ namespace Duplicati.GUI.TrayIcon
                         Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
                         Scheme = scheme
                     }).Uri;
+            }
+
+            string pwd;
+
+            if (options.TryGetValue("webserver-password", out pwd))
+            {
+                password = pwd;
+                saltedpassword = false;
             }
 
             string url;
@@ -200,7 +220,7 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null, options))
+                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, disableTrayIconLogin, options))
                         {
                             using (var tk = RunTrayIcon(toolkit))
                             {
@@ -280,7 +300,7 @@ namespace Duplicati.GUI.TrayIcon
             else if (toolkit == TOOLKIT_RUMPS)
                 return GetRumpsRunnerInstance();
             else 
-                throw new UserInformationException(string.Format("The selected toolkit '{0}' is invalid", toolkit));
+                throw new UserInformationException(string.Format("The selected toolkit '{0}' is invalid", toolkit), "TrayIconInvalidToolKit");
         }
         
         //We keep these in functions to avoid attempting to load the instance,
@@ -418,14 +438,14 @@ namespace Duplicati.GUI.TrayIcon
                 
                 var args = new List<Duplicati.Library.Interface.ICommandLineArgument>()
                 {
-                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(false), null, toolkits.ToArray()),
+                    new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(), null, toolkits.ToArray()),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                     new Duplicati.Library.Interface.CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),               
                     new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
                 };
 
-                if (Duplicati.Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     args.Add(new Duplicati.Library.Interface.CommandLineArgument(DETACHED_PROCESS, CommandLineArgument.ArgumentType.String, "Runs the tray-icon detached", "This option runs the tray-icon in detached mode, meaning that the process will exit immediately and not send output to the console of the caller"));
                 }

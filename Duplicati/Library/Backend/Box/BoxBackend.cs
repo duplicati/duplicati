@@ -17,6 +17,7 @@
 using System;
 using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Net;
@@ -25,6 +26,8 @@ namespace Duplicati.Library.Backend.Box
 {
     public class BoxBackend : IBackend, IStreamingBackend
     {
+		private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
+
         private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
 
@@ -33,12 +36,12 @@ namespace Duplicati.Library.Backend.Box
 
         private const int PAGE_SIZE = 200;
 
-        private BoxHelper m_oauth;
-        private string m_path;
-        private bool m_deleteFromTrash;
+        private readonly BoxHelper m_oauth;
+        private readonly string m_path;
+        private readonly bool m_deleteFromTrash;
 
         private string m_currentfolder;
-        private Dictionary<string, string> m_filecache;
+        private readonly Dictionary<string, string> m_filecache = new Dictionary<string, string>();
 
         private class BoxHelper : OAuthHelper
         {
@@ -76,7 +79,7 @@ namespace Duplicati.Library.Backend.Box
                 }
                 catch(Exception ex2)
                 {
-                    Console.WriteLine(ex2);
+					Library.Logging.Log.WriteWarningMessage(LOGTAG, "BoxErrorParser", ex2, "Failed to parse error from Box");
                 }
 
                 if (newex != null)
@@ -92,10 +95,8 @@ namespace Duplicati.Library.Backend.Box
         {
             var uri = new Utility.Uri(url);
 
-            m_path = uri.HostAndPath;
-            if (!m_path.EndsWith("/", StringComparison.Ordinal))
-                m_path += "/";
-            
+            m_path = Util.AppendDirSeparator(uri.HostAndPath, "/");
+
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))
                 authid = options[AUTHID_OPTION];
@@ -122,7 +123,7 @@ namespace Duplicati.Library.Backend.Box
 
             foreach(var p in m_path.Split(new string[] {"/"}, StringSplitOptions.RemoveEmptyEntries))
             {
-                var el = (MiniFolder)PagedFileListResponse(parentid, true).Where(x => x.Name == p).FirstOrDefault();
+                var el = (MiniFolder)PagedFileListResponse(parentid, true).FirstOrDefault(x => x.Name == p);
                 if (el == null)
                 {
                     if (!create)
@@ -142,12 +143,13 @@ namespace Duplicati.Library.Backend.Box
 
         private string GetFileID(string name)
         {
-            if (m_filecache != null && m_filecache.ContainsKey(name))
+            if (m_filecache.ContainsKey(name))
                 return m_filecache[name];
 
-            PagedFileListResponse(CurrentFolder, false);
+            // Make sure we enumerate this, otherwise the m_filecache is empty.
+            PagedFileListResponse(CurrentFolder, false).LastOrDefault();
 
-            if (m_filecache != null && m_filecache.ContainsKey(name))
+            if (m_filecache.ContainsKey(name))
                 return m_filecache[name];
 
             throw new FileMissingException();
@@ -159,9 +161,8 @@ namespace Duplicati.Library.Backend.Box
             var done = false;
 
             if (!onlyfolders)
-                m_filecache = null;
+                m_filecache.Clear();
             
-            var cache = onlyfolders ? null : new Dictionary<string, string>();
             do
             {
                 var resp = m_oauth.GetJSONData<ShortListResponse>(string.Format("{0}/folders/{1}/items?limit={2}&offset={3}&fields=name,size,modified_at", BOX_API_URL, parentid, PAGE_SIZE, offset));
@@ -179,7 +180,7 @@ namespace Duplicati.Library.Backend.Box
                     else
                     {
                         if (!onlyfolders && f.Type == "file")
-                            cache[f.Name] = f.ID;
+                            m_filecache[f.Name] = f.ID;
                         
                         yield return f;
                     }
@@ -191,9 +192,6 @@ namespace Duplicati.Library.Backend.Box
                     break;
 
             } while(!done);
-
-            if (!onlyfolders)
-                m_filecache = cache;
         }
 
         #region IStreamingBackend implementation
@@ -207,7 +205,7 @@ namespace Duplicati.Library.Backend.Box
                 }
             };
 
-            if (m_filecache == null)
+            if (m_filecache.Count == 0)
                 PagedFileListResponse(CurrentFolder, false);
 
             var existing = m_filecache.ContainsKey(remotename);
@@ -219,7 +217,7 @@ namespace Duplicati.Library.Backend.Box
                 {
                     res = m_oauth.PostMultipartAndGetJSONData<FileList>(
                         string.Format("{0}/{1}/content", BOX_UPLOAD_URL, m_filecache[remotename]),
-                        new MultipartItem(stream, name: "file", filename: remotename)
+                        new MultipartItem(stream, "file", remotename)
                     ).Entries.First();
                 }
                 else
@@ -227,8 +225,8 @@ namespace Duplicati.Library.Backend.Box
 
                     res = m_oauth.PostMultipartAndGetJSONData<FileList>(
                         string.Format("{0}/content", BOX_UPLOAD_URL),
-                        new MultipartItem(createreq, name: "attributes"),
-                        new MultipartItem(stream, name: "file", filename: remotename)
+                        new MultipartItem(createreq, "attributes"),
+                        new MultipartItem(stream, "file", remotename)
                     ).Entries.First();
                 }
 
@@ -236,7 +234,7 @@ namespace Duplicati.Library.Backend.Box
             }
             catch
             {
-                m_filecache = null;
+                m_filecache.Clear();
                 throw;
             }
         }
@@ -287,7 +285,7 @@ namespace Duplicati.Library.Backend.Box
             }
             catch
             {
-                m_filecache = null;
+                m_filecache.Clear();
                 throw;
             }
         }
@@ -334,6 +332,11 @@ namespace Duplicati.Library.Backend.Box
             {
                 return Strings.Box.Description;
             }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(BOX_API_URL).Host, new Uri(BOX_UPLOAD_URL).Host }; }
         }
 
         #endregion
@@ -401,14 +404,6 @@ namespace Duplicati.Library.Backend.Box
             public long Limit { get; set; }
         }
 
-        private class SharePermissions
-        {
-            [JsonProperty("can_download")]
-            public bool CanDownload { get; set; }
-            [JsonProperty("can_preview")]
-            public bool CanPreview { get; set; }
-        }
-
         private class UploadEmail
         {
             [JsonProperty("access")]
@@ -416,28 +411,6 @@ namespace Duplicati.Library.Backend.Box
             [JsonProperty("email")]
             public string Email { get; set; }
         }
-
-        private class SharedLink
-        {
-            [JsonProperty("url")]
-            public string Url { get; set; }
-            [JsonProperty("download_url")]
-            public string DownloadUrl { get; set; }
-            [JsonProperty("vanity_url")]
-            public string VanityUrl { get; set; }
-            [JsonProperty("is_password_enabled")]
-            public bool IsPasswordEnabled { get; set; }
-            [JsonProperty("unshared_at")]
-            public DateTime? UnsharedAt { get; set; }
-            [JsonProperty("download_count")]
-            public long DownloadCount { get; set; }
-            [JsonProperty("preview_count")]
-            public long PreviewCount { get; set; }
-            [JsonProperty("access")]
-            public string Access { get; set; }
-            [JsonProperty("permissions")]
-            public SharePermissions Permissions { get; set; }
-         }
 
         private class ListFolderResponse : MiniFolder
         {
@@ -514,9 +487,6 @@ namespace Duplicati.Library.Backend.Box
             public int Status { get; set; }
             [JsonProperty("code")]
             public string Code { get; set; }
-            // Not working exactly his way ...
-            //[JsonProperty("context_info")]
-            //public ErrorItem[] ContextInfo { get; set; }
             [JsonProperty("help_url")]
             public string HelpUrl { get; set; }
             [JsonProperty("message")]
@@ -525,17 +495,6 @@ namespace Duplicati.Library.Backend.Box
             public string RequestId { get; set; }
 
         }
-
-        private class ErrorItem
-        {
-            [JsonProperty("reason")]
-            public string Reason { get; set; }
-            [JsonProperty("name")]
-            public string Name { get; set; }
-            [JsonProperty("message")]
-            public string Message { get; set; }
-        }
-
     }
 }
 

@@ -27,6 +27,11 @@ namespace Duplicati.Library.UsageReporter
     public static class ReportSetUploader
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ReportSetUploader));
+
+        /// <summary>
         /// The maximum number of pending uploads
         /// </summary>
         private const int MAX_PENDING_UPLOADS = 50;
@@ -88,7 +93,7 @@ namespace Duplicati.Library.UsageReporter
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteMessage("UsageReporter failed", Duplicati.Library.Logging.LogMessageType.Error, ex);
+                            Logging.Log.WriteErrorMessage(LOGTAG, "UploadFailed", ex, "UsageReporter failed");
                         }
                     }
                 }

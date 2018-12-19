@@ -55,10 +55,10 @@ namespace Duplicati.GUI.TrayIcon
     
     public interface IMenuItem
     {
-        string Text { set; }
-        MenuIcons Icon { set; }
-        bool Enabled { set; }
-        bool Default { set; }
+        void SetDefault(bool isDefault);
+        void SetEnabled(bool isEnabled);
+        void SetIcon(MenuIcons icon);
+        void SetText(string text);
     }
     
     public abstract class TrayIconBase : IDisposable
@@ -90,11 +90,11 @@ namespace Duplicati.GUI.TrayIcon
             action();
         }
         
-        protected abstract TrayIcons Icon { set; }
-        
         protected abstract IMenuItem CreateMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems);
         
         protected abstract void Exit();
+
+        protected abstract void SetIcon(TrayIcons icon);
         
         protected abstract void SetMenu(IEnumerable<IMenuItem> items);
 
@@ -134,7 +134,7 @@ namespace Duplicati.GUI.TrayIcon
         public virtual IBrowserWindow ShowUrlInWindow(string url)
         {
             //Fallback is to just show the window in a browser
-            Duplicati.Library.Utility.UrlUtillity.OpenURL(url, Program.BrowserCommand);
+            Duplicati.Library.Utility.UrlUtility.OpenURL(url, Program.BrowserCommand);
 
             return null;
         }
@@ -142,7 +142,7 @@ namespace Duplicati.GUI.TrayIcon
         protected IEnumerable<IMenuItem> BuildMenu() 
         {
             var tmp = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
-            tmp.Default = true;
+            tmp.SetDefault(true);
             return new IMenuItem[] {
                 tmp,
                 m_pauseMenu = CreateMenuItem("Pause", MenuIcons.Pause, OnPauseClicked, null ),
@@ -155,8 +155,8 @@ namespace Duplicati.GUI.TrayIcon
             var window = ShowUrlInWindow(Program.Connection.StatusWindowURL);
             if (window != null)
             {
-                window.Icon = WindowIcons.Regular;
-                window.Title = "Duplicati status";
+                window.SetIcon(WindowIcons.Regular);
+                window.SetTitle("Duplicati status");
             }
         }
 
@@ -165,25 +165,9 @@ namespace Duplicati.GUI.TrayIcon
             ShowStatusWindow();
         }
 
-        protected void OnWizardClicked()
-        {
-        }
-        
-        protected void OnOptionsClicked()
-        {
-        }
-        
-        protected void OnStopClicked()
-        {
-        }
-
         protected void OnQuitClicked()
         {
             Exit();
-        }
-
-        protected void OnThrottleClicked()
-        {
         }
 
         protected void OnPauseClicked()
@@ -200,37 +184,37 @@ namespace Duplicati.GUI.TrayIcon
                 switch(status.SuggestedStatusIcon)
                 {
                     case SuggestedStatusIcon.Active:
-                        Icon = TrayIcons.Running;
+                        this.SetIcon(TrayIcons.Running);
                         break;
                     case SuggestedStatusIcon.ActivePaused:
-                        Icon = TrayIcons.Paused;
+                        this.SetIcon(TrayIcons.Paused);
                         break;
                     case SuggestedStatusIcon.ReadyError:
-                        Icon = TrayIcons.IdleError;
+                        this.SetIcon(TrayIcons.IdleError);
                         break;
                     case SuggestedStatusIcon.ReadyWarning:
-                        Icon = TrayIcons.IdleError;
+                        this.SetIcon(TrayIcons.IdleError);
                         break;
                     case SuggestedStatusIcon.Paused:
-                        Icon = TrayIcons.Paused;
+                        this.SetIcon(TrayIcons.Paused);
                         break;
                     case SuggestedStatusIcon.Ready:
                     default:    
-                        Icon = TrayIcons.Idle;
+                        this.SetIcon(TrayIcons.Idle);
                         break;
                     
                 }
     
                 if (status.ProgramState == LiveControlState.Running)
                 {
-                    m_pauseMenu.Icon = MenuIcons.Pause;
-                    m_pauseMenu.Text = "Pause";
+                    m_pauseMenu.SetIcon(MenuIcons.Pause);
+                    m_pauseMenu.SetText("Pause");
                     m_stateIsPaused = false;
                 }
                 else
                 {
-                    m_pauseMenu.Icon = MenuIcons.Resume;
-                    m_pauseMenu.Text = "Resume";
+                    m_pauseMenu.SetIcon(MenuIcons.Resume);
+                    m_pauseMenu.SetText("Resume");
                     m_stateIsPaused = true;
                 }
             });

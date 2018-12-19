@@ -48,6 +48,12 @@
     <Compile Include="PurgeTesting.cs" />
     <Compile Include="CompressionTests.cs" />
     <Compile Include="UtilityTests.cs" />
+    <Compile Include="FilterTest.cs" />
+    <Compile Include="ResultFormatSerializerProviderTest.cs" />
+    <Compile Include="UriUtilityTests.cs" />
+    <Compile Include="WebApiTests.cs" />
+    <Compile Include="RunScriptTests.cs" />
+    <Compile Include="IOTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -166,6 +172,14 @@
     <ProjectReference Include="..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
       <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>
       <Name>Duplicati.Server.Serialization</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj">
+      <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
+      <Name>Duplicati.Library.Backend.GoogleServices</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

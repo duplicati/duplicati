@@ -25,6 +25,11 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalDeleteDatabase : LocalDatabase
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalDeleteDatabase>();
+
         private System.Data.IDbCommand m_moveBlockToNewVolumeCommand;
 
         public LocalDeleteDatabase(string path, string operation)
@@ -46,12 +51,7 @@ namespace Duplicati.Library.Main.Database
             m_moveBlockToNewVolumeCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_moveBlockToNewVolumeCommand.AddParameters(3);
         }
-        
-        private long GetLastFilesetID(System.Data.IDbCommand cmd)
-        {
-            return cmd.ExecuteScalarInt64(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC LIMIT 1", -1);
-        }
-        
+
         /// <summary>
         /// Drops all entries related to operations listed in the table.
         /// </summary>
@@ -64,12 +64,7 @@ namespace Duplicati.Library.Main.Database
             {
                 cmd.Transaction = transaction;
 
-                var q = "";
-                foreach(var n in toDelete)
-                    if (q.Length == 0)
-                        q = "?";
-                    else
-                        q += ",?";
+                string q = String.Join(",", Enumerable.Repeat("?", toDelete.Length));
                         
                 //First we remove unwanted entries
                 var deleted = cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @") ", toDelete.Select(x => NormalizeDateTimeToEpochSeconds(x)).Cast<object>().ToArray());
@@ -79,6 +74,7 @@ namespace Duplicati.Library.Main.Database
     
                 //Then we delete anything that is no longer being referenced
                 cmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Fileset"")");
+                cmd.ExecuteNonQuery(@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Fileset"")");
                 cmd.ExecuteNonQuery(@"DELETE FROM ""File"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"") ");
                 cmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""MetadataID"" FROM ""File"") ");
                 cmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""BlocksetID"" FROM ""File"" UNION SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") ");
@@ -164,25 +160,25 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<string> CompactableVolumes { get; }
             bool ShouldReclaim { get; }
             bool ShouldCompact { get; }
-            void ReportCompactData(ILogWriter log); 
+            void ReportCompactData(); 
         }
         
         private class CompactReport : ICompactReport
         {
-            private IEnumerable<VolumeUsage> m_report;
-            private IEnumerable<VolumeUsage> m_cleandelete;
-            private IEnumerable<VolumeUsage> m_wastevolumes;
-            private IEnumerable<VolumeUsage> m_smallvolumes;
+            private readonly IEnumerable<VolumeUsage> m_report;
+            private readonly IEnumerable<VolumeUsage> m_cleandelete;
+            private readonly IEnumerable<VolumeUsage> m_wastevolumes;
+            private readonly IEnumerable<VolumeUsage> m_smallvolumes;
+
+            private readonly long m_deletablevolumes;
+            private readonly long m_wastedspace;
+            private readonly long m_smallspace;
+            private readonly long m_fullsize;
+            private readonly long m_smallvolumecount;
             
-            private long m_deletablevolumes;
-            private long m_wastedspace;
-            private long m_smallspace;
-            private long m_fullsize;
-            private long m_smallvolumecount;
-            
-            private long m_wastethreshold;
-            private long m_volsize;
-            private long m_maxsmallfilecount;
+            private readonly long m_wastethreshold;
+            private readonly long m_volsize;
+            private readonly long m_maxsmallfilecount;
             
             public CompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, IEnumerable<VolumeUsage> report)
             {
@@ -204,26 +200,23 @@ namespace Duplicati.Library.Main.Database
                 m_smallvolumecount = m_smallvolumes.Count();
             }
             
-            public void ReportCompactData(ILogWriter log)
+            public void ReportCompactData()
             {
                 var wastepercentage = ((m_wastedspace / (float)m_fullsize) * 100);
-                if (log.VerboseOutput)
-                {
-                    log.AddVerboseMessage(string.Format("Found {0} fully deletable volume(s)", m_deletablevolumes));
-                    log.AddVerboseMessage(string.Format("Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace)));
-                    log.AddVerboseMessage(string.Format("Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize)));
-                }
-                
+                Logging.Log.WriteVerboseMessage(LOGTAG, "FullyDeletableCount", "Found {0} fully deletable volume(s)", m_deletablevolumes);
+                Logging.Log.WriteVerboseMessage(LOGTAG, "SmallVolumeCount", "Found {0} small volumes(s) with a total size of {1}", m_smallvolumes.Count(), Library.Utility.Utility.FormatSizeString(m_smallspace));
+                Logging.Log.WriteVerboseMessage(LOGTAG, "WastedSpaceVolumes", "Found {0} volume(s) with a total of {1:F2}% wasted space ({2} of {3})", m_wastevolumes.Count(), wastepercentage, Library.Utility.Utility.FormatSizeString(m_wastedspace), Library.Utility.Utility.FormatSizeString(m_fullsize));
+
                 if (m_deletablevolumes > 0)
-                    log.AddMessage(string.Format("Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting because there are {0} fully deletable volume(s)", m_deletablevolumes);
                 else if (wastepercentage >= m_wastethreshold && m_wastevolumes.Count() >= 2)
-                    log.AddMessage(string.Format("Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting because there is {0:F2}% wasted space and the limit is {1}%", wastepercentage, m_wastethreshold);
                 else if (m_smallspace > m_volsize)
-                    log.AddMessage(string.Format("Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize)));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting because there are {0} in small volumes and the volume size is {1}", Library.Utility.Utility.FormatSizeString(m_smallspace), Library.Utility.Utility.FormatSizeString(m_volsize));
                 else if (m_smallvolumecount > m_maxsmallfilecount)
-                    log.AddMessage(string.Format("Compacting because there are {0} small volumes and the maximum is {1}", m_smallvolumecount, m_maxsmallfilecount));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting because there are {0} small volumes and the maximum is {1}", m_smallvolumecount, m_maxsmallfilecount);
                 else
-                    log.AddMessage("Compacting not required");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "CompactReason", "Compacting not required");
             }
             
             public bool ShouldReclaim
@@ -274,7 +267,7 @@ namespace Duplicati.Library.Main.Database
         {
             private System.Data.IDbCommand m_command;
 
-            public BlockQuery(System.Data.IDbConnection con, Options options, System.Data.IDbTransaction transaction)
+            public BlockQuery(System.Data.IDbConnection con, System.Data.IDbTransaction transaction)
             {
                 m_command = con.CreateCommand();
                 m_command.Transaction = transaction;
@@ -304,9 +297,9 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Builds a lookup table to enable faster response to block queries
         /// </summary>
-        public IBlockQuery CreateBlockQueryHelper(Options options, System.Data.IDbTransaction transaction)
+        public IBlockQuery CreateBlockQueryHelper(System.Data.IDbTransaction transaction)
         {
-            return new BlockQuery(m_connection, options, transaction);
+            return new BlockQuery(m_connection, transaction);
         }
 
         public void MoveBlockToNewVolume(string hash, long size, long volumeID, System.Data.IDbTransaction tr)

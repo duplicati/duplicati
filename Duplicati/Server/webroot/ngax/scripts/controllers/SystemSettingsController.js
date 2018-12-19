@@ -1,4 +1,4 @@
-backupApp.controller('SystemSettingsController', function($rootScope, $scope, $location, $cookies, AppService, AppUtils, SystemInfo, gettextCatalog) {
+backupApp.controller('SystemSettingsController', function($rootScope, $scope, $location, $cookies, AppService, DialogService, AppUtils, SystemInfo, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);    
     $scope.theme = $scope.$parent.$parent.saved_theme;
@@ -53,12 +53,15 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
 
         $scope.requireRemotePassword = data.data['server-passphrase'] != null && data.data['server-passphrase'] != '';
         $scope.remotePassword = data.data['server-passphrase'];
+        $scope.confirmPassword = '';
         $scope.allowRemoteAccess = data.data['server-listen-interface'] != 'loopback';
         $scope.startupDelayDurationValue = data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1) == "" ? "0" : data.data['startup-delay'].substr(0, data.data['startup-delay'].length - 1);
         $scope.startupDelayDurationMultiplier = data.data['startup-delay'].substr(-1) == "" ? "s" : data.data['startup-delay'].substr(-1);
         $scope.updateChannel = data.data['update-channel'];
         $scope.originalUpdateChannel = data.data['update-channel'];
         $scope.usageReporterLevel = data.data['usage-reporter-level'];
+        $scope.disableTrayIconLogin =  AppUtils.parseBoolString(data.data['disable-tray-icon-login']);
+        $scope.remoteHostnames = data.data['allowed-hostnames'];
         $scope.advancedOptions = AppUtils.serializeAdvancedOptionsToArray(data.data);
         $scope.servermodulesettings = {};
 
@@ -74,19 +77,22 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
 
         var patchdata = {
             'server-passphrase': $scope.requireRemotePassword ? $scope.remotePassword : '',
-
+            'allowed-hostnames': $scope.remoteHostnames,
             'server-listen-interface': $scope.allowRemoteAccess ? 'any' : 'loopback',
             'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
             'update-channel': $scope.updateChannel,
-            'usage-reporter-level': $scope.usageReporterLevel
+            'usage-reporter-level': $scope.usageReporterLevel,
+            'disable-tray-icon-login': $scope.disableTrayIconLogin
         };
 
-        if ($scope.requireRemotePassword) {
-            if ($scope.rawdata['server-passphrase'] != $scope.remotePassword) {
-                patchdata['server-passphrase-salt'] =  CryptoJS.lib.WordArray.random(256/8).toString(CryptoJS.enc.Base64);
-                patchdata['server-passphrase'] = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(CryptoJS.enc.Utf8.parse($scope.remotePassword) + CryptoJS.enc.Base64.parse(patchdata['server-passphrase-salt']))).toString(CryptoJS.enc.Base64);
+        if ($scope.requireRemotePassword && $scope.rawdata['server-passphrase'] != $scope.remotePassword) {
+            if ($scope.remotePassword != $scope.confirmPassword) {
+                AppUtils.notifyInputError(gettextCatalog.getString('The passwords do not match'));
+                return;
             }
-        } else {
+            patchdata['server-passphrase-salt'] =  CryptoJS.lib.WordArray.random(256/8).toString(CryptoJS.enc.Base64);
+            patchdata['server-passphrase'] = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(CryptoJS.enc.Utf8.parse($scope.remotePassword) + CryptoJS.enc.Base64.parse(patchdata['server-passphrase-salt']))).toString(CryptoJS.enc.Base64);
+        } else if (!$scope.requireRemotePassword) {
             patchdata['server-passphrase-salt'] = null;
             patchdata['server-passphrase'] = null;
         }

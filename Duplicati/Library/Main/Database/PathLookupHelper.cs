@@ -1,4 +1,4 @@
-//  Copyright (C) 2013, The Duplicati Team
+﻿//  Copyright (C) 2013, The Duplicati Team
 
 //  http://www.duplicati.com, info@duplicati.com
 //
@@ -19,18 +19,18 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
 {
     public class PathLookupHelper<T>
     {
         private static readonly char[] SPLIT_CHARS = new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
-        private static readonly string DIR_SEP = Path.DirectorySeparatorChar.ToString();
         private readonly FolderEntry m_root = new FolderEntry(); 
         private readonly List<KeyValuePair<string, FolderEntry>> m_lookup;
-        
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Database.PathLookupHelper`1"/> class.
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Database.PathLookupHelper{T}"/> class.
         /// </summary>
         /// <param name="useHotPath">If set to <c>true</c> use hotpath optimization</param>
         public PathLookupHelper(bool useHotPath = true)
@@ -55,7 +55,7 @@ namespace Duplicati.Library.Main.Database
             c = m_root;
 
             paths = path.Split(SPLIT_CHARS, StringSplitOptions.RemoveEmptyEntries);
-            prefix = DIR_SEP;
+            prefix = Util.DirectorySeparatorString;
             
             if (m_lookup == null)
                 return;
@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Database
             var hotIx = Math.Min(m_lookup.Count, paths.Length) - 1;
             while (hotIx >= 0)
             {
-                if (path.StartsWith(m_lookup[hotIx].Key, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                if (path.StartsWith(m_lookup[hotIx].Key, Duplicati.Library.Utility.Utility.ClientFilenameStringComparison))
                 {
                     c = m_lookup[hotIx].Value;
                     
@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Database
                 else if (m_lookup != null)
                 {
                     //Maintain the hotpath lookup information
-                    prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.Combine(prefix, p));
+                    prefix = Util.AppendDirSeparator(System.IO.Path.Combine(prefix, p));
                     m_lookup.Add(new KeyValuePair<string, FolderEntry>(prefix, cur));
                 }
 
@@ -133,7 +133,7 @@ namespace Duplicati.Library.Main.Database
                 if (m_lookup != null)
                 {
                     //Maintain the hotpath lookup information
-                    prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.Combine(prefix, p));
+                    prefix = Util.AppendDirSeparator(System.IO.Path.Combine(prefix, p));
                     m_lookup.Add(new KeyValuePair<string, FolderEntry>(prefix, cur));
                 }
             }

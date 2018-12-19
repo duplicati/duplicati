@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -55,11 +56,42 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 //Get the passphrase
                 bool confirm = string.Equals(commandlineOptions["main-action"], "backup", StringComparison.OrdinalIgnoreCase);
-                commandlineOptions["passphrase"] = ReadPassphraseFromConsole(confirm);
+                try
+                {
+                    commandlineOptions["passphrase"] = ReadPassphraseFromConsole(confirm);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Handle redirect issues on Windows only
+                    if (!Platform.IsClientWindows)
+                        throw;
+
+                    commandlineOptions["passphrase"] = ReadPassphraseFromStdin(confirm);
+                }
             }
         }
 
         #endregion
+
+
+        private static string ReadPassphraseFromStdin(bool confirm)
+        {
+            // We already printed the header in the previous attempt
+            var passphrase = Console.ReadLine();
+            if (confirm)
+            {
+                Console.Write("\n" + Strings.ConsolePasswordInput.ConfirmPassphrasePrompt + ": ");
+                var password2 = Console.ReadLine();
+
+                if (passphrase != password2)
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError, "PassphraseMismatch");
+            }
+
+            if (string.IsNullOrWhiteSpace(passphrase))
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError, "EmptyPassphrase");
+
+            return passphrase;
+        }
 
         private static string ReadPassphraseFromConsole(bool confirm)
         {
@@ -107,11 +139,11 @@ namespace Duplicati.Library.Modules.Builtin
                 Console.WriteLine();
 
                 if (passphrase.ToString() != password2.ToString())
-                    throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError, "PassphraseMismatch");
             }
 
-            if (passphrase.ToString().Length == 0)
-                throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError);
+            if (string.IsNullOrWhiteSpace(passphrase.ToString()))
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError, "EmptyPassphrase");
 
             return passphrase.ToString();
         }

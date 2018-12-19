@@ -1,0 +1,13 @@
+<span class="title" translate>Time</span>
+<span class="item">
+    <span class="key" translate>Start </span>
+    <span class="value">{{ parseTimestampToSeconds(item.Result.BeginTime) }}</span>
+</span>
+<span class="item">
+    <span class="key" translate>End </span>
+    <span class="value">{{ parseTimestampToSeconds(item.Result.EndTime) }}</span>
+</span>
+<span class="item">
+    <span class="key" translate>Duration </span>
+    <span class="value">{{ formatDuration(item.Result.Duration) }}</span>
+</span>

@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -36,10 +37,13 @@ namespace Duplicati.Library.UsageReporter
             System.Diagnostics.Process pi = null;
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo(cmd, args);
-                psi.RedirectStandardOutput = true;
-                psi.RedirectStandardError = true; // Suppress error messages
-                psi.UseShellExecute = false;
+                var psi = new System.Diagnostics.ProcessStartInfo(cmd, args)
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true, // Suppress error messages
+                    RedirectStandardInput = false,
+                    UseShellExecute = false
+                };
 
                 pi = System.Diagnostics.Process.Start(psi);
                 pi.WaitForExit(5000);
@@ -68,11 +72,11 @@ namespace Duplicati.Library.UsageReporter
         {
             get
             {
-                if (!Utility.Utility.IsClientLinux)
+                if (!Platform.IsClientPosix)
                 {
                     return Environment.OSVersion.ToString();
                 }
-                else if (Utility.Utility.IsClientOSX)
+                else if (Platform.IsClientOSX)
                 {
                     var m = RunProgramAndReadOutput("sw_vers", null);
                     if (m != null)

@@ -16,7 +16,7 @@ CODESIGN_IDENTITY=2S6R28R577
 SHOW_USAGE_ERROR=
 
 
-TEMPLATE_DMG_BZ2=`echo "$TEMPLATE_DMG.bz2"`
+TEMPLATE_DMG_BZ2=$(echo "$TEMPLATE_DMG.bz2")
 DELETE_DMG=0
 
 if [ -f "$TEMPLATE_DMG_BZ2" ]; then
@@ -38,7 +38,8 @@ if [ ! -f "$1" ]; then
     exit
 fi
 
-VERSION_NUMBER=`echo "$1" | awk -F- '{print $2}' | awk -F_ '{print $1}'`
+ZIPNAME=$(basename "$1")
+VERSION_NUMBER=$(echo "$ZIPNAME" | awk -F- '{print $2}' | awk -F_ '{print $1}')
 
 VERSION_NAME="Duplicati"
 if [ -e "${OUTPUT_DMG}" ]; then
@@ -63,11 +64,9 @@ mkdir "Duplicati.app/Contents/Resources"
 # Extract the zip into the Resouces folder
 unzip -q "$1" -d "Duplicati.app/Contents/Resources"
 
-# Install the Info.plist and icon
-SHORT_VERSION_NUMBER=`echo ${VERSION_NUMBER} | awk -F. '{printf $1; printf "."; printf $2; printf "."; print $3}'`
-PLIST=`cat "Info.plist"`
-PLIST=${PLIST/!LONG_VERSION!/${VERSION_NUMBER}}
-PLIST=${PLIST/!SHORT_VERSION!/${SHORT_VERSION_NUMBER}}
+# Install the Info.plist and icon, patch the plist file as well
+PLIST=$(cat "Info.plist")
+PLIST=${PLIST//!LONG_VERSION!/${VERSION_NUMBER}}
 echo ${PLIST} > "Duplicati.app/Contents/Info.plist"
 cp "Duplicati.icns" "Duplicati.app/Contents/Resources"
 
@@ -121,7 +120,7 @@ if [ "x${CODESIGN_IDENTITY}" != "x" ]; then
     echo "Codesigning application bundle"
 
     #Do a poke to get sudo prompt up before the long-running sign-process
-    UNUSED=`sudo ls`
+    UNUSED=$(sudo ls)
 
     # Codesign all resources in bundle (i.e. the actual code)
     # Not required, but nice-to-have

@@ -28,14 +28,14 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The lookup table
         /// </summary>
-        private SortedList<string, T>[] m_lookup;
+        private readonly SortedList<string, T>[] m_lookup;
         /// <summary>
         /// The number of entries in the table
         /// </summary>
         private readonly ulong m_entries;
         
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Main.HashLookupHelper"/> class.
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Main.HashLookupHelper{T}"/> class.
         /// </summary>
         /// <param name="maxmemory">The maximum amount of bytes to use for the lookup table</param>
         public HashLookupHelper (ulong maxmemory)

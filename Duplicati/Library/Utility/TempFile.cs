@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Utility
 {
@@ -31,14 +32,14 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The prefix applied to all temporary files
         /// </summary>
-        public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower() + "-";
+        public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower(System.Globalization.CultureInfo.InvariantCulture) + "-";
         
         private string m_path;
         private bool m_protect;
-                
+
 #if DEBUG
         //In debug mode, we track the creation of temporary files, and encode the generating method into the name
-        private static object m_lock = new object();
+        private static readonly object m_lock = new object();
         private static Dictionary<string, System.Diagnostics.StackTrace> m_fileTrace = new Dictionary<string, System.Diagnostics.StackTrace>();
         
         public static System.Diagnostics.StackTrace GetStackTraceForTempFile(string filename)
@@ -72,7 +73,6 @@ namespace Duplicati.Library.Utility
                 m_fileTrace.Add(s, st);
             return s;            
         }
-
 #else
         private static string GenerateUniqueName()
         {
@@ -88,9 +88,9 @@ namespace Duplicati.Library.Utility
         /// Gets all temporary files found in the current tempdir, that matches the application prefix
         /// </summary>
         /// <returns>The application temp files.</returns>
-        public static IEnumerable<string> GetApplicationTempFiles()
+        private static IEnumerable<string> GetApplicationTempFiles()
         {
-            return System.IO.Directory.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
+            return SystemIO.IO_OS.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
         }
         
         /// <summary>
@@ -162,8 +162,11 @@ namespace Duplicati.Library.Utility
             return new TempFile(path);
         }
 
-        public static TempFile CreateInFolder(string path)
+        public static TempFile CreateInFolder(string path, bool autocreatefolder)
         {
+            if (autocreatefolder && !System.IO.Directory.Exists(path))
+                System.IO.Directory.CreateDirectory(path);
+
             return new TempFile(System.IO.Path.Combine(path, GenerateUniqueName()));
         }
 

@@ -41,18 +41,15 @@ namespace Duplicati.Server.WebServer
         private const int XSRF_TIMEOUT_MINUTES = 10;
         private const int AUTH_TIMEOUT_MINUTES = 10;
 
-        private ConcurrentDictionary<string, DateTime> m_activeTokens = new ConcurrentDictionary<string, DateTime>();
-        private ConcurrentDictionary<string, Tuple<DateTime, string>> m_activeNonces = new ConcurrentDictionary<string, Tuple<DateTime, string>>();
-        private ConcurrentDictionary<string, DateTime> m_activexsrf = new ConcurrentDictionary<string, DateTime>();
+        private readonly ConcurrentDictionary<string, DateTime> m_activeTokens = new ConcurrentDictionary<string, DateTime>();
+        private readonly ConcurrentDictionary<string, Tuple<DateTime, string>> m_activeNonces = new ConcurrentDictionary<string, Tuple<DateTime, string>>();
+        private readonly ConcurrentDictionary<string, DateTime> m_activexsrf = new ConcurrentDictionary<string, DateTime>();
 
-        System.Security.Cryptography.RandomNumberGenerator m_prng = System.Security.Cryptography.RNGCryptoServiceProvider.Create();
+        readonly System.Security.Cryptography.RandomNumberGenerator m_prng = System.Security.Cryptography.RNGCryptoServiceProvider.Create();
 
         private string FindXSRFToken(HttpServer.IHttpRequest request)
         {
             string xsrftoken = request.Headers[XSRF_HEADER_NAME] ?? "";
-
-            if (string.IsNullOrWhiteSpace(xsrftoken))
-                xsrftoken = Duplicati.Library.Utility.Uri.UrlDecode(xsrftoken);
 
             if (string.IsNullOrWhiteSpace(xsrftoken))
             {
@@ -134,7 +131,7 @@ namespace Duplicati.Server.WebServer
 
         public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
         {
-            HttpServer.HttpInput input = request.Method.ToUpper() == "POST" ? request.Form : request.QueryString;
+            HttpServer.HttpInput input = String.Equals(request.Method, "POST", StringComparison.OrdinalIgnoreCase) ? request.Form : request.QueryString;
 
             var auth_token = FindAuthCookie(request);
             var xsrf_token = FindXSRFToken(request);
@@ -289,7 +286,7 @@ namespace Duplicati.Server.WebServer
                 else
                 {
                     response.Status = System.Net.HttpStatusCode.BadRequest;
-                    response.Reason = "Missing XSRF Token";
+                    response.Reason = "Missing XSRF Token. Please reload the page";
 
                     return true;
                 }

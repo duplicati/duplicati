@@ -3,14 +3,21 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
+# Translators:
+# Andrea Ricci <rccndr+github@gmail.com>, 2016
+# Massimo Piceni <massimo.piceni@inwind.it>, 2017
+# Andrea De Lunardi <a.delunardi@arca.com>, 2017
+# Francesco Infantini <infantini.francesco@gmail.com>, 2017
+# Folgore101 <andrea.gramegna@gmail.com>, 2018
+# 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-11-17 13:00+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Massimo Piceni <massimo.piceni@inwind.it>, 2017\n"
+"POT-Creation-Date: 2018-12-11 12:26+0100\n"
+"PO-Revision-Date: 2016-10-04 18:53+0000\n"
+"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2018\n"
 "Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -48,15 +55,63 @@ msgstr ""
 msgid "--{0}: {1}"
 msgstr "--{0}: {1}"
 
-#: Server/Strings.cs:15
+#: Server/Strings.cs:15 CommandLine/Strings.cs:21
+#, csharp-format
+msgid ""
+"This option can be used to store some or all of the options given to the "
+"commandline client. The file must be a plain text file, UTF-8 encoding is "
+"preferred. Each line in the file should be of the format --option=value. The"
+" special options --{0} and --{1} can be used to override the localpath and "
+"the remote destination uri, respectively. The options in this file take "
+"precedence over the options provided on the commandline. You cannot specify "
+"filters in both the file and on the commandline. Instead, you can use the "
+"special --{2}, --{3}, or --{4} options to specify filters inside the "
+"parameter file. Each filter must be prefixed with either a + or a -, and "
+"multiple filters must be joined with {5} "
+msgstr ""
+"Questa opzione può essere utilizzata per memorizzare alcune o tutte le "
+"opzioni fornite al client Riga di comando. Il file deve essere un file di "
+"testo normale, la codifica UTF-8 è preferibile. Ogni riga nel file deve "
+"essere del formato -option=value. Le opzioni speciali -{0} e --{1} possono "
+"essere utilizzate per sovrascrivere rispettivamente il LocalPath e l'URI di "
+"destinazione remota. Le opzioni in questo file hanno la precedenza sulle "
+"opzioni fornite dalla riga di comando. Non è possibile specificare filtri "
+"sia nel file sia nella riga di comando. È invece possibile utilizzare le "
+"opzioni speciali --{2}, --{3}, o --{4} per specificare i filtri all'interno "
+"del file dei parametri. Ogni filtro deve essere preceduto con un + o un -, e"
+" più filtri devono essere uniti con {5}"
+
+#: Server/Strings.cs:16 CommandLine/Strings.cs:22
+msgid "Path to a file with parameters"
+msgstr "Percorso di un file con parametri"
+
+#: Server/Strings.cs:17 CommandLine/Strings.cs:19
+#, csharp-format
+msgid ""
+"Filters cannot be specified on the commandline if filters are also present "
+"in the parameter file. Use the special --{0}, --{1}, or --{2} options to "
+"specify filters inside the parameter file. Each filter must be prefixed with"
+" either a + or a -, and multiple filters must be joined with {3}"
+msgstr ""
+"I filtri non possono essere specificati dalla riga di comando se sono "
+"presenti anche nel file parametri. Usa le opzioni speciali --{0}, --{1}, o "
+"--{2} per specificare i filtri all'interno del file parametri. Ogni filtro "
+"deve avere un prefisso + o un -, e più filtri devono essere uniti con {3}"
+
+#: Server/Strings.cs:18 CommandLine/Strings.cs:18
+#, csharp-format
+msgid "Unable to read the parameters file \"{0}\", reason: {1}"
+msgstr "Impossibile leggere il file dei parametri \"{0}\", motivo: {1}"
+
+#: Server/Strings.cs:20
 msgid "Outputs log information to the file given"
 msgstr "Il registro mostra informazioni del file dato"
 
-#: Server/Strings.cs:16
+#: Server/Strings.cs:21
 msgid "Determines the amount of information written in the log file"
 msgstr "Determina la quantità di informazioni scritte nel file di registro"
 
-#: Server/Strings.cs:17
+#: Server/Strings.cs:22
 msgid ""
 "Activates portable mode where the database is placed below the program "
 "executable"
@@ -64,12 +119,12 @@ msgstr ""
 "Attiva la modalità portable in cui il database è posizionato sotto "
 "l'eseguibile del programma"
 
-#: Server/Strings.cs:18
+#: Server/Strings.cs:23
 #, csharp-format
 msgid "A serious error occurred in Duplicati: {0}"
 msgstr "Si è verificato un errore grave in Duplicati: {0}"
 
-#: Server/Strings.cs:19
+#: Server/Strings.cs:24
 #, csharp-format
 msgid ""
 "Unable to start up, perhaps another process is already running?\n"
@@ -78,18 +133,18 @@ msgstr ""
 "Impossibile avviare il backup, magari un altro processo è già in esecuzione?\n"
 "Messaggio di errore: {0}"
 
-#: Server/Strings.cs:21
+#: Server/Strings.cs:26
 msgid "Disables database encryption"
-msgstr "Disattiva criptazione database"
+msgstr "Disattiva crittografia database"
 
-#: Server/Strings.cs:22
+#: Server/Strings.cs:27
 #, csharp-format
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr ""
 "Rilevata una versione non supportata di SQLite ({0}), deve essere {1} o "
 "superiore"
 
-#: Server/Strings.cs:23
+#: Server/Strings.cs:28
 msgid ""
 "The path to the folder where the static files for the webserver is present. "
 "The folder must be located beneath the installation folder"
@@ -97,7 +152,7 @@ msgstr ""
 "Il percorso della cartella in cui risiedono i file statici per il webserver."
 " La cartella deve trovarsi sotto la cartella di installazione"
 
-#: Server/Strings.cs:24
+#: Server/Strings.cs:29
 msgid ""
 "The port the webserver listens on. Multiple values may be supplied with a "
 "comma in between."
@@ -105,7 +160,7 @@ msgstr ""
 "La porta su cui il webserver è in ascolto. Valori multipli possono essere "
 "forniti con una virgola in mezzo."
 
-#: Server/Strings.cs:25
+#: Server/Strings.cs:30
 msgid ""
 "The certificate and key file in PKCS #12 format the webserver use for SSL. "
 "Only RSA/DSA keys are supported."
@@ -113,11 +168,11 @@ msgstr ""
 "Il certificato e il file chiave in PKCS #12 formato utilizzato del webserver"
 " per SSL. Sono supportate solo le chiavi RSA/DSA."
 
-#: Server/Strings.cs:26
+#: Server/Strings.cs:31
 msgid "The password for decryption of certificate PKCS #12 file."
-msgstr "Password per la decriptazione del file certificato PKCS #12."
+msgstr "Password per decriptare il file del certificato PKCS #12."
 
-#: Server/Strings.cs:27
+#: Server/Strings.cs:32
 msgid ""
 "The interface the webserver listens on. The special values \"*\" and \"any\""
 " means any interface. The special value \"loopback\" means the loopback "
@@ -127,7 +182,7 @@ msgstr ""
 "\"any\" significano qualsiasi interfaccia. Il valore speciale \"loopback\" "
 "significa la scheda loopback."
 
-#: Server/Strings.cs:28
+#: Server/Strings.cs:33
 msgid ""
 "The password required to access the webserver. This option is saved so you "
 "do not need to set it on each run. Setting an empty value disables the "
@@ -137,11 +192,21 @@ msgstr ""
 "in modo che non sia necessario impostarla su ogni volta. L'impostazione di "
 "un valore vuoto disattiva la password."
 
-#: Server/Strings.cs:29
+#: Server/Strings.cs:34
+msgid ""
+"The hostnames that are accepted, separated with semicolons. If any of the "
+"hostnames are \"*\", all hostnames are allowed and the hostname checking is "
+"disabled."
+msgstr ""
+"I nomi degli host che sono accettati, separati da punto e virgola. Se uno "
+"qualsiasi dei nomi host è \"*\", tutti i nomi host sono consentiti e il "
+"controllo del nome host è disabilitato."
+
+#: Server/Strings.cs:35
 msgid "Enables the ping-pong responder"
 msgstr "Abilita il risponditore ping-pong"
 
-#: Server/Strings.cs:30
+#: Server/Strings.cs:36
 msgid ""
 "When running as a server, the service daemon must verify that the process is"
 " responding. If this option is enabled, the server reads stdin and writes a "
@@ -151,21 +216,21 @@ msgstr ""
 "il processo stia rispondendo. Se questa opzione è abilitata, il server legge"
 " stdin e scrive una risposta a ogni riga di lettura"
 
-#: Server/Strings.cs:31 Library/Main/Strings.cs:218
+#: Server/Strings.cs:37 Library/Main/Strings.cs:220
 msgid "Clean up old log data"
 msgstr "Pulisci i vecchi dati del registro"
 
-#: Server/Strings.cs:32 Library/Main/Strings.cs:219
+#: Server/Strings.cs:38 Library/Main/Strings.cs:221
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 "Imposta l'ora dopo la quale i dati del registro saranno eliminati dal "
 "database."
 
-#: Server/Strings.cs:33
+#: Server/Strings.cs:39
 msgid "Sets the folder where settings are stored"
 msgstr "Imposta la cartella in cui sono salvate le impostazioni"
 
-#: Server/Strings.cs:34
+#: Server/Strings.cs:40
 #, csharp-format
 msgid ""
 "Duplicati needs to store a small database with all settings. Use this option"
@@ -177,23 +242,38 @@ msgstr ""
 "archiviate le impostazioni. Questa opzione può essere impostata anche con la"
 " variabile d'ambiente {0}."
 
-#: Server/Strings.cs:35
+#: Server/Strings.cs:41
 msgid "Sets the database encryption key"
-msgstr "Imposta la chiave di criptografia del database"
+msgstr "Imposta la chiave di crittografia del database"
 
-#: Server/Strings.cs:36
+#: Server/Strings.cs:42
 #, csharp-format
 msgid ""
 "This option sets the encryption key used to scramble the local settings "
 "database. This option can also be set with the environment variable {0}. Use"
 " the option --{1} to disable the database scrambling."
 msgstr ""
-"Questa opzione imposta la chiave di criptografia usata per codificare le "
+"Questa opzione imposta la chiave di crittografia usata per codificare le "
 "impostazioni locali del database. Questa opzione può essere impostata anche "
 "con la variabile d'ambiente {0}. Usa l'opzione --{1} per disabilitare la "
 "codifica del database."
 
-#: Server/Strings.cs:39
+#: Server/Strings.cs:43 Library/Main/Strings.cs:74
+msgid "Temporary storage folder"
+msgstr "Cartella archiviazione temporanea"
+
+#: Server/Strings.cs:44 Library/Main/Strings.cs:75
+msgid ""
+"This option can be used to supply an alternative folder for temporary "
+"storage. By default the system default temporary folder is used. Note that "
+"also SQLite will put temporary files in this temporary folder."
+msgstr ""
+"Questa opzione può essere utilizzata per fornire una cartella alternativa "
+"per la memorizzazione temporanea. Per impostazione predefinita è utilizzata "
+"la cartella temporanea predefinita del sistema. Nota che anche SQLite "
+"metterà file temporanei in questa cartella temporanea."
+
+#: Server/Strings.cs:47
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -202,12 +282,12 @@ msgstr ""
 "Impossibile trovare una data valida, stabilita la data d'inizio {0}, "
 "l'intervallo di ripetizione {1} e i giorni consentiti {2}"
 
-#: Server/Strings.cs:44
+#: Server/Strings.cs:52
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server avviato e in ascolto su {0}, porta {1}"
 
-#: Server/Strings.cs:45
+#: Server/Strings.cs:53
 #, csharp-format
 msgid ""
 "Unable to create SSL certificate using provided parameters. Exception "
@@ -216,7 +296,7 @@ msgstr ""
 "Impossibile creare il certificato SSL usando i parametri forniti. Dettaglio "
 "eccezione: {0}"
 
-#: Server/Strings.cs:46
+#: Server/Strings.cs:54
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Impossibile aprire un socket per l'ascolto, porte provate: {0}"
@@ -227,11 +307,11 @@ msgid ""
 " bit AES encryption."
 msgstr ""
 "Questo modulo cripta tutti i file nello stesso modo utilizzato da AESCrypt, "
-"usando la criptazione AES 256 bit."
+"usando la crittografia AES 256 bit."
 
 #: Library/Encryption/Strings.cs:5
 msgid "AES-256 encryption, built in"
-msgstr "Costruito con criptazione AES-256"
+msgstr "Crittografia AES-256, nativo"
 
 #: Library/Encryption/Strings.cs:6
 msgid "Empty passphrase not allowed"
@@ -244,12 +324,12 @@ msgid ""
 "multithreading)"
 msgstr ""
 "Usa questa opzione per impostare il livello di thread consentito per le "
-"operazioni di criptazione AES. I valori validi sono 0 (utilizzo predefinito)"
-" o da 1 (senza multithreading) a 4 (max. multithreading)"
+"operazioni di crittografia AES. I valori validi sono 0 (utilizzo "
+"predefinito) o da 1 (senza multithreading) a 4 (max. multithreading)"
 
 #: Library/Encryption/Strings.cs:8
 msgid "Set thread level utilized for crypting (0-4)"
-msgstr "Imposta il livello di thread utilizzato per la criptazione (0-4)"
+msgstr "Imposta il livello di thread utilizzato per la crittografia (0-4)"
 
 #: Library/Encryption/Strings.cs:11
 #, csharp-format
@@ -265,7 +345,7 @@ msgid ""
 "program is available via the PATH environment variable. It is possible to "
 "supply the path to GPG using the --gpg-program-path switch."
 msgstr ""
-"Il modulo di criptazione GPG utilizza il programma GNU Privacy Guard per "
+"Il modulo di crittografia GPG utilizza il programma GNU Privacy Guard per "
 "criptare e decriptare i file. Richiede che l'eseguibile GPG sia disponibile "
 "nel sistema. In Windows si presume che questo sia nella cartella predefinita"
 " di installazione sotto Programmi, sotto Linux e OSX si presume che il "
@@ -287,14 +367,14 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:17
 msgid "Extra GPG commandline options for decryption"
-msgstr "Opzioni aggiuntive per GPG da riga di comando per la decriptazione"
+msgstr "Opzioni aggiuntive per GPG da riga di comando per la decrittografia"
 
 #: Library/Encryption/Strings.cs:18
 msgid ""
 "The GPG encryption/decryption will use the --armor option for GPG to protect"
 " the files with armor. Specify this switch to remove the --armor option."
 msgstr ""
-"La criptazione/decriptazione GPG userà l'opzione --armor per GPG per "
+"La crittografia/decrittografia GPG userà l'opzione --armor per GPG per "
 "proteggere i file con armature. Specifica questo interruttore per rimuovere "
 "l'opzione --armor."
 
@@ -313,12 +393,12 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:21
 msgid "Extra GPG commandline options for encryption"
-msgstr "Opzioni aggiuntive per GPG da riga di comando per la criptazione"
+msgstr "Opzioni aggiuntive per GPG da riga di comando per la crittografia"
 
 #: Library/Encryption/Strings.cs:22
 #, csharp-format
-msgid "Failed to execute GPG at \"\"{0}\" {1}\": {2}"
-msgstr "Impossibile eseguire GPG in \"\"{0}\" {1}\": {2}"
+msgid "Failed to execute GPG with \"{0} {1}\": {2}"
+msgstr ""
 
 #: Library/Encryption/Strings.cs:23
 msgid ""
@@ -354,11 +434,11 @@ msgstr "Usa GPG Armor"
 
 #: Library/Encryption/Strings.cs:28
 msgid "Overrides the GPG command supplied for decryption"
-msgstr "Sovrascittura del comando GPG fornito per la decriptazione"
+msgstr "Sovrascrive il comando GPG fornito per la decrittografia"
 
 #: Library/Encryption/Strings.cs:29
 msgid "The GPG decryption command"
-msgstr "Il comando di decriptazione GPG"
+msgstr "Comando di decrittografia GPG"
 
 #: Library/Encryption/Strings.cs:30
 #, csharp-format
@@ -366,18 +446,18 @@ msgid ""
 "Overrides the default GPG encryption command \"{0}\", normal usage is to "
 "request asymetric encryption with the setting {1}"
 msgstr ""
-"Esegue la sovrascrittura del comando di criptazione GPG predefinito '{0}', "
-"l'utilizzo normale consiste nel richiedere la criptazione asimmetrica con "
+"Esegue la sovrascrittura del comando di crittografia GPG predefinito '{0}', "
+"un utilizzo normale consiste nel richiedere la crittografia asimmetrica con "
 "l'impostazione {1}"
 
 #: Library/Encryption/Strings.cs:31
 msgid "The GPG encryption command"
-msgstr "Il comando di criptazione GPG"
+msgstr "Comando di crittografia GPG"
 
 #: Library/Encryption/Strings.cs:34
 #, csharp-format
 msgid "Decryption failed: {0}"
-msgstr "Decriptazione non riuscita: {0}"
+msgstr "Decrittografia non riuscita: {0}"
 
 #: Library/Encryption/Strings.cs:35
 msgid "Failure while invoking GnuPG, program won't flush output"
@@ -527,8 +607,8 @@ msgstr "Il nome del server '{0}' non è valido"
 msgid "Cancelled"
 msgstr "Cancellato"
 
-#: Library/Interface/CustomExceptions.cs:77
-#: Library/Interface/CustomExceptions.cs:85
+#: Library/Interface/CustomExceptions.cs:82
+#: Library/Interface/CustomExceptions.cs:90
 msgid "The requested file does not exist"
 msgstr "Il file richiesto non esiste"
 
@@ -591,14 +671,22 @@ msgstr ""
 "parametro: {1}"
 
 #: Library/Snapshots/Strings.cs:15
+msgid "Unable to determine full file path for USN entry"
+msgstr "Impossibile determinare il percorso completo del file per la voce USN"
+
+#: Library/Snapshots/Strings.cs:16
+msgid "USN journal entries were purged since last scan"
+msgstr "Le voci del registro USN sono state eliminate dall'ultima scansione"
+
+#: Library/Snapshots/Strings.cs:17
 msgid "Unexpected empty response while enumerating"
 msgstr "Inaspettata risposta vuota durante l'enumerazione"
 
-#: Library/Snapshots/Strings.cs:16
+#: Library/Snapshots/Strings.cs:18
 msgid "USN is not supported on Linux"
 msgstr "USN non supportato in Linux"
 
-#: Library/Snapshots/Strings.cs:17
+#: Library/Snapshots/Strings.cs:19
 msgid ""
 "The number of files returned by USN was zero. This is likely an error. To "
 "remedy this, USN has been disabled."
@@ -607,10 +695,18 @@ msgstr ""
 "errore. Per ovviare a questo, USN è stato disattivato."
 
 #: Library/Snapshots/Strings.cs:20
+msgid "Unexpected path format encountered"
+msgstr "Rilevato un formato percorso imprevisto"
+
+#: Library/Snapshots/Strings.cs:21
+msgid "Unsupported USN journal version."
+msgstr "Versione del registro USN non supportata."
+
+#: Library/Snapshots/Strings.cs:25
 msgid "Calling process does not have the backup privilege"
 msgstr "Il processo chiamante non dispone di privilegi di backup"
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:23
 msgid ""
 "This backend can read and write data to Swift (OpenStack Object Storage). "
 "Supported format is \"openstack://container/folder\"."
@@ -618,16 +714,16 @@ msgstr ""
 "Questo backend può leggere e scrivere i dati su Swift (OpenStack Object "
 "Storage). Il formato supportato è \"openstack://container/folder\"."
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:24
 msgid "OpenStack Simple Storage"
 msgstr "OpenStack Simple Storage"
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:25
 #, csharp-format
 msgid "Missing required option: {0}"
 msgstr "Opzione richiesta mancante: {0}"
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:26
 #, csharp-format
 msgid ""
 "The password used to connect to the server. This may also be supplied as the"
@@ -638,7 +734,7 @@ msgstr ""
 " fornita come variabile d'ambiente \"AUTH_PASSWORD\". Se è fornita la "
 "password, è necessario impostare anche --{0}"
 
-#: Library/Backend/OpenStack/Strings.cs:20 Library/Backend/FTP/Strings.cs:13
+#: Library/Backend/OpenStack/Strings.cs:27 Library/Backend/FTP/Strings.cs:13
 #: Library/Backend/CloudFiles/Strings.cs:7 Library/Backend/S3/Strings.cs:10
 #: Library/Backend/AlternativeFTP/Strings.cs:11
 #: Library/Backend/SSHv2/Strings.cs:24 Library/Backend/File/Strings.cs:10
@@ -649,7 +745,15 @@ msgstr ""
 msgid "Supplies the password used to connect to the server"
 msgstr "Fornisci la password usata per connettersi al server"
 
-#: Library/Backend/OpenStack/Strings.cs:20 Library/Backend/FTP/Strings.cs:14
+#: Library/Backend/OpenStack/Strings.cs:28
+msgid "The domain name of the user used to connect to the server."
+msgstr "Il nome di dominio utilizzato dell'utente per connettersi al server."
+
+#: Library/Backend/OpenStack/Strings.cs:29
+msgid "Supplies the domain used to connect to the server"
+msgstr "Fornisce il dominio utilizzato per connettersi al server"
+
+#: Library/Backend/OpenStack/Strings.cs:30 Library/Backend/FTP/Strings.cs:14
 #: Library/Backend/CloudFiles/Strings.cs:8 Library/Backend/S3/Strings.cs:11
 #: Library/Backend/AlternativeFTP/Strings.cs:12
 #: Library/Backend/SSHv2/Strings.cs:25 Library/Backend/File/Strings.cs:11
@@ -665,7 +769,7 @@ msgstr ""
 "Il nome utente usato per connettersi al server. Questo può anche essere "
 "fornito come variabile d'ambiente \"AUTH_USERNAME\"."
 
-#: Library/Backend/OpenStack/Strings.cs:20 Library/Backend/FTP/Strings.cs:15
+#: Library/Backend/OpenStack/Strings.cs:31 Library/Backend/FTP/Strings.cs:15
 #: Library/Backend/CloudFiles/Strings.cs:9 Library/Backend/S3/Strings.cs:12
 #: Library/Backend/AlternativeFTP/Strings.cs:13
 #: Library/Backend/SSHv2/Strings.cs:26 Library/Backend/File/Strings.cs:12
@@ -677,7 +781,7 @@ msgstr ""
 msgid "Supplies the username used to connect to the server"
 msgstr "Fornisci il nome utente usato per connettersi al server"
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:32
 msgid ""
 "The Tenant Name is commonly the paying user account name. This option must "
 "be supplied when authenticating with a password, but is not required when "
@@ -687,11 +791,11 @@ msgstr ""
 "Questa opzione deve essere fornita quando si esegue l'autenticazione con una"
 " password, ma non è necessaria quando si utilizza una chiave API."
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:33
 msgid "Supplies the Tenant Name used to connect to the server"
 msgstr "Fornisci il Nome Inquilino utilizzato per connettersi al server"
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:34
 msgid ""
 "The API key can be used to connect without supplying a password and tenant "
 "ID with some providers."
@@ -699,11 +803,11 @@ msgstr ""
 "La chiave API può essere utilizzata per connettersi senza fornire una "
 "password e un ID inquilino con alcuni provider."
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:35
 msgid "Supplies the API key used to connect to the server"
 msgstr "Fornisci la chiave API utilizzata per connettersi al server"
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:36
 #, csharp-format
 msgid ""
 "The authentication URL is used to authenticate the user and find the storage"
@@ -713,11 +817,21 @@ msgstr ""
 "servizio di archiviazione. L'URL termina comunemente con \"/v2.0\". I "
 "provider noti sono: {0}{1}"
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:37
 msgid "Supplies the authentication URL"
 msgstr "Fornisci l'URL di autenticazione"
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:38
+msgid "The keystone API version to use, valid values are 'v2' and 'v3'."
+msgstr ""
+"La versione dell'API keystone da utilizzare, i valori validi sono 'v2' e "
+"'v3'."
+
+#: Library/Backend/OpenStack/Strings.cs:39
+msgid "The keystone API version to use"
+msgstr "La versione dell'API keystone da utilizzare"
+
+#: Library/Backend/OpenStack/Strings.cs:40
 msgid ""
 "This option is only used when creating a container, and is used to indicate "
 "where the container should be placed. Consult your provider for a list of "
@@ -728,7 +842,7 @@ msgstr ""
 "Consulta il provider per un elenco di aree valide o lascia vuoto per l'area "
 "predefinita."
 
-#: Library/Backend/OpenStack/Strings.cs:20
+#: Library/Backend/OpenStack/Strings.cs:41
 msgid "Supplies the region used for creating a container"
 msgstr "Fornisci la regione utilizzata per creare un contenitore"
 
@@ -848,7 +962,7 @@ msgstr ""
 #: Library/Backend/AmazonCloudDrive/Strings.cs:24
 #: Library/Backend/GoogleServices/Strings.cs:26
 #: Library/Backend/GoogleServices/Strings.cs:43
-#: Library/Backend/Box/Strings.cs:24 Library/Backend/OneDrive/Strings.cs:11
+#: Library/Backend/Box/Strings.cs:24 Library/Backend/OneDrive/Strings.cs:6
 #: Library/Backend/HubiC/Strings.cs:24 Library/Backend/Dropbox/Strings.cs:24
 #: Library/Backend/OAuthHelper/Strings.cs:9
 msgid "The authorization code"
@@ -857,7 +971,7 @@ msgstr "Il codice di autorizzazione"
 #: Library/Backend/AmazonCloudDrive/Strings.cs:25
 #: Library/Backend/GoogleServices/Strings.cs:27
 #: Library/Backend/GoogleServices/Strings.cs:44
-#: Library/Backend/Box/Strings.cs:25 Library/Backend/OneDrive/Strings.cs:12
+#: Library/Backend/Box/Strings.cs:25 Library/Backend/OneDrive/Strings.cs:7
 #: Library/Backend/HubiC/Strings.cs:25 Library/Backend/Dropbox/Strings.cs:25
 #: Library/Backend/OAuthHelper/Strings.cs:10
 #, csharp-format
@@ -979,6 +1093,18 @@ msgstr ""
 #: Library/Backend/GoogleServices/Strings.cs:45
 msgid "Google Drive"
 msgstr "Google Drive"
+
+#: Library/Backend/GoogleServices/Strings.cs:48
+msgid "Hide team drives"
+msgstr "Nascondi unità di squadra"
+
+#: Library/Backend/GoogleServices/Strings.cs:49
+msgid ""
+"This option disables the team drives, showing only files and folders "
+"accessible with the account itself"
+msgstr ""
+"Questa opzione disabilita le unità del gruppo di lavoro, mostrando solo i "
+"file e le cartelle accessibili con l'account stesso"
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -1288,23 +1414,23 @@ msgid ""
 "If this flag is set, the FTP encryption mode will be changed to the selected"
 " option."
 msgstr ""
-"Se questo flag è impostato, la modalità di criptazione FTP sarà modificata "
+"Se questo flag è abilitato, la modalità di crittografia FTP sarà modificata "
 "dall'opzione selezionata."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:23
 msgid "Configure the FTP encryption mode"
-msgstr "Configura la modalità di criptazione FTP"
+msgstr "Configura la modalità di crittografia FTP"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:24
 msgid "This flag controls the SSL policy to use when encryption is enabled."
 msgstr ""
-"Questo flag controlla i criteri SSL da utilizzare quando la criptazione è "
-"abilitata."
+"Questo flag controlla il criterio SSL da utilizzare quando la crittografia è"
+" abilitata."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr ""
-"Configura il criterio SSL da utilizzare quando la criptazione è abilitata"
+"Configura il criterio SSL da utilizzare quando la crittografia è abilitata"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:26
 #, csharp-format
@@ -1534,6 +1660,65 @@ msgstr ""
 "Dopo la cancellazione di un file, esso può finire nella cartella cestino da "
 "cui sarà cancellato dopo un po di tempo. Usa questo comando per forzare la "
 "rimozione immediata dei file da cancellare."
+
+#: Library/Backend/Rclone/Strings.cs:6
+msgid "Rclone"
+msgstr "Rclone"
+
+#: Library/Backend/Rclone/Strings.cs:7
+msgid "This backend can read and write data to Rclone."
+msgstr "Questo backend può leggere e scrivere dati in Rclone."
+
+#: Library/Backend/Rclone/Strings.cs:8
+msgid "Local repository"
+msgstr "Repository locale"
+
+#: Library/Backend/Rclone/Strings.cs:9
+msgid ""
+"Local repository for Rclone. Make sure it is configured as a local drive, as"
+" it needs access to the files generated by Duplicati."
+msgstr ""
+"Repository locale per Rclone. Assicurati che sia configurato come unità "
+"locale, in quanto ha bisogno di accedere ai file generati da Duplicati."
+
+#: Library/Backend/Rclone/Strings.cs:10
+msgid "Remote repository"
+msgstr "Repository remoto"
+
+#: Library/Backend/Rclone/Strings.cs:11
+msgid ""
+"Remote repository for Rclone. This can be any of the backends provided by "
+"Rclone. More info available on https://rclone.org/."
+msgstr ""
+"Repository remoto per Rclone. Questo può essere uno dei backend forniti da "
+"Rclone. Maggiori informazioni disponibili su https://rclone.org/."
+
+#: Library/Backend/Rclone/Strings.cs:12
+msgid "Remote path"
+msgstr "Percorso remoto"
+
+#: Library/Backend/Rclone/Strings.cs:13
+msgid "Path on the Remote repository. "
+msgstr "Percorso nel repository remoto."
+
+#: Library/Backend/Rclone/Strings.cs:14
+msgid "Rclone options."
+msgstr "Opzioni Rclone."
+
+#: Library/Backend/Rclone/Strings.cs:15
+msgid "Options will be transferred to rclone."
+msgstr "Le opzioni saranno trasferite su Rclone."
+
+#: Library/Backend/Rclone/Strings.cs:16
+msgid "Rclone executable"
+msgstr "Eseguibile Rclone"
+
+#: Library/Backend/Rclone/Strings.cs:17
+msgid ""
+"Full path to the rclone executable. Only needed if it's not in your path."
+msgstr ""
+"Percorso completo per l'eseguibile Rclone. Necessario solo se non è nel tuo "
+"percorso."
 
 #: Library/Backend/File/Strings.cs:4
 #, csharp-format
@@ -1772,47 +1957,170 @@ msgstr "3"
 msgid "Minimum value is 3."
 msgstr "Il valore minimo è 3."
 
-#: Library/Backend/OneDrive/Strings.cs:5
-#, csharp-format
-msgid ""
-"Failed to authorize using the WLID service: {0}. If the problem persists, "
-"try generating a new authid token from: {1}"
-msgstr ""
-"Impossibile autorizzare l'utilizzo del servizio WLID: {0}. Se il problema "
-"persiste, prova a generare un nuovo token da: {1}"
-
-#: Library/Backend/OneDrive/Strings.cs:6
-msgid "Autocreated folder"
-msgstr "Cartella auto creata"
-
-#: Library/Backend/OneDrive/Strings.cs:7
-#: Library/Backend/OAuthHelper/Strings.cs:8
-#, csharp-format
-msgid "Unexpected error code: {0} - {1}"
-msgstr "Codice di errore imprevisto: {0} - {1}"
-
 #: Library/Backend/OneDrive/Strings.cs:8
 #, csharp-format
-msgid "Missing the folder: {0}"
-msgstr "Cartella mancante: {0}"
+msgid "No Auth-ID was provided - you can get one from {0}"
+msgstr "Non è stato fornito alcun Auth-ID - puoi ottenerne uno da {0}"
 
-#: Library/Backend/OneDrive/Strings.cs:9 Library/Compression/Strings.cs:13
-#, csharp-format
-msgid "File not found: {0}"
-msgstr "File non trovato: {0}"
+#: Library/Backend/OneDrive/Strings.cs:9
+msgid "Fragment size for large uploads"
+msgstr "Dimensione del frammento per caricamenti di grandi dimensioni"
 
 #: Library/Backend/OneDrive/Strings.cs:10
-msgid "Microsoft OneDrive"
-msgstr "Microsoft OneDrive"
+msgid ""
+"Size of individual fragments which are uploaded separately for large files. "
+"It is recommended to be between 5-10 MiB (though a smaller value may work "
+"better on a slower or less reliable connection), and to be a multiple of 320"
+" KiB."
+msgstr ""
+"Dimensione dei singoli frammenti che sono caricati separatamente per file di"
+" grandi dimensioni. Si consiglia di stare tra 5-10 MiB (anche se un valore "
+"inferiore può funzionare meglio con una connessione più lenta o meno "
+"affidabile) e di essere un multiplo di 320 KiB."
+
+#: Library/Backend/OneDrive/Strings.cs:11
+msgid "Number of retries for each fragment"
+msgstr "Numero di tentativi per ciascun frammento"
+
+#: Library/Backend/OneDrive/Strings.cs:12
+msgid ""
+"Number of retry attempts made for each fragment before failing the overall "
+"file upload"
+msgstr ""
+"Numero di tentativi eseguiti per ogni frammento prima di non riuscire a "
+"caricare il file"
 
 #: Library/Backend/OneDrive/Strings.cs:13
+msgid "Millisecond delay between fragment errors"
+msgstr "Ritardo in millisecondi tra gli errori del frammento"
+
+#: Library/Backend/OneDrive/Strings.cs:14
+msgid ""
+"Amount of time (in milliseconds) to wait between failures when uploading "
+"fragments"
+msgstr ""
+"Quantità di tempo (in millisecondi) di attesa tra gli errori durante il "
+"caricamento dei frammenti"
+
+#: Library/Backend/OneDrive/Strings.cs:19
+msgid "Microsoft OneDrive v2"
+msgstr "Microsoft OneDrive v2"
+
+#: Library/Backend/OneDrive/Strings.cs:20
 #, csharp-format
 msgid ""
-"Stores files on Microsoft OneDrive. Usage of this backend requires that you "
-"agree to the terms in {0} ({1}) and {2} ({3})"
+"Stores files in Microsoft OneDrive or Microsoft OneDrive for Business via "
+"the Microsoft Graph API. Usage of this backend requires that you agree to "
+"the terms in {0} ({1}) and {2} ({3})"
 msgstr ""
-"Archivia i file su Microsoft OneDrive. L'utilizzo di questo backend richiede"
-" che accetti i termini in {0} ({1}) e {2} ({3})"
+"Archiviare i file in Microsoft OneDrive o Microsoft OneDrive for Business "
+"tramite l'API di Microsoft Graph. L'utilizzo di questo backend richiede "
+"l'accettazione dei termini in  {0} ({1}) e {2} ({3})"
+
+#: Library/Backend/OneDrive/Strings.cs:21
+msgid "Optional ID of the drive"
+msgstr "ID opzionale dell'unità"
+
+#: Library/Backend/OneDrive/Strings.cs:22
+#, csharp-format
+msgid ""
+"ID of the drive to store data in. If no drive is specified, the default "
+"OneDrive or OneDrive for Business drive will be used via '{0}'."
+msgstr ""
+"ID dell'unità in cui archiviare i dati. Se non è specificata alcuna unità, "
+"sarà utilizzata l'unità predefinita OneDrive o OneDrive for Business tramite"
+" '{0}'."
+
+#: Library/Backend/OneDrive/Strings.cs:27
+msgid "Microsoft SharePoint v2"
+msgstr "Microsoft SharePoint v2"
+
+#: Library/Backend/OneDrive/Strings.cs:28
+#, csharp-format
+msgid ""
+"Stores files in a Microsoft SharePoint site via the Microsoft Graph API. "
+"Usage of this backend requires that you agree to the terms in {0} ({1}) and "
+"{2} ({3})"
+msgstr ""
+"Archiviare i file in un sito Microsoft SharePoint tramite l'API di Microsoft"
+" Graph. L'utilizzo di questo backend richiede l'accettazione dei termini in "
+"{0} ({1}) e {2} ({3})"
+
+#: Library/Backend/OneDrive/Strings.cs:29
+msgid "ID of the site"
+msgstr "ID del sito"
+
+#: Library/Backend/OneDrive/Strings.cs:30
+msgid "ID of the site to store data in"
+msgstr "ID del sito in cui archiviare i dati"
+
+#: Library/Backend/OneDrive/Strings.cs:31
+msgid "No site ID was provided"
+msgstr "Non è stato fornito alcun ID del sito"
+
+#: Library/Backend/OneDrive/Strings.cs:32
+#, csharp-format
+msgid "Conflicting site IDs used: given {0} but found {1}"
+msgstr "Conflitto ID utilizzati per il sito: dato {0} ma trovato {1}"
+
+#: Library/Backend/OneDrive/Strings.cs:37
+msgid "Microsoft Office 365 Group"
+msgstr "Gruppo Microsoft Office 365"
+
+#: Library/Backend/OneDrive/Strings.cs:38
+#, csharp-format
+msgid ""
+"Stores files in a Microsoft Office 365 Group via the Microsoft Graph API. "
+"Allowed formats are "
+"\"sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder\""
+" (with \"//\" being optionally used to indicate the root document folder), "
+"or just \"sharepoint://subfolder\" (in which case you must also explicitly "
+"specify the SharePoint site's ID via --site-id). Usage of this backend "
+"requires that you agree to the terms in {0} ({1}) and {2} ({3})"
+msgstr ""
+"Archivia i file in un gruppo Microsoft Office 365 tramite l'API Microsoft "
+"Graph. I formati consentiti sono "
+"\"sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder\""
+" (con \"//\" utilizzato facoltativamente per indicare la cartella del "
+"documento principale), o \"sharepoint://subfolder\" Ascolta (nel qual caso è"
+" necessario specificare in modo esplicito anche l'ID del sito di SharePoint "
+"tramite --site-id). L'utilizzo di questo backend richiede l'accettazione dei"
+" termini in {0} ({1}) e {2} ({3})"
+
+#: Library/Backend/OneDrive/Strings.cs:39
+msgid "ID of the group"
+msgstr "ID del gruppo"
+
+#: Library/Backend/OneDrive/Strings.cs:40
+msgid "ID of the group to store data in"
+msgstr "ID del gruppo in cui archiviare i dati"
+
+#: Library/Backend/OneDrive/Strings.cs:41
+msgid "Email address of the group"
+msgstr "Indirizzo email del gruppo"
+
+#: Library/Backend/OneDrive/Strings.cs:42
+msgid "Email address of the group to store data in"
+msgstr "Indirizzo email del gruppo in cui archiviare i dati"
+
+#: Library/Backend/OneDrive/Strings.cs:43
+msgid "No group ID or group email address was provided"
+msgstr "Non è stato fornito alcun ID di gruppo o indirizzo email di gruppo"
+
+#: Library/Backend/OneDrive/Strings.cs:44
+#, csharp-format
+msgid "No groups were found with the given email address: {0}"
+msgstr "Nessun gruppo trovato con l'indirizzo email indicato: {0}"
+
+#: Library/Backend/OneDrive/Strings.cs:45
+#, csharp-format
+msgid "Multiple groups were found with the given email address: {0}"
+msgstr "Sono stati trovati più gruppi con l'indirizzo email specificato: {0}"
+
+#: Library/Backend/OneDrive/Strings.cs:46
+#, csharp-format
+msgid "Conflicting group IDs used: given {0} but found {1}"
+msgstr "Conflitto ID utilizzati per il gruppo: dato {0} ma trovato {1}"
 
 #: Library/Backend/HubiC/Strings.cs:21
 msgid ""
@@ -2206,6 +2514,11 @@ msgstr ""
 "Impossibile autorizzare l'utilizzo del servizio OAuth: {0}. Se il problema "
 "persiste, prova a generare un nuovo token da: {1}"
 
+#: Library/Backend/OAuthHelper/Strings.cs:8
+#, csharp-format
+msgid "Unexpected error code: {0} - {1}"
+msgstr "Codice di errore imprevisto: {0} - {1}"
+
 #: Library/Backend/OAuthHelper/Strings.cs:11
 msgid "The OAuth service is currently over quota, try again in a few hours"
 msgstr ""
@@ -2281,6 +2594,11 @@ msgstr ""
 msgid "Zip compression"
 msgstr "Compressione Zip"
 
+#: Library/Compression/Strings.cs:13
+#, csharp-format
+msgid "File not found: {0}"
+msgstr "File non trovato: {0}"
+
 #: Library/Compression/Strings.cs:16
 msgid "Archive not opened for writing"
 msgstr "Archivio non aperto per la scrittura"
@@ -2294,12 +2612,12 @@ msgid "The given file is not part of this archive"
 msgstr "Il file indicato non fa parte di questo archivio"
 
 #: Library/Compression/Strings.cs:19
-msgid "7z Archive with LZMA2 support."
-msgstr "Archivio 7z con supporto LZMA2"
+msgid "*Experimental*: 7z Archive with LZMA2 support."
+msgstr "*Sperimentale*: Archivio 7z con supporto LZMA2."
 
 #: Library/Compression/Strings.cs:20
-msgid "7z Archive"
-msgstr "Archivio 7z"
+msgid "Experimental - 7z Archive"
+msgstr "Sperimentale - Archivio 7z"
 
 #: Library/Compression/Strings.cs:21
 msgid ""
@@ -2370,30 +2688,19 @@ msgstr ""
 "Errore: {1}\n"
 "Database NON aggiornato. "
 
-#: Library/Main/Database/ExtensionMethods.cs:48
+#: Library/Main/Operation/Common/BackendHandler.cs:540
+#: Library/Main/BackendManager.cs:1107
 #, csharp-format
-msgid "ExecuteNonQuery: {0}"
-msgstr "Esegui Non Query: {0}"
+msgid "Delete operation failed for {0} with FileNotFound, listing contents"
+msgstr ""
+"Operazione di cancellazione non riuscita per {0} con FileNonTrovato, "
+"contenuto dell'elenco"
 
-#: Library/Main/Database/ExtensionMethods.cs:64
+#: Library/Main/Operation/Common/BackendHandler.cs:553
+#: Library/Main/BackendManager.cs:1120
 #, csharp-format
-msgid "ExecuteScalar: {0}"
-msgstr "Esegui Scalare: {0}"
-
-#: Library/Main/Database/ExtensionMethods.cs:90
-#, csharp-format
-msgid "ExecuteScalarInt64: {0}"
-msgstr "Esegui Scalare Int64: {0}"
-
-#: Library/Main/Database/ExtensionMethods.cs:110
-#, csharp-format
-msgid "ExecuteReader: {0}"
-msgstr "Esegui Lettura: {0}"
-
-#: Library/Main/Database/ExtensionMethods.cs:200
-#, csharp-format
-msgid "{0} records"
-msgstr "{0} registrazioni"
+msgid "Listing indicates file {0} is deleted correctly"
+msgstr "L'elenco indica che il file {0} è stato cancellato correttamente"
 
 #: Library/Main/Strings.cs:8
 #, csharp-format
@@ -2435,6 +2742,13 @@ msgstr "La cartella sorgente {0} non esiste, interruzione del backup"
 
 #: Library/Main/Strings.cs:14
 #, csharp-format
+msgid "Unauthorized to access source folder {0}, aborting backup"
+msgstr ""
+"Non autorizzato ad accedere alla cartella sorgente {0}, interruzione del "
+"backup"
+
+#: Library/Main/Strings.cs:15
+#, csharp-format
 msgid ""
 "The value \"{1}\" supplied to --{0} does not parse into a valid boolean, "
 "this will be treated as if it was set to \"true\""
@@ -2442,7 +2756,7 @@ msgstr ""
 "Il valore \"{1}\" fornito a --{0} non frammenterà in un booleano valido, "
 "questo sarà trattato come se fosse impostato su 'vero'"
 
-#: Library/Main/Strings.cs:15
+#: Library/Main/Strings.cs:16
 #, csharp-format
 msgid ""
 "The option --{0} does not support the value \"{1}\", supported values are: "
@@ -2451,7 +2765,7 @@ msgstr ""
 "L'opzione --{0} non supporta il valore \"{1}\", i valori supportati sono: "
 "{2}"
 
-#: Library/Main/Strings.cs:16
+#: Library/Main/Strings.cs:17
 #, csharp-format
 msgid ""
 "The option --{0} does not support the value \"{1}\", supported flag values "
@@ -2460,12 +2774,12 @@ msgstr ""
 "L'opzione --{0} non supporta il valore \"{1}\", i valori supportati dei flag"
 " sono: {2}"
 
-#: Library/Main/Strings.cs:17
+#: Library/Main/Strings.cs:18
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid integer"
 msgstr "Il valore \"{1}\" fornito a --{0} non rappresenta un numero intero valido"
 
-#: Library/Main/Strings.cs:18
+#: Library/Main/Strings.cs:19
 #, csharp-format
 msgid ""
 "The option --{0} is not supported because the module {1} is not currently "
@@ -2474,47 +2788,47 @@ msgstr ""
 "L'opzione --{0} non è supportata perché il modulo {1} non è attualmente "
 "caricato"
 
-#: Library/Main/Strings.cs:19
+#: Library/Main/Strings.cs:20
 #, csharp-format
 msgid "The supplied option --{0} is not supported and will be ignored"
 msgstr "L'opzione fornita --{0} non è supportata e sarà ignorata"
 
-#: Library/Main/Strings.cs:20
+#: Library/Main/Strings.cs:21
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid path"
 msgstr "Il valore \"{1}\" fornito a --{0} non rappresenta un percorso valido"
 
-#: Library/Main/Strings.cs:21
+#: Library/Main/Strings.cs:22
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid size"
 msgstr "Il valore \"{1}\" fornito a --{0} non rappresenta una dimensione valida"
 
-#: Library/Main/Strings.cs:22
+#: Library/Main/Strings.cs:23
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid time"
 msgstr "Il valore \"{1}\" fornito a --{0} non rappresenta un tepo valido"
 
-#: Library/Main/Strings.cs:23
+#: Library/Main/Strings.cs:24
 #, csharp-format
 msgid "The operation {0} has started"
 msgstr "L'operazione {0} è iniziata"
 
-#: Library/Main/Strings.cs:24
+#: Library/Main/Strings.cs:25
 #, csharp-format
 msgid "The operation {0} has completed"
 msgstr "L'operazione {0} è stata completata"
 
-#: Library/Main/Strings.cs:25
+#: Library/Main/Strings.cs:26
 #, csharp-format
 msgid "The operation {0} has failed with error: {1}"
-msgstr "L'operazione {0} non è riuscita con errore: {1}"
+msgstr "L'operazione {0} non è riuscita con l'errore: {1}"
 
-#: Library/Main/Strings.cs:26
+#: Library/Main/Strings.cs:27
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Percorso non valido: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:27
+#: Library/Main/Strings.cs:28
 #, csharp-format
 msgid ""
 "Failed to apply 'force-locale' setting. Please try to update .NET-Framework."
@@ -2523,14 +2837,14 @@ msgstr ""
 "Impossibile applicare l'impostazione 'force-locale'. Per favore prova ad "
 "aggiornare .NET-Framework. L'eccezione è stata: \"{0}\""
 
-#: Library/Main/Strings.cs:28
+#: Library/Main/Strings.cs:29
 #, csharp-format
 msgid "The source {0} uses an invalid volume name, aborting backup"
 msgstr ""
 "La sorgente {0} utilizza un nome di volume non valido, interruzione del "
 "backup"
 
-#: Library/Main/Strings.cs:29
+#: Library/Main/Strings.cs:30
 #, csharp-format
 msgid ""
 "The source {0} is on volume {1}, which could not be found, aborting backup"
@@ -2538,7 +2852,18 @@ msgstr ""
 "La sorgente {0} è sul volume {1}, che non è stato trovato, interruzione del "
 "backup"
 
-#: Library/Main/Strings.cs:34
+#: Library/Main/Strings.cs:31
+#, csharp-format
+msgid ""
+"The size \"{1}\" supplied to --{0} does not have a multiplier (b, kb, mb, "
+"etc). A multiplier is recommended to avoid unexpected changes if the program"
+" is updated."
+msgstr ""
+"La dimensione \"{1}\" fornito a --{0} non ha un moltiplicatore (b, kb, mb, "
+"etc). Un moltiplicatore è consigliabile per evitare modifiche impreviste "
+"quando il programma viene aggiornato."
+
+#: Library/Main/Strings.cs:36
 msgid ""
 "If a backup is interrupted there will likely be partial files present on the"
 " backend. Using this flag, Duplicati will automatically remove such files "
@@ -2548,12 +2873,12 @@ msgstr ""
 "sul backend. Usa questo flag, Duplicati rimuoverà automaticamente questi "
 "file quando saranno rilevati."
 
-#: Library/Main/Strings.cs:35
+#: Library/Main/Strings.cs:37
 msgid "A flag indicating that Duplicati should remove unused files"
 msgstr ""
 "Un flag che indica che Duplicati dovrebbero rimuovere i file inutilizzati"
 
-#: Library/Main/Strings.cs:36
+#: Library/Main/Strings.cs:38
 msgid ""
 "A string used to prefix the filenames of the remote volumes, can be used to "
 "store multiple backups in the same remote folder. The prefix cannot contain "
@@ -2565,11 +2890,11 @@ msgstr ""
 " prefisso non può contenere un trattino (-), ma può contenere tutti gli "
 "altri caratteri consentiti dall'archiviazione remota."
 
-#: Library/Main/Strings.cs:37
+#: Library/Main/Strings.cs:39
 msgid "Remote filename prefix"
 msgstr "Prefisso nome file remoto"
 
-#: Library/Main/Strings.cs:38
+#: Library/Main/Strings.cs:40
 msgid ""
 "The operating system keeps track of the last time a file was written. Using "
 "this information, Duplicati can quickly determine if the file has been "
@@ -2582,11 +2907,11 @@ msgstr ""
 "deliberatamente queste informazioni, Duplicati non funzionerà correttamente "
 "a meno che non sia impostato questo flag."
 
-#: Library/Main/Strings.cs:39
+#: Library/Main/Strings.cs:41
 msgid "Disable checks based on file time"
 msgstr "Disattiva i controlli in base all'ora del file"
 
-#: Library/Main/Strings.cs:40
+#: Library/Main/Strings.cs:42
 msgid ""
 "By default, files will be restored in the source folders, use this option to"
 " restore to another folder"
@@ -2594,15 +2919,15 @@ msgstr ""
 "Per impostazione predefinita, i file saranno ripristinati nelle cartelle "
 "sorgenti, utilizza questa opzione per ripristinare in un'altra cartella"
 
-#: Library/Main/Strings.cs:41
+#: Library/Main/Strings.cs:43
 msgid "Restore to another folder"
 msgstr "Ripristina in un'altra cartella"
 
-#: Library/Main/Strings.cs:42
+#: Library/Main/Strings.cs:44
 msgid "Toggles system sleep mode"
 msgstr "Attiva/disattiva modalità sospensione del sistema"
 
-#: Library/Main/Strings.cs:43
+#: Library/Main/Strings.cs:45
 msgid ""
 "Allow system to enter sleep power modes for inactivity during backup/restore"
 " operations (Windows/OSX only)"
@@ -2610,7 +2935,7 @@ msgstr ""
 "Consenti al sistema di entrare in modalità Sospensione per inattività "
 "durante le operazioni di backup/ripristino (solo Windows/OSX)"
 
-#: Library/Main/Strings.cs:44
+#: Library/Main/Strings.cs:46
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for downloads. Setting this limit can make the backups take longer, but will"
@@ -2620,11 +2945,11 @@ msgstr ""
 " Duplicata usa per scaricare. L'impostazione di questo limite può richiedere"
 " più tempo per i backup, ma renderà Duplicati meno invadente."
 
-#: Library/Main/Strings.cs:45
+#: Library/Main/Strings.cs:47
 msgid "Max number of kilobytes to download pr. second"
 msgstr "Numero massimo di kilobyte al secondo per scaricare"
 
-#: Library/Main/Strings.cs:46
+#: Library/Main/Strings.cs:48
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for uploads. Setting this limit can make the backups take longer, but will "
@@ -2634,24 +2959,24 @@ msgstr ""
 " Duplicata usa per i trasferimenti. L'impostazione di questo limite può "
 "richiedere più tempo per i backup, ma renderà Duplicati meno invadente."
 
-#: Library/Main/Strings.cs:47
+#: Library/Main/Strings.cs:49
 msgid "Max number of kilobytes to upload pr. second"
 msgstr "Numero massimo di kilobyte al secondo per caricare"
 
-#: Library/Main/Strings.cs:48
+#: Library/Main/Strings.cs:50
 msgid ""
 "If you store the backups on a local disk, and prefer that they are kept "
 "unencrypted, you can turn of encryption completely by using this switch."
 msgstr ""
 "Se archivi i backup su un disco locale e preferisci che siano mantenuti non "
-"criptati, puoi disattivare completamente la criptazione utilizzando questa "
+"criptati, puoi disattivare completamente la crittografia utilizzando questa "
 "opzione."
 
-#: Library/Main/Strings.cs:49
+#: Library/Main/Strings.cs:51
 msgid "Disable encryption"
-msgstr "Disattiva criptazione"
+msgstr "Disattiva crittografia"
 
-#: Library/Main/Strings.cs:50
+#: Library/Main/Strings.cs:52
 msgid ""
 "If an upload or download fails, Duplicati will retry a number of times "
 "before failing. Use this to handle unstable network connections better."
@@ -2660,11 +2985,11 @@ msgstr ""
 "un certo numero di volte prima di fallire. Usa questo per gestire meglio le "
 "connessioni di rete instabili."
 
-#: Library/Main/Strings.cs:51
+#: Library/Main/Strings.cs:53
 msgid "Number of times to retry a failed transmission"
 msgstr "Numero di tentativi se una trasmissione fallisce"
 
-#: Library/Main/Strings.cs:52
+#: Library/Main/Strings.cs:54
 msgid ""
 "Supply a passphrase that Duplicati will use to encrypt the backup volumes, "
 "making them unreadable without the passphrase. This variable can also be "
@@ -2674,11 +2999,11 @@ msgstr ""
 "backup, rendendoli illeggibili senza la passphrase. Questa variabile può "
 "essere fornita anche tramite la variabile d'ambiente PASSPHRASE."
 
-#: Library/Main/Strings.cs:53
+#: Library/Main/Strings.cs:55
 msgid "Passphrase used to encrypt backups"
 msgstr "Passphrase utilizzata per criptare i backup"
 
-#: Library/Main/Strings.cs:54
+#: Library/Main/Strings.cs:56
 msgid ""
 "By default, Duplicati will list and restore files from the most recent "
 "backup, use this option to select another item. You may use relative times, "
@@ -2688,11 +3013,11 @@ msgstr ""
 "backup più recente, usa questa opzione per selezionare un altro elemento. "
 "Puoi usare tempi relativi, come \"-2M\" per un backup di due mesi fa."
 
-#: Library/Main/Strings.cs:55
+#: Library/Main/Strings.cs:57
 msgid "The time to list/restore files"
 msgstr "Il periodo da cui elencare/ripristinare i file"
 
-#: Library/Main/Strings.cs:56
+#: Library/Main/Strings.cs:58
 msgid ""
 "By default, Duplicati will list and restore files from the most recent "
 "backup, use this option to select another item. You may enter multiple "
@@ -2703,11 +3028,11 @@ msgstr ""
 "Puoi immettere più valori separati da virgola, e gli intervalli usando -, "
 "es. \"0,2-4,7\"."
 
-#: Library/Main/Strings.cs:57
+#: Library/Main/Strings.cs:59
 msgid "The version to list/restore files"
 msgstr "La versione dei file da elencare/ripristinare"
 
-#: Library/Main/Strings.cs:58
+#: Library/Main/Strings.cs:60
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
@@ -2715,11 +3040,11 @@ msgstr ""
 "Durante la ricerca dei file, è ricercato solo il backup più recente. Usa "
 "questa opzione per visualizzare anche tutte le versioni precedenti."
 
-#: Library/Main/Strings.cs:59
+#: Library/Main/Strings.cs:61
 msgid "Show all versions"
 msgstr "Mostra tutte le versioni"
 
-#: Library/Main/Strings.cs:60
+#: Library/Main/Strings.cs:62
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the largest common prefix path."
@@ -2728,11 +3053,11 @@ msgstr ""
 "questa opzione per restituire solo il percorso del prefisso comune più "
 "grande."
 
-#: Library/Main/Strings.cs:61
+#: Library/Main/Strings.cs:63
 msgid "Show largest prefix"
 msgstr "Mostra il prefisso più grande"
 
-#: Library/Main/Strings.cs:62
+#: Library/Main/Strings.cs:64
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
@@ -2741,11 +3066,11 @@ msgstr ""
 "questa opzione per restituire solo le voci presenti nella cartella "
 "specificata come filtro."
 
-#: Library/Main/Strings.cs:63
+#: Library/Main/Strings.cs:65
 msgid "Show folder contents"
 msgstr "Mostra contenuto cartella"
 
-#: Library/Main/Strings.cs:64
+#: Library/Main/Strings.cs:66
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
 "attempting again. This is useful if the network drops out occasionally "
@@ -2755,21 +3080,21 @@ msgstr ""
 "prima di ritentare. Ciò è utile se la rete cade occasionalmente durante le "
 "trasmissioni."
 
-#: Library/Main/Strings.cs:65
+#: Library/Main/Strings.cs:67
 msgid "Time to wait between retries"
 msgstr "Tempo di attesa tra i tentativi"
 
-#: Library/Main/Strings.cs:66
+#: Library/Main/Strings.cs:68
 msgid "Use this option to attach extra files to the newly uploaded filelists."
 msgstr ""
 "Usa questa opzione per allegare file aggiuntivi ai file elenco appena "
 "caricati."
 
-#: Library/Main/Strings.cs:67
+#: Library/Main/Strings.cs:69
 msgid "Set control files"
 msgstr "Impostare file di controllo"
 
-#: Library/Main/Strings.cs:68
+#: Library/Main/Strings.cs:70
 msgid ""
 "If the hash for the volume does not match, Duplicati will refuse to use the "
 "backup. Supply this flag to allow Duplicati to proceed anyway."
@@ -2778,11 +3103,11 @@ msgstr ""
 "utilizzare il backup. Imposta questo flag per permettere a Duplicati di "
 "procedere comunque."
 
-#: Library/Main/Strings.cs:69
+#: Library/Main/Strings.cs:71
 msgid "Set this flag to skip hash checks"
 msgstr "Imposta questo flag per evitare i controlli hash"
 
-#: Library/Main/Strings.cs:70
+#: Library/Main/Strings.cs:72
 msgid ""
 "This option allows you to exclude files that are larger than the given "
 "value. Use this to prevent backups becoming extremely large."
@@ -2791,30 +3116,11 @@ msgstr ""
 "specificato. Usa questa per evitare che i backup diventino estremamente "
 "grandi."
 
-#: Library/Main/Strings.cs:71
+#: Library/Main/Strings.cs:73
 msgid "Limit the size of files being backed up"
 msgstr "Limita le dimensioni dei file sottoposti a backup"
 
-#: Library/Main/Strings.cs:72
-msgid "Temporary storage folder"
-msgstr "Cartella archiviazione temporanea"
-
-#: Library/Main/Strings.cs:73
-msgid ""
-"Duplicati will use the system default temporary folder. This option can be "
-"used to supply an alternative folder for temporary storage. Note that SQLite"
-" will always put temporary files in the system default temporary folder. "
-"Consider using the TMPDIR environment variable on Linux to set the temporary"
-" folder for both Duplicati and SQLite."
-msgstr ""
-"Duplicati utilizzerà la cartella temporanea predefinita del sistema. Questa "
-"opzione può essere utilizzata per fornire una cartella alternativa per "
-"l'archiviazione temporanea. Nota che SQLite metterà sempre i file temporanei"
-" nella cartella temporanea predefinita di sistema. Si consiglia di "
-"utilizzare la variabile d'ambiente TMPDIR su Linux per impostare la cartella"
-" temporanea sia per Duplicati sia per SQLite."
-
-#: Library/Main/Strings.cs:74
+#: Library/Main/Strings.cs:76
 msgid ""
 "Selects another thread priority for the process. Use this to set Duplicati "
 "to be more or less CPU intensive."
@@ -2822,11 +3128,11 @@ msgstr ""
 "Seleziona un'altra priorità del thread per il processo. Usa questa per "
 "impostare Duplicati ad essere più o meno CPU intensivo."
 
-#: Library/Main/Strings.cs:75
+#: Library/Main/Strings.cs:77
 msgid "Thread priority"
 msgstr "Priorità thread"
 
-#: Library/Main/Strings.cs:76
+#: Library/Main/Strings.cs:78
 msgid ""
 "This option can change the maximum size of dblock files. Changing the size "
 "can be useful if the backend has a limit on the size of each individual file"
@@ -2835,11 +3141,11 @@ msgstr ""
 "modifica delle dimensioni può essere utile se il backend ha un limite per le"
 " dimensioni di ogni singolo file"
 
-#: Library/Main/Strings.cs:77
+#: Library/Main/Strings.cs:79
 msgid "Limit the size of the volumes"
 msgstr "Limita le dimensioni dei volumi"
 
-#: Library/Main/Strings.cs:78
+#: Library/Main/Strings.cs:80
 msgid ""
 "Enabling this option will disallow usage of the streaming interface, which "
 "means that transfer progress bars will not show, and bandwidth throttle "
@@ -2850,11 +3156,11 @@ msgstr ""
 "non saranno visualizzate e le impostazioni della limitazione della larghezza"
 " di banda saranno ignorate."
 
-#: Library/Main/Strings.cs:79
+#: Library/Main/Strings.cs:81
 msgid "Disables use of the streaming transfer method"
 msgstr "Disattiva l'utilizzo del metodo di trasferimento streaming"
 
-#: Library/Main/Strings.cs:80
+#: Library/Main/Strings.cs:82
 msgid ""
 "This option will make sure the contents of the manifest file are not read. "
 "This also implies that file hashes are not checked either. Use only for "
@@ -2864,11 +3170,11 @@ msgstr ""
 "letto. Ciò implica anche che i file hash non sono controllati. Usala solo "
 "per il ripristino di emergenza."
 
-#: Library/Main/Strings.cs:81
+#: Library/Main/Strings.cs:83
 msgid "An option that prevents verifying the manifests"
 msgstr "Un'opzione che impedisce la verifica dei file manifest"
 
-#: Library/Main/Strings.cs:82
+#: Library/Main/Strings.cs:84
 msgid ""
 "Duplicati supports pluggable compression modules. Use this option to select "
 "a module to use for compression. This is only applied when creating new "
@@ -2881,74 +3187,76 @@ msgstr ""
 "file esistente, il nome del file è utilizzato per selezionare il modulo di "
 "compressione."
 
-#: Library/Main/Strings.cs:83
+#: Library/Main/Strings.cs:85
 msgid "Select what module to use for compression"
 msgstr "Seleziona il modulo da utilizzare per la compressione"
 
-#: Library/Main/Strings.cs:84
+#: Library/Main/Strings.cs:86
 msgid ""
 "Duplicati supports pluggable encryption modules. Use this option to select a"
 " module to use for encryption. This is only applied when creating new "
 "volumes, when reading an existing file, the filename is used to select the "
 "encryption module."
 msgstr ""
-"Duplicati supporta moduli di criptazione come componenti aggiuntivi. Usa "
-"questa opzione per selezionare un modulo da utilizzare per la criptazione. "
-"Questo è applicato solo quando si creano nuovi volumi, quando si legge un "
-"file esistente, il nome del file è utilizzato per selezionare il modulo di "
-"criptazione."
+"Duplicati supporta moduli di crittografia come componenti aggiuntivi. Usa "
+"questa opzione per selezionare un modulo da utilizzare per la crittografia. "
+"Viene applicato solo quando si creano nuovi volumi. Quando si legge un file "
+"esistente, il nome del file è utilizzato per selezionare il modulo di "
+"crittografia."
 
-#: Library/Main/Strings.cs:85
+#: Library/Main/Strings.cs:87
 msgid "Select what module to use for encryption"
-msgstr "Selezionare il modulo da utilizzare per la criptazione"
+msgstr "Selezionare il modulo da utilizzare per la crittografia"
 
-#: Library/Main/Strings.cs:86
+#: Library/Main/Strings.cs:88
 msgid "Supply one or more module names, separated by commas to unload them"
 msgstr "Fornisci uno o più nomi di moduli, separati da virgole, da scaricare"
 
-#: Library/Main/Strings.cs:87
+#: Library/Main/Strings.cs:89
 msgid "Disabled one or more modules"
 msgstr "Disabilita uno o più moduli"
 
-#: Library/Main/Strings.cs:88
+#: Library/Main/Strings.cs:90
 msgid "Supply one or more module names, separated by commas to load them"
 msgstr "Fornisci uno o più nomi di moduli, separati da virgole, da caricare"
 
-#: Library/Main/Strings.cs:89
+#: Library/Main/Strings.cs:91
 msgid "Enables one or more modules"
 msgstr "Attiva uno o più moduli"
 
-#: Library/Main/Strings.cs:90
+#: Library/Main/Strings.cs:92
 msgid ""
 "This setting controls the usage of snapshots, which allows Duplicati to "
 "backup files that are locked by other programs. If this is set to \"off\", "
 "Duplicati will not attempt to create a disk snapshot. Setting this to "
 "\"auto\" makes Duplicati attempt to create a snapshot, and fail silently if "
-"that was not allowed or supported. A setting of \"on\" will also make "
-"Duplicati attempt to create a snapshot, but will produce a warning message "
-"in the log if it fails. Setting it to \"required\" will make Duplicati abort"
-" the backup if the snapshot creation fails. On windows this uses the Volume "
-"Shadow Copy Services (VSS) and requires administrative privileges. On Linux "
-"this uses Logical Volume Management (LVM) and requires root privileges."
+"that was not allowed or supported (note that the OS may still log system "
+"warnings). A setting of \"on\" will also make Duplicati attempt to create a "
+"snapshot, but will produce a warning message in the log if it fails. Setting"
+" it to \"required\" will make Duplicati abort the backup if the snapshot "
+"creation fails. On windows this uses the Volume Shadow Copy Services (VSS) "
+"and requires administrative privileges. On Linux this uses Logical Volume "
+"Management (LVM) and requires root privileges."
 msgstr ""
-"Questa impostazione controlla l'utilizzo di istantanee, e consente a "
-"Duplicati di eseguire il backup dei file bloccati da altri programmi. "
-"Impostandola su \"off\", Duplicati non tenterà di creare un'istantanea del "
-"disco. L'impostazione di questa su \"auto\" farà si che Duplicati tenti di "
-"creare un'istantanea, e  se fallisce non sarà notificato se ciò non è stato "
-"consentito o supportato. Impostandola su \"on\" Duplicati farà un tentativo "
-"di creare un'istantanea, ma produrrà un messaggio di avviso nel registro se "
-"non ci riesce. Impostandola su \"required\" farà si che Duplicati "
-"interromperà il backup se la creazione di un'istantanea non riesce. In "
-"Windows questo utilizza il Volume Shadow Copy Services (VSS) e richiede i "
-"privilegi dell'amministratore. In Linux questo utilizza Logical Volume "
-"Management (LVM) e richiede privilegi di root."
+"Questa impostazione controlla l'utilizzo delle istantanee, che consentono a "
+"Duplicati di eseguire il backup dei file bloccati da altri programmi. Se è "
+"impostata su \"Off\", Duplicati non tenterà di creare un'istantanea del "
+"disco. Impostandola su \"Auto\", Duplicati tenta di creare un'istantanea e, "
+"se non è consentita o supportata, in caso di errore non sarà prodotta "
+"nessuna notifica (si noti che il sistema operativo può ancora registrare gli"
+" avvisi di sistema). Impostandola su \"On\" Duplicati tenterà di creare "
+"un'istantanea ma se fallisce, mostrerà un messaggio di avviso nel registro."
+"  Impostandola su \"Required\", Duplicati interromperà il backup se la "
+"creazione dell'istantanea fallisce. Su Windows questa funzione utilizza il "
+"Volume Shadow Copy Services (VSS) e richiede privilegi amministrativi. Su "
+"Linux questa funzione utilizza Logical Volume Management (LVM) e richiede i "
+"privilegi di root."
 
-#: Library/Main/Strings.cs:91
+#: Library/Main/Strings.cs:93
 msgid "Controls the use of disk snapshots"
 msgstr "Controlla l'utilizzo delle istantanee del disco"
 
-#: Library/Main/Strings.cs:92
+#: Library/Main/Strings.cs:94
 msgid ""
 "The pre-generated volumes will be placed into the temporary folder by "
 "default, this option can set a different folder for placing the temporary "
@@ -2959,11 +3267,11 @@ msgstr ""
 "per l'immissione dei volumi temporanei, nonostante il nome, questo funziona "
 "anche per le esecuzioni sincrone"
 
-#: Library/Main/Strings.cs:93
+#: Library/Main/Strings.cs:95
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "Il percorso in cui sono collocati i volumi pronti fino al caricamento"
 
-#: Library/Main/Strings.cs:94
+#: Library/Main/Strings.cs:96
 msgid ""
 "When performing asynchronous uploads, Duplicati will create volumes that can"
 " be uploaded. To prevent Duplicati from generating too many volumes, this "
@@ -2975,11 +3283,11 @@ msgstr ""
 "questa opzione limita il numero di caricamenti in sospeso. Impostala su zero"
 " per disabilitare il limite"
 
-#: Library/Main/Strings.cs:95
+#: Library/Main/Strings.cs:97
 msgid "The number of volumes to create ahead of time"
 msgstr "Il numero di volumi da creare prima del tempo"
 
-#: Library/Main/Strings.cs:96
+#: Library/Main/Strings.cs:98
 msgid ""
 "Activating this option will make some error messages more verbose, which may"
 " help you track down a particular issue"
@@ -2987,15 +3295,19 @@ msgstr ""
 "L'attivazione di questa opzione renderà alcuni messaggi di errore più "
 "prolissi, i quali possono aiutare a rintracciare un particolare problema"
 
-#: Library/Main/Strings.cs:97
+#: Library/Main/Strings.cs:99
 msgid "Enables debugging output"
 msgstr "Attiva emissione debug"
 
-#: Library/Main/Strings.cs:98
-msgid "Log internal information"
-msgstr "Registro interno informazioni"
+#: Library/Main/Strings.cs:100
+msgid "Log internal information to a file"
+msgstr "Registra le informazioni interne in un file"
 
-#: Library/Main/Strings.cs:99
+#: Library/Main/Strings.cs:101
+msgid "Logs information to the file specified"
+msgstr "Registra le informazioni nel file specificato"
+
+#: Library/Main/Strings.cs:102 Library/Main/Strings.cs:253
 msgid ""
 "Specifies the amount of log information to write into the file specified by "
 "--log-file"
@@ -3003,11 +3315,16 @@ msgstr ""
 "Specifica la quantità di informazioni nel registro da scrivere nel file "
 "specificato da --log-file"
 
-#: Library/Main/Strings.cs:100
+#: Library/Main/Strings.cs:103
 msgid "Log information level"
 msgstr "Livello registro informazioni"
 
-#: Library/Main/Strings.cs:101
+#: Library/Main/Strings.cs:104
+#, csharp-format
+msgid "Use the {0} and {1} options instead"
+msgstr "Usa invece le opzioni {0} e {1}"
+
+#: Library/Main/Strings.cs:105
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
@@ -3016,11 +3333,11 @@ msgstr ""
 "automaticamente. Attiva questa opzione per impedire la creazione automatica "
 "delle cartelle."
 
-#: Library/Main/Strings.cs:102
+#: Library/Main/Strings.cs:106
 msgid "Disables automatic folder creation"
 msgstr "Disabilita creazione automatica cartella"
 
-#: Library/Main/Strings.cs:103
+#: Library/Main/Strings.cs:107
 msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
@@ -3035,14 +3352,14 @@ msgstr ""
 "e la maggior parte delle forme GUID sono ammesse, incluse con e senza "
 "parentesi graffe."
 
-#: Library/Main/Strings.cs:104
+#: Library/Main/Strings.cs:108
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr ""
 "Un elenco separato da punti e virgola di GUID di scrittori VSS da escludere "
 "(solo Windows)"
 
-#: Library/Main/Strings.cs:105
+#: Library/Main/Strings.cs:109
 msgid ""
 "This setting controls the usage of NTFS USN numbers, which allows Duplicati "
 "to obtain a list of files and folders much faster. If this is set to "
@@ -3065,11 +3382,11 @@ msgstr ""
 "backup se l'utilizzo di USN non riesce. Questa funzionalità è supportata "
 "solo in Windows e richiede i privilegi dell'amministratore."
 
-#: Library/Main/Strings.cs:106
+#: Library/Main/Strings.cs:110
 msgid "Controls the use of NTFS Update Sequence Numbers"
 msgstr "Controlla l'utilizzo dei Numeri Sequenza Aggiornamento NTFS"
 
-#: Library/Main/Strings.cs:107
+#: Library/Main/Strings.cs:111
 msgid ""
 "If USN is enabled the USN numbers are used to find all changed files since "
 "last backup. Use this option to disable the use of USN numbers, which will "
@@ -3084,11 +3401,11 @@ msgstr ""
 "essere disabilitata in un ambiente di produzione. Se USN non è abilitato, "
 "questa opzione non ha effetto."
 
-#: Library/Main/Strings.cs:108
+#: Library/Main/Strings.cs:112
 msgid "Disables changelist by USN numbers"
 msgstr "Disattiva la modifica con numeri USN"
 
-#: Library/Main/Strings.cs:109
+#: Library/Main/Strings.cs:113
 #, csharp-format
 msgid ""
 "When matching timestamps, Duplicati will adjust the times by a small "
@@ -3111,15 +3428,15 @@ msgstr ""
 "opzione per disabilitare la tolleranza e usare il controllo del tempo "
 "rigoroso"
 
-#: Library/Main/Strings.cs:110
+#: Library/Main/Strings.cs:114
 msgid "Deactivates tolerance when comparing times"
 msgstr "Disattiva la tolleranza quando si confrontano gli orari"
 
-#: Library/Main/Strings.cs:111
+#: Library/Main/Strings.cs:115
 msgid "Verify uploads by listing contents"
 msgstr "Verificare i caricamenti elencando i contenuti"
 
-#: Library/Main/Strings.cs:112
+#: Library/Main/Strings.cs:116
 msgid ""
 "Duplicati will upload files while scanning the disk and producing volumes, "
 "which usually makes the backup faster. Use this flag to turn the behavior "
@@ -3130,11 +3447,11 @@ msgstr ""
 "disattivare questo comportamento, in modo che Duplicati attenda che ogni "
 "volume sia completato."
 
-#: Library/Main/Strings.cs:113
+#: Library/Main/Strings.cs:117
 msgid "Upload files synchronously"
 msgstr "Caricare i file in modo sincrono"
 
-#: Library/Main/Strings.cs:114
+#: Library/Main/Strings.cs:118
 msgid ""
 "Duplicati will attempt to perform multiple operations on a single "
 "connection, as this avoids repeated login attempts, and thus speeds up the "
@@ -3146,11 +3463,11 @@ msgstr ""
 "processo. Questa opzione può essere utilizzata per garantire che ogni "
 "operazione sia eseguita su una connessione separata"
 
-#: Library/Main/Strings.cs:115
+#: Library/Main/Strings.cs:119
 msgid "Do not re-use connections"
 msgstr "Non riutilizzare le connessioni"
 
-#: Library/Main/Strings.cs:116
+#: Library/Main/Strings.cs:120
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -3160,11 +3477,11 @@ msgstr ""
 "riporterà solo il numero di tentativi. Abilita questa opzione per "
 "visualizzare i messaggi di errore quando è eseguito un tentativo."
 
-#: Library/Main/Strings.cs:117
+#: Library/Main/Strings.cs:121
 msgid "Show error messages when a retry is performed"
 msgstr "Mostra messaggi di errore quando è eseguito un tentativo"
 
-#: Library/Main/Strings.cs:118
+#: Library/Main/Strings.cs:122
 msgid ""
 "If no files have changed, Duplicati will not upload a backup set. If the "
 "backup data is used to verify that a backup was executed, this option will "
@@ -3175,11 +3492,11 @@ msgstr ""
 "eseguito, questa opzione farà si che Duplicati caricherà un set di backup "
 "anche se è vuoto"
 
-#: Library/Main/Strings.cs:119
+#: Library/Main/Strings.cs:123
 msgid "Upload empty backup files"
 msgstr "Carica file di backup vuoti"
 
-#: Library/Main/Strings.cs:120
+#: Library/Main/Strings.cs:124
 msgid ""
 "This value can be used to set a known upper limit on the amount of space a "
 "backend has. If the backend reports the size itself, this value is ignored"
@@ -3188,32 +3505,33 @@ msgstr ""
 "sula quantità di spazio che ha il backend. Se il backend riporta la "
 "dimensione stessa, questo valore è ignorato"
 
-#: Library/Main/Strings.cs:121
+#: Library/Main/Strings.cs:125
 msgid "A reported maximum storage"
 msgstr "Una segnalazione massimo archivio"
 
-#: Library/Main/Strings.cs:122
-#, csharp-format
+#: Library/Main/Strings.cs:126
 msgid ""
-"Exclude files that match the given filter sets. Which default filter sets "
-"should be used. Valid sets are \"{0}\", \"{1}\", \"{2}\", and \"{3}\". If "
-"this parameter is set with no value, the set for the current operating "
-"system will be used."
+"Sets a threshold for when to warn about the backend quota being nearly "
+"exceeded. It is given as a percentage, and a warning is generated if the "
+"amount of available quota is less that this percentage of the total backup "
+"size. If the backend does not report the quota information, this value will "
+"be ignored"
 msgstr ""
-"Escludi i file che corrispondono ai set di filtri indicati. Quali set di "
-"filtri predefiniti devono essere utilizzati. I set validi sono \"{0}\", "
-"\"{1}\", \"{2}\" e \"{3}\". Se questo parametro è impostato senza alcun "
-"valore, sarà utilizzato il set per il sistema operativo corrente."
+"Imposta una soglia di avvertimento per quando si starà quasi per superare la"
+" quota del backend. È dato come percentuale e un messaggio di avviso è "
+"generato se la dimensione della quota disponibile è inferiore a questa "
+"percentuale del totale della dimensione dei backup. Se il backend non "
+"riporta le informazioni sulla quota, questo valore sarà ignorato"
 
-#: Library/Main/Strings.cs:123
-msgid "Default filter sets"
-msgstr "Set di filtri predefiniti"
+#: Library/Main/Strings.cs:127
+msgid "Threshold for warning about low quota"
+msgstr "Soglia di avviso su quota bassa"
 
-#: Library/Main/Strings.cs:124
+#: Library/Main/Strings.cs:128
 msgid "Symlink handling"
 msgstr "Gestione collegamento simbolico"
 
-#: Library/Main/Strings.cs:125
+#: Library/Main/Strings.cs:129
 #, csharp-format
 msgid ""
 "Use this option to handle symlinks differently. The \"{0}\" option will "
@@ -3231,11 +3549,11 @@ msgstr ""
 "Le versioni precedenti di Duplicati usavano l'impostazione \"{2}\", che "
 "causava l'inclusione dei file collegati e il ripristino come normali file."
 
-#: Library/Main/Strings.cs:126
+#: Library/Main/Strings.cs:130
 msgid "Hardlink handling"
 msgstr "Gestione hardlink"
 
-#: Library/Main/Strings.cs:127
+#: Library/Main/Strings.cs:131
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -3250,11 +3568,11 @@ msgstr ""
 "informazioni hardlink e tratterà ogni hardlink come un percorso univoco. "
 "L'opzione \"{2}\" ignorerà tutti i hardlink con più di un collegamento."
 
-#: Library/Main/Strings.cs:128
+#: Library/Main/Strings.cs:132
 msgid "Exclude files by attribute"
 msgstr "Escludi file per attributo"
 
-#: Library/Main/Strings.cs:129
+#: Library/Main/Strings.cs:133
 #, csharp-format
 msgid ""
 "Use this option to exclude files with certain attributes. Use a comma "
@@ -3265,7 +3583,7 @@ msgstr ""
 "elenco separato da virgole di nomi di attributi per specificare più di uno. "
 "I valori possibili sono: {0}"
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:134
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -3277,11 +3595,11 @@ msgstr ""
 "temporanee utilizzate per accedere al contenuto di una istantanea. Questa "
 "soluzione può velocizzare l'accesso ai file su Windows XP."
 
-#: Library/Main/Strings.cs:131
+#: Library/Main/Strings.cs:135
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Mappa istantanee su un'unità (solo Windows)"
 
-#: Library/Main/Strings.cs:132
+#: Library/Main/Strings.cs:136
 msgid ""
 "A display name that is attached to this backup. Can be used to identify the "
 "backup when sending mail or running scripts."
@@ -3289,11 +3607,11 @@ msgstr ""
 "Il nome visualizzato è associato a questo backup. Può essere utilizzato per "
 "identificare il backup durante l'invio di posta o esecuzione di script."
 
-#: Library/Main/Strings.cs:133
+#: Library/Main/Strings.cs:137
 msgid "Name of the backup"
 msgstr "Nome del backup"
 
-#: Library/Main/Strings.cs:134
+#: Library/Main/Strings.cs:138
 #, csharp-format
 msgid ""
 "This property can be used to point to a text file where each line contains a"
@@ -3312,12 +3630,12 @@ msgstr ""
 "per indicare la fine dell'estensione. È fornito un file predefinito, che "
 "funge anche da esempio. Il file predefinito è inserito in {0}."
 
-#: Library/Main/Strings.cs:135
+#: Library/Main/Strings.cs:139
 msgid "Manage non-compressible file extensions"
 msgstr "Gestisci le estensioni di file non comprimibili"
 
-#: Library/Main/Strings.cs:136 Library/Main/Strings.cs:146
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:140 Library/Main/Strings.cs:150
+#: Library/Main/Strings.cs:156
 msgid ""
 "A fragment of memory is used to reduce database lookups. You should not "
 "change this value unless you get warnings in the log."
@@ -3326,11 +3644,11 @@ msgstr ""
 "Non è necessario modificare questo valore a meno che non si ottengano avvisi"
 " nel registro."
 
-#: Library/Main/Strings.cs:137
+#: Library/Main/Strings.cs:141
 msgid "Memory used by the block hash"
 msgstr "Memoria utilizzata dal hash del blocco"
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:142
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -3344,11 +3662,11 @@ msgstr ""
 "di file. Nota che il valore non può essere modificato dopo la creazione di "
 "file remoti."
 
-#: Library/Main/Strings.cs:139
+#: Library/Main/Strings.cs:143
 msgid "Block size used in hashing"
 msgstr "Dimensione del blocco usato nell'hash"
 
-#: Library/Main/Strings.cs:140
+#: Library/Main/Strings.cs:144
 msgid ""
 "This option can be used to limit the scan to only files that are known to "
 "have changed. This is usually only activated in combination with a "
@@ -3359,20 +3677,20 @@ msgstr ""
 "solo in combinazione con un osservatore di filesystem che tiene traccia "
 "delle modifiche dei file."
 
-#: Library/Main/Strings.cs:141
+#: Library/Main/Strings.cs:145
 msgid "List of files to examine for changes"
 msgstr "Elenco di file da esaminare per le modifiche"
 
-#: Library/Main/Strings.cs:142
+#: Library/Main/Strings.cs:146
 msgid ""
 "Path to the file containing the local cache of the remote file database"
 msgstr "Percorso del file contiene la cache locale del file database remoto"
 
-#: Library/Main/Strings.cs:143
+#: Library/Main/Strings.cs:147
 msgid "Path to the local state database"
 msgstr "Percorso dello stato locale del database"
 
-#: Library/Main/Strings.cs:144
+#: Library/Main/Strings.cs:148
 #, csharp-format
 msgid ""
 "This option can be used to supply a list of deleted files. This option will "
@@ -3382,15 +3700,15 @@ msgstr ""
 "cancellati. Questa opzione sarà ignorata a meno che non sia impostata anche "
 "l'opzione --{0}."
 
-#: Library/Main/Strings.cs:145
+#: Library/Main/Strings.cs:149
 msgid "List of deleted files"
 msgstr "Elenco dei file cancellati"
 
-#: Library/Main/Strings.cs:147
+#: Library/Main/Strings.cs:151
 msgid "Memory used by the file hash"
 msgstr "Memoria utilizzata dal file hash"
 
-#: Library/Main/Strings.cs:148
+#: Library/Main/Strings.cs:152
 msgid ""
 "This option can be used to reduce the memory footprint by not keeping paths "
 "and modification timestamps in memory"
@@ -3398,45 +3716,27 @@ msgstr ""
 "Questa opzione può essere utilizzata per ridurre lo spazio di memoria "
 "occupata  non mantenendo i percorsi e la modifica dei timestamp in memoria"
 
-#: Library/Main/Strings.cs:149
+#: Library/Main/Strings.cs:153
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr ""
 "Riduci lo spazio di memoria occupata disabilitando le ricerche in memoria"
 
-#: Library/Main/Strings.cs:150
+#: Library/Main/Strings.cs:154
 msgid ""
 "This option can be used to increase speed in exchange for extra memory use."
 msgstr ""
 "Questa opzione può essere utilizzata per aumentare la velocità in cambio "
 "dell'utilizzo di più memoria."
 
-#: Library/Main/Strings.cs:151
+#: Library/Main/Strings.cs:155
 msgid "Store an in-memory block cache"
 msgstr "Archiviare un blocco cache in memoria"
 
-#: Library/Main/Strings.cs:152
-msgid ""
-"Stores metadata, such as file timestamps and attributes. This increases the "
-"required storage space as well as the processing time."
-msgstr ""
-"Archivia i metadati, ad esempio timestamp e attributi del file. Questo "
-"aumenta lo spazio di archiviazione richiesto e il tempo di elaborazione."
-
-#: Library/Main/Strings.cs:153
-msgid "Enables storing file metadata"
-msgstr "Consente di archiviare i metadati dei file"
-
-#: Library/Main/Strings.cs:154
-msgid "This option is no longer used as metadata is now stored by default"
-msgstr ""
-"Questa opzione non è più utilizzata come metadati è ora archiviata per "
-"impostazione predefinita"
-
-#: Library/Main/Strings.cs:156
+#: Library/Main/Strings.cs:157
 msgid "Memory used by the metadata hash"
 msgstr "Memoria utilizzata dall'hash metadati"
 
-#: Library/Main/Strings.cs:157
+#: Library/Main/Strings.cs:158
 msgid ""
 "If this flag is set, the local database is not compared to the remote "
 "filelist on startup. The intended usage for this option is to work correctly"
@@ -3447,11 +3747,11 @@ msgstr ""
 "funzionare correttamente nei casi in cui il file elenco è corrotto o non "
 "disponibile."
 
-#: Library/Main/Strings.cs:158
+#: Library/Main/Strings.cs:159
 msgid "Do not query backend at startup"
 msgstr "Non eseguire query sul backend all'avvio"
 
-#: Library/Main/Strings.cs:159
+#: Library/Main/Strings.cs:160
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -3465,11 +3765,11 @@ msgstr ""
 "senza il database. Il compromesso è che i file indice più grandi occupano "
 "più spazio remoto e che non possono mai essere utilizzati."
 
-#: Library/Main/Strings.cs:160
+#: Library/Main/Strings.cs:161
 msgid "Determines usage of index files"
 msgstr "Determina l'utilizzo dei file indice"
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:162
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -3482,11 +3782,11 @@ msgstr ""
 "recuperato. Questo valore è una percentuale utilizzata per ogni volume e per"
 " l'archiviazione totale."
 
-#: Library/Main/Strings.cs:162
+#: Library/Main/Strings.cs:163
 msgid "The maximum wasted space in percent"
 msgstr "Lo spazio massimo sprecato in percentuale"
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:164
 msgid ""
 "This option can be used to experiment with different settings and observe "
 "the outcome without changing actual files."
@@ -3494,11 +3794,11 @@ msgstr ""
 "Questa opzione può essere utilizzata per sperimentare impostazioni diverse e"
 " osservare il risultato senza modificare gli effettivi file."
 
-#: Library/Main/Strings.cs:164
+#: Library/Main/Strings.cs:165
 msgid "Does not perform any modifications"
 msgstr "Non esegue alcuna modifica"
 
-#: Library/Main/Strings.cs:165
+#: Library/Main/Strings.cs:166
 msgid ""
 "This is a very advanced option! This option can be used to select a block "
 "hash algorithm with smaller or larger hash size, for performance or storage "
@@ -3508,11 +3808,11 @@ msgstr ""
 " selezionare un algoritmo hash sul blocco con dimensioni hash più piccole o "
 "più grandi, per motivi di prestazioni o spazio di archiviazione."
 
-#: Library/Main/Strings.cs:166
+#: Library/Main/Strings.cs:167
 msgid "The hash algorithm used on blocks"
 msgstr "L'algoritmo hash usato sui blocchi"
 
-#: Library/Main/Strings.cs:167
+#: Library/Main/Strings.cs:168
 msgid ""
 "This is a very advanced option! This option can be used to select a file "
 "hash algorithm with smaller or larger hash size, for performance or storage "
@@ -3522,11 +3822,11 @@ msgstr ""
 " selezionare un algoritmo hash sul file con dimensioni hash più piccole o "
 "più grandi, per motivi di prestazioni o spazio di archiviazione."
 
-#: Library/Main/Strings.cs:168
+#: Library/Main/Strings.cs:169
 msgid "The hash algorithm used on files"
 msgstr "L'algoritmo hash utilizzato sui file"
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:170
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -3539,11 +3839,11 @@ msgstr ""
 "compressione automatica e compatta solo quando si esegue il comando "
 "comprimi."
 
-#: Library/Main/Strings.cs:170
+#: Library/Main/Strings.cs:171
 msgid "Disable automatic compacting"
 msgstr "Disattiva compressione automatica"
 
-#: Library/Main/Strings.cs:171
+#: Library/Main/Strings.cs:172
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -3556,11 +3856,11 @@ msgstr ""
 "possono avere alcuni byte di spazio sprecato, non siano scaricati e "
 "riscritti."
 
-#: Library/Main/Strings.cs:172
+#: Library/Main/Strings.cs:173
 msgid "Volume size threshold"
 msgstr "Soglia dimensione volume"
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:174
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -3571,11 +3871,11 @@ msgstr ""
 " I piccoli volumi saranno sempre uniti quando possono riempire un intero "
 "volume."
 
-#: Library/Main/Strings.cs:174
+#: Library/Main/Strings.cs:175
 msgid "Maximum number of small volumes"
 msgstr "Numero massimo dei piccoli volumi"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:176
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -3585,15 +3885,15 @@ msgstr ""
 "trovare blocchi esistenti. Questa è un'operazione abbastanza lenta, ma può "
 "limitare la dimensione dei file scaricati."
 
-#: Library/Main/Strings.cs:176
+#: Library/Main/Strings.cs:177
 msgid "Use local file data when restoring"
 msgstr "Utilizza i dati dei file locali durante il ripristino"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:178
 msgid "Disables the local database"
 msgstr "Disattiva il database locale"
 
-#: Library/Main/Strings.cs:178
+#: Library/Main/Strings.cs:179
 msgid ""
 "When listing contents or when restoring files, the local database can be "
 "skipped. This is usually slower, but can be used to verify the actual "
@@ -3603,11 +3903,11 @@ msgstr ""
 "ignorare il database locale. Questo è di solito più lento, ma può essere "
 "utilizzato per verificare il contenuto effettivo dell'archivio remoto"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:180
 msgid "Keep a number of versions"
 msgstr "Mantieni un numero di versioni"
 
-#: Library/Main/Strings.cs:180
+#: Library/Main/Strings.cs:181
 msgid ""
 "Use this option to set number of versions to keep, supply -1 to keep all "
 "versions"
@@ -3615,49 +3915,53 @@ msgstr ""
 "Usa questa opzione per impostare il numero di versioni da mantenere, metti "
 "-1 per mantenere tutte le versioni"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:182
 msgid "Keep all versions within a timespan"
 msgstr "Mantieni tutte le versioni all'interno di un periodo"
 
-#: Library/Main/Strings.cs:182
+#: Library/Main/Strings.cs:183
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr ""
 "Usa questa opzione per impostare il periodo in cui sono conservati i backup."
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:184
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "Riduci il numero di versioni eliminando i vecchi backup intermedi"
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:185
 msgid ""
 "Use this option to reduce the number of versions that are kept with "
 "increasing version age by deleting most of the old backups. The expected "
-"format is a comma seperated list of collon sperated time frame and interval "
+"format is a comma separated list of colon separated time frame and interval "
 "pairs. For example the value \"7D:0s,3M:1D,10Y:2M\" means \"For 7 day keep "
-"all backups, for 3 months keep one backup per day and for 10 years one "
-"backup every 2nd month"
+"all backups, for 3 months keep one backup every day, for 10 years one backup"
+" every 2nd month and delete every backup older than this.\". This option "
+"also supports using the specifier \"U\" to indicate an unlimited time "
+"interval."
 msgstr ""
 "Usa questa opzione per ridurre il numero di versioni mantenute con l'aumento"
 " dell'età della versione eliminando la maggior parte dei vecchi backup. Il "
 "formato previsto è un elenco separato da virgole di coppie di tempo separate"
-" da due punti. Ad esempio il valore \"7D:0s,3M:1D,10Y:2M\" significa 'per 7 "
-"giorni mantieni tutti i backup, per 3 mesi manteni un backup al giorno e per"
-" 10 anni un backup ogni 2 mesi"
+" da due punti. Ad esempio il valore \"7D:0s,3M:1D,10Y:2M\" significa \"Per 7"
+" giorni mantieni tutti i backup, per 3 mesi manteni un backup al giorno e "
+"per 10 anni un backup ogni 2 mesi ed elimina ogni backup più vecchio di "
+"questo.\" Questa opzione supporta anche l'uso dell'identificatore \"U\" per "
+"indicare un intervallo di tempo illimitato."
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:186
 msgid "Ignore missing source elements"
 msgstr "Ignora elementi sorgente mancanti"
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:187
 msgid "Use this option to continue even if some source entries are missing."
 msgstr ""
 "Usa questa opzione per continuare, anche se alcune voci sorgenti mancano."
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:188
 msgid "Overwrite files when restoring"
 msgstr "Sovrascrivi i file durante il ripristino"
 
-#: Library/Main/Strings.cs:188
+#: Library/Main/Strings.cs:189
 msgid ""
 "Use this option to overwrite target files when restoring, if this option is "
 "not set the files will be restored with a timestamp and a number appended."
@@ -3666,11 +3970,11 @@ msgstr ""
 "ripristino, se questa opzione non è impostata, i file saranno ripristinati "
 "con un timestamp e un numero aggiunto."
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:190
 msgid "Output more progress information"
 msgstr "Fornisci ulteriori informazioni sull'avanzamento"
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:191
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
@@ -3679,11 +3983,17 @@ msgstr ""
 "durante l'esecuzione di un'opzione. Generalmente questa opzione produrrà una"
 " linea per ogni file elaborato."
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:192
+msgid "Set a log-level for the desired output method instead"
+msgstr ""
+"Imposta invece un livello di registrazione per il metodo di output "
+"desiderato"
+
+#: Library/Main/Strings.cs:193
 msgid "Output full results"
 msgstr "Fornisci risultati completi"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:194
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -3691,11 +4001,11 @@ msgstr ""
 "Usa questa opzione per aumentare la quantità di dati generati in uscita come"
 " risultato dell'operazione, includendo tutti i nomi dei file."
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:195
 msgid "Determine if verification files are uploaded"
 msgstr "Determina se i file di verifica sono caricati"
 
-#: Library/Main/Strings.cs:194
+#: Library/Main/Strings.cs:196
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -3707,11 +4017,11 @@ msgstr ""
 "gli hash SHA256 di tutti i file remoti e può essere usato per verificare "
 "l'integrità dei file."
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:197
 msgid "The number of samples to test after a backup"
 msgstr "Il numero di campioni da testare dopo un backup"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:198
 #, csharp-format
 msgid ""
 "After a backup is completed, some files are selected for verification on the"
@@ -3723,11 +4033,11 @@ msgstr ""
 " questo valore è impostato a 0 o l'opzione --{0} è impostata, i file remoti "
 "non sono verificati"
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:199
 msgid "Activates in-depth verification of files"
 msgstr "Attiva verifica approfondita dei file"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:200
 #, csharp-format
 msgid ""
 "After a backup is completed, some files are selected for verification on the"
@@ -3744,22 +4054,22 @@ msgstr ""
 "impostata, non sono verificati file remoti. Questa opzione è impostata "
 "automaticamente quando la verifica è eseguita direttamente."
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:201
 msgid "Size of the file read buffer"
 msgstr "Dimensione del buffer di lettura del file"
 
-#: Library/Main/Strings.cs:200
+#: Library/Main/Strings.cs:202
 msgid ""
 "Use this size to control how many bytes a read from a file before processing"
 msgstr ""
 "Usa questa dimensione per controllare il numero di byte letti da un file "
 "prima dell'elaborazione"
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:203
 msgid "Allow the passphrase to change"
 msgstr "Consenti la modifica della passphrase"
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:204
 msgid ""
 "Use this option to allow the passphrase to change, note that this option is "
 "not permitted for a backup or repair operation"
@@ -3767,11 +4077,11 @@ msgstr ""
 "Usa questa opzione per consentire la modifica della passphrase, nota che "
 "questa opzione non è consentita per un'operazione di backup o di riparazione"
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:205
 msgid "List only filesets"
 msgstr "Elenca solo gruppi di file"
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:206
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process"
@@ -3779,11 +4089,11 @@ msgstr ""
 "Usa questa opzione per elencare solo un gruppo di file ed evitare di "
 "attraversare i nomi dei file e altri metadati che rallentano il processo"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:208
 msgid "Don't store metadata"
 msgstr "Non archiviare i metadati"
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:209
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -3794,11 +4104,11 @@ msgstr ""
 "accelererà le operazioni di backup e ripristino, ma non influisce molto "
 "sulla dimensione del file."
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:210
 msgid "Restore file permissions"
 msgstr "Ripristina le autorizzazioni sui file"
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:211
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -3807,11 +4117,11 @@ msgstr ""
 "quanto potrebbero impedire l'accesso ai file. Usa questa opzione per "
 "ripristinare anche le autorizzazioni."
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:212
 msgid "Skip restored file check"
 msgstr "Salta il controllo del file ripristinati"
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:213
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -3822,20 +4132,20 @@ msgstr ""
 "correttamente. Usa questa opzione per disabilitare il controllo ed evitare "
 "di aspettare la verifica."
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:214
 msgid "Activate caches"
 msgstr "Attiva cache"
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:215
 msgid "Activate in-memory caches, which are now off by default"
 msgstr ""
 "Attiva cache in memoria, ora è disattivata per impostazione predefinita"
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:216
 msgid "Do not use local data"
 msgstr "Non usare dati locali"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:217
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -3845,11 +4155,11 @@ msgstr ""
 "al minimo la quantità di dati scaricati. Utilizza questa opzione per "
 "ignorare questa ottimizzazione e usare solo i dati remoti."
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:218
 msgid "Check block hashes"
 msgstr "Controllo hash blocco"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:219
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -3858,11 +4168,11 @@ msgstr ""
 "blocchi letti da un volume prima di sistemare i file ripristinati con i "
 "dati."
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:222
 msgid "Repair database with paths"
 msgstr "Ripara database con percorsi"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:223
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -3875,11 +4185,11 @@ msgstr ""
 "ricostruire tutte le informazioni. Il database risultante può essere "
 "cercato, ma non può essere utilizzato per ripristinare i dati."
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:224
 msgid "Force the locale setting"
 msgstr "Forza le impostazioni locali"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:225
 msgid ""
 "By default, your system locale and culture settings will be used. In some "
 "cases you may prefer to run with another locale, for example to get messages"
@@ -3892,11 +4202,11 @@ msgstr ""
 "opzione può essere usata per settare le impostazioni locali. Fornire una "
 "stringa vuota per scegliere la \"lingua non variabile\"."
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:226
 msgid "Handle file communication with backend using threaded pipes"
 msgstr "Gestire la comunicazione file con backend usando threaded pipe"
 
-#: Library/Main/Strings.cs:225
+#: Library/Main/Strings.cs:227
 msgid ""
 "Use this option to disable multithreaded handling of up- and downloads, that"
 " can significantly speed up backend operations depending on the hardware "
@@ -3907,11 +4217,49 @@ msgstr ""
 "di backend a seconda dell'hardware che stai usando e della velocità di "
 "trasferimento del backend."
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:228
+msgid "Limit number of concurrent threads"
+msgstr "Limita il numero di thread simultanei"
+
+#: Library/Main/Strings.cs:229
+msgid ""
+"Use this option to set the maximum number of threads used. Setting this "
+"value to zero or less will dynamically balance the number of active threads "
+"to fit the hardware."
+msgstr ""
+"Utilizza questa opzione per impostare il numero massimo di thread "
+"utilizzati. Impostando questo valore su zero o su un valore minore si "
+"bilancia dinamicamente il numero di thread attivi per adattarsi "
+"all'hardware."
+
+#: Library/Main/Strings.cs:230
+msgid "Specify the number of concurrent hashing processes"
+msgstr "Specificare il numero di processi hash simultanei"
+
+#: Library/Main/Strings.cs:231
+msgid ""
+"Use this option to set the number of processes that perform hashing of data."
+msgstr ""
+"Utilizza questa opzione per impostare il numero di processi che eseguono "
+"l'hash dei dati."
+
+#: Library/Main/Strings.cs:232
+msgid "Specify the number of concurrent compression processes"
+msgstr "Specifica il numero di processi di compressione simultanei"
+
+#: Library/Main/Strings.cs:233
+msgid ""
+"Use this option to set the number of processes that perform compression of "
+"output data."
+msgstr ""
+"Utilizza questa opzione per impostare il numero di processi che eseguono la "
+"compressione dei dati di uscita."
+
+#: Library/Main/Strings.cs:234
 msgid "Perform backup of Hyper-V machines (Windows only)"
 msgstr "Esegui il backup di macchine Hyper-V (solo Windows)"
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:235
 msgid ""
 "Use this option to specify the IDs of machines to include in the backup. "
 "Specify multiple machine IDs with a semicolon separator. (You can use this "
@@ -3922,7 +4270,7 @@ msgstr ""
 "(Puoi usare questo comando Powershell per ottenere ID 'Get-VM | ft VMName, "
 "ID')"
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:236
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -3932,11 +4280,11 @@ msgstr ""
 "genererà un file elenco che è l'unione dell'ultimo backup completato e del "
 "contenuto caricato nella sessione di backup incompleta."
 
-#: Library/Main/Strings.cs:229
+#: Library/Main/Strings.cs:237
 msgid "Disables synthetic filelist"
 msgstr "Disabilita elenco file sintetico"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:238
 msgid ""
 "This flag instructs Duplicati to not look at metadata or filesize when "
 "deciding to scan a file for changes. Use this option if you have a large "
@@ -3948,15 +4296,15 @@ msgstr ""
 "modifiche. Usa questa opzione se disponi di un numero elevato di file e noti"
 " che la scansione richiede molto tempo con i file non modificati."
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:239
 msgid "Checks only file lastmodified"
 msgstr "Controlla solo il file modificato l'ultima volta"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:240
 msgid "Disables path compresion on restore"
 msgstr "Disattiva compressione percorso durante il ripristino"
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:241
 msgid ""
 "When restore a subset of a backup into a new folder, the shortest possible "
 "path is used to avoid generating deep paths with empty folders. Use this "
@@ -3969,11 +4317,11 @@ msgstr ""
 "compressione, in modo che l'intera struttura di cartelle originali sia "
 "mantenuta, incluse le cartelle vuote di livello superiore."
 
-#: Library/Main/Strings.cs:234
+#: Library/Main/Strings.cs:242
 msgid "Allow removing all filesets"
 msgstr "Consenti rimozione di tutti i gruppi di file"
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:243
 msgid ""
 "By default, the last fileset cannot be removed. This is a safeguard to make "
 "sure that all remote data is not deleted by a configuration mistake. Use "
@@ -3985,13 +4333,13 @@ msgstr ""
 "disabilitare tale protezione, in modo che tutti i gruppo di file possano "
 "essere cancellati."
 
-#: Library/Main/Strings.cs:236
+#: Library/Main/Strings.cs:244
 msgid "Allow automatic rebuilding of local database to save space."
 msgstr ""
 "Consenti la ricostruzione automatica del database locale per risparmiare "
 "spazio."
 
-#: Library/Main/Strings.cs:237
+#: Library/Main/Strings.cs:245
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -4008,93 +4356,210 @@ msgstr ""
 "L'impostazione a true consentirà a Duplicati di eseguire operazioni VACUUM a"
 " sua discrezione."
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:246
+msgid "Disable the read-ahead scanner"
+msgstr "Disabilita lo scanner di lettura in anticipo"
+
+#: Library/Main/Strings.cs:247
+msgid ""
+"When this flag is enabled, the scanner that computes the size of source "
+"files is disabled, and instead the reported size is read from the database. "
+"Using this flag can speed up the backup by reducing disk access, but will "
+"give a less accurate progress indicator."
+msgstr ""
+"Quando questo flag è abilitato, lo scanner che calcola la dimensione dei "
+"file di origine è disabilitato, la dimensione riportata è letta dal "
+"database. L'uso di questo flag può accelerare il backup riducendo l'accesso "
+"al disco, ma fornirà un indicatore di progresso meno preciso."
+
+#: Library/Main/Strings.cs:248
+msgid "Disable filelist consistency checks"
+msgstr "Disabilita i controlli di coerenza dell'elenco file"
+
+#: Library/Main/Strings.cs:249
+msgid ""
+"In backups with a large number of filesets, the verification can take up a "
+"large part of the backup time. If you disable the checks, make sure you run "
+"regular check commands to ensure that everything is working as expected."
+msgstr ""
+"Nei backup con un elevato numero di gruppi di file, la verifica può "
+"richiedere gran parte del tempo del backup. Se disabiliti i controlli, "
+"assicurati di eseguire comandi di controllo regolari per assicurarti che "
+"tutto funzioni come previsto."
+
+#: Library/Main/Strings.cs:250
+msgid "Disable the backup when on battery power"
+msgstr "Disabilita il backup quando si utilizza la batteria"
+
+#: Library/Main/Strings.cs:251
+msgid ""
+"When this flag is enabled, a scheduled backup will not run if the system is "
+"detected to be running on battery power (manual or command line backups will"
+" still be run).  If the detected power source is mains (i.e., AC) or "
+"unknown, then scheduled backups will proceed as normal."
+msgstr ""
+"Quando questo flag è abilitato, un backup programmato non sarà eseguito se "
+"viene rilevato che il sistema è alimentato a batteria (i backup manuali o da"
+" linea di comando saranno comunque eseguiti). Se la fonte di alimentazione "
+"rilevata è la rete (cioè, C.A.) o sconosciuta, i backup programmati "
+"procederanno normalmente."
+
+#: Library/Main/Strings.cs:254
+msgid "Log file information level"
+msgstr "Livello informazioni registrane nel file"
+
+#: Library/Main/Strings.cs:255
+msgid "Applies filters to the file log data"
+msgstr "Applica filtri ai dati registrati nel file"
+
+#: Library/Main/Strings.cs:256
+#, csharp-format
+msgid ""
+"This option accepts filters that removes or includes messages regardless of "
+"their log level. Multiple filters are supported by separating with {0}. "
+"Filters are matched against the log tag and assumed to be including, unless "
+"they start with '-'. Regular expressions are supported within hard braces. "
+"Example: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
+msgstr ""
+"Questa opzione accetta i filtri che rimuovono o includono i messaggi "
+"indipendentemente dal loro livello di registro. Filtri multipli sono "
+"supportati separandoli con {0}. I filtri sono accettati con il tag registro "
+"e presume siano inclusi, a meno che iniziano con '-'. Le espressioni "
+"regolari sono supportate all'interno di parentesi graffe. Esempio: "
+"\"+Path*{0}+*Mail*{0}-[.*DNS]\" "
+
+#: Library/Main/Strings.cs:257
+msgid "Specifies the amount of log information to write as console output"
+msgstr ""
+"Specifica la quantità di informazioni del registro da scrivere come output "
+"della console"
+
+#: Library/Main/Strings.cs:258
+msgid "Console information level"
+msgstr "Livello informazioni console"
+
+#: Library/Main/Strings.cs:259
+msgid "Applies filters to the console log data"
+msgstr "Applica filtri ai dati registrati nella console"
+
+#: Library/Main/Strings.cs:262
+msgid "Sets the process to use low IO priority"
+msgstr ""
+
+#: Library/Main/Strings.cs:263
+msgid ""
+"This option instructions the operating system to set the current process to "
+"use the lowest IO priority level, which can make operations run slower but "
+"will interfere less with other operations running at the same time"
+msgstr ""
+"Questa opzione indica al sistema operativo di impostare il processo corrente"
+" in modo che utilizzi il più basso livello di priorità IO, che può rendere "
+"le operazioni più lente ma interferire meno con altre operazioni in "
+"esecuzione nello stesso momento"
+
+#: Library/Main/Strings.cs:267
+msgid "List of filenames that exclude folders"
+msgstr "Elenco di nomi dei file che escludono cartelle"
+
+#: Library/Main/Strings.cs:268
+msgid ""
+"Use this option to set a filename, or list of filenames, that indicate "
+"exclusion of a folder which contains it. A common use would be to have a "
+"file named something like \".nobackup\" and place this file into folders "
+"that should not be backed up."
+msgstr ""
+"Utilizza questa opzione per impostare un nome file o un elenco di nomi di "
+"file che indicano l'esclusione della cartella che li contiene. Un uso comune"
+" sarebbe quello di avere un file chiamato per esempio \".nobackup\" e "
+"posizionarlo nelle cartelle che non dovrebbero essere sottoposte a backup."
+
+#: Library/Main/Strings.cs:274
+msgid "Activates logging of all database queries"
+msgstr "Attiva la registrazione di tutte le query del database"
+
+#: Library/Main/Strings.cs:275
+#, csharp-format
+msgid ""
+"To improve performance of the backups, frequent database queries are not "
+"logged by default. Enable this option to log all database queries, and "
+"remember to set either --{0}={2} or --{1}={2} to report the additional log "
+"data"
+msgstr ""
+"Per migliorare le prestazioni dei backup le query frequenti del database, "
+"per impostazione predefinita, non sono registrate. Abilita questa opzione "
+"per registrare tutte le query del database e ricorda di impostare --{0}={2} "
+"o --{1}={2} per segnalare i dati aggiuntivi nel log"
+
+#: Library/Main/Strings.cs:282
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
-"La libreria di criptazione non supporta le trasformazioni riutilizzabili per"
-" l'algoritmo hash {0}"
+"La libreria di crittografia non supporta le trasformazioni riutilizzabili "
+"per l'algoritmo hash {0}"
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:283
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
-msgstr "La libreria di criptazione non supporta l'algoritmo hash {0}"
+msgstr "La libreria di crittografia non supporta l'algoritmo hash {0}"
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:284
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "La passphrase non può essere modificata per un backup esistente"
 
-#: Library/Main/Strings.cs:245
+#: Library/Main/Strings.cs:285
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Creare dell'istantanea fallita: {0}"
 
-#: Library/Main/BackendManager.cs:595
-#, csharp-format
-msgid "Failed to dispose backend instance: {0}"
-msgstr "Impossibile disporre l'istanza del backend: {0}"
-
-#: Library/Main/BackendManager.cs:618
+#: Library/Main/BackendManager.cs:590
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr "Impossibile cancellare il file {0}, verifica se il file esiste"
 
-#: Library/Main/BackendManager.cs:624
+#: Library/Main/BackendManager.cs:596
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 "Recuperato dal problema con il tentativo di cancellare file non esistenti "
 "{0}"
 
-#: Library/Main/BackendManager.cs:629
+#: Library/Main/BackendManager.cs:601
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr "Impossibile recuperare da errore cancellazione file {0}"
 
-#: Library/Main/BackendManager.cs:1134
-#, csharp-format
-msgid "Delete operation failed for {0} with FileNotFound, listing contents"
-msgstr ""
-"Operazione di cancellazione non riuscita per {0} con FileNonTrovato, "
-"contenuto dell'elenco"
-
-#: Library/Main/BackendManager.cs:1147
-#, csharp-format
-msgid "Listing indicates file {0} is deleted correctly"
-msgstr "L'elenco indica che il file {0} è stato cancellato correttamente"
-
-#: Library/Modules/Builtin/Strings.cs:7
-msgid "Confirm encryption passphrase"
-msgstr "Conferma passphrase di criptazione"
-
 #: Library/Modules/Builtin/Strings.cs:8
+msgid "Confirm encryption passphrase"
+msgstr "Conferma passphrase crittografia"
+
+#: Library/Modules/Builtin/Strings.cs:9
 msgid ""
 "This module will ask the user for an encryption password on the command line"
 " unless encryption is disabled or the password is supplied by other means"
 msgstr ""
-"Questo modulo chiederà all'utente una password di criptazione da riga di "
-"comando a meno che la criptazione non sia disattivata o che la password sia "
-"fornita con altri mezzi"
+"Questo modulo chiederà all'utente una password di crittografia da riga di "
+"comando a meno che la crittografia non sia disattivata o la password sia "
+"fornita in altri modi"
 
-#: Library/Modules/Builtin/Strings.cs:9
+#: Library/Modules/Builtin/Strings.cs:10
 msgid "Password prompt"
 msgstr "Richiesta password"
 
-#: Library/Modules/Builtin/Strings.cs:10
+#: Library/Modules/Builtin/Strings.cs:11
 msgid "Empty passphrases are not allowed"
 msgstr "Non sono consentite passphrase vuote"
 
-#: Library/Modules/Builtin/Strings.cs:11
-msgid "Enter encryption passphrase"
-msgstr "Inserisci passphrase criptazione"
-
 #: Library/Modules/Builtin/Strings.cs:12
+msgid "Enter encryption passphrase"
+msgstr "Inserisci passphrase crittografia"
+
+#: Library/Modules/Builtin/Strings.cs:13
 msgid "The passphrases do not match"
 msgstr "Le passphrase non corrispondono"
 
-#: Library/Modules/Builtin/Strings.cs:15
+#: Library/Modules/Builtin/Strings.cs:16
 msgid ""
 "When running with Mono, this module will check if any certificates are "
 "installed and suggest installing them otherwise"
@@ -4102,24 +4567,26 @@ msgstr ""
 "Durante l'esecuzione con Mono, questo modulo verificherà se i certificati "
 "sono installati e in caso contrario suggerirà di installarli"
 
-#: Library/Modules/Builtin/Strings.cs:16
+#: Library/Modules/Builtin/Strings.cs:17
 msgid "Check for SSL certificates"
 msgstr "Controlla per certificati SSL"
 
-#: Library/Modules/Builtin/Strings.cs:17
+#: Library/Modules/Builtin/Strings.cs:18
 #, csharp-format
 msgid ""
 "No certificates found, you can install some with one of these commands:{0}"
 "    cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based "
 "systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat "
-"derivatives{0}Read more: {1}"
+"derivatives{0}    curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync "
+"--user cacert.pem; rm cacert.pem #for MacOS{0}Read more: {1}"
 msgstr ""
 "Nessun certificato trovato, è possibile installarne alcuni con uno di questi"
-" comandi: {0} cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based"
-" systems{0} cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat "
-"derivatives{0}Read more: {1}"
+" comandi{0} cert-sync /etc/ssl/certs/ca-certificates.crt #per i sistemi "
+"basati su Debian{0} cert-sync /etc/pki/tls/certs/ca-bundle.crt #per i "
+"derivati ​​RedHat{0} curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync "
+"--user cacert.pem; rm cacert.pem #per MacOS{0}Per saperne di più: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:20
+#: Library/Modules/Builtin/Strings.cs:21
 msgid ""
 "This module exposes a number of properties that can be used to change the "
 "way http requests are issued"
@@ -4127,7 +4594,7 @@ msgstr ""
 "Questo modulo espone un numero di proprietà che possono essere utilizzate "
 "per modificare il modo in cui sono emesse le richieste http"
 
-#: Library/Modules/Builtin/Strings.cs:21
+#: Library/Modules/Builtin/Strings.cs:22
 msgid ""
 "Use this option to accept any server certificate, regardless of what errors "
 "it may have. Please use --accept-specified-ssl-hash instead, whenever "
@@ -4137,27 +4604,23 @@ msgstr ""
 "indipendentemente dagli errori che può avere. Per favore, quando possibile, "
 "usa invece --accept-specified-ssl-hash."
 
-#: Library/Modules/Builtin/Strings.cs:22
+#: Library/Modules/Builtin/Strings.cs:23
 msgid "Accept any server certificate"
 msgstr "Accetta qualsiasi certificato del server"
 
-#: Library/Modules/Builtin/Strings.cs:23
+#: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash to approve it anyway. The"
-" hash value must be entered in hex format without spaces. You can enter "
-"multiple hashes separated by commas."
+"certificates), you can supply the certificate hash (SHA256) to approve it "
+"anyway. The hash value must be entered in hex format without spaces or "
+"colons. You can enter multiple hashes separated by commas."
 msgstr ""
-"Se il certificato del server è segnalato come non valido (es. con "
-"certificati autofirmati), puoi fornire l'hash del certificato per approvarlo"
-" in ogni caso. Il valore hash deve essere inserito in formato esadecimale "
-"senza spazi. Puoi inserire più hash separati da virgole."
 
-#: Library/Modules/Builtin/Strings.cs:24
+#: Library/Modules/Builtin/Strings.cs:25
 msgid "Optionally accept a known SSL certificate"
 msgstr "Accetta opzionalmente un certificato SSL noto"
 
-#: Library/Modules/Builtin/Strings.cs:25
+#: Library/Modules/Builtin/Strings.cs:26
 msgid ""
 "The default HTTP request has the header \"Expect: 100-Continue\" attached, "
 "which allows some optimizations when authenticating, but also breaks some "
@@ -4168,11 +4631,11 @@ msgstr ""
 "anche interruzioni di alcuni web server, causando una segnalazione \"417 - "
 "Expectation failed\""
 
-#: Library/Modules/Builtin/Strings.cs:26
+#: Library/Modules/Builtin/Strings.cs:27
 msgid "Disable the expect header"
 msgstr "Disattiva l'intestazione Expect"
 
-#: Library/Modules/Builtin/Strings.cs:27
+#: Library/Modules/Builtin/Strings.cs:28
 msgid ""
 "By default the http requests use the RFC 896 nagling algorithm to support "
 "transfer of small packages more efficiently."
@@ -4181,19 +4644,19 @@ msgstr ""
 "896 nagling per supportare il trasferimento dei pacchetti di piccole "
 "dimensioni in modo più efficiente."
 
-#: Library/Modules/Builtin/Strings.cs:28
+#: Library/Modules/Builtin/Strings.cs:29
 msgid "Disable nagling"
 msgstr "Disattiva nagling"
 
-#: Library/Modules/Builtin/Strings.cs:29
+#: Library/Modules/Builtin/Strings.cs:30
 msgid "Configure http requests"
 msgstr "Configura richieste http"
 
-#: Library/Modules/Builtin/Strings.cs:30
+#: Library/Modules/Builtin/Strings.cs:31
 msgid "Alternate OAuth URL"
 msgstr "URL OAuth alternativo"
 
-#: Library/Modules/Builtin/Strings.cs:31
+#: Library/Modules/Builtin/Strings.cs:32
 msgid ""
 "Duplicati uses an external server to support the OAuth authentication flow. "
 "If you have set up your own Duplicati OAuth server, you can supply the "
@@ -4203,11 +4666,11 @@ msgstr ""
 "OAuth. Se hai impostato Duplicati con un tuo server OAuth, puoi fornire "
 "l'URL di aggiornamento."
 
-#: Library/Modules/Builtin/Strings.cs:32
+#: Library/Modules/Builtin/Strings.cs:33
 msgid "Sets allowed SSL versions"
 msgstr "Imposta versioni SSL consentite"
 
-#: Library/Modules/Builtin/Strings.cs:33
+#: Library/Modules/Builtin/Strings.cs:34
 msgid ""
 "This option changes the default SSL versions allowed. This is an advanced "
 "option and should only be used if you want to enhance security or work "
@@ -4217,11 +4680,11 @@ msgstr ""
 " di un'opzione avanzata e deve essere usata solo se si desidera migliorare "
 "la protezione o aggirare un problema con un determinato protocollo SSL."
 
-#: Library/Modules/Builtin/Strings.cs:34
+#: Library/Modules/Builtin/Strings.cs:35
 msgid "Sets the default operation timeout"
 msgstr "Imposta il timeout predefinito dell'operazione"
 
-#: Library/Modules/Builtin/Strings.cs:35
+#: Library/Modules/Builtin/Strings.cs:36
 msgid ""
 "This option changes the default timeout for any HTTP request, the time "
 "covers the entire operation from initial packet to shutdown"
@@ -4229,11 +4692,11 @@ msgstr ""
 "Questa opzione modifica il timeout predefinito per qualsiasi richiesta HTTP,"
 " il tempo copre l'intera operazione dal pacchetto iniziale all'arresto"
 
-#: Library/Modules/Builtin/Strings.cs:36
+#: Library/Modules/Builtin/Strings.cs:37
 msgid "Sets readwrite"
 msgstr "Imposta lettura/scrittura"
 
-#: Library/Modules/Builtin/Strings.cs:37
+#: Library/Modules/Builtin/Strings.cs:38
 msgid ""
 "This option changes the default read-write timeout. Read-write timeouts are "
 "used to detect a stalled requests, and this option configures the maximum "
@@ -4244,11 +4707,11 @@ msgstr ""
 "blocco e questa opzione configura il tempo massimo tra attività in una "
 "connessione."
 
-#: Library/Modules/Builtin/Strings.cs:38
+#: Library/Modules/Builtin/Strings.cs:39
 msgid "Sets HTTP buffering"
 msgstr "Imposta buffering HTTP"
 
-#: Library/Modules/Builtin/Strings.cs:39
+#: Library/Modules/Builtin/Strings.cs:40
 #, csharp-format
 msgid ""
 "This option sets the HTTP buffering. Setting this to \"{0}\" can cause "
@@ -4257,7 +4720,7 @@ msgstr ""
 "Questa opzione imposta il buffer HTTP. Impostandola a \"{0}\" può causare "
 "perdite di memoria, ma in alcuni casi può anche migliorare la prestazione."
 
-#: Library/Modules/Builtin/Strings.cs:42
+#: Library/Modules/Builtin/Strings.cs:43
 msgid ""
 "This module works internaly to parse source parameters to backup Hyper-V "
 "virtual machines"
@@ -4265,11 +4728,11 @@ msgstr ""
 "Questo modulo funziona internamente per analizzare i parametri sorgenti per "
 "il backup delle macchine virtuali Hyper-V"
 
-#: Library/Modules/Builtin/Strings.cs:43
+#: Library/Modules/Builtin/Strings.cs:44
 msgid "Configure Hyper-V module"
 msgstr "Configura modulo Hyper-V"
 
-#: Library/Modules/Builtin/Strings.cs:47
+#: Library/Modules/Builtin/Strings.cs:48
 msgid ""
 "This module works internaly to parse source parameters to backup Microsoft "
 "SQL Server databases"
@@ -4277,21 +4740,21 @@ msgstr ""
 "Questo modulo funziona internamente per analizzare i parametri sorgente per "
 "il backup di database Microsoft SQL Server"
 
-#: Library/Modules/Builtin/Strings.cs:48
+#: Library/Modules/Builtin/Strings.cs:49
 msgid "Configure Microsoft SQL Server module"
 msgstr "Configura modulo Microsoft SQL Server"
 
-#: Library/Modules/Builtin/Strings.cs:51
+#: Library/Modules/Builtin/Strings.cs:52
 msgid ""
 "Executes a script before starting an operation, and again on completion"
 msgstr ""
 "Esegui uno script prima di avviare un'operazione e al suo completamento"
 
-#: Library/Modules/Builtin/Strings.cs:52
+#: Library/Modules/Builtin/Strings.cs:53
 msgid "Run script"
 msgstr "Esegui script"
 
-#: Library/Modules/Builtin/Strings.cs:53
+#: Library/Modules/Builtin/Strings.cs:54
 msgid ""
 "Executes a script after performing an operation. The script will receive the"
 " operation results written to stdout."
@@ -4299,16 +4762,21 @@ msgstr ""
 "Esegue uno script dopo l'esecuzione di un'operazione. Lo script riceverà i "
 "risultati dell'operazione scritti in stdout."
 
-#: Library/Modules/Builtin/Strings.cs:54
+#: Library/Modules/Builtin/Strings.cs:55
 msgid "Run a script on exit"
 msgstr "Esegui uno script all'uscita"
 
-#: Library/Modules/Builtin/Strings.cs:55
+#: Library/Modules/Builtin/Strings.cs:56
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Lo script \"{0}\" ha restituito il codice di uscita {1}"
 
-#: Library/Modules/Builtin/Strings.cs:56
+#: Library/Modules/Builtin/Strings.cs:57
+#, csharp-format
+msgid "The script \"{0}\" returned with exit code {1}{2}"
+msgstr "Lo script \"{0}\" ha restituito con il codice di uscita {1}{2}"
+
+#: Library/Modules/Builtin/Strings.cs:58
 msgid ""
 "Executes a script before performing an operation. The operation will block "
 "until the script has completed or timed out. If the script returns a non-"
@@ -4319,21 +4787,33 @@ msgstr ""
 "restituisce un codice d'errore diverso da zero o scade il tempo, "
 "l'operazione sarà interrotta."
 
-#: Library/Modules/Builtin/Strings.cs:57
+#: Library/Modules/Builtin/Strings.cs:59
 msgid "Run a required script on startup"
 msgstr "Esegui lo script richiesto all'avvio"
 
-#: Library/Modules/Builtin/Strings.cs:58
+#: Library/Modules/Builtin/Strings.cs:60
+#: Library/Modules/Builtin/Strings.cs:183
+msgid "Selects the output format for results"
+msgstr "Seleziona il formato di uscita per i risultati"
+
+#: Library/Modules/Builtin/Strings.cs:61
+#: Library/Modules/Builtin/Strings.cs:184
+#, csharp-format
+msgid "Selects the output format for results. Available formats: {0}"
+msgstr ""
+"Seleziona il formato di uscita per i risultati. Formati disponibili: {0}"
+
+#: Library/Modules/Builtin/Strings.cs:62
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr "Errore durante l'esecuzione dello script \"{0}\": {1}"
 
-#: Library/Modules/Builtin/Strings.cs:59
+#: Library/Modules/Builtin/Strings.cs:63
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr "Esecuzione dello script \"{0}\" fuori tempo"
 
-#: Library/Modules/Builtin/Strings.cs:60
+#: Library/Modules/Builtin/Strings.cs:64
 msgid ""
 "Executes a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
@@ -4341,16 +4821,16 @@ msgstr ""
 "Esegui uno script prima di eseguire un'operazione. L'operazione si bloccherà"
 " fino a quando lo script non sarà completato o fuori tempo."
 
-#: Library/Modules/Builtin/Strings.cs:61
+#: Library/Modules/Builtin/Strings.cs:65
 msgid "Run a script on startup"
 msgstr "Esegui uno script all'avvio"
 
-#: Library/Modules/Builtin/Strings.cs:62
+#: Library/Modules/Builtin/Strings.cs:66
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Lo script \"{0}\" ha segnalato i messaggi di errore: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:63
+#: Library/Modules/Builtin/Strings.cs:67
 msgid ""
 "Sets the maximum time a script is allowed to execute. If the script has not "
 "completed within this time, it will continue to execute but the operation "
@@ -4361,19 +4841,19 @@ msgstr ""
 "eseguito ma continuerà anche l'operazione e nessuna uscita dello script sarà"
 " elaborata."
 
-#: Library/Modules/Builtin/Strings.cs:64
+#: Library/Modules/Builtin/Strings.cs:68
 msgid "Sets the script timeout"
 msgstr "Imposta il timeout dello script"
 
-#: Library/Modules/Builtin/Strings.cs:67
+#: Library/Modules/Builtin/Strings.cs:71
 msgid "This module can send email after an operation completes"
 msgstr "Questo modulo può inviare email al termine di un'operazione"
 
-#: Library/Modules/Builtin/Strings.cs:68
+#: Library/Modules/Builtin/Strings.cs:72
 msgid "Send mail"
 msgstr "Invia mail"
 
-#: Library/Modules/Builtin/Strings.cs:69
+#: Library/Modules/Builtin/Strings.cs:73
 #, csharp-format
 msgid ""
 "Unable to find the destination mail server through MX lookup, please use the"
@@ -4382,7 +4862,7 @@ msgstr ""
 "Impossibile trovare il server mail di destinazione attraverso la ricerca MX,"
 " per favore usa l'opzione {0} per specificare il server SMTP da usare."
 
-#: Library/Modules/Builtin/Strings.cs:70
+#: Library/Modules/Builtin/Strings.cs:74
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message body.\n"
 "\n"
@@ -4404,20 +4884,20 @@ msgstr ""
 "\n"
 "Tutte le opzioni da riga di comando sono segnalate dentro %value%, es. %volsize%. Qualsiasi valore sconosciuto/non impostato è rimosso."
 
-#: Library/Modules/Builtin/Strings.cs:79
+#: Library/Modules/Builtin/Strings.cs:83
 msgid "The message body"
 msgstr "Il testo del messaggio"
 
-#: Library/Modules/Builtin/Strings.cs:80
+#: Library/Modules/Builtin/Strings.cs:84
 msgid "The password used to authenticate with the SMTP server if required."
 msgstr ""
 "La password usata per l'autenticazione con il server SMTP, se necessaria."
 
-#: Library/Modules/Builtin/Strings.cs:81
+#: Library/Modules/Builtin/Strings.cs:85
 msgid "SMTP Password"
 msgstr "Password SMTP"
 
-#: Library/Modules/Builtin/Strings.cs:82
+#: Library/Modules/Builtin/Strings.cs:86
 msgid ""
 "This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.\n"
 "Example with 3 recipients: \n"
@@ -4428,11 +4908,11 @@ msgstr ""
 "Esempio con 3 destinatari:\n"
 "Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 
-#: Library/Modules/Builtin/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:90
 msgid "Email recipient(s)"
 msgstr "Email destinatario(i)"
 
-#: Library/Modules/Builtin/Strings.cs:87
+#: Library/Modules/Builtin/Strings.cs:91
 msgid ""
 "By default, mail will only be sent after a Backup operation. Use this option"
 " to send mail for all operations."
@@ -4440,11 +4920,11 @@ msgstr ""
 "Per impostazione predefinita, l'email sarà inviata solo dopo un'operazione "
 "di backup. Usa questa opzione per inviare la posta per tutte le operazioni."
 
-#: Library/Modules/Builtin/Strings.cs:88
+#: Library/Modules/Builtin/Strings.cs:92
 msgid "Send email for all operations"
 msgstr "Invia email per tutte le operazioni"
 
-#: Library/Modules/Builtin/Strings.cs:89
+#: Library/Modules/Builtin/Strings.cs:93
 msgid ""
 "Address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:\n"
 "\n"
@@ -4460,11 +4940,11 @@ msgstr ""
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 
-#: Library/Modules/Builtin/Strings.cs:95
+#: Library/Modules/Builtin/Strings.cs:99
 msgid "Email sender"
 msgstr "Email mittente"
 
-#: Library/Modules/Builtin/Strings.cs:96
+#: Library/Modules/Builtin/Strings.cs:100
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". You can supply "
@@ -4477,13 +4957,13 @@ msgstr ""
 "speciale \"{4}\" è una scorciatoia per \"{0},{1},{2},{3}\" e avvierà tutte "
 "le operazioni di backup per inviare una email."
 
-#: Library/Modules/Builtin/Strings.cs:97
-#: Library/Modules/Builtin/Strings.cs:129
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:101
+#: Library/Modules/Builtin/Strings.cs:133
+#: Library/Modules/Builtin/Strings.cs:163
 msgid "The messages to send"
 msgstr "I messaggi da inviare"
 
-#: Library/Modules/Builtin/Strings.cs:98
+#: Library/Modules/Builtin/Strings.cs:102
 msgid ""
 "A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
@@ -4495,11 +4975,11 @@ msgstr ""
 "\n"
 "Per abilitare SMTP su SSL, usa il formato smtps://example.com. Per abilitare SMTP STARTTLS, usa il formato smtp://example.com:25/?starttls=when-available o smtp://example.com:25/?starttls=always. Se non è specificata alcuna porta, sarà utilizzata la porta 25 per le connessioni non SSL e 465 per le connessioni SSL. Per forzare il non utilizzo di STARTTLS usa smtp://example.com:25/?starttls=never."
 
-#: Library/Modules/Builtin/Strings.cs:102
+#: Library/Modules/Builtin/Strings.cs:106
 msgid "SMTP Url"
 msgstr "URL SMTP"
 
-#: Library/Modules/Builtin/Strings.cs:103
+#: Library/Modules/Builtin/Strings.cs:107
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
@@ -4508,46 +4988,46 @@ msgstr ""
 "Questa impostazione fornisce l'oggetto dell'email. I valori sono sostituiti "
 "come illustrato nella descrizione di --{0}."
 
-#: Library/Modules/Builtin/Strings.cs:104
+#: Library/Modules/Builtin/Strings.cs:108
 msgid "The email subject"
 msgstr "Il soggetto dell'email"
 
-#: Library/Modules/Builtin/Strings.cs:105
+#: Library/Modules/Builtin/Strings.cs:109
 msgid "The username used to authenticate with the SMTP server if required."
 msgstr ""
 "Il nome utente utilizzato per l'autenticazione con il server SMTP, se "
 "necessario."
 
-#: Library/Modules/Builtin/Strings.cs:106
+#: Library/Modules/Builtin/Strings.cs:110
 msgid "SMTP Username"
 msgstr "Nome utente SMTP"
 
-#: Library/Modules/Builtin/Strings.cs:107
+#: Library/Modules/Builtin/Strings.cs:111
 #, csharp-format
 msgid "Failed to send email: {0}"
 msgstr "Invio email fallito: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:108
+#: Library/Modules/Builtin/Strings.cs:112
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "Completa comunicazione SMTP: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:109
+#: Library/Modules/Builtin/Strings.cs:113
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 "Invio email con server fallita: {0}, messaggio: {1}, sto riprovando con {2}"
 
-#: Library/Modules/Builtin/Strings.cs:110
+#: Library/Modules/Builtin/Strings.cs:114
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "Email inviata con successo usando il server: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:113
+#: Library/Modules/Builtin/Strings.cs:117
 msgid "XMPP recipient email"
 msgstr "XMPP email destinatario"
 
-#: Library/Modules/Builtin/Strings.cs:114
+#: Library/Modules/Builtin/Strings.cs:118
 msgid ""
 "The users who should have the messages sent, specify multiple users "
 "separated with commas"
@@ -4555,13 +5035,13 @@ msgstr ""
 "Gli utenti che devono disporre dei messaggi inviati, specifica più utenti "
 "separati da virgole"
 
-#: Library/Modules/Builtin/Strings.cs:115
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:119
+#: Library/Modules/Builtin/Strings.cs:149
 msgid "The message template"
 msgstr "Il modello di messaggio"
 
-#: Library/Modules/Builtin/Strings.cs:116
-#: Library/Modules/Builtin/Strings.cs:146
+#: Library/Modules/Builtin/Strings.cs:120
+#: Library/Modules/Builtin/Strings.cs:150
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -4582,11 +5062,11 @@ msgstr ""
 "\n"
 "Tutte le opzioni da riga di comando sono segnalate dentro %value%, es. %volsize%. Qualsiasi valore sconosciuto/non impostato è rimosso."
 
-#: Library/Modules/Builtin/Strings.cs:125
+#: Library/Modules/Builtin/Strings.cs:129
 msgid "The XMPP username"
 msgstr "Il nome utente XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:130
 msgid ""
 "The username for the account that will send the message, including the "
 "hostname. I.e. \"account@jabber.org/Home\""
@@ -4594,16 +5074,16 @@ msgstr ""
 "Il nome utente per l'account che invierà il messaggio, incluso il nome "
 "dell'host. Cioè \"account@jabber.org/Home\""
 
-#: Library/Modules/Builtin/Strings.cs:127
+#: Library/Modules/Builtin/Strings.cs:131
 msgid "The XMPP password"
 msgstr "La password XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:128
+#: Library/Modules/Builtin/Strings.cs:132
 msgid "The password for the account that will send the message"
 msgstr "La password per l'account che invierà il messaggio"
 
-#: Library/Modules/Builtin/Strings.cs:130
-#: Library/Modules/Builtin/Strings.cs:160
+#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:164
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
@@ -4612,13 +5092,13 @@ msgstr ""
 "Puoi specificare uno di \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
 "Puoi fornire più opzioni con una  virgola come separatore, es. \"{0},{1}\". Il valore speciale \"{4}\" è una scorciatoia per \"{0},{1},{2},{3}\" e avvierà tutte le operazioni di backup per inviare un messaggio."
 
-#: Library/Modules/Builtin/Strings.cs:132
-#: Library/Modules/Builtin/Strings.cs:162
+#: Library/Modules/Builtin/Strings.cs:136
+#: Library/Modules/Builtin/Strings.cs:166
 msgid "Send messages for all operations"
 msgstr "Invia messaggi per tutte le operazioni"
 
-#: Library/Modules/Builtin/Strings.cs:133
-#: Library/Modules/Builtin/Strings.cs:163
+#: Library/Modules/Builtin/Strings.cs:137
+#: Library/Modules/Builtin/Strings.cs:167
 msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
@@ -4627,55 +5107,55 @@ msgstr ""
 "l'operazione di backup. Usa questa opzione per inviare i messaggi per tutte "
 "le operazioni"
 
-#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:138
 msgid "XMPP report module"
 msgstr "Modulo rapporto XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:135
+#: Library/Modules/Builtin/Strings.cs:139
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 "Questo modulo fornisce il supporto per l'invio di rapporti di stato tramite "
 "messaggi XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:136
+#: Library/Modules/Builtin/Strings.cs:140
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "Si è verificato un timeout durante l'accesso al server Jabber"
 
-#: Library/Modules/Builtin/Strings.cs:137
+#: Library/Modules/Builtin/Strings.cs:141
 #, csharp-format
 msgid "Failed to send jabber message: {0}"
 msgstr "Invio del messaggio Jabber fallito: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:141
+#: Library/Modules/Builtin/Strings.cs:145
 msgid "HTTP report module"
 msgstr "Modulo rapporto HTTP"
 
-#: Library/Modules/Builtin/Strings.cs:142
+#: Library/Modules/Builtin/Strings.cs:146
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Questo modulo fornisce il supporto per l'invio di rapporti di stato tramite "
 "messaggi HTTP"
 
-#: Library/Modules/Builtin/Strings.cs:143
-#: Library/Modules/Builtin/Strings.cs:144
+#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:148
 msgid "HTTP report url"
 msgstr "URL rapporto HTTP"
 
-#: Library/Modules/Builtin/Strings.cs:155
+#: Library/Modules/Builtin/Strings.cs:159
 msgid "The name of the parameter to send the message as"
 msgstr "Il nome del parametro per inviare il messaggio come"
 
-#: Library/Modules/Builtin/Strings.cs:156
+#: Library/Modules/Builtin/Strings.cs:160
 msgid "The name of the parameter to send the message as."
 msgstr "Il nome del parametro per inviare il messaggio come."
 
-#: Library/Modules/Builtin/Strings.cs:157
+#: Library/Modules/Builtin/Strings.cs:161
 msgid "Extra parameters to add to the http message"
 msgstr "Parametri aggiuntivi da aggiungere al messaggio http"
 
-#: Library/Modules/Builtin/Strings.cs:158
+#: Library/Modules/Builtin/Strings.cs:162
 msgid ""
 "Extra parameters to add to the http message. I.e. "
 "\"parameter1=value1&parameter2=value2\""
@@ -4683,10 +5163,75 @@ msgstr ""
 "Parametri aggiuntivi da aggiungere al messaggio http. Cioè "
 "\"parameter1=value1&parameter2=value2\""
 
-#: Library/Modules/Builtin/Strings.cs:164
+#: Library/Modules/Builtin/Strings.cs:168
 #, csharp-format
 msgid "Failed to send http message: {0}"
 msgstr "Invio del messaggio http fallito: {0}"
+
+#: Library/Modules/Builtin/Strings.cs:169
+msgid "Send data as JSON body"
+msgstr "Invia dati come corpo JSON"
+
+#: Library/Modules/Builtin/Strings.cs:170
+msgid "Use this flag to send the result data as a JSON object"
+msgstr ""
+"Utilizza questo flag per inviare i dati del risultato come oggetto JSON"
+
+#: Library/Modules/Builtin/Strings.cs:171
+msgid "Sets the HTTP verb to use"
+msgstr "Imposta il protocollo HTTP da utilizzare"
+
+#: Library/Modules/Builtin/Strings.cs:172
+msgid ""
+"Use this option to change the default HTTP verb used to submit a report"
+msgstr ""
+"Utilizza questa opzione per modificare il protocollo HTTP predefinito "
+"utilizzato per inviare una segnalazione"
+
+#: Library/Modules/Builtin/Strings.cs:176
+#, csharp-format
+msgid "Failed to send message: {0}"
+msgstr "Impossibile inviare il messaggio: {0}"
+
+#: Library/Modules/Builtin/Strings.cs:177
+msgid "Defines a log level for messages"
+msgstr "Definisce un livello di log per i messaggi"
+
+#: Library/Modules/Builtin/Strings.cs:178
+msgid ""
+"Use this option to set the log level for messages to include in the report"
+msgstr ""
+"Utilizza questa opzione per impostare il livello di log per i messaggi da "
+"includere nella segnalazione"
+
+#: Library/Modules/Builtin/Strings.cs:179
+msgid "Log message filter"
+msgstr "Filtro messaggi di log"
+
+#: Library/Modules/Builtin/Strings.cs:180
+msgid ""
+"Use this option to set a filter expression that defines what options are "
+"included in the report"
+msgstr ""
+"Utilizza questa opzione per impostare un filtro espressione che definisce "
+"quali opzioni sono incluse nella segnalazione"
+
+#: Library/Modules/Builtin/Strings.cs:181
+msgid "Limits log lines"
+msgstr "Limita le linee di log"
+
+#: Library/Modules/Builtin/Strings.cs:182
+msgid ""
+"Use this option to set the maximum number of log lines to include in the "
+"report. Zero or negative values means unlimited."
+msgstr ""
+"Utilizza questa opzione per impostare il numero massimo di righe nel log da "
+"includere nella segnalazione. Valori zero o negativi significa illimitate."
+
+#: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:19
+#, csharp-format
+msgid "The format is not supported: {0}"
+msgstr "Il formato non è supportato: {0}"
 
 #: Library/Utility/Strings.cs:7
 #, csharp-format
@@ -4802,8 +5347,77 @@ msgstr "Impossibile leggere e scrivere sullo stesso flusso di dati"
 
 #: Library/Utility/Strings.cs:39
 #, csharp-format
-msgid "Unknown default filter set: {0}"
-msgstr "Set di filtri predefinito sconosciuto: {0}"
+msgid ""
+"The string {0} does not represent a known filter group name. Valid values "
+"are: {1}"
+msgstr ""
+"La stringa {0} non rappresenta un filtro con un nome gruppo noto. I valori "
+"validi sono: {1}"
+
+#: Library/Utility/FilterGroups.cs:185
+#, csharp-format
+msgid "{0}: Selects no filters."
+msgstr "{0}: Seleziona nessun filtro."
+
+#: Library/Utility/FilterGroups.cs:186
+#, csharp-format
+msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
+msgstr ""
+"{0}: Un'impostazione predefinita di filtri di esclusione, attualmente "
+"restituisce: {1}."
+
+#: Library/Utility/FilterGroups.cs:187
+#, csharp-format
+msgid "{0}: A set of default include filters, currently evaluates to: {1}."
+msgstr ""
+"{0}: Un'impostazione predefinita di filtri di inclusione, attualmente "
+"restituisce: {1}."
+
+#: Library/Utility/FilterGroups.cs:198
+#, csharp-format
+msgid " Aliases: {0}"
+msgstr "Pseudonimo: {0}"
+
+#: Library/Utility/FilterGroups.cs:211
+#, csharp-format
+msgid ""
+"{0}: Files that are owned by the system or not suited to be backed up. This "
+"includes any operating system reported protected files. Most users should at"
+" least apply these filters."
+msgstr ""
+"{0}: File di proprietà del sistema o non adatti a essere sottoposti a "
+"backup. Questo include qualsiasi sistema operativo che segnala file "
+"protetti. La maggior parte degli utenti dovrebbe almeno applicare questi "
+"filtri."
+
+#: Library/Utility/FilterGroups.cs:213
+#, csharp-format
+msgid ""
+"{0}: Files that belong to the operating system. These files are restored "
+"when the operating system is re-installed."
+msgstr ""
+"{0}: File che fanno parte del sistema operativo. Questi file sono "
+"ripristinati quando si reinstalla il sistema operativo."
+
+#: Library/Utility/FilterGroups.cs:215
+#, csharp-format
+msgid "{0}: Files and folders that are known to be storage of temporary data."
+msgstr "{0}: File e cartelle noti per la memorizzazione di dati temporanei."
+
+#: Library/Utility/FilterGroups.cs:217
+#, csharp-format
+msgid ""
+"{0}: Files and folders that are known cache locations for the operating "
+"system and various applications"
+msgstr ""
+"{0}: File e cartelle che sono noti come posizioni di cache del sistema "
+"operativo e varie applicazioni"
+
+#: Library/Utility/FilterGroups.cs:219
+#, csharp-format
+msgid "{0}: Installed programs and their libraries, but not their settings."
+msgstr ""
+"{0}: Programmi installati e relative librerie, ma non le loro impostazioni."
 
 #: CommandLine/Strings.cs:4
 #, csharp-format
@@ -4846,7 +5460,7 @@ msgstr "Moduli di compressione supportati:"
 
 #: CommandLine/Strings.cs:13
 msgid "Supported encryption modules:"
-msgstr "Moduli di criptazione supportati:"
+msgstr "Moduli di crittografia supportati:"
 
 #: CommandLine/Strings.cs:14
 msgid "Supported options:"
@@ -4866,24 +5480,6 @@ msgstr ""
 msgid "Supported generic modules:"
 msgstr "Moduli generici supportati:"
 
-#: CommandLine/Strings.cs:18
-#, csharp-format
-msgid "Unable to read the parameters file \"{0}\", reason: {1}"
-msgstr "Impossibile leggere il file dei parametri \"{0}\", motivo: {1}"
-
-#: CommandLine/Strings.cs:19
-#, csharp-format
-msgid ""
-"Filters cannot be specified on the commandline if filters are also present "
-"in the parameter file. Use the special --{0}, --{1}, or --{2} options to "
-"specify filters inside the parameter file. Each filter must be prefixed with"
-" either a + or a -, and multiple filters must be joined with {3}"
-msgstr ""
-"I filtri non possono essere specificati dalla riga di comando se sono "
-"presenti anche nel file parametri. Usa le opzioni speciali --{0}, --{1}, o "
-"--{2} per specificare i filtri all'interno del file parametri. Ogni filtro "
-"deve avere un prefisso + o un -, e più filtri devono essere uniti con {3}"
-
 #: CommandLine/Strings.cs:20
 #, csharp-format
 msgid ""
@@ -4892,36 +5488,6 @@ msgid ""
 msgstr ""
 "L'opzione  --{0} è stata impostata, ma essa è riservata per uso interno e "
 "non può essere usata da riga di comando"
-
-#: CommandLine/Strings.cs:21
-#, csharp-format
-msgid ""
-"This option can be used to store some or all of the options given to the "
-"commandline client. The file must be a plain text file, UTF-8 encoding is "
-"preferred. Each line in the file should be of the format --option=value. The"
-" special options --{0} and --{1} can be used to override the localpath and "
-"the remote destination uri, respectively. The options in this file take "
-"precedence over the options provided on the commandline. You cannot specify "
-"filters in both the file and on the commandline. Instead, you can use the "
-"special --{2}, --{3}, or --{4} options to specify filters inside the "
-"parameter file. Each filter must be prefixed with either a + or a -, and "
-"multiple filters must be joined with {5} "
-msgstr ""
-"Questa opzione può essere utilizzata per memorizzare alcune o tutte le "
-"opzioni fornite al client Riga di comando. Il file deve essere un file di "
-"testo normale, la codifica UTF-8 è preferibile. Ogni riga nel file deve "
-"essere del formato -option=value. Le opzioni speciali -{0} e --{1} possono "
-"essere utilizzate per sovrascrivere rispettivamente il LocalPath e l'URI di "
-"destinazione remota. Le opzioni in questo file hanno la precedenza sulle "
-"opzioni fornite dalla riga di comando. Non è possibile specificare filtri "
-"sia nel file sia nella riga di comando. È invece possibile utilizzare le "
-"opzioni speciali --{2}, --{3}, o --{4} per specificare i filtri all'interno "
-"del file dei parametri. Ogni filtro deve essere preceduto con un + o un -, e"
-" più filtri devono essere uniti con {5}"
-
-#: CommandLine/Strings.cs:22
-msgid "Path to a file with parameters"
-msgstr "Percorso di un file con parametri"
 
 #: CommandLine/Strings.cs:23
 #, csharp-format
@@ -4939,13 +5505,17 @@ msgid ""
 "number of character, and the special character ? means any single character,"
 " use *.txt to include all files with a txt extension. Regular expressions "
 "are also supported and can be supplied by using hard braces, i.e. "
-"[.*\\.txt]."
+"[.*\\.txt]. Filter groups (which encapsulate a built-in set of well-known "
+"files and folders) can be specified by using curly braces, i.e. "
+"{{Applications}}."
 msgstr ""
-"Includi i file che corrispondono a questo filtro. Il carattere speciale * "
-"significa qualsiasi numero di caratteri, e il carattere speciale ? significa"
-" qualsiasi singolo carattere, usa *.txt per includere tutti i file con "
-"estensione txt. Anche le espressioni regolari sono supportate e possono "
-"essere utilizzate racchiudendole tra parentesi quadre, es. [.*\\.txt]."
+"Include i file che corrispondono a questo filtro. Il carattere speciale * "
+"indica un numero qualsiasi di caratteri e il carattere speciale ? ogni "
+"singolo carattere, usa *.txt per includere tutti i file con estensione txt. "
+"Anche le espressioni regolari sono supportate e possono essere fornite "
+"utilizzando parentesi quadre, ad es. [.*\\.txt]. I filtri gruppo (che "
+"racchiudono un set predefinito di file e cartelle noti) possono essere "
+"specificati utilizzando parentesi graffe, ad es. {{Applicazioni}}."
 
 #: CommandLine/Strings.cs:26
 msgid "Include files"
@@ -4957,13 +5527,17 @@ msgid ""
 "number of character, and the special character ? means any single character,"
 " use *.txt to exclude all files with a txt extension. Regular expressions "
 "are also supported and can be supplied by using hard braces, i.e. "
-"[.*\\.txt]."
+"[.*\\.txt]. Filter groups (which encapsulate a built-in set of well-known "
+"files and folders) can be specified by using curly braces, i.e. "
+"{{TemporaryFiles}}."
 msgstr ""
-"Escludi i file che corrispondono a questo filtro. Il carattere speciale * "
-"significa qualsiasi numero di caratteri, e il carattere speciale ? significa"
-" qualsiasi singolo carattere, usa *.txt per includere tutti i file con "
-"estensione txt. Anche le espressioni regolari sono supportate e possono "
-"essere utilizzate racchiudendole tra parentesi quadre, es. [.*\\.txt]."
+"Esclude i file che corrispondono a questo filtro. Il carattere speciale * "
+"indica un numero qualsiasi di caratteri e il carattere speciale ? ogni "
+"singolo carattere, usa *.txt per escludere tutti i file con estensione txt. "
+"Anche le espressioni regolari sono supportate e possono essere fornite "
+"utilizzando parentesi quadre, ad es. [.*\\.txt]. I filtri gruppo (che "
+"racchiudono un set predefinito di file e cartelle noti) possono essere "
+"specificati utilizzando parentesi graffe, ad es. {{File temporanei}}."
 
 #: CommandLine/Strings.cs:28
 msgid "Exclude files"
@@ -4997,11 +5571,16 @@ msgstr ""
 msgid "Disable console output"
 msgstr "Disattiva uscita console"
 
-#: CommandLine/Program.cs:302
+#: CommandLine/Strings.cs:34
+#, csharp-format
+msgid "This link may provide additional information: {0}"
+msgstr "Questo link può fornire ulteriori informazioni: {0}"
+
+#: CommandLine/Program.cs:294
 msgid "Toggle automatic updates"
 msgstr "Attiva/disattiva aggiornamenti automatici"
 
-#: CommandLine/Program.cs:302
+#: CommandLine/Program.cs:294
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"

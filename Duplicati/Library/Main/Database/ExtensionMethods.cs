@@ -8,6 +8,11 @@ namespace Duplicati.Library.Main.Database
 {
     public static class ExtensionMethods
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ExtensionMethods));
+
         public static void AddParameters(this System.Data.IDbCommand self, int count)
         {
             for(var i = 0; i < count; i++)
@@ -33,7 +38,41 @@ namespace Duplicati.Library.Main.Database
             ((System.Data.IDataParameter)self.Parameters[index]).Value = value;
         }
 
+        public static string GetPrintableCommandText(this System.Data.IDbCommand self)
+        {
+            var txt = self.CommandText;
+
+            foreach(var p in self.Parameters.Cast<System.Data.IDbDataParameter>())
+            {
+                var ix = txt.IndexOf('?');
+                if (ix >= 0)
+                {
+                    string v;
+                    if (p.Value is string)
+                        v = string.Format("\"{0}\"", p.Value);
+                    else if (p.Value == null)
+                        v = "NULL";
+                    else
+                        v = string.Format("{0}", p.Value);
+
+                    txt = txt.Substring(0, ix) + v + txt.Substring(ix + 1);
+                }
+            }
+
+            return txt;
+        }
+
+        public static int ExecuteNonQuery(this System.Data.IDbCommand self, bool writeLog)
+        {
+            return ExecuteNonQuery(self, writeLog, null, null);
+        }
+
         public static int ExecuteNonQuery(this System.Data.IDbCommand self, string cmd, params object[] values)
+        {
+            return ExecuteNonQuery(self, true, cmd, values);
+        }
+
+        public static int ExecuteNonQuery(this System.Data.IDbCommand self, bool writeLog, string cmd, params object[] values)
         {
             if (cmd != null)
                 self.CommandText = cmd;
@@ -45,11 +84,16 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteNonQuery: {0}", self.CommandText)))
+            using(writeLog ? new Logging.Timer(LOGTAG, "ExecuteNonQuery", string.Format("ExecuteNonQuery: {0}", self.GetPrintableCommandText())) : null)
                 return self.ExecuteNonQuery();
         }
 
         public static object ExecuteScalar(this System.Data.IDbCommand self, string cmd, params object[] values)
+        {
+            return ExecuteScalar(self, true, cmd, values);
+        }
+
+        public static object ExecuteScalar(this System.Data.IDbCommand self, bool writeLog, string cmd, params object[] values)
         {
             if (cmd != null)
                 self.CommandText = cmd;
@@ -61,21 +105,36 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteScalar: {0}", self.CommandText)))
+            using(writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalar", string.Format("ExecuteScalar: {0}", self.GetPrintableCommandText())) : null)
                 return self.ExecuteScalar();
+        }
+
+        public static long ExecuteScalarInt64(this System.Data.IDbCommand self, bool writeLog, long defaultvalue = -1)
+        {
+            return ExecuteScalarInt64(self, writeLog, null, defaultvalue);
         }
 
         public static long ExecuteScalarInt64(this System.Data.IDbCommand self, long defaultvalue = -1)
         {
-            return ExecuteScalarInt64(self, null, defaultvalue, null);
+            return ExecuteScalarInt64(self, true, null, defaultvalue);
+        }
+
+        public static long ExecuteScalarInt64(this System.Data.IDbCommand self, bool writeLog, string cmd, long defaultvalue = -1)
+        {
+            return ExecuteScalarInt64(self, writeLog, cmd, defaultvalue, null);
         }
 
         public static long ExecuteScalarInt64(this System.Data.IDbCommand self, string cmd, long defaultvalue = -1)
         {
-            return ExecuteScalarInt64(self, cmd, defaultvalue, null);
+            return ExecuteScalarInt64(self, true, cmd, defaultvalue, null);
         }
 
         public static long ExecuteScalarInt64(this System.Data.IDbCommand self, string cmd, long defaultvalue, params object[] values)
+        {
+            return ExecuteScalarInt64(self, true, cmd, defaultvalue, values);
+        }
+
+        public static long ExecuteScalarInt64(this System.Data.IDbCommand self, bool writeLog, string cmd, long defaultvalue, params object[] values)
         {
             if (cmd != null)
                 self.CommandText = cmd;
@@ -87,7 +146,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteScalarInt64: {0}", self.CommandText)))
+            using(writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarInt64", string.Format("ExecuteScalarInt64: {0}", self.GetPrintableCommandText())) : null)
                 using(var rd = self.ExecuteReader())
                     if (rd.Read())
                         return ConvertValueToInt64(rd, 0, defaultvalue);
@@ -97,6 +156,11 @@ namespace Duplicati.Library.Main.Database
 
         public static System.Data.IDataReader ExecuteReader(this System.Data.IDbCommand self, string cmd, params object[] values)
         {
+            return ExecuteReader(self, true, cmd, values);
+        }
+
+        public static System.Data.IDataReader ExecuteReader(this System.Data.IDbCommand self, bool writeLog, string cmd, params object[] values)
+        {
             if (cmd != null)
                 self.CommandText = cmd;
 
@@ -107,7 +171,7 @@ namespace Duplicati.Library.Main.Database
                     self.AddParameter(n);
             }
 
-            using(new Logging.Timer(LC.L("ExecuteReader: {0}", self.CommandText)))
+            using(writeLog ? new Logging.Timer(LOGTAG, "ExecuteReader", string.Format("ExecuteReader: {0}", self.GetPrintableCommandText())) : null)
                 return self.ExecuteReader();
         }
 
@@ -197,7 +261,7 @@ namespace Duplicati.Library.Main.Database
                         Console.WriteLine();
                         n++;
                     }
-                    Console.WriteLine(LC.L("{0} records", n));
+                    Console.WriteLine("{0} records", n);
                 }
             }
         }

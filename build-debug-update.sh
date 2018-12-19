@@ -1,10 +1,10 @@
-RELEASE_TIMESTAMP=`date +%Y-%m-%d`
+RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
 
-RELEASE_INC_VERSION=`cat Updates/build_version.txt`
+RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
 RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
 
 RELEASE_NAME=2.0_CLI_experimental_${RELEASE_TIMESTAMP}
-RELEASE_CHANGEINFO=`cat Updates/debug_changeinfo.txt`
+RELEASE_CHANGEINFO=$(cat Updates/debug_changeinfo.txt)
 RELEASE_VERSION="2.0.0.${RELEASE_INC_VERSION}"
 
 UPDATE_ZIP_URLS=http://updates.duplicati.com/debug/duplicati.zip\;http://alt.updates.duplicati.com/debug/duplicati.zip

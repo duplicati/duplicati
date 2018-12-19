@@ -174,7 +174,7 @@ namespace Duplicati.Library.Compression
             if (m_reader == null)
                 throw new InvalidOperationException(Strings.SevenZipCompression.NoReaderError);
 
-            StringComparison sc = Library.Utility.Utility.ClientFilenameStringComparision;
+            StringComparison sc = Library.Utility.Utility.ClientFilenameStringComparison;
 
             return
                 from n in m_reader.GetFiles(m_archive)
@@ -222,8 +222,8 @@ namespace Duplicati.Library.Compression
 
         private sealed class WriterEntry : ManagedLzma.LZMA.Master.SevenZip.IArchiveWriterEntry
         {
-            private string mName;
-            private DateTime? mTimestamp;
+            private readonly string mName;
+            private readonly DateTime? mTimestamp;
 
             internal WriterEntry(string name, DateTime? timestamp)
             {

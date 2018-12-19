@@ -12,6 +12,11 @@ namespace Duplicati.Library.Main
 {
     internal class BackendManager : IDisposable
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
+
         public const string VOLUME_HASH = "SHA256";
 
         /// <summary>
@@ -121,7 +126,7 @@ namespace Duplicati.Library.Main
             /// <summary>
             /// The event that is signaled once the operation is complete or has failed
             /// </summary>
-            private System.Threading.ManualResetEvent DoneEvent;
+            private readonly System.Threading.ManualResetEvent DoneEvent;
 
             public FileEntryItem(OperationType operation, string remotefilename, Tuple<IndexVolumeWriter, FileEntryItem> indexfile = null)
             {
@@ -209,7 +214,7 @@ namespace Duplicati.Library.Main
             {
                 if (this.LocalTempfile != null)
                     try { this.LocalTempfile.Dispose(); }
-                    catch (Exception ex) { stat.AddWarning(string.Format("Failed to dispose temporary file: {0}", this.LocalTempfile), ex); }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
                     finally { this.LocalTempfile = null; }
             }
 
@@ -239,11 +244,10 @@ namespace Duplicati.Library.Main
 
         private class DatabaseCollector
         {
-            private object m_dbqueuelock = new object();
-            private LocalDatabase m_database;
-            private System.Threading.Thread m_callerThread;
+            private readonly object m_dbqueuelock = new object();
+            private readonly LocalDatabase m_database;
+            private readonly System.Threading.Thread m_callerThread;
             private List<IDbEntry> m_dbqueue;
-            private IBackendWriter m_stats;
 
             private interface IDbEntry { }
 
@@ -268,10 +272,9 @@ namespace Duplicati.Library.Main
                 public string Newname;
             }
 
-            public DatabaseCollector(LocalDatabase database, IBackendWriter stats)
+            public DatabaseCollector(LocalDatabase database)
             {
                 m_database = database;
-                m_stats = stats;
                 m_dbqueue = new List<IDbEntry>();
                 if (m_database != null)
                     m_callerThread = System.Threading.Thread.CurrentThread;
@@ -333,7 +336,7 @@ namespace Duplicati.Library.Main
                     else if (e is DbRename)
                         db.RenameRemoteFile(((DbRename)e).Oldname, ((DbRename)e).Newname, transaction);
                     else if (e != null)
-                        m_stats.AddError(string.Format("Queue had element of type: {0}, {1}", e.GetType(), e), null);
+                        Logging.Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
 
                 // Finally remove volumes from DB.
                 if (volsRemoved.Count > 0)
@@ -344,15 +347,15 @@ namespace Duplicati.Library.Main
         }
 
         private readonly BlockingQueue<FileEntryItem> m_queue;
-        private Options m_options;
+        private readonly Options m_options;
         private volatile Exception m_lastException;
-        private Library.Interface.IEncryption m_encryption;
+        private readonly Library.Interface.IEncryption m_encryption;
         private readonly object m_encryptionLock = new object();
         private Library.Interface.IBackend m_backend;
-        private string m_backendurl;
-        private IBackendWriter m_statwriter;
+        private readonly string m_backendurl;
+        private readonly IBackendWriter m_statwriter;
         private System.Threading.Thread m_thread;
-        private BasicResults m_taskControl;
+        private readonly BasicResults m_taskControl;
         private readonly DatabaseCollector m_db;
 
         // Cache these
@@ -373,7 +376,7 @@ namespace Duplicati.Library.Main
             m_numberofretries = options.NumberOfRetries;
             m_retrydelay = options.RetryDelay;
 
-            m_db = new DatabaseCollector(database, statwriter);
+            m_db = new DatabaseCollector(database);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
             if (m_backend == null)
@@ -384,14 +387,14 @@ namespace Duplicati.Library.Main
                 try { shortname = new Library.Utility.Uri(shortname).Scheme; }
                 catch { }
 
-                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Backend not supported: {0}", shortname));
+                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Backend not supported: {0}", shortname), "BackendNotSupported");
             }
 
             if (!m_options.NoEncryption)
             {
                 m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
                 if (m_encryption == null)
-                    throw new Duplicati.Library.Interface.UserInformationException(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule));
+                    throw new Duplicati.Library.Interface.UserInformationException(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule), "EncryptionMethodNotSupported");
             }
 
             if (m_taskControl != null)
@@ -472,7 +475,7 @@ namespace Duplicati.Library.Main
                             if (m_backend == null)
                                 throw new Exception("Backend failed to re-load");
 
-                            using (new Logging.Timer(string.Format("RemoteOperation{0}", item.Operation)))
+                            using (new Logging.Timer(LOGTAG, string.Format("RemoteOperation{0}", item.Operation), string.Format("RemoteOperation{0}", item.Operation)))
                                 switch (item.Operation)
                                 {
                                     case OperationType.Put:
@@ -508,7 +511,7 @@ namespace Duplicati.Library.Main
                         {
                             retries++;
                             lastException = ex;
-                            m_statwriter.AddRetryAttempt(string.Format("Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_numberofretries, ex.Message), ex);
+                            Logging.Log.WriteRetryMessage(LOGTAG, $"Retry{item.Operation}", ex, "Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_numberofretries, ex.Message);
 
                             // If the thread is aborted, we exit here
                             if (ex is System.Threading.ThreadAbortException)
@@ -517,6 +520,24 @@ namespace Duplicati.Library.Main
                                 item.Exception = ex;
                                 item.SignalComplete();
                                 throw;
+                            }
+
+                            if (ex is System.Net.WebException)
+                            {
+                                // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
+                                if (((System.Net.WebException)ex).Status == System.Net.WebExceptionStatus.NameResolutionFailure)
+                                {
+                                    try
+                                    {
+                                        var names = m_backend.DNSName ?? new string[0];
+                                        foreach(var name in names)
+                                            if (!string.IsNullOrWhiteSpace(name))
+                                                System.Net.Dns.GetHostEntry(name);
+                                    }
+                                    catch
+                                    {
+                                    }
+                                }
                             }
 
                             m_statwriter.SendEvent(item.BackendActionType, retries < m_numberofretries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
@@ -532,7 +553,7 @@ namespace Duplicati.Library.Main
                                 }
                                 catch (Exception dex)
                                 {
-                                    m_statwriter.AddWarning(string.Format("Failed to create folder: {0}", ex.Message), dex);
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "FolderCreateError", dex, "Failed to create folder: {0}", ex.Message);
                                 }
                             }
 
@@ -543,7 +564,7 @@ namespace Duplicati.Library.Main
                             if (!recovered)
                             {
                                 try { m_backend.Dispose(); }
-                                catch (Exception dex) { m_statwriter.AddWarning(LC.L("Failed to dispose backend instance: {0}", ex.Message), dex); }
+                                catch (Exception dex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeError", dex, "Failed to dispose backend instance: {0}", ex.Message); }
 
                                 m_backend = null;
 
@@ -566,18 +587,18 @@ namespace Duplicati.Library.Main
 
                     if (lastException != null && !(lastException is Duplicati.Library.Interface.FileMissingException) && item.Operation == OperationType.Delete)
                     {
-                        m_statwriter.AddMessage(LC.L("Failed to delete file {0}, testing if file exists", item.RemoteFilename));
+                        Logging.Log.WriteInformationMessage(LOGTAG, "DeleteFileFailed", LC.L("Failed to delete file {0}, testing if file exists", item.RemoteFilename));
                         try
                         {
                             if (!m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename))
                             {
                                 lastException = null;
-                                m_statwriter.AddMessage(LC.L("Recovered from problem with attempting to delete non-existing file {0}", item.RemoteFilename));
+                                Logging.Log.WriteInformationMessage(LOGTAG, "DeleteFileFailureRecovered", LC.L("Recovered from problem with attempting to delete non-existing file {0}", item.RemoteFilename));
                             }
                         }
                         catch (Exception ex)
                         {
-                            m_statwriter.AddWarning(LC.L("Failed to recover from error deleting file {0}", item.RemoteFilename), ex);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "DeleteFileFailure", ex, LC.L("Failed to recover from error deleting file {0}", item.RemoteFilename), ex);
                         }
                     }
 
@@ -610,14 +631,14 @@ namespace Duplicati.Library.Main
         private void RenameFileAfterError(FileEntryItem item)
         {
             var p = VolumeBase.ParseFilename(item.RemoteFilename);
-            var guid = VolumeWriterBase.GenerateGuid(m_options);
+            var guid = VolumeWriterBase.GenerateGuid();
             var time = p.Time.Ticks == 0 ? p.Time : p.Time.AddSeconds(1);
             var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
             var oldname = item.RemoteFilename;
 
             m_statwriter.SendEvent(item.BackendActionType, BackendEventType.Rename, oldname, item.Size);
             m_statwriter.SendEvent(item.BackendActionType, BackendEventType.Rename, newname, item.Size);
-            m_statwriter.AddMessage(string.Format("Renaming \"{0}\" to \"{1}\"", oldname, newname));
+            Logging.Log.WriteInformationMessage(LOGTAG, "RenameRemoteTargetFile", "Renaming \"{0}\" to \"{1}\"", oldname, newname);
             m_db.LogDbRename(oldname, newname);
             item.RemoteFilename = newname;
 
@@ -712,14 +733,14 @@ namespace Duplicati.Library.Main
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                     ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
             }
             else
                 m_backend.Put(item.RemoteFilename, item.LocalFilename);
 
             var duration = DateTime.Now - begin;
-            Logging.Log.WriteMessage(string.Format("Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds))), Duplicati.Library.Logging.LogMessageType.Profiling);
+            Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
 
             if (!item.NotTrackedInDb)
                 m_db.LogDbUpdate(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
@@ -728,7 +749,7 @@ namespace Duplicati.Library.Main
 
             if (m_options.ListVerifyUploads)
             {
-                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var f = m_backend.List().FirstOrDefault(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase));
                 if (f == null)
                     throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
                 else if (f.Size != item.Size && f.Size >= 0)
@@ -805,8 +826,8 @@ namespace Duplicati.Library.Main
                     {
                         using (var ss = new ShaderStream(nextTierWriter, false))
                         {
-                            using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                            using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                             {
                                 taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
                                 if (taskDecrypter != null) taskDecrypter.Start();
@@ -835,7 +856,7 @@ namespace Duplicati.Library.Main
                     // are properly ended and tidied up. For what is thrown: If exceptions in main thread occured (download) it is thrown,
                     // then hasher task is checked and last decryption. This resembles old logic.
                     try { retHashcode = taskHasher.Result; }
-                    catch (AggregateException ex) { if (!hadException) { hadException = true; throw ex.InnerExceptions[0]; } }
+                    catch (AggregateException ex) { if (!hadException) { hadException = true; throw ex.Flatten().InnerException; } }
                     finally
                     {
                         if (taskDecrypter != null)
@@ -846,10 +867,11 @@ namespace Duplicati.Library.Main
                                 if (!hadException)
                                 {
                                     hadException = true;
-                                    if (ex.InnerExceptions[0] is System.Security.Cryptography.CryptographicException)
-                                        throw ex.InnerExceptions[0];
+                                    AggregateException flattenedException = ex.Flatten();
+                                    if (flattenedException.InnerException is System.Security.Cryptography.CryptographicException)
+                                        throw flattenedException.InnerException;
                                     else
-                                        throw new System.Security.Cryptography.CryptographicException(ex.InnerExceptions[0].Message, ex.InnerExceptions[0]);
+                                        throw new System.Security.Cryptography.CryptographicException(flattenedException.InnerException.Message, flattenedException.InnerException);
                                 }
                             }
                         }
@@ -890,8 +912,8 @@ namespace Duplicati.Library.Main
                     using (var hs = GetFileHasherStream(fs, System.Security.Cryptography.CryptoStreamMode.Write, out getFileHash))
                     using (var ss = new ShaderStream(hs, true))
                     {
-                        using (var ts = new ThrottledStream(ss, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                        using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                         { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;
@@ -963,20 +985,20 @@ namespace Duplicati.Library.Main
                                     // Check if the file is encrypted with something else
                                     if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                                     {
-                                        m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
+                                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, m_options.EncryptionModule);
                                         useDecrypter = DynamicLoader.EncryptionLoader.GetModule(ext, m_options.Passphrase, m_options.RawOptions);
                                         useDecrypter = useDecrypter ?? m_encryption;
                                     }
                                     // Check if the file is not encrypted
                                     else if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                                     {
-                                        m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule);
+                                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, m_options.EncryptionModule);
                                         useDecrypter = null;
                                     }
                                     // Fallback, lets see what happens...
                                     else
                                     {
-                                        m_statwriter.AddVerboseMessage("Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule);
+                                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, m_options.EncryptionModule);
                                     }
                                 }
                             }
@@ -995,9 +1017,9 @@ namespace Duplicati.Library.Main
                     tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
 
                 var duration = DateTime.Now - begin;
-                Logging.Log.WriteMessage(string.Format("Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
+                Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
                     duration, Library.Utility.Utility.FormatSizeString((long)(dataSizeDownloaded / duration.TotalSeconds)),
-                    useDecrypter == null ? "" : "and decrypted "), Duplicati.Library.Logging.LogMessageType.Profiling);
+                    useDecrypter == null ? "" : "and decrypted ");
 
                 m_db.LogDbOperation("get", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = dataSizeDownloaded, Hash = fileHash }));
                 m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, item.RemoteFilename, dataSizeDownloaded);
@@ -1082,7 +1104,7 @@ namespace Duplicati.Library.Main
 
                 if (isFileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
                 {
-                    m_statwriter.AddWarning(LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename), ex);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "DeleteRemoteFileFailed", ex, LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename));
                     bool success = false;
 
                     try
@@ -1095,7 +1117,7 @@ namespace Duplicati.Library.Main
 
                     if (success)
                     {
-                        m_statwriter.AddMessage(LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
+                        Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileSuccess", LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
                         return;
                     }
 
@@ -1485,7 +1507,7 @@ namespace Duplicati.Library.Main
             }
 
             try { m_db.FlushDbMessages(true); }
-            catch (Exception ex) { m_statwriter.AddError(string.Format("Backend Shutdown error: {0}", ex.Message), ex); }
+            catch (Exception ex) { Logging.Log.WriteErrorMessage(LOGTAG, "ShutdownError", ex, "Backend Shutdown error: {0}", ex.Message); }
         }
     }
 }

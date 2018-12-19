@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
     public class Dropbox : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
-        private const int MAX_FILE_LIST = 10000;
 
-        private string m_path,m_accesToken;
-        private DropboxHelper dbx;
+        private readonly string m_accesToken;
+        private readonly string m_path;
+        private readonly DropboxHelper dbx;
 
         public Dropbox()
         {
@@ -49,7 +50,7 @@ namespace Duplicati.Library.Backend
             get { return "dropbox"; }
         }
 
-        private FileEntry ParseEntry(MetaData md)
+        private IFileEntry ParseEntry(MetaData md)
         {
             var ife = new FileEntry(md.name);
             if (md.IsFile)
@@ -135,6 +136,11 @@ namespace Duplicati.Library.Backend
         }
 
         public string Description { get { return Strings.Dropbox.Description; } }
+
+        public string[] DNSName
+        {
+            get { return WebApi.Dropbox.Hosts(); }
+        }
 
         public void Test()
         {

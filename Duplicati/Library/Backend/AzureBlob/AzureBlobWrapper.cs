@@ -21,6 +21,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Microsoft.WindowsAzure.Storage;
@@ -35,6 +36,29 @@ namespace Duplicati.Library.Backend.AzureBlob
     {
         private readonly string _containerName;
         private readonly CloudBlobContainer _container;
+
+        public string[] DnsNames
+        {
+            get
+            {
+                var lst = new List<string>();
+                if (_container != null)
+                {
+                    if (_container.Uri != null)
+                        lst.Add(_container.Uri.Host);
+
+                    if (_container.StorageUri != null)
+                    {
+                        if (_container.StorageUri.PrimaryUri != null)
+                            lst.Add(_container.StorageUri.PrimaryUri.Host);
+                        if (_container.StorageUri.SecondaryUri != null)
+                            lst.Add(_container.StorageUri.SecondaryUri.Host);
+                    }
+                }
+
+                return lst.ToArray();
+            }
+        }
 
         public AzureBlobWrapper(string accountName, string accessKey, string containerName)
         {
@@ -96,7 +120,6 @@ namespace Duplicati.Library.Backend.AzureBlob
                         if (x is CloudBlockBlob)
                         {
                             var cb = (CloudBlockBlob)x;
-                            var modified = cb.Properties.LastModified;
                             var lastModified = new System.DateTime();
                             if (cb.Properties.LastModified != null)
                                 lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);

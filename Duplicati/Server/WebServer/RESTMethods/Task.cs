@@ -37,8 +37,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     return;
                 }
 
-                task = tasks.Where(x => x.TaskID == taskid).FirstOrDefault();
-                if (tasks.Where(x => x.TaskID == taskid).FirstOrDefault() == null)
+                if (tasks.FirstOrDefault(x => x.TaskID == taskid) == null)
                 {
                     KeyValuePair<long, Exception>[] matches;
                     lock(Program.MainLock)
@@ -60,7 +59,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             else
             {
-                info.ReportClientError("Invalid request");
+                info.ReportClientError("Invalid request", System.Net.HttpStatusCode.BadRequest);
             }
         }
 
@@ -76,7 +75,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 if (task != null)
                     tasks.Insert(0, task);
 
-                task = tasks.Where(x => x.TaskID == taskid).FirstOrDefault();
+                task = tasks.FirstOrDefault(x => x.TaskID == taskid);
                 if (task == null)
                 {
                     info.ReportClientError("No such task", System.Net.HttpStatusCode.NotFound);
@@ -97,7 +96,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 }
             }
 
-            info.ReportClientError("Invalid or missing task id");
+            info.ReportClientError("Invalid or missing task id", System.Net.HttpStatusCode.NotFound);
         }
     }
 }

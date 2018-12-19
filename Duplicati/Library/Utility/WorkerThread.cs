@@ -33,11 +33,11 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Locking object for shared data
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         /// <summary>
         /// The wait event
         /// </summary>
-        private AutoResetEvent m_event;
+        private readonly AutoResetEvent m_event;
         /// <summary>
         /// The internal list of tasks to perform
         /// </summary>
@@ -63,7 +63,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A callback that performs the actual work on the item
         /// </summary>
-        private Action<Tx> m_delegate;
+        private readonly Action<Tx> m_delegate;
 
         /// <summary>
         /// An event that is raised when the runner state changes
@@ -161,6 +161,40 @@ namespace Duplicati.Library.Utility
             if (WorkQueueChanged != null)
                 WorkQueueChanged(this);
         }
+
+        /// <summary>
+        /// An overloaded AddTask method that allows a task to skip to the front of a queue
+        /// It does this by creating a new queue, adding the new task first, and then adding
+        /// all the old tasks to the new queue. It's cleaner to use a linked list,
+        /// but the performance difference is negligible on such a small queue.
+        /// </summary>
+        /// <param name="task">Task.</param>
+        /// <param name="skipQueue">If set to <c>true</c> skip queue.</param>
+        public void AddTask(Tx task, bool skipQueue)
+        {
+            if (!skipQueue) {
+                // Fall back to default AddTask method
+                AddTask(task);
+                return;
+            }
+
+            lock (m_lock)
+            {
+                Queue<Tx> newQueue = new Queue<Tx>();
+                newQueue.Enqueue(task);
+                while (m_tasks.Count > 0)
+                {
+                    Tx n = m_tasks.Dequeue();
+                    newQueue.Enqueue(n);
+                }
+                m_tasks = newQueue;
+                m_event.Set();
+            }
+
+            if (WorkQueueChanged != null)
+                WorkQueueChanged(this);
+        }
+
 
         /// <summary>
         /// Removes a task from the queue, does not remove the task if it is currently running

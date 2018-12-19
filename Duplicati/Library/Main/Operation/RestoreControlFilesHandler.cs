@@ -7,9 +7,9 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class RestoreControlFilesHandler
     {
-        private Options m_options;
-        private string m_backendurl;
-        private RestoreControlFilesResults m_result;
+        private readonly Options m_options;
+        private readonly string m_backendurl;
+        private readonly RestoreControlFilesResults m_result;
 
         public RestoreControlFilesHandler(string backendurl, Options options, RestoreControlFilesResults result)
         {
@@ -51,17 +51,12 @@ namespace Duplicati.Library.Main.Operation
                             }    
                         
                             var file = fileversion.Value.File;
-                            long size;
-                            string hash;
-                            RemoteVolumeType type;
-                            RemoteVolumeState state;
-                            if (!db.GetRemoteVolume(file.Name, out hash, out size, out type, out state))
-                                size = file.Size;
-    
+                            var entry = db.GetRemoteVolume(file.Name);
+
                             var res = new List<string>();
-                            using (var tmpfile = backend.Get(file.Name, size, hash))
-                            using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
-                                foreach (var cf in tmp.ControlFiles)
+                            using (var tmpfile = backend.Get(file.Name, entry.Size < 0 ? file.Size : entry.Size, entry.Hash))
+	                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
+	                            foreach (var cf in tmp.ControlFiles)
                                     if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
                                     {
                                         var targetpath = System.IO.Path.Combine(m_options.Restorepath, cf.Key);

@@ -30,9 +30,14 @@ namespace Duplicati.Library.DynamicLoader
     internal abstract class DynamicLoader<T> where T : class
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<DynamicLoader<T>>();
+
+        /// <summary>
         /// A lock used to guarantee threadsafe access to the interface lookup table
         /// </summary>
-        protected object m_lock = new object();
+        protected readonly object m_lock = new object();
 
         /// <summary>
         /// A cached list of interfaces
@@ -55,7 +60,7 @@ namespace Duplicati.Library.DynamicLoader
         /// Construcst a new instance of the dynamic loader,
         ///  does not load anything
         /// </summary>
-        public DynamicLoader()
+        protected DynamicLoader()
         {
         }
 
@@ -130,14 +135,15 @@ namespace Duplicati.Library.DynamicLoader
                             }
                             catch (Exception ex)
                             {
-                                Duplicati.Library.Logging.Log.WriteMessage(Strings.DynamicLoader.DynamicTypeLoadError(t.FullName, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
+                                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "SoftError", ex, Strings.DynamicLoader.DynamicTypeLoadError(t.FullName, s, ex.Message));
                             }
                     }
                 }
-                catch // (Exception ex)
-                {   // Since this is locating the assemblies that have the proper interface, it isn't an error to not.
+                catch(Exception ex)
+                {   
+                    // Since this is locating the assemblies that have the proper interface, it isn't an error to not.
                     // This was loading the log with errors about additional DLL's that are not plugins and do not have manifests.
-                    // Duplicati.Library.Logging.Log.WriteMessage(string.Format(Strings.DynamicLoader.DynamicAssemblyLoadError, s, ex.ToString()), Duplicati.Library.Logging.LogMessageType.Warning);
+                    Duplicati.Library.Logging.Log.WriteExplicitMessage(LOGTAG, "HardError", ex, Strings.DynamicLoader.DynamicAssemblyLoadError(s, ex.Message));
                 }
             }
 

@@ -19,7 +19,7 @@
         </div>
     </div>
     <!-- .steps -->
-    
+
     <ol class="steps-legend">
         <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>General</li>
         <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Destination</li>
@@ -37,7 +37,11 @@
 
                     <div class="input text">
                         <label for="name" translate>Name</label>
-                        <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}"/>
+                        <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}" />
+                    </div>
+                    <div class="input textarea">
+                        <label for="description" translate>Description (optional)</label>
+                        <textarea name="description" id="description" ng-model="Backup.Description"></textarea>
                     </div>
                     <div class="input select" ng-hide="SystemInfo.EncryptionModules.length == 0">
                         <label for="encryption" translate>Encryption</label>
@@ -46,15 +50,15 @@
                         </select>
                     </div>
 
-                    <div class="input encryptionhint" ng-show="(Options['encryption-module'] || '').length == 0">
+                    <div class="input encryptionhint" ng-show="!checkGpgAsymmetric() && (Options['encryption-module'] || '').length == 0">
                         <h3 class="warning" translate>We recommend that you encrypt all backups stored outside your system</h3>
                     </div>
 
-                    <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                    <div class="input password" ng-hide="checkGpgAsymmetric() || (Options['encryption-module'] || '').length == 0">
                         <label for="passphrase" translate>Passphrase</label>
                         <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" ng-model="Options['passphrase']" />
                     </div>
-                    <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                    <div class="input password" ng-hide="checkGpgAsymmetric() || (Options['encryption-module'] || '').length == 0">
                         <label for="repeat-passphrase" translate>Repeat Passphrase</label>
                         <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" ng-model="RepeatPasshrase"/>
 
@@ -112,7 +116,7 @@
             </form>
         </div>
         <!-- .step2 -->
-        
+
         <div class="step step3" ng-class="{active: CurrentStep == 2}">
             <form class="styled">
                 <div class="box browser">
@@ -188,27 +192,19 @@
                                     <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
                                     </select>
 
-                                    <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
+                                    <div ng-show="!(Backup.Filters[$index].indexOf('-{') == 0 || Backup.Filters[$index].indexOf('+{') == 0)">
+                                        <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="{{'Enter expression here' | translate}}"/>
+                                    </div>
+                                    <div ng-show="Backup.Filters[$index].indexOf('-{') == 0 || Backup.Filters[$index].indexOf('+{') == 0">
+                                        <select parse-filter-content ng-model="Backup.Filters[$index]" ng-options="item.value as item.name for item in AppUtils.filterGroups">
+                                        </select>
+                                    </div>
 
                                     <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
                                 </li>
 
                             </ul>
                             <a href ng-click="Backup.Filters.push('-*')" translate>Add filter</a>
-                        </div>
-
-                        <div class="input checkbox multiple">
-                            <strong translate>Default Filters</strong>
-                            
-                            <div ng-repeat="filterSet in defaultFilterSets">
-                                <input id="filterSet_{{filterSet.value}}"
-                                       type="checkbox"
-                                       name="filterSet_{{filterSet.value}}"
-                                       value="{{filterSet.value}}"
-                                       ng-checked="isDefaultFilterSetEnabled(filterSet.value)"
-                                       ng-click="toggleDefaultFilters(filterSet.value)" />
-                                <label for="filterSet_{{filterSet.value}}">{{filterSet.name}}</label>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -253,7 +249,7 @@
             </form>
         </div>
         <!-- .step3 -->
-        
+
         <div class="step step4" ng-class="{active: CurrentStep == 3}">
             <form class="styled">
                 <h2 translate>Schedule</h2>
@@ -292,7 +288,7 @@
                             ng-click="toggleAllowedDays(day.value)"
                           />
                           <label for="dayofweek_{{day.value}}">{{day.name}}</label>
-                        </div>                
+                        </div>
                     </div>
                 </div>
 
@@ -303,26 +299,53 @@
             </form>
         </div>
         <!-- .step4 -->
-        
+
         <div class="step step5" ng-class="{active: CurrentStep == 4}">
             <form class="styled">
                 <h2 translate>General options</h2>
                 <div class="input multiple text select maxSize">
-                    <label for="dblockSizeNumber" translate>Upload volume size</label>
+                    <label for="dblockSizeNumber" translate>Remote volume size</label>
                     <input type="number" class="number" parse-size-number="uppercase" id="dblockSizeNumber" ng-model="Options['dblock-size']" />
                     <select parse-size-multiplier="uppercase" id="dblockSizeMultiplier" ng-model="Options['dblock-size']" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
                     </select>
+
+                    <div class="hint" translate>
+                        This option does not relate to your maximum backup or file size, nor does it affect deduplication rates. <external-link link="'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'">See this page before you change the remote volume size.</external-link>
+                    </div>
+
                 </div>
+
                 <div class="input multiple text select keepBackups">
-                    <label for="keepTimeType" translate>Keep this number of backups</label>
+                    <label for="keepTimeType" translate>Backup retention</label>
                     <select id="keepTimeType" ng-model="KeepType">
-                        <option value="" translate>unlimited</option>
-                        <option value="time" translate>until they are older than</option>
-                        <option value="versions" translate>a specific number</option>
+                        <option value="" translate>Keep all backups</option>
+                        <option value="time" translate>Delete backups that are older than</option>
+                        <option value="versions" translate>Keep a specific number of backups</option>
+                        <option value="smart" translate>Smart backup retention</option>
+                        <option value="custom" translate>Custom backup retention</option>
                     </select>
 
-                    <input type="number" ng-model="Options['keep-versions']" ng-show="KeepType == 'versions'" min="1" />
-                    <div ng-show="KeepType == 'time'">
+                    <div ng-show="KeepType == ''" class="hint" translate>
+                        Nothing will be deleted. The backup size will grow with each change.
+                    </div>
+
+                    <div ng-show="KeepType == 'smart'" class="hint" translate>
+                        Over time backups will be deleted automatically. There will remain one backup for each of the last 7 days, each of the last 4 weeks, each of the last 12 months. There will always be at least one remaining backup.
+                    </div>
+
+                    <div class="retention-options" ng-show="KeepType == 'custom'">
+                        <input type="text" ng-model="Options['retention-policy']" ng-show="KeepType == 'custom'" />
+                    </div>
+                    <div class="hint" translate  ng-show="KeepType == 'custom'">
+                        Enter a retention strategy manually. Placeholders are D/W/Y for days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. This example keeps one backup for each of the next 7 days, one for each of the next 4 weeks, and one for each of the next 36 months. This can also be written as 1W:1D,1M:1W,3Y:1M.
+                    </div>
+
+                    <div class="retention-options" ng-show="KeepType == 'versions'">
+                        <input type="number" ng-model="Options['keep-versions']"  min="1" />
+                    </div>
+                    <div class="hint" ng-show="KeepType == 'versions'" translate>Once there are more backups than the specified number, the oldest backups are deleted.</div>
+
+                    <div class="retention-options" ng-show="KeepType == 'time'">
                         <input type="text" class="number" parse-size-number ng-model="Options['keep-time']" />
                         <select parse-size-multiplier ng-model="Options['keep-time']" >
                             <option value="D" translate>Days</option>
@@ -331,12 +354,17 @@
                             <option value="Y" translate>Years</option>
                             <option value="" translate>custom</option>
                         </select>
+
                     </div>
+                    <div class="hint" ng-show="KeepType == 'time'" translate>
+                        If at least one newer backup is found, all backups older than this date are deleted.
+                    </div>
+
                 </div>
 
                 <div ng-repeat="module in ServerModules">
                     <h2 title="{{module.Description}}">{{module.DisplayName}}</h2>
-                    
+
                     <div class="input" ng-repeat="opt in module.SupportedLocalCommands">
                         <label for="{{module.Key}}-{{opt.Name}}" title="{{opt.LongDescription}}">{{opt.ShortDescription}}</label>
                         <input type="text" title="{{opt.LongDescription}}" name="{{module.Key}}-{{opt.Name}}" id="{{module.Key}}-{{opt.Name}}" ng-model="servermodulesettings[opt.Name]" />

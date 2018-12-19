@@ -15,59 +15,47 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Text;
+
 using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
 {
     /// <summary>
     /// Handler for providing a snapshot like access to files and folders
     /// </summary>
-    public class NoSnapshotLinux : NoSnapshot
+    public sealed class NoSnapshotLinux : SnapshotBase
     {
-        private readonly SystemIOLinux _sysIO = new SystemIOLinux();
-
-        public NoSnapshotLinux(string[] sourcefolders)
-            : base(sourcefolders)
-        {
-        }
-
-        public NoSnapshotLinux(string[] sourcefolders, Dictionary<string, string> options)
-            : base(sourcefolders, options)
-        {
-        }
-
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
         /// </summary>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="localPath">The file or folder to examine</param>
         /// <returns>The symlink target</returns>
-        public override string GetSymlinkTarget(string file)
+        public override string GetSymlinkTarget(string localPath)
         {
-            return UnixSupport.File.GetSymlinkTarget(NormalizePath(file));
+            return SystemIO.IO_SYS.GetSymlinkTarget(localPath);
         }
         
         /// <summary>
         /// Gets the metadata for the given file or folder
         /// </summary>
         /// <returns>The metadata for the given file or folder</returns>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
-        public override Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
+        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return _sysIO.GetMetadata(file, isSymlink, followSymlink);
+            return SystemIO.IO_SYS.GetMetadata(localPath, isSymlink, followSymlink);
         }
         
         /// <summary>
         /// Gets a value indicating if the path points to a block device
         /// </summary>
         /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
-        /// <param name="file">The file or folder to examine</param>
-        public override bool IsBlockDevice(string file)
+        /// <param name="localPath">The file or folder to examine</param>
+        public override bool IsBlockDevice(string localPath)
         {
-            var n = UnixSupport.File.GetFileType(NormalizePath(file));
+            var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
             switch (n)
             {
                 case UnixSupport.File.FileType.Directory:
@@ -83,14 +71,25 @@ namespace Duplicati.Library.Snapshots
         /// Gets a unique hardlink target ID
         /// </summary>
         /// <returns>The hardlink ID</returns>
-        /// <param name="path">The file or folder to examine</param>
-        public override string HardlinkTargetID(string path)
+        /// <param name="localPath">The file or folder to examine</param>
+        public override string HardlinkTargetID(string localPath)
         {
-            path = NormalizePath(path);
-            if (UnixSupport.File.GetHardlinkCount(path) <= 1)
-                return null;
-            
-            return UnixSupport.File.GetInodeTargetID(path);
+            var normalizePath = SystemIOLinux.NormalizePath(localPath);
+            return UnixSupport.File.GetHardlinkCount(normalizePath) <= 1
+                ? null
+                : UnixSupport.File.GetInodeTargetID(normalizePath);
+        }
+
+        /// <inheritdoc />
+        public override string ConvertToLocalPath(string snapshotPath)
+        {
+            return snapshotPath;
+        }
+
+        /// <inheritdoc />
+        public override string ConvertToSnapshotPath(string localPath)
+        {
+            return SystemIOLinux.NormalizePath(localPath);
         }
     }
 }

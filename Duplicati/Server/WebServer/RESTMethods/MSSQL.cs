@@ -20,6 +20,7 @@ using Duplicati.Library.Interface;
 using System.Linq;
 using System.Security.Principal;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -28,7 +29,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         public void GET(string key, RequestInfo info)
         {
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
-            if (Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
                 RealGET(key, info);
             else
                 info.OutputOK(new string[0]);
@@ -60,7 +61,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     if (foundDBs.Count == 1)
                         info.OutputOK(foundDBs[0].DataPaths.Select(x => new { text = x, id = x, cls = "folder", iconCls = "x-tree-icon-leaf", check = "false", leaf = "true" }).ToList());
                     else
-                        info.ReportClientError(string.Format("Cannot find DB with ID {0}.", key));
+                        info.ReportClientError(string.Format("Cannot find DB with ID {0}.", key), System.Net.HttpStatusCode.NotFound);
                 }
             }
             catch (Exception ex)

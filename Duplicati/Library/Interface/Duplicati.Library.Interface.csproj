@@ -45,8 +45,8 @@
     <Compile Include="CommandLineArgument.cs" />
     <Compile Include="CommonStrings.cs" />
     <Compile Include="CustomExceptions.cs" />
-    <Compile Include="FileEntry.cs" />
     <Compile Include="IBackend.cs" />
+    <Compile Include="USNJournalDataEntry.cs" />
     <Compile Include="ICommandLineArgument.cs" />
     <Compile Include="IEncryption.cs" />
     <Compile Include="ICompression.cs" />

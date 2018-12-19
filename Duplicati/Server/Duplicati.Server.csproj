@@ -44,6 +44,9 @@
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -128,6 +131,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="app.manifest" />
     <None Include="Duplicati.snk" />
     <EmbeddedResource Include="newbackup.json" />
     <EmbeddedResource Include="Database\Database schema\Schema.sql" />
@@ -136,6 +140,7 @@
     <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
     <EmbeddedResource Include="Database\Database schema\4. Add autoincrement to backup id.sql" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="Database\Database schema\5. Extend notification table.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
@@ -314,9 +319,16 @@
       <Project>{0797AA22-C5DD-4950-BB60-34765AB8C6DD}</Project>
       <Name>Duplicati.Tools</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database\Database schema\6. Add Description to Backup.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
