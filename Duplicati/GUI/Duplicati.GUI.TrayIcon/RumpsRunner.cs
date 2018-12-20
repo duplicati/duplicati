@@ -37,6 +37,11 @@ namespace Duplicati.GUI.TrayIcon
             private bool m_enabled;
             private bool m_default;
 
+            public bool Default => this.m_default;
+            public bool Enabled => this.m_enabled;
+            public MenuIcons Icon => this.m_icon;
+            public string Text => this.m_text;
+
             public MenuItemWrapper(RumpsRunner parent, string text, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
             {
                 m_parent = parent;
