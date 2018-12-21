@@ -606,18 +606,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Creates a Regex filter
-        /// </summary>
-        /// <param name="filter">Filter text</param>
-        /// <returns>Regex filter</returns>
-        private static string CreateRegexFilter(string filter)
-        {
-            // Create a filter with the given name.
-            // However, in order to match paths correctly, the directory separators need to be normalized to match the system default.
-            return "[" + filter.Replace(FilterGroups.RegexEscapedAltDirectorySeparatorChar, FilterGroups.RegexEscapedDirectorySeparatorChar) + "]";
-        }
-
-        /// <summary>
         /// Gets a list of exclude paths from the MacOS system
         /// </summary>
         /// <returns>The list of paths to exclude on OSX backups.</returns>
