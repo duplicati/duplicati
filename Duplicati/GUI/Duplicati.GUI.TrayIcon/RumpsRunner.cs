@@ -32,19 +32,19 @@ namespace Duplicati.GUI.TrayIcon
 
             private readonly RumpsRunner m_parent;
 
-            private string m_text;
-            private MenuIcons m_icon;
-            private bool m_enabled;
-            private bool m_default;
+            public bool Default { get; private set; }
+            public bool Enabled { get; private set; }
+            public MenuIcons Icon { get; private set; }
+            public string Text { get; private set; }
 
             public MenuItemWrapper(RumpsRunner parent, string text, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
             {
                 m_parent = parent;
                 Key = Guid.NewGuid().ToString("N");
-                m_text = text ?? "";
+                this.Text = text ?? "";
                 Callback = callback;
-                m_enabled = true;
-                m_default = false;
+                this.Enabled = true;
+                this.Default = false;
                 if (subitems != null)
                     Subitems = subitems.Cast<MenuItemWrapper>().ToList();
             }
@@ -59,36 +59,36 @@ namespace Duplicati.GUI.TrayIcon
             #region IMenuItem implementation
             public void SetText(string text)
             {
-                if (m_text != text)
+                if (this.Text != text)
                 {
-                    m_text = text;
+                    this.Text = text;
                     m_parent.UpdateMenu(this);
                 }
             }
 
             public void SetIcon(MenuIcons icon)
             {
-                if (m_icon != icon)
+                if (this.Icon != icon)
                 {
-                    m_icon = icon;
+                    this.Icon = icon;
                     m_parent.UpdateMenu(this);
                 }
             }
 
             public void SetEnabled(bool isEnabled)
             {
-                if (m_enabled != isEnabled)
+                if (this.Enabled != isEnabled)
                 {
-                    m_enabled = isEnabled;
+                    this.Enabled = isEnabled;
                     m_parent.UpdateMenu(this);
                 }
             }
 
             public void SetDefault(bool isDefault)
             {
-                if (m_default != isDefault)
+                if (this.Default != isDefault)
                 {
-                    m_default = isDefault;
+                    this.Default = isDefault;
                     m_parent.UpdateMenu(this);
                 }
             }
