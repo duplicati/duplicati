@@ -1,3 +1,10 @@
+2018-12-22 - 2.0.4.9_canary_2018-12-22
+==========
+* Improved code quality, thanks @warwickmm
+* Fixed typo, thanks @JonMikeIV
+* Improved speed from default filter groups, thanks @warwickmm
+* Fixed CPU/memory issue on MacOS, thanks @warwickmm
+
 2018-12-13 - 2.0.4.8_canary_2018-12-13
 ==========
 * Fixed an issue that broke IE, thanks @mikaelmello
