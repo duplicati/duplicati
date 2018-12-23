@@ -99,6 +99,7 @@ fi
 RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
 
 git stash save "${GIT_STASH_NAME}"
+git pull
 
 if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 
@@ -360,6 +361,8 @@ ${RELEASE_CHANGEINFO_NEWS}
 		-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
 		-F "raw=${body}"
 fi
+
+git push
 
 echo
 echo "Built ${RELEASE_TYPE} version: ${RELEASE_VERSION} - ${RELEASE_NAME}"

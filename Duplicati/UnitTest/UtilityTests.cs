@@ -20,6 +20,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 
 namespace Duplicati.UnitTest
 {
@@ -182,7 +183,7 @@ namespace Duplicati.UnitTest
                 string message = $"{value} should be parsed to true.";
 
                 Assert.IsTrue(Utility.ParseBool(value, false), message);
-                Assert.IsTrue(Utility.ParseBool(value.ToUpper(), false), message);
+                Assert.IsTrue(Utility.ParseBool(value.ToUpper(CultureInfo.InvariantCulture), false), message);
                 Assert.IsTrue(Utility.ParseBool($" {value} ", false), message);
             }
 
@@ -191,7 +192,7 @@ namespace Duplicati.UnitTest
                 string message = $"{value} should be parsed to false.";
 
                 Assert.IsFalse(Utility.ParseBool(value, true), message);
-                Assert.IsFalse(Utility.ParseBool(value.ToUpper(), true), message);
+                Assert.IsFalse(Utility.ParseBool(value.ToUpper(CultureInfo.InvariantCulture), true), message);
                 Assert.IsFalse(Utility.ParseBool($" {value} ", true), message);
             }
 

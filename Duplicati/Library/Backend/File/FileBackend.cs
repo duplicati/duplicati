@@ -173,7 +173,7 @@ namespace Duplicati.Library.Backend
             if (!systemIO.DirectoryExists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            foreach (string s in systemIO.EnumerateFileSystemEntries(m_path))
+            foreach (string s in systemIO.EnumerateFiles(m_path))
             {
                 yield return systemIO.FileEntry(s);
             }

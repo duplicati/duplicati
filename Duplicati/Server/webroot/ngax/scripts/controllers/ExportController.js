@@ -40,7 +40,7 @@ backupApp.controller("ExportController", function($scope, $routeParams, AppServi
                             message = resp.data.Message;
                         }
 
-                        DialogService.dialog(gettextCatalog.getString("Error"), gettextCatalog.getString("Failed to connect: {{message}}", { message }));
+                        DialogService.dialog(gettextCatalog.getString("Error"), gettextCatalog.getString("Failed to connect: {{message}}", { message: message }));
                     }
                 );
             } else {

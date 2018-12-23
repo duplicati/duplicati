@@ -374,10 +374,11 @@ namespace Duplicati.Server
         /// <returns>True if the backup is allowed to run, false otherwise</returns>
         private static bool IsDateAllowed(DateTime time, DayOfWeek[] allowedDays)
         {
+            var localTime = time.ToLocalTime();
             if (allowedDays == null || allowedDays.Length == 0)
                 return true;
             else
-                return Array.IndexOf<DayOfWeek>(allowedDays, time.DayOfWeek) >= 0; 
+                return Array.IndexOf<DayOfWeek>(allowedDays, localTime.DayOfWeek) >= 0; 
         }
 
     }

@@ -159,8 +159,10 @@ wait_for_text(60, "//form[@id='restore']/div[3]/h3/div[1]", "Your files and fold
 sha1_restore = sha1_folder(RESTORE_FOLDER)
 
 # cleanup: delete source and restore folder and rename destination folder for direct restore
-shutil.rmtree(SOURCE_FOLDER)
-shutil.rmtree(RESTORE_FOLDER)
+if os.path.exists(SOURCE_FOLDER):
+    shutil.rmtree(SOURCE_FOLDER)
+if os.path.exists(RESTORE_FOLDER):
+    shutil.rmtree(RESTORE_FOLDER)
 os.rename(DESTINATION_FOLDER, DESTINATION_FOLDER_DIRECT_RESTORE)
 
 # direct restore

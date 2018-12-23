@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace Duplicati.Library.Utility
 {
@@ -121,7 +122,7 @@ namespace Duplicati.Library.Utility
                 else
                 {
                     this.Type = (filter.Contains(MULTIPLE_WILDCARD) || filter.Contains(SINGLE_WILDCARD)) ? FilterType.Wildcard : FilterType.Simple;
-                    this.Filter = (!Utility.IsFSCaseSensitive && this.Type == FilterType.Wildcard) ? filter.ToUpper() : filter;
+                    this.Filter = (!Utility.IsFSCaseSensitive && this.Type == FilterType.Wildcard) ? filter.ToUpper(CultureInfo.InvariantCulture) : filter;
                     this.Regexp = new Regex(Utility.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
                 }
             }
@@ -266,7 +267,7 @@ namespace Duplicati.Library.Utility
                     case FilterType.Simple:
                         return string.Equals(this.Filter, path, Library.Utility.Utility.ClientFilenameStringComparison);
                     case FilterType.Wildcard:
-                        return IsWildcardMatch(!Utility.IsFSCaseSensitive ? path.ToUpper() : path, this.Filter);
+                        return IsWildcardMatch(!Utility.IsFSCaseSensitive ? path.ToUpper(CultureInfo.InvariantCulture) : path, this.Filter);
                     case FilterType.Regexp:
                     case FilterType.Group:
                         var m = this.Regexp.Match(path);
