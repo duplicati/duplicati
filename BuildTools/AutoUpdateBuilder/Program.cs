@@ -1,10 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace AutoUpdateBuilder
 {
     public class Program
     {
+        private static RSACryptoServiceProvider privkey;
+
+        private static void CompareToManifestPublicKey()
+        {
+            if (Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey == null || privkey.ToXmlString(false) != Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey.ToXmlString(false))
+            {
+                Console.WriteLine("The public key in the project is not the same as the public key from the file");
+                Console.WriteLine("Try setting the key to: ");
+                Console.WriteLine(privkey.ToXmlString(false));
+                System.Environment.Exit(5);
+            }
+        }
+
         public static int Main(string[] _args)
         {
             var args = new List<string>(_args);
@@ -17,16 +31,18 @@ namespace AutoUpdateBuilder
             string keyfilepassword;
 			string gpgkeyfile;
 			string gpgpath;
+            string allowNewKey;
 
             opts.TryGetValue("input", out inputfolder);
             opts.TryGetValue("output", out outputfolder);
+            opts.TryGetValue("allow-new-key", out allowNewKey);
             opts.TryGetValue("keyfile", out keyfile);
             opts.TryGetValue("manifest", out manifestfile);
             opts.TryGetValue("keyfile-password", out keyfilepassword);
 			opts.TryGetValue("gpgkeyfile", out gpgkeyfile);
 			opts.TryGetValue("gpgpath", out gpgpath);
 
-			var usedoptions = new string[] { "input", "output", "keyfile", "manifest", "keyfile-password", "gpgkeyfile", "gpgpath" };
+			var usedoptions = new string[] { "allow-new-key", "input", "output", "keyfile", "manifest", "keyfile-password", "gpgkeyfile", "gpgpath" };
 
             if (string.IsNullOrWhiteSpace(inputfolder))
             {
@@ -61,7 +77,7 @@ namespace AutoUpdateBuilder
             if (!System.IO.File.Exists(keyfile))
             {
                 Console.WriteLine("Keyfile not found, creating new");
-                var newkey = System.Security.Cryptography.RSACryptoServiceProvider.Create().ToXmlString(true);
+                var newkey = RSA.Create().ToXmlString(true);
                 using (var enc = new Duplicati.Library.Encryption.AESEncryption(keyfilepassword, new Dictionary<string, string>()))
                 using (var fs = System.IO.File.OpenWrite(keyfile))
                 using (var ms = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(newkey)))
@@ -71,7 +87,7 @@ namespace AutoUpdateBuilder
             if (!System.IO.Directory.Exists(outputfolder))
                 System.IO.Directory.CreateDirectory(outputfolder);
 
-            var privkey = (System.Security.Cryptography.RSACryptoServiceProvider)System.Security.Cryptography.RSACryptoServiceProvider.Create();
+            privkey = (RSACryptoServiceProvider) RSA.Create();
 
             using(var enc = new Duplicati.Library.Encryption.AESEncryption(keyfilepassword, new Dictionary<string, string>()))
             using(var ms = new System.IO.MemoryStream())
@@ -84,16 +100,12 @@ namespace AutoUpdateBuilder
                     privkey.FromXmlString(sr.ReadToEnd());
             }
 
-            if (Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey == null || privkey.ToXmlString(false) != Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey.ToXmlString(false))
+            if (!Boolean.TryParse(allowNewKey, out Boolean newKeyAllowed) || !newKeyAllowed)
             {
-                Console.WriteLine("The public key in the project is not the same as the public key from the file");
-                Console.WriteLine("Try setting the key to: ");
-                Console.WriteLine(privkey.ToXmlString(false));
-                return 5;
+                CompareToManifestPublicKey();
             }
 
-
-			string gpgkeyid = null;
+            string gpgkeyid = null;
 			string gpgkeypassphrase = null;
 
 			if (string.IsNullOrWhiteSpace(gpgkeyfile))
