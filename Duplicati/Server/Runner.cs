@@ -193,11 +193,12 @@ namespace Duplicati.Server
                 ["overwrite"] = overwrite? Boolean.TrueString : Boolean.FalseString,
                 ["restore-permissions"] = restore_permissions ? Boolean.TrueString : Boolean.FalseString,
                 ["skip-metadata"] = skip_metadata ? Boolean.TrueString : Boolean.FalseString,
-                ["passphrase"] = passphrase,
                 ["allow-passphrase-change"] = Boolean.TrueString
             };
             if (!string.IsNullOrWhiteSpace(restoreTarget))
                 dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
+            if (!(passphrase is null))
+                dict["passphrase"] = passphrase;
 
             return CreateTask(
                 DuplicatiOperation.Restore,
