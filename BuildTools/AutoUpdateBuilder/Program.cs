@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 
+using Duplicati.Library.Logging;
+
 namespace AutoUpdateBuilder
 {
     public class Program
@@ -17,6 +19,8 @@ namespace AutoUpdateBuilder
         private static string gpgkeyid;
 
         private static string outputfolder;
+
+        private static readonly string LOGTAG = "AutoUpdate";
 
         private static void CompareToManifestPublicKey()
         {
@@ -47,12 +51,14 @@ namespace AutoUpdateBuilder
         {
             var srcfile = System.IO.Path.Combine(outputfolder, "package.zip");
 
+            Log.WriteInformationMessage(LOGTAG, "output", "Signing file: ", srcfile);
+
             var armorOption = armor ? "--armor" : "";
             var signatureFileExtension = armor ? "sig.asc" : "sig";
-            var gpgArgument = string.Format("--passphrase-fd 0 --batch --yes --default-key={1} {2} --output \"{0}.{3}\" --detach-sig \"{0}\"",
-                                            srcfile,
-                                            gpgkeyid,
+            var gpgArgument = string.Format("--pinentry-mode loopback --passphrase-fd 0 --batch --yes {0} --default-key \"{1}\" --output \"{2}.{3}\" --detach-sig \"{2}\"",
                                             armorOption,
+                                            gpgkeyid,
+                                            srcfile,
                                             signatureFileExtension);
 
             var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
