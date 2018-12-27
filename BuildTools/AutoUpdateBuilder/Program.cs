@@ -11,6 +11,13 @@ namespace AutoUpdateBuilder
         private static string keyfile;
         private static string keyfilepassword;
 
+        private static string gpgkeypassphrase;
+        private static string gpgkeyfile;
+        private static string gpgpath;
+        private static string gpgkeyid;
+
+        private static string outputfolder;
+
         private static void CompareToManifestPublicKey()
         {
             if (Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey == null || privkey.ToXmlString(false) != Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey.ToXmlString(false))
@@ -36,6 +43,55 @@ namespace AutoUpdateBuilder
             }
         }
 
+        private static void SpawnGPG(bool armor)
+        {
+            var srcfile = System.IO.Path.Combine(outputfolder, "package.zip");
+
+            var armorOption = armor ? "--armor" : "";
+            var signatureFileExtension = armor ? "sig.asc" : "sig";
+            var gpgArgument = string.Format("--passphrase-fd 0 --batch --yes --default-key={1} {2} --output \"{0}.{3}\" --detach-sig \"{0}\"",
+                                            srcfile,
+                                            gpgkeyid,
+                                            armorOption,
+                                            signatureFileExtension);
+
+            var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = gpgpath,
+                Arguments = gpgArgument,
+                RedirectStandardInput = true,
+                UseShellExecute = false
+            });
+
+            proc.StandardInput.WriteLine(gpgkeypassphrase);
+            proc.WaitForExit();
+        }
+
+        private static void SignUsingGPG()
+        {
+            gpgpath = gpgpath ?? "gpg";
+            SpawnGPG(false);
+            SpawnGPG(true);
+        }
+
+        private static void LoadGPGKeyIdAndPassphrase()
+        {
+            using (var enc = new Duplicati.Library.Encryption.AESEncryption(keyfilepassword, new Dictionary<string, string>()))
+            using (var ms = new System.IO.MemoryStream())
+            using (var fs = System.IO.File.OpenRead(gpgkeyfile))
+            {
+                enc.Decrypt(fs, ms);
+                ms.Position = 0;
+
+                // No real format, just two lines
+                using (var sr = new System.IO.StreamReader(ms))
+                {
+                    var lines = sr.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                    gpgkeyid = lines[0];
+                    gpgkeypassphrase = lines[1];
+                }
+            }
+        }
 
         public static int Main(string[] _args)
         {
@@ -43,10 +99,7 @@ namespace AutoUpdateBuilder
             var opts = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
             string inputfolder;
-            string outputfolder;
             string manifestfile;
-            string gpgkeyfile;
-			string gpgpath;
             string allowNewKey;
 
             opts.TryGetValue("input", out inputfolder);
@@ -55,7 +108,7 @@ namespace AutoUpdateBuilder
             opts.TryGetValue("keyfile", out keyfile);
             opts.TryGetValue("manifest", out manifestfile);
             opts.TryGetValue("keyfile-password", out keyfilepassword);
-			opts.TryGetValue("gpgkeyfile", out gpgkeyfile);
+            opts.TryGetValue("gpgkeyfile", out gpgkeyfile);
 			opts.TryGetValue("gpgpath", out gpgpath);
 
 			var usedoptions = new [] { "allow-new-key", "input", "output", "keyfile", "manifest", "keyfile-password", "gpgkeyfile", "gpgpath" };
@@ -112,9 +165,6 @@ namespace AutoUpdateBuilder
                 CompareToManifestPublicKey();
             }
 
-            string gpgkeyid = null;
-			string gpgkeypassphrase = null;
-
 			if (string.IsNullOrWhiteSpace(gpgkeyfile))
 			{
 				Console.WriteLine("No gpgfile, skipping GPG signature files");
@@ -126,24 +176,9 @@ namespace AutoUpdateBuilder
 			}
 			else
 			{
-				using(var enc = new Duplicati.Library.Encryption.AESEncryption(keyfilepassword, new Dictionary<string, string>()))
-				using(var ms = new System.IO.MemoryStream())
-				using(var fs = System.IO.File.OpenRead(gpgkeyfile))
-				{
-					enc.Decrypt(fs, ms);
-					ms.Position = 0;
+                LoadGPGKeyIdAndPassphrase();
+            }
 
-					// No real format, just two lines
-					using (var sr = new System.IO.StreamReader(ms))
-					{
-						var lines = sr.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-						gpgkeyid = lines[0];
-						gpgkeypassphrase = lines[1];
-					}
-				}
-			}
-
-                
             Duplicati.Library.AutoUpdater.UpdateInfo updateInfo;
 
             using (var fs = System.IO.File.OpenRead(manifestfile))
@@ -201,31 +236,8 @@ namespace AutoUpdateBuilder
 
 			if (gpgkeyid != null)
 			{
-				gpgpath = gpgpath ?? "gpg";
-				var srcfile = System.IO.Path.Combine(outputfolder, "package.zip");
-
-				var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo() {
-					FileName = gpgpath,
-					Arguments = string.Format("--passphrase-fd 0 --batch --yes --default-key={1} --output \"{0}.sig\" --detach-sig \"{0}\"", srcfile, gpgkeyid),
-					RedirectStandardInput = true,
-					UseShellExecute = false
-				});
-
-				proc.StandardInput.WriteLine(gpgkeypassphrase);
-				proc.WaitForExit();
-
-				proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo() {
-					FileName = gpgpath,
-					Arguments = string.Format("--passphrase-fd 0 --batch --yes --default-key={1} --armor --output \"{0}.sig.asc\" --detach-sig \"{0}\"", srcfile, gpgkeyid),
-					RedirectStandardInput = true,
-					UseShellExecute = false
-				});
-
-				proc.StandardInput.WriteLine(gpgkeypassphrase);
-				proc.WaitForExit();
-
+                SignUsingGPG();
 			}
-
 
             return 0;
         }
