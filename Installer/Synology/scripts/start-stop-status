@@ -68,7 +68,7 @@ DaemonStop() {
 	DaemonStatus
 	if [ $? == 1 ]; then
 		echo "Stopping ${PACKAGE_NAME_SIMPLE}."
-		kill -- -$(ps -o pgid= $(cat "$PID_FILE") | grep -o '[0-9]*')
+		pkill -P $(cat "$PID_FILE")
 		rm -f "$PID_FILE"
 		
 		rm -f /usr/local/etc/nginx/conf.d/dsm.duplicati.conf
