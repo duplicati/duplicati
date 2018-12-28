@@ -1,7 +1,7 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GnupgSigningTool", "GnupgSigningTool\GnupgSigningTool.csproj", "{72B910F2-8E80-4955-A0D6-ED4C35CEE665}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GnupgSigningTool", "GnupgSigningTool.csproj", "{72B910F2-8E80-4955-A0D6-ED4C35CEE665}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
