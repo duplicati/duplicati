@@ -8,6 +8,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.firefox.options import Options
 
 if "TRAVIS_BUILD_NUMBER" in os.environ:
     if "SAUCE_USERNAME" not in os.environ:
@@ -31,7 +32,9 @@ else:
     print "Using LOCAL webdriver"
     profile = webdriver.FirefoxProfile()
     profile.set_preference("intl.accept_languages", "en")
-    driver = webdriver.Firefox(profile)
+    options = Options()
+    options.set_headless(headless=True)
+    driver = webdriver.Firefox(profile, firefox_options=options)
     driver.maximize_window()
 
 
