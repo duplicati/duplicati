@@ -1,4 +1,6 @@
-backupApp.controller('LogController', function($scope, $timeout, AppService, LogService) {
+backupApp.controller('LogController', function($scope, $timeout, AppService, LogService, SystemInfo, ServerStatus) {
+    $scope.state = ServerStatus.watch($scope);
+    $scope.SystemInfo = SystemInfo.watch($scope);
 
     var liveRefreshTimer = null;
     const PAGE_SIZE = 100;
@@ -56,17 +58,17 @@ backupApp.controller('LogController', function($scope, $timeout, AppService, Log
     $scope.LiveRefreshing = false;
     $scope.LiveRefreshPending = false;
 
-    $scope.LoadMoreStoredData = function() { 
+    $scope.LoadMoreStoredData = function() {
         LogService.LoadMoreData('/logdata/log', $scope.LogData, 'Timestamp', PAGE_SIZE)
             .then(function(result) {
                 if (!result)
                     return;
-                
+
                 $scope.LogData = result.current;
                 $scope.LogDataComplete = result.complete;
-            }); 
+            });
     };
     $scope.LoadMoreStoredData();
-    
+
 
 });
