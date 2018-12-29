@@ -405,16 +405,19 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(filter))
                 return null;
 
-            if (filter.Length < 2 ||
-                (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)) ||
-                (filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal)))
+            if (filter.Length < 2 || (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)))
             {
                 return new string[] { filter };
             }
-            else
+
+            if (filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal))
             {
-                return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+                string groupName = filter.Substring(1, filter.Length - 2);
+                FilterGroup filterGroup = FilterGroups.ParseFilterList(groupName, FilterGroup.None);
+                return (filterGroup == FilterGroup.None) ? null : FilterGroups.GetFilterStrings(filterGroup);
             }
+
+            return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
         }
         
         private static List<FilterEntry> Compact(IEnumerable<FilterEntry> items)
