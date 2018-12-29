@@ -1,3 +1,12 @@
+2018-12-29 - 2.0.4.10_canary_2018-12-29
+==========
+* Improved passphrase export, thanks @Pectojin
+* Fixed an issue with restores that have no password, thanks @warwickmm
+* Fixed a process shutdown/restart issue on Synology, thanks @drwtsn32x
+* Improved build and tests, thanks @verhoek
+* Fixed issues with displaying logs from the UI, thanks @Pectojin
+* Improved performance of filters by around 10x, thanks @warwickmm
+
 2018-12-22 - 2.0.4.9_canary_2018-12-22
 ==========
 * Improved code quality, thanks @warwickmm
