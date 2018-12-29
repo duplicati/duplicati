@@ -186,9 +186,9 @@ namespace Duplicati.Library.Utility
             /// <note>From: http://www.c-sharpcorner.com/uploadfile/b81385/efficient-string-matching-algorithm-with-use-of-wildcard-characters/</note>
             private static bool IsWildcardMatch(string input, string pattern)
             {
-                int[] inputPosStack = new int[(input.Length + 1) * (pattern.Length + 1)];   // Stack containing input positions that should be tested for further matching
-                int[] patternPosStack = new int[inputPosStack.Length];                      // Stack containing pattern positions that should be tested for further matching
-                int stackPos = -1;                                                          // Points to last occupied entry in stack; -1 indicates that stack is empty
+                Stack<int> inputPosStack = new Stack<int>(); // Stack containing input positions that should be tested for further matching
+                Stack<int> patternPosStack = new Stack<int>(); // Stack containing pattern positions that should be tested for further matching
+
                 bool[,] pointTested = new bool[input.Length + 1, pattern.Length + 1];       // Each true value indicates that input position vs. pattern position has been tested
                 int inputPos = 0;   // Position in input matched up to the first multiple wildcard in pattern
                 int patternPos = 0; // Position in pattern matched up to the first multiple wildcard in pattern
@@ -199,24 +199,23 @@ namespace Duplicati.Library.Utility
                     patternPos++;
                 }
                 
-                
                 // Push this position to stack if it points to end of pattern or to a general wildcard
                 if (patternPos == pattern.Length || pattern[patternPos] == MULTIPLE_WILDCARD)
                 {
                     pointTested[inputPos, patternPos] = true;
-                    inputPosStack[++stackPos] = inputPos;
-                    patternPosStack[stackPos] = patternPos;
+                    inputPosStack.Push(inputPos);
+                    patternPosStack.Push(patternPos);
                 }
                 bool matched = false;
                 // Repeat matching until either string is matched against the pattern or no more parts remain on stack to test
-                while (stackPos >= 0 && !matched)
+                while (inputPosStack.Count > 0 && !matched)
                 {
-                    inputPos = inputPosStack[stackPos];         // Pop input and pattern positions from stack
-                    patternPos = patternPosStack[stackPos--];   // Matching will succeed if rest of the input string matches rest of the pattern
-                    
+                    inputPos = inputPosStack.Pop(); // Pop input and pattern positions from stack
+                    patternPos = patternPosStack.Pop(); // Matching will succeed if rest of the input string matches rest of the pattern
+
                     // Modified from original version to match zero or more characters
                     //if (inputPos == input.Length && patternPos == pattern.Length)
-                    
+
                     if (inputPos == input.Length && (patternPos == pattern.Length || (patternPos == pattern.Length - 1 && pattern[patternPos] == MULTIPLE_WILDCARD)))
                         matched = true;     // Reached end of both pattern and input string, hence matching is successful
                     else
@@ -247,8 +246,8 @@ namespace Duplicati.Library.Utility
                                 && !pointTested[curInputPos, curPatternPos])
                             {
                                 pointTested[curInputPos, curPatternPos] = true;
-                                inputPosStack[++stackPos] = curInputPos;
-                                patternPosStack[stackPos] = curPatternPos;
+                                inputPosStack.Push(curInputPos);
+                                patternPosStack.Push(curPatternPos);
                             }
                         }
                     }

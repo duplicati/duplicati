@@ -15,9 +15,11 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -156,7 +158,38 @@ namespace Duplicati.UnitTest
                 if (files != 0)
                     throw new Exception($"Empty not satisfied, found {files} files, but expected 0");
             }
+        }
 
+        [Test]
+        [Category("Filter")]
+        public static void WildcardPatterns()
+        {
+            // These examples were taken from https://www.c-sharpcorner.com/uploadfile/b81385/efficient-string-matching-algorithm-with-use-of-wildcard-characters/.
+            Dictionary<string, string> shouldMatch = new Dictionary<string, string>
+            {
+                { @"*", "Something" },
+                { @"S*eth??g", "Something" },
+                { @"A *?string*", "A very long long long stringggggggg" },
+                { @"Performance issue when using *,Window server ???? R? and java *.*.*_*", "Performance issue when using WebSphere MQ 7.1 ,Window server 2008 R2 and java 1.6.0_21" },
+                { @"Performance* and java 1.6.0_21", "Performance issue when using WebSphere MQ 7.1 ,Window server 2008 R2 and java 1.6.0_21" }
+            };
+
+            Dictionary<string, string> shouldNotMatch = new Dictionary<string, string>
+            {
+                { @"Performance issue when using *,Window server ???? R? and java *.*.*_", "Performance issue when using WebSphere MQ 7.1 ,Window server 2008 R2 and java 1.6.0_21" }
+            };
+
+            foreach (KeyValuePair<string, string> entry in shouldMatch)
+            {
+                IFilter filter = new FilterExpression(entry.Key);
+                Assert.IsTrue(filter.Matches(entry.Value, out _, out _));
+            }
+
+            foreach (KeyValuePair<string, string> entry in shouldNotMatch)
+            {
+                IFilter filter = new FilterExpression(entry.Key);
+                Assert.IsFalse(filter.Matches(entry.Value, out _, out _));
+            }
         }
     }
 }
