@@ -630,23 +630,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         bool hasPaused = Program.LiveControl.State == LiveControls.LiveControlState.Paused;
                         Program.LiveControl.Pause();
 
-                        try
-                        {
-                            for(int i = 0; i < 10; i++)
-                                if (Program.WorkThread.Active)
-                                {
-                                    var t = Program.WorkThread.CurrentTask;
-                                    if (backup.Equals(t == null ? null : t.Backup))
-                                        System.Threading.Thread.Sleep(1000);
-                                    else
-                                        break;
-                                }
+                        for(int i = 0; i < 10; i++)
+                            if (Program.WorkThread.Active)
+                            {
+                                var t = Program.WorkThread.CurrentTask;
+                                if (backup.Equals(t == null ? null : t.Backup))
+                                    System.Threading.Thread.Sleep(1000);
                                 else
                                     break;
-                        }
-                        finally
-                        {
-                        }
+                            }
+                            else
+                                break;
 
                         if (Program.WorkThread.Active)
                         {
