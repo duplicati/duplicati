@@ -768,7 +768,7 @@ namespace Duplicati.Server
                         null,
                         (n, a) =>
                         {
-                            var existing = (a.Where(x => x.BackupID == backup.ID)).FirstOrDefault();
+                            var existing = a.FirstOrDefault(x => x.BackupID == backup.ID);
                             if (existing == null)
                                 return n;
 
