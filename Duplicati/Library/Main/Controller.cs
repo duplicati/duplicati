@@ -910,7 +910,7 @@ namespace Duplicati.Library.Main
                         {
                             // Try to get attributes. Returns -1 if source doesn't exist, otherwise throws an exception.
                             // In this case, it is irrelevant to use fileinfo or directoryinfo to retrieve attributes.
-                            var attributes = fi.Attributes;
+                            var unused = fi.Attributes;
                         }
                         catch (UnauthorizedAccessException ex)
                         {
