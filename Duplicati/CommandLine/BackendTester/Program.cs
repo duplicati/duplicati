@@ -178,7 +178,7 @@ namespace Duplicati.CommandLine.BackendTester
                     backend.Test();
                     curlist = backend.List();
                 }
-                catch (FolderMissingException fex)
+                catch (FolderMissingException)
                 {
                     if (autoCreateFolders)
                     {
@@ -194,7 +194,7 @@ namespace Duplicati.CommandLine.BackendTester
                     }
 
                     if (curlist == null)
-                        throw fex;
+                        throw;
                 }
 
                 foreach (Library.Interface.IFileEntry fe in curlist)
