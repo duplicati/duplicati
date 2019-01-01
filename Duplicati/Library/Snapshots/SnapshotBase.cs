@@ -50,9 +50,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="errorCallback">The callback used to report errors</param>
         public IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
         {
-            return sources.SelectMany(
-                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, ListFolders, ListFiles, GetAttributes, errorCallback)
-            );
+            return sources.SelectMany(s => Utility.Utility.EnumerateFileSystemEntries(s, callback, ListFolders, ListFiles, GetAttributes, errorCallback));
         }
         
         /// <summary>
