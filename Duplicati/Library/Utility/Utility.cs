@@ -198,7 +198,6 @@ namespace Duplicati.Library.Utility
                 rootpath = Util.AppendDirSeparator(rootpath);
                 try
                 {
-
                     var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Directory;
                     if (callback(rootpath, rootpath, attr))
                         lst.Push(rootpath);
