@@ -215,7 +215,7 @@ namespace Duplicati.Library.Utility
 
                 while (lst.Count > 0)
                 {
-                    var f = Util.AppendDirSeparator(lst.Pop());
+                    var f = lst.Pop();
 
                     yield return f;
 
