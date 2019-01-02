@@ -521,6 +521,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
+                    new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0"),
                     new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), "false"),
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
@@ -1734,6 +1735,18 @@ namespace Duplicati.Library.Main
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-backend-verification"); }
         }
                 
+        /// <summary>
+        /// Gets the percentage of samples to test during a backup operation
+        /// </summary>
+        public long BackupTestPercentage
+        {
+            get
+            {
+                m_options.TryGetValue("backup-test-percentage", out string s);
+                return string.IsNullOrEmpty(s) ? 0 : Math.Min(Math.Max(long.Parse(s), 0), 100);
+            }
+        }
+
         /// <summary>
         /// Gets the number of samples to test during a backup operation
         /// </summary>
