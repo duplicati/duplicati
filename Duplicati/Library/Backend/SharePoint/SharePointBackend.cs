@@ -516,15 +516,11 @@ namespace Duplicati.Library.Backend
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
             catch { if (!useNewContext) /* retry */ doGet(remotename, stream, true); else throw; }
-            finally { }
-            try
-            {
-                byte[] copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
-                using (var fileInfo = SP.File.OpenBinaryDirect(ctx, fileurl))
-                using (var s = fileInfo.Stream)
-                    Utility.Utility.CopyStream(s, stream, true, copybuffer);
-            }
-            finally { }
+
+            byte[] copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+            using (var fileInfo = SP.File.OpenBinaryDirect(ctx, fileurl))
+            using (var s = fileInfo.Stream)
+                Utility.Utility.CopyStream(s, stream, true, copybuffer);
         }
 
         public void Put(string remotename, string filename)
@@ -554,12 +550,10 @@ namespace Duplicati.Library.Backend
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
             catch { if (!useNewContext) /* retry */ { doPut(remotename, stream, true); return; } else throw; }
-            finally { }
 
             if (m_useBinaryDirectMode)
             {
-                try { SP.File.SaveBinaryDirect(ctx, fileurl, stream, true); }
-                finally { }
+                SP.File.SaveBinaryDirect(ctx, fileurl, stream, true);
             }
 
         }
@@ -696,7 +690,6 @@ namespace Duplicati.Library.Backend
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
             catch { if (!useNewContext) /* retry */ doCreateFolder(true); else throw; }
-            finally { }
         }
 
         public void Delete(string remotename) { doDelete(remotename, false); }
@@ -722,7 +715,6 @@ namespace Duplicati.Library.Backend
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
             catch { if (!useNewContext) /* retry */ doDelete(remotename, true); else throw; }
-            finally { }
         }
 
         #endregion
