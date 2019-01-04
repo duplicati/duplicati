@@ -1743,7 +1743,18 @@ namespace Duplicati.Library.Main
             get
             {
                 m_options.TryGetValue("backup-test-percentage", out string s);
-                return string.IsNullOrEmpty(s) ? 0 : Math.Min(Math.Max(long.Parse(s), 0), 100);
+                if (string.IsNullOrEmpty(s))
+                {
+                    return 0;
+                }
+
+                long percentage = long.Parse(s);
+                if ((percentage < 0) || (percentage > 100))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(percentage), "The value provided for the backup-test-percentage option must lie between 0 and 100.");
+                }
+
+                return percentage;
             }
         }
 
