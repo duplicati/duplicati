@@ -1748,7 +1748,16 @@ namespace Duplicati.Library.Main
                     return 0;
                 }
 
-                long percentage = long.Parse(s);
+                long percentage;
+                try
+                {
+                    percentage = long.Parse(s);
+                }
+                catch (Exception ex)
+                {
+                    throw new ArgumentException("The value provided for the backup-test-percentage option must lie between 0 and 100.", ex);
+                }
+
                 if ((percentage < 0) || (percentage > 100))
                 {
                     throw new ArgumentOutOfRangeException(nameof(percentage), "The value provided for the backup-test-percentage option must lie between 0 and 100.");
