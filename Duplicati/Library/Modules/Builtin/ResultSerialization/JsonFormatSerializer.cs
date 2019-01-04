@@ -87,8 +87,6 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
 
         public string SerializeResults(IBasicResults result)
         {
-            var basicResult = result;
-
             return JsonConvert.SerializeObject(
                 result,
                 new JsonSerializerSettings()

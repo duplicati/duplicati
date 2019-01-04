@@ -175,7 +175,7 @@ namespace Duplicati.Library.Main.Operation
             using(new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
                 // Make sure the CompressionHints table is initialized, otherwise all workers will initialize it
-                var tb = options.CompressionHints.Count;
+                var unused = options.CompressionHints.Count;
 
                 Task all;
                 using(new ChannelScope())
