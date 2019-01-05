@@ -271,7 +271,9 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(m_database, null);
             }
 
-            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Any())
+            long remoteVolumeCount = m_database.GetRemoteVolumes().LongCount(x => x.State == RemoteVolumeState.Verified);
+            long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100D), MidpointRounding.AwayFromZero));
+            if (samplesToTest > 0 && remoteVolumeCount > 0)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
@@ -279,7 +281,7 @@ namespace Duplicati.Library.Main.Operation
                 using(var testdb = new LocalTestDatabase(m_database))
                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
                     new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
-                        .DoRun(m_options.BackupTestSampleCount, testdb, backend);
+                        .DoRun(samplesToTest, testdb, backend);
             }
         }
 
