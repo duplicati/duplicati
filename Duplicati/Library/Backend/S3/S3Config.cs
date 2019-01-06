@@ -19,7 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend
 {

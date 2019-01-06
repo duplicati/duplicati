@@ -20,7 +20,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Duplicati.Library.Interface;
@@ -43,20 +42,20 @@ namespace Duplicati.Library.Backend
 
         public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
         {
-            var cfg = new AmazonS3Config();
+            var cfg = new AmazonS3Config
+            {
+                UseHttp = !useSSL,
+                ServiceURL = (useSSL ? "https://" : "http://") + servername,
+                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE
+            };
 
-            cfg.UseHttp = !useSSL;
-            cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
-            //cfg.UserAgent = "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() + " S3 client with AWS SDK v" + cfg.GetType().Assembly.GetName().Version.ToString();
-            cfg.BufferSize = (int)Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE;
-
-            foreach(var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
+            foreach (var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
             {
                 var prop = cfg.GetType().GetProperties().FirstOrDefault(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
                 if (prop != null && prop.CanWrite)
                 {
                     if (prop.PropertyType == typeof(bool))
-                        prop.SetValue(cfg, Library.Utility.Utility.ParseBoolOption(options, opt));
+                        prop.SetValue(cfg, Utility.Utility.ParseBoolOption(options, opt));
                     else if (prop.PropertyType.IsEnum)
                         prop.SetValue(cfg, Enum.Parse(prop.PropertyType, options[opt], true));
                     else if (prop.PropertyType == typeof(int))
@@ -71,7 +70,7 @@ namespace Duplicati.Library.Backend
                     Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedOption", null, "Unsupported option: {0}", opt);
             }
 
-            m_client = new Amazon.S3.AmazonS3Client(awsID, awsKey, cfg);
+            m_client = new AmazonS3Client(awsID, awsKey, cfg);
 
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
@@ -80,8 +79,10 @@ namespace Duplicati.Library.Backend
 
         public void AddBucket(string bucketName)
         {
-            PutBucketRequest request = new PutBucketRequest();
-            request.BucketName = bucketName;
+            PutBucketRequest request = new PutBucketRequest
+            {
+                BucketName = bucketName
+            };
 
             if (!string.IsNullOrEmpty(m_locationConstraint))
                 request.BucketRegionName = m_locationConstraint;
@@ -91,11 +92,13 @@ namespace Duplicati.Library.Backend
 
         public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
         {
-            GetObjectRequest objectGetRequest = new GetObjectRequest();
-            objectGetRequest.BucketName = bucketName;
-            objectGetRequest.Key = keyName;
+            GetObjectRequest objectGetRequest = new GetObjectRequest
+            {
+                BucketName = bucketName,
+                Key = keyName
+            };
 
-            using(GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
+            using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
             using(System.IO.Stream s = objectGetResponse.ResponseStream)
             {
                 try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
@@ -119,10 +122,12 @@ namespace Duplicati.Library.Backend
 
         public virtual void AddFileStream(string bucketName, string keyName, System.IO.Stream source)
         {
-            PutObjectRequest objectAddRequest = new PutObjectRequest();
-            objectAddRequest.BucketName = bucketName;
-            objectAddRequest.Key = keyName;
-            objectAddRequest.InputStream = source;
+            PutObjectRequest objectAddRequest = new PutObjectRequest
+            {
+                BucketName = bucketName,
+                Key = keyName,
+                InputStream = source
+            };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
 
@@ -131,9 +136,11 @@ namespace Duplicati.Library.Backend
 
         public void DeleteObject(string bucketName, string keyName)
         {
-            DeleteObjectRequest objectDeleteRequest = new DeleteObjectRequest();
-            objectDeleteRequest.BucketName = bucketName;
-            objectDeleteRequest.Key = keyName;
+            DeleteObjectRequest objectDeleteRequest = new DeleteObjectRequest
+            {
+                BucketName = bucketName,
+                Key = keyName
+            };
 
             m_client.DeleteObject(objectDeleteRequest);
         }
@@ -182,11 +189,13 @@ namespace Duplicati.Library.Backend
 
         public void RenameFile(string bucketName, string source, string target)
         {
-            CopyObjectRequest copyObjectRequest = new CopyObjectRequest();
-            copyObjectRequest.SourceBucket = bucketName;
-            copyObjectRequest.SourceKey = source;
-            copyObjectRequest.DestinationBucket = bucketName;
-            copyObjectRequest.DestinationKey = target;
+            CopyObjectRequest copyObjectRequest = new CopyObjectRequest
+            {
+                SourceBucket = bucketName,
+                SourceKey = source,
+                DestinationBucket = bucketName,
+                DestinationKey = target
+            };
 
             m_client.CopyObject(copyObjectRequest);
 

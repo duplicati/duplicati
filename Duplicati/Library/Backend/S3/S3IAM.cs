@@ -130,8 +130,10 @@ namespace Duplicati.Library.Backend
 
         private Dictionary<string, string> GetPolicyDoc(string path)
         {
-            var dict = new Dictionary<string, string>();
-            dict["doc"] = GeneratePolicyDoc(path);
+            var dict = new Dictionary<string, string>
+            {
+                ["doc"] = GeneratePolicyDoc(path)
+            };
             return dict;
         }
 
@@ -152,23 +154,29 @@ namespace Duplicati.Library.Backend
 
         private Dictionary<string, string> CanCreateUser(string awsid, string awskey)
         {
-            var dict = new Dictionary<string, string>();
             var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
+            Dictionary<string, string> dict;
             try
             {
                 var user = cl.GetUser().User;
 
-                dict["isroot"] = "False"; //user.Arn.EndsWith(":root", StringComparison.Ordinal).ToString();
-                dict["arn"] = user.Arn;
-                dict["id"] = user.UserId;
-                dict["name"] = user.UserName;
+                dict = new Dictionary<string, string>
+                {
+                    ["isroot"] = "False", //user.Arn.EndsWith(":root", StringComparison.Ordinal).ToString();
+                    ["arn"] = user.Arn,
+                    ["id"] = user.UserId,
+                    ["name"] = user.UserName,
 
-                dict["isroot"] = (cl.SimulatePrincipalPolicy(new SimulatePrincipalPolicyRequest() { PolicySourceArn = user.Arn, ActionNames = new[] { "iam:CreateUser" }.ToList() }).EvaluationResults.First().EvalDecision == PolicyEvaluationDecisionType.Allowed).ToString();
+                    ["isroot"] = (cl.SimulatePrincipalPolicy(new SimulatePrincipalPolicyRequest() { PolicySourceArn = user.Arn, ActionNames = new[] { "iam:CreateUser" }.ToList() }).EvaluationResults.First().EvalDecision == PolicyEvaluationDecisionType.Allowed).ToString()
+                };
             }
             catch (Exception ex)
             {
-                dict["ex"] = ex.ToString();
-                dict["error"] = ex.Message;
+                dict = new Dictionary<string, string>
+                {
+                    ["ex"] = ex.ToString(),
+                    ["error"] = ex.Message
+                };
             }
 
             return dict;
@@ -190,10 +198,12 @@ namespace Duplicati.Library.Backend
             ));
             var key = cl.CreateAccessKey(new CreateAccessKeyRequest() { UserName = user.UserName }).AccessKey;
 
-            var dict = new Dictionary<string, string>();
-            dict["accessid"] = key.AccessKeyId;
-            dict["secretkey"] = key.SecretAccessKey;
-            dict["username"] = key.UserName;
+            var dict = new Dictionary<string, string>
+            {
+                ["accessid"] = key.AccessKeyId,
+                ["secretkey"] = key.SecretAccessKey,
+                ["username"] = key.UserName
+            };
 
             return dict;
         }

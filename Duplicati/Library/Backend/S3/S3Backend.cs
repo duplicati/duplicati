@@ -220,7 +220,7 @@ namespace Duplicati.Library.Backend
 
                 if (String.Equals(host, s3host, StringComparison.OrdinalIgnoreCase))
                 {
-                    m_bucket = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
+                    m_bucket = Utility.Uri.UrlDecode(u.PathAndQuery);
 
                     if (m_bucket.StartsWith("/", StringComparison.Ordinal))
                         m_bucket = m_bucket.Substring(1);
@@ -238,7 +238,7 @@ namespace Duplicati.Library.Backend
                     {
                         m_bucket = host.Substring(0, host.Length - ("." + s3host).Length);
                         host = s3host;
-                        m_prefix = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
+                        m_prefix = Utility.Uri.UrlDecode(u.PathAndQuery);
 
                         if (m_prefix.StartsWith("/", StringComparison.Ordinal))
                             m_prefix = m_prefix.Substring(1);
