@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace GnupgSigningTool
 {
-    public class Program
+    public static class Program
     {
 
         private static string keyfilepassword;
@@ -50,14 +50,13 @@ namespace GnupgSigningTool
                 {
                     enc.Decrypt(fs, ms);
                 } catch (System.Security.Cryptography.CryptographicException e) {
-                    Console.Write("Failed to decrypt gpg secret credentials file: {0}\n", e.Message);
-                    return;
+                    throw new ArgumentException("Failed to decrypt gpg secret credentials file: {0}\n", e.Message);
                 }
                 ms.Position = 0;
 
                 using (var sr = new System.IO.StreamReader(ms))
                 {
-                    var lines = sr.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                    var lines = sr.ReadToEnd().Split(new [] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                     gpgkeyid = lines[0];
                     gpgkeypassphrase = lines[1];
                 }
@@ -65,7 +64,7 @@ namespace GnupgSigningTool
         }
 
 
-        public static int Main(string [] _args)
+        public static void Main(string [] _args)
         {
             var args = new List<string>(_args);
             var opts = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
@@ -81,28 +80,23 @@ namespace GnupgSigningTool
 
             if (string.IsNullOrWhiteSpace(gpgkeyfile))
             {
-                Console.WriteLine("No gpgfile with encrypted credentials specified, exiting");
-                return 1;
+                throw new ArgumentException("No gpgfile with encrypted credentials specified.");
             }
 
             if (!System.IO.File.Exists(gpgkeyfile))
             {
-                Console.WriteLine("Specified file with encrypted gpg credentials not found, exiting");
-                return 1;
+                throw new ArgumentException("Specified file with encrypted gpg credentials not found.");
             }
 
             LoadGPGKeyIdAndPassphrase();
 
             if (gpgkeyid is null || gpgkeypassphrase is null)
             {
-                Console.WriteLine("Could not fetch gpg key id or gpg passphrase, exiting.");
-                return 1;
+                throw new ArgumentException("Could not fetch gpg key id or gpg passphrase.");
             }
 
             gpgpath = gpgpath ?? "gpg";
             SpawnGPG();
-
-            return 0;
         }
     }
 }
