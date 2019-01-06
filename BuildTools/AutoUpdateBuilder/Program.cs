@@ -11,8 +11,6 @@ namespace AutoUpdateBuilder
         private static string keyfile;
         private static string keyfilepassword;
 
-        private static string outputfolder;
-
         private static void CompareToManifestPublicKey()
         {
             if (Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey == null || privkey.ToXmlString(false) != Duplicati.Library.AutoUpdater.AutoUpdateSettings.SignKey.ToXmlString(false))
@@ -44,7 +42,7 @@ namespace AutoUpdateBuilder
             var opts = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
             opts.TryGetValue("input", out string inputfolder);
-            opts.TryGetValue("output", out outputfolder);
+            opts.TryGetValue("output", out string outputfolder);
             opts.TryGetValue("allow-new-key", out string allowNewKey);
             opts.TryGetValue("keyfile", out keyfile);
             opts.TryGetValue("manifest", out string manifestfile);
