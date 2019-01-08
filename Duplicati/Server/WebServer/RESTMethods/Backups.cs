@@ -71,7 +71,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     if (file == null)
                         throw new Exception("No file uploaded");
 
-                    Serializable.ImportExportStructure ipx = Backups.LoadConfiguration(file.Filename, import_metadata, input["passphrase"].Value);
+                    Serializable.ImportExportStructure ipx = Backups.LoadConfiguration(file.Filename, import_metadata, () => input["passphrase"].Value);
                     if (direct)
                     {
                         lock (Program.DataConnection.m_lock)
@@ -121,7 +121,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }            
         }
 
-        internal static Serializable.ImportExportStructure LoadConfiguration(string filename, bool importMetadata, string passphrase = null)
+        public static Serializable.ImportExportStructure LoadConfiguration(string filename, bool importMetadata, Func<string> getPassword)
         {
             Serializable.ImportExportStructure ipx;
 
@@ -133,7 +133,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 fs.Position = 0;
                 if (buf[0] == 'A' && buf[1] == 'E' && buf[2] == 'S')
                 {
-                    using (var m = new Duplicati.Library.Encryption.AESEncryption(passphrase, new Dictionary<string, string>()))
+                    using (var m = new Duplicati.Library.Encryption.AESEncryption(getPassword(), new Dictionary<string, string>()))
                     {
                         using (var m2 = m.Decrypt(fs))
                         {

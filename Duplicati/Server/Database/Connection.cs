@@ -372,12 +372,12 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        internal void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule schedule)
+        public void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule schedule)
         {
             AddOrUpdateBackup(item, true, schedule);
         }
 
-        internal string ValidateBackup(IBackup item, ISchedule schedule)
+        public string ValidateBackup(IBackup item, ISchedule schedule)
         {
             if (string.IsNullOrWhiteSpace(item.Name))
                 return "Missing a name";
@@ -506,7 +506,7 @@ namespace Duplicati.Server.Database
                     var folder = Program.DataFolder;
                     if (!System.IO.Directory.Exists(folder))
                         System.IO.Directory.CreateDirectory(folder);
-                    
+
                     for(var i = 0; i < 100; i++)
                     {
                         var guess = System.IO.Path.Combine(folder, System.IO.Path.ChangeExtension(Duplicati.Library.Main.DatabaseLocator.GenerateRandomName(), ".sqlite"));
@@ -520,7 +520,7 @@ namespace Duplicati.Server.Database
                     if (item.DBPath == null)
                         throw new Exception("Unable to generate a unique database file name");
                 }
-                
+
                 using(var tr = m_connection.BeginTransaction())
                 {
                     OverwriteAndUpdateDb(
@@ -669,7 +669,7 @@ namespace Duplicati.Server.Database
                     tr.Commit();
                 }
             }
-            
+
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.StatusEventNotifyer.SignalNewEvent();
         }
