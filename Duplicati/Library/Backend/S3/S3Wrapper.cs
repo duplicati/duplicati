@@ -79,7 +79,7 @@ namespace Duplicati.Library.Backend
 
         public void AddBucket(string bucketName)
         {
-            PutBucketRequest request = new PutBucketRequest
+            var request = new PutBucketRequest
             {
                 BucketName = bucketName
             };
@@ -92,7 +92,7 @@ namespace Duplicati.Library.Backend
 
         public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
         {
-            GetObjectRequest objectGetRequest = new GetObjectRequest
+            var objectGetRequest = new GetObjectRequest
             {
                 BucketName = bucketName,
                 Key = keyName
@@ -122,7 +122,7 @@ namespace Duplicati.Library.Backend
 
         public virtual void AddFileStream(string bucketName, string keyName, System.IO.Stream source)
         {
-            PutObjectRequest objectAddRequest = new PutObjectRequest
+            var objectAddRequest = new PutObjectRequest
             {
                 BucketName = bucketName,
                 Key = keyName,
@@ -136,7 +136,7 @@ namespace Duplicati.Library.Backend
 
         public void DeleteObject(string bucketName, string keyName)
         {
-            DeleteObjectRequest objectDeleteRequest = new DeleteObjectRequest
+            var objectDeleteRequest = new DeleteObjectRequest
             {
                 BucketName = bucketName,
                 Key = keyName
@@ -189,7 +189,7 @@ namespace Duplicati.Library.Backend
 
         public void RenameFile(string bucketName, string source, string target)
         {
-            CopyObjectRequest copyObjectRequest = new CopyObjectRequest
+            var copyObjectRequest = new CopyObjectRequest
             {
                 SourceBucket = bucketName,
                 SourceKey = source,
