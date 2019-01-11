@@ -67,48 +67,11 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 }
                 else
                 {
-                    Serializable.ImportExportStructure ipx;
-
                     var file = info.Request.Form.GetFile("config");
                     if (file == null)
                         throw new Exception("No file uploaded");
 
-                    var buf = new byte[3];
-                    using(var fs = System.IO.File.OpenRead(file.Filename))
-                    {
-                        Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
-
-                        fs.Position = 0;
-                        if (buf[0] == 'A' && buf[1] == 'E' && buf[2] == 'S')
-                        {
-                            var passphrase = input["passphrase"].Value;
-                            using(var m = new Duplicati.Library.Encryption.AESEncryption(passphrase, new Dictionary<string, string>()))
-                            using(var m2 = m.Decrypt(fs))
-                            using(var sr = new System.IO.StreamReader(m2))
-                                ipx = Serializer.Deserialize<Serializable.ImportExportStructure>(sr);
-                        }
-                        else
-                        {
-                            using(var sr = new System.IO.StreamReader(fs))
-                                ipx = Serializer.Deserialize<Serializable.ImportExportStructure>(sr);
-                        }
-                    }
-
-                    if (ipx.Backup == null)
-                        throw new Exception("No backup found in document");
-
-                    if (ipx.Backup.Metadata == null)
-                        ipx.Backup.Metadata = new Dictionary<string, string>();
-
-                    if (!import_metadata) 
-                        ipx.Backup.Metadata.Clear();
-
-                    ipx.Backup.ID = null;
-                    ((Database.Backup)ipx.Backup).DBPath = null;
-
-                    if (ipx.Schedule != null)
-                        ipx.Schedule.ID = -1;
-
+                    Serializable.ImportExportStructure ipx = Backups.LoadConfiguration(file.Filename, import_metadata, () => input["passphrase"].Value);
                     if (direct)
                     {
                         lock (Program.DataConnection.m_lock)
@@ -156,6 +119,64 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 info.Response.ContentType = "text/html";
                 info.BodyWriter.Write(output_template.Replace("MSG", ex.Message.Replace("\'", "\\'").Replace("\r", "\\r").Replace("\n", "\\n")));
             }            
+        }
+
+        public static Serializable.ImportExportStructure LoadConfiguration(string filename, bool importMetadata, Func<string> getPassword)
+        {
+            Serializable.ImportExportStructure ipx;
+
+            var buf = new byte[3];
+            using (var fs = System.IO.File.OpenRead(filename))
+            {
+                Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
+
+                fs.Position = 0;
+                if (buf[0] == 'A' && buf[1] == 'E' && buf[2] == 'S')
+                {
+                    using (var m = new Duplicati.Library.Encryption.AESEncryption(getPassword(), new Dictionary<string, string>()))
+                    {
+                        using (var m2 = m.Decrypt(fs))
+                        {
+                            using (var sr = new System.IO.StreamReader(m2))
+                            {
+                                ipx = Serializer.Deserialize<Serializable.ImportExportStructure>(sr);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    using (var sr = new System.IO.StreamReader(fs))
+                    {
+                        ipx = Serializer.Deserialize<Serializable.ImportExportStructure>(sr);
+                    }
+                }
+            }
+
+            if (ipx.Backup == null)
+            {
+                throw new Exception("No backup found in document");
+            }
+
+            if (ipx.Backup.Metadata == null)
+            {
+                ipx.Backup.Metadata = new Dictionary<string, string>();
+            }
+
+            if (!importMetadata)
+            {
+                ipx.Backup.Metadata.Clear();
+            }
+
+            ipx.Backup.ID = null;
+            ipx.Backup.DBPath = null;
+
+            if (ipx.Schedule != null)
+            {
+                ipx.Schedule.ID = -1;
+            }
+
+            return ipx;
         }
 
         public void POST(string key, RequestInfo info)
