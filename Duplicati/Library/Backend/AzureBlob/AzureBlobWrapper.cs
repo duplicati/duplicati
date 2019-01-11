@@ -62,11 +62,18 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public AzureBlobWrapper(string accountName, string accessKey, string containerName)
         {
-            _containerName = containerName;
+            OperationContext.GlobalSendingRequest += (sender, args) =>
+            {
+                string userAgent = "APN/1.0 Duplicati/2.0 AzureBlob/2.0 " + Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent;
+                args.Request.UserAgent = userAgent;
+            };
+
             var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
                 accountName, accessKey);
             var storageAccount = CloudStorageAccount.Parse(connectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
+
+            _containerName = containerName;
             _container = blobClient.GetContainerReference(containerName);
         }
 
