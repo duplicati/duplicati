@@ -60,10 +60,6 @@ namespace Duplicati.Library.Backend
 }
 ";
 
-        public S3IAM()
-        {
-        }
-
         public string Key { get { return "s3-iamconfig"; } }
 
         public string DisplayName { get { return "S3 IAM support module"; } }
@@ -162,12 +158,12 @@ namespace Duplicati.Library.Backend
 
                 dict = new Dictionary<string, string>
                 {
-                    ["isroot"] = "False", //user.Arn.EndsWith(":root", StringComparison.Ordinal).ToString();
+                    ["isroot"] = "False",
                     ["arn"] = user.Arn,
                     ["id"] = user.UserId,
                     ["name"] = user.UserName,
 
-                    ["isroot"] = (cl.SimulatePrincipalPolicy(new SimulatePrincipalPolicyRequest() { PolicySourceArn = user.Arn, ActionNames = new[] { "iam:CreateUser" }.ToList() }).EvaluationResults.First().EvalDecision == PolicyEvaluationDecisionType.Allowed).ToString()
+                    ["isroot"] = (cl.SimulatePrincipalPolicy(new SimulatePrincipalPolicyRequest { PolicySourceArn = user.Arn, ActionNames = new[] { "iam:CreateUser" }.ToList() }).EvaluationResults.First().EvalDecision == PolicyEvaluationDecisionType.Allowed).ToString()
                 };
             }
             catch (Exception ex)
@@ -184,7 +180,7 @@ namespace Duplicati.Library.Backend
 
         private Dictionary<string, string> CreateUnprivilegedUser(string awsid, string awskey, string path)
         {
-            var now = Library.Utility.Utility.SerializeDateTime(DateTime.Now);
+            var now = Utility.Utility.SerializeDateTime(DateTime.Now);
             var username = string.Format("duplicati-autocreated-backup-user-{0}", now);
             var policyname = string.Format("duplicati-autocreated-policy-{0}", now);
             var policydoc = GeneratePolicyDoc(path);
@@ -196,16 +192,14 @@ namespace Duplicati.Library.Backend
                 policyname,
                 policydoc
             ));
-            var key = cl.CreateAccessKey(new CreateAccessKeyRequest() { UserName = user.UserName }).AccessKey;
+            var key = cl.CreateAccessKey(new CreateAccessKeyRequest { UserName = user.UserName }).AccessKey;
 
-            var dict = new Dictionary<string, string>
+            return new Dictionary<string, string>
             {
                 ["accessid"] = key.AccessKeyId,
                 ["secretkey"] = key.SecretAccessKey,
                 ["username"] = key.UserName
             };
-
-            return dict;
         }
     }
 }
