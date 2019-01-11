@@ -328,10 +328,6 @@ namespace Duplicati.Library.Utility
                     default: throw new NotSupportedException();
                 }
             }
-
-            public override long Position
-            { set { if (value == this.Position) return; else throw new NotSupportedException(); } }
-
         }
 
 

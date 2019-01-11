@@ -1,4 +1,4 @@
-//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 
 //  http://www.duplicati.com, info@duplicati.com
 //
@@ -23,6 +23,7 @@ using System.Security.Cryptography.X509Certificates;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Server.Database
 {
@@ -495,7 +496,7 @@ namespace Duplicati.Server.Database
                 if (String.IsNullOrEmpty(m_values[CONST.SERVER_SSL_CERTIFICATE]))
                     return null;
 
-                if (Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                     return new X509Certificate2(Convert.FromBase64String(m_values[CONST.SERVER_SSL_CERTIFICATE]));
                 else
                 {
@@ -527,7 +528,7 @@ namespace Duplicati.Server.Database
                 }
                 else
                 {
-                    if (Library.Utility.Utility.IsClientWindows)
+                    if (Platform.IsClientWindows)
                         lock (m_connection.m_lock)
                             m_values[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12));
                     else

@@ -48,7 +48,7 @@
                 <label for="restoreversion" translate>Restore from</label>
 
                 <select name="restoreversion" id="restoreversion" ng-model="RestoreVersion" ng-options="fs.Version as fs.DisplayLabel group by fs.GroupLabel for fs in Filesets | orderBy: ['Version']">
-                    
+
                 </select>
             </div>
 
@@ -101,7 +101,7 @@
 
                     <a href ng-click="HideFolderBrowser = true" style="float: right; margin-right: 10px;" translate>Manually type path</a>
                 </div>
-                
+
                 <label for="folder_path_picker" translate>Folder path</label>
                 <div class="resizable filepicker" style="clear: both;">
                     <destination-folder-picker id="folder_path_picker" ng-model="RestorePath" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="false"></destination-folder-picker>
@@ -124,14 +124,24 @@
             <div class="input checkbox leftflush">
                 <input type="checkbox" id="readwritepermissions" ng-model="RestorePermissions" />
                 <label for="readwritepermissions" translate>Restore read/write permissions</label>
-                
+            </div>
+
+            <div  class="input password" ng-show="showInputPassphrase()">
+                <h2 translate>Passphrase</h2>
+                <p translate>
+                    Backup is encrypted but no passphrase is available.
+                    Type a passphrase below to use for restoring your files,
+                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by
+                    invoking your system's keychain.
+                </p>
+                <input type="password" name="restore_path" id="passphrase" ng-model="passphrase"
+                placeholder="{{'Type passphrase here.' | translate}}" />
             </div>
 
             <div class="buttons">
                 <a href class="submit" ng-click="onStartRestore()" translate>Restore</a>
                 <a href class="submit" ng-click="restore_step = 0" translate>Back</a>
             </div>
-
         </div>
 
         <div ng-show="restore_step == 3 &amp;&amp; connecting == false">
@@ -144,13 +154,13 @@
             </h3>
             <div class="buttons">
                 <a href class="submit" ng-click="onClickComplete()" translate>OK</a>
-            </div>            
+            </div>
         </div>
 
         <div ng-show="connecting == true &amp;&amp; taskid != null">
             <wait-area taskid="taskid" text="ConnectionProgress" allow-cancel="true"></wait-area>
         </div>
-        
+
         <div ng-show="connecting == true &amp;&amp; taskid == null">
             {{ConnectionProgress}}
         </div>

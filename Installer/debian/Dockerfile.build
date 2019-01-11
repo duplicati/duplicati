@@ -3,6 +3,7 @@ FROM ubuntu:latest
 # Source build packages locally
 ARG DOCKER_BUILD_PROXY
 ENV DOCKER_BUILD_PROXY $DOCKER_BUILD_PROXY
+ENV DEBIAN_FRONTEND noninteractive
 
 # Install common build tools
 RUN set -uex; \

@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Interface;
 using System.Linq;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -85,7 +86,7 @@ namespace Duplicati.Library.Backend
                 m_userInfo.Domain = "";
 
             m_url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            m_url = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_url, "/");
+            m_url = Util.AppendDirSeparator(m_url, "/");
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 

@@ -138,7 +138,7 @@ namespace Duplicati.Server
         /// </summary>
         private class RingBuffer<T> : IEnumerable<T>
         {
-            private T[] m_buffer;
+            private readonly T[] m_buffer;
             private int m_head;
             private int m_tail;
             private int m_length;

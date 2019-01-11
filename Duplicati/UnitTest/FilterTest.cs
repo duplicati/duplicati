@@ -15,8 +15,11 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -71,8 +74,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 7)
                     throw new Exception($"Initial condition not satisfied, found {folders} folders, but expected 7");
@@ -90,8 +93,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 6)
                     throw new Exception($"Initial condition not satisfied, found {folders} folders, but expected 6");
@@ -109,8 +112,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 4)
                     throw new Exception($"Empty not satisfied, found {folders} folders, but expected 4");
@@ -128,8 +131,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 3)
                     throw new Exception($"Empty not satisfied, found {folders} folders, but expected 3");
@@ -147,15 +150,46 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
-                var folders = r.Files.Count(x => x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
-                var files = r.Files.Count(x => !x.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal));
+                var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
+                var files = r.Files.Count(x => !x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
 
                 if (folders != 1)
                     throw new Exception($"Empty not satisfied, found {folders} folders, but expected 1");
                 if (files != 0)
                     throw new Exception($"Empty not satisfied, found {files} files, but expected 0");
             }
+        }
 
+        [Test]
+        [Category("Filter")]
+        public static void WildcardPatterns()
+        {
+            // These examples were taken from https://www.c-sharpcorner.com/uploadfile/b81385/efficient-string-matching-algorithm-with-use-of-wildcard-characters/.
+            Dictionary<string, string> shouldMatch = new Dictionary<string, string>
+            {
+                { @"*", "Something" },
+                { @"S*eth??g", "Something" },
+                { @"A *?string*", "A very long long long stringggggggg" },
+                { @"Performance issue when using *,Window server ???? R? and java *.*.*_*", "Performance issue when using WebSphere MQ 7.1 ,Window server 2008 R2 and java 1.6.0_21" },
+                { @"Performance* and java 1.6.0_21", "Performance issue when using WebSphere MQ 7.1 ,Window server 2008 R2 and java 1.6.0_21" }
+            };
+
+            Dictionary<string, string> shouldNotMatch = new Dictionary<string, string>
+            {
+                { @"Performance issue when using *,Window server ???? R? and java *.*.*_", "Performance issue when using WebSphere MQ 7.1 ,Window server 2008 R2 and java 1.6.0_21" }
+            };
+
+            foreach (KeyValuePair<string, string> entry in shouldMatch)
+            {
+                IFilter filter = new FilterExpression(entry.Key);
+                Assert.IsTrue(filter.Matches(entry.Value, out _, out _));
+            }
+
+            foreach (KeyValuePair<string, string> entry in shouldNotMatch)
+            {
+                IFilter filter = new FilterExpression(entry.Key);
+                Assert.IsFalse(filter.Matches(entry.Value, out _, out _));
+            }
         }
     }
 }

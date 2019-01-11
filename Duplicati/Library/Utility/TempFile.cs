@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Utility
 {
@@ -31,7 +32,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The prefix applied to all temporary files
         /// </summary>
-        public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower() + "-";
+        public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower(System.Globalization.CultureInfo.InvariantCulture) + "-";
         
         private string m_path;
         private bool m_protect;
@@ -89,7 +90,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The application temp files.</returns>
         private static IEnumerable<string> GetApplicationTempFiles()
         {
-            return System.IO.Directory.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
+            return SystemIO.IO_OS.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
         }
         
         /// <summary>

@@ -1,0 +1,12 @@
+<span class="item">
+        <span class="key" translate>Restored Files </span>
+        <span class="value">{{ item.Result.RestoredFiles || '0' }} ({{ formatSize(item.Result.SizeOfRestoredFiles) }})</span>
+</span>
+<span class="item">
+        <span class="key" translate>Restored Folders </span>
+        <span class="value">{{ item.Result.RestoredFolders || '0' }}</span>
+</span>
+<span class="item">
+        <span class="key" translate>Restored Symlinks </span>
+        <span class="value">{{ item.Result.RestoredSymlinks || '0' }}</span>
+</span>

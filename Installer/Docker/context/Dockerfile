@@ -6,6 +6,8 @@ RUN apt-get update && \
         curl \
         libmono-sqlite4.0-cil \
         libmono-system-drawing4.0-cil \
+        libmono-system-net-http-webrequest4.0-cil \
+        libmono-system-web4.0-cil \
         referenceassemblies-pcl && \
     rm -rf /var/lib/apt/lists && \
     cert-sync /etc/ssl/certs/ca-certificates.crt

@@ -74,8 +74,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void ListFileSets(IBackup backup, RequestInfo info)
         {
             var input = info.Request.QueryString;
-            var extra = new Dictionary<string, string>();
-            extra["list-sets-only"] = "true";
+            var extra = new Dictionary<string, string>
+            {
+                ["list-sets-only"] = "true"
+            };
             if (input["include-metadata"].Value != null)
                 extra["list-sets-only"] = (!Library.Utility.Utility.ParseBool(input["include-metadata"].Value, false)).ToString();
             if (input["from-remote-only"].Value != null)
@@ -120,6 +122,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             var cmdline = Library.Utility.Utility.ParseBool(info.Request.QueryString["cmdline"].Value, false);
             var argsonly = Library.Utility.Utility.ParseBool(info.Request.QueryString["argsonly"].Value, false);
+            var exportPasswords = Library.Utility.Utility.ParseBool(info.Request.QueryString["export-passwords"].Value, false);
+            if (!exportPasswords)
+            {
+                backup.SanitizeSettings();
+                backup.SanitizeTargetUrl();
+            }
+
             if (cmdline)
             {
                 info.OutputOK(new { Command = Runner.GetCommandLine(Runner.CreateTask(DuplicatiOperation.Backup, backup)) });
@@ -178,7 +187,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var input = info.Request.Form;
 
             string[] filters = parsePaths(input["paths"].Value ?? string.Empty);
-            
+
+            var passphrase = string.IsNullOrEmpty(input["passphrase"].Value) ? null : input["passphrase"].Value;
+
             var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
             var restoreTarget = input["restore-path"].Value;
             var overwrite = Duplicati.Library.Utility.Utility.ParseBool(input["overwrite"].Value, false);
@@ -186,7 +197,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var permissions = Duplicati.Library.Utility.Utility.ParseBool(input["permissions"].Value, false);
             var skip_metadata = Duplicati.Library.Utility.Utility.ParseBool(input["skip-metadata"].Value, false);
 
-            var task = Runner.CreateRestoreTask(backup, filters, time, restoreTarget, overwrite, permissions, skip_metadata);
+            var task = Runner.CreateRestoreTask(backup, filters, time, restoreTarget, overwrite, permissions, skip_metadata, passphrase);
 
             Program.WorkThread.AddTask(task);
 
@@ -303,7 +314,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void IsActive(IBackup backup, RequestInfo info)
         {
             var t = Program.WorkThread.CurrentTask;
-            var bt = t == null ? null : t.Backup;
+            var bt = t?.Backup;
             if (bt != null && backup.ID == bt.ID)
             {
                 info.OutputOK(new { Status = "OK", Active = true });
@@ -311,7 +322,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             else if (Program.WorkThread.CurrentTasks.Any(x =>
             { 
-                var bn = x == null ? null : x.Backup;
+                var bn = x?.Backup;
                 return bn == null || bn.ID == backup.ID;
             }))
             {
@@ -402,7 +413,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 info.OutputOK(new GetResponse()
                 {
                     success = true,
-                    data = new GetResponse.GetResponseData() {
+                    data = new GetResponse.GetResponseData {
                         Schedule = schedule,
                         Backup = bk,
                         DisplayNames = sourcenames
@@ -619,23 +630,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         bool hasPaused = Program.LiveControl.State == LiveControls.LiveControlState.Paused;
                         Program.LiveControl.Pause();
 
-                        try
-                        {
-                            for(int i = 0; i < 10; i++)
-                                if (Program.WorkThread.Active)
-                                {
-                                    var t = Program.WorkThread.CurrentTask;
-                                    if (backup.Equals(t == null ? null : t.Backup))
-                                        System.Threading.Thread.Sleep(1000);
-                                    else
-                                        break;
-                                }
+                        for(int i = 0; i < 10; i++)
+                            if (Program.WorkThread.Active)
+                            {
+                                var t = Program.WorkThread.CurrentTask;
+                                if (backup.Equals(t == null ? null : t.Backup))
+                                    System.Threading.Thread.Sleep(1000);
                                 else
                                     break;
-                        }
-                        finally
-                        {
-                        }
+                            }
+                            else
+                                break;
 
                         if (Program.WorkThread.Active)
                         {

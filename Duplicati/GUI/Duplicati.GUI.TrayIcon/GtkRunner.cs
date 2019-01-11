@@ -1,4 +1,4 @@
-//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //  
 //  This library is free software; you can redistribute it and/or modify
@@ -17,6 +17,7 @@
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.Common;
 using Gdk;
 using Gtk;
 
@@ -93,7 +94,7 @@ namespace Duplicati.GUI.TrayIcon
                 else
                 {
                     m_item = new ImageMenuItem(text);
-                    if (!Duplicati.Library.Utility.Utility.IsClientOSX)
+                    if (!Platform.IsClientOSX)
                         if (icon != MenuIcons.None) {
                             ((ImageMenuItem)m_item).Image = GetIcon(icon);
 
@@ -144,26 +145,24 @@ namespace Duplicati.GUI.TrayIcon
             }
             */
             
-            public string Text
+            public void SetText(string text)
             {
-                get { return ((Gtk.Label)m_item.Child).Text; }
-                set { ((Gtk.Label)m_item.Child).Text = value; }
+                ((Gtk.Label) m_item.Child).Text = text;
             }
             
-            public MenuIcons Icon
+            public void SetIcon(MenuIcons icon)
             {
-                set { ((ImageMenuItem)m_item).Image = GetIcon(value); }
+                ((ImageMenuItem) m_item).Image = GetIcon(icon);
             }
             
-            public bool Enabled
+            public void SetEnabled(bool isEnabled)
             {
-                get { return m_item.Sensitive; }
-                set { m_item.Sensitive = value; }
+                m_item.Sensitive = isEnabled;
             }
 
-            public bool Default
+            public void SetDefault(bool isDefault)
             {
-                set { }
+                // Do nothing.  Implementation needed for TrayIconBase interface.
             }
         }
         
@@ -268,7 +267,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             if (!_images.ContainsKey(icon))
             {
-                if (Duplicati.Library.Utility.Utility.IsClientOSX)
+                if (Platform.IsClientOSX)
                 {
                     switch (icon)
                     {
@@ -304,15 +303,13 @@ namespace Duplicati.GUI.TrayIcon
             
             return _images[icon];
         }
-        
-        protected override TrayIcons Icon 
+
+        protected override void SetIcon(TrayIcons icon)
         {
-            set 
-            {
-                m_trayIcon.Pixbuf = GetIcon(value);
-            }
+            m_trayIcon.Pixbuf = GetIcon(icon);
         }
-        
+       
+
         protected override void SetMenu (IEnumerable<IMenuItem> items)
         {
             m_popupMenu = new Menu();

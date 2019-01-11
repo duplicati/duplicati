@@ -20,6 +20,7 @@ using Duplicati.Library.Interface;
 using System.Linq;
 using System.Security.Principal;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -28,7 +29,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         public void GET(string key, RequestInfo info)
         {
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
-            if (Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
                 RealGET(key, info);
             else
                 info.OutputOK(new string[0]);

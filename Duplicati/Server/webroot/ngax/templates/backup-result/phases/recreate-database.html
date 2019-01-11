@@ -1,0 +1,40 @@
+<span ng-click="rdr_expanded = !rdr_expanded" style="cursor: pointer">
+    <i class="{{ResultIcon(item.Result.RecreateDatabaseResults.ParsedResult)}}"></i>
+    <span class="key" translate>Recreate Database Phase</span>
+    <span class="value"><i class="fa fa-angle-{{rdr_expanded ? 'up': 'down'}}"></i></span>
+</span>
+<div ng-show="rdr_expanded" class="expanded">
+    <span class="item">
+        <span class="key" translate>Start </span>
+        <span class="value">{{ parseTimestampToSeconds(item.Result.RecreateDatabaseResults.BeginTime) }}</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>End </span>
+        <span class="value">{{ parseTimestampToSeconds(item.Result.RecreateDatabaseResults.EndTime) }}</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>Duration </span>
+        <span class="value">{{ formatDuration(item.Result.RecreateDatabaseResults.Duration) }}</span>
+    </span>
+
+    <div class="horizontal-rule"></div>
+    
+    <!-- ng-if="true" isolates the scope of 'data' in ng-init, this way we can include the same template using the same variable more than one time
+        without them intercepting each other's data. Similar to passing a parameter to the included template -->
+    <span class="item" ng-if="true" 
+        ng-init="data = {
+            'messages': item.Result.RecreateDatabaseResults.Warnings,
+            'length': item.Result.RecreateDatabaseResults.WarningsActualLength,
+            'type': 'Warning',
+            'title': gettextCatalog.getString('Warnings') }"
+        ng-include="'templates/backup-result/message-list.html'">
+    </span>
+    <span class="item" ng-if="true"
+        ng-init="data = {
+            'messages': item.Result.RecreateDatabaseResults.Errors,
+            'length': item.Result.RecreateDatabaseResults.ErrorsActualLength,
+            'type': 'Error',
+            'title': gettextCatalog.getString('Errors') }"
+        ng-include="'templates/backup-result/message-list.html'">
+    </span>
+</div>

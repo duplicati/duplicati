@@ -178,7 +178,7 @@ namespace Duplicati.Library.Main.Operation
             if (allBackups.Length == 0)
                 return allBackups;
 
-            if (allBackups.Distinct().Count() != allBackups.Length)
+            if (allBackups.Select(x => x.ToUniversalTime()).Distinct().Count() != allBackups.Length)
                 throw new Exception(string.Format("List of backup timestamps contains duplicates: {0}", string.Join(", ", allBackups.Select(x => x.ToString()))));
 
             List<DateTime> toDelete = new List<DateTime>();
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main.Operation
             if (keepVersions > 0 && keepVersions < backupsRemaining.Count())
                 toDelete.AddRange(backupsRemaining.Skip(keepVersions));
 
-            var toDeleteDistinct = toDelete.Distinct().OrderByDescending(x => x).AsEnumerable();
+            var toDeleteDistinct = toDelete.Distinct().OrderByDescending(x => x.ToUniversalTime()).AsEnumerable();
 
             var removeCount = toDeleteDistinct.Count();
             if (removeCount > allBackups.Length)

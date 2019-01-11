@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Net;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -46,7 +47,7 @@ namespace Duplicati.Library.Backend
             var uri = new Utility.Uri(url);
 
             m_rootfolder = uri.Host;
-            m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator("/" + uri.Path, "/");
+            m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))

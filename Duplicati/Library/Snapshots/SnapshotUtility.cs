@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,8 @@
 
 using System.Collections.Generic;
 using System.IO;
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -37,7 +39,7 @@ namespace Duplicati.Library.Snapshots
         public static ISnapshotService CreateSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
             return
-                Utility.Utility.IsClientLinux
+                Platform.IsClientPosix
                        ? CreateLinuxSnapshot(folders)
                        : CreateWindowsSnapshot(folders, options);
             
@@ -122,17 +124,6 @@ namespace Duplicati.Library.Snapshots
             // are reparse points, which allows the folder to hook into the OneDrive service and download things on-demand.
             // If we can't find a symlink target for the current path, we won't treat it as a symlink.
             return (attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint && !string.IsNullOrEmpty(systemIO.GetSymlinkTarget(path));
-        }
-
-        /// <summary>
-        /// Gets an interface for System.IO, which wraps all operations in a platform consistent manner.
-        /// </summary>
-        public static ISystemIO SystemIO
-        {
-            get
-            {
-                return Utility.Utility.IsClientLinux ? (ISystemIO)new SystemIOLinux() : (ISystemIO)new SystemIOWindows();
-            }
         }
     }
 }
