@@ -344,6 +344,10 @@
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
       <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\ConfigurationImporter\ConfigurationImporter.csproj">
+      <Project>{864B98B9-1B56-40D9-9733-9002E5B9B9D5}</Project>
+      <Name>ConfigurationImporter</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">
