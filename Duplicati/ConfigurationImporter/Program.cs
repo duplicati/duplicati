@@ -65,9 +65,6 @@ namespace Duplicati.CommandLine.ConfigurationImporter
             // This creates a new ID and DBPath.
             connection.AddOrUpdateBackupAndSchedule(importedStructure.Backup, importedStructure.Schedule);
 
-            // This creates the local database file at the location specified by the DBPath.
-            SQLiteLoader.LoadConnection(importedStructure.Backup.DBPath);
-
             Console.WriteLine($"Imported \"{importedStructure.Backup.Name}\" with ID {importedStructure.Backup.ID} and local database at {importedStructure.Backup.DBPath}.");
         }
 
