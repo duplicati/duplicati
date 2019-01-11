@@ -197,9 +197,6 @@ namespace Duplicati.Library.Main.Database
             
             m_insertDuplicateBlockCommand.CommandText = @"INSERT INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?), ?)";
             m_insertDuplicateBlockCommand.AddParameters(3);
-
-            if (options.UseFilepathCache)
-                m_filesetLookup = new PathLookupHelper<PathEntryKeeper>();
         }
 
         public void FindMissingBlocklistHashes(long hashsize, long blocksize, System.Data.IDbTransaction transaction)
