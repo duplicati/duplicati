@@ -124,16 +124,15 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        private Dictionary<string, string> GetPolicyDoc(string path)
+        private static IDictionary<string, string> GetPolicyDoc(string path)
         {
-            var dict = new Dictionary<string, string>
+            return new Dictionary<string, string>
             {
                 ["doc"] = GeneratePolicyDoc(path)
             };
-            return dict;
         }
 
-        private string GeneratePolicyDoc(string path)
+        private static string GeneratePolicyDoc(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentNullException(nameof(path));
@@ -148,7 +147,7 @@ namespace Duplicati.Library.Backend
             return POLICY_DOCUMENT_TEMPLATE.Replace("bucket-name", bucketname).Trim();
         }
 
-        private IDictionary<string, string> CanCreateUser(string awsid, string awskey)
+        private static IDictionary<string, string> CanCreateUser(string awsid, string awskey)
         {
             var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
             User user;
@@ -195,7 +194,7 @@ namespace Duplicati.Library.Backend
             return resultDict;
         }
 
-        private Dictionary<string, string> CreateUnprivilegedUser(string awsid, string awskey, string path)
+        private static IDictionary<string, string> CreateUnprivilegedUser(string awsid, string awskey, string path)
         {
             var now = Utility.Utility.SerializeDateTime(DateTime.Now);
             var username = string.Format("duplicati-autocreated-backup-user-{0}", now);
