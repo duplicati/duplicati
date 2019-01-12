@@ -81,21 +81,15 @@ namespace Duplicati.Library.Backend
 
         public IDictionary<string, string> Execute(IDictionary<string, string> options)
         {
-            string operationstring;
-            string username;
-            string password;
-            string path;
-            Operation operation;
-
-            options.TryGetValue(KEY_OPERATION, out operationstring);
-            options.TryGetValue(KEY_USERNAME, out username);
-            options.TryGetValue(KEY_PASSWORD, out password);
-            options.TryGetValue(KEY_PATH, out path);
+            options.TryGetValue(KEY_OPERATION, out string operationstring);
+            options.TryGetValue(KEY_USERNAME, out string username);
+            options.TryGetValue(KEY_PASSWORD, out string password);
+            options.TryGetValue(KEY_PATH, out string path);
 
             if (string.IsNullOrWhiteSpace(operationstring))
                 throw new ArgumentNullException(KEY_OPERATION);
 
-            if (!Enum.TryParse(operationstring, true, out operation))
+            if (!Enum.TryParse(operationstring, true, out Operation operation))
                 throw new ArgumentException(string.Format("Unable to parse {0} as an operation", operationstring));
 
             switch (operation)
@@ -188,7 +182,7 @@ namespace Duplicati.Library.Backend
             catch (Exception ex)
             {
                 resultDict["ex"] = ex.ToString();
-                resultDict["ex"] = ex.Message;
+                resultDict["error"] = ex.Message;
             }
 
             return resultDict;
