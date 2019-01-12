@@ -148,34 +148,51 @@ namespace Duplicati.Library.Backend
             return POLICY_DOCUMENT_TEMPLATE.Replace("bucket-name", bucketname).Trim();
         }
 
-        private Dictionary<string, string> CanCreateUser(string awsid, string awskey)
+        private IDictionary<string, string> CanCreateUser(string awsid, string awskey)
         {
             var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
-            Dictionary<string, string> dict;
+            User user;
             try
             {
-                var user = cl.GetUser().User;
-
-                dict = new Dictionary<string, string>
-                {
-                    ["isroot"] = "False",
-                    ["arn"] = user.Arn,
-                    ["id"] = user.UserId,
-                    ["name"] = user.UserName,
-
-                    ["isroot"] = (cl.SimulatePrincipalPolicy(new SimulatePrincipalPolicyRequest { PolicySourceArn = user.Arn, ActionNames = new[] { "iam:CreateUser" }.ToList() }).EvaluationResults.First().EvalDecision == PolicyEvaluationDecisionType.Allowed).ToString()
-                };
+                user = cl.GetUser().User;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is NoSuchEntityException || ex is ServiceFailureException)
             {
-                dict = new Dictionary<string, string>
+                return new Dictionary<string, string>
                 {
                     ["ex"] = ex.ToString(),
                     ["error"] = ex.Message
                 };
             }
 
-            return dict;
+            var resultDict = new Dictionary<string, string>
+            {
+                ["isroot"] = "False",
+                ["arn"] = user.Arn,
+                ["id"] = user.UserId,
+                ["name"] = user.UserName,
+            };
+
+            var simulatePrincipalPolicy = new SimulatePrincipalPolicyRequest
+            {
+                PolicySourceArn = user.Arn,
+                ActionNames = new[] { "iam:CreateUser" }.ToList()
+            };
+
+            try
+            {
+                resultDict["isroot"] = (cl.SimulatePrincipalPolicy(simulatePrincipalPolicy).
+                                        EvaluationResults.First().
+                                        EvalDecision == PolicyEvaluationDecisionType.Allowed).
+                                        ToString();
+            }
+            catch (Exception ex)
+            {
+                resultDict["ex"] = ex.ToString();
+                resultDict["ex"] = ex.Message;
+            }
+
+            return resultDict;
         }
 
         private Dictionary<string, string> CreateUnprivilegedUser(string awsid, string awskey, string path)
