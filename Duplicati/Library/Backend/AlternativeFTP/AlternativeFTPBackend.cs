@@ -542,13 +542,12 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         private FtpClient CreateClient()
         {
+            var url = _url;
+
+            var uri = new Uri(url);
+
             if (this.Client == null) // Create connection if it doesn't exist yet
             {
-
-                var url = _url;
-
-                var uri = new Uri(url);
-
                 var ftpClient = new FtpClient
                 {
                     Host = uri.Host,
@@ -562,12 +561,13 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                 ftpClient.ValidateCertificate += HandleValidateCertificate;
 
-                // Get the remote path
-                var remotePath = uri.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? uri.AbsolutePath.Substring(0, uri.AbsolutePath.Length - 1) : uri.AbsolutePath;
-                ftpClient.SetWorkingDirectory(remotePath);
-
                 this.Client = ftpClient;
             } // else reuse existing connection
+
+            // Change working directory to the remote path
+            // Do this every time to prevent issues when FtpClient silently reconnects after failure.
+            var remotePath = uri.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? uri.AbsolutePath.Substring(0, uri.AbsolutePath.Length - 1) : uri.AbsolutePath;
+            this.Client.SetWorkingDirectory(remotePath);
 
             return this.Client;
         }
