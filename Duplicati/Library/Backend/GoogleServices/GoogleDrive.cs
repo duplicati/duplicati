@@ -340,7 +340,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 try
                 {
                     GoogleDriveAboutResponse about = this.GetAboutInfo();
-                    return new QuotaInfo(about.quotaBytesTotal ?? -1, about.quotaBytesUsed ?? -1);
+                    return new QuotaInfo(about.quotaBytesTotal ?? -1, about.quotaBytesTotal - about.quotaBytesUsed ?? -1);
                 }
                 catch
                 {
