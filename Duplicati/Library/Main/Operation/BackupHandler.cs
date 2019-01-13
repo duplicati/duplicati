@@ -460,9 +460,6 @@ namespace Duplicati.Library.Main.Operation
                                 // Rebuild any index files that are missing
                                 await Backup.RecreateMissingIndexFiles.Run(db, m_options, m_result.TaskReader);
 
-                                // This should be removed as the lookups are no longer used
-                                m_database.BuildLookupTable(m_options);
-
                                 // Prepare the operation by registering the filelist
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
 
