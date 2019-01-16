@@ -160,7 +160,7 @@ namespace Duplicati.Library.Backend
         {
             var resultDict = new Dictionary<string, string>
             {
-                ["isroot"] = "False",
+                ["isroot"] = false.ToString(),
                 ["arn"] = user.Arn,
                 ["id"] = user.UserId,
                 ["name"] = user.UserName,
@@ -174,6 +174,8 @@ namespace Duplicati.Library.Backend
             {
                 return new Dictionary<string, string>
                 {
+                    // Can be removed if the UI code is updated to check for the "ex" key first
+                    ["isroot"] = false.ToString(),
                     ["ex"] = ex.ToString(),
                     ["error"] = $"Exception occurred while testing if CreateUser is allowed for user {user.UserId} : {ex.Message}"
                 };
