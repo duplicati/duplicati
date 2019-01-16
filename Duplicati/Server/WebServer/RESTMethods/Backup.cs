@@ -146,31 +146,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
             else
             {
                 var passphrase = info.Request.QueryString["passphrase"].Value;
-                var ipx = Program.DataConnection.PrepareBackupForExport(backup);
+                byte[] data = Backup.ExportToJSON(backup, passphrase);
 
-                byte[] data;
-                using(var ms = new System.IO.MemoryStream())
-                using(var sw = new System.IO.StreamWriter(ms))
-                {
-                    Serializer.SerializeJson(sw, ipx, true);
-
-                    if (!string.IsNullOrWhiteSpace(passphrase))
-                    {
-                        ms.Position = 0;
-                        using(var ms2 = new System.IO.MemoryStream())
-                        using(var m = new Duplicati.Library.Encryption.AESEncryption(passphrase, new Dictionary<string, string>()))
-                        {
-                            m.Encrypt(ms, ms2);
-                            data = ms2.ToArray();
-                        }
-                    }
-                    else
-                        data = ms.ToArray();
-                }
-
-                var filename = Library.Utility.Uri.UrlEncode(backup.Name) + "-duplicati-config.json";
+                string filename = Library.Utility.Uri.UrlEncode(backup.Name) + "-duplicati-config.json";
                 if (!string.IsNullOrWhiteSpace(passphrase))
+                {
                     filename += ".aes";
+                }
 
                 info.Response.ContentLength = data.Length;
                 info.Response.AddHeader("Content-Disposition", string.Format("attachment; filename={0}", filename));
@@ -180,6 +162,39 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 info.Response.SendHeaders();
                 info.Response.SendBody(data);
             }
+        }
+
+        public static byte[] ExportToJSON(IBackup backup, string passphrase)
+        {
+            Serializable.ImportExportStructure ipx = Program.DataConnection.PrepareBackupForExport(backup);
+
+            byte[] data;
+            using (MemoryStream ms = new System.IO.MemoryStream())
+            {
+                using (StreamWriter sw = new System.IO.StreamWriter(ms))
+                {
+                    Serializer.SerializeJson(sw, ipx, true);
+
+                    if (!string.IsNullOrWhiteSpace(passphrase))
+                    {
+                        ms.Position = 0;
+                        using (MemoryStream ms2 = new System.IO.MemoryStream())
+                        {
+                            using (Library.Encryption.AESEncryption m = new Duplicati.Library.Encryption.AESEncryption(passphrase, new Dictionary<string, string>()))
+                            {
+                                m.Encrypt(ms, ms2);
+                                data = ms2.ToArray();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        data = ms.ToArray();
+                    }
+                }
+            }
+                       
+            return data;
         }
 
         private void RestoreFiles(IBackup backup, RequestInfo info)
