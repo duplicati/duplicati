@@ -1,3 +1,17 @@
+2019-01-16 - 2.0.4.11_canary_2019-01-16
+==========
+* Many source code quality improvements, thanks @warwickmm
+* Added test percentage option, thanks @warwickmm
+* Fixed an issue with the log page not loading, thanks @LacunaSoftware
+* Updated the Mega API, thanks @Pectojin
+* Added tool to import a CLI backup into the server, thanks @warwickmm
+* Improved build tools to separate and simplify the GPG signing step, thanks @verhoek
+* Fixed a case where listing files backed up from a UNC path are not shown, thanks @mnaimann
+* Removed the unused file lookup table, thanks @Pectojin
+* Fixed an issue with the FTP backend where it would sporadically create files in the root folder of the server, thanks @balchen
+* Fixed quota reporting from GoogleDrive, thanks @warwickmm
+* Improved code quality, thanks @verhoek
+
 2018-12-29 - 2.0.4.10_canary_2018-12-29
 ==========
 * Improved passphrase export, thanks @Pectojin
