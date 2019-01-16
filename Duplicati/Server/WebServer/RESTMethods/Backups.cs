@@ -146,7 +146,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             return importedStructure;
         }
 
-        public static Serializable.ImportExportStructure LoadConfiguration(string filename, bool importMetadata, Func<string> getPassword)
+        private static Serializable.ImportExportStructure LoadConfiguration(string filename, bool importMetadata, Func<string> getPassword)
         {
             Serializable.ImportExportStructure ipx;
 
