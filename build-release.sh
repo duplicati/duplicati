@@ -251,13 +251,13 @@ if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
 	exit 5
 fi
 
-"${MONO}" "BuildTools/GnupgSigningTool/bin/Release/GnupgSigningTool.exe" \
+"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
 --inputfile=\"${UPDATE_TARGET}/package.zip\" \
 --signaturefile=\"${UPDATE_TARGET}/package.zip.sig\" \
 --armor=false --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
 --keyfile-password="${KEYFILE_PASSWORD}"
 
-"${MONO}" "BuildTools/GnupgSigningTool/bin/Release/GnupgSigningTool.exe" \
+"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
 --inputfile=\"${UPDATE_TARGET}/package.zip\" \
 --signaturefile=\"${UPDATE_TARGET}/package.zip.sig.asc\" \
 --armor=true --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
