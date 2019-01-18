@@ -17,6 +17,7 @@
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -98,6 +99,9 @@ namespace Duplicati.UnitTest
                 Duplicati.Server.WebServer.RESTMethods.Backups.ImportBackup(encryptedWithMetadata, true, () => passphrase, advancedOptions);
                 Assert.AreEqual(4, Duplicati.Server.Program.DataConnection.Backups.Length);
                 Assert.AreEqual(metadata.Count, Duplicati.Server.Program.DataConnection.Backups[3].Metadata.Count);
+
+                // Encrypted file, incorrect passphrase.
+                Assert.Throws(Is.InstanceOf<Exception>(), () => Duplicati.Server.WebServer.RESTMethods.Backups.ImportBackup(encryptedWithMetadata, true, () => passphrase + " ", advancedOptions));
             }
         }
     }
