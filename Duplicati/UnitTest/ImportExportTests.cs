@@ -70,18 +70,21 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
             using (Duplicati.Server.Program.DataConnection = Duplicati.Server.Program.GetDatabaseConnection(advancedOptions))
             {
+                // Unencrypted file, don't import metadata.
                 string unencryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 File.WriteAllBytes(unencryptedWithoutMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(CreateBackup("unencrypted without metadata"), null));
                 Duplicati.Server.WebServer.RESTMethods.Backups.ImportBackup(unencryptedWithoutMetadata, false, () => null, advancedOptions);
                 Assert.AreEqual(1, Duplicati.Server.Program.DataConnection.Backups.Length);
                 Assert.AreEqual(0, Duplicati.Server.Program.DataConnection.Backups[0].Metadata.Count);
 
+                // Unencrypted file, import metadata.
                 string unencryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 File.WriteAllBytes(unencryptedWithMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(CreateBackup("unencrypted with metadata"), null));
                 Duplicati.Server.WebServer.RESTMethods.Backups.ImportBackup(unencryptedWithMetadata, true, () => null, advancedOptions);
                 Assert.AreEqual(2, Duplicati.Server.Program.DataConnection.Backups.Length);
                 Assert.AreEqual(metadata.Count, Duplicati.Server.Program.DataConnection.Backups[1].Metadata.Count);
 
+                // Encrypted file, don't import metadata.
                 string encryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 string passphrase = "abcde";
                 File.WriteAllBytes(encryptedWithoutMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(CreateBackup("encrypted without metadata"), passphrase));
@@ -89,6 +92,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(3, Duplicati.Server.Program.DataConnection.Backups.Length);
                 Assert.AreEqual(0, Duplicati.Server.Program.DataConnection.Backups[2].Metadata.Count);
 
+                // Encrypted file, import metadata.
                 string encryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 File.WriteAllBytes(encryptedWithMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(CreateBackup("encrypted with metadata"), passphrase));
                 Duplicati.Server.WebServer.RESTMethods.Backups.ImportBackup(encryptedWithMetadata, true, () => passphrase, advancedOptions);
