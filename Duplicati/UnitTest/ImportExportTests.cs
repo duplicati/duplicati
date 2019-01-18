@@ -42,6 +42,7 @@ namespace Duplicati.UnitTest
             }
             catch
             {
+                // If there's an exception, let the OS deal with cleaning up the temp folder.
             }
         }
 
