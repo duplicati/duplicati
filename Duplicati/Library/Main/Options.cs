@@ -1356,7 +1356,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                System.IO.FileAttributes res = (System.IO.FileAttributes)0;
+                System.IO.FileAttributes res = default(System.IO.FileAttributes);
                 string v;
                 if (!m_options.TryGetValue("exclude-files-attributes", out v))
                     return res;

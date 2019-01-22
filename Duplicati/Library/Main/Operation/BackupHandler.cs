@@ -88,7 +88,7 @@ namespace Duplicati.Library.Main.Operation
             return Platform.IsClientPosix ?
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux()
                     :
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows();
+                new Duplicati.Library.Snapshots.NoSnapshotWindows();
         }
 
         /// <summary>

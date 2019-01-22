@@ -397,7 +397,7 @@ namespace Duplicati.Library.Utility
             if (m_filters.Count == 0)
                 this.Type = FilterType.Empty;
             else
-                this.Type = (FilterType)m_filters.Max((a) => a.Type);
+                this.Type = m_filters.Max((a) => a.Type);
         }
         
         private static IEnumerable<string> Expand(string filter)

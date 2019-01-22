@@ -157,7 +157,7 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.IListResults List(Library.Utility.IFilter filter = null)
         {
-            return List((IEnumerable<string>)null, filter);
+            return List(null, filter);
         }
 
         public Duplicati.Library.Interface.IListResults List(string filterstring)

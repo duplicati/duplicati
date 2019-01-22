@@ -88,11 +88,11 @@ namespace DnsLib
             }
             data[0] = (byte)(id >> 8);
             data[1] = (byte)(id & 0xFF);
-            data[2] = (byte)1; data[3] = (byte)0;
-            data[4] = (byte)0; data[5] = (byte)1;
-            data[6] = (byte)0; data[7] = (byte)0;
-            data[8] = (byte)0; data[9] = (byte)0;
-            data[10] = (byte)0; data[11] = (byte)0;
+            data[2] = 1; data[3] = 0;
+            data[4] = 0; data[5] = 1;
+            data[6] = 0; data[7] = 0;
+            data[8] = 0; data[9] = 0;
+            data[10] = 0; data[11] = 0;
             string[] tokens = name.Split(new char[] { '.' });
             string label;
             position = 12;
@@ -106,9 +106,9 @@ namespace DnsLib
                     data[position++] = b[k];
                 }
             }
-            data[position++] = (byte)0; data[position++] = (byte)0;
-            data[position++] = (byte)15; data[position++] = (byte)0;
-            data[position++] = (byte)1;
+            data[position++] = 0; data[position++] = 0;
+            data[position++] = 15; data[position++] = 0;
+            data[position++] = 1;
         }
         //for un packing the byte array 
         public ArrayList makeResponse()

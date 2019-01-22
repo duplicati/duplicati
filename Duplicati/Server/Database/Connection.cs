@@ -543,10 +543,10 @@ namespace Duplicati.Server.Database
                                 n.Description == null ? "" : n.Description, // Description is optional but the column is set to NOT NULL, an additional check is welcome
                                 string.Join(",", n.Tags ?? new string[0]),
                                 n.TargetURL,
-                                update ? (object)item.ID : (object)n.DBPath 
+                                update ? item.ID : n.DBPath
                             };
                         });
-                        
+
                     if (!update)
                         using(var cmd = m_connection.CreateCommand())
                         {
