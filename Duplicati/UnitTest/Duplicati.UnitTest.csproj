@@ -54,6 +54,7 @@
     <Compile Include="WebApiTests.cs" />
     <Compile Include="RunScriptTests.cs" />
     <Compile Include="IOTests.cs" />
+    <Compile Include="ImportExportTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
