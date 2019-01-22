@@ -263,8 +263,7 @@ namespace Duplicati.Library.Common.IO
 
         public System.IO.FileAttributes GetFileAttributes(string path)
         {
-            return PathTooLongFuncWrapper(System.IO.File.GetAttributes,
-                                          (Func<string, System.IO.FileAttributes>)Alphaleonis.Win32.Filesystem.File.GetAttributes, path, true);
+            return PathTooLongFuncWrapper(System.IO.File.GetAttributes, AlphaFS.File.GetAttributes, path, true);
         }
 
         public void SetFileAttributes(string path, System.IO.FileAttributes attributes)
@@ -502,7 +501,7 @@ namespace Duplicati.Library.Common.IO
                     // Attempt to apply as many rules as we can
                     try
                     {
-                        rules.AddAccessRule((System.Security.AccessControl.FileSystemAccessRule)r.Create(rules));
+                        rules.AddAccessRule(r.Create(rules));
                     }
                     catch (Exception e)
                     {

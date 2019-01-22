@@ -148,7 +148,7 @@ namespace Duplicati.Library.Backend
             {
                 var usfa = new UploadSessionFinishArg();
                 usfa.cursor.session_id = ussr.session_id;
-                usfa.cursor.offset = (ulong)globalBytesRead;
+                usfa.cursor.offset = globalBytesRead;
                 usfa.commit.path = path;
 
                 req = CreateRequest(WebApi.Dropbox.UploadSessionFinishUrl(), "POST");

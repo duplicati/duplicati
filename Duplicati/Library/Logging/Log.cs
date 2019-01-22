@@ -347,7 +347,7 @@ namespace Duplicati.Library.Logging
         {
             lock (m_lock)
             {
-                var scope = StartScope((ILogDestination)null, null, true);
+                var scope = StartScope(null, null, true);
                 if (detached)
                     DetachCurrentScope(scope);
                 return scope;
