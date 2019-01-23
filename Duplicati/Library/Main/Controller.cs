@@ -155,9 +155,9 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public Duplicati.Library.Interface.IListResults List(Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults List()
         {
-            return List(null, filter);
+            return List(null, null);
         }
 
         public Duplicati.Library.Interface.IListResults List(string filterstring)
