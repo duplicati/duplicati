@@ -509,7 +509,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.List:
                             {
-                                var r = controller.List(data.FilterStrings);
+                                var r = controller.List(data.FilterStrings, null);
                                 UpdateMetadata(backup, r);
                                 return r;
                             }

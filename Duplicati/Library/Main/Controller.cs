@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main
             return List(filterstring == null ? null : new string[] { filterstring }, null);
         }
 
-        public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter)
         {
             return RunAction(new ListResults(), ref filter, (result) => {
                 new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
