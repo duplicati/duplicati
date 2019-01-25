@@ -127,21 +127,22 @@ namespace Duplicati.Server.WebServer.RESTMethods
             Serializable.ImportExportStructure importedStructure = Backups.LoadConfiguration(configurationFile, importMetadata, getPassword);
 
             // This will create the Duplicati-server.sqlite database file if it doesn't exist.
-            Duplicati.Server.Database.Connection connection = Program.GetDatabaseConnection(advancedOptions);
-
-            if (connection.Backups.Any(x => x.Name.Equals(importedStructure.Backup.Name, StringComparison.OrdinalIgnoreCase)))
+            using (Duplicati.Server.Database.Connection connection = Program.GetDatabaseConnection(advancedOptions))
             {
-                throw new InvalidOperationException($"A backup with the name {importedStructure.Backup.Name} already exists.");
-            }
+                if (connection.Backups.Any(x => x.Name.Equals(importedStructure.Backup.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException($"A backup with the name {importedStructure.Backup.Name} already exists.");
+                }
 
-            string error = connection.ValidateBackup(importedStructure.Backup, importedStructure.Schedule);
-            if (!string.IsNullOrWhiteSpace(error))
-            {
-                throw new InvalidOperationException(error);
-            }
+                string error = connection.ValidateBackup(importedStructure.Backup, importedStructure.Schedule);
+                if (!string.IsNullOrWhiteSpace(error))
+                {
+                    throw new InvalidOperationException(error);
+                }
 
-            // This creates a new ID and DBPath.
-            connection.AddOrUpdateBackupAndSchedule(importedStructure.Backup, importedStructure.Schedule);
+                // This creates a new ID and DBPath.
+                connection.AddOrUpdateBackupAndSchedule(importedStructure.Backup, importedStructure.Schedule);
+            }
 
             return importedStructure;
         }
