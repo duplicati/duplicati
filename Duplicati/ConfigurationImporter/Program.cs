@@ -24,23 +24,32 @@ namespace Duplicati.CommandLine.ConfigurationImporter
 {
     public class ConfigurationImporter
     {
-        private static readonly string usageString = $"Usage: {nameof(ConfigurationImporter)}.exe <configuration-file> --import-metadata=(true | false) [<advanced-option>]...";
+        private static readonly string usageString = $"Usage: {nameof(ConfigurationImporter)}.exe <configuration-file> --import-metadata=(true | false) --server-datafolder=<folder containing Duplicati-server.sqlite>";
 
         public static void Main(string[] args)
         {
-            if (args.Length < 2)
+            if (args.Length != 3)
             {
                 throw new ArgumentException($"Incorrect number of input arguments.  {ConfigurationImporter.usageString}");
             }
 
             string configurationFile = args[0];
-            Dictionary<string, string> importOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string> { args[1] });
+            Dictionary<string, string> importOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args.Skip(1).ToList());
             if (!importOptions.TryGetValue("import-metadata", out string importMetadataString))
             {
                 throw new ArgumentException($"Invalid import-metadata argument.  {ConfigurationImporter.usageString}");
             }
             bool importMetadata = Duplicati.Library.Utility.Utility.ParseBool(importMetadataString, false);
-            Dictionary<string, string> advancedOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args.Skip(2)));
+
+            if (!importOptions.TryGetValue("server-datafolder", out string serverDatafolder))
+            {
+                throw new ArgumentException($"Invalid server-datafolder argument.  {ConfigurationImporter.usageString}");
+            }
+
+            Dictionary<string, string> advancedOptions = new Dictionary<string, string>
+            {
+                { "server-datafolder", serverDatafolder }
+            };
 
             ImportExportStructure importedStructure = Backups.ImportBackup(configurationFile, importMetadata, () => ConfigurationImporter.ReadPassword($"Password for {configurationFile}: "), advancedOptions);
             Console.WriteLine($"Imported \"{importedStructure.Backup.Name}\" with ID {importedStructure.Backup.ID} and local database at {importedStructure.Backup.DBPath}.");
