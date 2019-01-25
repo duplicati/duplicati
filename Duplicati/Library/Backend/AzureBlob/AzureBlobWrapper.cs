@@ -64,8 +64,11 @@ namespace Duplicati.Library.Backend.AzureBlob
         {
             OperationContext.GlobalSendingRequest += (sender, args) =>
             {
-                string userAgent = "APN/1.0 Duplicati/2.0 AzureBlob/2.0 " + Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent;
-                args.Request.UserAgent = userAgent;
+                args.Request.UserAgent = string.Format(
+                    "APN/1.0 Duplicati/{0} AzureBlob/2.0 {1}",
+                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
+                    Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent
+                );
             };
 
             var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
