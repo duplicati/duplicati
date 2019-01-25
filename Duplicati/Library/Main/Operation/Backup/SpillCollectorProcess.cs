@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 while(!await self.Input.IsRetiredAsync)
                     try
                     {
-                        lst.Add((VolumeUploadRequest)await self.Input.ReadAsync());
+                        lst.Add(await self.Input.ReadAsync());
                     }
                     catch (Exception ex)
                     {

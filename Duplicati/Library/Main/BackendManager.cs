@@ -1376,25 +1376,19 @@ namespace Duplicati.Library.Main
 
         public void WaitForComplete(LocalDatabase db, System.Data.IDbTransaction transation)
         {
-            try
-            {
-                m_statwriter.BackendProgressUpdater.SetBlocking(true);
-                m_db.FlushDbMessages(db, transation);
-                if (m_lastException != null)
-                    throw m_lastException;
+            m_statwriter.BackendProgressUpdater.SetBlocking(true);
+            m_db.FlushDbMessages(db, transation);
+            if (m_lastException != null)
+                throw m_lastException;
 
-                var item = new FileEntryItem(OperationType.Terminate, null);
-                if (m_queue.Enqueue(item))
-                    item.WaitForComplete();
+            var item = new FileEntryItem(OperationType.Terminate, null);
+            if (m_queue.Enqueue(item))
+                item.WaitForComplete();
 
-                m_db.FlushDbMessages(db, transation);
+            m_db.FlushDbMessages(db, transation);
 
-                if (m_lastException != null)
-                    throw m_lastException;
-            }
-            finally
-            {
-            }
+            if (m_lastException != null)
+                throw m_lastException;
         }
 
         public void WaitForEmpty(LocalDatabase db, System.Data.IDbTransaction transation)

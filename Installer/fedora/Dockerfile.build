@@ -7,7 +7,7 @@ ENV DOCKER_BUILD_PROXY $DOCKER_BUILD_PROXY
 # Install common build tools
 RUN dnf -y install deltarpm
 RUN dnf -y upgrade
-RUN dnf -y install @"Minimal Install" @buildsys-build yum-utils rpm-sign gnupg rpmdevtools
+RUN dnf -y --allowerasing install @"Minimal Install" @buildsys-build yum-utils rpm-sign gnupg rpmdevtools
 
 # Install mono things
 RUN dnf -y install mono-devel gnome-sharp-devel dos2unix git nuget

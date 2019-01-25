@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -219,7 +220,7 @@ namespace Duplicati.Library.Backend
 
                 if (String.Equals(host, s3host, StringComparison.OrdinalIgnoreCase))
                 {
-                    m_bucket = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
+                    m_bucket = Utility.Uri.UrlDecode(u.PathAndQuery);
 
                     if (m_bucket.StartsWith("/", StringComparison.Ordinal))
                         m_bucket = m_bucket.Substring(1);
@@ -237,7 +238,7 @@ namespace Duplicati.Library.Backend
                     {
                         m_bucket = host.Substring(0, host.Length - ("." + s3host).Length);
                         host = s3host;
-                        m_prefix = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
+                        m_prefix = Utility.Uri.UrlDecode(u.PathAndQuery);
 
                         if (m_prefix.StartsWith("/", StringComparison.Ordinal))
                             m_prefix = m_prefix.Substring(1);
@@ -259,7 +260,7 @@ namespace Duplicati.Library.Backend
             m_prefix = m_prefix.Trim();
             if (m_prefix.Length != 0)
             {
-                m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_prefix, "/");
+                m_prefix = Util.AppendDirSeparator(m_prefix, "/");
             }
 
             // Auto-disable dns lookup for non AWS configurations

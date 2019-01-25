@@ -1,4 +1,4 @@
-//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 
 //  http://www.duplicati.com, info@duplicati.com
 //
@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -139,7 +140,7 @@ namespace Duplicati.Library.Main.Database
 
                     //If we have a prefix rule, apply it
                     if (!string.IsNullOrWhiteSpace(prefixrule))
-                        cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE SUBSTR(""Path"", 1, 1) != ?", tmpnames.Tablename), prefixrule);
+                        cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE SUBSTR(""Path"", 1, {1}) != ?", tmpnames.Tablename, prefixrule.Length), prefixrule);
 
                     // Then we recursively find the largest prefix
                     cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""{0}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1", tmpnames.Tablename);
@@ -148,7 +149,7 @@ namespace Duplicati.Library.Main.Database
                     if (v0 != null)
                         maxpath = v0.ToString();
 
-                    var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(maxpath);
+                    var dirsep = Util.GuessDirSeparator(maxpath);
     
                     cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}""", tmpnames.Tablename);
                     var filecount = cmd.ExecuteScalarInt64(0);
@@ -161,7 +162,7 @@ namespace Duplicati.Library.Main.Database
     
                     while (filecount != foundfiles && maxpath.Length > 0)
                     {
-                        var mp = Duplicati.Library.Utility.Utility.AppendDirSeparator(maxpath, dirsep);
+                        var mp = Util.AppendDirSeparator(maxpath, dirsep);
                         cmd.SetParameterValue(0, mp.Length);
                         cmd.SetParameterValue(1, mp);
                         foundfiles = cmd.ExecuteScalarInt64(0);
@@ -170,31 +171,37 @@ namespace Duplicati.Library.Main.Database
                         {
                             var oldlen = maxpath.Length;
                             var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
+
                             maxpath = maxpath.Substring(0, lix + 1);
                             if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen || maxpath == "\\\\")
                                 maxpath = "";
                         }
                     }
 
-                    // Special handling for Windows and multi-drive backups as they do not have a single common root
+                    // Special handling for Windows and multi-drive/UNC backups as they do not have a single common root
                     if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
                     {
-                        var roots = cmd.ExecuteReaderEnumerable(string.Format(@"SELECT DISTINCT SUBSTR(""Path"", 1, 1) FROM ""{0}""", tmpnames.Tablename)).Select(x => x.ConvertValueToString(0)).ToArray();
-                        return roots.Select(x => GetLargestPrefix(filter, x).First()).Distinct().ToArray();
+                        var paths = cmd.ExecuteReaderEnumerable(string.Format(@"SELECT Path FROM ""{0}""", tmpnames.Tablename)).Select(x => x.ConvertValueToString(0)).ToArray();
+                        var roots = paths.Select(x => x.Substring(0, 1)).Distinct().Where(x => x != "\\").ToArray();
+
+                        //unc path like \\server.domain\
+                        var regexUNCPrefix = new System.Text.RegularExpressions.Regex(@"^\\\\.*?\\");
+                        var rootsUNC = paths.Select(x => regexUNCPrefix.Match(x)).Where(x => x.Success).Select(x => x.Value).Distinct().ToArray();
+
+                        return roots.Concat(rootsUNC).Select(x => GetLargestPrefix(filter, x).First()).Distinct().ToArray();
                     }
     
                     return 
                         new IFileversion[] {
-                            new FileversionFixed() { Path = maxpath == "" ? "" : Duplicati.Library.Utility.Utility.AppendDirSeparator(maxpath, dirsep) }
+                            new FileversionFixed { Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep) }
                         };
                 }
-    
             }
             
             private IEnumerable<string> SelectFolderEntries(System.Data.IDbCommand cmd, string prefix, string table)
             {
                 if (!string.IsNullOrEmpty(prefix))
-                    prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(prefix, Duplicati.Library.Utility.Utility.GuessDirSeparator(prefix));
+                    prefix = Util.AppendDirSeparator(prefix, Util.GuessDirSeparator(prefix));
                 
                 var ppl = prefix.Length;
                 using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""Path"" FROM ""{0}"" ", table)))
@@ -204,7 +211,7 @@ namespace Duplicati.Library.Main.Database
                         if (!s.StartsWith(prefix, StringComparison.Ordinal))
                             continue;
 
-                        var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(s);
+                        var dirsep = Util.GuessDirSeparator(s);
 
                         s = s.Substring(ppl);
                         var ix = s.IndexOf(dirsep, StringComparison.Ordinal);
@@ -227,10 +234,10 @@ namespace Duplicati.Library.Main.Database
                     else
                         pathprefix = ((Library.Utility.FilterExpression)filter).GetSimpleList().First();
 
-                    var dirsep = Duplicati.Library.Utility.Utility.GuessDirSeparator(pathprefix);
+                    var dirsep = Util.GuessDirSeparator(pathprefix);
 
                     if (pathprefix.Length > 0 || dirsep == "/")
-                        pathprefix = Duplicati.Library.Utility.Utility.AppendDirSeparator(pathprefix, dirsep);
+                        pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
                     
                     using(var tmpnames = new FilteredFilenameTable(m_connection, new Library.Utility.FilterExpression(new string[] { pathprefix + "*" }, true), null))
                     using(var cmd = m_connection.CreateCommand())

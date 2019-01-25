@@ -183,18 +183,22 @@ namespace Duplicati.Server
                 filters);
         }
 
-        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, DateTime time, string restoreTarget, bool overwrite, bool restore_permissions, bool skip_metadata)
+        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, 
+                                                    DateTime time, string restoreTarget, bool overwrite, bool restore_permissions, 
+                                                    bool skip_metadata, string passphrase)
         {
-            var dict = new Dictionary<string, string>();
-            dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
+            var dict = new Dictionary<string, string>
+            {
+                ["time"] = Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime()),
+                ["overwrite"] = overwrite? Boolean.TrueString : Boolean.FalseString,
+                ["restore-permissions"] = restore_permissions ? Boolean.TrueString : Boolean.FalseString,
+                ["skip-metadata"] = skip_metadata ? Boolean.TrueString : Boolean.FalseString,
+                ["allow-passphrase-change"] = Boolean.TrueString
+            };
             if (!string.IsNullOrWhiteSpace(restoreTarget))
                 dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
-            if (overwrite)
-                dict["overwrite"] = "true";
-            if (restore_permissions)
-                dict["restore-permissions"] = "true";
-            if (skip_metadata)
-                dict["skip-metadata"] = "true";
+            if (!(passphrase is null))
+                dict["passphrase"] = passphrase;
 
             return CreateTask(
                 DuplicatiOperation.Restore,
@@ -306,26 +310,22 @@ namespace Duplicati.Server
                     }
                 }
             }
+
+            public void SetBackendProgress(Library.Main.IBackendProgress progress)
+            {
+                lock (m_lock)
+                    m_backendProgress = progress;
+            }
+
+            public void SetOperationProgress(Library.Main.IOperationProgress progress)
+            {
+                lock (m_lock)
+                    m_operationProgress = progress;
+            }
+
             public void WriteMessage(Library.Logging.LogEntry entry)
             {
                 // Do nothing.  Implementation needed for ILogDestination interface.
-            }
-
-            public Duplicati.Library.Main.IBackendProgress BackendProgress
-            {
-                set
-                {
-                    lock(m_lock)
-                        m_backendProgress = value;
-                }
-            }
-            public Duplicati.Library.Main.IOperationProgress OperationProgress
-            {
-                set
-                {
-                    lock(m_lock)
-                        m_operationProgress = value;
-                }
             }
             #endregion
         }
@@ -425,7 +425,7 @@ namespace Duplicati.Server
                 try
                 {
                     var sink = new MessageSink(data.TaskID, null);
-                    Program.GenerateProgressState = () => sink.Copy();
+                    Program.GenerateProgressState = sink.Copy;
                     Program.StatusEventNotifyer.SignalNewEvent();
 
                     ((CustomRunnerTask)data).Run(sink);
@@ -509,7 +509,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.List:
                             {
-                                var r = controller.List(data.FilterStrings);
+                                var r = controller.List(data.FilterStrings, null);
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
@@ -591,7 +591,7 @@ namespace Duplicati.Server
                                 if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-local-db"))
                                 {
                                     string dbpath;
-                                    options.TryGetValue("db-path", out dbpath);
+                                    options.TryGetValue("dbpath", out dbpath);
 
                                     if (!string.IsNullOrWhiteSpace(dbpath) && System.IO.File.Exists(dbpath))
                                         System.IO.File.Delete(dbpath);
@@ -768,7 +768,7 @@ namespace Duplicati.Server
                         null,
                         (n, a) =>
                         {
-                            var existing = (a.Where(x => x.BackupID == backup.ID)).FirstOrDefault();
+                            var existing = a.FirstOrDefault(x => x.BackupID == backup.ID);
                             if (existing == null)
                                 return n;
 
@@ -780,37 +780,34 @@ namespace Duplicati.Server
                     );
                 }
             }
-            else
+            else if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
             {
-                if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
-                {
-                    var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                ? NotificationType.Warning
-                                : NotificationType.Error;
+                var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                            ? NotificationType.Warning
+                            : NotificationType.Error;
 
-                    var title = result.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                 ? (backup.IsTemporary ?
-                                    "Warning" : string.Format("Warning while running {0}", backup.Name))
-                                : (backup.IsTemporary ?
-                                   "Error" : string.Format("Error while running {0}", backup.Name));
+                var title = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                ? (backup.IsTemporary ?
+                                "Warning" : string.Format("Warning while running {0}", backup.Name))
+                            : (backup.IsTemporary ?
+                                "Error" : string.Format("Error while running {0}", backup.Name));
 
-                    var message = result.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                        ? string.Format("Got {0} warning(s) ", result.Warnings.Count())
-                                        : string.Format("Got {0} error(s) ", result.Errors.Count());
+                var message = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                    ? string.Format("Got {0} warning(s)", result.Warnings.Count())
+                                    : string.Format("Got {0} error(s)", result.Errors.Count());
 
-                    Program.DataConnection.RegisterNotification(
-                        type,
-                        title,
-                        message,
-                        null,
-                        backup.ID,
-                        null,
-                        null,
-                        null,
-                        "backup:show-log",
-                        (n, a) => n
-                    );
-                }
+                Program.DataConnection.RegisterNotification(
+                    type,
+                    title,
+                    message,
+                    null,
+                    backup.ID,
+                    "backup:show-log",
+                    null,
+                    null,
+                    "backup:show-log",
+                    (n, a) => n
+                );
             }
 
             if (!backup.IsTemporary)

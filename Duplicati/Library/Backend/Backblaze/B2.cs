@@ -19,6 +19,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 using Newtonsoft.Json;
 using System.Net;
 
@@ -56,7 +57,7 @@ namespace Duplicati.Library.Backend.Backblaze
             var uri = new Utility.Uri(url);
 
             m_bucketname = uri.Host;
-            m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator("/" + uri.Path, "/");
+            m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             // For B2 we do not use a leading slash
             while(m_prefix.StartsWith("/", StringComparison.Ordinal))

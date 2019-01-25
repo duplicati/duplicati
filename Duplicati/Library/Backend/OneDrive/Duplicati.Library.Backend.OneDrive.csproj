@@ -54,7 +54,6 @@
     <Compile Include="MicrosoftGraphBackend.cs" />
     <Compile Include="MicrosoftGraphTypes.cs" />
     <Compile Include="MicrosoftGroup.cs" />
-    <Compile Include="OneDrive.cs" />
     <Compile Include="OneDriveV2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SharePointV2.cs" />
@@ -80,6 +79,10 @@
     <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj">
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
       <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

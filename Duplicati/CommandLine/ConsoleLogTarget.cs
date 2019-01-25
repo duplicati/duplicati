@@ -72,9 +72,9 @@ namespace Duplicati.CommandLine
                     return;
                 
                 if (entry.Level == LogMessageType.Error)
-                    m_stderr.WriteLine(entry.ToString());
+                    m_stderr.WriteLine(entry);
                 else
-                    m_stdout.WriteLine(entry.ToString());
+                    m_stdout.WriteLine(entry);
             }
             else
             {

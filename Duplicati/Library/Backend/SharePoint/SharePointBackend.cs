@@ -29,6 +29,7 @@ using Duplicati.Library.Interface;
 
 using SP = Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client; // Plain 'using' for extension methods
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -169,7 +170,7 @@ namespace Duplicati.Library.Backend
             m_serverRelPath = u.Path;
             if (!m_serverRelPath.StartsWith("/", StringComparison.Ordinal))
                 m_serverRelPath = "/" + m_serverRelPath;
-            m_serverRelPath = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_serverRelPath, "/");
+            m_serverRelPath = Util.AppendDirSeparator(m_serverRelPath, "/");
             // remove marker for SP-Web
             m_serverRelPath = m_serverRelPath.Replace("//", "/");
 
@@ -515,15 +516,11 @@ namespace Duplicati.Library.Backend
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
             catch { if (!useNewContext) /* retry */ doGet(remotename, stream, true); else throw; }
-            finally { }
-            try
-            {
-                byte[] copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
-                using (var fileInfo = SP.File.OpenBinaryDirect(ctx, fileurl))
-                using (var s = fileInfo.Stream)
-                    Utility.Utility.CopyStream(s, stream, true, copybuffer);
-            }
-            finally { }
+
+            byte[] copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+            using (var fileInfo = SP.File.OpenBinaryDirect(ctx, fileurl))
+            using (var s = fileInfo.Stream)
+                Utility.Utility.CopyStream(s, stream, true, copybuffer);
         }
 
         public void Put(string remotename, string filename)
@@ -553,12 +550,10 @@ namespace Duplicati.Library.Backend
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
             catch { if (!useNewContext) /* retry */ { doPut(remotename, stream, true); return; } else throw; }
-            finally { }
 
             if (m_useBinaryDirectMode)
             {
-                try { SP.File.SaveBinaryDirect(ctx, fileurl, stream, true); }
-                finally { }
+                SP.File.SaveBinaryDirect(ctx, fileurl, stream, true);
             }
 
         }
@@ -695,7 +690,6 @@ namespace Duplicati.Library.Backend
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
             catch { if (!useNewContext) /* retry */ doCreateFolder(true); else throw; }
-            finally { }
         }
 
         public void Delete(string remotename) { doDelete(remotename, false); }
@@ -721,7 +715,6 @@ namespace Duplicati.Library.Backend
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
             catch { if (!useNewContext) /* retry */ doDelete(remotename, true); else throw; }
-            finally { }
         }
 
         #endregion

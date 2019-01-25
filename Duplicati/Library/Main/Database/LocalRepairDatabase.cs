@@ -183,7 +183,7 @@ namespace Duplicati.Library.Main.Database
                         {
                             var bs = new BlockWithSources(rd);
                             while (!bs.Done)
-                                yield return (IBlockWithSources)bs;
+                                yield return bs;
                         }
             }
                     

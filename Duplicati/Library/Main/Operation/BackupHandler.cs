@@ -32,6 +32,8 @@ using CoCoL;
 using System.Threading;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -83,10 +85,10 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
             }
 
-            return Library.Utility.Utility.IsClientLinux ?
+            return Platform.IsClientPosix ?
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux()
                     :
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows();
+                new Duplicati.Library.Snapshots.NoSnapshotWindows();
         }
 
         /// <summary>
@@ -173,7 +175,7 @@ namespace Duplicati.Library.Main.Operation
             using(new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
                 // Make sure the CompressionHints table is initialized, otherwise all workers will initialize it
-                var tb = options.CompressionHints.Count;
+                var unused = options.CompressionHints.Count;
 
                 Task all;
                 using(new ChannelScope())
@@ -269,7 +271,9 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(m_database, null);
             }
 
-            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Any())
+            long remoteVolumeCount = m_database.GetRemoteVolumes().LongCount(x => x.State == RemoteVolumeState.Verified);
+            long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100D), MidpointRounding.AwayFromZero));
+            if (samplesToTest > 0 && remoteVolumeCount > 0)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
@@ -277,7 +281,7 @@ namespace Duplicati.Library.Main.Operation
                 using(var testdb = new LocalTestDatabase(m_database))
                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
                     new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
-                        .DoRun(m_options.BackupTestSampleCount, testdb, backend);
+                        .DoRun(samplesToTest, testdb, backend);
             }
         }
 
@@ -376,7 +380,7 @@ namespace Duplicati.Library.Main.Operation
                 Utility.VerifyParameters(m_database, m_options);
 
                 var probe_path = m_database.GetFirstPath();
-                if (probe_path != null && Duplicati.Library.Utility.Utility.GuessDirSeparator(probe_path) != System.IO.Path.DirectorySeparatorChar.ToString())
+                if (probe_path != null && Util.GuessDirSeparator(probe_path) != Util.DirectorySeparatorString)
                     throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"), "CrossOsDatabaseReuseNotSupported");
 
                 if (m_database.PartiallyRecreated)
@@ -455,9 +459,6 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Rebuild any index files that are missing
                                 await Backup.RecreateMissingIndexFiles.Run(db, m_options, m_result.TaskReader);
-
-                                // This should be removed as the lookups are no longer used
-                                m_database.BuildLookupTable(m_options);
 
                                 // Prepare the operation by registering the filelist
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
