@@ -232,18 +232,6 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public Duplicati.Library.Interface.IRecreateDatabaseResults RecreateDatabase(string targetpath, Library.Utility.IFilter filter = null)
-        {
-            var t = new string[] { string.IsNullOrEmpty(targetpath) ? m_options.Dbpath : targetpath };
-
-            var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
-
-            return RunAction(new RecreateDatabaseResults(), ref t, ref filter, (result) => {
-                using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
-                    h.Run(t[0], filter, filelistfilter);
-            });
-        }
-
         public Duplicati.Library.Interface.IRecreateDatabaseResults UpdateDatabaseWithVersions(Library.Utility.IFilter filter = null)
         {
             var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version, singleTimeMatch: true);
