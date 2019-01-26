@@ -29,6 +29,9 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_insertremotelogCommand;
         private readonly System.Data.IDbCommand m_insertIndexBlockLink;
 
+        private readonly System.Data.IDbCommand m_findpathprefixCommand;
+        private readonly System.Data.IDbCommand m_insertpathprefixCommand;
+
         protected BasicResults m_result;
 
         public const long FOLDER_BLOCKSET_ID = -100;
@@ -107,6 +110,8 @@ namespace Duplicati.Library.Main.Database
             m_selectremotevolumeIdCommand = connection.CreateCommand();
             m_createremotevolumeCommand = connection.CreateCommand();
             m_insertIndexBlockLink = connection.CreateCommand();
+            m_findpathprefixCommand = connection.CreateCommand();
+            m_insertpathprefixCommand = connection.CreateCommand();
 
             m_insertlogCommand.CommandText = @"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (?, ?, ?, ?, ?)";
             m_insertlogCommand.AddParameters(5);
@@ -134,6 +139,12 @@ namespace Duplicati.Library.Main.Database
 
             m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
             m_insertIndexBlockLink.AddParameters(2);
+
+            m_findpathprefixCommand.CommandText = @"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" = ?";
+            m_findpathprefixCommand.AddParameter();
+
+            m_insertpathprefixCommand.CommandText = @"INSERT INTO ""PathPrefix"" (""Prefix"") VALUES (?); SELECT last_insert_rowid(); ";
+            m_insertpathprefixCommand.AddParameter();
         }
 
         internal void SetResult(BasicResults result)
@@ -419,7 +430,7 @@ namespace Duplicati.Library.Main.Database
                 bsIdsSubQuery = string.Format(@"SELECT ""ID"" FROM ""{0}"" ", blocksetidstable);
                 deletecmd.Parameters.Clear();
 
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN ({0}) OR ""MetadataID"" IN ({0})", bsIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""FileLookup"" WHERE ""BlocksetID"" IN ({0}) OR ""MetadataID"" IN ({0})", bsIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN ({0})", bsIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
@@ -800,7 +811,7 @@ ON
                     throw new Exception("Detected non-empty blocksets with no associated blocks!");
                 }
 
-                if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""ID"" FROM ""Blockset"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
+                if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""ID"" FROM ""Blockset"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
                     throw new Exception("Detected files associated with non-existing blocksets!");
 
                 if (verifyfilelists)
@@ -810,7 +821,7 @@ ON
                     {
                         var expandedCmd = string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS);
                         var expandedlist = cmd2.ExecuteScalarInt64(expandedCmd, 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, filesetid);
-                        //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+                        //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""FileLookup"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FileLookup"".""BlocksetID"" != ? AND ""FileLookup"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
                         var storedlist = cmd2.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?", 0, filesetid);
 
                         if (expandedlist != storedlist)
@@ -1167,6 +1178,8 @@ ORDER BY
                 {
                     using(var cmd = m_connection.CreateCommand())
                     {
+                        // TODO: Optimize this to not rely on the "File" view, and not instantiate the paths in full
+
                         cmd.Transaction = transaction;
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", Tablename));
                         using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
@@ -1412,5 +1425,71 @@ ORDER BY
                 );
             }
         }
+
+        /// <summary>
+        /// The current index into the path prefix buffer
+        /// </summary>
+        private int m_pathPrefixIndex = 0;
+        /// <summary>
+        /// The path prefix lookup list
+        /// </summary>
+        private readonly KeyValuePair<string, long>[] m_pathPrefixLookup = new KeyValuePair<string, long>[5];
+
+        /// <summary>
+        /// Gets the path prefix ID, optionally creating it in the process.
+        /// </summary>
+        /// <returns>The path prefix ID.</returns>
+        /// <param name="prefix">The path to get the prefix for.</param>
+        /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
+        public long GetOrCreatePathPrefix(string prefix, System.Data.IDbTransaction transaction)
+        {
+            // Ring-buffer style lookup
+            for (var i = 0; i < m_pathPrefixLookup.Length; i++)
+            {
+                var ix = (i + m_pathPrefixIndex) % m_pathPrefixLookup.Length;
+                if (string.Equals(m_pathPrefixLookup[ix].Key, prefix, StringComparison.Ordinal))
+                    return m_pathPrefixLookup[ix].Value;
+            }
+
+            m_findpathprefixCommand.Transaction = transaction;
+            m_findpathprefixCommand.SetParameterValue(0, prefix);
+            var id = m_findpathprefixCommand.ExecuteScalarInt64();
+            if (id < 0)
+            {
+                m_insertpathprefixCommand.Transaction = transaction;
+                m_insertpathprefixCommand.SetParameterValue(0, prefix);
+                id = m_insertpathprefixCommand.ExecuteScalarInt64();
+            }
+
+            m_pathPrefixIndex = (m_pathPrefixIndex + 1) % m_pathPrefixLookup.Length;
+            m_pathPrefixLookup[m_pathPrefixIndex] = new KeyValuePair<string, long>(prefix, id);
+
+            return id;
+        }
+
+        /// <summary>
+        /// The path separators on this system
+        /// </summary>
+        private static readonly char[] _pathseparators = new char[] {
+            System.IO.Path.DirectorySeparatorChar,
+            System.IO.Path.AltDirectorySeparatorChar,
+        };
+
+        /// <summary>
+        /// Helper method that splits a path on the last path separator
+        /// </summary>
+        /// <returns>The prefix and name.</returns>
+        /// <param name="path">The path to split.</param>
+        public static KeyValuePair<string, string> SplitIntoPrefixAndName(string path)
+        {
+            if (path == null || path.Length == 0)
+                throw new ArgumentException($"Invalid path: {path}", nameof(path));
+
+            int nLast = path.TrimEnd(_pathseparators).LastIndexOfAny(_pathseparators);
+            if (nLast >= 0)
+                return new KeyValuePair<string, string>(path.Substring(0, nLast + 1), path.Substring(nLast + 1));
+
+            throw new ArgumentException($"Invalid path: {path}", nameof(path));
+        }   
     }
 }
