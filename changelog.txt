@@ -1,3 +1,9 @@
+2019-01-29 - 2.0.4.13_canary_2019-01-29
+==========
+* Added tests and improved code quality, thanks @warwickmm
+* Changed the internal storage of paths to use a prefix method. This should reduce the size of the database significantly and enable much faster database queries later on
+* Increased timeouts for reading the output from the commandline process to allow long running background jobs
+
 2019-01-16 - 2.0.4.12_canary_2019-01-16
 ==========
 * Many source code quality improvements, thanks @warwickmm
