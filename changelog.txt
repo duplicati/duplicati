@@ -1,3 +1,8 @@
+2019-01-30 - 2.0.4.14_canary_2019-01-30
+==========
+* Fixed an issue with upgrading the database from a previous version
+* If you used v2.0.4.13, your database is likely broken, see the forum for details: https://forum.duplicati.com/t/release-2-0-4-13-canary-2019-01-29/
+
 2019-01-29 - 2.0.4.13_canary_2019-01-29
 ==========
 * Added tests and improved code quality, thanks @warwickmm
