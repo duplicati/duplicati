@@ -38,16 +38,17 @@ SELECT DISTINCT
 FROM "File";
 
 /* Build the path lookup table */
-INSERT INTO "FileLookup" ("Path", "PrefixID", "BlocksetID", "MetadataID")
+INSERT INTO "FileLookup" ("ID", "Path", "PrefixID", "BlocksetID", "MetadataID")
 
 SELECT 
+  "A"."ID",
   SUBSTR("Path", LENGTH("ParentFolder") + 1) AS "Path", 
-  "ID" AS "PrefixID", 
+  "B"."ID" AS "PrefixID", 
   "BlocksetID", 
   "MetadataID" 
 FROM
 
-(SELECT "Path", "BlocksetID", "MetadataID",
+(SELECT "ID", "Path", "BlocksetID", "MetadataID",
     CASE SUBSTR("Path", LENGTH("Path")) WHEN  '/' THEN
         rtrim(SUBSTR("Path", 1, LENGTH("Path")-1), replace(replace(SUBSTR("Path", 1, LENGTH("Path")-1), "\", "/"), '/', ''))
     ELSE
