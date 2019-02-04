@@ -311,7 +311,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 // Already running
             }
             else if (Program.WorkThread.CurrentTasks.Any(x => { 
-                var bn = x == null ? null : x.Backup;
+                var bn = x?.Backup;
                 return bn == null || bn.ID == backup.ID;
             }))
             {
