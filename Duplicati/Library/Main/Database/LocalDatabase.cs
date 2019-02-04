@@ -1482,14 +1482,14 @@ ORDER BY
         /// <param name="path">The path to split.</param>
         public static KeyValuePair<string, string> SplitIntoPrefixAndName(string path)
         {
-            if (path == null || path.Length == 0)
+            if (string.IsNullOrEmpty(path))
                 throw new ArgumentException($"Invalid path: {path}", nameof(path));
 
             int nLast = path.TrimEnd(_pathseparators).LastIndexOfAny(_pathseparators);
             if (nLast >= 0)
                 return new KeyValuePair<string, string>(path.Substring(0, nLast + 1), path.Substring(nLast + 1));
 
-            throw new ArgumentException($"Invalid path: {path}", nameof(path));
+            return new KeyValuePair<string, string>(string.Empty, path);
         }   
     }
 }
