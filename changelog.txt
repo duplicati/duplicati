@@ -1,3 +1,8 @@
+2019-02-06 - 2.0.4.15_canary_2019-02-06
+==========
+* Fixed an issue with backup of a Windows drive (without a path)
+* Clarified the B2 user interface, thanks @Pectojin
+
 2019-01-30 - 2.0.4.14_canary_2019-01-30
 ==========
 * Fixed an issue with upgrading the database from a previous version
