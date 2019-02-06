@@ -29,7 +29,7 @@ namespace Duplicati.Server.Database
 {
     public class ServerSettings
     {
-        private class CONST
+        private static class CONST
         {
             public const string STARTUP_DELAY = "startup-delay";
             public const string DOWNLOAD_SPEED_LIMIT = "max-download-speed";
@@ -58,7 +58,7 @@ namespace Duplicati.Server.Database
 		}
 
         private readonly Dictionary<string, string> m_values;
-        private readonly Database.Connection m_connection;
+        private readonly Connection m_connection;
         private Library.AutoUpdater.UpdateInfo m_latestUpdate;
 
         internal ServerSettings(Connection con)
@@ -318,7 +318,7 @@ namespace Duplicati.Server.Database
             }
             else
             {
-                var prng = System.Security.Cryptography.RNGCryptoServiceProvider.Create();
+                var prng = RandomNumberGenerator.Create();
                 var buf = new byte[32];
                 prng.GetBytes(buf);
                 var salt = Convert.ToBase64String(buf);
