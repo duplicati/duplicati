@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
@@ -10,6 +9,9 @@ namespace Duplicati.Server
 {
     public class Program
     {
+
+        private static readonly List<string> alternativeHelpStrings = new List<string> { "help", "/help", "usage", "/usage", "--help" };
+
         /// <summary>
         /// The log tag for messages from this class
         /// </summary>
@@ -195,25 +197,15 @@ namespace Duplicati.Server
             var commandlineOptions = argtuple.Item1;
             var filter = argtuple.Item2;
 
-            foreach(var s in _args)
-                if (
-                    s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
-                    s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
-                    s.Equals("usage", StringComparison.OrdinalIgnoreCase) ||
-                    s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
-                    commandlineOptions["help"] = "";
-
+            if (_args.Select(s => s.ToLower()).Intersect(alternativeHelpStrings).Any())
+            {
+                return ShowHelp(writeConsole);
+            }
 
             if (commandlineOptions.ContainsKey("tempdir") && !string.IsNullOrEmpty(commandlineOptions["tempdir"]))
                 Library.Utility.SystemContextSettings.DefaultTempPath = commandlineOptions["tempdir"];
             
             Library.Utility.SystemContextSettings.StartSession();
-
-            //If the commandline issues --help, just stop here
-            if (commandlineOptions.ContainsKey("help"))
-            {
-                return ShowHelp(writeConsole);
-            }
 
             // try and parse all parameter file aliases
             foreach (string parameterOption in new[] { "parameters-file", "parameters-file", "parameterfile" })
