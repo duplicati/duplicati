@@ -209,38 +209,25 @@ namespace Duplicati.Server
             
             Library.Utility.SystemContextSettings.StartSession();
 
-            // Check if a parameters-file was provided. Skip if help was already specified
-            if (!commandlineOptions.ContainsKey("help"))
-            {
-                // try and parse all parameter file aliases
-                foreach (string parameterOption in new[] { "parameters-file", "parameters-file", "parameterfile" })
-                {
-                    if (commandlineOptions.ContainsKey(parameterOption) && !string.IsNullOrEmpty(commandlineOptions[parameterOption]))
-                    {
-                        string filename = commandlineOptions[parameterOption];
-                        commandlineOptions.Remove(parameterOption);
-                        if (!ReadOptionsFromFile(filename, ref filter, args, commandlineOptions))
-                            return 100;
-                        break;
-                    }
-                }
-            }
-
             //If the commandline issues --help, just stop here
             if (commandlineOptions.ContainsKey("help"))
             {
-                if (writeConsole)
-                {
-                    Console.WriteLine(Strings.Program.HelpDisplayDialog);
-
-                    foreach(Library.Interface.ICommandLineArgument arg in SupportedCommands)
-                        Console.WriteLine(Strings.Program.HelpDisplayFormat(arg.Name, arg.LongDescription));
-
-                    return 0;
-                }
-
-                throw new Exception("Server invoked with --help");
+                return ShowHelp(writeConsole);
             }
+
+            // try and parse all parameter file aliases
+            foreach (string parameterOption in new[] { "parameters-file", "parameters-file", "parameterfile" })
+            {
+                if (commandlineOptions.ContainsKey(parameterOption) && !string.IsNullOrEmpty(commandlineOptions[parameterOption]))
+                {
+                    string filename = commandlineOptions[parameterOption];
+                    commandlineOptions.Remove(parameterOption);
+                    if (!ReadOptionsFromFile(filename, ref filter, args, commandlineOptions))
+                        return 100;
+                    break;
+                }
+            }
+
 
 #if DEBUG
             //Log various information in the logfile
@@ -492,6 +479,21 @@ namespace Duplicati.Server
                 return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
 
             return 0;
+        }
+
+        private static int ShowHelp(bool writeConsole)
+        {
+            if (writeConsole)
+            {
+                Console.WriteLine(Strings.Program.HelpDisplayDialog);
+
+                foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
+                    Console.WriteLine(Strings.Program.HelpDisplayFormat(arg.Name, arg.LongDescription));
+
+                return 0;
+            }
+
+            throw new Exception("Server invoked with --help");
         }
 
         public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions)
