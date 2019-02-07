@@ -402,8 +402,10 @@ namespace Duplicati.Server
                     }
                 };
 
-                Action<long, Exception> registerTaskResult = (id, ex) => {
-                    lock(Program.MainLock) {
+                void registerTaskResult(long id, Exception ex)
+                {
+                    lock (Program.MainLock)
+                    {
 
                         // If the new results says it crashed, we store that instead of success
                         if (Program.TaskResultCache.Count > 0 && Program.TaskResultCache.Last().Key == id)
@@ -415,10 +417,10 @@ namespace Duplicati.Server
                         }
 
                         Program.TaskResultCache.Add(new KeyValuePair<long, Exception>(id, ex));
-                        while(Program.TaskResultCache.Count > MAX_TASK_RESULT_CACHE_SIZE)
+                        while (Program.TaskResultCache.Count > MAX_TASK_RESULT_CACHE_SIZE)
                             Program.TaskResultCache.RemoveAt(0);
                     }
-                };
+                }
 
                 Program.WorkThread.CompletedWork += (worker, task) => { registerTaskResult(task.TaskID, null); };
                 Program.WorkThread.OnError += (worker, task, exception) => { registerTaskResult(task.TaskID, exception); };
