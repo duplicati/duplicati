@@ -12,6 +12,8 @@ namespace Duplicati.Server
 
         private static readonly List<string> alternativeHelpStrings = new List<string> { "help", "/help", "usage", "/usage", "--help" };
 
+        private static readonly List<string> parameterFileOptionStrings = new List<string> { "parameters-file", "parameters-file", "parameterfile" };
+
         /// <summary>
         /// The log tag for messages from this class
         /// </summary>
@@ -203,23 +205,20 @@ namespace Duplicati.Server
             }
 
             if (commandlineOptions.ContainsKey("tempdir") && !string.IsNullOrEmpty(commandlineOptions["tempdir"]))
+            {
                 Library.Utility.SystemContextSettings.DefaultTempPath = commandlineOptions["tempdir"];
+            }
             
             Library.Utility.SystemContextSettings.StartSession();
 
-            // try and parse all parameter file aliases
-            foreach (string parameterOption in new[] { "parameters-file", "parameters-file", "parameterfile" })
-            {
-                if (commandlineOptions.ContainsKey(parameterOption) && !string.IsNullOrEmpty(commandlineOptions[parameterOption]))
-                {
-                    string filename = commandlineOptions[parameterOption];
-                    commandlineOptions.Remove(parameterOption);
-                    if (!ReadOptionsFromFile(filename, ref filter, args, commandlineOptions))
-                        return 100;
-                    break;
-                }
-            }
+            var parameterFileOption = commandlineOptions.Keys.Select(s => s.ToLower()).Intersect(parameterFileOptionStrings).FirstOrDefault();
 
+            if (parameterFileOption != null && !string.IsNullOrEmpty(commandlineOptions[parameterFileOption]))
+            {
+                commandlineOptions.Remove(parameterFileOption);
+                if (!ReadOptionsFromFile(commandlineOptions[parameterFileOption], ref filter, args, commandlineOptions))
+                    return 100;
+            }
 
 #if DEBUG
             //Log various information in the logfile
