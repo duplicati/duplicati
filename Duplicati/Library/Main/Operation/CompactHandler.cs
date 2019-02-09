@@ -184,12 +184,13 @@ namespace Duplicati.Library.Main.Operation
                                                     else
                                                         Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
 
-
+                                                    newvol.Dispose();
                                                     newvol = new BlockVolumeWriter(m_options);
                                                     newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
 
                                                     if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
                                                     {
+                                                        newvolindex.Dispose();
                                                         newvolindex = new IndexVolumeWriter(m_options);
                                                         newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
                                                         db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
@@ -214,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
                                     deleteableVolumes.Add(entry);
                                 }
                             }
-                            
+
                             if (blocksInVolume > 0)
                             {
                                 uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));

@@ -101,6 +101,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
                                 await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, indexvolume));
+                                blockvolume.Dispose();
                                 blockvolume = null;
                                 indexvolume = null;
                             }
