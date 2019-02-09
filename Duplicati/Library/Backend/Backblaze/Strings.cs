@@ -17,6 +17,8 @@ namespace Duplicati.Library.Backend.Strings {
         public static string B2createbuckettypeDescriptionShort { get { return LC.L(@"The bucket type used when creating a bucket"); } }
 		public static string B2pagesizeDescriptionLong { get { return LC.L(@"Use this option to set the page size for listing contents of B2 buckets. A lower number means less data, but can increase the number of Class C transaction on B2. Suggested values are between 100 and 1000"); } }
 		public static string B2pagesizeDescriptionShort { get { return LC.L(@"The size of file-listing pages"); } }
+        public static string B2downloadurlDescriptionLong { get { return LC.L(@"Change this if you want to use your custom domain to download files, and uploading will not be affected. The default download url is ""https://f00X.backblazeb2.com"""); } }
+        public static string B2downloadurlDescriptionShort { get { return LC.L(@"The base URL to use for downloading files"); } }
         public static string InvalidPageSizeError(string argname, string value) { return LC.L(@"The setting ""{0}"" is invalid for ""{1}"", it must be an integer larger than zero", value, argname); }
 	}
 }
