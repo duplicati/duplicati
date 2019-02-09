@@ -199,7 +199,7 @@ namespace Duplicati.Server
             var commandlineOptions = argtuple.Item1;
             var filter = argtuple.Item2;
 
-            if (_args.Select(s => s.ToLower()).Intersect(alternativeHelpStrings).Any())
+            if (_args.Select(s => s.ToLower()).Intersect(alternativeHelpStrings.ConvertAll(x => x.ToLower())).Any())
             {
                 return ShowHelp(writeConsole);
             }
@@ -208,10 +208,11 @@ namespace Duplicati.Server
             {
                 Library.Utility.SystemContextSettings.DefaultTempPath = commandlineOptions["tempdir"];
             }
-            
+
             Library.Utility.SystemContextSettings.StartSession();
 
-            var parameterFileOption = commandlineOptions.Keys.Select(s => s.ToLower()).Intersect(parameterFileOptionStrings).FirstOrDefault();
+            var parameterFileOption = commandlineOptions.Keys.Select(s => s.ToLower())
+                                    .Intersect(parameterFileOptionStrings.ConvertAll(x => x.ToLower())).FirstOrDefault();
 
             if (parameterFileOption != null && !string.IsNullOrEmpty(commandlineOptions[parameterFileOption]))
             {
@@ -220,35 +221,10 @@ namespace Duplicati.Server
                     return 100;
             }
 
-#if DEBUG
-            //Log various information in the logfile
-            if (!commandlineOptions.ContainsKey("log-file"))
-            {
-                commandlineOptions["log-file"] = System.IO.Path.Combine(StartupPath, "Duplicati.debug.log");
-                commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
-            }
-#endif
+            ConfigureLogging(commandlineOptions);
 
             try
             {
-                // Setup the log redirect
-                Library.Logging.Log.StartScope(Program.LogHandler, null);
-
-                if (commandlineOptions.ContainsKey("log-file"))
-                {
-#if DEBUG
-                    // Only delete the --log-file when in DEBUG mode. Otherwise, don't delete and just append logs.
-                    if (System.IO.File.Exists(commandlineOptions["log-file"]))
-                        System.IO.File.Delete(commandlineOptions["log-file"]);
-#endif
-
-                    var loglevel = Duplicati.Library.Logging.LogMessageType.Error;
-
-                    if (commandlineOptions.ContainsKey("log-level"))
-                        Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(commandlineOptions["log-level"], true, out loglevel);
-
-                    Program.LogHandler.SetServerFile(commandlineOptions["log-file"], loglevel);
-                }
 
                 DataConnection = GetDatabaseConnection(commandlineOptions);
 
@@ -303,7 +279,8 @@ namespace Duplicati.Server
                 UpdatePoller = new UpdatePollThread();
                 DateTime lastPurge = new DateTime(0);
 
-                System.Threading.TimerCallback purgeTempFilesCallback = (x) => {
+                System.Threading.TimerCallback purgeTempFilesCallback = (x) =>
+                {
                     try
                     {
                         if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
@@ -311,7 +288,7 @@ namespace Duplicati.Server
 
                         lastPurge = DateTime.Now;
 
-                        foreach(var e in Program.DataConnection.GetTempFiles().Where((f) => f.Expires < DateTime.Now))
+                        foreach (var e in Program.DataConnection.GetTempFiles().Where((f) => f.Expires < DateTime.Now))
                         {
                             try
                             {
@@ -327,7 +304,8 @@ namespace Duplicati.Server
                         }
 
 
-                        Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) => {
+                        Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
+                        {
                             Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", path), ex);
                         });
 
@@ -470,6 +448,36 @@ namespace Duplicati.Server
                 return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
 
             return 0;
+        }
+
+        private static void ConfigureLogging(Dictionary<string, string> commandlineOptions)
+        {
+
+#if DEBUG
+            //Log various information in the logfile
+            if (!commandlineOptions.ContainsKey("log-file"))
+            {
+                commandlineOptions["log-file"] = System.IO.Path.Combine(StartupPath, "Duplicati.debug.log");
+                commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
+                if (System.IO.File.Exists(commandlineOptions["log-file"]))
+                {
+                    System.IO.File.Delete(commandlineOptions["log-file"]);
+                }
+            }
+#endif
+
+            // Setup the log redirect
+            Library.Logging.Log.StartScope(LogHandler, null);
+
+            if (commandlineOptions.ContainsKey("log-file"))
+            {
+                var loglevel = Library.Logging.LogMessageType.Error;
+
+                if (commandlineOptions.ContainsKey("log-level"))
+                    Enum.TryParse(commandlineOptions["log-level"], true, out loglevel);
+
+                LogHandler.SetServerFile(commandlineOptions["log-file"], loglevel);
+            }
         }
 
         private static int ShowHelp(bool writeConsole)
