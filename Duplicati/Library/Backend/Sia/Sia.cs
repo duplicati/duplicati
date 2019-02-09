@@ -20,7 +20,7 @@ namespace Duplicati.Library.Backend.Sia
         private readonly int m_apiport;
         private readonly string m_targetpath;
         private readonly float m_redundancy;
-        private readonly System.Net.NetworkCredential m_user;
+        private readonly string m_authorization;
 
         public Sia() {
 
@@ -55,11 +55,9 @@ namespace Duplicati.Library.Backend.Sia
             if (m_targetpath.Length == 0)
                 m_targetpath = "backup";
 
-            m_user = new System.Net.NetworkCredential();
-            if (options.ContainsKey(SIA_PASSWORD))
-            {             
-                m_user.Password = options[SIA_PASSWORD];
-            }
+            m_authorization = options.ContainsKey(SIA_PASSWORD) && !string.IsNullOrEmpty(options[SIA_PASSWORD])
+                ? "Basic " + System.Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(":" + options[SIA_PASSWORD]))
+                : null;
         }
 
         private System.Net.HttpWebRequest CreateRequest(string endpoint)
@@ -67,10 +65,10 @@ namespace Duplicati.Library.Backend.Sia
             string baseurl = "http://" + m_apihost + ":" + m_apiport;
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(baseurl + endpoint);
 
-            if (!string.IsNullOrEmpty(m_user.Password))
+            if (m_authorization != null)
             {
-                req.Credentials = m_user;
-                req.PreAuthenticate = true;
+                // Manually set Authorization header, since System.Net.NetworkCredential ignores credentials with empty usernames
+                req.Headers.Add("Authorization", m_authorization);
             }
 
             req.KeepAlive = false;
