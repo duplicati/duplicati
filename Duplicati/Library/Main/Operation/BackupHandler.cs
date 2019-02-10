@@ -395,12 +395,12 @@ namespace Duplicati.Library.Main.Operation
                 m_sourceFilter = new Library.Utility.FilterExpression(sources, true);
 
                 Task parallelScanner = null;
-                Task uploader = null;
+                Task uploaderTask = null;
                 try
                 {
                     // Setup runners and instances here
                     using(var db = new Backup.BackupDatabase(m_database, m_options))
-                    using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
+                    using(var backendManager = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     using(var stats = new Backup.BackupStatsCollector(m_result))
                     using(var bk = new Common.BackendHandler(m_options, m_backendurl, db, stats, m_result.TaskReader))
@@ -409,7 +409,9 @@ namespace Duplicati.Library.Main.Operation
                     {
                         long filesetid;
                         var counterToken = new CancellationTokenSource();
-                        using(var snapshot = GetSnapshot(sources, m_options))
+                        var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+                        var uploader = new Backup.BackendUploader(bk, backend, m_options, db, m_result, m_result.TaskReader, stats);
+                        using (var snapshot = GetSnapshot(sources, m_options))
                         {
                             try
                             {
@@ -428,7 +430,7 @@ namespace Duplicati.Library.Main.Operation
                                 await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
 
                                 // Start the uploader process
-                                uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result, m_result.TaskReader, stats);
+                                uploaderTask = uploader.Run();
 
                                 // If we have an interrupted backup, grab the 
                                 string lasttempfilelist = null;
@@ -445,7 +447,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 // TODO: Rewrite to using the uploader process, or the BackendHandler interface
                                 // Do a remote verification, unless disabled
-                                PreBackupVerify(backend, lasttempfilelist);
+                                PreBackupVerify(backendManager, lasttempfilelist);
 
                                 // If the previous backup was interrupted, send a synthetic list
                                 await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader, lasttempfilelist, lasttempfileid);
@@ -497,7 +499,7 @@ namespace Duplicati.Library.Main.Operation
 
                         // Wait for upload completion
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-                        var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploader).ConfigureAwait(false);
+                        var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploaderTask).ConfigureAwait(false);
 
                         // Make sure we have the database up-to-date
                         await db.CommitTransactionAsync("CommitAfterUpload", false);
@@ -506,12 +508,12 @@ namespace Duplicati.Library.Main.Operation
                         m_transaction = m_database.BeginTransaction();
     		                                        
                         if (await m_result.TaskReader.ProgressAsync)
-                            CompactIfRequired(backend, lastVolumeSize);
+                            CompactIfRequired(backendManager, lastVolumeSize);
 
                         if (m_options.UploadVerificationFile && await m_result.TaskReader.ProgressAsync)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
-                            FilelistProcessor.UploadVerificationFile(backend.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
+                            FilelistProcessor.UploadVerificationFile(backendManager.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
                         }
 
                         if (m_options.Dryrun)
@@ -547,7 +549,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 catch (Exception ex)
                 {
-                    var aex = BuildException(ex, uploader, parallelScanner);
+                    var aex = BuildException(ex, uploaderTask, parallelScanner);
                     Logging.Log.WriteErrorMessage(LOGTAG, "FatalError", ex, "Fatal error");
                     if (aex == ex)
                         throw;
