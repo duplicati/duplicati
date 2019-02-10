@@ -41,7 +41,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The single instance
         /// </summary>
-        public static SingleInstance Instance = null;
+        public static SingleInstance ApplicationInstance = null;
 
         /// <summary>
         /// This is the only access to the database
@@ -234,7 +234,7 @@ namespace Duplicati.Server
                 try
                 {
                     //This will also create DATAFOLDER if it does not exist
-                    Instance = new SingleInstance(DataFolder);
+                    ApplicationInstance = new SingleInstance(DataFolder);
                 }
                 catch (Exception ex)
                 {
@@ -247,7 +247,7 @@ namespace Duplicati.Server
                     throw new Exception(Strings.Program.StartupFailure(ex));
                 }
 
-                if (!Instance.IsFirstInstance)
+                if (!ApplicationInstance.IsFirstInstance)
                 {
                     if (writeConsole)
                     {
@@ -273,7 +273,7 @@ namespace Duplicati.Server
 
                 Duplicati.Library.AutoUpdater.UpdaterManager.OnError += (Exception obj) =>
                 {
-                    Program.DataConnection.LogError(null, "Error in updater", obj);
+                    DataConnection.LogError(null, "Error in updater", obj);
                 };
 
                 UpdatePoller = new UpdatePollThread();
@@ -288,7 +288,7 @@ namespace Duplicati.Server
 
                         lastPurge = DateTime.Now;
 
-                        foreach (var e in Program.DataConnection.GetTempFiles().Where((f) => f.Expires < DateTime.Now))
+                        foreach (var e in DataConnection.GetTempFiles().Where((f) => f.Expires < DateTime.Now))
                         {
                             try
                             {
@@ -297,27 +297,28 @@ namespace Duplicati.Server
                             }
                             catch (Exception ex)
                             {
-                                Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", e.Path), ex);
+                                DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", e.Path), ex);
                             }
 
-                            Program.DataConnection.DeleteTempFile(e.ID);
+                            DataConnection.DeleteTempFile(e.ID);
                         }
 
 
-                        Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
+                        Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
                         {
-                            Program.DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", path), ex);
+                            DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", path), ex);
                         });
 
-                        string pts;
-                        if (!commandlineOptions.TryGetValue("log-retention", out pts))
+                        if (!commandlineOptions.TryGetValue("log-retention", out string pts))
+                        {
                             pts = DEFAULT_LOG_RETENTION;
+                        }
 
-                        Program.DataConnection.PurgeLogData(Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true));
+                        DataConnection.PurgeLogData(Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true));
                     }
                     catch (Exception ex)
                     {
-                        Program.DataConnection.LogError(null, "Failed during temp file cleanup", ex);
+                        DataConnection.LogError(null, "Failed during temp file cleanup", ex);
                     }
                 };
 
@@ -429,8 +430,8 @@ namespace Duplicati.Server
                     Scheduler.Terminate(true);
                 if (WorkThread != null)
                     WorkThread.Terminate(true);
-                if (Instance != null)
-                    Instance.Dispose();
+                if (ApplicationInstance != null)
+                    ApplicationInstance.Dispose();
                 if (PurgeTempFilesTimer != null)
                     PurgeTempFilesTimer.Dispose();
 
