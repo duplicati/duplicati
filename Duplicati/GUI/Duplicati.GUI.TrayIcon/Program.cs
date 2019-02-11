@@ -140,6 +140,7 @@ namespace Duplicati.GUI.TrayIcon
             string password = null;
             var saltedpassword = false;
             var serverURL = new Uri(DEFAULT_HOSTURL);
+            var disableTrayIconLogin = false;
 
             if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
             {
@@ -172,29 +173,28 @@ namespace Duplicati.GUI.TrayIcon
                     Scheme = scheme
                 }).Uri;
             }
-            
-            if (Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) && Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
+            else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
+            {
                 databaseConnection = Server.Program.GetDatabaseConnection(options);
 
-            var disableTrayIconLogin = false;
+                if (databaseConnection != null)
+                {
+                    disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
+                    password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
+                    saltedpassword = false;
 
-            if (databaseConnection != null)
-            {
-                disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
-                password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
-                saltedpassword = false;
+                    var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
+                    var scheme = "http";
 
-                var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
-                var scheme = "http";
+                    if (cert != null && cert.HasPrivateKey)
+                        scheme = "https";
 
-                if (cert != null && cert.HasPrivateKey)
-                    scheme = "https";
-
-                serverURL = (new UriBuilder(serverURL)
+                    serverURL = (new UriBuilder(serverURL)
                     {
                         Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
                         Scheme = scheme
                     }).Uri;
+                }
             }
 
             string pwd;
@@ -224,8 +224,8 @@ namespace Duplicati.GUI.TrayIcon
                         {
                             using (var tk = RunTrayIcon(toolkit))
                             {
-                                if (hosted != null && Server.Program.Instance != null)
-                                    Server.Program.Instance.SecondInstanceDetected +=
+                                if (hosted != null && Server.Program.ApplicationInstance != null)
+                                    Server.Program.ApplicationInstance.SecondInstanceDetected +=
                                         new Server.SingleInstance.SecondInstanceDelegate(
                                             x => { tk.ShowUrlInWindow(serverURL.ToString()); });
 
