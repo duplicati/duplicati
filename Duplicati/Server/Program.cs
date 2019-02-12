@@ -191,7 +191,7 @@ namespace Duplicati.Server
             }
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
-            var writeConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
+            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
 
             //Find commandline options here for handling special startup cases
             var args = new List<string>(_args);
@@ -201,7 +201,7 @@ namespace Duplicati.Server
 
             if (_args.Select(s => s.ToLower()).Intersect(alternativeHelpStrings.ConvertAll(x => x.ToLower())).Any())
             {
-                return ShowHelp(writeConsole);
+                return ShowHelp(writeToConsole);
             }
 
             if (commandlineOptions.ContainsKey("tempdir") && !string.IsNullOrEmpty(commandlineOptions["tempdir"]))
@@ -231,32 +231,7 @@ namespace Duplicati.Server
                 if (!DataConnection.ApplicationSettings.FixedInvalidBackupId)
                     DataConnection.FixInvalidBackupId();
 
-                try
-                {
-                    //This will also create DATAFOLDER if it does not exist
-                    ApplicationInstance = new SingleInstance(DataFolder);
-                }
-                catch (Exception ex)
-                {
-                    if (writeConsole)
-                    {
-                        Console.WriteLine(Strings.Program.StartupFailure(ex));
-                        return 200;
-                    }
-
-                    throw new Exception(Strings.Program.StartupFailure(ex));
-                }
-
-                if (!ApplicationInstance.IsFirstInstance)
-                {
-                    if (writeConsole)
-                    {
-                        Console.WriteLine(Strings.Program.AnotherInstanceDetected);
-                        return 200;
-                    }
-
-                    throw new SingleInstance.MultipleInstanceException(Strings.Program.AnotherInstanceDetected);
-                }
+                CreateApplicationInstance(writeToConsole);
 
                 StartOrStopUsageReporter();
 
@@ -401,7 +376,7 @@ namespace Duplicati.Server
             catch (SingleInstance.MultipleInstanceException mex)
             {
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
-                if (writeConsole)
+                if (writeToConsole)
                 {
                     Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                     return 100;
@@ -412,7 +387,7 @@ namespace Duplicati.Server
             catch (Exception ex)
             {
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(ex.ToString()));
-                if (writeConsole)
+                if (writeToConsole)
                 {
                     Console.WriteLine(Strings.Program.SeriousError(ex.ToString()));
                     return 100;
@@ -449,6 +424,37 @@ namespace Duplicati.Server
                 return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
 
             return 0;
+        }
+
+
+        private static void CreateApplicationInstance(bool writeConsole)
+        {
+            try
+            {
+                //This will also create DATAFOLDER if it does not exist
+                ApplicationInstance = new SingleInstance(DataFolder);
+            }
+            catch (Exception ex)
+            {
+                if (writeConsole)
+                {
+                    Console.WriteLine(Strings.Program.StartupFailure(ex));
+                    Environment.Exit(200);
+                }
+
+                throw new Exception(Strings.Program.StartupFailure(ex));
+            }
+
+            if (!ApplicationInstance.IsFirstInstance)
+            {
+                if (writeConsole)
+                {
+                    Console.WriteLine(Strings.Program.AnotherInstanceDetected);
+                    Environment.Exit(200);
+                }
+
+                throw new SingleInstance.MultipleInstanceException(Strings.Program.AnotherInstanceDetected);
+            }
         }
 
         private static void ConfigureLogging(Dictionary<string, string> commandlineOptions)
