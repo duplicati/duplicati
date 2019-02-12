@@ -76,7 +76,7 @@ namespace Duplicati.GUI.TrayIcon
 
             if (Platform.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
                 Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
-            
+
             foreach (string s in args)
                 if (
                     s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
@@ -94,7 +94,7 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
                     if (arg.Name == TOOLKIT_OPTION)
-                        Console.WriteLine("    Supported toolkits: {0}{1}", string.Join(", ", arg.ValidValues), Environment.NewLine);                    
+                        Console.WriteLine("    Supported toolkits: {0}{1}", string.Join(", ", arg.ValidValues), Environment.NewLine);
                 }
 
                 Console.WriteLine("Additionally, these server options are also supported:");
@@ -107,7 +107,7 @@ namespace Duplicati.GUI.TrayIcon
             }
 
             options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
-            
+
             string toolkit;
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
             {
@@ -117,7 +117,7 @@ namespace Duplicati.GUI.TrayIcon
 #endif
                 toolkit = GetDefaultToolKit();
             }
-            else 
+            else
             {
                 if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_WINDOWS_FORMS;
@@ -209,7 +209,12 @@ namespace Duplicati.GUI.TrayIcon
 
             if (options.TryGetValue(HOSTURL_OPTION, out url))
                 serverURL = new Uri(url);
-            
+
+            StartTray(_args, options, toolkit, hosted, openui, password, saltedpassword, serverURL, disableTrayIconLogin);
+        }
+
+        private static void StartTray(string[] _args, Dictionary<string, string> options, string toolkit, HostedInstanceKeeper hosted, bool openui, string password, bool saltedpassword, Uri serverURL, bool disableTrayIconLogin)
+        {
             using (hosted)
             {
                 var reSpawn = 0;
