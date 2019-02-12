@@ -34,6 +34,11 @@ namespace Duplicati.GUI.TrayIcon
         private const string DEFAULT_HOSTURL = "http://localhost:8200";
         
         private static string _browser_command = null;
+        private static bool disableTrayIconLogin = false;
+        private static bool openui = false;
+        private static Uri serverURL = new Uri(DEFAULT_HOSTURL);
+
+
         public static string BrowserCommand { get { return _browser_command; } }
         public static Server.Database.Connection databaseConnection = null;
 
@@ -136,11 +141,9 @@ namespace Duplicati.GUI.TrayIcon
             }
 
             HostedInstanceKeeper hosted = null;
-            var openui = false;
+
             string password = null;
             var saltedpassword = false;
-            var serverURL = new Uri(DEFAULT_HOSTURL);
-            var disableTrayIconLogin = false;
 
             if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
             {
@@ -210,10 +213,10 @@ namespace Duplicati.GUI.TrayIcon
             if (options.TryGetValue(HOSTURL_OPTION, out url))
                 serverURL = new Uri(url);
 
-            StartTray(_args, options, toolkit, hosted, openui, password, saltedpassword, serverURL, disableTrayIconLogin);
+            StartTray(_args, options, toolkit, hosted, password, saltedpassword);
         }
 
-        private static void StartTray(string[] _args, Dictionary<string, string> options, string toolkit, HostedInstanceKeeper hosted, bool openui, string password, bool saltedpassword, Uri serverURL, bool disableTrayIconLogin)
+        private static void StartTray(string[] _args, Dictionary<string, string> options, string toolkit, HostedInstanceKeeper hosted, string password, bool saltedpassword)
         {
             using (hosted)
             {
