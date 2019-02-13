@@ -338,7 +338,6 @@ namespace Duplicati.Server.Database
             }
 
             SaveSettings();
-            GenerateWebserverPasswordTrayIcon();
         }
 
         public void SetAllowedHostnames(string allowedHostnames)
