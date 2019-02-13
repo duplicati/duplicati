@@ -235,21 +235,11 @@ namespace Duplicati.Server
 
                 StartOrStopUsageReporter();
 
-                if (commandlineOptions.ContainsKey("webservice-password"))
-                {
-                    DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
-                }
-
-                DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
-
-                if (commandlineOptions.ContainsKey("webservice-allowed-hostnames"))
-                {
-                    DataConnection.ApplicationSettings.SetAllowedHostnames(commandlineOptions["webservice-allowed-hostnames"]);
-                }
+                AdjustApplicationSettings(commandlineOptions);
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
 
-                Duplicati.Library.AutoUpdater.UpdaterManager.OnError += (Exception obj) =>
+                Library.AutoUpdater.UpdaterManager.OnError += (Exception obj) =>
                 {
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
@@ -429,6 +419,20 @@ namespace Duplicati.Server
             return 0;
         }
 
+        private static void AdjustApplicationSettings(Dictionary<string, string> commandlineOptions)
+        {
+            if (commandlineOptions.ContainsKey("webservice-password"))
+            {
+                DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
+            }
+
+            DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
+
+            if (commandlineOptions.ContainsKey("webservice-allowed-hostnames"))
+            {
+                DataConnection.ApplicationSettings.SetAllowedHostnames(commandlineOptions["webservice-allowed-hostnames"]);
+            }
+        }
 
         private static void CreateApplicationInstance(bool writeConsole)
         {
