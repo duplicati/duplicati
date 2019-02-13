@@ -236,13 +236,16 @@ namespace Duplicati.Server
                 StartOrStopUsageReporter();
 
                 if (commandlineOptions.ContainsKey("webservice-password"))
-                    Program.DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
+                {
+                    DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
+                }
 
-                Program.DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
+                DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
 
                 if (commandlineOptions.ContainsKey("webservice-allowed-hostnames"))
-                    Program.DataConnection.ApplicationSettings.SetAllowedHostnames(commandlineOptions["webservice-allowed-hostnames"]);
-
+                {
+                    DataConnection.ApplicationSettings.SetAllowedHostnames(commandlineOptions["webservice-allowed-hostnames"]);
+                }
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
 
