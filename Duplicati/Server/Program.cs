@@ -245,60 +245,8 @@ namespace Duplicati.Server
                 };
 
                 UpdatePoller = new UpdatePollThread();
-                DateTime lastPurge = new DateTime(0);
-
-                System.Threading.TimerCallback purgeTempFilesCallback = (x) =>
-                {
-                    try
-                    {
-                        if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
-                            return;
-
-                        lastPurge = DateTime.Now;
-
-                        foreach (var e in DataConnection.GetTempFiles().Where((f) => f.Expires < DateTime.Now))
-                        {
-                            try
-                            {
-                                if (System.IO.File.Exists(e.Path))
-                                    System.IO.File.Delete(e.Path);
-                            }
-                            catch (Exception ex)
-                            {
-                                DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", e.Path), ex);
-                            }
-
-                            DataConnection.DeleteTempFile(e.ID);
-                        }
-
-
-                        Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
-                        {
-                            DataConnection.LogError(null, string.Format("Failed to delete temp file: {0}", path), ex);
-                        });
-
-                        if (!commandlineOptions.TryGetValue("log-retention", out string pts))
-                        {
-                            pts = DEFAULT_LOG_RETENTION;
-                        }
-
-                        DataConnection.PurgeLogData(Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true));
-                    }
-                    catch (Exception ex)
-                    {
-                        DataConnection.LogError(null, "Failed during temp file cleanup", ex);
-                    }
-                };
-
-                try
-                {
-                    PurgeTempFilesTimer = new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
-                }
-                catch (ArgumentOutOfRangeException)
-                {
-                    //Bugfix for older Mono, slightly more resources used to avoid large values in the period field
-                    PurgeTempFilesTimer = new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
-                }
+                
+                SetPurgeTempFilesTimer(commandlineOptions);
 
                 LiveControl = new LiveControls(DataConnection.ApplicationSettings);
                 LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
@@ -317,14 +265,12 @@ namespace Duplicati.Server
                 Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
                 Program.WorkThread.OnError += (worker, task, exception) => { Program.DataConnection.LogError(task?.BackupID, "Error in worker", exception); };
 
-                var lastscheduleid = LastDataUpdateID;
+                var lastScheduleId = LastDataUpdateID;
                 Program.StatusEventNotifyer.NewEvent += (sender, e) =>
                 {
-                    if (lastscheduleid != LastDataUpdateID)
-                    {
-                        lastscheduleid = LastDataUpdateID;
-                        Program.Scheduler.Reschedule();
-                    }
+                    if (lastScheduleId == LastDataUpdateID) return;
+                    lastScheduleId = LastDataUpdateID;
+                    Program.Scheduler.Reschedule();
                 };
 
                 void registerTaskResult(long id, Exception ex)
@@ -392,16 +338,11 @@ namespace Duplicati.Server
             {
                 StatusEventNotifyer.SignalNewEvent();
 
-                if (UpdatePoller != null)
-                    UpdatePoller.Terminate();
-                if (Scheduler != null)
-                    Scheduler.Terminate(true);
-                if (WorkThread != null)
-                    WorkThread.Terminate(true);
-                if (ApplicationInstance != null)
-                    ApplicationInstance.Dispose();
-                if (PurgeTempFilesTimer != null)
-                    PurgeTempFilesTimer.Dispose();
+                UpdatePoller?.Terminate();
+                Scheduler?.Terminate(true);
+                WorkThread?.Terminate(true);
+                ApplicationInstance?.Dispose();
+                PurgeTempFilesTimer?.Dispose();
 
                 Library.UsageReporter.Reporter.ShutDown();
 
@@ -409,14 +350,73 @@ namespace Duplicati.Server
                     try { PingPongThread.Abort(); }
                     catch { }
 
-                if (LogHandler != null)
-                    LogHandler.Dispose();
+                LogHandler?.Dispose();
             }
 
             if (UpdatePoller != null && UpdatePoller.IsUpdateRequested)
                 return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
 
             return 0;
+        }
+
+        private static void SetPurgeTempFilesTimer(Dictionary<string, string> commandlineOptions)
+        {
+            var lastPurge = new DateTime(0);
+
+            System.Threading.TimerCallback purgeTempFilesCallback = (x) =>
+            {
+                try
+                {
+                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
+                        return;
+
+                    lastPurge = DateTime.Now;
+
+                    foreach (var e in DataConnection.GetTempFiles().Where((f) => f.Expires < DateTime.Now))
+                    {
+                        try
+                        {
+                            if (System.IO.File.Exists(e.Path))
+                                System.IO.File.Delete(e.Path);
+                        }
+                        catch (Exception ex)
+                        {
+                            DataConnection.LogError(null, $"Failed to delete temp file: {e.Path}", ex);
+                        }
+
+                        DataConnection.DeleteTempFile(e.ID);
+                    }
+
+
+                    Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
+                    {
+                        DataConnection.LogError(null, $"Failed to delete temp file: {path}", ex);
+                    });
+
+                    if (!commandlineOptions.TryGetValue("log-retention", out string pts))
+                    {
+                        pts = DEFAULT_LOG_RETENTION;
+                    }
+
+                    DataConnection.PurgeLogData(Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true));
+                }
+                catch (Exception ex)
+                {
+                    DataConnection.LogError(null, "Failed during temp file cleanup", ex);
+                }
+            };
+
+            try
+            {
+                PurgeTempFilesTimer =
+                    new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                //Bugfix for older Mono, slightly more resources used to avoid large values in the period field
+                PurgeTempFilesTimer =
+                    new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
+            }
         }
 
         private static void AdjustApplicationSettings(Dictionary<string, string> commandlineOptions)
