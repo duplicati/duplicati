@@ -14,14 +14,14 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using Duplicati.Library.Utility;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Net;
-using Duplicati.Library.Utility;
-using Newtonsoft.Json;
 using System.Text;
-using System.IO;
-using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library
 {
@@ -32,6 +32,7 @@ namespace Duplicati.Library
         public string OAuthLoginUrl { get; protected set; }
         public string UserAgent { get { return m_user_agent; } }
         public event Action<HttpWebRequest> CreateSetupHelper;
+        private static readonly byte[] crlf = Encoding.UTF8.GetBytes("\r\n");
 
         public JSONWebHelper(string useragent = null)
         {
@@ -77,6 +78,21 @@ namespace Duplicati.Library
         }
 
         /// <summary>
+        /// Performs a multipart post and parses the response as JSON
+        /// </summary>
+        /// <returns>The parsed JSON item.</returns>
+        /// <param name="url">The url to post to.</param>
+        /// <param name="setup">The optional setup callback method.</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <param name="parts">The multipart items.</param>
+        /// <typeparam name="T">The return type parameter.</typeparam>
+        public virtual async Task<T> PostMultipartAndGetJSONDataAsync<T>(string url, Action<HttpWebRequest> setup, CancellationToken cancelToken, params MultipartItem[] parts)
+        {
+            var response = await PostMultipartAsync(url, setup, cancelToken, parts).ConfigureAwait(false);
+            return ReadJSONResponse<T>(response);
+        }
+
+        /// <summary>
         /// Performs a multipart post
         /// </summary>
         /// <returns>The response.</returns>
@@ -85,25 +101,70 @@ namespace Duplicati.Library
         /// <param name="setup">The optional setup callback method.</param>
         public virtual HttpWebResponse PostMultipart(string url, Action<HttpWebRequest> setup = null, params MultipartItem[] parts)
         {
-            var boundary = "----DuplicatiFormBoundary" + Guid.NewGuid().ToString("N");
+            CreateBoundary(out var boundary, out var bodyTerminator);
 
-            var bodyterminator = System.Text.Encoding.UTF8.GetBytes("--" + boundary + "--");
-            var crlf = System.Text.Encoding.UTF8.GetBytes("\r\n");
+            var req = PreparePostMultipart(url, setup, boundary, bodyTerminator, out var headers, parts);
+            var areq = new AsyncHttpRequest(req);
 
-            var headers = 
+            using (var rs = areq.GetRequestStream())
+            {
+                foreach(var p in headers)
+                {
+                    rs.Write(p.Header, 0, p.Header.Length);
+                    Utility.Utility.CopyStream(p.Part.ContentData, rs);
+                    rs.Write(crlf, 0, crlf.Length);
+                }
+
+                rs.Write(bodyTerminator, 0, bodyTerminator.Length);
+            }
+
+            return GetResponse(areq);
+        }
+
+        /// <summary>
+        /// Performs a multipart post
+        /// </summary>
+        /// <returns>The response.</returns>
+        /// <param name="url">The url to post to.</param>
+        /// <param name="parts">The multipart items.</param>
+        /// <param name="setup">The optional setup callback method.</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        public virtual async Task<HttpWebResponse> PostMultipartAsync(string url, Action<HttpWebRequest> setup, CancellationToken cancelToken, params MultipartItem[] parts)
+        {
+            CreateBoundary(out var boundary, out var bodyTerminator);
+
+            var req = PreparePostMultipart(url, setup, boundary, bodyTerminator, out var headers, parts);
+            var buffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
+
+            using (var rs = await req.GetRequestStreamAsync().ConfigureAwait(false))
+            {
+                foreach (var p in headers)
+                {
+                    await rs.WriteAsync(p.Header, 0, p.Header.Length, cancelToken).ConfigureAwait(false);
+                    await Utility.Utility.CopyStreamAsync(p.Part.ContentData, rs, tryRewindSource: true, cancelToken:cancelToken, buf: buffer).ConfigureAwait(false);
+                    await rs.WriteAsync(crlf, 0, crlf.Length, cancelToken).ConfigureAwait(false);
+                }
+
+                await rs.WriteAsync(bodyTerminator, 0, bodyTerminator.Length, cancelToken).ConfigureAwait(false);
+            }
+
+            return (HttpWebResponse)(await req.GetResponseAsync().ConfigureAwait(false));
+        }
+
+        protected virtual HttpWebRequest PreparePostMultipart(string url, Action<HttpWebRequest> setup, string boundary, byte[] bodyTerminator, out HeaderPart[] headers, params MultipartItem[] parts)
+        {
+            headers =
                 (from p in parts
-                    select new {
-                        Header = System.Text.Encoding.UTF8.GetBytes(
-                            "--" + boundary + "\r\n" 
-                            + string.Join("", 
-                                from n in p.Headers 
-                                select string.Format("{0}: {1}\r\n", n.Key, n.Value)
-                            )
-                        + "\r\n"),
-                        Part = p
-                }).ToArray();
+                 select new HeaderPart(
+                         Encoding.UTF8.GetBytes(
+                         "--" + boundary + "\r\n"
+                         + string.Join("",
+                             from n in p.Headers
+                             select string.Format("{0}: {1}\r\n", n.Key, n.Value)
+                         ) + "\r\n"),
+                         p)).ToArray();
 
-            var envelopesize = headers.Sum(x => x.Header.Length + crlf.Length) + bodyterminator.Length;
+            var envelopesize = headers.Sum(x => x.Header.Length + crlf.Length) + bodyTerminator.Length;
             var datasize = parts.Sum(x => x.ContentData.Length);
 
             var req = CreateRequest(url);
@@ -112,25 +173,14 @@ namespace Duplicati.Library
             req.ContentType = "multipart/form-data; boundary=" + boundary;
             req.ContentLength = envelopesize + datasize;
 
-            if (setup != null)
-                setup(req);
+            setup?.Invoke(req);
+            return req;
+        }
 
-            var areq = new AsyncHttpRequest(req);
-
-            using(var rs = areq.GetRequestStream())
-            {
-
-                foreach(var p in headers)
-                {
-                    rs.Write(p.Header, 0, p.Header.Length);
-                    Utility.Utility.CopyStream(p.Part.ContentData, rs);
-                    rs.Write(crlf, 0, crlf.Length);
-                }
-
-                rs.Write(bodyterminator, 0, bodyterminator.Length);
-            }
-
-            return GetResponse(areq);
+        private void CreateBoundary(out string boundary, out byte[] bodyterminator)
+        {
+            boundary = "----DuplicatiFormBoundary" + Guid.NewGuid().ToString("N");
+            bodyterminator = Encoding.UTF8.GetBytes("--" + boundary + "--");
         }
 
 
@@ -299,6 +349,18 @@ namespace Duplicati.Library
             {
                 ParseException(ex);
                 throw;
+            }
+        }
+
+        protected class HeaderPart
+        {
+            public byte[] Header;
+            public MultipartItem Part;
+
+            public HeaderPart(byte[] header, MultipartItem part)
+            {
+                Header = header;
+                Part = part;
             }
         }
     }
