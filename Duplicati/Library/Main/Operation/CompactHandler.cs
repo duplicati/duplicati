@@ -136,7 +136,7 @@ namespace Duplicati.Library.Main.Operation
 
                     if (report.ShouldCompact)
                     {
-                        newvolindex.StartVolume(newvol.RemoteFilename);
+                        newvolindex?.StartVolume(newvol.RemoteFilename);
                         var volumesToDownload = (from v in remoteList
                                                  where report.CompactableVolumes.Contains(v.Name)
                                                  select (IRemoteVolume)v).ToList();
@@ -238,7 +238,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                     else
                     {
-                        newvolindex.Dispose();
+                        newvolindex?.Dispose();
                         newvol.Dispose();
                     }
 
