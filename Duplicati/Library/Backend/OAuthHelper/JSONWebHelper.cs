@@ -330,7 +330,7 @@ namespace Duplicati.Library
         {
             if (requestdata is string)
                 throw new ArgumentException("Cannot send string object as data");
-            
+
             if (method == null && requestdata != null)
                 method = "POST";
 
@@ -355,7 +355,7 @@ namespace Duplicati.Library
                         if (string.IsNullOrEmpty(req.Request.ContentType))
                             req.Request.ContentType = "application/octet-stream";
 
-                        using(var rs = req.GetRequestStream())
+                        using (var rs = req.GetRequestStream())
                             Library.Utility.Utility.CopyStream(stream, rs);
                     }
                     else
@@ -364,18 +364,30 @@ namespace Duplicati.Library
                         req.Request.ContentLength = data.Length;
                         req.Request.ContentType = "application/json; charset=UTF-8";
 
-                        using(var rs = req.GetRequestStream())
+                        using (var rs = req.GetRequestStream())
                             rs.Write(data, 0, data.Length);
                     }
                 }
 
                 return (HttpWebResponse)req.GetResponse();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ParseException(ex);
                 throw;
             }
+        }
+
+        public async Task<HttpWebResponse> GetResponseAsync(string url, CancellationToken cancelToken, object requestdata = null, string method = null)
+        {
+            if (requestdata is string)
+                throw new ArgumentException("Cannot send string object as data");
+            
+            if (method == null && requestdata != null)
+                method = "POST";
+
+            var areq = new AsyncHttpRequest(CreateRequest(url, method));
+            return await GetResponseAsync(areq, cancelToken, requestdata).ConfigureAwait(false);
         }
 
         public async Task<HttpWebResponse> GetResponseAsync(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
@@ -426,4 +438,3 @@ namespace Duplicati.Library
         }
     }
 }
-

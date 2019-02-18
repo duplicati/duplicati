@@ -108,8 +108,7 @@ namespace Duplicati.Library.Backend.HubiC
 
         public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            m_openstack.Put(remotename, stream, cancelToken);
-            return Task.FromResult(true);
+            return m_openstack.Put(remotename, stream, cancelToken);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -128,8 +127,7 @@ namespace Duplicati.Library.Backend.HubiC
 
         public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
-            m_openstack.Put(remotename, filename, cancelToken);
-            return Task.FromResult(true);
+            return m_openstack.Put(remotename, filename, cancelToken);
         }
 
         public void Get(string remotename, string filename)
