@@ -242,18 +242,15 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         #endregion
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-
             var item = new BucketResourceItem { name = m_prefix + remotename };
 
             var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
-            var res = GoogleCommon.ChunckedUploadWithResume<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream);
+            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, cancelToken);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");
-
-            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)

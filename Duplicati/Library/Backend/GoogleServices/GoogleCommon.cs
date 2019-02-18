@@ -14,10 +14,12 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
 using Duplicati.Library.Utility;
-using System.Net;
 using Newtonsoft.Json;
+using System;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.GoogleServices
 {
@@ -86,7 +88,7 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <param name="method">The HTTP Method.</param>
         /// <typeparam name="TRequest">The type of data to upload as metadata.</typeparam>
         /// <typeparam name="TResponse">The type of data returned from the upload.</typeparam>
-        public static TResponse ChunckedUploadWithResume<TRequest, TResponse>(OAuthHelper oauth, TRequest requestdata, string url, System.IO.Stream stream, string method = "POST")
+        public static async Task<TResponse> ChunkedUploadWithResumeAsync<TRequest, TResponse>(OAuthHelper oauth, TRequest requestdata, string url, System.IO.Stream stream, CancellationToken cancelToken, string method = "POST")
             where TRequest : class
             where TResponse : class
         {
@@ -105,7 +107,7 @@ namespace Duplicati.Library.Backend.GoogleServices
             var areq = new AsyncHttpRequest(req);
             if (data != null)
                 using(var rs = areq.GetRequestStream())
-                    rs.Write(data, 0, data.Length);
+                    await rs.WriteAsync(data, 0, data.Length, cancelToken).ConfigureAwait(false);
 
             string uploaduri;
             using(var resp = (HttpWebResponse)areq.GetResponse())
@@ -116,7 +118,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                 uploaduri = resp.Headers["Location"];
             }
 
-            return ChunkedUpload<TResponse>(oauth, uploaduri, stream);
+            return await ChunkedUploadAsync<TResponse>(oauth, uploaduri, stream, cancelToken);
         }
 
         /// <summary>
@@ -127,7 +129,7 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <param name="uploaduri">The resumeable uploaduri</param>
         /// <param name="stream">The stream with data to upload.</param>
         /// <typeparam name="T">The type of data in the response.</typeparam>
-        private static T ChunkedUpload<T>(OAuthHelper oauth, string uploaduri, System.IO.Stream stream)
+        private static async Task<T> ChunkedUploadAsync<T>(OAuthHelper oauth, string uploaduri, System.IO.Stream stream, CancellationToken cancelToken)
             where T : class
         {
             var queryRange = false;
@@ -171,7 +173,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                         while(remaining > 0)
                         {
                             var n = stream.Read(buffer, 0, (int)Math.Min(remaining, Library.Utility.Utility.DEFAULT_BUFFER_SIZE));
-                            rs.Write(buffer, 0, n);
+                            await rs.WriteAsync(buffer, 0, n, cancelToken);
                             remaining -= n;
                         }
                     }

@@ -133,7 +133,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         #region IStreamingBackend implementation
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -166,7 +166,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     parents = new GoogleDriveParentReference[] { new GoogleDriveParentReference { id = CurrentFolderId } }
                 };
 
-                var res = GoogleCommon.ChunckedUploadWithResume<GoogleDriveFolderItem, GoogleDriveFolderItem>(m_oauth, item, url, stream, isUpdate ? "PUT" : "POST");
+                var res = await GoogleCommon.ChunkedUploadWithResumeAsync<GoogleDriveFolderItem, GoogleDriveFolderItem>(m_oauth, item, url, stream, cancelToken, isUpdate ? "PUT" : "POST");
                 m_filecache[remotename] = new GoogleDriveFolderItem[] { res };
             }
             catch
@@ -174,8 +174,6 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 m_filecache.Clear();
                 throw;
             }
-
-            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
