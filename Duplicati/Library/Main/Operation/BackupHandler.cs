@@ -314,9 +314,9 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
                 }
+                
+                m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
             }
-
-            m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
         }
 
         public void Run(string[] sources, Library.Utility.IFilter filter)
