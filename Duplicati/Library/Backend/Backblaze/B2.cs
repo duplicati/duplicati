@@ -30,6 +30,7 @@ namespace Duplicati.Library.Backend.Backblaze
         private const string B2_ID_OPTION = "b2-accountid";
         private const string B2_KEY_OPTION = "b2-applicationkey";
 		private const string B2_PAGESIZE_OPTION = "b2-page-size";
+        private const string B2_DOWNLOAD_URL_OPTION = "b2-download-url";
 
 		private const string B2_CREATE_BUCKET_TYPE_OPTION = "b2-create-bucket-type";
         private const string DEFAULT_BUCKET_TYPE = "allPrivate";
@@ -41,6 +42,7 @@ namespace Duplicati.Library.Backend.Backblaze
         private readonly string m_urlencodedprefix;
         private readonly string m_bucketType;
         private readonly int m_pagesize;
+        private readonly string m_downloadUrl;
         private readonly B2AuthHelper m_helper;
         private UploadUrlResponse m_uploadUrl;
 
@@ -101,6 +103,12 @@ namespace Duplicati.Library.Backend.Backblaze
                 if (m_pagesize <= 0)
                     throw new UserInformationException(Strings.B2.InvalidPageSizeError(B2_PAGESIZE_OPTION, options[B2_PAGESIZE_OPTION]), "B2InvalidPageSize");
             }
+
+            m_downloadUrl = null;
+            if (options.ContainsKey(B2_DOWNLOAD_URL_OPTION))
+            {
+                m_downloadUrl = options[B2_DOWNLOAD_URL_OPTION];
+            }
 		}
 
         private BucketEntity Bucket
@@ -153,6 +161,16 @@ namespace Duplicati.Library.Backend.Backblaze
             throw new FileMissingException();
         }
 
+        private string DownloadUrl {
+            get {
+                if (string.IsNullOrEmpty(m_downloadUrl)) {
+                    return m_helper.DownloadUrl;
+                } else {
+                    return m_downloadUrl;
+                }
+            }
+        }
+
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -164,6 +182,7 @@ namespace Duplicati.Library.Backend.Backblaze
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.B2.AuthUsernameDescriptionShort, Strings.B2.AuthUsernameDescriptionLong),
                     new CommandLineArgument(B2_CREATE_BUCKET_TYPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2createbuckettypeDescriptionShort, Strings.B2.B2createbuckettypeDescriptionLong, DEFAULT_BUCKET_TYPE),
                     new CommandLineArgument(B2_PAGESIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.B2.B2pagesizeDescriptionShort, Strings.B2.B2pagesizeDescriptionLong, DEFAULT_PAGE_SIZE.ToString()),
+                    new CommandLineArgument(B2_DOWNLOAD_URL_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2downloadurlDescriptionShort, Strings.B2.B2downloadurlDescriptionLong),
 				});
 
             }
@@ -275,9 +294,9 @@ namespace Duplicati.Library.Backend.Backblaze
                 List();
 
             if (m_filecache != null && m_filecache.ContainsKey(remotename))
-                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/b2api/v1/b2_download_file_by_id?fileId={1}", m_helper.DownloadUrl, Library.Utility.Uri.UrlEncode(GetFileID(remotename)))));
+                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/b2api/v1/b2_download_file_by_id?fileId={1}", DownloadUrl, Library.Utility.Uri.UrlEncode(GetFileID(remotename)))));
             else
-                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/{1}{2}", m_helper.DownloadUrl, m_urlencodedprefix, Library.Utility.Uri.UrlPathEncode(remotename))));
+                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/{1}{2}", DownloadUrl, m_urlencodedprefix, Library.Utility.Uri.UrlPathEncode(remotename))));
 
             try
             {
