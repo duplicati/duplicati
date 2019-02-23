@@ -49,19 +49,19 @@ namespace Duplicati.Library.Main.Operation.Common
 		public TemporaryIndexVolume(Options options)
 		{
 			m_blockhashsize = options.BlockhashSize;
-		}
+        }
 
         /// <summary>
         /// Creates an index volume with the temporary contents
         /// </summary>
         /// <returns>The index volume.</returns>
         /// <param name="blockfilename">The name of the block file.</param>
-        public async Task<IndexVolumeWriter> CreateVolume(string blockfilename, Options options, Common.DatabaseCommon database)
+        /// <param name="blockHash">Hash of the volume</param>
+        /// <param name="blockSize">Size of the volume</param>
+        public async Task<IndexVolumeWriter> CreateVolume(string blockfilename, string blockHash, long blockSize, Options options, DatabaseCommon database)
         {
             var w = new IndexVolumeWriter(options);
             w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
-
-            var blockvolume = await database.GetVolumeInfoAsync(blockfilename);
 
             w.StartVolume(blockfilename);
             foreach (var n in blockHashes)
@@ -69,8 +69,8 @@ namespace Duplicati.Library.Main.Operation.Common
                 var args = n.Split(new char[] { ':' }, 2);
                 w.AddBlock(args[1], long.Parse(args[0]));
             }
-            
-            w.FinishVolume(blockvolume.Hash, blockvolume.Size);
+
+            w.FinishVolume(blockHash, blockSize);
 
             var enumerator = blockListHashes.GetEnumerator();
             while(enumerator.MoveNext())

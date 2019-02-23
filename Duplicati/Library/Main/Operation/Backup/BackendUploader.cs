@@ -66,16 +66,20 @@ namespace Duplicati.Library.Main.Operation.Backup
 
     internal class VolumeUploadRequest : IUploadRequest
     {
-        public BlockVolumeWriter BlockVolume { get; private set; }
-        public TemporaryIndexVolume IndexVolume { get; private set;}
+        public FileEntryItem BlockEntry { get; }
+        public BlockVolumeWriter BlockVolume { get; }
+        public FileEntryItem IndexEntry { get; }
+        public IndexVolumeWriter IndexVolume { get; }
 
-        public VolumeUploadRequest(BlockVolumeWriter blockvolume, TemporaryIndexVolume indexvolume)
+        public VolumeUploadRequest(BlockVolumeWriter blockvolume, FileEntryItem blockEntry, IndexVolumeWriter indexVolume, FileEntryItem indexEntry)
         {
             BlockVolume = blockvolume;
-            IndexVolume = indexvolume;
+            BlockEntry = blockEntry;
+            IndexVolume = indexVolume;
+            IndexEntry = indexEntry;
         }
     }
-   
+
     /// <summary>
     /// This class encapsulates all requests to the backend
     /// and ensures that the <code>AsynchronousUploadLimit</code> is honored
@@ -133,16 +137,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (req is VolumeUploadRequest)
                         {
                             lastSize = ((VolumeUploadRequest)req).BlockVolume.SourceSize;
-
-                            if (noIndexFiles || ((VolumeUploadRequest)req).IndexVolume == null)
-                                task = new KeyValuePair<int, Task>(1, UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, null));
+                            if(((VolumeUploadRequest)req).IndexVolume == null)
+                                task = new KeyValuePair<int, Task>(1, UploadFileAsync(((VolumeUploadRequest)req).BlockEntry, null));
                             else
-                                task = new KeyValuePair<int, Task>(2, UploadFileAsync(((VolumeUploadRequest)req).BlockVolume, name => ((VolumeUploadRequest)req).IndexVolume.CreateVolume(name, m_options, m_database)));
+                                task = new KeyValuePair<int, Task>(2, UploadBlockAndIndexAsync((VolumeUploadRequest)req));
                         }
                         else if (req is FilesetUploadRequest)
-                            task = new KeyValuePair<int, Task>(1, UploadFileAsync(((FilesetUploadRequest)req).Fileset));
+                            task = new KeyValuePair<int, Task>(1, UploadVolumeWriter(((FilesetUploadRequest)req).Fileset));
                         else if (req is IndexVolumeUploadRequest)
-                            task = new KeyValuePair<int, Task>(1, UploadFileAsync(((IndexVolumeUploadRequest)req).IndexVolume));
+                            task = new KeyValuePair<int, Task>(1, UploadVolumeWriter(((IndexVolumeUploadRequest)req).IndexVolume));
                         else if (req is FlushRequest)
                         {
                             try
@@ -205,65 +208,37 @@ namespace Duplicati.Library.Main.Operation.Backup
                     m_stats.SetBlocking(false);
                 }
             });
-                                
         }
 
-        private async Task UploadFileAsync(VolumeWriterBase item, Func<string, Task<IndexVolumeWriter>> createIndexFile = null)
+        private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload)
         {
-            var fe = new FileEntryItem(BackendActionType.Put, item.RemoteFilename);
-            fe.SetLocalfilename(item.LocalFilename);
+            await UploadFileAsync(upload.BlockEntry).ConfigureAwait(false);
+            await UploadFileAsync(upload.IndexEntry).ConfigureAwait(false);
 
-            var tcs = new TaskCompletionSource<bool>();
+            // Register that the index file is tracking the block file
+            var blockVolumeId = await m_database.GetRemoteVolumeIDAsync(upload.BlockVolume.RemoteFilename).ConfigureAwait(false);
+            await m_database.AddIndexBlockLinkAsync(upload.IndexVolume.VolumeID, blockVolumeId).ConfigureAwait(false);
+        }
 
-            fe.Encrypt(m_options);
-            fe.UpdateHashAndSize(m_options);
+        private async Task UploadVolumeWriter(VolumeWriterBase volumeWriter)
+        {
+            var fileEntry = new FileEntryItem(BackendActionType.Put, volumeWriter.RemoteFilename);
+            fileEntry.SetLocalfilename(volumeWriter.LocalFilename);
+            fileEntry.Encrypt(m_options);
+            fileEntry.UpdateHashAndSize(m_options);
 
-            try
+            await UploadFileAsync(fileEntry).ConfigureAwait(false);
+        }
+
+        private async Task<bool> UploadFileAsync(FileEntryItem item, Func<string, Task<IndexVolumeWriter>> createIndexFile = null)
+        {
+            return await DoWithRetry(item, async () =>
             {
-                await DoWithRetry(fe, async () =>
-                {
-                    if (fe.IsRetry)
-                        await RenameFileAfterErrorAsync(fe).ConfigureAwait(false);
-                    return await DoPut(fe).ConfigureAwait(false);
-                }).ConfigureAwait(false);
+                if (item.IsRetry)
+                    await RenameFileAfterErrorAsync(item).ConfigureAwait(false);
 
-                if (createIndexFile != null)
-                {
-                    var ix = await createIndexFile(fe.RemoteFilename).ConfigureAwait(false);
-                    var indexFile = new FileEntryItem(BackendActionType.Put, ix.RemoteFilename);
-                    indexFile.SetLocalfilename(ix.LocalFilename);
-
-                    await m_database.UpdateRemoteVolumeAsync(indexFile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-
-                    await DoWithRetry(indexFile, async () =>
-                    {
-                        if (indexFile.IsRetry)
-                            await RenameFileAfterErrorAsync(indexFile).ConfigureAwait(false);
-
-                        var res = await DoPut(indexFile).ConfigureAwait(false);
-
-                        // Register that the index file is tracking the block file
-                        await m_database.AddIndexBlockLinkAsync(
-                            ix.VolumeID,
-                            await m_database.GetRemoteVolumeIDAsync(fe.RemoteFilename)
-                        ).ConfigureAwait(false);
-
-
-                        return res;
-                    }).ConfigureAwait(false);
-                }
-
-                tcs.TrySetResult(true);
-            }
-            catch (Exception ex)
-            {
-                if (ex is System.Threading.ThreadAbortException)
-                    tcs.TrySetCanceled();
-                else
-                    tcs.TrySetException(ex);
-            }
-
-            await tcs.Task.ConfigureAwait(false);
+                return await DoPut(item, false).ConfigureAwait(false);
+            }).ConfigureAwait(false);
         }
 
         private async Task<T> DoWithRetry<T>(FileEntryItem item, Func<Task<T>> method)
@@ -355,12 +330,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         private async Task<bool> DoPut(FileEntryItem item, bool updatedHash = false)
         {
-            // If this is not already encrypted, do it now
-            item.Encrypt(m_options);
-
-            updatedHash |= item.UpdateHashAndSize(m_options);
-
-            if (updatedHash && item.TrackedInDb)
+            if (item.TrackedInDb)
                 await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
 
             if (m_options.Dryrun)
@@ -433,4 +403,3 @@ namespace Duplicati.Library.Main.Operation.Backup
         }
     }
 }
-
