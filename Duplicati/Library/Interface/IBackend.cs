@@ -19,7 +19,8 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Interface
 {
@@ -56,7 +57,8 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="filename">The local filename</param>
-        void Put(string remotename, string filename);
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        Task Put(string remotename, string filename, CancellationToken cancelToken);
 
         /// <summary>
         /// Downloads a file with the remote data

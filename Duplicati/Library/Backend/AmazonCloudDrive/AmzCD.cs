@@ -14,14 +14,16 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
-using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
-using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AmazonCloudDrive
 {
@@ -313,7 +315,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             EnforceConsistencyDelay(remotename);
 
@@ -362,6 +364,8 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             {
                 SetWaitUntil(remotename, DateTime.Now + m_delayTimeSpan);
             }
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -428,10 +432,10 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
 
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return Put(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)

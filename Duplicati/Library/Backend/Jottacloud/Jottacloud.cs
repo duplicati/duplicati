@@ -17,10 +17,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -220,10 +222,10 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return Put(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -334,7 +336,7 @@ namespace Duplicati.Library.Backend
                 Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
         }
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             // Some challenges with uploading to Jottacloud:
             // - Jottacloud supports use of a custom header where we can tell the server the MD5 hash of the file
@@ -448,6 +450,8 @@ namespace Duplicati.Library.Backend
                 }
                 catch { }
             }
+
+            return Task.FromResult(true);
         }
 
         #endregion

@@ -18,16 +18,18 @@
 //
 #endregion
 
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.FtpClient;
 using System.Net.Security;
 using System.Security.Authentication;
-using Duplicati.Library.Interface;
-using Uri = System.Uri;
+using System.Threading;
+using System.Threading.Tasks;
 using CoreUtility = Duplicati.Library.Utility.Utility;
-using Duplicati.Library.Common.IO;
+using Uri = System.Uri;
 
 namespace Duplicati.Library.Backend.AlternativeFTP
 {
@@ -304,7 +306,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             return list;
         }
 
-        public void Put(string remotename, System.IO.Stream input)
+        public Task Put(string remotename, System.IO.Stream input, CancellationToken cancelToken)
         {
             string remotePath = remotename;
             long streamLen = -1;
@@ -355,7 +357,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                         {
                             if (fileEntry.Size < 0 || streamLen < 0 || fileEntry.Size == streamLen)
                             {
-                                return;
+                                return Task.FromResult(true);
                             }
 
                             throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, fileEntry.Size, streamLen), "AftpListVerifySizeFailure");
@@ -374,13 +376,15 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                 throw;
             }
+
+            return Task.FromResult(true);
         }
 
-        public void Put(string remotename, string localname)
+        public Task Put(string remotename, string localname, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
             {
-                Put(remotename, fs);
+                return Put(remotename, fs, cancelToken);
             }
         }
 
@@ -485,7 +489,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    Put(TEST_FILE_NAME, testStream);
+                    Put(TEST_FILE_NAME, testStream, CancellationToken.None).Wait();
                 }
                 catch (Exception e)
                 {

@@ -1,12 +1,13 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json.Linq;
-using Duplicati.Library.Interface;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -253,7 +254,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         if (reupload)
                         {
                             Console.Write(" reuploading ...");
-                            backend.Put((new FileInfo(localFileTarget)).Name, localFileTarget);
+                            backend.Put((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Wait();
                             backend.Delete(remoteFile.File.Name);
                             File.Delete(localFileTarget);
                         }

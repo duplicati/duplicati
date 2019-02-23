@@ -14,18 +14,18 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using Duplicati.Library.Backend.GoogleServices;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
-
-using Newtonsoft.Json;
-
-using Duplicati.Library.Backend.GoogleServices;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
-using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.GoogleDrive
 {
@@ -133,7 +133,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -174,6 +174,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 m_filecache.Clear();
                 throw;
             }
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -249,10 +251,10 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return Put(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)

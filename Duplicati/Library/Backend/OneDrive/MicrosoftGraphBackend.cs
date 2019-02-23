@@ -1,4 +1,9 @@
-﻿using System;
+﻿using Duplicati.Library.Backend.MicrosoftGraph;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,13 +12,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
-
-using Duplicati.Library.Backend.MicrosoftGraph;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
-
-using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -327,15 +326,15 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fileStream = File.OpenRead(filename))
             {
-                this.Put(remotename, fileStream);
+                return Put(remotename, fileStream, cancelToken);
             }
         }
 
-        public void Put(string remotename, Stream stream)
+        public Task Put(string remotename, Stream stream, CancellationToken cancelToken)
         {
             // PUT only supports up to 4 MB file uploads. There's a separate process for larger files.
             if (stream.Length < PUT_MAX_SIZE)
@@ -429,6 +428,8 @@ namespace Duplicati.Library.Backend
                     }
                 }
             }
+
+            return Task.FromResult(true);
         }
 
         public void Delete(string remotename)

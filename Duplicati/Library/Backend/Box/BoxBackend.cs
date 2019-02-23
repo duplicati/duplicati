@@ -14,13 +14,15 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
-using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
-using System.Collections.Generic;
+using Duplicati.Library.Interface;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Box
 {
@@ -196,7 +198,7 @@ namespace Duplicati.Library.Backend.Box
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var createreq = new CreateItemRequest() {
                 Name = remotename,
@@ -237,6 +239,8 @@ namespace Duplicati.Library.Backend.Box
                 m_filecache.Clear();
                 throw;
             }
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -257,10 +261,10 @@ namespace Duplicati.Library.Backend.Box
                 select (IFileEntry)new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return Put(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)

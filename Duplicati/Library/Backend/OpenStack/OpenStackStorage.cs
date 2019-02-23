@@ -26,6 +26,8 @@ using Duplicati.Library.Strings;
 using System.Net;
 using System.Text;
 using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.OpenStack
 {
@@ -483,11 +485,13 @@ namespace Duplicati.Library.Backend.OpenStack
         }
 
         #region IStreamingBackend implementation
-        public void Put(string remotename, System.IO.Stream stream)
+        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var url = JoinUrls(SimpleStorageEndPoint, m_container, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
             using(m_helper.GetResponse(url, stream, "PUT"))
             { }
+
+            return Task.FromResult(true);
         }
         public void Get(string remotename, System.IO.Stream stream)
         {
@@ -562,15 +566,17 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+            using (FileStream fs = File.OpenRead(filename))
+                Put(remotename, fs, cancelToken);
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string filename)
         {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
+            using (FileStream fs = File.Create(filename))
                 Get(remotename, fs);
         }
         public void Delete(string remotename)

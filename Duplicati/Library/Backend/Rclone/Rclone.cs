@@ -17,17 +17,17 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Diagnostics;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Globalization;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using Duplicati.Library.Common.IO;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -225,7 +225,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
             try
             {
@@ -235,6 +235,8 @@ namespace Duplicati.Library.Backend
             {
                 throw new FileMissingException(ex);
             }
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string filename)

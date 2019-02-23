@@ -14,11 +14,12 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using Duplicati.Library.Interface;
-using Duplicati.Library;
 using Duplicati.Library.Backend.OpenStack;
+using Duplicati.Library.Interface;
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.HubiC
 {
@@ -105,9 +106,10 @@ namespace Duplicati.Library.Backend.HubiC
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            m_openstack.Put(remotename, stream);
+            m_openstack.Put(remotename, stream, cancelToken);
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -124,9 +126,10 @@ namespace Duplicati.Library.Backend.HubiC
             return m_openstack.List();
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
-            m_openstack.Put(remotename, filename);
+            m_openstack.Put(remotename, filename, cancelToken);
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string filename)

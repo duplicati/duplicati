@@ -17,13 +17,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Net;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -194,10 +194,10 @@ namespace Duplicati.Library.Backend
             } while (repeat);
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return Put(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -314,7 +314,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             HttpWebRequest req = CreateRequest("/" + remotename, "");
             req.Method = "PUT";
@@ -394,6 +394,8 @@ namespace Duplicati.Library.Backend
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
                 }
             }
+
+            return Task.FromResult(true);
         }
 
         #endregion

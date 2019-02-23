@@ -18,10 +18,11 @@
 // 
 #endregion
 
-using System;
+using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using System.IO;
-using Duplicati.Library.Interface;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
@@ -87,18 +88,19 @@ namespace Duplicati.Library.Backend.AzureBlob
             return _azureBlob.ListContainerEntries();
         }
 
-        public void Put(string remotename, string localname)
+        public Task Put(string remotename, string localname, CancellationToken cancelToken)
         {
             using (var fs = File.Open(localname,
                 FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                Put(remotename, fs);
+                return Put(remotename, fs, cancelToken);
             }
         }
 
-        public void Put(string remotename, Stream input)
+        public Task Put(string remotename, Stream input, CancellationToken cancelToken)
         {
             _azureBlob.AddFileStream(remotename, input);
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string localname)

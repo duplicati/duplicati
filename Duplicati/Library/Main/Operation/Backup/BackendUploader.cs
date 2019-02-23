@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using static Duplicati.Library.Main.Operation.Common.BackendHandler;
 
@@ -88,6 +89,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendUploader>();
 
         private Func<IBackend> m_backendFactory;
+        private CancellationTokenSource m_cancelTokenSource;
         private Options m_options;
         private ITaskReader m_taskreader;
         private StatsCollector m_stats;
@@ -119,6 +121,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var max_pending = m_options.AsynchronousUploadLimit == 0 ? long.MaxValue : m_options.AsynchronousUploadLimit;
                 var lastSize = -1L;
                 var uploadsInProgress = 0;
+                m_cancelTokenSource = new CancellationTokenSource();
 
                 while (!await self.Input.IsRetiredAsync && await m_taskreader.ProgressAsync)
                 {
@@ -139,21 +142,21 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (req is VolumeUploadRequest volumeUpload)
                         {
                             if (volumeUpload.IndexVolume == null)
-                                worker.Task = Task.Run(() => UploadFileAsync(volumeUpload.BlockEntry, worker));
+                                worker.Task = Task.Run(() => UploadFileAsync(volumeUpload.BlockEntry, worker, m_cancelTokenSource.Token));
                             else
-                                worker.Task = Task.Run(() => UploadBlockAndIndexAsync(volumeUpload, worker));
+                                worker.Task = Task.Run(() => UploadBlockAndIndexAsync(volumeUpload, worker, m_cancelTokenSource.Token));
 
                             lastSize = volumeUpload.BlockVolume.SourceSize;
                             uploadsInProgress++;
                         }
                         else if (req is FilesetUploadRequest filesetUpload)
                         {
-                            worker.Task = Task.Run(() => UploadVolumeWriter(filesetUpload.Fileset, worker));
+                            worker.Task = Task.Run(() => UploadVolumeWriter(filesetUpload.Fileset, worker, m_cancelTokenSource.Token));
                             uploadsInProgress++;
                         }
                         else if (req is IndexVolumeUploadRequest indexUpload)
                         {
-                            worker.Task = Task.Run(() => UploadVolumeWriter(indexUpload.IndexVolume, worker));
+                            worker.Task = Task.Run(() => UploadVolumeWriter(indexUpload.IndexVolume, worker, m_cancelTokenSource.Token));
                             uploadsInProgress++;
                         }
                         else if (req is FlushRequest flush)
@@ -198,30 +201,30 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-        private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload, Worker worker)
+        private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload, Worker worker, CancellationToken cancelToken)
         {
-            await UploadFileAsync(upload.BlockEntry, worker).ConfigureAwait(false);
-            await UploadFileAsync(upload.IndexEntry, worker).ConfigureAwait(false);
+            await UploadFileAsync(upload.BlockEntry, worker, cancelToken).ConfigureAwait(false);
+            await UploadFileAsync(upload.IndexEntry, worker, cancelToken).ConfigureAwait(false);
             await m_database.AddIndexBlockLinkAsync(upload.IndexVolume.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
         }
 
-        private async Task UploadVolumeWriter(VolumeWriterBase volumeWriter, Worker worker)
+        private async Task UploadVolumeWriter(VolumeWriterBase volumeWriter, Worker worker, CancellationToken cancelToken)
         {
             var fileEntry = new FileEntryItem(BackendActionType.Put, volumeWriter.RemoteFilename);
             fileEntry.SetLocalfilename(volumeWriter.LocalFilename);
             fileEntry.Encrypt(m_options);
             fileEntry.UpdateHashAndSize(m_options);
 
-            await UploadFileAsync(fileEntry, worker).ConfigureAwait(false);
+            await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
         }
 
-        private async Task UploadFileAsync(FileEntryItem item, Worker worker)
+        private async Task UploadFileAsync(FileEntryItem item, Worker worker, CancellationToken cancelToken)
         {
             await DoWithRetry(item, worker, async () =>
             {
                 if (item.IsRetry)
                     await RenameFileAfterErrorAsync(item).ConfigureAwait(false);
-                await DoPut(item, worker.Backend).ConfigureAwait(false);
+                await DoPut(item, worker.Backend, cancelToken).ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
 
@@ -318,7 +321,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             item.RemoteFilename = newname;
         }
 
-        private async Task DoPut(FileEntryItem item, IBackend backend)
+        private async Task DoPut(FileEntryItem item, IBackend backend, CancellationToken cancelToken)
         {
             if (item.TrackedInDb)
                 await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
@@ -340,10 +343,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                 using (var fs = File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                 using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                    streamingBackend.Put(item.RemoteFilename, pgs);
+                    await streamingBackend.Put(item.RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
             }
             else
-                backend.Put(item.RemoteFilename, item.LocalFilename);
+                await backend.Put(item.RemoteFilename, item.LocalFilename, cancelToken).ConfigureAwait(false);
 
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));

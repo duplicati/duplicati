@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Duplicati.Library.Backend
 {
@@ -99,15 +101,15 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task Put(string remotename, string filename, CancellationToken cancelToken)
         {
-            using(FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename,fs);
+            using(FileStream fs = File.OpenRead(filename))
+                return Put(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
         {
-            using(FileStream fs = System.IO.File.Create(filename))
+            using(FileStream fs = File.Create(filename))
                 Get(remotename, fs);
         }
 
@@ -162,7 +164,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, Stream stream)
+        public Task Put(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -174,6 +176,8 @@ namespace Duplicati.Library.Backend
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;
             }
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, Stream stream)

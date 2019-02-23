@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -339,13 +341,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string localname)
+        public Task Put(string remotename, string localname, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Put(remotename, fs);
+                return Put(remotename, fs, cancelToken);
         }
 
-        public void Put(string remotename, System.IO.Stream input)
+        public Task Put(string remotename, System.IO.Stream input, CancellationToken cancelToken)
         {
             try
             {
@@ -360,6 +362,8 @@ namespace Duplicati.Library.Backend
 
                 throw;
             }
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string localname)
