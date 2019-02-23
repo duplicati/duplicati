@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -164,20 +164,18 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task Put(string remotename, Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                string path = string.Format("{0}/{1}", m_path, remotename);
-                dbx.UploadFile(path, stream);
+                string path = $"{m_path}/{remotename}";
+                await dbx.UploadFileAsync(path, stream, cancelToken);
             }
             catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;
             }
-
-            return Task.FromResult(true);
         }
 
         public void Get(string remotename, Stream stream)

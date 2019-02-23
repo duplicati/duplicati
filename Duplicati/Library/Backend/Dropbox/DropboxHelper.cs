@@ -1,10 +1,11 @@
-﻿using System;
-using System.IO;
-using System.Net;
-
-using Duplicati.Library.Utility;
+﻿using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.IO;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -68,7 +69,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public FileMetaData UploadFile(String path, Stream stream)
+        public async Task<FileMetaData> UploadFileAsync(String path, Stream stream, CancellationToken cancelToken)
         {
             // start a session
             var ussa = new UploadSessionStartArg();
@@ -84,6 +85,7 @@ namespace Duplicati.Library.Backend
             var areq = new AsyncHttpRequest(req);
 
             byte[] buffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
+            int sizeToRead = Math.Min((int)Utility.Utility.DEFAULT_BUFFER_SIZE, chunksize);
 
             ulong globalBytesRead = 0;
             using (var rs = areq.GetRequestStream())
@@ -91,15 +93,14 @@ namespace Duplicati.Library.Backend
                 int bytesRead = 0;
                 do
                 {
-                    bytesRead = stream.Read(buffer, 0, Math.Min((int)Utility.Utility.DEFAULT_BUFFER_SIZE, chunksize));
+                    bytesRead = await stream.ReadAsync(buffer, 0, sizeToRead, cancelToken).ConfigureAwait(false);
                     globalBytesRead += (ulong)bytesRead;
-                    rs.Write(buffer, 0, bytesRead);
-
+                    await rs.WriteAsync(buffer, 0, bytesRead, cancelToken).ConfigureAwait(false);
                 }
-                while (bytesRead > 0 && globalBytesRead < (ulong)chunksize);                
+                while (bytesRead > 0 && globalBytesRead < (ulong)chunksize);
             }
 
-            var ussr = ReadJSONResponse<UploadSessionStartResult>(areq); // pun intended
+            var ussr = await ReadJSONResponseAsync<UploadSessionStartResult>(areq, cancelToken); // pun intended
 
             // keep appending until finished
             // 1) read into buffer
@@ -124,15 +125,16 @@ namespace Duplicati.Library.Backend
                 areq = new AsyncHttpRequest(req);
 
                 int bytesReadInRequest = 0;
+                sizeToRead = Math.Min(chunksize, (int)Utility.Utility.DEFAULT_BUFFER_SIZE);
                 using (var rs = areq.GetRequestStream())
                 {
                     int bytesRead = 0;
                     do
                     {
-                        bytesRead = stream.Read(buffer, 0, Math.Min(chunksize, (int)Utility.Utility.DEFAULT_BUFFER_SIZE));
+                        bytesRead = await stream.ReadAsync(buffer, 0, sizeToRead, cancelToken).ConfigureAwait(false);
                         bytesReadInRequest += bytesRead;
                         globalBytesRead += (ulong)bytesRead;
-                        rs.Write(buffer, 0, bytesRead);
+                        await rs.WriteAsync(buffer, 0, bytesRead, cancelToken).ConfigureAwait(false);
 
                     }
                     while (bytesRead > 0 && bytesReadInRequest < chunksize);
@@ -140,7 +142,7 @@ namespace Duplicati.Library.Backend
 
                 using (var response = GetResponse(areq))
                 using (var sr = new StreamReader(response.GetResponseStream()))
-                    sr.ReadToEnd();
+                    await sr.ReadToEndAsync();
             }
 
             // finish session and commit

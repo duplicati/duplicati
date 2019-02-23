@@ -188,23 +188,20 @@ namespace Duplicati.Library.Backend
 
 #if DEBUG_RETRY
         private static Random random = new Random();
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
             {
                 if (random.NextDouble() > 0.6666)
                     throw new Exception("Random upload failure");
-                Utility.Utility.CopyStream(stream, writestream);
+                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken);
             }
-
-            return Task.FromResult(true);
         }
 #else
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
-                Utility.Utility.CopyStream(stream, writestream, true, m_copybuffer);
-            return Task.FromResult(true);
+            using (System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
+                await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
         }
 #endif
 
