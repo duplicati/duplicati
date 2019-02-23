@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendUploader>();
 
-        private IBackend m_backend;
+        private Func<IBackend> m_backendFactory;
         private Options m_options;
         private ITaskReader m_taskreader;
         private StatsCollector m_stats;
@@ -96,14 +96,14 @@ namespace Duplicati.Library.Main.Operation.Backup
         private string m_lastThrottleUploadValue;
         private string m_lastThrottleDownloadValue;
 
-        public BackendUploader(IBackend backend, Options options, DatabaseCommon database, BackupResults results, ITaskReader taskreader, StatsCollector stats)
+        public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, BackupResults results, ITaskReader taskreader, StatsCollector stats)
         {
-            this.m_options = options;
-            this.m_backend = backend;
-            this.m_taskreader = taskreader;
-            this.m_stats = stats;
-            this.m_database = database;
-            this.m_results = results;
+            m_backendFactory = backendFactory;
+            m_options = options;
+            m_taskreader = taskreader;
+            m_stats = stats;
+            m_database = database;
+            m_results = results;
         }
 
         public Task Run()
@@ -115,9 +115,10 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-                var inProgress = new List<Task>();
+                var workers = new List<Worker>();
                 var max_pending = m_options.AsynchronousUploadLimit == 0 ? long.MaxValue : m_options.AsynchronousUploadLimit;
                 var lastSize = -1L;
+                var uploadsInProgress = 0;
 
                 while (!await self.Input.IsRetiredAsync && await m_taskreader.ProgressAsync)
                 {
@@ -128,24 +129,40 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (!await m_taskreader.ProgressAsync)
                             continue;
 
+                        var worker = workers.FirstOrDefault(w => w.Task.IsCompleted);
+                        if (worker == null)
+                        {
+                            worker = new Worker(m_backendFactory());
+                            workers.Add(worker);
+                        }
+
                         if (req is VolumeUploadRequest volumeUpload)
                         {
-                            lastSize = volumeUpload.BlockVolume.SourceSize;
                             if (volumeUpload.IndexVolume == null)
-                                inProgress.Add(UploadFileAsync(volumeUpload.BlockEntry));
+                                worker.Task = Task.Run(() => UploadFileAsync(volumeUpload.BlockEntry, worker));
                             else
-                                inProgress.Add(UploadBlockAndIndexAsync(volumeUpload));
+                                worker.Task = Task.Run(() => UploadBlockAndIndexAsync(volumeUpload, worker));
+
+                            lastSize = volumeUpload.BlockVolume.SourceSize;
+                            uploadsInProgress++;
                         }
                         else if (req is FilesetUploadRequest filesetUpload)
-                            inProgress.Add(UploadVolumeWriter(filesetUpload.Fileset));
+                        {
+                            worker.Task = Task.Run(() => UploadVolumeWriter(filesetUpload.Fileset, worker));
+                            uploadsInProgress++;
+                        }
                         else if (req is IndexVolumeUploadRequest indexUpload)
-                            inProgress.Add(UploadVolumeWriter(indexUpload.IndexVolume));
+                        {
+                            worker.Task = Task.Run(() => UploadVolumeWriter(indexUpload.IndexVolume, worker));
+                            uploadsInProgress++;
+                        }
                         else if (req is FlushRequest flush)
                         {
                             try
                             {
-                                await Task.WhenAll(inProgress);
-                                inProgress.Clear();
+                                await Task.WhenAll(workers.Select(w => w.Task));
+                                workers.Clear();
+                                uploadsInProgress = 0;
                             }
                             finally
                             {
@@ -160,10 +177,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                             throw;
                     }
 
-                    while (inProgress.Count >= max_pending)
+                    if (uploadsInProgress >= max_pending)
                     {
-                        var completedTask = await Task.WhenAny(inProgress);
-                        inProgress.Remove(completedTask);
+                        await Task.WhenAny(workers.Select(w => w.Task));
+                        uploadsInProgress--;
                     }
                 }
 
@@ -172,7 +189,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 try
                 {
                     m_stats.SetBlocking(true);
-                    await Task.WhenAll(inProgress);
+                    await Task.WhenAll(workers.Select(w => w.Task));
                 }
                 finally
                 {
@@ -181,35 +198,34 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-        private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload)
+        private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload, Worker worker)
         {
-            await UploadFileAsync(upload.BlockEntry).ConfigureAwait(false);
-            await UploadFileAsync(upload.IndexEntry).ConfigureAwait(false);
+            await UploadFileAsync(upload.BlockEntry, worker).ConfigureAwait(false);
+            await UploadFileAsync(upload.IndexEntry, worker).ConfigureAwait(false);
             await m_database.AddIndexBlockLinkAsync(upload.IndexVolume.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
         }
 
-        private async Task UploadVolumeWriter(VolumeWriterBase volumeWriter)
+        private async Task UploadVolumeWriter(VolumeWriterBase volumeWriter, Worker worker)
         {
             var fileEntry = new FileEntryItem(BackendActionType.Put, volumeWriter.RemoteFilename);
             fileEntry.SetLocalfilename(volumeWriter.LocalFilename);
             fileEntry.Encrypt(m_options);
             fileEntry.UpdateHashAndSize(m_options);
 
-            await UploadFileAsync(fileEntry).ConfigureAwait(false);
+            await UploadFileAsync(fileEntry, worker).ConfigureAwait(false);
         }
 
-        private async Task UploadFileAsync(FileEntryItem item)
+        private async Task UploadFileAsync(FileEntryItem item, Worker worker)
         {
-            await DoWithRetry(item, async () =>
+            await DoWithRetry(item, worker, async () =>
             {
                 if (item.IsRetry)
                     await RenameFileAfterErrorAsync(item).ConfigureAwait(false);
-
-                await DoPut(item).ConfigureAwait(false);
+                await DoPut(item, worker.Backend).ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
 
-        private async Task DoWithRetry(FileEntryItem item, Func<Task> method)
+        private async Task DoWithRetry(FileEntryItem item, Worker worker, Func<Task> method)
         {
             item.IsRetry = false;
             Exception lastException = null;
@@ -227,6 +243,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 try
                 {
+                    if (worker.Backend == null)
+                        worker.Backend = m_backendFactory();
                     await method().ConfigureAwait(false);
                     return;
                 }
@@ -247,7 +265,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         try
                         {
                             // If we successfully create the folder, we can re-use the connection
-                            m_backend.CreateFolder();
+                            worker.Backend.CreateFolder();
                             recovered = true;
                         }
                         catch (Exception dex)
@@ -257,29 +275,32 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     if (!recovered)
-                        ResetBackend(ex);
+                        ResetBackend(ex, worker);
                 }
                 finally
                 {
                     if (m_options.NoConnectionReuse)
-                        ResetBackend(null);
+                        ResetBackend(null, worker);
                 }
             }
 
             throw lastException;
         }
 
-        private void ResetBackend(Exception ex)
+        private void ResetBackend(Exception ex, Worker worker)
         {
             try
             {
-                m_backend?.Dispose();
+                worker.Backend?.Dispose();
             }
             catch (Exception dex)
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeError", dex, "Failed to dispose backend instance: {0}", ex?.Message);
             }
-            m_backend = null;
+            finally
+            {
+                worker.Backend = null;
+            }
         }
 
         private async Task RenameFileAfterErrorAsync(FileEntryItem item)
@@ -297,7 +318,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             item.RemoteFilename = newname;
         }
 
-        private async Task DoPut(FileEntryItem item)
+        private async Task DoPut(FileEntryItem item, IBackend backend)
         {
             if (item.TrackedInDb)
                 await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
@@ -314,15 +335,15 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             var begin = DateTime.Now;
 
-            if (!m_options.DisableStreamingTransfers && m_backend is IStreamingBackend backend)
+            if (!m_options.DisableStreamingTransfers && backend is IStreamingBackend streamingBackend)
             {
                 using (var fs = File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                 using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                    backend.Put(item.RemoteFilename, pgs);
+                    streamingBackend.Put(item.RemoteFilename, pgs);
             }
             else
-                m_backend.Put(item.RemoteFilename, item.LocalFilename);
+                backend.Put(item.RemoteFilename, item.LocalFilename);
 
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
@@ -334,7 +355,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             if (m_options.ListVerifyUploads)
             {
-                var f = m_backend.List().FirstOrDefault(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase));
+                var f = backend.List().FirstOrDefault(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase));
                 if (f == null)
                     throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
                 else if (f.Size != item.Size && f.Size >= 0)
@@ -367,6 +388,18 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             m_stats.UpdateBackendProgress(pg);
+        }
+
+        private class Worker
+        {
+            public Task Task;
+            public IBackend Backend;
+
+            public Worker(IBackend backend)
+            {
+                Backend = backend;
+                Task = Task.FromResult(true);
+            }
         }
     }
 }
