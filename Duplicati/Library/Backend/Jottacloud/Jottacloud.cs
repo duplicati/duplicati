@@ -336,7 +336,7 @@ namespace Duplicati.Library.Backend
                 Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
         }
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             // Some challenges with uploading to Jottacloud:
             // - Jottacloud supports use of a custom header where we can tell the server the MD5 hash of the file
@@ -374,7 +374,7 @@ namespace Duplicati.Library.Backend
                 using (var os = System.IO.File.OpenWrite(tmpFile))
                 using (var md5 = new Utility.MD5CalculatingStream(baseStream))
                 {
-                    Library.Utility.Utility.CopyStream(md5, os, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(md5, os, true, cancelToken, m_copybuffer);
                     md5Hash = md5.GetFinalHashString();
                 }
                 stream = System.IO.File.OpenRead(tmpFile);
@@ -397,10 +397,11 @@ namespace Duplicati.Library.Backend
                 //req.Headers.Add("JModified", timeModified);
                 req.ContentType = "application/octet-stream";
                 req.ContentLength = fileSize;
+
                 // Write post data request
                 var areq = new Utility.AsyncHttpRequest(req);
                 using (var rs = areq.GetRequestStream())
-                    Utility.Utility.CopyStream(stream, rs, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(stream, rs, true, cancelToken, m_copybuffer);
                 // Send request, and check response
                 using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
@@ -450,8 +451,6 @@ namespace Duplicati.Library.Backend
                 }
                 catch { }
             }
-
-            return Task.FromResult(true);
         }
 
         #endregion

@@ -257,7 +257,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task Put(string remotename, System.IO.Stream input, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream input, CancellationToken cancelToken)
         {
             System.Net.FtpWebRequest req = null;
             try
@@ -272,16 +272,16 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream rs = areq.GetRequestStream(streamLen))
-                    Utility.Utility.CopyStream(input, rs, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(input, rs, true, cancelToken, m_copybuffer).ConfigureAwait(false);
                 
-                if (m_listVerify) 
+                if (m_listVerify)
                 {
                     IEnumerable<IFileEntry> files = List(remotename);
                     foreach(IFileEntry fe in files)
                         if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename, StringComparison.Ordinal) || fe.Name.EndsWith("\\" + remotename, StringComparison.Ordinal)) 
                         {
                             if (fe.Size < 0 || streamLen < 0 || fe.Size == streamLen)
-                                return Task.FromResult(true);
+                                return;
 
                             throw new Exception(Strings.FTPBackend.ListVerifySizeFailure(remotename, fe.Size, streamLen));
                         } 
@@ -297,8 +297,6 @@ namespace Duplicati.Library.Backend
                 else
                     throw;
             }
-
-            return Task.FromResult(true);
         }
 
         public Task Put(string remotename, string localname, CancellationToken cancelToken)
