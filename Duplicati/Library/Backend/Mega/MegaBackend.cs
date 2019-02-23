@@ -142,14 +142,14 @@ namespace Duplicati.Library.Backend.Mega
 
         #region IStreamingBackend implementation
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
                 if (m_filecache == null)
                     ResetFileCache();
 
-                var el = Client.Upload(stream, remotename, CurrentFolder);
+                var el = await Client.UploadAsync(stream, remotename, CurrentFolder, null, null, cancelToken);
                 if (m_filecache.ContainsKey(remotename))
                     Delete(remotename);
 
@@ -161,8 +161,6 @@ namespace Duplicati.Library.Backend.Mega
                 m_filecache = null;
                 throw;
             }
-
-            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
