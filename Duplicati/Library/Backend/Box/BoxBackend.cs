@@ -198,7 +198,7 @@ namespace Duplicati.Library.Backend.Box
 
         #region IStreamingBackend implementation
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var createreq = new CreateItemRequest() {
                 Name = remotename,
@@ -214,24 +214,20 @@ namespace Duplicati.Library.Backend.Box
 
             try
             {
-                FileEntity res;
+                string url;
+                var items = new List<MultipartItem>(2);
+
                 if (existing)
-                {
-                    res = m_oauth.PostMultipartAndGetJSONData<FileList>(
-                        string.Format("{0}/{1}/content", BOX_UPLOAD_URL, m_filecache[remotename]),
-                        new MultipartItem(stream, "file", remotename)
-                    ).Entries.First();
-                }
+                    url = $"{BOX_UPLOAD_URL}/{m_filecache[remotename]}/content";
                 else
                 {
-
-                    res = m_oauth.PostMultipartAndGetJSONData<FileList>(
-                        string.Format("{0}/content", BOX_UPLOAD_URL),
-                        new MultipartItem(createreq, "attributes"),
-                        new MultipartItem(stream, "file", remotename)
-                    ).Entries.First();
+                    url = $"{BOX_UPLOAD_URL}/content";
+                    items.Add(new MultipartItem(createreq, "attributes"));
                 }
 
+                items.Add(new MultipartItem(stream, "file", remotename));
+
+                var res = (await m_oauth.PostMultipartAndGetJSONDataAsync<FileList>(url, null, cancelToken, items.ToArray())).Entries.First();
                 m_filecache[remotename] = res.ID;
             }
             catch
@@ -239,8 +235,6 @@ namespace Duplicati.Library.Backend.Box
                 m_filecache.Clear();
                 throw;
             }
-
-            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)

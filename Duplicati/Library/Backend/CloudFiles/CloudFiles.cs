@@ -314,7 +314,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             HttpWebRequest req = CreateRequest("/" + remotename, "");
             req.Method = "PUT";
@@ -352,14 +352,13 @@ namespace Duplicati.Library.Backend
 
                 long streamLen = -1;
                 try { streamLen = stream.Length; }
-                catch {}
-
+                catch { }
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream s = areq.GetRequestStream(streamLen))
                 using (var mds = new Utility.MD5CalculatingStream(s))
                 {
-                    Utility.Utility.CopyStream(stream, mds, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(stream, mds, tryRewindSource: true, cancelToken: cancelToken);
                     fileHash = mds.GetFinalHashString();
                 }
 
@@ -377,7 +376,7 @@ namespace Duplicati.Library.Backend
                 catch (WebException wex)
                 {
                     //Catch 404 and turn it into a FolderNotFound error
-                    if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                    if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                         throw new FolderMissingException(wex);
 
                     //Other error, just re-throw
@@ -394,8 +393,6 @@ namespace Duplicati.Library.Backend
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
                 }
             }
-
-            return Task.FromResult(true);
         }
 
         #endregion
