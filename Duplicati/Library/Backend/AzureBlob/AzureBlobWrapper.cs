@@ -21,6 +21,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -95,17 +97,17 @@ namespace Duplicati.Library.Backend.AzureBlob
             _container.GetBlockBlobReference(keyName).DownloadToFile(localfile, FileMode.Create);
         }
 
-        public void AddFileObject(string keyName, string localfile)
+        public Task AddFileObject(string keyName, string localfile, CancellationToken cancelToken)
         {
             using (var fs = File.Open(localfile, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                AddFileStream(keyName, fs);
+                return AddFileStream(keyName, fs, cancelToken);
             }
         }
 
-        public virtual void AddFileStream(string keyName, Stream source)
+        public virtual async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
-            _container.GetBlockBlobReference(keyName).UploadFromStream(source);
+            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, cancelToken);
         }
 
         public void DeleteObject(string keyName)

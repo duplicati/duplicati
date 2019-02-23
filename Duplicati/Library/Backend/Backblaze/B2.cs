@@ -190,7 +190,7 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             TempFile tmp = null;
 
@@ -205,14 +205,11 @@ namespace Duplicati.Library.Backend.Backblaze
             string sha1;
             if (measure.CanSeek)
             {
-                // Record the stream position
                 var p = measure.Position;
 
-                // Compute the hash
-                using(var hashalg = Duplicati.Library.Utility.HashAlgorithmHelper.Create("sha1"))
-                    sha1 = Library.Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
+                using(var hashalg = HashAlgorithmHelper.Create("sha1"))
+                    sha1 = Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
 
-                // Reset the stream position
                 measure.Position = p;
             }
             else
@@ -222,7 +219,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 using(var sr = System.IO.File.OpenWrite(tmp))
                 using(var hc = new HashCalculatingStream(measure, "sha1"))
                 {
-                    Library.Utility.Utility.CopyStream(hc, sr);
+                    await Utility.Utility.CopyStreamAsync(hc, sr, cancelToken).ConfigureAwait(false);
                     sha1 = hc.GetFinalHashString();
                 }
 
@@ -234,8 +231,9 @@ namespace Duplicati.Library.Backend.Backblaze
 
             try
             {
-                var fileinfo = m_helper.GetJSONData<UploadFileResponse>(
+                var fileinfo = await m_helper.GetJSONDataAsync<UploadFileResponse>(
                     UploadUrlData.UploadUrl,
+                    cancelToken,
                     req =>
                     {
                         req.Method = "POST";
@@ -246,12 +244,12 @@ namespace Duplicati.Library.Backend.Backblaze
                         req.ContentLength = stream.Length;
                     },
 
-                    req =>
+                    async (req, reqCancelToken) =>
                     {
-                        using(var rs = req.GetRequestStream())
-                            Utility.Utility.CopyStream(stream, rs);
+                        using (var rs = req.GetRequestStream())
+                            await Utility.Utility.CopyStreamAsync(stream, rs, reqCancelToken);
                     }
-                );
+                ).ConfigureAwait(false);
 
                 // Delete old versions
                 if (m_filecache.ContainsKey(remotename))
@@ -280,15 +278,10 @@ namespace Duplicati.Library.Backend.Backblaze
             {
                 try
                 {
-                    if (tmp != null)
-                        tmp.Dispose();
+                    tmp?.Dispose();
                 }
-                catch
-                {
-                }
+                catch { }
             }
-
-            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)

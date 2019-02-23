@@ -208,6 +208,26 @@ namespace Duplicati.Library
         }
 
         /// <summary>
+        /// Executes a web request and json-deserializes the results as the specified type
+        /// </summary>
+        /// <returns>The deserialized JSON data.</returns>
+        /// <param name="url">The remote URL</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
+        /// <param name="setupbodyreq">A callback method that can be used to submit data into the body of the request.</param>
+        /// <typeparam name="T">The type of data to return.</typeparam>
+        public virtual async Task<T> GetJSONDataAsync<T>(string url, CancellationToken cancelToken, Action<HttpWebRequest> setup = null, Func<AsyncHttpRequest, CancellationToken, Task> setupbodyreq = null)
+        {
+            var req = CreateRequest(url);
+            setup?.Invoke(req);
+
+            var areq = new AsyncHttpRequest(req);
+            await setupbodyreq?.Invoke(areq, cancelToken);
+
+            return await ReadJSONResponseAsync<T>(areq, cancelToken);
+        }
+
+        /// <summary>
         /// Executes a web request by POST'ing the supplied object and json-deserializes the results as the specified type
         /// </summary>
         /// <returns>The deserialized JSON data.</returns>
@@ -255,6 +275,12 @@ namespace Duplicati.Library
         public virtual T ReadJSONResponse<T>(AsyncHttpRequest req, object requestdata = null)
         {
             using(var resp = GetResponse(req, requestdata))
+                return ReadJSONResponse<T>(resp);
+        }
+
+        public virtual async Task<T> ReadJSONResponseAsync<T>(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
+        {
+            using (var resp = await GetResponseAsync(req, cancelToken, requestdata))
                 return ReadJSONResponse<T>(resp);
         }
 
@@ -346,6 +372,41 @@ namespace Duplicati.Library
                 return (HttpWebResponse)req.GetResponse();
             }
             catch(Exception ex)
+            {
+                ParseException(ex);
+                throw;
+            }
+        }
+
+        public async Task<HttpWebResponse> GetResponseAsync(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
+        {
+            try
+            {
+                if (requestdata != null)
+                {
+                    if (requestdata is System.IO.Stream stream)
+                    {
+                        req.Request.ContentLength = stream.Length;
+                        if (string.IsNullOrEmpty(req.Request.ContentType))
+                            req.Request.ContentType = "application/octet-stream";
+
+                        using (var rs = req.GetRequestStream())
+                            await Utility.Utility.CopyStreamAsync(stream, rs, cancelToken);
+                    }
+                    else
+                    {
+                        var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
+                        req.Request.ContentLength = data.Length;
+                        req.Request.ContentType = "application/json; charset=UTF-8";
+
+                        using (var rs = req.GetRequestStream())
+                            await rs.WriteAsync(data, 0, data.Length, cancelToken);
+                    }
+                }
+
+                return (HttpWebResponse)req.GetResponse();
+            }
+            catch (Exception ex)
             {
                 ParseException(ex);
                 throw;

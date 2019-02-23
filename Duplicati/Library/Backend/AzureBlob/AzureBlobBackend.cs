@@ -97,10 +97,9 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public Task Put(string remotename, Stream input, CancellationToken cancelToken)
+        public async Task Put(string remotename, Stream input, CancellationToken cancelToken)
         {
-            _azureBlob.AddFileStream(remotename, input);
-            return Task.FromResult(true);
+            await _azureBlob.AddFileStream(remotename, input, cancelToken);
         }
 
         public void Get(string remotename, string localname)
