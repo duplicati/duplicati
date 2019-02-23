@@ -21,6 +21,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -343,27 +344,25 @@ namespace Duplicati.Library.Backend
 
         public Task Put(string remotename, string localname, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
                 return Put(remotename, fs, cancelToken);
         }
 
-        public Task Put(string remotename, System.IO.Stream input, CancellationToken cancelToken)
+        public async Task Put(string remotename, Stream input, CancellationToken cancelToken)
         {
             try
             {
-                Connection.AddFileStream(m_bucket, GetFullKey(remotename), input);
+                await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
             }
             catch (Exception ex)
             {
                 //Catch "non-existing" buckets
                 Amazon.S3.AmazonS3Exception s3ex = ex as Amazon.S3.AmazonS3Exception;
                 if (s3ex != null && (s3ex.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchBucket".Equals(s3ex.ErrorCode)))
-                    throw new Interface.FolderMissingException(ex);
+                    throw new FolderMissingException(ex);
 
                 throw;
             }
-
-            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string localname)

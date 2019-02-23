@@ -530,7 +530,7 @@ namespace Duplicati.Library.Backend
         }
 
         public Task Put(string remotename, Stream stream, CancellationToken cancelToken) { return doPut(remotename, stream, false, cancelToken); }
-        private Task doPut(string remotename, Stream stream, bool useNewContext, CancellationToken cancelToken)
+        private async Task doPut(string remotename, Stream stream, bool useNewContext, CancellationToken cancelToken)
         {
             string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
             SP.ClientContext ctx = getSpClientContext(useNewContext);
@@ -544,26 +544,24 @@ namespace Duplicati.Library.Backend
                 
                 useNewContext = true; // disable retry
                 if (!m_useBinaryDirectMode)
-                    uploadFileSlicePerSlice(ctx, remoteFolder, stream, fileurl);
+                    await uploadFileSlicePerSlice(ctx, remoteFolder, stream, fileurl, cancelToken);
             }
             catch (ServerException) { throw; /* rethrow if Server answered */ }
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
-            catch { if (!useNewContext) /* retry */ { return doPut(remotename, stream, true, cancelToken); } else throw; }
+            catch { if (!useNewContext) /* retry */ { await doPut(remotename, stream, true, cancelToken); } else throw; }
 
             if (m_useBinaryDirectMode)
             {
                 SP.File.SaveBinaryDirect(ctx, fileurl, stream, true);
             }
-
-            return Task.FromResult(true);
         }
 
         /// <summary>
         /// Upload in chunks to bypass filesize limit.
         /// https://msdn.microsoft.com/en-us/library/office/dn904536.aspx
         /// </summary>
-        private SP.File uploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName)
+        private async Task<SP.File> uploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName, CancellationToken cancelToken)
         {
             // Each sliced upload requires a unique ID.
             Guid uploadId = Guid.NewGuid();
@@ -587,7 +585,7 @@ namespace Duplicati.Library.Backend
             {
                 int bufCnt = 0;
                 // read chunk to array (necessary because chunk uploads fail if size unknown)
-                while (bufCnt < blockSize && (lastreadsize = sourceFileStream.Read(buf, bufCnt, blockSize - bufCnt)) > 0)
+                while (bufCnt < blockSize && (lastreadsize = await sourceFileStream.ReadAsync(buf, bufCnt, blockSize - bufCnt, cancelToken)) > 0)
                     bufCnt += lastreadsize;
 
                 using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))

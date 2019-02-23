@@ -271,7 +271,7 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Members
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -284,7 +284,7 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream s = areq.GetRequestStream())
-                    Utility.Utility.CopyStream(stream, s, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(stream, s, true, cancelToken, m_copybuffer);
 
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
@@ -302,8 +302,6 @@ namespace Duplicati.Library.Backend
 
                 throw;
             }
-
-            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)

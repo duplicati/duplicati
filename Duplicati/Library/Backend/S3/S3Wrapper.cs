@@ -17,12 +17,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Duplicati.Library.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -132,6 +134,20 @@ namespace Duplicati.Library.Backend
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
 
             m_client.PutObject(objectAddRequest);
+        }
+
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source, CancellationToken cancelToken)
+        {
+            var objectAddRequest = new PutObjectRequest
+            {
+                BucketName = bucketName,
+                Key = keyName,
+                InputStream = source
+            };
+            if (!string.IsNullOrWhiteSpace(m_storageClass))
+                objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
+
+            await m_client.PutObjectAsync(objectAddRequest, cancelToken);
         }
 
         public void DeleteObject(string bucketName, string keyName)
