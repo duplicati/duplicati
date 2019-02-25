@@ -17,13 +17,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -57,6 +57,8 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("Europe (EU, Frankfurt)", "eu-central-1"),
             new KeyValuePair<string, string>("Europe (EU, Ireland)", "eu-west-1"),
             new KeyValuePair<string, string>("Europe (EU, London)", "eu-west-2"),
+            new KeyValuePair<string, string>("Europe (EU, Paris)", "eu-west-3"),
+            new KeyValuePair<string, string>("Europe (EU, Stockholm)", "eu-north-1"),
             new KeyValuePair<string, string>("US East (Northern Virginia)", "us-east-1"),
             new KeyValuePair<string, string>("US East (Ohio)", "us-east-2"),
             new KeyValuePair<string, string>("US West (Northern California)", "us-west-1"),
@@ -67,7 +69,10 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("Asia Pacific (Sydney)", "ap-southeast-2"),
             new KeyValuePair<string, string>("Asia Pacific (Tokyo)", "ap-northeast-1"),
             new KeyValuePair<string, string>("Asia Pacific (Seoul)", "ap-northeast-2"),
+            new KeyValuePair<string, string>("Asia Pacific (Osaka-Local)", "ap-northeast-3"),
             new KeyValuePair<string, string>("South America (São Paulo)", "sa-east-1"),
+            new KeyValuePair<string, string>("China (Beijing)", "cn-north-1"),
+            new KeyValuePair<string, string>("China (Ningxia)", "cn-northwest-1"),
         };
 
         public static readonly KeyValuePair<string, string>[] DEFAULT_S3_LOCATION_BASED_HOSTS = new KeyValuePair<string, string>[] {
@@ -75,6 +80,8 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("ca-central-1", "s3-ca-central-1.amazonaws.com"),
             new KeyValuePair<string, string>("eu-west-1", "s3-eu-west-1.amazonaws.com"),
             new KeyValuePair<string, string>("eu-west-2", "s3-eu-west-2.amazonaws.com"),
+            new KeyValuePair<string, string>("eu-west-3", "s3-eu-west-3.amazonaws.com"),
+            new KeyValuePair<string, string>("eu-north-1", "s3-eu-north-1.amazonaws.com"),
             new KeyValuePair<string, string>("eu-central-1", "s3-eu-central-1.amazonaws.com"),
             new KeyValuePair<string, string>("us-east-1", "s3.amazonaws.com"),
             new KeyValuePair<string, string>("us-east-2", "s3.us-east-2.amazonaws.com"),
@@ -85,12 +92,16 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("ap-southeast-2", "s3-ap-southeast-2.amazonaws.com"),
             new KeyValuePair<string, string>("ap-northeast-1", "s3-ap-northeast-1.amazonaws.com"),
             new KeyValuePair<string, string>("ap-northeast-2", "s3-ap-northeast-2.amazonaws.com"),
+            new KeyValuePair<string, string>("ap-northeast-3", "s3-ap-northeast-3.amazonaws.com"),
             new KeyValuePair<string, string>("sa-east-1", "s3-sa-east-1.amazonaws.com"),
+            new KeyValuePair<string, string>("cn-north-1", "s3.cn-north-1.amazonaws.com.cn"),
+            new KeyValuePair<string, string>("cn-northwest-1", "s3.cn-northwest-1.amazonaws.com.cn"),
         };
 
         public static readonly KeyValuePair<string, string>[] KNOWN_S3_STORAGE_CLASSES;
 
-        static S3() {
+        static S3()
+        {
             var ns = new List<KeyValuePair<string, string>> {
                 new KeyValuePair<string, string>("(default)", ""),
                 new KeyValuePair<string, string>("Standard", "STANDARD"),
@@ -101,7 +112,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                foreach(var sc in ReadStorageClasses())
+                foreach (var sc in ReadStorageClasses())
                     if (!ns.Select(x => x.Value).Contains(sc.Value))
                         ns.Add(sc);
             }
@@ -118,7 +129,7 @@ namespace Duplicati.Library.Backend
         /// <returns>The storage classes.</returns>
         private static IEnumerable<KeyValuePair<string, string>> ReadStorageClasses()
         {
-            foreach(var f in typeof(Amazon.S3.S3StorageClass).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public))
+            foreach (var f in typeof(Amazon.S3.S3StorageClass).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public))
             {
                 if (f.FieldType == typeof(Amazon.S3.S3StorageClass))
                 {
@@ -133,7 +144,7 @@ namespace Duplicati.Library.Backend
         private readonly string m_bucket;
         private readonly string m_prefix;
 
-        public const string DEFAULT_S3_HOST  = "s3.amazonaws.com";
+        public const string DEFAULT_S3_HOST = "s3.amazonaws.com";
         public const string S3_EU_REGION_NAME = "eu-west-1";
         public const string S3_RRS_CLASS_NAME = "REDUCED_REDUNDANCY";
 
@@ -151,7 +162,7 @@ namespace Duplicati.Library.Backend
         {
             var uri = new Utility.Uri(url);
             uri.RequireHost();
-            
+
             string host = uri.Host;
             m_prefix = uri.Path;
 
@@ -197,13 +208,13 @@ namespace Duplicati.Library.Backend
 
             string s3host;
             options.TryGetValue(SERVER_NAME, out s3host);
-            if (string.IsNullOrEmpty(s3host)) 
+            if (string.IsNullOrEmpty(s3host))
             {
                 s3host = DEFAULT_S3_HOST;
 
                 //Change in S3, now requires that you use location specific endpoint
                 if (!string.IsNullOrEmpty(locationConstraint))
-                    foreach(KeyValuePair<string, string> kvp in DEFAULT_S3_LOCATION_BASED_HOSTS)
+                    foreach (KeyValuePair<string, string> kvp in DEFAULT_S3_LOCATION_BASED_HOSTS)
                         if (kvp.Key.Equals(locationConstraint, StringComparison.OrdinalIgnoreCase))
                         {
                             s3host = kvp.Value;
@@ -247,7 +258,7 @@ namespace Duplicati.Library.Backend
                         throw new UserInformationException(Strings.S3Backend.UnableToDecodeBucketnameError(url), "S3CannotDecodeBucketName");
                 }
 
-                Logging.Log.WriteWarningMessage(LOGTAG, "DeprecatedS3Format", null, Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix)); 
+                Logging.Log.WriteWarningMessage(LOGTAG, "DeprecatedS3Format", null, Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix));
             }
             else
             {
@@ -391,7 +402,7 @@ namespace Duplicati.Library.Backend
             {
                 StringBuilder hostnames = new StringBuilder();
                 StringBuilder locations = new StringBuilder();
-                foreach(KeyValuePair<string, string> s in KNOWN_S3_PROVIDERS)
+                foreach (KeyValuePair<string, string> s in KNOWN_S3_PROVIDERS)
                     hostnames.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
                 foreach (KeyValuePair<string, string> s in KNOWN_S3_LOCATIONS)
@@ -399,10 +410,10 @@ namespace Duplicati.Library.Backend
 
                 var defaults = new Amazon.S3.AmazonS3Config();
 
-                var exts = 
+                var exts =
                     typeof(Amazon.S3.AmazonS3Config).GetProperties().Where(x => x.CanRead && x.CanWrite && (x.PropertyType == typeof(string) || x.PropertyType == typeof(bool) || x.PropertyType == typeof(int) || x.PropertyType == typeof(long) || x.PropertyType.IsEnum))
                         .Select(x => (ICommandLineArgument)new CommandLineArgument(
-                            "s3-ext-" + x.Name.ToLowerInvariant(), 
+                            "s3-ext-" + x.Name.ToLowerInvariant(),
                             x.PropertyType == typeof(bool) ? CommandLineArgument.ArgumentType.Boolean : x.PropertyType.IsEnum ? CommandLineArgument.ArgumentType.Enumeration : CommandLineArgument.ArgumentType.String,
                             x.Name,
                             string.Format("Extended option {0}", x.Name),
