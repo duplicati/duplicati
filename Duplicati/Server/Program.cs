@@ -195,9 +195,9 @@ namespace Duplicati.Server
 
             //Find commandline options here for handling special startup cases
             var args = new List<string>(_args);
-            var argtuple = Library.Utility.FilterCollector.ExtractOptions(new List<string>(args));
-            var commandlineOptions = argtuple.Item1;
-            var filter = argtuple.Item2;
+            var optionsWithFilter = Library.Utility.FilterCollector.ExtractOptions(new List<string>(args));
+            var commandlineOptions = optionsWithFilter.Item1;
+            var filter = optionsWithFilter.Item2;
 
             if (_args.Select(s => s.ToLower()).Intersect(alternativeHelpStrings.ConvertAll(x => x.ToLower())).Any())
             {
@@ -212,7 +212,7 @@ namespace Duplicati.Server
             Library.Utility.SystemContextSettings.StartSession();
 
             var parameterFileOption = commandlineOptions.Keys.Select(s => s.ToLower())
-                                    .Intersect(parameterFileOptionStrings.ConvertAll(x => x.ToLower())).FirstOrDefault();
+                .Intersect(parameterFileOptionStrings.ConvertAll(x => x.ToLower())).FirstOrDefault();
 
             if (parameterFileOption != null && !string.IsNullOrEmpty(commandlineOptions[parameterFileOption]))
             {
@@ -248,22 +248,19 @@ namespace Duplicati.Server
                 
                 SetPurgeTempFilesTimer(commandlineOptions);
 
-                LiveControl = new LiveControls(DataConnection.ApplicationSettings);
-                LiveControl.StateChanged += new EventHandler(LiveControl_StateChanged);
-                LiveControl.ThreadPriorityChanged += new EventHandler(LiveControl_ThreadPriorityChanged);
-                LiveControl.ThrottleSpeedChanged += new EventHandler(LiveControl_ThrottleSpeedChanged);
+                SetLiveControls();
 
-                Program.WorkThread = new Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData>((x) =>
-                {
-                    Runner.Run(x, true);
-                }, LiveControl.State == LiveControls.LiveControlState.Paused);
-                Program.Scheduler = new Scheduler(WorkThread);
+                WorkThread = new Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData>((x) =>
+                    {
+                        Runner.Run(x, true);
+                    }, LiveControl.State == LiveControls.LiveControlState.Paused);
+                Scheduler = new Scheduler(WorkThread);
 
-                Program.WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
-                Program.WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
-                Program.WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
-                Program.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
-                Program.WorkThread.OnError += (worker, task, exception) => { Program.DataConnection.LogError(task?.BackupID, "Error in worker", exception); };
+                WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
+                WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
+                WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
+                Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
+                WorkThread.OnError += (worker, task, exception) => { Program.DataConnection.LogError(task?.BackupID, "Error in worker", exception); };
 
                 var lastScheduleId = LastDataUpdateID;
                 Program.StatusEventNotifyer.NewEvent += (sender, e) =>
@@ -315,11 +312,10 @@ namespace Duplicati.Server
             catch (SingleInstance.MultipleInstanceException mex)
             {
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
-                if (writeToConsole)
-                {
-                    Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
-                    return 100;
-                }
+                if (!writeToConsole) throw;
+                
+                Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
+                return 100;
 
                 throw;
             }
@@ -357,6 +353,14 @@ namespace Duplicati.Server
                 return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
 
             return 0;
+        }
+
+        private static void SetLiveControls()
+        {
+            LiveControl = new LiveControls(DataConnection.ApplicationSettings);
+            LiveControl.StateChanged += LiveControl_StateChanged;
+            LiveControl.ThreadPriorityChanged += LiveControl_ThreadPriorityChanged;
+            LiveControl.ThrottleSpeedChanged += LiveControl_ThrottleSpeedChanged;
         }
 
         private static void SetPurgeTempFilesTimer(Dictionary<string, string> commandlineOptions)
@@ -694,16 +698,14 @@ namespace Duplicati.Server
                     {
                         WorkThread.Pause();
                         var t = WorkThread.CurrentTask;
-                        if (t != null)
-                            t.Pause();
+                        t?.Pause();
                         break;
                     }
                 case LiveControls.LiveControlState.Running:
                     {
                         WorkThread.Resume();
                         var t = WorkThread.CurrentTask;
-                        if (t != null)
-                            t.Resume();
+                        t?.Resume();
                         break;
                     }
             }
