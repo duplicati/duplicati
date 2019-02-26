@@ -150,6 +150,7 @@ namespace Duplicati.Library.Main.Volumes
         public override void Dispose()
         {
             this.Close();
+            base.Dispose();
         }
 
         public long FileCount { get { return m_filecount; } }
