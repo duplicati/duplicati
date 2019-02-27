@@ -95,8 +95,11 @@ namespace Duplicati.Library.Main.Operation.Backup
         private StatsCollector m_stats;
         private DatabaseCommon m_database;
         private readonly BackupResults m_results;
+        private readonly FileProgressThrottler m_progressUpdater;
         private string m_lastThrottleUploadValue;
         private string m_lastThrottleDownloadValue;
+        private int m_maxConcurrentUploads;
+        private long m_initialUploadThrottle;
 
         public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, BackupResults results, ITaskReader taskreader, StatsCollector stats)
         {
@@ -106,6 +109,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             m_stats = stats;
             m_database = database;
             m_results = results;
+            m_progressUpdater = new FileProgressThrottler(stats, options.MaxUploadPrSecond);
         }
 
         public Task Run()
@@ -118,10 +122,12 @@ namespace Duplicati.Library.Main.Operation.Backup
             async self =>
             {
                 var workers = new List<Worker>();
-                var maxConcurrent = m_options.AsynchronousConcurrentUploadLimit <= 0 ? long.MaxValue : m_options.AsynchronousConcurrentUploadLimit;
+                m_maxConcurrentUploads = m_options.AsynchronousConcurrentUploadLimit <= 0 ? int.MaxValue : m_options.AsynchronousConcurrentUploadLimit;
+                m_initialUploadThrottle = m_options.AsynchronousConcurrentUploadLimit <= 0 ? int.MaxValue : m_options.MaxUploadPrSecond / m_maxConcurrentUploads;
                 var lastSize = -1L;
                 var uploadsInProgress = 0;
                 m_cancelTokenSource = new CancellationTokenSource();
+                m_progressUpdater.Run(m_cancelTokenSource.Token);
 
                 while (!await self.Input.IsRetiredAsync && await m_taskreader.ProgressAsync)
                 {
@@ -177,10 +183,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                     catch (Exception ex)
                     {
                         if (!ex.IsRetiredException())
+                        {
+                            m_cancelTokenSource.Cancel();
                             throw;
+                        }
                     }
 
-                    if (uploadsInProgress >= maxConcurrent)
+                    if (uploadsInProgress >= m_maxConcurrentUploads)
                     {
                         await Task.WhenAny(workers.Select(w => w.Task));
                         uploadsInProgress--;
@@ -334,21 +343,23 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             await m_database.LogRemoteOperationAsync("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
-            await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
+            await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size, updateProgress: false);
+            m_progressUpdater.StartFileProgress(item.RemoteFilename, item.Size);
 
             var begin = DateTime.Now;
 
             if (!m_options.DisableStreamingTransfers && backend is IStreamingBackend streamingBackend)
             {
                 using (var fs = File.OpenRead(item.LocalFilename))
-                using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
+                using (var ts = new ThrottledStream(fs, m_initialUploadThrottle, 0))
+                using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg, item.RemoteFilename)))
                     await streamingBackend.Put(item.RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
             }
             else
                 await backend.Put(item.RemoteFilename, item.LocalFilename, cancelToken).ConfigureAwait(false);
 
             var duration = DateTime.Now - begin;
+            m_progressUpdater.EndFileProgress(item.RemoteFilename);
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
 
             if (item.TrackedInDb)
@@ -369,28 +380,29 @@ namespace Duplicati.Library.Main.Operation.Backup
             await m_database.CommitTransactionAsync("CommitAfterUpload");
         }
 
-        private void HandleProgress(ThrottledStream ts, long pg)
+        private void HandleProgress(ThrottledStream ts, long progress, string path)
         {
             if (!m_taskreader.TransferProgressAsync.WaitForTask().Result)
                 throw new OperationCanceledException();
 
-            // Update the throttle speeds if they have changed
-            string tmp;
-            m_options.RawOptions.TryGetValue("throttle-upload", out tmp);
+            var updateThrottleSpeeds = false;
+            m_options.RawOptions.TryGetValue("throttle-upload", out var tmp);
             if (tmp != m_lastThrottleUploadValue)
             {
-                ts.WriteSpeed = m_options.MaxUploadPrSecond;
                 m_lastThrottleUploadValue = tmp;
+                m_initialUploadThrottle = m_options.MaxUploadPrSecond / m_maxConcurrentUploads;
+                updateThrottleSpeeds = true;
             }
 
             m_options.RawOptions.TryGetValue("throttle-download", out tmp);
             if (tmp != m_lastThrottleDownloadValue)
             {
-                ts.ReadSpeed = m_options.MaxDownloadPrSecond;
                 m_lastThrottleDownloadValue = tmp;
             }
 
-            m_stats.UpdateBackendProgress(pg);
+            if (updateThrottleSpeeds)
+                m_progressUpdater.UpdateThrottleSpeeds(m_options.MaxUploadPrSecond);
+            m_progressUpdater.UpdateFileProgress(path, progress, ts);
         }
 
         private class Worker
