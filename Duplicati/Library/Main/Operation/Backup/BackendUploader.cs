@@ -118,7 +118,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             async self =>
             {
                 var workers = new List<Worker>();
-                var max_pending = m_options.AsynchronousUploadLimit == 0 ? long.MaxValue : m_options.AsynchronousUploadLimit;
+                var maxConcurrent = m_options.AsynchronousConcurrentUploadLimit <= 0 ? long.MaxValue : m_options.AsynchronousConcurrentUploadLimit;
                 var lastSize = -1L;
                 var uploadsInProgress = 0;
                 m_cancelTokenSource = new CancellationTokenSource();
@@ -180,7 +180,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             throw;
                     }
 
-                    if (uploadsInProgress >= max_pending)
+                    if (uploadsInProgress >= maxConcurrent)
                     {
                         await Task.WhenAny(workers.Select(w => w.Task));
                         uploadsInProgress--;
