@@ -10,14 +10,14 @@ namespace Duplicati.Server
     public class Program
     {
 
-        private static readonly List<string> alternativeHelpStrings = new List<string> { "help", "/help", "usage", "/usage", "--help" };
+        private static readonly List<string> AlternativeHelpStrings = new List<string> { "help", "/help", "usage", "/usage", "--help" };
 
-        private static readonly List<string> parameterFileOptionStrings = new List<string> { "parameters-file", "parameters-file", "parameterfile" };
+        private static readonly List<string> ParameterFileOptionStrings = new List<string> { "parameters-file", "parameters-file", "parameterfile" };
 
         /// <summary>
         /// The log tag for messages from this class
         /// </summary>
-        public static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
         /// <summary>
         /// The path to the directory that contains the main executable
         /// </summary>
@@ -26,12 +26,12 @@ namespace Duplicati.Server
         /// <summary>
         /// The name of the environment variable that holds the path to the data folder used by Duplicati
         /// </summary>
-        public static readonly string DATAFOLDER_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_HOME";
+        private static readonly string DATAFOLDER_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_HOME";
 
         /// <summary>
         /// The environment variable that holdes the database key used to encrypt the SQLite database
         /// </summary>
-        public static readonly string DB_KEY_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_DB_KEY";
+        private static readonly string DB_KEY_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_DB_KEY";
 
         /// <summary>
         /// Gets the folder where Duplicati data is stored
@@ -76,12 +76,12 @@ namespace Duplicati.Server
         /// <summary>
         /// The thread running the ping-pong handler
         /// </summary>
-        public static System.Threading.Thread PingPongThread;
+        private static System.Threading.Thread PingPongThread;
 
         /// <summary>
         /// The path to the file that contains the current database
         /// </summary>
-        public static string DatabasePath;
+        private static string DatabasePath;
 
         /// <summary>
         /// The controller interface for pause/resume and throttle options
@@ -96,7 +96,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The webserver instance
         /// </summary>
-        public static WebServer.Server WebServer;
+        private static WebServer.Server WebServer;
 
         /// <summary>
         /// The update poll thread.
@@ -199,7 +199,7 @@ namespace Duplicati.Server
             var commandlineOptions = optionsWithFilter.Item1;
             var filter = optionsWithFilter.Item2;
 
-            if (_args.Select(s => s.ToLower()).Intersect(alternativeHelpStrings.ConvertAll(x => x.ToLower())).Any())
+            if (_args.Select(s => s.ToLower()).Intersect(AlternativeHelpStrings.ConvertAll(x => x.ToLower())).Any())
             {
                 return ShowHelp(writeToConsole);
             }
@@ -212,7 +212,7 @@ namespace Duplicati.Server
             Library.Utility.SystemContextSettings.StartSession();
 
             var parameterFileOption = commandlineOptions.Keys.Select(s => s.ToLower())
-                .Intersect(parameterFileOptionStrings.ConvertAll(x => x.ToLower())).FirstOrDefault();
+                .Intersect(ParameterFileOptionStrings.ConvertAll(x => x.ToLower())).FirstOrDefault();
 
             if (parameterFileOption != null && !string.IsNullOrEmpty(commandlineOptions[parameterFileOption]))
             {
