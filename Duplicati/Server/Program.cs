@@ -250,60 +250,14 @@ namespace Duplicati.Server
 
                 SetLiveControls();
 
-                WorkThread = new Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData>((x) =>
-                    {
-                        Runner.Run(x, true);
-                    }, LiveControl.State == LiveControls.LiveControlState.Paused);
-                Scheduler = new Scheduler(WorkThread);
+                SetWorkerThread();
 
-                WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
-                WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
-                WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
-                Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
-                WorkThread.OnError += (worker, task, exception) => { Program.DataConnection.LogError(task?.BackupID, "Error in worker", exception); };
-
-                var lastScheduleId = LastDataUpdateID;
-                Program.StatusEventNotifyer.NewEvent += (sender, e) =>
-                {
-                    if (lastScheduleId == LastDataUpdateID) return;
-                    lastScheduleId = LastDataUpdateID;
-                    Program.Scheduler.Reschedule();
-                };
-
-                void registerTaskResult(long id, Exception ex)
-                {
-                    lock (Program.MainLock)
-                    {
-
-                        // If the new results says it crashed, we store that instead of success
-                        if (Program.TaskResultCache.Count > 0 && Program.TaskResultCache.Last().Key == id)
-                        {
-                            if (ex != null && Program.TaskResultCache.Last().Value == null)
-                                Program.TaskResultCache.RemoveAt(Program.TaskResultCache.Count - 1);
-                            else
-                                return;
-                        }
-
-                        Program.TaskResultCache.Add(new KeyValuePair<long, Exception>(id, ex));
-                        while (Program.TaskResultCache.Count > MAX_TASK_RESULT_CACHE_SIZE)
-                            Program.TaskResultCache.RemoveAt(0);
-                    }
-                }
-
-                Program.WorkThread.CompletedWork += (worker, task) => { registerTaskResult(task.TaskID, null); };
-                Program.WorkThread.OnError += (worker, task, exception) => { registerTaskResult(task.TaskID, exception); };
-
-
-                Program.WebServer = new WebServer.Server(commandlineOptions);
-
-                ServerPortChanged |= Program.WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort;
-                DataConnection.ApplicationSettings.LastWebserverPort = Program.WebServer.Port;
+                StartWebServer(commandlineOptions);
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, "ping-pong-keepalive"))
                 {
-                    Program.PingPongThread = new System.Threading.Thread(PingPongMethod);
-                    Program.PingPongThread.IsBackground = true;
-                    Program.PingPongThread.Start();
+                    PingPongThread = new System.Threading.Thread(PingPongMethod) {IsBackground = true};
+                    PingPongThread.Start();
                 }
 
                 ServerStartedEvent.Set();
@@ -353,6 +307,60 @@ namespace Duplicati.Server
                 return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
 
             return 0;
+        }
+
+        private static void StartWebServer(Dictionary<string, string> commandlineOptions)
+        {
+            WebServer = new WebServer.Server(commandlineOptions);
+
+            ServerPortChanged |= WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort;
+            DataConnection.ApplicationSettings.LastWebserverPort = WebServer.Port;
+        }
+
+        private static void SetWorkerThread()
+        {
+            WorkThread = new Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData>((x) => { Runner.Run(x, true); },
+                LiveControl.State == LiveControls.LiveControlState.Paused);
+            Scheduler = new Scheduler(WorkThread);
+
+            WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
+            WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
+            WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
+            Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
+            WorkThread.OnError += (worker, task, exception) =>
+            {
+                Program.DataConnection.LogError(task?.BackupID, "Error in worker", exception);
+            };
+
+            var lastScheduleId = LastDataUpdateID;
+            Program.StatusEventNotifyer.NewEvent += (sender, e) =>
+            {
+                if (lastScheduleId == LastDataUpdateID) return;
+                lastScheduleId = LastDataUpdateID;
+                Program.Scheduler.Reschedule();
+            };
+
+            void RegisterTaskResult(long id, Exception ex)
+            {
+                lock (MainLock)
+                {
+                    // If the new results says it crashed, we store that instead of success
+                    if (Program.TaskResultCache.Count > 0 && Program.TaskResultCache.Last().Key == id)
+                    {
+                        if (ex != null && Program.TaskResultCache.Last().Value == null)
+                            Program.TaskResultCache.RemoveAt(Program.TaskResultCache.Count - 1);
+                        else
+                            return;
+                    }
+
+                    Program.TaskResultCache.Add(new KeyValuePair<long, Exception>(id, ex));
+                    while (Program.TaskResultCache.Count > MAX_TASK_RESULT_CACHE_SIZE)
+                        Program.TaskResultCache.RemoveAt(0);
+                }
+            }
+
+            Program.WorkThread.CompletedWork += (worker, task) => { RegisterTaskResult(task.TaskID, null); };
+            Program.WorkThread.OnError += (worker, task, exception) => { RegisterTaskResult(task.TaskID, exception); };
         }
 
         private static void SetLiveControls()
