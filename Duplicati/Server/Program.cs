@@ -296,9 +296,8 @@ namespace Duplicati.Server
 
                 Library.UsageReporter.Reporter.ShutDown();
 
-                if (PingPongThread != null)
-                    try { PingPongThread.Abort(); }
-                    catch { }
+                try { PingPongThread?.Abort(); }
+                catch { }
 
                 LogHandler?.Dispose();
             }
