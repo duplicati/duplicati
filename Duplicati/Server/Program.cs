@@ -12,7 +12,7 @@ namespace Duplicati.Server
 
         private static readonly List<string> AlternativeHelpStrings = new List<string> { "help", "/help", "usage", "/usage", "--help" };
 
-        private static readonly List<string> ParameterFileOptionStrings = new List<string> { "parameters-file", "parameters-file", "parameterfile" };
+        private static readonly List<string> ParameterFileOptionStrings = new List<string> { "parameters-file", "parameterfile" };
 
         /// <summary>
         /// The log tag for messages from this class
