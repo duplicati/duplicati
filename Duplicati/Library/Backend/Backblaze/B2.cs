@@ -276,11 +276,7 @@ namespace Duplicati.Library.Backend.Backblaze
             }
             finally
             {
-                try
-                {
-                    tmp?.Dispose();
-                }
-                catch { }
+                tmp?.Dispose();
             }
         }
 

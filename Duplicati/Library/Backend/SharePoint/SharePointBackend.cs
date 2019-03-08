@@ -544,12 +544,12 @@ namespace Duplicati.Library.Backend
                 
                 useNewContext = true; // disable retry
                 if (!m_useBinaryDirectMode)
-                    await uploadFileSlicePerSlice(ctx, remoteFolder, stream, fileurl, cancelToken);
+                    await uploadFileSlicePerSlice(ctx, remoteFolder, stream, fileurl, cancelToken).ConfigureAwait(false);
             }
             catch (ServerException) { throw; /* rethrow if Server answered */ }
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
-            catch { if (!useNewContext) /* retry */ { await doPut(remotename, stream, true, cancelToken); } else throw; }
+            catch { if (!useNewContext) /* retry */ { await doPut(remotename, stream, true, cancelToken).ConfigureAwait(false); } else throw; }
 
             if (m_useBinaryDirectMode)
             {
@@ -585,7 +585,7 @@ namespace Duplicati.Library.Backend
             {
                 int bufCnt = 0;
                 // read chunk to array (necessary because chunk uploads fail if size unknown)
-                while (bufCnt < blockSize && (lastreadsize = await sourceFileStream.ReadAsync(buf, bufCnt, blockSize - bufCnt, cancelToken)) > 0)
+                while (bufCnt < blockSize && (lastreadsize = await sourceFileStream.ReadAsync(buf, bufCnt, blockSize - bufCnt, cancelToken).ConfigureAwait(false)) > 0)
                     bufCnt += lastreadsize;
 
                 using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))

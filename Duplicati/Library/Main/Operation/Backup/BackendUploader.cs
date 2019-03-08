@@ -88,17 +88,15 @@ namespace Duplicati.Library.Main.Operation.Backup
     internal class BackendUploader
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendUploader>();
-
-        private Func<IBackend> m_backendFactory;
+        private readonly Func<IBackend> m_backendFactory;
         private CancellationTokenSource m_cancelTokenSource;
-        private Options m_options;
-        private ITaskReader m_taskreader;
-        private StatsCollector m_stats;
-        private DatabaseCommon m_database;
+        private readonly Options m_options;
+        private readonly ITaskReader m_taskreader;
+        private readonly StatsCollector m_stats;
+        private readonly DatabaseCommon m_database;
         private readonly BackupResults m_results;
         private readonly FileProgressThrottler m_progressUpdater;
         private string m_lastThrottleUploadValue;
-        private string m_lastThrottleDownloadValue;
         private int m_maxConcurrentUploads;
         private long m_initialUploadThrottle;
 
@@ -225,7 +223,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-        private Exception GetInnerMostException(Exception ex)
+        private static Exception GetInnerMostException(Exception ex)
         {
             while (ex.InnerException != null)
                 ex = ex.InnerException;
@@ -416,12 +414,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                 m_lastThrottleUploadValue = tmp;
                 m_initialUploadThrottle = m_options.MaxUploadPrSecond / m_maxConcurrentUploads;
                 updateThrottleSpeeds = true;
-            }
-
-            m_options.RawOptions.TryGetValue("throttle-download", out tmp);
-            if (tmp != m_lastThrottleDownloadValue)
-            {
-                m_lastThrottleDownloadValue = tmp;
             }
 
             if (updateThrottleSpeeds)

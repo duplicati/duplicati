@@ -118,7 +118,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                 uploaduri = resp.Headers["Location"];
             }
 
-            return await ChunkedUploadAsync<TResponse>(oauth, uploaduri, stream, cancelToken);
+            return await ChunkedUploadAsync<TResponse>(oauth, uploaduri, stream, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>

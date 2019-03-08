@@ -310,7 +310,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         public async Task Put(string remotename, Stream input, CancellationToken cancelToken)
         {
             string remotePath = remotename;
-            long streamLen = -1;
+            long streamLen;
 
             try
             {
@@ -320,8 +320,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 {
                     streamLen = input.Length;
                 }
-                // ReSharper disable once EmptyGeneralCatchClause
-                catch { }
+                catch (NotSupportedException) { streamLen = -1; }
 
                 // Get the remote path
                 remotePath = "";

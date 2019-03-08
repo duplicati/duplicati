@@ -142,7 +142,7 @@ namespace Duplicati.Library.Backend
 
                 using (var response = GetResponse(areq))
                 using (var sr = new StreamReader(response.GetResponseStream()))
-                    await sr.ReadToEndAsync();
+                    await sr.ReadToEndAsync().ConfigureAwait(false);
             }
 
             // finish session and commit

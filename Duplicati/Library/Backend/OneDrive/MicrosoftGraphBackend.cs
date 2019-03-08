@@ -368,7 +368,7 @@ namespace Duplicati.Library.Backend
                 int read = 0;
                 for (int offset = 0; offset < stream.Length; offset += read)
                 {
-                    read = await stream.ReadAsync(fragmentBuffer, 0, bufferSize, cancelToken);
+                    read = await stream.ReadAsync(fragmentBuffer, 0, bufferSize, cancelToken).ConfigureAwait(false);
 
                     int retryCount = this.fragmentRetryCount;
                     for (int attempt = 0; attempt < retryCount; attempt++)

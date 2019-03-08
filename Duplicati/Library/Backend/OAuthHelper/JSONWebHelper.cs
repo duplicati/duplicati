@@ -177,7 +177,7 @@ namespace Duplicati.Library
             return req;
         }
 
-        private void CreateBoundary(out string boundary, out byte[] bodyterminator)
+        private static void CreateBoundary(out string boundary, out byte[] bodyterminator)
         {
             boundary = "----DuplicatiFormBoundary" + Guid.NewGuid().ToString("N");
             bodyterminator = Encoding.UTF8.GetBytes("--" + boundary + "--");
@@ -222,9 +222,10 @@ namespace Duplicati.Library
             setup?.Invoke(req);
 
             var areq = new AsyncHttpRequest(req);
-            await setupbodyreq?.Invoke(areq, cancelToken);
+            if (setupbodyreq != null)
+                await setupbodyreq(areq, cancelToken).ConfigureAwait(false);
 
-            return await ReadJSONResponseAsync<T>(areq, cancelToken);
+            return await ReadJSONResponseAsync<T>(areq, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -280,7 +281,7 @@ namespace Duplicati.Library
 
         public virtual async Task<T> ReadJSONResponseAsync<T>(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
         {
-            using (var resp = await GetResponseAsync(req, cancelToken, requestdata))
+            using (var resp = await GetResponseAsync(req, cancelToken, requestdata).ConfigureAwait(false))
                 return ReadJSONResponse<T>(resp);
         }
 
