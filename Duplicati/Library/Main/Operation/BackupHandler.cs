@@ -409,7 +409,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         long filesetid;
                         var counterToken = new CancellationTokenSource();
-                        var uploader = new Backup.BackendUploader(() => DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions), m_options, db, m_result, m_result.TaskReader, stats);
+                        var uploader = new Backup.BackendUploader(() => DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions), m_options, db, m_result.TaskReader, stats);
                         using (var snapshot = GetSnapshot(sources, m_options))
                         {
                             try

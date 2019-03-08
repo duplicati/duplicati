@@ -94,20 +94,18 @@ namespace Duplicati.Library.Main.Operation.Backup
         private readonly ITaskReader m_taskreader;
         private readonly StatsCollector m_stats;
         private readonly DatabaseCommon m_database;
-        private readonly BackupResults m_results;
         private readonly FileProgressThrottler m_progressUpdater;
-        private string m_lastThrottleUploadValue;
+        private long m_lastThrottleUpload;
         private int m_maxConcurrentUploads;
         private long m_initialUploadThrottle;
 
-        public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, BackupResults results, ITaskReader taskreader, StatsCollector stats)
+        public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, ITaskReader taskreader, StatsCollector stats)
         {
             m_backendFactory = backendFactory;
             m_options = options;
             m_taskreader = taskreader;
             m_stats = stats;
             m_database = database;
-            m_results = results;
             m_progressUpdater = new FileProgressThrottler(stats, options.MaxUploadPrSecond);
         }
 
@@ -168,8 +166,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             try
                             {
-                                await Task.WhenAll(workers.Select(w => w.Task));
-                                workers.Clear();
+                                while (workers.Any())
+                                {
+                                    var finishedTask = await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
+                                    if (finishedTask.IsFaulted)
+                                        ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
+                                    workers.RemoveAll(w => w.Task == finishedTask);
+                                }
                                 uploadsInProgress = 0;
                             }
                             finally
@@ -195,21 +198,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!ex.IsRetiredException())
                 {
-                    if (!ex.IsRetiredException())
+                    m_cancelTokenSource.Cancel();
+                    try
                     {
-                        m_cancelTokenSource.Cancel();
-                        try
-                        {
-                            await Task.WhenAll(workers.Where(w => w.Task.Exception == null).Select(w => w.Task));
-                        }
-                        catch { }
-                        throw;
+                        await Task.WhenAll(workers.Select(w => w.Task));
                     }
+                    catch { /* As we are cancelling all threads we do not need to alert the user to any of these exceptions */ }
+                    throw;
                 }
-
-                m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
 
                 try
                 {
@@ -408,16 +406,16 @@ namespace Duplicati.Library.Main.Operation.Backup
         private void HandleProgress(ThrottledStream ts, long progress, string path)
         {
             var updateThrottleSpeeds = false;
-            m_options.RawOptions.TryGetValue("throttle-upload", out var tmp);
-            if (tmp != m_lastThrottleUploadValue)
+            var maxUploadPerSecond = m_options.MaxUploadPrSecond;
+            if (m_lastThrottleUpload != maxUploadPerSecond)
             {
-                m_lastThrottleUploadValue = tmp;
-                m_initialUploadThrottle = m_options.MaxUploadPrSecond / m_maxConcurrentUploads;
+                m_lastThrottleUpload = maxUploadPerSecond;
+                m_initialUploadThrottle = maxUploadPerSecond / m_maxConcurrentUploads;
                 updateThrottleSpeeds = true;
             }
 
             if (updateThrottleSpeeds)
-                m_progressUpdater.UpdateThrottleSpeeds(m_options.MaxUploadPrSecond);
+                m_progressUpdater.UpdateThrottleSpeeds(maxUploadPerSecond);
             m_progressUpdater.UpdateFileProgress(path, progress, ts);
         }
 
