@@ -90,20 +90,22 @@ namespace Duplicati.Library.Main.Operation.Backup
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendUploader>();
         private readonly Func<IBackend> m_backendFactory;
         private CancellationTokenSource m_cancelTokenSource;
-        private readonly Options m_options;
-        private readonly ITaskReader m_taskreader;
-        private readonly StatsCollector m_stats;
         private readonly DatabaseCommon m_database;
-        private readonly FileProgressThrottler m_progressUpdater;
-        private long m_lastThrottleUpload;
+        private long m_initialUploadThrottleSpeed;
+        private int m_lastThrottleCheckTime;
+        private long m_lastUploadThrottleSpeed;
         private int m_maxConcurrentUploads;
-        private long m_initialUploadThrottle;
+        private readonly Options m_options;
+        private readonly FileProgressThrottler m_progressUpdater;
+        private readonly StatsCollector m_stats;
+        private readonly ITaskReader m_taskReader;
 
-        public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, ITaskReader taskreader, StatsCollector stats)
+
+        public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, ITaskReader taskReader, StatsCollector stats)
         {
             m_backendFactory = backendFactory;
             m_options = options;
-            m_taskreader = taskreader;
+            m_taskReader = taskReader;
             m_stats = stats;
             m_database = database;
             m_progressUpdater = new FileProgressThrottler(stats, options.MaxUploadPrSecond);
@@ -120,7 +122,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var workers = new List<Worker>();
                 m_maxConcurrentUploads = m_options.AsynchronousConcurrentUploadLimit <= 0 ? int.MaxValue : m_options.AsynchronousConcurrentUploadLimit;
-                m_initialUploadThrottle = m_options.AsynchronousConcurrentUploadLimit <= 0 ? int.MaxValue : m_options.MaxUploadPrSecond / m_maxConcurrentUploads;
+                m_initialUploadThrottleSpeed = m_options.AsynchronousConcurrentUploadLimit <= 0 ? int.MaxValue : m_options.MaxUploadPrSecond / m_maxConcurrentUploads;
                 var lastSize = -1L;
                 var uploadsInProgress = 0;
                 m_cancelTokenSource = new CancellationTokenSource();
@@ -128,11 +130,11 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 try
                 {
-                    while (!await self.Input.IsRetiredAsync && await m_taskreader.ProgressAsync)
+                    while (!await self.Input.IsRetiredAsync && await m_taskReader.ProgressAsync)
                     {
                         var req = await self.Input.ReadAsync();
 
-                        if (!await m_taskreader.ProgressAsync)
+                        if (!await m_taskReader.ProgressAsync)
                             break;
 
                         var worker = workers.FirstOrDefault(w => w.Task.IsCompleted && !w.Task.IsFaulted);
@@ -373,8 +375,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             if (!m_options.DisableStreamingTransfers && backend is IStreamingBackend streamingBackend)
             {
+                // A download throttle speed is not given to the ThrottledStream as we are only uploading data here
                 using (var fs = File.OpenRead(item.LocalFilename))
-                using (var ts = new ThrottledStream(fs, m_initialUploadThrottle, 0))
+                using (var ts = new ThrottledStream(fs, m_initialUploadThrottleSpeed, 0))
                 using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg, item.RemoteFilename)))
                     await streamingBackend.Put(item.RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
             }
@@ -403,20 +406,36 @@ namespace Duplicati.Library.Main.Operation.Backup
             await m_database.CommitTransactionAsync("CommitAfterUpload");
         }
 
-        private void HandleProgress(ThrottledStream ts, long progress, string path)
+        private void HandleProgress(ThrottledStream stream, long progress, string path)
         {
-            var updateThrottleSpeeds = false;
-            var maxUploadPerSecond = m_options.MaxUploadPrSecond;
-            if (m_lastThrottleUpload != maxUploadPerSecond)
+            UpdateThrottleSpeed();
+            m_progressUpdater.UpdateFileProgress(path, progress, stream);
+        }
+
+        private void UpdateThrottleSpeed()
+        {
+            var updateThrottleSpeed = false;
+
+            lock (m_progressUpdater)
             {
-                m_lastThrottleUpload = maxUploadPerSecond;
-                m_initialUploadThrottle = maxUploadPerSecond / m_maxConcurrentUploads;
-                updateThrottleSpeeds = true;
+                var currentTick = Environment.TickCount;
+                if (currentTick - m_lastThrottleCheckTime > 2000)
+                {
+                    m_lastThrottleCheckTime = currentTick;
+                    updateThrottleSpeed = true;
+                }
             }
 
-            if (updateThrottleSpeeds)
+            if (!updateThrottleSpeed)
+                return;
+
+            var maxUploadPerSecond = m_options.MaxUploadPrSecond;
+            if (maxUploadPerSecond != m_lastUploadThrottleSpeed)
+            {
+                m_lastUploadThrottleSpeed = maxUploadPerSecond;
+                m_initialUploadThrottleSpeed = maxUploadPerSecond / m_maxConcurrentUploads;
                 m_progressUpdater.UpdateThrottleSpeeds(maxUploadPerSecond);
-            m_progressUpdater.UpdateFileProgress(path, progress, ts);
+            }
         }
 
         private class Worker
