@@ -34,7 +34,7 @@ namespace Duplicati.Library.Main.Volumes
 
             if (metablocklisthashes != null)
             {
-                //Slightly akward, but we avoid writing if there are no entries 
+                // Slightly awkward, but we avoid writing if there are no entries.
                 using (var en = metablocklisthashes.GetEnumerator())
                 {
                     if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
