@@ -19,10 +19,8 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using Duplicati.Library.Localization.Short;
-using Duplicati.Library.Utility;
 using System.IO;
 using Duplicati.Library.Common;
 

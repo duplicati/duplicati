@@ -29,7 +29,7 @@ namespace Duplicati.Server.Database
 {
     public class ServerSettings
     {
-        private class CONST
+        private static class CONST
         {
             public const string STARTUP_DELAY = "startup-delay";
             public const string DOWNLOAD_SPEED_LIMIT = "max-download-speed";
@@ -57,26 +57,26 @@ namespace Duplicati.Server.Database
             public const string SERVER_ALLOWED_HOSTNAMES = "allowed-hostnames";
 		}
 
-        private readonly Dictionary<string, string> m_values;
-        private readonly Database.Connection m_connection;
+        private readonly Dictionary<string, string> settings;
+        private readonly Connection databaseConnection;
         private Library.AutoUpdater.UpdateInfo m_latestUpdate;
 
         internal ServerSettings(Connection con)
         {
-            m_values = new Dictionary<string, string>();
-            m_connection = con;
+            settings = new Dictionary<string, string>();
+            databaseConnection = con;
             ReloadSettings();
         }
 
         public void ReloadSettings()
         {
-            lock(m_connection.m_lock)
+            lock(databaseConnection.m_lock)
             {
-                m_values.Clear();
+                settings.Clear();
                 foreach(var n in typeof(CONST).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static).Select(x => (string)x.GetValue(null)))
-                    m_values[n] = null;
-                foreach(var n in m_connection.GetSettings(Connection.SERVER_SETTINGS_ID))
-                    m_values[n.Name] = n.Value;
+                    settings[n] = null;
+                foreach(var n in databaseConnection.GetSettings(Connection.SERVER_SETTINGS_ID))
+                    settings[n.Name] = n.Value;
             }
         }
 
@@ -85,17 +85,17 @@ namespace Duplicati.Server.Database
             if (newsettings == null)
                 throw new ArgumentNullException();
 
-            lock(m_connection.m_lock)
+            lock(databaseConnection.m_lock)
             {
                 m_latestUpdate = null;
                 if (clearExisting)
-                    m_values.Clear();
+                    settings.Clear();
 
                 foreach(var k in newsettings)
                     if (!clearExisting && newsettings[k.Key] == null && k.Key.StartsWith("--", StringComparison.Ordinal))
-                        m_values.Remove(k.Key);
+                        settings.Remove(k.Key);
                     else
-                        m_values[k.Key] = newsettings[k.Key];
+                        settings[k.Key] = newsettings[k.Key];
 
             }
 
@@ -107,8 +107,8 @@ namespace Duplicati.Server.Database
             
         private void SaveSettings()
         {
-            m_connection.SetSettings(
-                from n in m_values
+            databaseConnection.SetSettings(
+                from n in settings
                 select (Duplicati.Server.Serialization.Interface.ISetting)new Setting() {
                     Filter = "",
                     Name = n.Key,
@@ -128,12 +128,12 @@ namespace Duplicati.Server.Database
         {
             get 
             {
-                return m_values[CONST.STARTUP_DELAY];
+                return settings[CONST.STARTUP_DELAY];
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.STARTUP_DELAY] = value;
+                lock(databaseConnection.m_lock)
+                    settings[CONST.STARTUP_DELAY] = value;
                 SaveSettings();
             }
         }
@@ -142,7 +142,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                var tp = m_values[CONST.THREAD_PRIORITY];
+                var tp = settings[CONST.THREAD_PRIORITY];
                 if (string.IsNullOrEmpty(tp))
                     return null;
                   
@@ -154,8 +154,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.THREAD_PRIORITY] = value.HasValue ? Enum.GetName(typeof(System.Threading.ThreadPriority), value.Value) : null;
+                lock(databaseConnection.m_lock)
+                    settings[CONST.THREAD_PRIORITY] = value.HasValue ? Enum.GetName(typeof(System.Threading.ThreadPriority), value.Value) : null;
             }
         }
         
@@ -163,12 +163,12 @@ namespace Duplicati.Server.Database
         {
             get 
             {
-                return m_values[CONST.DOWNLOAD_SPEED_LIMIT];
+                return settings[CONST.DOWNLOAD_SPEED_LIMIT];
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.DOWNLOAD_SPEED_LIMIT] = value;
+                lock(databaseConnection.m_lock)
+                    settings[CONST.DOWNLOAD_SPEED_LIMIT] = value;
                 SaveSettings();
             }
         }
@@ -177,12 +177,12 @@ namespace Duplicati.Server.Database
         {
             get 
             {
-                return m_values[CONST.UPLOAD_SPEED_LIMIT];
+                return settings[CONST.UPLOAD_SPEED_LIMIT];
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.UPLOAD_SPEED_LIMIT] = value;
+                lock(databaseConnection.m_lock)
+                    settings[CONST.UPLOAD_SPEED_LIMIT] = value;
                 SaveSettings();
             }
         }
@@ -191,12 +191,12 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.IS_FIRST_RUN);
+                return Duplicati.Library.Utility.Utility.ParseBoolOption(settings, CONST.IS_FIRST_RUN);
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.IS_FIRST_RUN] = value.ToString();
+                lock(databaseConnection.m_lock)
+                    settings[CONST.IS_FIRST_RUN] = value.ToString();
                 SaveSettings();
             }
         }
@@ -205,12 +205,12 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBoolOption(m_values, CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION);
+                return Duplicati.Library.Utility.Utility.ParseBoolOption(settings, CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION);
             }
             set
             {
-                lock (m_connection.m_lock)
-                    m_values[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION] = value.ToString();
+                lock (databaseConnection.m_lock)
+                    settings[CONST.HAS_ASKED_FOR_PASSWORD_PROTECTION] = value.ToString();
                 SaveSettings();
             }
         }
@@ -219,12 +219,12 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.UNACKED_ERROR], false);
+                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.UNACKED_ERROR], false);
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.UNACKED_ERROR] = value.ToString();
+                lock(databaseConnection.m_lock)
+                    settings[CONST.UNACKED_ERROR] = value.ToString();
                 SaveSettings();
             }
         }
@@ -233,12 +233,12 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.UNACKED_WARNING], false);
+                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.UNACKED_WARNING], false);
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.UNACKED_WARNING] = value.ToString();
+                lock(databaseConnection.m_lock)
+                    settings[CONST.UNACKED_WARNING] = value.ToString();
                 SaveSettings();
             }
         }
@@ -247,12 +247,12 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.SERVER_PORT_CHANGED], false);
+                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.SERVER_PORT_CHANGED], false);
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.SERVER_PORT_CHANGED] = value.ToString();
+                lock(databaseConnection.m_lock)
+                    settings[CONST.SERVER_PORT_CHANGED] = value.ToString();
                 SaveSettings();
             }
         }
@@ -261,12 +261,12 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.DISABLE_TRAY_ICON_LOGIN], false);
+                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.DISABLE_TRAY_ICON_LOGIN], false);
             }
             set
             {
-                lock (m_connection.m_lock)
-                    m_values[CONST.DISABLE_TRAY_ICON_LOGIN] = value.ToString();
+                lock (databaseConnection.m_lock)
+                    settings[CONST.DISABLE_TRAY_ICON_LOGIN] = value.ToString();
                 SaveSettings();
             }
         }
@@ -275,7 +275,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                var tp = m_values[CONST.LAST_WEBSERVER_PORT];
+                var tp = settings[CONST.LAST_WEBSERVER_PORT];
                 int p;
                 if (string.IsNullOrEmpty(tp) || !int.TryParse(tp, out p))
                     return -1;
@@ -284,8 +284,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.LAST_WEBSERVER_PORT] = value.ToString();
+                lock(databaseConnection.m_lock)
+                    settings[CONST.LAST_WEBSERVER_PORT] = value.ToString();
                 SaveSettings();
             }
         }
@@ -294,7 +294,7 @@ namespace Duplicati.Server.Database
         {
             get 
             {
-                return m_values[CONST.SERVER_PASSPHRASE];
+                return settings[CONST.SERVER_PASSPHRASE];
             }
         }
 
@@ -302,7 +302,7 @@ namespace Duplicati.Server.Database
         {
             get 
             {
-                return m_values[CONST.SERVER_PASSPHRASE_SALT];
+                return settings[CONST.SERVER_PASSPHRASE_SALT];
             }
         }
 
@@ -310,15 +310,15 @@ namespace Duplicati.Server.Database
         {
             if (string.IsNullOrWhiteSpace(password))
             {
-                lock(m_connection.m_lock)
+                lock(databaseConnection.m_lock)
                 {
-                    m_values[CONST.SERVER_PASSPHRASE] = "";
-                    m_values[CONST.SERVER_PASSPHRASE_SALT] = "";
+                    settings[CONST.SERVER_PASSPHRASE] = "";
+                    settings[CONST.SERVER_PASSPHRASE_SALT] = "";
                 }
             }
             else
             {
-                var prng = System.Security.Cryptography.RNGCryptoServiceProvider.Create();
+                var prng = RandomNumberGenerator.Create();
                 var buf = new byte[32];
                 prng.GetBytes(buf);
                 var salt = Convert.ToBase64String(buf);
@@ -330,40 +330,39 @@ namespace Duplicati.Server.Database
                 sha256.TransformFinalBlock(buf, 0, buf.Length);
                 var pwd = Convert.ToBase64String(sha256.Hash);
 
-                lock(m_connection.m_lock)
+                lock(databaseConnection.m_lock)
                 {
-                    m_values[CONST.SERVER_PASSPHRASE] = pwd;
-                    m_values[CONST.SERVER_PASSPHRASE_SALT] = salt;
+                    settings[CONST.SERVER_PASSPHRASE] = pwd;
+                    settings[CONST.SERVER_PASSPHRASE_SALT] = salt;
                 }
             }
 
             SaveSettings();
-            GenerateWebserverPasswordTrayIcon();
         }
 
         public void SetAllowedHostnames(string allowedHostnames)
         {
-            lock (m_connection.m_lock)
-                m_values[CONST.SERVER_ALLOWED_HOSTNAMES] = allowedHostnames;
+            lock (databaseConnection.m_lock)
+                settings[CONST.SERVER_ALLOWED_HOSTNAMES] = allowedHostnames;
 
             SaveSettings();
         }
 
-        public string WebserverPasswordTrayIcon => m_values[CONST.SERVER_PASSPHRASETRAYICON];
+        public string WebserverPasswordTrayIcon => settings[CONST.SERVER_PASSPHRASETRAYICON];
 
-        public string WebserverPasswordTrayIconHash => m_values[CONST.SERVER_PASSPHRASETRAYICONHASH];
+        public string WebserverPasswordTrayIconHash => settings[CONST.SERVER_PASSPHRASETRAYICONHASH];
 
-        public string AllowedHostnames => m_values[CONST.SERVER_ALLOWED_HOSTNAMES];
+        public string AllowedHostnames => settings[CONST.SERVER_ALLOWED_HOSTNAMES];
 
         public void GenerateWebserverPasswordTrayIcon()
         {
             var password = "";
             var pwd = "";
 
-            if (!string.IsNullOrEmpty(m_values[CONST.SERVER_PASSPHRASE]))
+            if (!string.IsNullOrEmpty(settings[CONST.SERVER_PASSPHRASE]))
             {
                 password = Guid.NewGuid().ToString();
-                var buf = Convert.FromBase64String(m_values[CONST.SERVER_PASSPHRASE_SALT]);
+                var buf = Convert.FromBase64String(settings[CONST.SERVER_PASSPHRASE_SALT]);
 
                 var sha256 = System.Security.Cryptography.SHA256.Create();
                 var str = System.Text.Encoding.UTF8.GetBytes(password);
@@ -373,10 +372,10 @@ namespace Duplicati.Server.Database
                 pwd = Convert.ToBase64String(sha256.Hash);
             }
             
-            lock (m_connection.m_lock)
+            lock (databaseConnection.m_lock)
             {
-                m_values[CONST.SERVER_PASSPHRASETRAYICON] = password;
-                m_values[CONST.SERVER_PASSPHRASETRAYICONHASH] = pwd;
+                settings[CONST.SERVER_PASSPHRASETRAYICON] = password;
+                settings[CONST.SERVER_PASSPHRASETRAYICONHASH] = pwd;
             }
 
             SaveSettings();
@@ -387,15 +386,15 @@ namespace Duplicati.Server.Database
             get 
             {
                 long t;
-                if (long.TryParse(m_values[CONST.UPDATE_CHECK_LAST], out t))
+                if (long.TryParse(settings[CONST.UPDATE_CHECK_LAST], out t))
                     return new DateTime(t, DateTimeKind.Utc);
                 else
                     return new DateTime(0, DateTimeKind.Utc);
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.UPDATE_CHECK_LAST] = value.ToUniversalTime().Ticks.ToString();
+                lock(databaseConnection.m_lock)
+                    settings[CONST.UPDATE_CHECK_LAST] = value.ToUniversalTime().Ticks.ToString();
                 SaveSettings();
             }
         }
@@ -404,7 +403,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                var tp = m_values[CONST.UPDATE_CHECK_INTERVAL];
+                var tp = settings[CONST.UPDATE_CHECK_INTERVAL];
                 if (string.IsNullOrWhiteSpace(tp))
                     tp = "1W";
 
@@ -412,8 +411,8 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.UPDATE_CHECK_INTERVAL] = value;
+                lock(databaseConnection.m_lock)
+                    settings[CONST.UPDATE_CHECK_INTERVAL] = value;
                 SaveSettings();
                 Program.UpdatePoller.Reschedule();
             }
@@ -438,7 +437,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(m_values[CONST.UPDATE_CHECK_NEW_VERSION]))
+                if (string.IsNullOrWhiteSpace(settings[CONST.UPDATE_CHECK_NEW_VERSION]))
                     return null;
 
                 try
@@ -446,7 +445,7 @@ namespace Duplicati.Server.Database
                     if (m_latestUpdate != null)
                         return m_latestUpdate;
 
-                    using(var tr = new System.IO.StringReader(m_values[CONST.UPDATE_CHECK_NEW_VERSION]))
+                    using(var tr = new System.IO.StringReader(settings[CONST.UPDATE_CHECK_NEW_VERSION]))
                         return m_latestUpdate = Server.Serialization.Serializer.Deserialize<Library.AutoUpdater.UpdateInfo>(tr);
                 }
                 catch
@@ -468,8 +467,8 @@ namespace Duplicati.Server.Database
                 }
 
                 m_latestUpdate = value;
-                lock(m_connection.m_lock)
-                    m_values[CONST.UPDATE_CHECK_NEW_VERSION] = result;
+                lock(databaseConnection.m_lock)
+                    settings[CONST.UPDATE_CHECK_NEW_VERSION] = result;
 
                 SaveSettings();
             }
@@ -479,12 +478,12 @@ namespace Duplicati.Server.Database
         {
             get 
             {
-                return m_values[CONST.SERVER_LISTEN_INTERFACE];
+                return settings[CONST.SERVER_LISTEN_INTERFACE];
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.SERVER_LISTEN_INTERFACE] = value;
+                lock(databaseConnection.m_lock)
+                    settings[CONST.SERVER_LISTEN_INTERFACE] = value;
                 SaveSettings();
             }
         }
@@ -493,16 +492,16 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                if (String.IsNullOrEmpty(m_values[CONST.SERVER_SSL_CERTIFICATE]))
+                if (String.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATE]))
                     return null;
 
                 if (Platform.IsClientWindows)
-                    return new X509Certificate2(Convert.FromBase64String(m_values[CONST.SERVER_SSL_CERTIFICATE]));
+                    return new X509Certificate2(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]));
                 else
                 {
                     var store = new Pkcs12Store();
 
-                    using (var stream = new System.IO.MemoryStream(Convert.FromBase64String(m_values[CONST.SERVER_SSL_CERTIFICATE])))
+                    using (var stream = new System.IO.MemoryStream(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE])))
                         store.Load(stream, null);
 
                     if (store.Count != 1)
@@ -523,14 +522,14 @@ namespace Duplicati.Server.Database
             {
                 if (value == null)
                 {
-                    lock (m_connection.m_lock)
-                        m_values[CONST.SERVER_SSL_CERTIFICATE] = String.Empty;
+                    lock (databaseConnection.m_lock)
+                        settings[CONST.SERVER_SSL_CERTIFICATE] = String.Empty;
                 }
                 else
                 {
                     if (Platform.IsClientWindows)
-                        lock (m_connection.m_lock)
-                            m_values[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12));
+                        lock (databaseConnection.m_lock)
+                            settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12));
                     else
                     {
                         var store = new Pkcs12Store();
@@ -542,8 +541,8 @@ namespace Duplicati.Server.Database
                         using (var stream = new System.IO.MemoryStream())
                         {
                             store.Save(stream, null, new SecureRandom());
-                            lock (m_connection.m_lock)
-                                m_values[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(stream.ToArray());
+                            lock (databaseConnection.m_lock)
+                                settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(stream.ToArray());
                         }
                     }
                 }
@@ -555,12 +554,12 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(m_values[CONST.HAS_FIXED_INVALID_BACKUPID], false);
+                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.HAS_FIXED_INVALID_BACKUPID], false);
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.HAS_FIXED_INVALID_BACKUPID] = value.ToString();
+                lock(databaseConnection.m_lock)
+                    settings[CONST.HAS_FIXED_INVALID_BACKUPID] = value.ToString();
                 SaveSettings();
             }
         }
@@ -569,12 +568,12 @@ namespace Duplicati.Server.Database
         {
             get 
             {
-                return m_values[CONST.UPDATE_CHANNEL];
+                return settings[CONST.UPDATE_CHANNEL];
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.UPDATE_CHANNEL] = value;
+                lock(databaseConnection.m_lock)
+                    settings[CONST.UPDATE_CHANNEL] = value;
                 SaveSettings();
             }
         }
@@ -583,12 +582,12 @@ namespace Duplicati.Server.Database
         {
             get 
             {
-                return m_values[CONST.USAGE_REPORTER_LEVEL];
+                return settings[CONST.USAGE_REPORTER_LEVEL];
             }
             set
             {
-                lock(m_connection.m_lock)
-                    m_values[CONST.USAGE_REPORTER_LEVEL] = value;
+                lock(databaseConnection.m_lock)
+                    settings[CONST.USAGE_REPORTER_LEVEL] = value;
                 SaveSettings();
             }
         }
