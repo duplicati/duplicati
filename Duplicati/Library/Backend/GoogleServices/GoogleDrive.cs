@@ -133,7 +133,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         #region IStreamingBackend implementation
 
-        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -249,10 +249,10 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        public Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                return Put(remotename, fs, cancelToken);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)

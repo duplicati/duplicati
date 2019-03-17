@@ -58,7 +58,7 @@ namespace Duplicati.Library.Interface
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="filename">The local filename</param>
         /// <param name="cancelToken">Token to cancel the operation.</param>
-        Task Put(string remotename, string filename, CancellationToken cancelToken);
+        Task PutAsync(string remotename, string filename, CancellationToken cancelToken);
 
         /// <summary>
         /// Downloads a file with the remote data

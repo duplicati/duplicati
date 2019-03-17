@@ -198,7 +198,7 @@ namespace Duplicati.Library.Backend
             }
         }
 #else
-        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             using (System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
                 await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
@@ -212,7 +212,7 @@ namespace Duplicati.Library.Backend
                 Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
         }
 
-        public Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             string path = GetRemoteName(remotename);
             if (m_moveFile)

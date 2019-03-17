@@ -471,10 +471,10 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                     using (NonSeekableStream nss = new NonSeekableStream(fs))
-                        (backend as Library.Interface.IStreamingBackend).Put(remotefilename, nss, CancellationToken.None).Wait();
+                        (backend as Library.Interface.IStreamingBackend).PutAsync(remotefilename, nss, CancellationToken.None).Wait();
                 }
                 else
-                    backend.Put(remotefilename, localfilename, CancellationToken.None).Wait();
+                    backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Wait();
 
                 e = null;
             }

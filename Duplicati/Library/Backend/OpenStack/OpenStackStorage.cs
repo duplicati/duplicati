@@ -485,7 +485,7 @@ namespace Duplicati.Library.Backend.OpenStack
         }
 
         #region IStreamingBackend implementation
-        public async Task Put(string remotename, Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             var url = JoinUrls(SimpleStorageEndPoint, m_container, Utility.Uri.UrlPathEncode(m_prefix + remotename));
             using(await m_helper.GetResponseAsync(url, cancelToken, stream, "PUT"))
@@ -565,10 +565,10 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fs = File.OpenRead(filename))
-                return Put(remotename, fs, cancelToken);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)

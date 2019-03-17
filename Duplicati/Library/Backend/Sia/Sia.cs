@@ -306,7 +306,7 @@ namespace Duplicati.Library.Backend.Sia
             }
         }
 
-        public Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             string endpoint ="";
             string siafile = m_targetpath + "/" + remotename;

@@ -257,7 +257,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public async Task Put(string remotename, System.IO.Stream input, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, System.IO.Stream input, CancellationToken cancelToken)
         {
             System.Net.FtpWebRequest req = null;
             try
@@ -299,10 +299,10 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task Put(string remotename, string localname, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                return Put(remotename, fs, cancelToken);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, System.IO.Stream output)

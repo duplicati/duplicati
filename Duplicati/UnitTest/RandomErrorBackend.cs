@@ -48,12 +48,12 @@ namespace Duplicati.UnitTest
                 throw new Exception("Random upload failure");
         }
         #region IStreamingBackend implementation
-        public async Task Put(string remotename, Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             var uploadError = random.NextDouble() > 0.9;
 
             using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new Exception("Random upload failure"); }))
-                await m_backend.Put(remotename, f, cancelToken);
+                await m_backend.PutAsync(remotename, f, cancelToken);
             ThrowErrorRandom();
         }
         public void Get(string remotename, Stream stream)
@@ -69,10 +69,10 @@ namespace Duplicati.UnitTest
         {
             return m_backend.List();
         }
-        public async Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            await m_backend.Put(remotename, filename, cancelToken);
+            await m_backend.PutAsync(remotename, filename, cancelToken);
             ThrowErrorRandom();
         }
         public void Get(string remotename, string filename)

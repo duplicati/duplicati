@@ -51,7 +51,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 using(var tf = new Library.Utility.TempFile())
                 {
                     System.IO.File.WriteAllText(tf, data);
-                    b.Put(remotename, tf, CancellationToken.None).Wait();
+                    b.PutAsync(remotename, tf, CancellationToken.None).Wait();
                 }
             }
 

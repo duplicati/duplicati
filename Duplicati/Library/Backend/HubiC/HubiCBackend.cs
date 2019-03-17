@@ -106,9 +106,9 @@ namespace Duplicati.Library.Backend.HubiC
 
         #region IStreamingBackend implementation
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            return m_openstack.Put(remotename, stream, cancelToken);
+            return m_openstack.PutAsync(remotename, stream, cancelToken);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -125,9 +125,9 @@ namespace Duplicati.Library.Backend.HubiC
             return m_openstack.List();
         }
 
-        public Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            return m_openstack.Put(remotename, filename, cancelToken);
+            return m_openstack.PutAsync(remotename, filename, cancelToken);
         }
 
         public void Get(string remotename, string filename)

@@ -735,10 +735,10 @@ namespace Duplicati.Library.Main
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                    ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs, CancellationToken.None).Wait();
+                    ((Library.Interface.IStreamingBackend)m_backend).PutAsync(item.RemoteFilename, pgs, CancellationToken.None).Wait();
             }
             else
-                m_backend.Put(item.RemoteFilename, item.LocalFilename, CancellationToken.None).Wait();
+                m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, CancellationToken.None).Wait();
 
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));

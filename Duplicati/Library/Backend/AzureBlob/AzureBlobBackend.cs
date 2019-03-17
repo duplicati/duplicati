@@ -88,16 +88,16 @@ namespace Duplicati.Library.Backend.AzureBlob
             return _azureBlob.ListContainerEntries();
         }
 
-        public Task Put(string remotename, string localname, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (var fs = File.Open(localname,
                 FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                return Put(remotename, fs, cancelToken);
+                return PutAsync(remotename, fs, cancelToken);
             }
         }
 
-        public async Task Put(string remotename, Stream input, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
             await _azureBlob.AddFileStream(remotename, input, cancelToken);
         }

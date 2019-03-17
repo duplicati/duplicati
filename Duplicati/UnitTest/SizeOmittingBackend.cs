@@ -42,9 +42,9 @@ namespace Duplicati.UnitTest
         }
 
         #region IStreamingBackend implementation
-        public Task Put(string remotename, Stream stream, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            return m_backend.Put(remotename, stream, cancelToken);
+            return m_backend.PutAsync(remotename, stream, cancelToken);
         }
         public void Get(string remotename, Stream stream)
         {
@@ -60,9 +60,9 @@ namespace Duplicati.UnitTest
                 where !n.IsFolder
                 select new FileEntry(n.Name);
         }
-        public Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            return m_backend.Put(remotename, filename, cancelToken);
+            return m_backend.PutAsync(remotename, filename, cancelToken);
         }
         public void Get(string remotename, string filename)
         {

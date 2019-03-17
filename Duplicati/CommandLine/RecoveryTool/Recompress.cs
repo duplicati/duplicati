@@ -254,7 +254,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         if (reupload)
                         {
                             Console.Write(" reuploading ...");
-                            backend.Put((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Wait();
+                            backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Wait();
                             backend.Delete(remoteFile.File.Name);
                             File.Delete(localFileTarget);
                         }

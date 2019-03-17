@@ -145,7 +145,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count > 3)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
                            
-                        backend.Put(Path.GetFileName(args[2]), args[2], CancellationToken.None).Wait();
+                        backend.PutAsync(Path.GetFileName(args[2]), args[2], CancellationToken.None).Wait();
                         
                         return 0;
                     }

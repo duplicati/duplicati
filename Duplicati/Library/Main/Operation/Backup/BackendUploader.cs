@@ -379,10 +379,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                 using (var fs = File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_initialUploadThrottleSpeed, 0))
                 using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg, item.RemoteFilename)))
-                    await streamingBackend.Put(item.RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
+                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
             }
             else
-                await backend.Put(item.RemoteFilename, item.LocalFilename, cancelToken).ConfigureAwait(false);
+                await backend.PutAsync(item.RemoteFilename, item.LocalFilename, cancelToken).ConfigureAwait(false);
 
             var duration = DateTime.Now - begin;
             m_progressUpdater.EndFileProgress(item.RemoteFilename);

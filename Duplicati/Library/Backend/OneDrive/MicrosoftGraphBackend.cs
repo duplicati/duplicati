@@ -326,15 +326,15 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fileStream = File.OpenRead(filename))
             {
-                return Put(remotename, fileStream, cancelToken);
+                return PutAsync(remotename, fileStream, cancelToken);
             }
         }
 
-        public async Task Put(string remotename, Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             // PUT only supports up to 4 MB file uploads. There's a separate process for larger files.
             if (stream.Length < PUT_MAX_SIZE)

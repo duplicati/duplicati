@@ -148,10 +148,10 @@ namespace Duplicati.Library.Backend
             get { return "ssh"; }
         }
 
-        public Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                return Put(remotename, fs, cancelToken);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -226,7 +226,7 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Implementation
 
-        public Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);

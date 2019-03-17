@@ -523,13 +523,13 @@ namespace Duplicati.Library.Backend
                 Utility.Utility.CopyStream(s, stream, true, copybuffer);
         }
 
-        public Task Put(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fs = System.IO.File.OpenRead(filename))
-                return Put(remotename, fs, cancelToken);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
-        public Task Put(string remotename, Stream stream, CancellationToken cancelToken) { return doPut(remotename, stream, false, cancelToken); }
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken) { return doPut(remotename, stream, false, cancelToken); }
         private async Task doPut(string remotename, Stream stream, bool useNewContext, CancellationToken cancelToken)
         {
             string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
