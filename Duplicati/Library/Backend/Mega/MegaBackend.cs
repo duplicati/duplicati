@@ -149,7 +149,7 @@ namespace Duplicati.Library.Backend.Mega
                 if (m_filecache == null)
                     ResetFileCache();
 
-                var el = await Client.UploadAsync(stream, remotename, CurrentFolder, null, null, cancelToken);
+                var el = await Client.UploadAsync(stream, remotename, CurrentFolder, new Progress(), null, cancelToken);
                 if (m_filecache.ContainsKey(remotename))
                     Delete(remotename);
 
@@ -277,6 +277,13 @@ namespace Duplicati.Library.Backend.Mega
         }
 
         #endregion
+
+        private class Progress : IProgress<double>
+        {
+            public void Report(double value)
+            {
+                // No implementation as we have already wrapped the stream in our own progress reporting stream
+            }
+        }
     }
 }
-
