@@ -7,7 +7,7 @@ namespace Duplicati.GUI.TrayIcon
 {
     public interface IBrowserWindow
     {
-        string Title { set; }
-        WindowIcons Icon { set; }
+        void SetTitle(string title);
+        void SetIcon(WindowIcons icon);
     }
 }

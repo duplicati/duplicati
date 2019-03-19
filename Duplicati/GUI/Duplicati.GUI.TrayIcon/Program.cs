@@ -34,6 +34,11 @@ namespace Duplicati.GUI.TrayIcon
         private const string DEFAULT_HOSTURL = "http://localhost:8200";
         
         private static string _browser_command = null;
+        private static bool disableTrayIconLogin = false;
+        private static bool openui = false;
+        private static Uri serverURL = new Uri(DEFAULT_HOSTURL);
+
+
         public static string BrowserCommand { get { return _browser_command; } }
         public static Server.Database.Connection databaseConnection = null;
 
@@ -76,7 +81,7 @@ namespace Duplicati.GUI.TrayIcon
 
             if (Platform.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
                 Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
-            
+
             foreach (string s in args)
                 if (
                     s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
@@ -94,7 +99,7 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
                     if (arg.Name == TOOLKIT_OPTION)
-                        Console.WriteLine("    Supported toolkits: {0}{1}", string.Join(", ", arg.ValidValues), Environment.NewLine);                    
+                        Console.WriteLine("    Supported toolkits: {0}{1}", string.Join(", ", arg.ValidValues), Environment.NewLine);
                 }
 
                 Console.WriteLine("Additionally, these server options are also supported:");
@@ -107,7 +112,7 @@ namespace Duplicati.GUI.TrayIcon
             }
 
             options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
-            
+
             string toolkit;
             if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
             {
@@ -117,7 +122,7 @@ namespace Duplicati.GUI.TrayIcon
 #endif
                 toolkit = GetDefaultToolKit();
             }
-            else 
+            else
             {
                 if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_WINDOWS_FORMS;
@@ -136,10 +141,9 @@ namespace Duplicati.GUI.TrayIcon
             }
 
             HostedInstanceKeeper hosted = null;
-            var openui = false;
+
             string password = null;
             var saltedpassword = false;
-            var serverURL = new Uri(DEFAULT_HOSTURL);
 
             if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
             {
@@ -172,29 +176,28 @@ namespace Duplicati.GUI.TrayIcon
                     Scheme = scheme
                 }).Uri;
             }
-            
-            if (Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION) && Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
+            else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
+            {
                 databaseConnection = Server.Program.GetDatabaseConnection(options);
 
-            var disableTrayIconLogin = false;
+                if (databaseConnection != null)
+                {
+                    disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
+                    password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
+                    saltedpassword = false;
 
-            if (databaseConnection != null)
-            {
-                disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
-                password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
-                saltedpassword = false;
+                    var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
+                    var scheme = "http";
 
-                var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
-                var scheme = "http";
+                    if (cert != null && cert.HasPrivateKey)
+                        scheme = "https";
 
-                if (cert != null && cert.HasPrivateKey)
-                    scheme = "https";
-
-                serverURL = (new UriBuilder(serverURL)
+                    serverURL = (new UriBuilder(serverURL)
                     {
                         Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
                         Scheme = scheme
                     }).Uri;
+                }
             }
 
             string pwd;
@@ -209,7 +212,12 @@ namespace Duplicati.GUI.TrayIcon
 
             if (options.TryGetValue(HOSTURL_OPTION, out url))
                 serverURL = new Uri(url);
-            
+
+            StartTray(_args, options, toolkit, hosted, password, saltedpassword);
+        }
+
+        private static void StartTray(string[] _args, Dictionary<string, string> options, string toolkit, HostedInstanceKeeper hosted, string password, bool saltedpassword)
+        {
             using (hosted)
             {
                 var reSpawn = 0;
@@ -224,8 +232,8 @@ namespace Duplicati.GUI.TrayIcon
                         {
                             using (var tk = RunTrayIcon(toolkit))
                             {
-                                if (hosted != null && Server.Program.Instance != null)
-                                    Server.Program.Instance.SecondInstanceDetected +=
+                                if (hosted != null && Server.Program.ApplicationInstance != null)
+                                    Server.Program.ApplicationInstance.SecondInstanceDetected +=
                                         new Server.SingleInstance.SecondInstanceDelegate(
                                             x => { tk.ShowUrlInWindow(serverURL.ToString()); });
 

@@ -23,6 +23,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
+using System.Globalization;
+using System.Threading;
 
 namespace Duplicati.Library.Utility
 {
@@ -99,6 +101,46 @@ namespace Duplicati.Library.Utility
 			}
 
 			return total;
+        }
+
+        /// <summary>
+        /// Copies the content of one stream into another
+        /// </summary>
+        /// <param name="source">The stream to read from</param>
+        /// <param name="target">The stream to write to</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        public static async Task<long> CopyStreamAsync(Stream source, Stream target, CancellationToken cancelToken)
+        {
+            return await CopyStreamAsync(source, target, tryRewindSource: true, cancelToken: cancelToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Copies the content of one stream into another
+        /// </summary>
+        /// <param name="source">The stream to read from</param>
+        /// <param name="target">The stream to write to</param>
+        /// <param name="tryRewindSource">True if an attempt should be made to rewind the source stream, false otherwise</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <param name="buf">Temporary buffer to use (optional)</param>
+        public static async Task<long> CopyStreamAsync(Stream source, Stream target, bool tryRewindSource, CancellationToken cancelToken, byte[] buf = null)
+        {
+            if (tryRewindSource && source.CanSeek)
+                try { source.Position = 0; }
+                catch {}
+
+            buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
+
+            int read;
+            long total = 0;
+            while (true)
+            {
+                read = await source.ReadAsync(buf, 0, buf.Length, cancelToken).ConfigureAwait(false);
+                if (read == 0) break;
+                await target.WriteAsync(buf, 0, read, cancelToken).ConfigureAwait(false);
+                total += read;
+            }
+
+            return total;
         }
 
         /// <summary>
@@ -197,7 +239,6 @@ namespace Duplicati.Library.Utility
                 rootpath = Util.AppendDirSeparator(rootpath);
                 try
                 {
-
                     var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Directory;
                     if (callback(rootpath, rootpath, attr))
                         lst.Push(rootpath);
@@ -214,7 +255,7 @@ namespace Duplicati.Library.Utility
 
                 while (lst.Count > 0)
                 {
-                    var f = Util.AppendDirSeparator(lst.Pop());
+                    var f = lst.Pop();
 
                     yield return f;
 
@@ -617,7 +658,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrEmpty(value) || value.Trim().Length == 0)
                 return System.Threading.ThreadPriority.Normal;
 
-            switch (value.ToLower().Trim())
+            switch (value.ToLower(CultureInfo.InvariantCulture).Trim())
             {
                 case "+2":
                 case "high":
@@ -656,7 +697,7 @@ namespace Duplicati.Library.Utility
                 return defaultFunc();
             }
 
-            switch (value.Trim().ToLower())
+            switch (value.Trim().ToLower(CultureInfo.InvariantCulture))
             {
                 case "1":
                 case "on":

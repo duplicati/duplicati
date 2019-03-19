@@ -69,7 +69,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     if (res.Item1)
                                         return res.Item2;
 
-                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpextedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}, Path: {3}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2, e.Path);
+                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpectedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}, Path: {3}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2, e.Path);
                                     e.MetadataChanged = true;
                                 }
 
@@ -107,12 +107,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddChangedFile", "Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
-                            await database.AddFileAsync(e.Path, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else if (e.MetadataChanged)
                         {
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Path);
-                            await database.AddFileAsync(e.Path, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else /*if (e.OldId >= 0)*/
                         {

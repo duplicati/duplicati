@@ -37,7 +37,7 @@
       <HintPath>..\..\..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="MegaApiClient">
-      <HintPath>..\..\..\..\packages\MegaApiClient.1.6.3\lib\net45\MegaApiClient.dll</HintPath>
+      <HintPath>..\..\..\..\packages\MegaApiClient.1.7.1\lib\net45\MegaApiClient.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

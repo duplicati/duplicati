@@ -193,11 +193,12 @@ namespace Duplicati.Server
                 ["overwrite"] = overwrite? Boolean.TrueString : Boolean.FalseString,
                 ["restore-permissions"] = restore_permissions ? Boolean.TrueString : Boolean.FalseString,
                 ["skip-metadata"] = skip_metadata ? Boolean.TrueString : Boolean.FalseString,
-                ["passphrase"] = passphrase,
                 ["allow-passphrase-change"] = Boolean.TrueString
             };
             if (!string.IsNullOrWhiteSpace(restoreTarget))
                 dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
+            if (!(passphrase is null))
+                dict["passphrase"] = passphrase;
 
             return CreateTask(
                 DuplicatiOperation.Restore,
@@ -309,26 +310,22 @@ namespace Duplicati.Server
                     }
                 }
             }
+
+            public void SetBackendProgress(Library.Main.IBackendProgress progress)
+            {
+                lock (m_lock)
+                    m_backendProgress = progress;
+            }
+
+            public void SetOperationProgress(Library.Main.IOperationProgress progress)
+            {
+                lock (m_lock)
+                    m_operationProgress = progress;
+            }
+
             public void WriteMessage(Library.Logging.LogEntry entry)
             {
                 // Do nothing.  Implementation needed for ILogDestination interface.
-            }
-
-            public Duplicati.Library.Main.IBackendProgress BackendProgress
-            {
-                set
-                {
-                    lock(m_lock)
-                        m_backendProgress = value;
-                }
-            }
-            public Duplicati.Library.Main.IOperationProgress OperationProgress
-            {
-                set
-                {
-                    lock(m_lock)
-                        m_operationProgress = value;
-                }
             }
             #endregion
         }
@@ -512,7 +509,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.List:
                             {
-                                var r = controller.List(data.FilterStrings);
+                                var r = controller.List(data.FilterStrings, null);
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
@@ -771,7 +768,7 @@ namespace Duplicati.Server
                         null,
                         (n, a) =>
                         {
-                            var existing = (a.Where(x => x.BackupID == backup.ID)).FirstOrDefault();
+                            var existing = a.FirstOrDefault(x => x.BackupID == backup.ID);
                             if (existing == null)
                                 return n;
 

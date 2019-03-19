@@ -47,44 +47,39 @@ namespace Duplicati.GUI.TrayIcon
             Gtk.Application.Run();
         }
         
-        
         protected override void SetMenu (IEnumerable<IMenuItem> items)
         {
             base.SetMenu(items);
             m_appIndicator.Menu = m_popupMenu;
         }
         
-        protected override TrayIcons Icon 
+        protected override void SetIcon(TrayIcons icon)
         {
-            set 
-            {
-                m_appIndicator.IconName = GetTrayIconFilename(value);
+            m_appIndicator.IconName = GetTrayIconFilename(icon);
 
-                switch(value)
-                {
-                    case TrayIcons.Paused:
-                        m_appIndicator.IconDesc = "Paused";
-                        break;
-                    case TrayIcons.Running:
-                        m_appIndicator.IconDesc = "Running";
-                        break;
-                    case TrayIcons.IdleError:
-                        m_appIndicator.IconDesc = "Error";
-                        break;
-                    case TrayIcons.RunningError:
-                        m_appIndicator.IconDesc = "Running";
-                        break;
-                    case TrayIcons.PausedError:
-                        m_appIndicator.IconDesc = "Paused";
-                        break;
-                    case TrayIcons.Idle:
-                    default:
-                        m_appIndicator.IconDesc = "Ready";
-                        break;
-                }
+            switch (icon)
+            {
+                case TrayIcons.Paused:
+                    m_appIndicator.IconDesc = "Paused";
+                    break;
+                case TrayIcons.Running:
+                    m_appIndicator.IconDesc = "Running";
+                    break;
+                case TrayIcons.IdleError:
+                    m_appIndicator.IconDesc = "Error";
+                    break;
+                case TrayIcons.RunningError:
+                    m_appIndicator.IconDesc = "Running";
+                    break;
+                case TrayIcons.PausedError:
+                    m_appIndicator.IconDesc = "Paused";
+                    break;
+                case TrayIcons.Idle:
+                default:
+                    m_appIndicator.IconDesc = "Ready";
+                    break;
             }
         }
-
     }
 }
 #endif

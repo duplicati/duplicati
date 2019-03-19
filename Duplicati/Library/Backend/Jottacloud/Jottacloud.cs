@@ -17,12 +17,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
-using Duplicati.Library.Interface;
+using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Library.Common.IO;
-
 namespace Duplicati.Library.Backend
 {
     public class Jottacloud : IBackend, IStreamingBackend
@@ -259,7 +259,7 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="remotename"></param>
         /// <returns></returns>
-        public IFileEntry Info(string remotename)
+        public static IFileEntry Info(string remotename)
         {
             var doc = new System.Xml.XmlDocument();
             try
@@ -312,10 +312,10 @@ namespace Duplicati.Library.Backend
             return null;
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -446,7 +446,9 @@ namespace Duplicati.Library.Backend
 
             while (position < size)
             {
-                chunks.Enqueue(new Tuple<long, long>(position, position += Math.Min(m_chunksize, size - position)));
+                var length = Math.Min(m_chunksize, size - position);
+                chunks.Enqueue(new Tuple<long, long>(position, position + length));
+                position += length;
             }
 
             var tasks = new Queue<Task<byte[]>>();
@@ -474,7 +476,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             // Some challenges with uploading to Jottacloud:
             // - Jottacloud supports use of a custom header where we can tell the server the MD5 hash of the file
@@ -512,7 +514,7 @@ namespace Duplicati.Library.Backend
                 using (var os = System.IO.File.OpenWrite(tmpFile))
                 using (var md5 = new Utility.MD5CalculatingStream(baseStream))
                 {
-                    Library.Utility.Utility.CopyStream(md5, os, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(md5, os, true, cancelToken, m_copybuffer);
                     md5Hash = md5.GetFinalHashString();
                 }
                 stream = System.IO.File.OpenRead(tmpFile);
@@ -535,10 +537,11 @@ namespace Duplicati.Library.Backend
                 //req.Headers.Add("JModified", timeModified);
                 req.ContentType = "application/octet-stream";
                 req.ContentLength = fileSize;
+
                 // Write post data request
                 var areq = new Utility.AsyncHttpRequest(req);
                 using (var rs = areq.GetRequestStream())
-                    Utility.Utility.CopyStream(stream, rs, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(stream, rs, true, cancelToken, m_copybuffer);
                 // Send request, and check response
                 using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {

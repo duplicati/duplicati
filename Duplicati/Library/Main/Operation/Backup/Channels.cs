@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <summary>
         /// When the backup completes, all in-progress archives are sent from the <see cref="DataBlockProcessor"/> to the <see cref="SpillCollectorProcess"/>
         /// </summary>
-        public static readonly ChannelMarkerWrapper<VolumeUploadRequest> SpillPickup = new ChannelMarkerWrapper<VolumeUploadRequest>(new ChannelNameAttribute("SpillPickup"));
+        public static readonly ChannelMarkerWrapper<SpillVolumeRequest> SpillPickup = new ChannelMarkerWrapper<SpillVolumeRequest>(new ChannelNameAttribute("SpillPickup"));
         /// <summary>
         /// All data blocks are sent during the scanning to the <see cref="DataBlockProcessor"/> who bundles them in compressed archives
         /// </summary>

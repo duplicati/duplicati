@@ -1,3 +1,88 @@
+2019-02-06 - 2.0.4.15_canary_2019-02-06
+==========
+* Fixed an issue with backup of a Windows drive (without a path)
+* Clarified the B2 user interface, thanks @Pectojin
+
+2019-01-30 - 2.0.4.14_canary_2019-01-30
+==========
+* Fixed an issue with upgrading the database from a previous version
+* If you used v2.0.4.13, your database is likely broken, see the forum for details: https://forum.duplicati.com/t/release-2-0-4-13-canary-2019-01-29/
+
+2019-01-29 - 2.0.4.13_canary_2019-01-29
+==========
+* Added tests and improved code quality, thanks @warwickmm
+* Changed the internal storage of paths to use a prefix method. This should reduce the size of the database significantly and enable much faster database queries later on
+* Increased timeouts for reading the output from the commandline process to allow long running background jobs
+
+2019-01-16 - 2.0.4.12_canary_2019-01-16
+==========
+* Many source code quality improvements, thanks @warwickmm
+* Added test percentage option, thanks @warwickmm
+* Fixed an issue with the log page not loading, thanks @LacunaSoftware
+* Updated the Mega API, thanks @Pectojin
+* Added tool to import a CLI backup into the server, thanks @warwickmm
+* Improved build tools to separate and simplify the GPG signing step, thanks @v$
+* Fixed a case where listing files backed up from a UNC path are not shown, tha$
+* Removed the unused file lookup table, thanks @Pectojin
+* Fixed an issue with the FTP backend where it would sporadically create files $
+* Fixed quota reporting from GoogleDrive, thanks @warwickmm
+* Improved code quality, thanks @verhoek
+* (rebuild of 2.0.4.11)
+
+2019-01-16 - 2.0.4.11_canary_2019-01-16
+==========
+* Many source code quality improvements, thanks @warwickmm
+* Added test percentage option, thanks @warwickmm
+* Fixed an issue with the log page not loading, thanks @LacunaSoftware
+* Updated the Mega API, thanks @Pectojin
+* Added tool to import a CLI backup into the server, thanks @warwickmm
+* Improved build tools to separate and simplify the GPG signing step, thanks @verhoek
+* Fixed a case where listing files backed up from a UNC path are not shown, thanks @mnaimann
+* Removed the unused file lookup table, thanks @Pectojin
+* Fixed an issue with the FTP backend where it would sporadically create files in the root folder of the server, thanks @balchen
+* Fixed quota reporting from GoogleDrive, thanks @warwickmm
+* Improved code quality, thanks @verhoek
+
+2018-12-29 - 2.0.4.10_canary_2018-12-29
+==========
+* Improved passphrase export, thanks @Pectojin
+* Fixed an issue with restores that have no password, thanks @warwickmm
+* Fixed a process shutdown/restart issue on Synology, thanks @drwtsn32x
+* Improved build and tests, thanks @verhoek
+* Fixed issues with displaying logs from the UI, thanks @Pectojin
+* Improved performance of filters by around 10x, thanks @warwickmm
+
+2018-12-22 - 2.0.4.9_canary_2018-12-22
+==========
+* Improved code quality, thanks @warwickmm
+* Fixed typo, thanks @JonMikeIV
+* Improved speed from default filter groups, thanks @warwickmm
+* Fixed CPU/memory issue on MacOS, thanks @warwickmm
+
+2018-12-13 - 2.0.4.8_canary_2018-12-13
+==========
+* Fixed an issue that broke IE, thanks @mikaelmello
+
+2018-12-13 - 2.0.4.7_canary_2018-12-13
+==========
+* Fixed an issue that broke IE, thanks @mikaelmello
+
+2018-12-11 - 2.0.4.6_canary_2018-12-11
+==========
+* Improved code quality and documentation, thanks @warwickmm
+* Don't ask for password for an unencrypted backup, thanks @verhoek
+* SFTP can now create missing folder tree, thanks @warwickmm
+* Removed duplicati http options, thanks @warwickmm
+* Fixed an issue with exporting passwords, thanks @Pectojin
+* Added notificaiton button for warnings, thanks @LacunaSoftware
+* Added cache-buster for all local static files, thanks @LacunaSoftware
+* Improved code quality, thanks @verhoek
+* Fixed an issue where the GUI would not delete the local database, even on request, thanks @warwickmm
+* Fixed a misleading path error message, thanks @mikaelmello
+* Fixed scheduler checking allowed days in local timezone, thanks @LacunaSoftware
+* Reworked the log UI, thanks @LacunaSoftware
+* Fixed an issue where local times were reported as clashing if times overlapped due to DST
+
 2018-11-28 - 2.0.4.5_beta_2018-11-28
 ==========
 The major changes in this version are:

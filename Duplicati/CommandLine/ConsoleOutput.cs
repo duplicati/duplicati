@@ -38,27 +38,11 @@ namespace Duplicati.CommandLine
             this.VerboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
             this.FullResults = Library.Utility.Utility.ParseBoolOption(options, "full-results");
         }
-    
+
         #region IMessageSink implementation
-        
-        public IBackendProgress BackendProgress { get; set; }
-        
-        private IOperationProgress m_operationProgress;
-        public IOperationProgress OperationProgress
-        {
-            get { return m_operationProgress; }
-            set 
-            { 
-                if (m_operationProgress != null)
-                    m_operationProgress.PhaseChanged -= InvokePhaseChanged;
-                    
-                m_operationProgress = value; 
-                
-                if (value != null)
-                    m_operationProgress.PhaseChanged += InvokePhaseChanged;
-            }
-        }
-        
+
+        public IOperationProgress OperationProgress { get; private set; }
+
         private void InvokePhaseChanged(OperationPhase p1, OperationPhase p2)
         {
             if (PhaseChanged != null)
@@ -91,6 +75,22 @@ namespace Duplicati.CommandLine
                             break;
                     }
                 }
+        }
+
+        public void SetBackendProgress(IBackendProgress progress)
+        {
+            // Do nothing.  Implementation needed for IMessageSink interface.
+        }
+
+        public void SetOperationProgress(IOperationProgress progress)
+        {
+            if (OperationProgress != null)
+                this.OperationProgress.PhaseChanged -= InvokePhaseChanged;
+
+            OperationProgress = progress;
+
+            if (progress != null)
+                this.OperationProgress.PhaseChanged += InvokePhaseChanged;
         }
 
         public void WriteMessage(Library.Logging.LogEntry entry)

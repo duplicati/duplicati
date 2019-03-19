@@ -34,6 +34,13 @@
     <script type="text/javascript" src="scripts/libs/oldbrowsersupport.js"></script>
     <script type="text/javascript" src="scripts/libs/cryptojs.js"></script>
     <script type="text/javascript" src="scripts/libs/zxcvbn.js"></script>
+    <script>
+        if (navigator.userAgent.indexOf('MSIE') !== -1 || navigator.appVersion.indexOf('Trident/') > -1) {
+            /* Microsoft Internet Explorer detected in. */
+            /* Bluebird is necessary to make Promises work in IE */
+            document.write('<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.3.4/bluebird.min.js" ></scr' + 'ipt>');
+        }
+    </script>
 
     <script type="text/javascript" src="scripts/libs/jquery.min.js"></script>
     <script type="text/javascript" src="scripts/libs/jquery-ui.min.js"></script>
@@ -71,6 +78,7 @@
     <script type="text/javascript" src="scripts/services/EditUriBuiltins.js?v=2.0.0.7"></script>
     <script type="text/javascript" src="scripts/services/NotificationService.js?v=2.0.0.7"></script>
     <script type="text/javascript" src="scripts/services/DialogService.js?v=2.0.0.7"></script>
+    <script type="text/javascript" src="scripts/services/LogService.js?v=2.0.0.7"></script>
     <script type="text/javascript" src="scripts/services/EditBackupService.js?v=2.0.0.7"></script>
     <script type="text/javascript" src="scripts/services/CaptchaService.js?v=2.0.0.7"></script>
 
@@ -83,6 +91,7 @@
     <script type="text/javascript" src="scripts/controllers/RestoreController.js?v=2.0.0.7"></script>
     <script type="text/javascript" src="scripts/controllers/RestoreDirectController.js?v=2.0.0.7"></script>
     <script type="text/javascript" src="scripts/controllers/LogController.js?v=2.0.0.7"></script>
+    <script type="text/javascript" src="scripts/controllers/BackupLogController.js?v=2.0.0.7"></script>
     <script type="text/javascript" src="scripts/controllers/ExportController.js?v=2.0.0.7"></script>
     <script type="text/javascript" src="scripts/controllers/ImportController.js?v=2.0.0.7"></script>
     <script type="text/javascript" src="scripts/controllers/UpdateChangelogController.js?v=2.0.0.7"></script>
@@ -230,7 +239,7 @@
                 </ul>
             </div>
 
-            <div ng-view class="content">
+            <div ng-view class="content" style="width: 100%">
             </div>
         </div>
 

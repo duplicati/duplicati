@@ -76,7 +76,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     bool result;
                     Library.Utility.IFilter evfilter;
                     bool match = filter.Matches(f.Path, out result, out evfilter);
-                    if (!match || (match && result))
+                    if (!match || result)
                         yield return f;
                 }
         }

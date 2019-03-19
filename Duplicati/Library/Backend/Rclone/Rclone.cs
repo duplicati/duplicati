@@ -17,17 +17,18 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Diagnostics;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Globalization;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using Duplicati.Library.Common.IO;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -97,7 +98,7 @@ namespace Duplicati.Library.Backend
             get { return false; }
         }
 
-        private string RcloneCommandExecuter(String command, String arguments)
+        private async Task<string> RcloneCommandExecuter(String command, String arguments, CancellationToken cancelToken)
         {
             StringBuilder outputBuilder = new StringBuilder();
             StringBuilder errorBuilder = new StringBuilder();
@@ -162,7 +163,17 @@ namespace Duplicati.Library.Backend
             process.Start();
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
-            process.WaitForExit();
+
+            while(!process.HasExited)
+            {
+                await Task.Delay(500).ConfigureAwait(false);
+                if (cancelToken.IsCancellationRequested)
+                {
+                    process.Kill();
+                    process.WaitForExit();
+                }
+            }
+
             process.CancelOutputRead();
             process.CancelErrorRead();
 
@@ -191,7 +202,7 @@ namespace Duplicati.Library.Backend
             try
             {
 
-                str_result = RcloneCommandExecuter(rclone_executable, String.Format("lsjson {0}:{1}", remote_repo, remote_path));
+                str_result = RcloneCommandExecuter(rclone_executable, String.Format("lsjson {0}:{1}", remote_repo, remote_path), CancellationToken.None).Await();
                 // this will give an error if the executable does not exist.
             }
 
@@ -225,11 +236,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             try
             {
-                RcloneCommandExecuter(rclone_executable, String.Format("copyto {0}:{1} {2}:{3}/{4}", local_repo, filename, remote_repo, remote_path, remotename));
+                return RcloneCommandExecuter(rclone_executable, String.Format("copyto {0}:{1} {2}:{3}/{4}", local_repo, filename, remote_repo, remote_path, remotename), cancelToken);
             }
             catch (FolderMissingException ex)
             {
@@ -241,7 +252,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                RcloneCommandExecuter(rclone_executable, String.Format("copyto {2}:{3}/{4} {0}:{1}", local_repo, filename, remote_repo, remote_path, remotename));
+                RcloneCommandExecuter(rclone_executable, String.Format("copyto {2}:{3}/{4} {0}:{1}", local_repo, filename, remote_repo, remote_path, remotename), CancellationToken.None).Await();
             }
             catch (FolderMissingException ex) {
                 throw new FileMissingException(ex);
@@ -254,7 +265,7 @@ namespace Duplicati.Library.Backend
             // Will give a "directory not found" error if the file does not exist, need to change that to a missing file exception
             try
             {
-                RcloneCommandExecuter(rclone_executable, String.Format("delete {0}:{1}/{2}", remote_repo, remote_path, remotename));
+                RcloneCommandExecuter(rclone_executable, String.Format("delete {0}:{1}/{2}", remote_repo, remote_path, remotename), CancellationToken.None).Await();
             }
             catch (FolderMissingException ex) {
                 throw new FileMissingException(ex);
@@ -300,7 +311,7 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            RcloneCommandExecuter(rclone_executable, String.Format("mkdir {0}:{1}", remote_repo, remote_path));     
+            RcloneCommandExecuter(rclone_executable, String.Format("mkdir {0}:{1}", remote_repo, remote_path), CancellationToken.None).Await();
         }
 
 #endregion

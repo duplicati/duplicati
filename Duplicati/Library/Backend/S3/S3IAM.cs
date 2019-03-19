@@ -37,7 +37,7 @@ namespace Duplicati.Library.Backend
             GetPolicyDoc
         }
 
-        public const string POLICY_DOCUMENT_TEMPLATE = 
+        public const string POLICY_DOCUMENT_TEMPLATE =
 @"
 {
     ""Version"": ""2012-10-17"",
@@ -60,10 +60,6 @@ namespace Duplicati.Library.Backend
 }
 ";
 
-        public S3IAM()
-        {
-        }
-
         public string Key { get { return "s3-iamconfig"; } }
 
         public string DisplayName { get { return "S3 IAM support module"; } }
@@ -85,57 +81,52 @@ namespace Duplicati.Library.Backend
 
         public IDictionary<string, string> Execute(IDictionary<string, string> options)
         {
-            string operationstring;
-            string username;
-            string password;
-            string path;
-            Operation operation;
+            options.TryGetValue(KEY_OPERATION, out string operationstring);
+            options.TryGetValue(KEY_USERNAME, out string username);
+            options.TryGetValue(KEY_PASSWORD, out string password);
+            options.TryGetValue(KEY_PATH, out string path);
 
-            options.TryGetValue(KEY_OPERATION, out operationstring);
-            options.TryGetValue(KEY_USERNAME, out username);
-            options.TryGetValue(KEY_PASSWORD, out password);
-            options.TryGetValue(KEY_PATH, out path);
+            ValidateArgument(operationstring, KEY_OPERATION);
 
-            if (string.IsNullOrWhiteSpace(operationstring))
-                throw new ArgumentNullException(KEY_OPERATION);
-
-            if (!Enum.TryParse(operationstring, true, out operation))
+            if (!Enum.TryParse(operationstring, true, out Operation operation))
                 throw new ArgumentException(string.Format("Unable to parse {0} as an operation", operationstring));
 
             switch (operation)
             {
                 case Operation.GetPolicyDoc:
-                    if (string.IsNullOrWhiteSpace(path))
-                        throw new ArgumentNullException(KEY_PATH);
+                    ValidateArgument(path, KEY_PATH);
                     return GetPolicyDoc(path);
 
                 case Operation.CreateIAMUser:
-                    if (string.IsNullOrWhiteSpace(username))
-                        throw new ArgumentNullException(KEY_USERNAME);
-                    if (string.IsNullOrWhiteSpace(password))
-                        throw new ArgumentNullException(KEY_PASSWORD);
-                    if (string.IsNullOrWhiteSpace(path))
-                        throw new ArgumentNullException(KEY_PATH);
+                    ValidateArgument(username, KEY_USERNAME);
+                    ValidateArgument(password, KEY_PASSWORD);
+                    ValidateArgument(path, KEY_PATH);
                     return CreateUnprivilegedUser(username, password, path);
 
-                case Operation.CanCreateUser:
                 default:
-                    if (string.IsNullOrWhiteSpace(username))
-                        throw new ArgumentNullException(KEY_USERNAME);
-                    if (string.IsNullOrWhiteSpace(password))
-                        throw new ArgumentNullException(KEY_PASSWORD);
+                    ValidateArgument(username, KEY_USERNAME);
+                    ValidateArgument(password, KEY_PASSWORD);
                     return CanCreateUser(username, password);
             }
         }
 
-        private Dictionary<string, string> GetPolicyDoc(string path)
+        private static void ValidateArgument(string arg, string type)
         {
-            var dict = new Dictionary<string, string>();
-            dict["doc"] = GeneratePolicyDoc(path);
-            return dict;
+            if (string.IsNullOrWhiteSpace(arg))
+            {
+                throw new ArgumentNullException(type);
+            }
         }
 
-        private string GeneratePolicyDoc(string path)
+        private static IDictionary<string, string> GetPolicyDoc(string path)
+        {
+            return new Dictionary<string, string>
+            {
+                ["doc"] = GeneratePolicyDoc(path)
+            };
+        }
+
+        private static string GeneratePolicyDoc(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentNullException(nameof(path));
@@ -150,33 +141,72 @@ namespace Duplicati.Library.Backend
             return POLICY_DOCUMENT_TEMPLATE.Replace("bucket-name", bucketname).Trim();
         }
 
-        private Dictionary<string, string> CanCreateUser(string awsid, string awskey)
+
+        private static Boolean DetermineIfCreateUserIsAllowed(User user, AmazonIdentityManagementServiceClient cl)
         {
-            var dict = new Dictionary<string, string>();
-            var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
+            var simulatePrincipalPolicy = new SimulatePrincipalPolicyRequest
+            {
+                PolicySourceArn = user.Arn,
+                ActionNames = new[] { "iam:CreateUser" }.ToList()
+            };
+
+            return cl.SimulatePrincipalPolicy(simulatePrincipalPolicy).
+                                        EvaluationResults.First().
+                                        EvalDecision == PolicyEvaluationDecisionType.Allowed;
+
+        }
+
+        private static IDictionary<string, string> GetCreateUserDict(User user, AmazonIdentityManagementServiceClient cl)
+        {
+            var resultDict = new Dictionary<string, string>
+            {
+                ["isroot"] = false.ToString(),
+                ["arn"] = user.Arn,
+                ["id"] = user.UserId,
+                ["name"] = user.UserName,
+            };
+
             try
             {
-                var user = cl.GetUser().User;
-
-                dict["isroot"] = "False"; //user.Arn.EndsWith(":root", StringComparison.Ordinal).ToString();
-                dict["arn"] = user.Arn;
-                dict["id"] = user.UserId;
-                dict["name"] = user.UserName;
-
-                dict["isroot"] = (cl.SimulatePrincipalPolicy(new SimulatePrincipalPolicyRequest() { PolicySourceArn = user.Arn, ActionNames = new[] { "iam:CreateUser" }.ToList() }).EvaluationResults.First().EvalDecision == PolicyEvaluationDecisionType.Allowed).ToString();
+                resultDict["isroot"] = DetermineIfCreateUserIsAllowed(user, cl).ToString();
             }
             catch (Exception ex)
             {
-                dict["ex"] = ex.ToString();
-                dict["error"] = ex.Message;
+                return new Dictionary<string, string>
+                {
+                    // Can be removed if the UI code is updated to check for the "ex" key first
+                    ["isroot"] = false.ToString(),
+                    ["ex"] = ex.ToString(),
+                    ["error"] = $"Exception occurred while testing if CreateUser is allowed for user {user.UserId} : {ex.Message}"
+                };
             }
 
-            return dict;
+            return resultDict;
         }
 
-        private Dictionary<string, string> CreateUnprivilegedUser(string awsid, string awskey, string path)
+        private static IDictionary<string, string> CanCreateUser(string awsid, string awskey)
         {
-            var now = Library.Utility.Utility.SerializeDateTime(DateTime.Now);
+            var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
+            User user;
+            try
+            {
+                user = cl.GetUser().User;
+            }
+            catch (Exception ex) when (ex is NoSuchEntityException || ex is ServiceFailureException)
+            {
+                return new Dictionary<string, string>
+                {
+                    ["ex"] = ex.ToString(),
+                    ["error"] = $"Exception occurred while retrieving user {awsid} : {ex.Message}"
+                };
+            }
+
+            return GetCreateUserDict(user, cl);
+        }
+
+        private static IDictionary<string, string> CreateUnprivilegedUser(string awsid, string awskey, string path)
+        {
+            var now = Utility.Utility.SerializeDateTime(DateTime.Now);
             var username = string.Format("duplicati-autocreated-backup-user-{0}", now);
             var policyname = string.Format("duplicati-autocreated-policy-{0}", now);
             var policydoc = GeneratePolicyDoc(path);
@@ -188,14 +218,14 @@ namespace Duplicati.Library.Backend
                 policyname,
                 policydoc
             ));
-            var key = cl.CreateAccessKey(new CreateAccessKeyRequest() { UserName = user.UserName }).AccessKey;
+            var key = cl.CreateAccessKey(new CreateAccessKeyRequest { UserName = user.UserName }).AccessKey;
 
-            var dict = new Dictionary<string, string>();
-            dict["accessid"] = key.AccessKeyId;
-            dict["secretkey"] = key.SecretAccessKey;
-            dict["username"] = key.UserName;
-
-            return dict;
+            return new Dictionary<string, string>
+            {
+                ["accessid"] = key.AccessKeyId,
+                ["secretkey"] = key.SecretAccessKey,
+                ["username"] = key.UserName
+            };
         }
     }
 }

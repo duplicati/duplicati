@@ -330,7 +330,7 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER, no_local_blocks = true }), null))
             {
                 var r = c.Restore(null);
-                Assert.AreEqual(filenames.Count * 3, r.FilesRestored);
+                Assert.AreEqual(filenames.Count * 3, r.RestoredFiles);
             }
 
             TestUtils.VerifyDir(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"));
@@ -340,7 +340,7 @@ namespace Duplicati.UnitTest
                 using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = (string)tf, no_local_blocks = true }), null))
                 {
                     var r = c.Restore(new string[] { Path.Combine(DATAFOLDER, "a") + "*" });
-                    Assert.AreEqual(filenames.Count, r.FilesRestored);
+                    Assert.AreEqual(filenames.Count, r.RestoredFiles);
                 }
             }
         }

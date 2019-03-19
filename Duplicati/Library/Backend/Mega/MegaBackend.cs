@@ -14,12 +14,14 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using Duplicati.Library.Interface;
 using CG.Web.MegaApiClient;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Mega
 {
@@ -140,14 +142,14 @@ namespace Duplicati.Library.Backend.Mega
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
                 if (m_filecache == null)
                     ResetFileCache();
 
-                var el = Client.Upload(stream, remotename, CurrentFolder);
+                var el = await Client.UploadAsync(stream, remotename, CurrentFolder, new Progress(), null, cancelToken);
                 if (m_filecache.ContainsKey(remotename))
                     Delete(remotename);
 
@@ -182,10 +184,10 @@ namespace Duplicati.Library.Backend.Mega
                 select new FileEntry(item.Name, item.Size, item.ModificationDate ?? new DateTime(0), item.ModificationDate ?? new DateTime(0));
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -275,6 +277,13 @@ namespace Duplicati.Library.Backend.Mega
         }
 
         #endregion
+
+        private class Progress : IProgress<double>
+        {
+            public void Report(double value)
+            {
+                // No implementation as we have already wrapped the stream in our own progress reporting stream
+            }
+        }
     }
 }
-

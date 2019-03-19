@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Data storage for an ongoing backend operation
         /// </summary>
-        protected class FileEntryItem
+        public class FileEntryItem
         {
             /// <summary>
             /// The current operation this entry represents
@@ -166,7 +166,6 @@ namespace Duplicati.Library.Main.Operation.Common
         private IBackend m_backend;
         private readonly Options m_options;
         private readonly string m_backendurl;
-        private bool m_uploadSuccess;
         private readonly StatsCollector m_stats;
         private readonly ITaskReader m_taskreader;
 
@@ -196,90 +195,6 @@ namespace Duplicati.Library.Main.Operation.Common
             return RunOnMain<T>(() =>
                 DoWithRetry<T>(fe, method)
             );
-        }
-
-        public Task PutUnencryptedAsync(string remotename, string localpath)
-        {
-            var fe = new FileEntryItem(BackendActionType.Put, remotename);
-            fe.SetLocalfilename(localpath);
-            fe.Encrypted = true; //Prevent encryption
-            fe.TrackedInDb = false; //Prevent Db updates
-
-            return RunRetryOnMain<bool>(fe, async () =>
-            {
-                await DoPut(fe).ConfigureAwait(false);
-                m_uploadSuccess = true;
-                return true;
-            });
-
-        }
-
-        public async Task UploadFileAsync(VolumeWriterBase item, Func<string, Task<IndexVolumeWriter>> createIndexFile = null)
-        {
-            var fe = new FileEntryItem(BackendActionType.Put, item.RemoteFilename);
-            fe.SetLocalfilename(item.LocalFilename);
-
-            var tcs = new TaskCompletionSource<bool>();
-
-            var backgroundhashAndEncrypt = Task.Run(() =>
-            {
-                fe.Encrypt(m_options);
-                return fe.UpdateHashAndSize(m_options);
-            });
-
-            await RunOnMain(async () =>
-            {
-                try
-                {
-                    await DoWithRetry(fe, async () =>
-                    {
-                        if (fe.IsRetry)
-                            await RenameFileAfterErrorAsync(fe).ConfigureAwait(false);
-
-                        // Make sure the encryption and hashing has completed
-                        await backgroundhashAndEncrypt.ConfigureAwait(false);
-
-                        return await DoPut(fe).ConfigureAwait(false);
-                    }).ConfigureAwait(false);
-
-                    if (createIndexFile != null)
-                    {
-                        var ix = await createIndexFile(fe.RemoteFilename).ConfigureAwait(false);
-                        var indexFile = new FileEntryItem(BackendActionType.Put, ix.RemoteFilename);
-                        indexFile.SetLocalfilename(ix.LocalFilename);
-
-                        await m_database.UpdateRemoteVolumeAsync(indexFile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-
-                        await DoWithRetry(indexFile, async () =>
-                        {
-                            if (indexFile.IsRetry)
-                                await RenameFileAfterErrorAsync(indexFile).ConfigureAwait(false);
-
-                            var res = await DoPut(indexFile).ConfigureAwait(false);
-
-                            // Register that the index file is tracking the block file
-                            await m_database.AddIndexBlockLinkAsync(
-                                ix.VolumeID,
-                                await m_database.GetRemoteVolumeIDAsync(fe.RemoteFilename)
-                            ).ConfigureAwait(false);
-
-
-                            return res;
-                        }).ConfigureAwait(false);
-                    }
-
-                    tcs.TrySetResult(true);
-                }
-                catch (Exception ex)
-                {
-                    if (ex is System.Threading.ThreadAbortException)
-                        tcs.TrySetCanceled();
-                    else
-                        tcs.TrySetException(ex);
-                }
-            });
-
-            await tcs.Task.ConfigureAwait(false);
         }
 
         public Task DeleteFileAsync(string remotename, bool suppressCleanup = false)
@@ -392,7 +307,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     await m_stats.SendEventAsync(item.Operation, i < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
                     bool recovered = false;
-                    if (!m_uploadSuccess && ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
+                    if (ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
                     {
                         try
                         {
@@ -417,76 +332,6 @@ namespace Duplicati.Library.Main.Operation.Common
             }
 
             throw lastException;
-        }
-
-        private async Task RenameFileAfterErrorAsync(FileEntryItem item)
-        {
-            var p = VolumeBase.ParseFilename(item.RemoteFilename);
-            var guid = VolumeWriterBase.GenerateGuid();
-            var time = p.Time.Ticks == 0 ? p.Time : p.Time.AddSeconds(1);
-            var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
-            var oldname = item.RemoteFilename;
-
-            await m_stats.SendEventAsync(item.Operation, BackendEventType.Rename, oldname, item.Size);
-            await m_stats.SendEventAsync(item.Operation, BackendEventType.Rename, newname, item.Size);
-            Logging.Log.WriteInformationMessage(LOGTAG, "RenameRemoteTargetFile", "Renaming \"{0}\" to \"{1}\"", oldname, newname);
-            await m_database.RenameRemoteFileAsync(oldname, newname);
-            item.RemoteFilename = newname;
-        }
-
-        private async Task<bool> DoPut(FileEntryItem item, bool updatedHash = false)
-        {
-            // If this is not already encrypted, do it now
-            item.Encrypt(m_options);
-
-            updatedHash |= item.UpdateHashAndSize(m_options);
-
-            if (updatedHash && item.TrackedInDb)
-                await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
-
-            if (m_options.Dryrun)
-            {
-                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadVolume", "Would upload volume: {0}, size: {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(item.LocalFilename).Length));
-                item.DeleteLocalFile();
-                return true;
-            }
-
-            await m_database.LogRemoteOperationAsync("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
-            await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Started, item.RemoteFilename, item.Size);
-
-            var begin = DateTime.Now;
-
-            if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
-            {
-                using (var fs = System.IO.File.OpenRead(item.LocalFilename))
-                using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                    ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
-            }
-            else
-                m_backend.Put(item.RemoteFilename, item.LocalFilename);
-
-            var duration = DateTime.Now - begin;
-            Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
-
-            if (item.TrackedInDb)
-                await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
-
-            await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size);
-
-            if (m_options.ListVerifyUploads)
-            {
-                var f = m_backend.List().FirstOrDefault(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase));
-                if (f == null)
-                    throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
-                else if (f.Size != item.Size && f.Size >= 0)
-                    throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
-            }
-
-            item.DeleteLocalFile();
-            await m_database.CommitTransactionAsync("CommitAfterUpload");
-
-            return true;
         }
 
         private async Task<IList<Library.Interface.IFileEntry>> DoList()

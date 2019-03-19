@@ -140,7 +140,7 @@ namespace Duplicati.Library.Main.Database
 
                     //If we have a prefix rule, apply it
                     if (!string.IsNullOrWhiteSpace(prefixrule))
-                        cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE SUBSTR(""Path"", 1, 1) != ?", tmpnames.Tablename), prefixrule);
+                        cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE SUBSTR(""Path"", 1, {1}) != ?", tmpnames.Tablename, prefixrule.Length), prefixrule);
 
                     // Then we recursively find the largest prefix
                     cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""{0}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1", tmpnames.Tablename);
@@ -171,17 +171,24 @@ namespace Duplicati.Library.Main.Database
                         {
                             var oldlen = maxpath.Length;
                             var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
+
                             maxpath = maxpath.Substring(0, lix + 1);
                             if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen || maxpath == "\\\\")
                                 maxpath = "";
                         }
                     }
 
-                    // Special handling for Windows and multi-drive backups as they do not have a single common root
+                    // Special handling for Windows and multi-drive/UNC backups as they do not have a single common root
                     if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
                     {
-                        var roots = cmd.ExecuteReaderEnumerable(string.Format(@"SELECT DISTINCT SUBSTR(""Path"", 1, 1) FROM ""{0}""", tmpnames.Tablename)).Select(x => x.ConvertValueToString(0)).ToArray();
-                        return roots.Select(x => GetLargestPrefix(filter, x).First()).Distinct().ToArray();
+                        var paths = cmd.ExecuteReaderEnumerable(string.Format(@"SELECT Path FROM ""{0}""", tmpnames.Tablename)).Select(x => x.ConvertValueToString(0)).ToArray();
+                        var roots = paths.Select(x => x.Substring(0, 1)).Distinct().Where(x => x != "\\").ToArray();
+
+                        //unc path like \\server.domain\
+                        var regexUNCPrefix = new System.Text.RegularExpressions.Regex(@"^\\\\.*?\\");
+                        var rootsUNC = paths.Select(x => regexUNCPrefix.Match(x)).Where(x => x.Success).Select(x => x.Value).Distinct().ToArray();
+
+                        return roots.Concat(rootsUNC).Select(x => GetLargestPrefix(filter, x).First()).Distinct().ToArray();
                     }
     
                     return 
@@ -189,7 +196,6 @@ namespace Duplicati.Library.Main.Database
                             new FileversionFixed { Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep) }
                         };
                 }
-    
             }
             
             private IEnumerable<string> SelectFolderEntries(System.Data.IDbCommand cmd, string prefix, string table)

@@ -78,28 +78,24 @@ namespace Duplicati.GUI.TrayIcon.Windows
             }
 
             #region IMenuItem implementation
-            public string Text {
-                set {
-                    m_menu.Text = value;
-                }
+            public void SetText(string text)
+            {
+                m_menu.Text = text;
             }
 
-            public MenuIcons Icon {
-                set {
-                    m_menu.Image = GetIcon(value);
-                }
+            public void SetIcon(MenuIcons icon)
+            {
+                m_menu.Image = GetIcon(icon);
             }
 
-            public bool Enabled {
-                set {
-                    m_menu.Enabled = value;
-                }
+            public void SetEnabled(bool isEnabled)
+            {
+                m_menu.Enabled = isEnabled;
             }
 
-            public bool Default {
-                set {
-                    m_menu.Font = new System.Drawing.Font(m_menu.Font, System.Drawing.FontStyle.Bold);
-                }
+            public void SetDefault(bool value)
+            {
+                m_menu.Font = new System.Drawing.Font(m_menu.Font, System.Drawing.FontStyle.Bold);
             }
             #endregion
         }
@@ -169,34 +165,7 @@ namespace Duplicati.GUI.TrayIcon.Windows
             m_trayIcon.Visible = true;
             Application.Run();
         }
-
-        protected override TrayIcons Icon {
-            set {
-                switch (value)
-                {
-                    case TrayIcons.IdleError:
-                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.ErrorIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
-                        break;
-                    case TrayIcons.Paused:
-                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.PauseIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
-                        break;
-                    case TrayIcons.PausedError:
-                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.PauseIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
-                        break;
-                    case TrayIcons.Running:
-                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.WorkingIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
-                        break;
-                    case TrayIcons.RunningError:
-                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.WorkingIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
-                        break;
-                    case TrayIcons.Idle:
-                    default:
-                        m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.NormalIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
-                        break;
-                }
-            }
-        }
-
+       
         protected override IMenuItem CreateMenuItem (string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
         {
             return new MenuItemWrapper(text, icon, callback, subitems);
@@ -225,6 +194,32 @@ namespace Duplicati.GUI.TrayIcon.Windows
         protected override void Exit ()
         {
             Application.Exit();
+        }
+
+        protected override void SetIcon(TrayIcons icon)
+        {
+            switch (icon)
+            {
+                case TrayIcons.IdleError:
+                    m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.ErrorIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
+                    break;
+                case TrayIcons.Paused:
+                    m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.PauseIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
+                    break;
+                case TrayIcons.PausedError:
+                    m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.PauseIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
+                    break;
+                case TrayIcons.Running:
+                    m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.WorkingIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
+                    break;
+                case TrayIcons.RunningError:
+                    m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.WorkingIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
+                    break;
+                case TrayIcons.Idle:
+                default:
+                    m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.NormalIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
+                    break;
+            }
         }
 
         protected override void SetMenu (System.Collections.Generic.IEnumerable<IMenuItem> items)
