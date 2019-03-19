@@ -259,7 +259,7 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="remotename"></param>
         /// <returns></returns>
-        public static IFileEntry Info(string remotename)
+        public IFileEntry Info(string remotename)
         {
             var doc = new System.Xml.XmlDocument();
             try
