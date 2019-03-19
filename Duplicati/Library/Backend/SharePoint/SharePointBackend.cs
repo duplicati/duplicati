@@ -18,18 +18,18 @@
 // 
 #endregion
 
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Microsoft.SharePoint.Client; // Plain 'using' for extension methods
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Duplicati.Library.Utility;
-
-using Duplicati.Library.Interface;
-
+using System.Threading;
+using System.Threading.Tasks;
 using SP = Microsoft.SharePoint.Client;
-using Microsoft.SharePoint.Client; // Plain 'using' for extension methods
-using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -523,14 +523,14 @@ namespace Duplicati.Library.Backend
                 Utility.Utility.CopyStream(s, stream, true, copybuffer);
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+            using (FileStream fs = System.IO.File.OpenRead(filename))
+                return PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Put(string remotename, System.IO.Stream stream) { doPut(remotename, stream, false); }
-        private void doPut(string remotename, System.IO.Stream stream, bool useNewContext)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken) { return doPut(remotename, stream, false, cancelToken); }
+        private async Task doPut(string remotename, Stream stream, bool useNewContext, CancellationToken cancelToken)
         {
             string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
             SP.ClientContext ctx = getSpClientContext(useNewContext);
@@ -544,25 +544,24 @@ namespace Duplicati.Library.Backend
                 
                 useNewContext = true; // disable retry
                 if (!m_useBinaryDirectMode)
-                    uploadFileSlicePerSlice(ctx, remoteFolder, stream, fileurl);
+                    await uploadFileSlicePerSlice(ctx, remoteFolder, stream, fileurl, cancelToken).ConfigureAwait(false);
             }
             catch (ServerException) { throw; /* rethrow if Server answered */ }
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
-            catch { if (!useNewContext) /* retry */ { doPut(remotename, stream, true); return; } else throw; }
+            catch { if (!useNewContext) /* retry */ { await doPut(remotename, stream, true, cancelToken).ConfigureAwait(false); } else throw; }
 
             if (m_useBinaryDirectMode)
             {
                 SP.File.SaveBinaryDirect(ctx, fileurl, stream, true);
             }
-
         }
 
         /// <summary>
         /// Upload in chunks to bypass filesize limit.
         /// https://msdn.microsoft.com/en-us/library/office/dn904536.aspx
         /// </summary>
-        private SP.File uploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName)
+        private async Task<SP.File> uploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName, CancellationToken cancelToken)
         {
             // Each sliced upload requires a unique ID.
             Guid uploadId = Guid.NewGuid();
@@ -586,7 +585,7 @@ namespace Duplicati.Library.Backend
             {
                 int bufCnt = 0;
                 // read chunk to array (necessary because chunk uploads fail if size unknown)
-                while (bufCnt < blockSize && (lastreadsize = sourceFileStream.Read(buf, bufCnt, blockSize - bufCnt)) > 0)
+                while (bufCnt < blockSize && (lastreadsize = await sourceFileStream.ReadAsync(buf, bufCnt, blockSize - bufCnt, cancelToken).ConfigureAwait(false)) > 0)
                     bufCnt += lastreadsize;
 
                 using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))

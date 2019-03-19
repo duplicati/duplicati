@@ -14,14 +14,16 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using Duplicati.Library.Utility;
-using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Backblaze
 {
@@ -188,7 +190,7 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             TempFile tmp = null;
 
@@ -203,14 +205,11 @@ namespace Duplicati.Library.Backend.Backblaze
             string sha1;
             if (measure.CanSeek)
             {
-                // Record the stream position
                 var p = measure.Position;
 
-                // Compute the hash
-                using(var hashalg = Duplicati.Library.Utility.HashAlgorithmHelper.Create("sha1"))
-                    sha1 = Library.Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
+                using(var hashalg = HashAlgorithmHelper.Create("sha1"))
+                    sha1 = Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
 
-                // Reset the stream position
                 measure.Position = p;
             }
             else
@@ -220,7 +219,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 using(var sr = System.IO.File.OpenWrite(tmp))
                 using(var hc = new HashCalculatingStream(measure, "sha1"))
                 {
-                    Library.Utility.Utility.CopyStream(hc, sr);
+                    await Utility.Utility.CopyStreamAsync(hc, sr, cancelToken).ConfigureAwait(false);
                     sha1 = hc.GetFinalHashString();
                 }
 
@@ -232,8 +231,9 @@ namespace Duplicati.Library.Backend.Backblaze
 
             try
             {
-                var fileinfo = m_helper.GetJSONData<UploadFileResponse>(
+                var fileinfo = await m_helper.GetJSONDataAsync<UploadFileResponse>(
                     UploadUrlData.UploadUrl,
+                    cancelToken,
                     req =>
                     {
                         req.Method = "POST";
@@ -244,12 +244,12 @@ namespace Duplicati.Library.Backend.Backblaze
                         req.ContentLength = stream.Length;
                     },
 
-                    req =>
+                    async (req, reqCancelToken) =>
                     {
-                        using(var rs = req.GetRequestStream())
-                            Utility.Utility.CopyStream(stream, rs);
+                        using (var rs = req.GetRequestStream())
+                            await Utility.Utility.CopyStreamAsync(stream, rs, reqCancelToken);
                     }
-                );
+                ).ConfigureAwait(false);
 
                 // Delete old versions
                 if (m_filecache.ContainsKey(remotename))
@@ -276,14 +276,7 @@ namespace Duplicati.Library.Backend.Backblaze
             }
             finally
             {
-                try
-                {
-                    if (tmp != null)
-                        tmp.Dispose();
-                }
-                catch
-                {
-                }
+                tmp?.Dispose();
             }
         }
 
@@ -368,10 +361,10 @@ namespace Duplicati.Library.Backend.Backblaze
                 ).ToList();
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)

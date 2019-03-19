@@ -14,10 +14,12 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
 using Duplicati.Library.Interface;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -46,12 +48,12 @@ namespace Duplicati.UnitTest
                 throw new Exception("Random upload failure");
         }
         #region IStreamingBackend implementation
-        public void Put(string remotename, Stream stream)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             var uploadError = random.NextDouble() > 0.9;
 
             using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new Exception("Random upload failure"); }))
-                m_backend.Put(remotename, f);
+                await m_backend.PutAsync(remotename, f, cancelToken);
             ThrowErrorRandom();
         }
         public void Get(string remotename, Stream stream)
@@ -67,10 +69,10 @@ namespace Duplicati.UnitTest
         {
             return m_backend.List();
         }
-        public void Put(string remotename, string filename)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Put(remotename, filename);
+            await m_backend.PutAsync(remotename, filename, cancelToken);
             ThrowErrorRandom();
         }
         public void Get(string remotename, string filename)

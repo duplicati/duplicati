@@ -18,16 +18,19 @@
 //
 #endregion
 
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using FluentFTP;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Net.FtpClient;
 using System.Net.Security;
 using System.Security.Authentication;
-using Duplicati.Library.Interface;
-using Uri = System.Uri;
+using System.Threading;
+using System.Threading.Tasks;
 using CoreUtility = Duplicati.Library.Utility.Utility;
-using Duplicati.Library.Common.IO;
+using Uri = System.Uri;
 
 namespace Duplicati.Library.Backend.AlternativeFTP
 {
@@ -304,10 +307,10 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             return list;
         }
 
-        public void Put(string remotename, System.IO.Stream input)
+        public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
             string remotePath = remotename;
-            long streamLen = -1;
+            long streamLen;
 
             try
             {
@@ -317,11 +320,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 {
                     streamLen = input.Length;
                 }
-                // ReSharper disable once EmptyGeneralCatchClause
-                catch
-                {
-
-                }
+                catch (NotSupportedException) { streamLen = -1; }
 
                 // Get the remote path
                 remotePath = "";
@@ -332,18 +331,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                     remotePath += remotename;
                 }
 
-                using (var outputStream = ftpClient.OpenWrite(remotePath))
+                var success = await ftpClient.UploadAsync(input, remotePath, FtpExists.Overwrite, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
+                if (!success)
                 {
-                    try
-                    {
-                        CoreUtility.CopyStream(input, outputStream, true, _copybuffer);
-                    }
-                    finally
-                    {
-                        outputStream.Close();
-                    }
+                    throw new UserInformationException(string.Format(Strings.ErrorWriteFile, remotename), "AftpPutFailure");
                 }
-
 
                 if (_listVerify)
                 {
@@ -376,15 +368,15 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public void Put(string remotename, string localname)
+        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
             }
         }
 
-        public void Get(string remotename, System.IO.Stream output)
+        public void Get(string remotename, Stream output)
         {
             var ftpClient = CreateClient();
 
@@ -413,7 +405,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         public void Get(string remotename, string localname)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            using (FileStream fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 Get(remotename, fs);
             }
@@ -452,10 +444,10 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             get { return new string[] { new Uri(_url).Host }; }
         }
 
-        private static System.IO.Stream StringToStream(string str)
+        private static Stream StringToStream(string str)
         {
-            var stream = new System.IO.MemoryStream();
-            var writer = new System.IO.StreamWriter(stream) { AutoFlush = true };
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream) { AutoFlush = true };
             writer.Write(str);
             return stream;
         }
@@ -485,7 +477,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    Put(TEST_FILE_NAME, testStream);
+                    PutAsync(TEST_FILE_NAME, testStream, CancellationToken.None).Wait();
                 }
                 catch (Exception e)
                 {
@@ -494,7 +486,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
 
             // Test read permissions
-            using (var stream = new System.IO.MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 try
                 {
@@ -542,9 +534,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         private FtpClient CreateClient()
         {
-            var url = _url;
-
-            var uri = new Uri(url);
+            var uri = new Uri(_url);
 
             if (this.Client == null) // Create connection if it doesn't exist yet
             {

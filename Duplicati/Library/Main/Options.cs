@@ -289,6 +289,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
                     new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "4"),
+                    new CommandLineArgument("asynchronous-concurrent-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousconcurrentuploadlimitShort, Strings.Options.AsynchronousconcurrentuploadlimitLong, "4"),
                     new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong, System.IO.Path.GetTempPath()),
 
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
@@ -1038,6 +1039,23 @@ namespace Duplicati.Library.Main
                     return OptimizationStrategy.Auto;
                 else
                     return OptimizationStrategy.Off;
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of concurrent volume uploads allowed. Zero for unlimited.
+        /// </summary>
+        public int AsynchronousConcurrentUploadLimit
+        {
+            get
+            {
+                if (!m_options.TryGetValue("asynchronous-concurrent-upload-limit", out var value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return 4;
+                else
+                    return int.Parse(value);
             }
         }
 

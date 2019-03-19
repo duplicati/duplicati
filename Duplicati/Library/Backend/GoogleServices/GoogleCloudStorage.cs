@@ -14,17 +14,17 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using Duplicati.Library.Backend.GoogleServices;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
-
-using Newtonsoft.Json;
-
-using Duplicati.Library.Backend.GoogleServices;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
-using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
@@ -147,10 +147,10 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -242,13 +242,12 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         #endregion
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-
             var item = new BucketResourceItem { name = m_prefix + remotename };
 
             var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
-            var res = GoogleCommon.ChunckedUploadWithResume<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream);
+            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, cancelToken);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");

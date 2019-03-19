@@ -143,8 +143,15 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Updates the current progress
         /// </summary>
-        /// <param name="progress">he current number of transferred bytes</param>
+        /// <param name="progress">The current number of transferred bytes</param>
         void UpdateProgress(long progress);
+
+        /// <summary>
+        /// Updates the total size
+        /// </summary>
+        /// <param name="size">The new total size</param>
+        void UpdateTotalSize(long size);
+
         /// <summary>
         /// Sets a flag indicating if the backend operation is blocking progress
         /// </summary>
@@ -201,26 +208,36 @@ namespace Duplicati.Library.Main
         /// <param name="size">The size of the file being transferred</param>
         public void StartAction(BackendActionType action, string path, long size)
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 m_action = action;
                 m_path = path;
                 m_size = size;
                 m_progress = 0;
-                m_actionStart = DateTime.Now;                
+                m_actionStart = DateTime.Now;
             }
         }
-        
+
         /// <summary>
         /// Updates the progress
         /// </summary>
         /// <param name="progress">The current number of transferred bytes</param>
         public void UpdateProgress(long progress)
         {
-            lock(m_lock)
+            lock (m_lock)
                 m_progress = progress;
         }
-        
+
+        /// <summary>
+        /// Updates the total size
+        /// </summary>
+        /// <param name="size">The new total size</param>
+        public void UpdateTotalSize(long size)
+        {
+            lock (m_lock)
+                m_size = size;
+        }
+
         /// <summary>
         /// Update with the current action, path, size, progress and bytes_pr_second.
         /// </summary>

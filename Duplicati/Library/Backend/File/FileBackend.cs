@@ -17,12 +17,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -186,20 +188,20 @@ namespace Duplicati.Library.Backend
 
 #if DEBUG_RETRY
         private static Random random = new Random();
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
             {
                 if (random.NextDouble() > 0.6666)
                     throw new Exception("Random upload failure");
-                Utility.Utility.CopyStream(stream, writestream);
+                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken);
             }
         }
 #else
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
-                Utility.Utility.CopyStream(stream, writestream, true, m_copybuffer);
+            using (System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
+                await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
         }
 #endif
 
@@ -210,7 +212,7 @@ namespace Duplicati.Library.Backend
                 Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             string path = GetRemoteName(remotename);
             if (m_moveFile)
@@ -222,6 +224,8 @@ namespace Duplicati.Library.Backend
             }
             else
                 systemIO.FileCopy(filename, path, true);
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string filename)

@@ -48,6 +48,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Operation\Backup\FileProgressThrottler.cs" />
     <Compile Include="Operation\VacuumHandler.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -220,8 +221,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Operation\Backup\" />
-    <Folder Include="Operation\Common\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

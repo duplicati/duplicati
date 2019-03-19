@@ -23,6 +23,7 @@ using System.Text;
 using Duplicati.Library.Interface;
 using System.Linq;
 using System.Globalization;
+using System.Threading;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -470,10 +471,10 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                     using (NonSeekableStream nss = new NonSeekableStream(fs))
-                        (backend as Library.Interface.IStreamingBackend).Put(remotefilename, nss);
+                        (backend as Library.Interface.IStreamingBackend).PutAsync(remotefilename, nss, CancellationToken.None).Wait();
                 }
                 else
-                    backend.Put(remotefilename, localfilename);
+                    backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Wait();
 
                 e = null;
             }

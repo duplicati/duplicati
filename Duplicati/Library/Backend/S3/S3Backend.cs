@@ -21,9 +21,12 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -339,24 +342,24 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string localname)
+        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Put(remotename, fs);
+            using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
+                return PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Put(string remotename, System.IO.Stream input)
+        public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
             try
             {
-                Connection.AddFileStream(m_bucket, GetFullKey(remotename), input);
+                await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
             }
             catch (Exception ex)
             {
                 //Catch "non-existing" buckets
                 Amazon.S3.AmazonS3Exception s3ex = ex as Amazon.S3.AmazonS3Exception;
                 if (s3ex != null && (s3ex.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchBucket".Equals(s3ex.ErrorCode)))
-                    throw new Interface.FolderMissingException(ex);
+                    throw new FolderMissingException(ex);
 
                 throw;
             }

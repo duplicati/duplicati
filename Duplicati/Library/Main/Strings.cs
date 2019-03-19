@@ -95,6 +95,8 @@ namespace Duplicati.Library.Main.Strings
         public static string AsynchronousuploadfolderShort { get { return LC.L(@"The path where ready volumes are placed until uploaded"); } }
         public static string AsynchronousuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, Duplicati will create volumes that can be uploaded. To prevent Duplicati from generating too many volumes, this option limits the number of pending uploads. Set to zero to disable the limit"); } }
         public static string AsynchronousuploadlimitShort { get { return LC.L(@"The number of volumes to create ahead of time"); } }
+        public static string AsynchronousconcurrentuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, the maximum number of concurrent uploads allowed. Set to zero to disable the limit."); } }
+        public static string AsynchronousconcurrentuploadlimitShort { get { return LC.L(@"The number of concurrent uploads allowed"); } }
         public static string DebugoutputLong { get { return LC.L(@"Activating this option will make some error messages more verbose, which may help you track down a particular issue"); } }
         public static string DebugoutputShort { get { return LC.L(@"Enables debugging output"); } }
         public static string LogfileShort { get { return LC.L(@"Log internal information to a file"); } }
