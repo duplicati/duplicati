@@ -357,11 +357,11 @@ namespace Duplicati.Library.Main.Operation
             await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
 
             // In case the uploader crashes, we grab the exception here
-            if (await Task.WhenAny(uploader, flushReq.LastWriteSizeAync) == uploader)
+            if (await Task.WhenAny(uploader, flushReq.LastWriteSizeAsync) == uploader)
                 await uploader.ConfigureAwait(false);
 
             // Grab the size of the last uploaded volume
-            return await flushReq.LastWriteSizeAync;
+            return await flushReq.LastWriteSizeAsync;
         }
 
         private async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
