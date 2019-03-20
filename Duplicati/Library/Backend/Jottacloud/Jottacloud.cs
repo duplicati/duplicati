@@ -200,7 +200,6 @@ namespace Duplicati.Library.Backend
                 // Send request and load XML response.
                 var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, "", "", false);
                 var areq = new Utility.AsyncHttpRequest(req);
-                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 using (var rs = areq.GetResponseStream())
                     doc.Load(rs);
             }
@@ -267,7 +266,6 @@ namespace Duplicati.Library.Backend
                 // Send request and load XML response.
                 var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "", false);
                 var areq = new Utility.AsyncHttpRequest(req);
-                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 using (var rs = areq.GetResponseStream())
                     doc.Load(rs);
             }
@@ -428,7 +426,6 @@ namespace Duplicati.Library.Backend
             // ignoring any incomplete or corrupt versions.
             var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin", false);
             var areq = new Utility.AsyncHttpRequest(req);
-            using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
             using (var s = areq.GetResponseStream())
                 Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
         }
@@ -463,11 +460,11 @@ namespace Duplicati.Library.Backend
                         var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin", false);
                         req.AddRange(item.Item1, item.Item2 - 1);
                         var areq = new Utility.AsyncHttpRequest(req);
-                        using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                         using (var s = areq.GetResponseStream())
                         using (var reader = new System.IO.BinaryReader(s))
                         {
-                            return reader.ReadBytes((int)(item.Item2 - item.Item1));
+                            var length = item.Item2 - item.Item1;
+                            return reader.ReadBytes((int)length);
                         }
                     }));
                 }
