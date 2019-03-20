@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
     internal class FlushRequest : IUploadRequest
     {
-        public Task<long> LastWriteSizeAync { get { return m_tcs.Task; } }
+        public Task<long> LastWriteSizeAsync { get { return m_tcs.Task; } }
         private readonly TaskCompletionSource<long> m_tcs = new TaskCompletionSource<long>();
         public void SetFlushed(long size)
         {
