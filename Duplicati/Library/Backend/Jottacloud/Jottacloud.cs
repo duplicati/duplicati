@@ -19,6 +19,7 @@
 #endregion
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Localization.Short;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -53,7 +54,7 @@ namespace Duplicati.Library.Backend
         private static readonly string JFS_DEFAULT_CHUNKSIZE = "5mb";
         private static readonly string JFS_DEFAULT_THREADS = "4";
         private readonly int m_threads;
-        private readonly int m_chunksize;
+        private readonly long m_chunksize;
 
         /// <summary>
         /// The default maximum number of concurrent connections allowed by a ServicePoint object is 2.
@@ -163,7 +164,7 @@ namespace Duplicati.Library.Backend
             m_url        = m_url_device + "/" + m_mountPoint + "/" + m_path;
             m_url_upload = JFS_ROOT_UPLOAD + "/" + m_userInfo.UserName + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
 
-            m_threads = options.ContainsKey(JFS_THREADS) ? int.Parse(options[JFS_THREADS]) : 4;
+            m_threads = int.Parse(options.ContainsKey(JFS_THREADS) ? options[JFS_THREADS] : JFS_DEFAULT_THREADS);
 
             if (!options.TryGetValue(JFS_CHUNKSIZE, out var tmp))
             {
@@ -174,10 +175,10 @@ namespace Duplicati.Library.Backend
 
             if (chunksize > int.MaxValue || chunksize < 1024)
             {
-                throw new ArgumentOutOfRangeException(nameof(chunksize), string.Format("The chunk size cannot be less than {0}, nor larger than {1}", 1024, int.MaxValue));
+                throw new ArgumentOutOfRangeException(nameof(chunksize), string.Format("The chunk size cannot be less than {0}, nor larger than {1}", Utility.Utility.FormatSizeString(1024), Utility.Utility.FormatSizeString(int.MaxValue)));
             }
 
-            m_chunksize = (int)chunksize;
+            m_chunksize = chunksize;
         }
 
         #region IBackend Members
@@ -227,30 +228,39 @@ namespace Duplicati.Library.Backend
             }
             foreach (System.Xml.XmlNode xFile in xRoot.SelectNodes("files/file[not(@deleted)]"))
             {
-                string name = xFile.Attributes["name"].Value;
-                // Normal files have an "currentRevision", which represent the most recent successfully upload
-                // (could also checked that currentRevision/state is "COMPLETED", but should not be necessary).
-                // There might also be a newer "latestRevision" coming from an incomplete or corrupt upload,
-                // but we ignore that here and use the information about the last valid version.
-                System.Xml.XmlNode xRevision = xFile.SelectSingleNode("currentRevision");
-                if (xRevision != null)
+                var fe = ToFileEntry(xFile);
+                if (fe != null)
                 {
-                    System.Xml.XmlNode xNode = xRevision.SelectSingleNode("state");
-                    if (xNode.InnerText == "COMPLETED") // Think "currentRevision" always is a complete version, but just to be on the safe side..
-                    {
-                        xNode = xRevision.SelectSingleNode("size");
-                        long size;
-                        if (xNode == null || !long.TryParse(xNode.InnerText, out size))
-                            size = -1;
-                        DateTime lastModified;
-                        xNode = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
-                        if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
-                            lastModified = new DateTime();
-                        FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
-                        yield return fe;
-                    }
+                    yield return fe;
                 }
             }
+        }
+
+        public IFileEntry ToFileEntry(System.Xml.XmlNode xFile)
+        {
+            string name = xFile.Attributes["name"].Value;
+            // Normal files have an "currentRevision", which represent the most recent successfully upload
+            // (could also checked that currentRevision/state is "COMPLETED", but should not be necessary).
+            // There might also be a newer "latestRevision" coming from an incomplete or corrupt upload,
+            // but we ignore that here and use the information about the last valid version.
+            System.Xml.XmlNode xRevision = xFile.SelectSingleNode("currentRevision");
+            if (xRevision != null)
+            {
+                System.Xml.XmlNode xNode = xRevision.SelectSingleNode("state");
+                if (xNode.InnerText == "COMPLETED") // Think "currentRevision" always is a complete version, but just to be on the safe side..
+                {
+                    long size;
+                    if (xNode == null || !long.TryParse(xNode.InnerText, out size))
+                        size = -1;
+                    DateTime lastModified;
+                    xNode = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
+                    if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
+                        lastModified = new DateTime();
+                    FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
+                    return fe;
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -282,32 +292,10 @@ namespace Duplicati.Library.Backend
             var xFile = doc.DocumentElement;
             if (xFile.Attributes["deleted"] != null)
             {
-                throw new FileMissingException();
+                throw new FileMissingException(string.Format("{0}: {1}", LC.L("The requested file does not exist"), remotename));
             }
-            string name = xFile.Attributes["name"].Value;
-            // Normal files have an "currentRevision", which represent the most recent successfully upload
-            // (could also checked that currentRevision/state is "COMPLETED", but should not be necessary).
-            // There might also be a newer "latestRevision" coming from an incomplete or corrupt upload,
-            // but we ignore that here and use the information about the last valid version.
-            System.Xml.XmlNode xRevision = xFile.SelectSingleNode("currentRevision");
-            if (xRevision != null)
-            {
-                System.Xml.XmlNode xNode = xRevision.SelectSingleNode("state");
-                if (xNode.InnerText == "COMPLETED") // Think "currentRevision" always is a complete version, but just to be on the safe side..
-                {
-                    xNode = xRevision.SelectSingleNode("size");
-                    long size;
-                    if (xNode == null || !long.TryParse(xNode.InnerText, out size))
-                        size = -1;
-                    DateTime lastModified;
-                    xNode = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
-                    if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
-                        lastModified = new DateTime();
-                    FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
-                    return fe;
-                }
-            }
-            return null;
+
+            return ToFileEntry(xFile);
         }
 
         public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
