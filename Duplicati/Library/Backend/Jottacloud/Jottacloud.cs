@@ -246,15 +246,16 @@ namespace Duplicati.Library.Backend
             System.Xml.XmlNode xRevision = xFile.SelectSingleNode("currentRevision");
             if (xRevision != null)
             {
-                System.Xml.XmlNode xNode = xRevision.SelectSingleNode("state");
-                if (xNode.InnerText == "COMPLETED") // Think "currentRevision" always is a complete version, but just to be on the safe side..
+                System.Xml.XmlNode xState = xRevision.SelectSingleNode("state");
+                if (xState != null && xState.InnerText == "COMPLETED") // Think "currentRevision" always is a complete version, but just to be on the safe side..
                 {
+                    System.Xml.XmlNode xSize = xRevision.SelectSingleNode("size");
                     long size;
-                    if (xNode == null || !long.TryParse(xNode.InnerText, out size))
+                    if (xSize == null || !long.TryParse(xSize.InnerText, out size))
                         size = -1;
                     DateTime lastModified;
-                    xNode = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
-                    if (xNode == null || !DateTime.TryParseExact(xNode.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
+                    System.Xml.XmlNode xModified = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
+                    if (xModified == null || !DateTime.TryParseExact(xModified.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
                         lastModified = new DateTime();
                     FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
                     return fe;
