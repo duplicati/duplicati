@@ -355,10 +355,7 @@ namespace Duplicati.Library.Main.Operation
             // Wait for upload completion
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
             await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
-
-            // In case the uploader crashes, we grab the exception here
-            if (await Task.WhenAny(uploader, flushReq.LastWriteSizeAsync) == uploader)
-                await uploader.ConfigureAwait(false);
+            await uploader.ConfigureAwait(false);
 
             // Grab the size of the last uploaded volume
             return await flushReq.LastWriteSizeAsync;
