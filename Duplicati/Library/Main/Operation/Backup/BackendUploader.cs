@@ -39,6 +39,12 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         public Task<long> LastWriteSizeAsync { get { return m_tcs.Task; } }
         private readonly TaskCompletionSource<long> m_tcs = new TaskCompletionSource<long>();
+        
+        public void TrySetCanceled()
+        {
+            m_tcs.TrySetCanceled();
+        }
+        
         public void SetFlushed(long size)
         {
             m_tcs.TrySetResult(size);
@@ -171,6 +177,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 Task finishedTask = await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
                                 if (finishedTask.IsFaulted)
                                 {
+                                    flush.TrySetCanceled();
                                     ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
                                 }
 
