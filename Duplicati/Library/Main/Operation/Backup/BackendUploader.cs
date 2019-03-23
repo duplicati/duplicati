@@ -166,25 +166,19 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         else if (req is FlushRequest flush)
                         {
-                            Task finishedTask = null;
-                            try
+                            while (workers.Any())
                             {
-                                while (workers.Any())
+                                Task finishedTask = await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
+                                if (finishedTask.IsFaulted)
                                 {
-                                    finishedTask = await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
-                                    if (finishedTask.IsFaulted)
-                                        ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
-                                    workers.RemoveAll(w => w.Task == finishedTask);
+                                    ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
                                 }
-                                uploadsInProgress = 0;
+
+                                workers.RemoveAll(w => w.Task == finishedTask);
+                                flush.SetFlushed(lastSize);
                             }
-                            finally
-                            {
-                                if (finishedTask != null && !finishedTask.IsFaulted)
-                                {
-                                    flush.SetFlushed(lastSize);
-                                }
-                            }
+                            
+                            uploadsInProgress = 0;
                             break;
                         }
 
