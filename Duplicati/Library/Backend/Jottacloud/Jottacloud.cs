@@ -238,7 +238,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public IFileEntry ToFileEntry(System.Xml.XmlNode xFile)
+        public static IFileEntry ToFileEntry(System.Xml.XmlNode xFile)
         {
             string name = xFile.Attributes["name"].Value;
             // Normal files have an "currentRevision", which represent the most recent successfully upload
