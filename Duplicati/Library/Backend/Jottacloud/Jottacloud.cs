@@ -173,6 +173,8 @@ namespace Duplicati.Library.Backend
 
             var chunksize = Utility.Sizeparser.ParseSize(tmp, "mb");
 
+            // Chunk size is bound by BinaryReader.ReadBytes(length) where length is an int.
+
             if (chunksize > int.MaxValue || chunksize < 1024)
             {
                 throw new ArgumentOutOfRangeException(nameof(chunksize), string.Format("The chunk size cannot be less than {0}, nor larger than {1}", Utility.Utility.FormatSizeString(1024), Utility.Utility.FormatSizeString(int.MaxValue)));
