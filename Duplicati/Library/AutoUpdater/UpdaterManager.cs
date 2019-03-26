@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
@@ -1025,9 +1026,13 @@ namespace Duplicati.Library.AutoUpdater
                 }
 
                 if (tex.InnerException != null)
-                    throw tex.InnerException;
-                else
-                    throw;
+                {
+                    // Unwrap exceptions for nicer display.  The ExceptionDispatchInfo class allows us to
+                    // rethrow an exception without changing the stack trace.
+                    ExceptionDispatchInfo.Capture(tex.InnerException).Throw();
+                }
+                
+                throw;
             }
         }
 
