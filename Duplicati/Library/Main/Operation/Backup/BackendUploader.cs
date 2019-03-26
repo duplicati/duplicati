@@ -182,9 +182,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 }
 
                                 workers.RemoveAll(w => w.Task == finishedTask);
-                                flush.SetFlushed(lastSize);
                             }
                             
+                            flush.SetFlushed(lastSize);
                             uploadsInProgress = 0;
                             break;
                         }
