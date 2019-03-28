@@ -362,6 +362,8 @@ namespace Duplicati.Library.Main
         private readonly int m_numberofretries;
         private readonly TimeSpan m_retrydelay;
 
+        private readonly CommandLine.SubProcess.RPCServer m_isolatedprocess;
+
         public string BackendUrl { get { return m_backendurl; } }
 
         public bool HasDied { get { return m_lastException != null; } }
@@ -378,7 +380,14 @@ namespace Duplicati.Library.Main
 
             m_db = new DatabaseCollector(database);
 
-            m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+            if (options.IsolatedBackendProcess)
+                m_isolatedprocess = CommandLine.SubProcess.RemotingHandlers.StartServerAndClientAsync().Result;
+
+
+            m_backend = options.IsolatedBackendProcess
+                ? m_isolatedprocess.LoaderProxy.GetBackend(m_backendurl, m_options.RawOptions)
+                : DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+
             if (m_backend == null)
             {
                 string shortname = m_backendurl;
@@ -471,7 +480,10 @@ namespace Duplicati.Library.Main
                             }
 
                             if (m_backend == null)
-                                m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+                                m_backend = m_options.IsolatedBackendProcess
+                                    ? m_isolatedprocess.LoaderProxy.GetBackend(m_backendurl, m_options.RawOptions)
+                                    : DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+
                             if (m_backend == null)
                                 throw new Exception("Backend failed to re-load");
 
@@ -1498,6 +1510,12 @@ namespace Duplicati.Library.Main
             {
                 m_backend.Dispose();
                 m_backend = null;
+            }
+
+            if (m_isolatedprocess != null)
+            {
+                m_isolatedprocess.StopAsync();
+                m_isolatedprocess.Dispose();
             }
 
             try { m_db.FlushDbMessages(true); }

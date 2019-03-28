@@ -325,18 +325,28 @@ namespace Duplicati.Library.Logging
         /// <param name="arguments">The arguments to format the log message with</param>
         public static void WriteMessage(LogMessageType type, string tag, string id, Exception ex, string message, params object[] arguments)
         {
-            var msg = new LogEntry(message, arguments, type, tag, id, ex);
+            WriteMessage(new LogEntry(message, arguments, type, tag, id, ex));
+        }
 
+        /// <summary>
+        /// Writes a message to the current log destination
+        /// </summary>
+        /// <param name="entry">The entry to write.</param>
+        public static void WriteMessage(LogEntry entry)
+        {
+            if (entry == null)
+                throw new ArgumentNullException(nameof(entry));
             lock (m_lock)
             {
                 var cs = CurrentScope;
                 while (cs != null && !cs.IsolatingScope)
                 {
-                    cs.WriteMessage(msg);
+                    cs.WriteMessage(entry);
                     cs = cs.Parent;
                 }
             }
         }
+
 
         /// <summary>
         /// Starts a new scope, that can be closed by disposing the returned instance

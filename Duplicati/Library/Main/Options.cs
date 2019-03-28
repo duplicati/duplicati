@@ -290,7 +290,8 @@ namespace Duplicati.Library.Main
                     "max-download-pr-second",
                     "no-connection-reuse",
                     "allow-sleep",
-                    "use-background-io-priority"
+                    "use-background-io-priority",
+                    "isolated-backend-process"
                 };
             }
         }
@@ -565,6 +566,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong),
                     new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
                     new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
+
+                    new CommandLineArgument("isolated-backend-process", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IsolatedbackendprocessShort, Strings.Options.IsolatedbackendprocessLong, "false"),
+
 
                 });
 
@@ -1960,6 +1964,16 @@ namespace Duplicati.Library.Main
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-on-battery"); }
         }
+
+        /// <summary>
+        /// Gets a value indicating if backends are loaded in isolated processes
+        /// </summary>
+        public bool IsolatedBackendProcess
+        //{
+        //    get { return GetBool("isolated-backend-process"); }
+        //}
+
+            => true;
 
         /// <summary>
         /// Gets a value indicating if missing dblock files are attempted created

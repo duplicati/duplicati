@@ -28,7 +28,7 @@ using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Main
 {
-    public class Controller : IDisposable
+    public class Controller : IController
     {
         /// <summary>
         /// The tag used for logging

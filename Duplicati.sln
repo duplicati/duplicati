@@ -103,6 +103,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Common", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigurationImporter", "Duplicati\ConfigurationImporter\ConfigurationImporter.csproj", "{864B98B9-1B56-40D9-9733-9002E5B9B9D5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SubProcess", "Duplicati\CommandLine\SubProcess\Duplicati.CommandLine.SubProcess.csproj", "{8F5301A5-A77F-4DA4-8AE1-4E15340EBCB8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeanIPC", "..\LeanIPC\LeanIPC\LeanIPC.csproj", "{52332691-7D8F-4F33-92D8-DC0EB1A67B05}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -309,6 +313,14 @@ Global
 		{864B98B9-1B56-40D9-9733-9002E5B9B9D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{864B98B9-1B56-40D9-9733-9002E5B9B9D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{864B98B9-1B56-40D9-9733-9002E5B9B9D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F5301A5-A77F-4DA4-8AE1-4E15340EBCB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F5301A5-A77F-4DA4-8AE1-4E15340EBCB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F5301A5-A77F-4DA4-8AE1-4E15340EBCB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F5301A5-A77F-4DA4-8AE1-4E15340EBCB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52332691-7D8F-4F33-92D8-DC0EB1A67B05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52332691-7D8F-4F33-92D8-DC0EB1A67B05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52332691-7D8F-4F33-92D8-DC0EB1A67B05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52332691-7D8F-4F33-92D8-DC0EB1A67B05}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

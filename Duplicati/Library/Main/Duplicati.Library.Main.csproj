@@ -12,7 +12,7 @@
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
@@ -143,6 +143,7 @@
     <Compile Include="Operation\Backup\RecreateMissingIndexFiles.cs" />
     <Compile Include="ControllerMultiLogTarget.cs" />
     <Compile Include="ProcessController.cs" />
+    <Compile Include="IController.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
@@ -188,6 +189,14 @@
     <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj">
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
       <Name>Duplicati.Library.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\SubProcess\Duplicati.CommandLine.SubProcess.csproj">
+      <Project>{8F5301A5-A77F-4DA4-8AE1-4E15340EBCB8}</Project>
+      <Name>Duplicati.CommandLine.SubProcess</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\LeanIPC\LeanIPC\LeanIPC.csproj">
+      <Project>{52332691-7D8F-4F33-92D8-DC0EB1A67B05}</Project>
+      <Name>LeanIPC</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
