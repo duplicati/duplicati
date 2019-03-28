@@ -1,3 +1,16 @@
+2019-03-28 - 2.0.4.16_canary_2019-03-28
+==========
+* Fixed an issue with Sia authentication, thanks @Ajedi32
+* Improved documentation, thanks @kesava-wow
+* Improved code quality, thanks @warwickmm
+* Added custom B2 download url option, thanks @aahung
+* Updated list of Wasabi and S3 storage destinations, thanks @FroggieFrog
+* Fixed a case where temporary files were not removed, thanks @warwickmm
+* Code refactor and quality improvement, thanks @verhoek
+* Added option for parallel uploads, thanks @seantempleton
+* Improved exception messages, thanks @warwickmm
+* Implemented Jottacloud multithreading uploads, thanks @nescafe2002
+
 2019-02-06 - 2.0.4.15_canary_2019-02-06
 ==========
 * Fixed an issue with backup of a Windows drive (without a path)
