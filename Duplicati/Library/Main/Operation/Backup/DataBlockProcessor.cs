@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 IndexVolumeWriter indexVolumeWriter = null;
                                 FileEntryItem indexEntry = null;
-                                if (indexVolumeWriter != null)
+                                if (indexvolume != null)
                                 {
                                     indexVolumeWriter = await indexvolume.CreateVolume(blockvolume.RemoteFilename, blockEntry.Hash, blockEntry.Size, options, database);
                                     indexEntry = CreateFileEntryForUpload(indexVolumeWriter, options);
