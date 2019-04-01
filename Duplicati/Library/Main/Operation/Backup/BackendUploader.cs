@@ -166,11 +166,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         else if (req is FlushRequest flush)
                         {
+                            Task finishedTask = null;
                             try
                             {
                                 while (workers.Any())
                                 {
-                                    var finishedTask = await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
+                                    finishedTask = await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
                                     if (finishedTask.IsFaulted)
                                         ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
                                     workers.RemoveAll(w => w.Task == finishedTask);
@@ -179,7 +180,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
                             finally
                             {
-                                flush.SetFlushed(lastSize);
+                                if (finishedTask != null && !finishedTask.IsFaulted)
+                                {
+                                    flush.SetFlushed(lastSize);
+                                }
                             }
                             break;
                         }
