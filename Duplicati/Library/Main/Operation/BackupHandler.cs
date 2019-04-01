@@ -393,10 +393,10 @@ namespace Duplicati.Library.Main.Operation
 
                 Task parallelScanner = null;
                 Task uploaderTask = null;
+                using (var db = new Backup.BackupDatabase(m_database, m_options))
                 try
                 {
                     // Setup runners and instances here
-                    using(var db = new Backup.BackupDatabase(m_database, m_options))
                     using(var backendManager = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     using(var stats = new Backup.BackupStatsCollector(m_result))
@@ -545,6 +545,8 @@ namespace Duplicati.Library.Main.Operation
                 }
                 catch (Exception ex)
                 {
+                    await db.RollbackTransactionAsync();
+
                     var aex = BuildException(ex, uploaderTask, parallelScanner);
                     Logging.Log.WriteErrorMessage(LOGTAG, "FatalError", ex, "Fatal error");
                     if (aex == ex)

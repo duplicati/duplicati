@@ -69,7 +69,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                             return;
                         
                         await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                        await db.CommitTransactionAsync("CommitUpdateRemoteVolume");
                         await self.Output.WriteAsync(new FilesetUploadRequest(filesetvolume));
                     }
                 }
@@ -78,8 +77,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingLeftoverTempFile", "removing temp files, as no data needs to be uploaded");
                     await db.RemoveRemoteVolumeAsync(filesetvolume.RemoteFilename);
                 }
-
-                await db.CommitTransactionAsync("CommitUpdateRemoteVolume");
             });
         }
     }
