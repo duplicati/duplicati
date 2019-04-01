@@ -1,0 +1,11 @@
+language: node_js
+
+node_js:
+  - "5.0"
+
+script:
+  - npm test
+
+cache:
+  directories:
+    - node_modules
