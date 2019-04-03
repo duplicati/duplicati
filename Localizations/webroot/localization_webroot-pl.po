@@ -1,13 +1,14 @@
 # Translators:
 # Slawomir Ciunczyk <s.ciunczyk@ciunczyk.com>, 2016
 # Jerzy Wartałowicz <juwicz@gmail.com>, 2017
-# Mariusz Wierzbicki <engineer@post.pl>, 2018
 # Mikolaj Zajac <mikolaj.zajac@outlook.com>, 2018
+# Mariusz Wierzbicki <engineer@post.pl>, 2019
+# norill <norill@wp.pl>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Mikolaj Zajac <mikolaj.zajac@outlook.com>, 2018\n"
+"Last-Translator: norill <norill@wp.pl>, 2019\n"
 "Language-Team: Polish (https://www.transifex.com/duplicati/teams/67655/pl/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -38,7 +39,7 @@ msgstr "Klucz dostepu AWS"
 
 #: scripts/services/EditUriBuiltins.js:138
 msgid "AWS IAM Policy"
-msgstr "Polisa AWS IAM"
+msgstr "Polityka AWS IAM"
 
 #: index.html:227 index.html:243
 msgid "About"
@@ -99,7 +100,7 @@ msgstr "Dodaj ścieżkę"
 
 #: templates/backup-result/top-right-box.html:11
 msgid "Added"
-msgstr ""
+msgstr "Dodano"
 
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
@@ -182,7 +183,7 @@ msgstr "Anonimowy raport użycia"
 
 #: scripts/services/AppUtils.js:204
 msgid "Applications"
-msgstr ""
+msgstr "Aplikacje"
 
 #: templates/export.html:8
 msgid "As Command-line"
@@ -214,7 +215,7 @@ msgstr "Automatycznie uruchamiaj kopie."
 
 #: templates/backends/b2.html:12
 msgid "B2 Account ID or Application ID"
-msgstr ""
+msgstr "ID konta B2 lub ID aplikacji"
 
 #: templates/backends/b2.html:16
 msgid "B2 Application Key"
@@ -238,7 +239,7 @@ msgstr "Moduły zaplecza:"
 
 #: scripts/services/ServerStatus.js:44
 msgid "Backup complete!"
-msgstr ""
+msgstr "Backup zakończony!"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
@@ -259,7 +260,7 @@ msgstr "Lokalizacja kopii"
 
 #: templates/addoredit.html:319
 msgid "Backup retention"
-msgstr ""
+msgstr "Retencja kopii zapasowej"
 
 #: templates/home.html:73
 msgid "Backup:"
@@ -336,7 +337,7 @@ msgstr ""
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
-msgstr ""
+msgstr "Pliki pamięci podręcznej"
 
 #: templates/settings.html:109
 msgid "Canary"
@@ -429,6 +430,8 @@ msgid ""
 "Complete log\n"
 "            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 msgstr ""
+"Kompletny dziennik\n"
+"            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup ..."
@@ -466,7 +469,7 @@ msgstr "Potwierdź usunięcie"
 
 #: templates/settings.html:12
 msgid "Confirm password"
-msgstr ""
+msgstr "Potwierdź hasło"
 
 #: scripts/services/EditUriBackendConfig.js:66
 msgid "Confirmation required"
@@ -523,7 +526,7 @@ msgstr "Skopiowane!"
 
 #: templates/copy_clipboard_buttons.html:3
 msgid "Copy"
-msgstr ""
+msgstr "Kopiuj"
 
 #: templates/addoredit.html:103 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
@@ -583,7 +586,7 @@ msgstr ""
 
 #: templates/home.html:88
 msgid "Current file:"
-msgstr ""
+msgstr "Aktualny plik:"
 
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
@@ -663,7 +666,7 @@ msgstr "Usuń kopię"
 
 #: templates/addoredit.html:322
 msgid "Delete backups that are older than"
-msgstr ""
+msgstr "Usuń kopie zapasowe starsze niż"
 
 #: templates/delete.html:13
 msgid "Delete local database"
@@ -683,15 +686,15 @@ msgstr "Usunąć {{filecount}} plików ({{filesize}}) ze zdalnego magazynu?"
 
 #: templates/backup-result/top-right-box.html:19
 msgid "Deleted"
-msgstr ""
+msgstr "Usunięte"
 
 #: templates/backup-result/phases/delete.html:24
 msgid "Deleted Versions"
-msgstr ""
+msgstr "Usunięte wersje"
 
 #: templates/backup-result/phases/compact.html:23
 msgid "Deleted files"
-msgstr ""
+msgstr "Usunięte pliki"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
@@ -703,11 +706,11 @@ msgstr "Usuwanie niepotrzebnych plików"
 
 #: templates/addoredit.html:43
 msgid "Description (optional)"
-msgstr ""
+msgstr "Opis (opcjonalnie)"
 
 #: templates/home.html:17
 msgid "Description:"
-msgstr ""
+msgstr "Opis:"
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
@@ -719,7 +722,7 @@ msgstr "Lokalizacja docelowa"
 
 #: templates/backends/sharepoint.html:2
 msgid "Destination path"
-msgstr ""
+msgstr "Ścieżka docelowa"
 
 #: templates/restore.html:151
 msgid ""
@@ -741,11 +744,11 @@ msgstr "Wyłączone"
 
 #: templates/notificationarea.html:10 templates/notificationarea.html:27
 msgid "Dismiss"
-msgstr "Ukryj"
+msgstr "Odrzuć"
 
 #: templates/notificationarea.html:41
 msgid "Dismiss all"
-msgstr ""
+msgstr "Odrzucić wszystkie"
 
 #: templates/settings.html:68
 msgid "Display and color theme"
@@ -789,7 +792,7 @@ msgstr "Pobranie"
 
 #: templates/backup-result/phases/compact.html:28
 msgid "Downloaded files"
-msgstr ""
+msgstr "Pobrane pliki"
 
 #: templates/notificationarea.html:30
 msgid "Downloading ..."
@@ -821,6 +824,9 @@ msgid ""
 "duration. Duplicati will occupy minimal system resources and no backups will"
 " be run."
 msgstr ""
+"Duplikati będzie działać po uruchomieniu, ale pozostanie w stanie "
+"wstrzymania na wskazany czas. Duplikati będzie używać minimalne zasoby "
+"systemowe i nie będą wykonywane żadne kopie zapasowe."
 
 #: templates/backup-result/phases/compact.html:16
 #: templates/backup-result/phases/delete.html:16
@@ -830,7 +836,7 @@ msgstr ""
 #: templates/backup-result/phases/test.html:16
 #: templates/backup-result/top-left-box.html:11
 msgid "Duration"
-msgstr ""
+msgstr "Czas trwania"
 
 #: templates/delete.html:15
 msgid ""
@@ -893,7 +899,7 @@ msgstr "Moduły szyfrujące:"
 #: templates/backup-result/phases/test.html:12
 #: templates/backup-result/top-left-box.html:7
 msgid "End"
-msgstr ""
+msgstr "Koniec"
 
 #: scripts/controllers/EditBackupController.js:95
 #: scripts/controllers/RestoreDirectController.js:24
@@ -955,13 +961,13 @@ msgstr "Wprowadź ścieżkę docelową"
 
 #: templates/backends/msgroup.html:3
 msgid "Enter the email address of the Office 365 group"
-msgstr ""
+msgstr "Wprowadź adres e-mail grupy Office 365"
 
 #: templates/backends/sharepoint.html:3
 msgid ""
 "Enter the full destination path, including the server name, but without "
 "https"
-msgstr ""
+msgstr "Wprowadź pełną ścieżkę docelową, w tym nazwę serwera, ale bez https"
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
@@ -1061,7 +1067,7 @@ msgstr "Eksportuj konfigurację"
 
 #: templates/export.html:18
 msgid "Export passwords"
-msgstr ""
+msgstr "Eksportuj hasła"
 
 #: templates/export.html:35
 msgid "Exporting ..."
@@ -1069,7 +1075,7 @@ msgstr "Eksportowanie ..."
 
 #: templates/externallink.html:1
 msgid "External link"
-msgstr ""
+msgstr "Link zewnętrzny"
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
@@ -1109,7 +1115,7 @@ msgstr "Nie udało się pobrać informacji o ścieżce: {{message}}"
 
 #: scripts/directives/notificationArea.js:45
 msgid "Failed to find backup:"
-msgstr ""
+msgstr "Nie udało się znaleźć kopii zapasowej:"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
@@ -1138,7 +1144,7 @@ msgstr "Plik"
 
 #: templates/backup-result/top-right-box.html:1
 msgid "Files"
-msgstr ""
+msgstr "Pliki"
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
@@ -1357,7 +1363,7 @@ msgstr "Zaimportuj z pliku"
 
 #: templates/import.html:19
 msgid "Import metadata"
-msgstr ""
+msgstr "Importuj metadane"
 
 #: templates/import.html:35
 msgid "Importing ..."
@@ -1444,7 +1450,7 @@ msgstr "Ostatni miesiąc"
 
 #: templates/home.html:53
 msgid "Last successful backup:"
-msgstr ""
+msgstr "Ostatnia prawidłowa kopia zapasowa:"
 
 #: templates/restorewizard.html:27
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
@@ -1529,11 +1535,11 @@ msgstr "Położenie, gdzie będą utworzone zasobniki"
 
 #: templates/backuplog.html:3
 msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
-msgstr "Loguj dane dla <b>{{Backup.Backup.Name}}</b>"
+msgstr "Logi dla <b>{{Backup.Backup.Name}}</b>"
 
 #: templates/log.html:3
 msgid "Log data from the server"
-msgstr "Loguj dane z serwera"
+msgstr "Logi z serwera"
 
 #: index.html:230
 msgid "Log out"
@@ -1857,15 +1863,15 @@ msgstr "Długie hasło (jeśli zaszyfrowane)"
 
 #: scripts/controllers/EditBackupController.js:390
 msgid "Passphrase changed"
-msgstr "Zmieniono długie hasło"
+msgstr "Zmieniono hasło"
 
 #: scripts/controllers/EditBackupController.js:252
 msgid "Passphrases are not matching"
-msgstr "Długie hasła różnią się od siebie"
+msgstr "Hasła różnią się od siebie"
 
 #: scripts/controllers/EditBackupController.js:29
 msgid "Passphrases do not match"
-msgstr ""
+msgstr "Hasła różnią się od siebie"
 
 #: scripts/services/EditUriBuiltins.js:910
 #: scripts/services/EditUriBuiltins.js:920 templates/backends/file.html:33
@@ -1937,7 +1943,7 @@ msgstr "Poprzedni"
 
 #: templates/home.html:80
 msgid "Progress:"
-msgstr ""
+msgstr "Postęp:"
 
 #: templates/backends/gcs.html:39
 msgid "ProjectID is optional if the bucket exist"
@@ -2033,7 +2039,7 @@ msgstr ""
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
-msgstr ""
+msgstr "Naprawianie bazy danych ..."
 
 #: templates/addoredit.html:62
 msgid "Repeat Passphrase"
@@ -2268,7 +2274,7 @@ msgstr ""
 
 #: templates/addoredit.html:26
 msgid "Source Data"
-msgstr "Dane Źródłowe"
+msgstr "Dane źródłowe"
 
 #: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:124
 msgid "Source data"
@@ -2298,7 +2304,7 @@ msgstr "Protokoły standardowe"
 #: templates/backup-result/phases/test.html:8
 #: templates/backup-result/top-left-box.html:3
 msgid "Start"
-msgstr ""
+msgstr "Rozpocznij"
 
 #: scripts/services/ServerStatus.js:33
 msgid "Starting backup ..."
@@ -2377,7 +2383,7 @@ msgstr "Link symboliczny"
 
 #: scripts/services/AppUtils.js:192
 msgid "System Files"
-msgstr ""
+msgstr "Pliki systemowe"
 
 #: templates/settings.html:125
 msgid "System default ({{levelname}})"
@@ -2413,7 +2419,7 @@ msgstr "Zadanie jest wykonywane"
 
 #: scripts/services/AppUtils.js:201
 msgid "Temporary Files"
-msgstr ""
+msgstr "Pliki tymczasowe"
 
 #: scripts/controllers/EditBackupController.js:21
 msgid "Temporary files"
@@ -2453,6 +2459,8 @@ msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
+"Pole '{{fieldname}}' zawiera niedozwolony znak: {{character}} (value: "
+"{{value}}, indeks: {{pos}})"
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
@@ -2513,7 +2521,7 @@ msgstr ""
 
 #: scripts/controllers/SystemSettingsController.js:90
 msgid "The passwords do not match"
-msgstr ""
+msgstr "Hasła różnią się od siebie"
 
 #: scripts/controllers/EditBackupController.js:153
 msgid "The path does not appear to exist, do you want to add it anyway?"
@@ -2622,7 +2630,7 @@ msgstr "Czw"
 #: templates/backup-result/phases/delete.html:33
 #: templates/backup-result/top-left-box.html:1
 msgid "Time"
-msgstr ""
+msgstr "Czas"
 
 #: templates/export.html:14
 msgid "To File"
@@ -2675,7 +2683,7 @@ msgstr "Wt"
 
 #: templates/restore.html:138
 msgid "Type passphrase here."
-msgstr ""
+msgstr "Wpisz tutaj hasło."
 
 #: templates/restore.html:57
 msgid "Type to highlight files"
@@ -2703,7 +2711,7 @@ msgstr "Uaktualnij z istniejącą bazą danych"
 
 #: templates/backup-result/phases/compact.html:33
 msgid "Uploaded files"
-msgstr ""
+msgstr "Przesłane pliki"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
@@ -2715,6 +2723,9 @@ msgid ""
 " features. We use them to generate <external-link link=\"link\">public usage"
 " statistics</external-link>"
 msgstr ""
+"Raporty użytkowania pomagają nam poprawić wrażenia użytkownika i ocenić "
+"wpływ nowych funkcji. Używamy ich do generowania <external-link "
+"link=\"link\">publicznych statystyk użytkowania</external-link>"
 
 #: templates/settings.html:120
 msgid "Usage statistics"
@@ -2746,7 +2757,7 @@ msgstr "Dane użytkownika"
 
 #: templates/backends/openstack.html:27
 msgid "User domain name"
-msgstr ""
+msgstr "Nazwa domeny użytkownika"
 
 #: scripts/services/EditUriBuiltins.js:50
 msgid "User has too many permissions"
@@ -2792,7 +2803,7 @@ msgstr "Weryfikowanie danych silnika ..."
 
 #: scripts/services/ServerStatus.js:58
 msgid "Verifying files ..."
-msgstr ""
+msgstr "Weryfikacja plików ..."
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
@@ -2804,7 +2815,7 @@ msgstr "Weryfikacja odtworzonych plików ..."
 
 #: templates/backup-result/phases/delete.html:33
 msgid "Version ID"
-msgstr ""
+msgstr "ID wersji"
 
 #: scripts/controllers/EditBackupController.js:34
 msgid "Very strong"
@@ -2840,7 +2851,7 @@ msgstr "Oczekiwanie na uruchomienie zadania ..."
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload to finish ..."
-msgstr ""
+msgstr "Oczekiwanie na zakończenie przesyłania ..."
 
 #: templates/settings.html:127
 msgid "Warnings, errors and crashes"
@@ -2913,7 +2924,7 @@ msgstr "Tak, długie hasło zostało bezpiecznie zachowane."
 
 #: scripts/controllers/ExportController.js:13
 msgid "Yes, I understand the risk"
-msgstr ""
+msgstr "Tak, rozumiem ryzyko"
 
 #: scripts/controllers/EditBackupController.js:399
 msgid "Yes, I'm brave!"
@@ -3007,7 +3018,7 @@ msgstr "Musisz wybrać co najmniej jeden folder źródłowy"
 
 #: scripts/services/EditUriBuiltins.js:797
 msgid "You must enter a domain name to use v3 API"
-msgstr ""
+msgstr "Musisz podać domenę aby użyć v3 API"
 
 #: scripts/controllers/EditBackupController.js:239
 msgid "You must enter a name for the backup"
@@ -3019,7 +3030,7 @@ msgstr "Musisz podać długie hasło lub wyłączyć szyfrowanie"
 
 #: scripts/services/EditUriBuiltins.js:794
 msgid "You must enter a password to use v3 API"
-msgstr ""
+msgstr "Musisz podać hasło aby użyć v3 API"
 
 #: scripts/controllers/EditBackupController.js:295
 msgid "You must enter a positive number of backups to keep"
@@ -3027,7 +3038,7 @@ msgstr "Musisz podać dodatnią liczbę kopii do zachowania"
 
 #: scripts/services/EditUriBuiltins.js:800
 msgid "You must enter a tenant (aka project) name to use v3 API"
-msgstr ""
+msgstr "Musisz podać nazwę dzierżawcy (znanego jako projekt) aby użyć v3 API"
 
 #: scripts/services/EditUriBuiltins.js:814
 msgid "You must enter a tenant name if you do not provide an API Key"
@@ -3039,7 +3050,7 @@ msgstr "Musisz podać prawidłowy okres przechowywania kopii zapasowych"
 
 #: scripts/controllers/EditBackupController.js:302
 msgid "You must enter a valid rentention policy string"
-msgstr ""
+msgstr "Musisz wprowadzić prawidłowy łańcuch zasad retencji"
 
 #: scripts/services/EditUriBuiltins.js:811
 msgid "You must enter either a password or an API Key"
@@ -3080,7 +3091,7 @@ msgstr "Musisz podać ścieżkę"
 
 #: scripts/services/EditUriBackendConfig.js:85
 msgid "You should fill in {{field}}{{reason}}"
-msgstr ""
+msgstr "Powinieneś wypełnić {{field}}{{reason}}"
 
 #: templates/restore.html:149
 msgid "Your files and folders have been restored successfully."
@@ -3134,7 +3145,7 @@ msgstr ""
 
 #: templates/backup-result/message-list.html:3
 msgid "{{data.title}}"
-msgstr ""
+msgstr "{{data.title}}"
 
 #: scripts/controllers/StateController.js:50
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
@@ -3146,7 +3157,7 @@ msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Wersja"
 msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Wersji"
 msgstr[2] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Wersji"
-msgstr[3] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Wersji"
+msgstr[3] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Wersje"
 
 #: templates/pause.html:26
 msgid "{{number}} Hour"
@@ -3154,7 +3165,7 @@ msgstr "{{number}} Godzin"
 
 #: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
 msgid "{{number}} Hours"
-msgstr ""
+msgstr "{{number}} godzin"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6

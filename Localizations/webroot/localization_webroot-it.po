@@ -2,14 +2,14 @@
 # Nicola Pappagallo <npappagallo@developing.it>, 2016
 # Claudio Marchesini <markeclaudio@gmail.com>, 2017
 # Devis Cerri <cerride@gmail.com>, 2017
-# Francesco Infantini <infantini.francesco@gmail.com>, 2017
+# Francesco Infantini <infantini.francesco@gmail.com>, 2018
 # Andrea De Lunardi <a.delunardi@arca.com>, 2018
-# Folgore101 <andrea.gramegna@gmail.com>, 2018
+# Folgore101 <andrea.gramegna@gmail.com>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2018\n"
+"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2019\n"
 "Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -101,7 +101,7 @@ msgstr "Aggiungi percorso"
 
 #: templates/backup-result/top-right-box.html:11
 msgid "Added"
-msgstr ""
+msgstr "Aggiunto"
 
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
@@ -240,7 +240,7 @@ msgstr "Moduli backend:"
 
 #: scripts/services/ServerStatus.js:44
 msgid "Backup complete!"
-msgstr ""
+msgstr "Backup completo!"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
@@ -253,6 +253,10 @@ msgid ""
 "                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by\n"
 "                    invoking your system's keychain."
 msgstr ""
+"Il backup è crittografato ma non è disponibile la passphrase.\n"
+"                    Digita una passphrase qui sotto da utilizzare per ripristinare i tuoi file,\n"
+"                    o, in caso di crittografia GPG, lascia vuoto per consentire a gpg di recuperare la passphrase\n"
+"                    richiamando il portachiavi del sistema."
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
@@ -339,12 +343,11 @@ msgid ""
 "interface from the tray icon, enable this option."
 msgstr ""
 "Per impostazione predefinita, l'icona nella barra delle applicazioni aprirà "
-"l'interfaccia utente con un token che sbloccherà l'interfaccia utente. Ciò "
-"garantisce la possibilità di accedere all'interfaccia utente dall'icona "
-"nella barra delle applicazioni, mentre gli altri necessitano di inserire una"
-" password. Se si preferisce digitare la password, anche quando si accede "
-"all'interfaccia utente dall'icona nella barra delle applicazioni, abilita "
-"questa opzione."
+"l'interfaccia utente con un token che la sbloccherà. Ciò garantisce la "
+"possibilità di accedere all'interfaccia utente dall'icona nella barra delle "
+"applicazioni, mentre gli altri necessitano di inserire una password. Se si "
+"preferisce digitare la password, anche quando si accede all'interfaccia "
+"utente dall'icona nella barra delle applicazioni, abilita questa opzione."
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
@@ -426,7 +429,7 @@ msgstr "Riga di comando..."
 
 #: templates/backup-result/phases/compact.html:3
 msgid "Compact Phase"
-msgstr ""
+msgstr "Fase Compattazione"
 
 #: templates/home.html:41
 msgid "Compact now"
@@ -441,6 +444,8 @@ msgid ""
 "Complete log\n"
 "            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 msgstr ""
+"Log completo\n"
+"<i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup ..."
@@ -478,7 +483,7 @@ msgstr "Conferma cancellazione"
 
 #: templates/settings.html:12
 msgid "Confirm password"
-msgstr ""
+msgstr "Conferma password"
 
 #: scripts/services/EditUriBackendConfig.js:66
 msgid "Confirmation required"
@@ -667,7 +672,7 @@ msgstr "Cancella..."
 
 #: templates/backup-result/phases/delete.html:3
 msgid "Delete Phase (Old Backup Versions)"
-msgstr ""
+msgstr "Fase Cancellazione (Vecchie versioni di backup)"
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
@@ -695,15 +700,15 @@ msgstr "Cancella {{filecount}} file ({{filesize}}) dall'archivio remoto?"
 
 #: templates/backup-result/top-right-box.html:19
 msgid "Deleted"
-msgstr ""
+msgstr "Cancellato"
 
 #: templates/backup-result/phases/delete.html:24
 msgid "Deleted Versions"
-msgstr ""
+msgstr "Versioni Cancellate"
 
 #: templates/backup-result/phases/compact.html:23
 msgid "Deleted files"
-msgstr ""
+msgstr "File cancellati"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
@@ -715,11 +720,11 @@ msgstr "Cancellazione file indesiderati..."
 
 #: templates/addoredit.html:43
 msgid "Description (optional)"
-msgstr ""
+msgstr "Descrizione (facoltativa)"
 
 #: templates/home.html:17
 msgid "Description:"
-msgstr ""
+msgstr "Descrizione:"
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
@@ -801,7 +806,7 @@ msgstr "Scarica"
 
 #: templates/backup-result/phases/compact.html:28
 msgid "Downloaded files"
-msgstr ""
+msgstr "File scaricati"
 
 #: templates/notificationarea.html:30
 msgid "Downloading ..."
@@ -833,6 +838,8 @@ msgid ""
 "duration. Duplicati will occupy minimal system resources and no backups will"
 " be run."
 msgstr ""
+"Duplicati sarà eseguito all'avvio, ma rimarrà in pausa per la durata. "
+"Duplicati occuperà risorse di sistema minime e non saranno eseguiti backup."
 
 #: templates/backup-result/phases/compact.html:16
 #: templates/backup-result/phases/delete.html:16
@@ -842,7 +849,7 @@ msgstr ""
 #: templates/backup-result/phases/test.html:16
 #: templates/backup-result/top-left-box.html:11
 msgid "Duration"
-msgstr ""
+msgstr "Durata"
 
 #: templates/delete.html:15
 msgid ""
@@ -903,7 +910,7 @@ msgstr "Moduli crittografia:"
 #: templates/backup-result/phases/test.html:12
 #: templates/backup-result/top-left-box.html:7
 msgid "End"
-msgstr ""
+msgstr "Fine"
 
 #: scripts/controllers/EditBackupController.js:95
 #: scripts/controllers/RestoreDirectController.js:24
@@ -1013,7 +1020,7 @@ msgstr "Errori e arresti anomali"
 
 #: templates/backup-result/top-right-box.html:3
 msgid "Examined"
-msgstr ""
+msgstr "Esaminato"
 
 #: templates/addoredit.html:214
 msgid "Exclude"
@@ -1077,7 +1084,7 @@ msgstr "Esporta configurazione"
 
 #: templates/export.html:18
 msgid "Export passwords"
-msgstr ""
+msgstr "Esporta le password"
 
 #: templates/export.html:35
 msgid "Exporting ..."
@@ -1125,7 +1132,7 @@ msgstr "Recupero informazioni sul percorso fallito: {{message}}"
 
 #: scripts/directives/notificationArea.js:45
 msgid "Failed to find backup:"
-msgstr ""
+msgstr "Impossibile trovare il backup:"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
@@ -1154,7 +1161,7 @@ msgstr "File"
 
 #: templates/backup-result/top-right-box.html:1
 msgid "Files"
-msgstr ""
+msgstr "File"
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
@@ -1223,7 +1230,7 @@ msgstr "Genera criteri di accesso IAM"
 
 #: scripts/controllers/RestoreController.js:67
 msgid "Getting file versions ..."
-msgstr "Ottenimento versione file..."
+msgstr "Recupero versione file..."
 
 #: scripts/services/EditUriBuiltins.js:729
 #: scripts/services/EditUriBuiltins.js:740 templates/backends/msgroup.html:2
@@ -1489,7 +1496,7 @@ msgstr "Creazione elenco file remoti..."
 
 #: scripts/services/ServerStatus.js:62
 msgid "Listing remote files for purge ..."
-msgstr ""
+msgstr "Elenco dei file remoti da eliminare..."
 
 #: templates/log.html:7
 msgid "Live"
@@ -1629,7 +1636,7 @@ msgstr "Sorgente mancante"
 
 #: templates/backup-result/top-right-box.html:15
 msgid "Modified"
-msgstr ""
+msgstr "Modificato"
 
 #: scripts/services/AppUtils.js:104
 msgid "Mon"
@@ -1773,7 +1780,7 @@ msgstr "Nessuno / disattivato"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Not using encryption"
-msgstr ""
+msgstr "Non usare la crittografia"
 
 #: templates/addoredit.html:328
 msgid "Nothing will be deleted. The backup size will grow with each change."
@@ -1812,7 +1819,7 @@ msgstr "OpenStack Object Storage / Swift"
 
 #: templates/backup-result/top-right-box.html:7
 msgid "Opened"
-msgstr ""
+msgstr "Aperto"
 
 #: scripts/services/EditUriBuiltins.js:803
 msgid "Openstack API Key are not supported in v3 keystone API."
@@ -1824,7 +1831,7 @@ msgstr "Sistema Operativo"
 
 #: templates/backuplog.html:16
 msgid "Operation"
-msgstr ""
+msgstr "Operazione"
 
 #: scripts/controllers/SystemSettingsController.js:127
 #: scripts/controllers/SystemSettingsController.js:138
@@ -1897,7 +1904,7 @@ msgstr "Passphrase non corrispondenti"
 
 #: scripts/controllers/EditBackupController.js:29
 msgid "Passphrases do not match"
-msgstr ""
+msgstr "Le passphrase non corrispondono"
 
 #: scripts/services/EditUriBuiltins.js:910
 #: scripts/services/EditUriBuiltins.js:920 templates/backends/file.html:33
@@ -1982,7 +1989,7 @@ msgstr "Proprietario"
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
-msgstr ""
+msgstr "Fase eliminazione"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
@@ -1990,7 +1997,7 @@ msgstr "Cancellazione dei file..."
 
 #: scripts/services/ServerStatus.js:65
 msgid "Purging files complete!"
-msgstr ""
+msgstr "Eliminazione dei file completata!"
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
@@ -2002,7 +2009,7 @@ msgstr "Ricrea (cancella e ripara)"
 
 #: templates/backup-result/phases/recreate-database.html:3
 msgid "Recreate Database Phase"
-msgstr ""
+msgstr "Fase ricreazione database"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database ..."
@@ -2054,7 +2061,7 @@ msgstr "Rimuovi opzione"
 
 #: templates/backup-result/phases/purge.html:23
 msgid "Removed files"
-msgstr ""
+msgstr "File rimossi"
 
 #: templates/localdatabase.html:18 templates/notificationarea.html:14
 msgid "Repair"
@@ -2062,7 +2069,7 @@ msgstr "Ripara"
 
 #: templates/backup-result/phases/repair.html:3
 msgid "Repair Phase"
-msgstr ""
+msgstr "Fase riparazione"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
@@ -2086,7 +2093,7 @@ msgstr "Ripristina"
 
 #: scripts/services/ServerStatus.js:55
 msgid "Restore complete!"
-msgstr ""
+msgstr "Ripristino completato!"
 
 #: templates/restore.html:45
 msgid "Restore files"
@@ -2132,7 +2139,7 @@ msgstr "Riprendi"
 
 #: templates/backup-result/phases/purge.html:28
 msgid "Rewritten File Lists"
-msgstr ""
+msgstr "Elenchi file riscritti"
 
 #: templates/addoredit.html:269
 msgid "Run again every"
@@ -2332,15 +2339,15 @@ msgstr "Protocolli standard"
 #: templates/backup-result/phases/test.html:8
 #: templates/backup-result/top-left-box.html:3
 msgid "Start"
-msgstr ""
+msgstr "Avvio"
 
 #: scripts/services/ServerStatus.js:33
 msgid "Starting backup ..."
-msgstr ""
+msgstr "Avvio backup..."
 
 #: scripts/services/ServerStatus.js:45
 msgid "Starting restore ..."
-msgstr ""
+msgstr "Avvio ripristino..."
 
 #: scripts/controllers/RestoreController.js:369
 #: scripts/controllers/RestoreController.js:393
@@ -2459,7 +2466,7 @@ msgstr "Nome Inquilino"
 
 #: templates/backup-result/phases/test.html:3
 msgid "Test Phase"
-msgstr ""
+msgstr "Fase test"
 
 #: templates/edituri.html:21
 msgid "Test connection"
@@ -2492,12 +2499,14 @@ msgstr ""
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
-msgstr ""
+msgstr "Il backup è mancante, è stato cancellato?"
 
 #: scripts/directives/notificationArea.js:41
 msgid ""
 "The backup was temporary and does not exist anymore, so the log data is lost"
 msgstr ""
+"Il backup era temporaneo e non esiste più, quindi i dati del registro sono "
+"persi"
 
 #: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
@@ -2517,6 +2526,8 @@ msgid ""
 "The configuration should be kept safe. Are you sure you want to save an "
 "unencrypted file containing your passwords?"
 msgstr ""
+"La configurazione dovrebbe essere mantenuta al sicuro. Sei sicuro di voler "
+"salvare un file non criptato contenente le tue password?"
 
 #: index.html:308
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
@@ -2550,7 +2561,7 @@ msgstr ""
 
 #: scripts/controllers/SystemSettingsController.js:90
 msgid "The passwords do not match"
-msgstr ""
+msgstr "Le password non corrispondono"
 
 #: scripts/controllers/EditBackupController.js:153
 msgid "The path does not appear to exist, do you want to add it anyway?"
@@ -2667,7 +2678,7 @@ msgstr "Mar"
 #: templates/backup-result/phases/delete.html:33
 #: templates/backup-result/top-left-box.html:1
 msgid "Time"
-msgstr ""
+msgstr "Tempo"
 
 #: templates/export.html:14
 msgid "To File"
@@ -2731,7 +2742,7 @@ msgstr "Gio"
 
 #: templates/restore.html:138
 msgid "Type passphrase here."
-msgstr ""
+msgstr "Scrivi la passphrase qui."
 
 #: templates/restore.html:57
 msgid "Type to highlight files"
@@ -2759,7 +2770,7 @@ msgstr "Aggiornamento con database esistente"
 
 #: templates/backup-result/phases/compact.html:33
 msgid "Uploaded files"
-msgstr ""
+msgstr "File caricati"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
@@ -2831,7 +2842,7 @@ msgstr "Convalida..."
 
 #: templates/backup-result/phases/test.html:20
 msgid "Verifications"
-msgstr ""
+msgstr "Verifiche"
 
 #: templates/home.html:40
 msgid "Verify files"
@@ -2851,7 +2862,7 @@ msgstr "Verifica dati backend..."
 
 #: scripts/services/ServerStatus.js:58
 msgid "Verifying files ..."
-msgstr ""
+msgstr "Verifica dei file..."
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
@@ -2863,7 +2874,7 @@ msgstr "Verifica file ripristinati..."
 
 #: templates/backup-result/phases/delete.html:33
 msgid "Version ID"
-msgstr ""
+msgstr "Versione ID"
 
 #: scripts/controllers/EditBackupController.js:34
 msgid "Very strong"
@@ -2973,7 +2984,7 @@ msgstr "Si, ho archiviato la passphrase in modo sicuro"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Yes, I understand the risk"
-msgstr ""
+msgstr "Sì, capisco il rischio"
 
 #: scripts/controllers/EditBackupController.js:399
 msgid "Yes, I'm brave!"
@@ -3196,7 +3207,7 @@ msgstr ""
 
 #: templates/backup-result/message-list.html:3
 msgid "{{data.title}}"
-msgstr ""
+msgstr "{{data.title}}"
 
 #: scripts/controllers/StateController.js:50
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
@@ -3214,7 +3225,7 @@ msgstr "{{number}} Ore"
 
 #: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
 msgid "{{number}} Hours"
-msgstr ""
+msgstr "{{number}} Ore"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6

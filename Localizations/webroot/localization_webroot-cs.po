@@ -1,10 +1,11 @@
 # Translators:
 # Pavel Borecki <pavel.borecki@gmail.com>, 2018
+# vita.brno, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>, 2018\n"
+"Last-Translator: vita.brno, 2019\n"
 "Language-Team: Czech (https://www.transifex.com/duplicati/teams/67655/cs/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -96,7 +97,7 @@ msgstr "Přidat popis umístění"
 
 #: templates/backup-result/top-right-box.html:11
 msgid "Added"
-msgstr ""
+msgstr "Přidáno"
 
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
@@ -232,7 +233,7 @@ msgstr "Moduly podpůrných vrstev (backend):"
 
 #: scripts/services/ServerStatus.js:44
 msgid "Backup complete!"
-msgstr ""
+msgstr "Záloha dokončena!"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
@@ -245,6 +246,10 @@ msgid ""
 "                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by\n"
 "                    invoking your system's keychain."
 msgstr ""
+"Záloha je šifrovaná, ale není k dispozici žádná heslová fráze.\n"
+"                    Pro obnovu souborů níže zadejte heslovou frázi,\n"
+"                    nebo, v případě GPG šifrování, ponechte nevyplněné a nechte gpg získat heslovou frázi\n"
+"                    vyvoláním systémové klíčenky."
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
@@ -416,7 +421,7 @@ msgstr "Příkazový řádek…"
 
 #: templates/backup-result/phases/compact.html:3
 msgid "Compact Phase"
-msgstr ""
+msgstr "Fáze zkompaktňování"
 
 #: templates/home.html:41
 msgid "Compact now"
@@ -431,6 +436,8 @@ msgid ""
 "Complete log\n"
 "            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 msgstr ""
+"Úplný záznam událostí\n"
+"            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup ..."
@@ -468,7 +475,7 @@ msgstr "Potvrzení smazání"
 
 #: templates/settings.html:12
 msgid "Confirm password"
-msgstr ""
+msgstr "Potvrďte zopakováním zadání hesla"
 
 #: scripts/services/EditUriBackendConfig.js:66
 msgid "Confirmation required"
@@ -549,7 +556,7 @@ msgstr "Pouze pády"
 
 #: templates/home.html:48
 msgid "Create bug report ..."
-msgstr "Vyplnit hlášení chyby…"
+msgstr "Vytvořit chybový report…"
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
@@ -561,7 +568,7 @@ msgstr "Vytvořit nový uživatelský účet s omezenými oprávněními"
 
 #: scripts/services/ServerStatus.js:59
 msgid "Creating bug report ..."
-msgstr "Vytváření hlášení chyby…"
+msgstr "Vytváření chybového reportu…"
 
 #: scripts/services/EditUriBuiltins.js:115
 msgid "Creating new user with limited access ..."
@@ -657,7 +664,7 @@ msgstr "Smazat…"
 
 #: templates/backup-result/phases/delete.html:3
 msgid "Delete Phase (Old Backup Versions)"
-msgstr ""
+msgstr "Fáze mazání (staré verze zálohy)"
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
@@ -685,15 +692,15 @@ msgstr "Smazat {{filecount}} souborů ({{filesize}}) ze vzdáleného úložišt�
 
 #: templates/backup-result/top-right-box.html:19
 msgid "Deleted"
-msgstr ""
+msgstr "Smazáno"
 
 #: templates/backup-result/phases/delete.html:24
 msgid "Deleted Versions"
-msgstr ""
+msgstr "Smazané verze"
 
 #: templates/backup-result/phases/compact.html:23
 msgid "Deleted files"
-msgstr ""
+msgstr "Smazané soubory"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
@@ -705,11 +712,11 @@ msgstr "Mazání nepotřebných souborů…"
 
 #: templates/addoredit.html:43
 msgid "Description (optional)"
-msgstr ""
+msgstr "Popis (volitelné)"
 
 #: templates/home.html:17
 msgid "Description:"
-msgstr ""
+msgstr "Popis:"
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
@@ -743,11 +750,11 @@ msgstr "Vypnuto"
 
 #: templates/notificationarea.html:10 templates/notificationarea.html:27
 msgid "Dismiss"
-msgstr "Odmítnout"
+msgstr "Zavřít"
 
 #: templates/notificationarea.html:41
 msgid "Dismiss all"
-msgstr "Zahodit vše"
+msgstr "Zavřít vše"
 
 #: templates/settings.html:68
 msgid "Display and color theme"
@@ -791,7 +798,7 @@ msgstr "Stáhnout"
 
 #: templates/backup-result/phases/compact.html:28
 msgid "Downloaded files"
-msgstr ""
+msgstr "Stažené soubory"
 
 #: templates/notificationarea.html:30
 msgid "Downloading ..."
@@ -823,6 +830,9 @@ msgid ""
 "duration. Duplicati will occupy minimal system resources and no backups will"
 " be run."
 msgstr ""
+"Duplicati se zahájí při spuštění, ale po dobu průběhu zůstane v pozastaveném"
+" stavu. Bude zabírat co nejméně systémových prostředků a nebudou spouštěny "
+"žádné zálohy."
 
 #: templates/backup-result/phases/compact.html:16
 #: templates/backup-result/phases/delete.html:16
@@ -832,7 +842,7 @@ msgstr ""
 #: templates/backup-result/phases/test.html:16
 #: templates/backup-result/top-left-box.html:11
 msgid "Duration"
-msgstr ""
+msgstr "Doba trvání"
 
 #: templates/delete.html:15
 msgid ""
@@ -894,7 +904,7 @@ msgstr "Šifrovací moduly:"
 #: templates/backup-result/phases/test.html:12
 #: templates/backup-result/top-left-box.html:7
 msgid "End"
-msgstr ""
+msgstr "Konec"
 
 #: scripts/controllers/EditBackupController.js:95
 #: scripts/controllers/RestoreDirectController.js:24
@@ -1003,7 +1013,7 @@ msgstr "Chyby a pády"
 
 #: templates/backup-result/top-right-box.html:3
 msgid "Examined"
-msgstr ""
+msgstr "Prozkoumáno"
 
 #: templates/addoredit.html:214
 msgid "Exclude"
@@ -1067,7 +1077,7 @@ msgstr "Exportovat nastavení"
 
 #: templates/export.html:18
 msgid "Export passwords"
-msgstr ""
+msgstr "Exportovat hesla"
 
 #: templates/export.html:35
 msgid "Exporting ..."
@@ -1115,7 +1125,7 @@ msgstr "Nepodařilo se stáhnout informaci o popisu umístění: {{message}}"
 
 #: scripts/directives/notificationArea.js:45
 msgid "Failed to find backup:"
-msgstr ""
+msgstr "Zálohu se nepodařilo nalézt:"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
@@ -1144,7 +1154,7 @@ msgstr "Soubor"
 
 #: templates/backup-result/top-right-box.html:1
 msgid "Files"
-msgstr ""
+msgstr "Soubory"
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
@@ -1477,7 +1487,7 @@ msgstr "Vypisování vzdálených souborů…"
 
 #: scripts/services/ServerStatus.js:62
 msgid "Listing remote files for purge ..."
-msgstr ""
+msgstr "Vypisování souborů na protějšku, které trvale vymazat…"
 
 #: templates/log.html:7
 msgid "Live"
@@ -1613,7 +1623,7 @@ msgstr "Chybějící zdroje"
 
 #: templates/backup-result/top-right-box.html:15
 msgid "Modified"
-msgstr ""
+msgstr "Změněno"
 
 #: scripts/services/AppUtils.js:104
 msgid "Mon"
@@ -1757,7 +1767,7 @@ msgstr "Žádné / vypnuté"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Not using encryption"
-msgstr ""
+msgstr "Nepoužívá šifrování"
 
 #: templates/addoredit.html:328
 msgid "Nothing will be deleted. The backup size will grow with each change."
@@ -1793,7 +1803,7 @@ msgstr "Objektové úložiště OpenStack (Swift)"
 
 #: templates/backup-result/top-right-box.html:7
 msgid "Opened"
-msgstr ""
+msgstr "Otevřeno"
 
 #: scripts/services/EditUriBuiltins.js:803
 msgid "Openstack API Key are not supported in v3 keystone API."
@@ -1806,7 +1816,7 @@ msgstr "Operační systém"
 
 #: templates/backuplog.html:16
 msgid "Operation"
-msgstr ""
+msgstr "Operace"
 
 #: scripts/controllers/SystemSettingsController.js:127
 #: scripts/controllers/SystemSettingsController.js:138
@@ -1880,7 +1890,7 @@ msgstr "Zadání heslové fráze se neshodují"
 
 #: scripts/controllers/EditBackupController.js:29
 msgid "Passphrases do not match"
-msgstr ""
+msgstr "Zadání heslové fráze se neshodují"
 
 #: scripts/services/EditUriBuiltins.js:910
 #: scripts/services/EditUriBuiltins.js:920 templates/backends/file.html:33
@@ -1966,7 +1976,7 @@ msgstr "Proprietární"
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
-msgstr ""
+msgstr "Fáze trvalého mazání"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
@@ -1974,7 +1984,7 @@ msgstr "Trvalé vymazávání souborů…"
 
 #: scripts/services/ServerStatus.js:65
 msgid "Purging files complete!"
-msgstr ""
+msgstr "Trvalé smazání souborů dokončeno!"
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
@@ -1986,7 +1996,7 @@ msgstr "Vytvořit znovu (smazat a opravit)"
 
 #: templates/backup-result/phases/recreate-database.html:3
 msgid "Recreate Database Phase"
-msgstr ""
+msgstr "Fáze znovuvytváření databáze"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database ..."
@@ -2038,7 +2048,7 @@ msgstr "Odebrat volbu"
 
 #: templates/backup-result/phases/purge.html:23
 msgid "Removed files"
-msgstr ""
+msgstr "Odebrané soubory"
 
 #: templates/localdatabase.html:18 templates/notificationarea.html:14
 msgid "Repair"
@@ -2046,7 +2056,7 @@ msgstr "Opravit"
 
 #: templates/backup-result/phases/repair.html:3
 msgid "Repair Phase"
-msgstr ""
+msgstr "Fáze oprav"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
@@ -2070,7 +2080,7 @@ msgstr "Obnovit"
 
 #: scripts/services/ServerStatus.js:55
 msgid "Restore complete!"
-msgstr ""
+msgstr "Obnovení dokončeno!"
 
 #: templates/restore.html:45
 msgid "Restore files"
@@ -2116,7 +2126,7 @@ msgstr "Pokračovat"
 
 #: templates/backup-result/phases/purge.html:28
 msgid "Rewritten File Lists"
-msgstr ""
+msgstr "Seznamy přepsaných souborů"
 
 #: templates/addoredit.html:269
 msgid "Run again every"
@@ -2318,15 +2328,15 @@ msgstr "Standardní protokoly"
 #: templates/backup-result/phases/test.html:8
 #: templates/backup-result/top-left-box.html:3
 msgid "Start"
-msgstr ""
+msgstr "Začátek"
 
 #: scripts/services/ServerStatus.js:33
 msgid "Starting backup ..."
-msgstr ""
+msgstr "Spouštění zálohy…"
 
 #: scripts/services/ServerStatus.js:45
 msgid "Starting restore ..."
-msgstr ""
+msgstr "Spouštění obnovení…"
 
 #: scripts/controllers/RestoreController.js:369
 #: scripts/controllers/RestoreController.js:393
@@ -2445,7 +2455,7 @@ msgstr "Jméno nájemníka (tenant)"
 
 #: templates/backup-result/phases/test.html:3
 msgid "Test Phase"
-msgstr ""
+msgstr "Fáze zkoušení"
 
 #: templates/edituri.html:21
 msgid "Test connection"
@@ -2478,12 +2488,14 @@ msgstr ""
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
-msgstr ""
+msgstr "Záloha chybí, byla smazána?"
 
 #: scripts/directives/notificationArea.js:41
 msgid ""
 "The backup was temporary and does not exist anymore, so the log data is lost"
 msgstr ""
+"Záloha byla dočasná a už neexistuje, takže data záznamu událostí jsou "
+"ztracena"
 
 #: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
@@ -2501,6 +2513,8 @@ msgid ""
 "The configuration should be kept safe. Are you sure you want to save an "
 "unencrypted file containing your passwords?"
 msgstr ""
+"Nastavení by měla být uchovávána bezpečně. Opravdu chcete uložit nešifrovaný"
+" soubor obsahující vaše hesla?"
 
 #: index.html:308
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
@@ -2534,7 +2548,7 @@ msgstr ""
 
 #: scripts/controllers/SystemSettingsController.js:90
 msgid "The passwords do not match"
-msgstr ""
+msgstr "Zadání hesla se neshodují"
 
 #: scripts/controllers/EditBackupController.js:153
 msgid "The path does not appear to exist, do you want to add it anyway?"
@@ -2645,7 +2659,7 @@ msgstr "Čt"
 #: templates/backup-result/phases/delete.html:33
 #: templates/backup-result/top-left-box.html:1
 msgid "Time"
-msgstr ""
+msgstr "Čas"
 
 #: templates/export.html:14
 msgid "To File"
@@ -2708,7 +2722,7 @@ msgstr "Út"
 
 #: templates/restore.html:138
 msgid "Type passphrase here."
-msgstr ""
+msgstr "Sem zadejte heslovou frázi."
 
 #: templates/restore.html:57
 msgid "Type to highlight files"
@@ -2736,7 +2750,7 @@ msgstr "Aktualizace se stávající databází"
 
 #: templates/backup-result/phases/compact.html:33
 msgid "Uploaded files"
-msgstr ""
+msgstr "Nahrané soubory"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
@@ -2808,7 +2822,7 @@ msgstr "Ověřování…"
 
 #: templates/backup-result/phases/test.html:20
 msgid "Verifications"
-msgstr ""
+msgstr "Ověřování"
 
 #: templates/home.html:40
 msgid "Verify files"
@@ -2828,7 +2842,7 @@ msgstr "Ověřování dat podpůrné vrstvy (backend)…"
 
 #: scripts/services/ServerStatus.js:58
 msgid "Verifying files ..."
-msgstr ""
+msgstr "Ověřování souborů…"
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
@@ -2840,7 +2854,7 @@ msgstr "Ověřování obnovených souborů…"
 
 #: templates/backup-result/phases/delete.html:33
 msgid "Version ID"
-msgstr ""
+msgstr "Identif. verze"
 
 #: scripts/controllers/EditBackupController.js:34
 msgid "Very strong"
@@ -2949,7 +2963,7 @@ msgstr "Ano, heslovou frázi mám bezpečně uloženou"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Yes, I understand the risk"
-msgstr ""
+msgstr "Ano, rozumím riziku"
 
 #: scripts/controllers/EditBackupController.js:399
 msgid "Yes, I'm brave!"
@@ -3173,7 +3187,7 @@ msgstr ""
 
 #: templates/backup-result/message-list.html:3
 msgid "{{data.title}}"
-msgstr ""
+msgstr "{{data.title}}"
 
 #: scripts/controllers/StateController.js:50
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
@@ -3193,7 +3207,7 @@ msgstr "{{number}} hodin"
 
 #: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
 msgid "{{number}} Hours"
-msgstr ""
+msgstr "{{number}} hodin"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6

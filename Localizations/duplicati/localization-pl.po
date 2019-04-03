@@ -6,8 +6,8 @@
 # Translators:
 # Jerzy Wartałowicz <juwicz@gmail.com>, 2017
 # Mikolaj Zajac <mikolaj.zajac@outlook.com>, 2017
-# Mariusz Wierzbicki <engineer@post.pl>, 2017
 # marekjedrzejewski <marekjedrzejewski@users.noreply.github.com>, 2017
+# Mariusz Wierzbicki <engineer@post.pl>, 2019
 # 
 #, fuzzy
 msgid ""
@@ -16,7 +16,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-12-11 12:26+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: marekjedrzejewski <marekjedrzejewski@users.noreply.github.com>, 2017\n"
+"Last-Translator: Mariusz Wierzbicki <engineer@post.pl>, 2019\n"
 "Language-Team: Polish (https://www.transifex.com/duplicati/teams/67655/pl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1650,19 +1650,19 @@ msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:6
 msgid "Sia Decentralized Cloud"
-msgstr ""
+msgstr "Chmura rozproszona Sia"
 
 #: Library/Backend/Sia/Strings.cs:7
 msgid "This backend can read and write data to Sia."
-msgstr ""
+msgstr "Ten backend potrafi czytać i zapisywać dane do Sia."
 
 #: Library/Backend/Sia/Strings.cs:8
 msgid "Sia address"
-msgstr ""
+msgstr "Adres Sia"
 
 #: Library/Backend/Sia/Strings.cs:9
 msgid "Sia address, ie 127.0.0.1:9980"
-msgstr ""
+msgstr "Adres Sia, tj. 127.0.0.1:9980"
 
 #: Library/Backend/Sia/Strings.cs:10
 msgid "Backup path"
@@ -1674,7 +1674,7 @@ msgstr "Ścieżka docelowa, np. /backup"
 
 #: Library/Backend/Sia/Strings.cs:12 Library/Backend/Sia/Strings.cs:13
 msgid "Sia password"
-msgstr ""
+msgstr "Hasło Sia"
 
 #: Library/Backend/Sia/Strings.cs:14
 msgid "3"
@@ -3739,7 +3739,7 @@ msgstr "Podaj hasło szyfrowania"
 
 #: Library/Modules/Builtin/Strings.cs:13
 msgid "The passphrases do not match"
-msgstr "Hasła szyfrowania nie zgadzają się"
+msgstr "Hasła różnią się od siebie"
 
 #: Library/Modules/Builtin/Strings.cs:16
 msgid ""

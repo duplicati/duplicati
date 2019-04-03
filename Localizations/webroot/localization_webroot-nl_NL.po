@@ -96,7 +96,7 @@ msgstr "Voeg pad toe"
 
 #: templates/backup-result/top-right-box.html:11
 msgid "Added"
-msgstr ""
+msgstr "Toegevoegd"
 
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
@@ -236,7 +236,7 @@ msgstr "Backend modules:"
 
 #: scripts/services/ServerStatus.js:44
 msgid "Backup complete!"
-msgstr ""
+msgstr "Back-up compleet!"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
@@ -249,6 +249,8 @@ msgid ""
 "                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by\n"
 "                    invoking your system's keychain."
 msgstr ""
+"Back-up is versleuteld maar er is geen wachtwoordzin beschikbaar.\n"
+"Typ hieronder een wachtwoordzin om te gebruiken voor het herstellen van uw bestanden, of, in het geval van GPG-codering, laat dit leeg om de gpg-code de wachtwoordzin op te laten halen door een beroep te doen op de keychain van uw systeem."
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
@@ -422,7 +424,7 @@ msgstr "Opdrachtregel ..."
 
 #: templates/backup-result/phases/compact.html:3
 msgid "Compact Phase"
-msgstr ""
+msgstr "Opruimen Subtaak"
 
 #: templates/home.html:41
 msgid "Compact now"
@@ -437,6 +439,8 @@ msgid ""
 "Complete log\n"
 "            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 msgstr ""
+"Volledig logbestand\n"
+"            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup ..."
@@ -474,7 +478,7 @@ msgstr "Bevestig verwijderen"
 
 #: templates/settings.html:12
 msgid "Confirm password"
-msgstr ""
+msgstr "Bevestig wachtwoord"
 
 #: scripts/services/EditUriBackendConfig.js:66
 msgid "Confirmation required"
@@ -663,7 +667,7 @@ msgstr "Verwijderen ..."
 
 #: templates/backup-result/phases/delete.html:3
 msgid "Delete Phase (Old Backup Versions)"
-msgstr ""
+msgstr "Verwijderen Subtaak (Oude Back-upversies)"
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
@@ -692,15 +696,15 @@ msgstr ""
 
 #: templates/backup-result/top-right-box.html:19
 msgid "Deleted"
-msgstr ""
+msgstr "Verwijderd"
 
 #: templates/backup-result/phases/delete.html:24
 msgid "Deleted Versions"
-msgstr ""
+msgstr "Verwijderde versies"
 
 #: templates/backup-result/phases/compact.html:23
 msgid "Deleted files"
-msgstr ""
+msgstr "Verwijderde bestanden"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
@@ -712,11 +716,11 @@ msgstr "Onnodige bestanden verwijderen ..."
 
 #: templates/addoredit.html:43
 msgid "Description (optional)"
-msgstr ""
+msgstr "Omschrijving (optioneel)"
 
 #: templates/home.html:17
 msgid "Description:"
-msgstr ""
+msgstr "Omschrijving:"
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
@@ -798,7 +802,7 @@ msgstr "Download"
 
 #: templates/backup-result/phases/compact.html:28
 msgid "Downloaded files"
-msgstr ""
+msgstr "Gedownloade bestanden"
 
 #: templates/notificationarea.html:30
 msgid "Downloading ..."
@@ -830,6 +834,9 @@ msgid ""
 "duration. Duplicati will occupy minimal system resources and no backups will"
 " be run."
 msgstr ""
+"Duplicati zal bij het starten worden uitgevoerd, maar zolang als opgegeven "
+"gepauzeerd blijven. Duplicati zal een minimale hoeveelheid systeembronnen "
+"gebruiken en er zullen geen back-ups gestart worden."
 
 #: templates/backup-result/phases/compact.html:16
 #: templates/backup-result/phases/delete.html:16
@@ -839,7 +846,7 @@ msgstr ""
 #: templates/backup-result/phases/test.html:16
 #: templates/backup-result/top-left-box.html:11
 msgid "Duration"
-msgstr ""
+msgstr "Tijdsduur"
 
 #: templates/delete.html:15
 msgid ""
@@ -900,7 +907,7 @@ msgstr "Versleutelingsmodules:"
 #: templates/backup-result/phases/test.html:12
 #: templates/backup-result/top-left-box.html:7
 msgid "End"
-msgstr ""
+msgstr "Einde"
 
 #: scripts/controllers/EditBackupController.js:95
 #: scripts/controllers/RestoreDirectController.js:24
@@ -1010,7 +1017,7 @@ msgstr "Fouten en crashes"
 
 #: templates/backup-result/top-right-box.html:3
 msgid "Examined"
-msgstr ""
+msgstr "Onderzocht"
 
 #: templates/addoredit.html:214
 msgid "Exclude"
@@ -1074,7 +1081,7 @@ msgstr "Exporteer configuratie"
 
 #: templates/export.html:18
 msgid "Export passwords"
-msgstr ""
+msgstr "Exporteer wachtwoorden"
 
 #: templates/export.html:35
 msgid "Exporting ..."
@@ -1122,7 +1129,7 @@ msgstr "Ophalen pad-informatie mislukt: {{message}}"
 
 #: scripts/directives/notificationArea.js:45
 msgid "Failed to find backup:"
-msgstr ""
+msgstr "Back-up kon niet worden gevonden:"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
@@ -1151,7 +1158,7 @@ msgstr "Bestand"
 
 #: templates/backup-result/top-right-box.html:1
 msgid "Files"
-msgstr ""
+msgstr "Bestanden"
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
@@ -1487,7 +1494,7 @@ msgstr "Remote bestanden weergeven ..."
 
 #: scripts/services/ServerStatus.js:62
 msgid "Listing remote files for purge ..."
-msgstr ""
+msgstr "Remote bestanden tonen voor wissen ..."
 
 #: templates/log.html:7
 msgid "Live"
@@ -1624,7 +1631,7 @@ msgstr "Ontbrekende bronnen"
 
 #: templates/backup-result/top-right-box.html:15
 msgid "Modified"
-msgstr ""
+msgstr "Gewijzigd"
 
 #: scripts/services/AppUtils.js:104
 msgid "Mon"
@@ -1770,7 +1777,7 @@ msgstr "Geen / uitgeschakeld"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Not using encryption"
-msgstr ""
+msgstr "Zonder versleuteling"
 
 #: templates/addoredit.html:328
 msgid "Nothing will be deleted. The backup size will grow with each change."
@@ -1809,7 +1816,7 @@ msgstr "OpenStack Object Storage / Swift"
 
 #: templates/backup-result/top-right-box.html:7
 msgid "Opened"
-msgstr ""
+msgstr "Geopend"
 
 #: scripts/services/EditUriBuiltins.js:803
 msgid "Openstack API Key are not supported in v3 keystone API."
@@ -1821,7 +1828,7 @@ msgstr "Besturingssysteem"
 
 #: templates/backuplog.html:16
 msgid "Operation"
-msgstr ""
+msgstr "Bewerking"
 
 #: scripts/controllers/SystemSettingsController.js:127
 #: scripts/controllers/SystemSettingsController.js:138
@@ -1895,7 +1902,7 @@ msgstr "Wachtwoordzinnen komen niet overeen"
 
 #: scripts/controllers/EditBackupController.js:29
 msgid "Passphrases do not match"
-msgstr ""
+msgstr "Wachtwoordzinnen komen niet overeen"
 
 #: scripts/services/EditUriBuiltins.js:910
 #: scripts/services/EditUriBuiltins.js:920 templates/backends/file.html:33
@@ -1979,7 +1986,7 @@ msgstr "Fabrikantgebonden"
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
-msgstr ""
+msgstr "Uitwissen Subtaak"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
@@ -1987,7 +1994,7 @@ msgstr "Bestanden wissen ..."
 
 #: scripts/services/ServerStatus.js:65
 msgid "Purging files complete!"
-msgstr ""
+msgstr "Wissen van bestanden compleet!"
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
@@ -1999,7 +2006,7 @@ msgstr "Opnieuw aanmaken (verwijderen en repareren)"
 
 #: templates/backup-result/phases/recreate-database.html:3
 msgid "Recreate Database Phase"
-msgstr ""
+msgstr "Opnieuw aanmaken Database Subtaak"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database ..."
@@ -2051,7 +2058,7 @@ msgstr "Verwijder optie"
 
 #: templates/backup-result/phases/purge.html:23
 msgid "Removed files"
-msgstr ""
+msgstr "Verwijderde bestanden"
 
 #: templates/localdatabase.html:18 templates/notificationarea.html:14
 msgid "Repair"
@@ -2059,7 +2066,7 @@ msgstr "Repareer"
 
 #: templates/backup-result/phases/repair.html:3
 msgid "Repair Phase"
-msgstr ""
+msgstr "Repareren Subtaak"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
@@ -2083,7 +2090,7 @@ msgstr "Herstellen"
 
 #: scripts/services/ServerStatus.js:55
 msgid "Restore complete!"
-msgstr ""
+msgstr "Herstellen compleet!"
 
 #: templates/restore.html:45
 msgid "Restore files"
@@ -2129,7 +2136,7 @@ msgstr "Hervat"
 
 #: templates/backup-result/phases/purge.html:28
 msgid "Rewritten File Lists"
-msgstr ""
+msgstr "Herschreven bestandslijsten"
 
 #: templates/addoredit.html:269
 msgid "Run again every"
@@ -2330,15 +2337,15 @@ msgstr "Standaard protocollen"
 #: templates/backup-result/phases/test.html:8
 #: templates/backup-result/top-left-box.html:3
 msgid "Start"
-msgstr ""
+msgstr "Start"
 
 #: scripts/services/ServerStatus.js:33
 msgid "Starting backup ..."
-msgstr ""
+msgstr "Back-up wordt gestart ..."
 
 #: scripts/services/ServerStatus.js:45
 msgid "Starting restore ..."
-msgstr ""
+msgstr "Herstellen wordt gestart ..."
 
 #: scripts/controllers/RestoreController.js:369
 #: scripts/controllers/RestoreController.js:393
@@ -2457,7 +2464,7 @@ msgstr "Tenant naam"
 
 #: templates/backup-result/phases/test.html:3
 msgid "Test Phase"
-msgstr ""
+msgstr "Testen Subtaak"
 
 #: templates/edituri.html:21
 msgid "Test connection"
@@ -2490,12 +2497,14 @@ msgstr ""
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
-msgstr ""
+msgstr "De back-up ontbreekt, is deze verwijderd?"
 
 #: scripts/directives/notificationArea.js:41
 msgid ""
 "The backup was temporary and does not exist anymore, so the log data is lost"
 msgstr ""
+"De back-up was tijdelijk en bestaat niet meer, waardoor de log-gegevens "
+"verloren zijn gegaan"
 
 #: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
@@ -2514,6 +2523,8 @@ msgid ""
 "The configuration should be kept safe. Are you sure you want to save an "
 "unencrypted file containing your passwords?"
 msgstr ""
+"De configuratie moet op een veilige plaats bewaard worden. Weet u zeker dat "
+"u een onversleuteld bestand wilt opslaan dat uw wachtwoorden bevat?"
 
 #: index.html:308
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
@@ -2548,7 +2559,7 @@ msgstr ""
 
 #: scripts/controllers/SystemSettingsController.js:90
 msgid "The passwords do not match"
-msgstr ""
+msgstr "De wachtwoorden komen niet overeen"
 
 #: scripts/controllers/EditBackupController.js:153
 msgid "The path does not appear to exist, do you want to add it anyway?"
@@ -2663,7 +2674,7 @@ msgstr "Donderdag"
 #: templates/backup-result/phases/delete.html:33
 #: templates/backup-result/top-left-box.html:1
 msgid "Time"
-msgstr ""
+msgstr "Tijd"
 
 #: templates/export.html:14
 msgid "To File"
@@ -2728,7 +2739,7 @@ msgstr "Dinsdag"
 
 #: templates/restore.html:138
 msgid "Type passphrase here."
-msgstr ""
+msgstr "Type hier de wachtwoordzin."
 
 #: templates/restore.html:57
 msgid "Type to highlight files"
@@ -2756,7 +2767,7 @@ msgstr "Updaten met bestaande database"
 
 #: templates/backup-result/phases/compact.html:33
 msgid "Uploaded files"
-msgstr ""
+msgstr "Geüploade bestanden"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
@@ -2829,7 +2840,7 @@ msgstr "Valideren ..."
 
 #: templates/backup-result/phases/test.html:20
 msgid "Verifications"
-msgstr ""
+msgstr "Controles"
 
 #: templates/home.html:40
 msgid "Verify files"
@@ -2849,7 +2860,7 @@ msgstr "Controleren van backend gegevens ..."
 
 #: scripts/services/ServerStatus.js:58
 msgid "Verifying files ..."
-msgstr ""
+msgstr "Controleren bestanden ..."
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
@@ -2861,7 +2872,7 @@ msgstr "Controleren van herstelde bestanden ..."
 
 #: templates/backup-result/phases/delete.html:33
 msgid "Version ID"
-msgstr ""
+msgstr "Versie ID"
 
 #: scripts/controllers/EditBackupController.js:34
 msgid "Very strong"
@@ -2973,7 +2984,7 @@ msgstr "Ja, ik heb de wachtwoordzin op een veilige plaats opgeborgen"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Yes, I understand the risk"
-msgstr ""
+msgstr "Ja, ik begrijp het risico"
 
 #: scripts/controllers/EditBackupController.js:399
 msgid "Yes, I'm brave!"
@@ -3202,7 +3213,7 @@ msgstr ""
 
 #: templates/backup-result/message-list.html:3
 msgid "{{data.title}}"
-msgstr ""
+msgstr "{{data.title}}"
 
 #: scripts/controllers/StateController.js:50
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
@@ -3220,7 +3231,7 @@ msgstr "{{number}} Uur"
 
 #: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
 msgid "{{number}} Hours"
-msgstr ""
+msgstr "{{number}} Uur"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6
