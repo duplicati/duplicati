@@ -383,7 +383,7 @@ msgstr "Další předvolby příkazového řádku pro GPG pro šifrování"
 #: Library/Encryption/Strings.cs:22
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
-msgstr ""
+msgstr "Nepodařilo se spustit GPG s „{0} {1}“: {2}"
 
 #: Library/Encryption/Strings.cs:23
 msgid ""
@@ -4362,6 +4362,8 @@ msgstr "Použije filtry na data záznamu na konzoli"
 #: Library/Main/Strings.cs:262
 msgid "Sets the process to use low IO priority"
 msgstr ""
+"Nastaví že procesy budou mít nízkou prioritu při vyřizování "
+"vstupně/výstupních operací"
 
 #: Library/Main/Strings.cs:263
 msgid ""
@@ -4532,6 +4534,11 @@ msgid ""
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
+"Pokud je certifikát serveru hlášen jako neplatný (např. sám sebou podepsané "
+"certifikáty), je možné zadat otisk (SHA256) certifikátu a schválit ho i tak."
+" Je třeba, aby hodnota otisku byla zadaná v osmičkovém (hex) formátu bez "
+"mezer či dvojteček. Vícero otisků je možné zadat pokud budou oddělovány "
+"čárkou."
 
 #: Library/Modules/Builtin/Strings.cs:25
 msgid "Optionally accept a known SSL certificate"

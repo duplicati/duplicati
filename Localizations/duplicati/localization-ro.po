@@ -4,8 +4,8 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# George Draghici <notgexge@gmail.com>, 2017
 # Robert Cocirlea <robytza12335@gmail.com>, 2017
+# George Draghici <notgexge@gmail.com>, 2017
 # Leonte Cristian <leontecristian86@gmail.com>, 2017
 # 
 #, fuzzy
