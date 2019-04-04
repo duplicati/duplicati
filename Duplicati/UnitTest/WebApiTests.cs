@@ -36,7 +36,7 @@ namespace Duplicati.UnitTest
         public static void CreateFolderUrl()
         {
             var url = "https://www.googleapis.com/drive/v2/files?supportsTeamDrives=true";
-            Assert.AreEqual(url, GoogleDrive.CreateFolderUrl(true));
+            Assert.AreEqual(url, GoogleDrive.CreateFolderUrl(""));
         }
 
         [Test]
