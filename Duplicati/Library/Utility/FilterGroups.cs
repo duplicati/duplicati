@@ -556,6 +556,7 @@ namespace Duplicati.Library.Utility
             }
             if (group.HasFlag(FilterGroup.CacheFiles))
             {
+                yield return FilterGroups.CreateWildcardFilter(@"*/.cache/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/.config/google-chrome/Default/Cookies");
                 yield return FilterGroups.CreateWildcardFilter(@"*/.config/google-chrome/Default/Cookies-journal");
             }
