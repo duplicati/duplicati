@@ -183,15 +183,22 @@ namespace Duplicati.Library.Backend.WebApi
                 { QueryParam.UploadType,
                     QueryValue.Resumable } };
 
-            if(useTeamDrive)
+            if (useTeamDrive)
+            {
                 queryParams.Add(QueryParam.SupportsTeamDrive, QueryValue.True);
+            }
 
             return !string.IsNullOrWhiteSpace(fileId) ?
                 FileUploadUrl(Uri.UrlPathEncode(fileId), queryParams) :
                       FileUploadUrl(queryParams);
         }
 
-        public static string ListUrl(string fileQuery, string teamDriveId, string token=null)
+        public static string ListUrl(string fileQuery, string teamDriveId)
+        {
+            return ListUrl(fileQuery, teamDriveId, null);
+        }
+        
+        public static string ListUrl(string fileQuery, string teamDriveId, string token)
         {
             var queryParams = new NameValueCollection
             {
@@ -282,7 +289,7 @@ namespace Duplicati.Library.Backend.WebApi
                     teamDriveId },
                 { WebApi.GoogleDrive.QueryParam.IncludeTeamDrive,
                     WebApi.GoogleDrive.QueryValue.True },
-                { WebApi.GoogleDrive.QueryParam.IncludeTeamDrive,
+                { WebApi.GoogleDrive.QueryParam.corpora,
                     WebApi.GoogleDrive.QueryValue.TeamDrive }
 
             } : new NameValueCollection( );
