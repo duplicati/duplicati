@@ -4667,7 +4667,7 @@ msgstr "Jedes Serverzertifikat akzeptieren"
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash (SHA256) to approve it "
+"certificates), you can supply the certificate hash (SHA1) to approve it "
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
