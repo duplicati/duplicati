@@ -155,8 +155,7 @@ namespace Duplicati.GUI.TrayIcon.Windows
                
         private void m_BalloonTipClicked(object sender, EventArgs e)
         {
-            if (m_onNotificationClick != null)
-                m_onNotificationClick();
+            m_onNotificationClick?.Invoke();
         }
 
         protected override void RegisterStatusUpdateCallback ()
