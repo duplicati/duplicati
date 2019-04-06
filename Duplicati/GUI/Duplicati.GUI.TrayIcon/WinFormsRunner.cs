@@ -122,7 +122,8 @@ namespace Duplicati.GUI.TrayIcon.Windows
             m_trayIcon = new NotifyIcon();
             m_trayIcon.DoubleClick += new EventHandler(m_trayIcon_DoubleClick);
             m_trayIcon.Click += new EventHandler(m_trayIcon_Click);
-            m_trayIcon.Text = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName;
+            m_trayIcon.BalloonTipClicked += new EventHandler(m_BalloonTipClicked);
+            m_trayIcon.Text = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName;            
             base.Init(args);
         }
         
@@ -151,7 +152,12 @@ namespace Duplicati.GUI.TrayIcon.Windows
             if (m_onDoubleClick != null)
                 m_onDoubleClick();
         }
-        
+               
+        private void m_BalloonTipClicked(object sender, EventArgs e)
+        {
+            ShowStatusWindow();
+        }
+
         protected override void RegisterStatusUpdateCallback ()
         {
             Program.Connection.OnStatusUpdated += delegate(IServerStatus status) {
