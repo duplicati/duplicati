@@ -67,7 +67,7 @@ namespace Duplicati.GUI.TrayIcon
         protected bool m_stateIsPaused;
         protected Action m_onSingleClick;
         protected Action m_onDoubleClick;
-        protected static Action m_onNotificationClick;
+        protected Action m_onNotificationClick;
         
         public virtual void Init(string[] args)
         {

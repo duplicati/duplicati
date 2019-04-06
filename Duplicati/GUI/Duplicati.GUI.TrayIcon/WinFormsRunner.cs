@@ -153,7 +153,7 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 m_onDoubleClick();
         }
                
-        private static void m_BalloonTipClicked(object sender, EventArgs e)
+        private void m_BalloonTipClicked(object sender, EventArgs e)
         {
             m_onNotificationClick?.Invoke();
         }
