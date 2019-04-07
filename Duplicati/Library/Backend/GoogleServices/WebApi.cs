@@ -172,23 +172,33 @@ namespace Duplicati.Library.Backend.WebApi
             return FileQueryUrl(Uri.UrlPathEncode(fileId));
         }
 
-        public static string DeleteUrl(string fileId, bool useTeamDrive)
+        public static string DeleteUrl(string fileId, string teamDriveId)
         {
-            return FileQueryUrl(Uri.UrlPathEncode(fileId), SupportsTeamDriveParam(useTeamDrive));
+            return FileQueryUrl(Uri.UrlPathEncode(fileId), AddTeamDriveParam(teamDriveId));
         }
 
-        public static string PutUrl(string fileId)
+        public static string PutUrl(string fileId, bool useTeamDrive)
         {
             var queryParams = new NameValueCollection {
                 { QueryParam.UploadType,
                     QueryValue.Resumable } };
- 
+
+            if (useTeamDrive)
+            {
+                queryParams.Add(QueryParam.SupportsTeamDrive, QueryValue.True);
+            }
+
             return !string.IsNullOrWhiteSpace(fileId) ?
                 FileUploadUrl(Uri.UrlPathEncode(fileId), queryParams) :
                       FileUploadUrl(queryParams);
         }
 
-        public static string ListUrl(string fileQuery, bool useTeamDrive, string token=null)
+        public static string ListUrl(string fileQuery, string teamDriveId)
+        {
+            return ListUrl(fileQuery, teamDriveId, null);
+        }
+        
+        public static string ListUrl(string fileQuery, string teamDriveId, string token)
         {
             var queryParams = new NameValueCollection
             {
@@ -196,9 +206,8 @@ namespace Duplicati.Library.Backend.WebApi
                     fileQuery }
             };
 
-            queryParams.Add(SupportsTeamDriveParam(useTeamDrive));
-            queryParams.Add(IncludeTeamDriveParam(useTeamDrive));
-
+            queryParams.Add(AddTeamDriveParam(teamDriveId));
+            
             if (token != null)
             {
                 queryParams.Set(QueryParam.PageToken, token);
@@ -207,9 +216,9 @@ namespace Duplicati.Library.Backend.WebApi
             return FileQueryUrl(queryParams);
         }
 
-        public static string CreateFolderUrl(bool useTeamDrive)
+        public static string CreateFolderUrl(string teamDriveId)
         {
-            return FileQueryUrl(SupportsTeamDriveParam(useTeamDrive));
+            return FileQueryUrl(AddTeamDriveParam(teamDriveId));
         }
 
         public static string AboutInfoUrl()
@@ -233,6 +242,8 @@ namespace Duplicati.Library.Backend.WebApi
         {
             public const string SupportsTeamDrive = "supportsTeamDrives";
             public const string IncludeTeamDrive = "includeTeamDriveItems";
+            public const string TeamDriveId = "teamDriveId";
+            public const string corpora = "corpora";
             public const string File = "q";
             public const string PageToken = "pageToken";
             public const string UploadType = "uploadType";
@@ -244,6 +255,7 @@ namespace Duplicati.Library.Backend.WebApi
             public const string True = "true";
             public const string Resumable = "resumable";
             public const string Media = "media";
+            public const string TeamDrive = "teamDrive";
         }
 
         private static string FileQueryUrl(NameValueCollection values)
@@ -268,19 +280,19 @@ namespace Duplicati.Library.Backend.WebApi
             return Uri.UriBuilder(Url.UPLOAD, Path.File, values);
         }
 
-        private static NameValueCollection SupportsTeamDriveParam(bool useTeamDrive)
+        private static NameValueCollection AddTeamDriveParam(string teamDriveId)
         {
-            return useTeamDrive ? new NameValueCollection {
+            return teamDriveId != null ? new NameValueCollection {
                 { WebApi.GoogleDrive.QueryParam.SupportsTeamDrive,
-                    WebApi.GoogleDrive.QueryValue.True }
-            } : null;
-        }
+                    WebApi.GoogleDrive.QueryValue.True },
+                { WebApi.GoogleDrive.QueryParam.TeamDriveId,  
+                    teamDriveId },
+                { WebApi.GoogleDrive.QueryParam.IncludeTeamDrive,
+                    WebApi.GoogleDrive.QueryValue.True },
+                { WebApi.GoogleDrive.QueryParam.corpora,
+                    WebApi.GoogleDrive.QueryValue.TeamDrive }
 
-        private static NameValueCollection IncludeTeamDriveParam(bool useTeamDrive)
-        {
-            return useTeamDrive ? new NameValueCollection {
-                { QueryParam.IncludeTeamDrive,
-                    QueryValue.True } } : null;
+            } : new NameValueCollection( );
         }
     }
 }
