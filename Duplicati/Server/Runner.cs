@@ -750,7 +750,7 @@ namespace Duplicati.Server
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
                     Program.DataConnection.RegisterNotification(
-                        NotificationType.Error,
+                         r.FilesWithError == 0 && !r.Errors.Any() ? NotificationType.Warning : NotificationType.Error,
                         backup.IsTemporary ?
                             "Warning" : string.Format("Warning while running {0}", backup.Name),
                             r.FilesWithError > 0 ?

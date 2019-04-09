@@ -67,6 +67,7 @@ namespace Duplicati.GUI.TrayIcon
         protected bool m_stateIsPaused;
         protected Action m_onSingleClick;
         protected Action m_onDoubleClick;
+        protected Action m_onNotificationClick;
         
         public virtual void Init(string[] args)
         {
@@ -75,6 +76,7 @@ namespace Duplicati.GUI.TrayIcon
             RegisterNotificationCallback();
             OnStatusUpdated(Program.Connection.Status);
             m_onDoubleClick = ShowStatusWindow;
+            m_onNotificationClick = ShowStatusWindow;
             Run(args);
         }
         
