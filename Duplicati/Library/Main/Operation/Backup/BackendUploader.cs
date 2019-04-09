@@ -39,9 +39,15 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         public Task<long> LastWriteSizeAsync { get { return m_tcs.Task; } }
         private readonly TaskCompletionSource<long> m_tcs = new TaskCompletionSource<long>();
+        
         public void SetFlushed(long size)
         {
             m_tcs.TrySetResult(size);
+        }
+        
+        public void TrySetCanceled()
+        {
+            m_tcs.TrySetCanceled();
         }
     }
 
@@ -166,21 +172,20 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         else if (req is FlushRequest flush)
                         {
-                            try
+                            while (workers.Any())
                             {
-                                while (workers.Any())
+                                Task finishedTask = await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
+                                if (finishedTask.IsFaulted)
                                 {
-                                    var finishedTask = await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
-                                    if (finishedTask.IsFaulted)
-                                        ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
-                                    workers.RemoveAll(w => w.Task == finishedTask);
+                                    flush.TrySetCanceled();
+                                    ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
                                 }
-                                uploadsInProgress = 0;
+
+                                workers.RemoveAll(w => w.Task == finishedTask);
                             }
-                            finally
-                            {
-                                flush.SetFlushed(lastSize);
-                            }
+                            
+                            flush.SetFlushed(lastSize);
+                            uploadsInProgress = 0;
                             break;
                         }
 
