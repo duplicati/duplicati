@@ -186,7 +186,7 @@ namespace Duplicati.Library.Main.Strings
         public static string FullremoteverificationShort { get { return LC.L(@"Activates in-depth verification of files"); } }
         public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some files are selected for verification on the remote backend. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash, If the option --{0} is set, no remote files are verified", optionname); }
         public static string FilereadbuffersizeShort { get { return LC.L(@"Size of the file read buffer"); } }
-        public static string FilereadbuffersizeLong { get { return LC.L(@"Use this size to control how many bytes a read from a file before processing"); } }
+        public static string FilereadbuffersizeLong { get { return LC.L(@"Use this size to control how many bytes are read from a file before processing"); } }
         public static string AllowpassphrasechangeShort { get { return LC.L(@"Allow the passphrase to change"); } }
         public static string AllowpassphrasechangeLong { get { return LC.L(@"Use this option to allow the passphrase to change, note that this option is not permitted for a backup or repair operation"); } }
         public static string ListsetsonlyShort { get { return LC.L(@"List only filesets"); } }
