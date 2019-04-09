@@ -940,7 +940,7 @@ msgstr ""
 "Geben Sie manuell die Aufbewahrungregeln an. Platzhalter sind D/W/Y für "
 "Tag/Woche/Jahr und U für unbegrenzt.  Die syntax lautet 7D:1D,4W:1W,36M:1M. "
 "Dieses Beispiel erhält eine Sicherung für jeden der nächsten 7 Tage, jede "
-"der nächsten 4 Wochen und jeden der nächsten 12 Monate. Die Eingabe kann "
+"der nächsten 4 Wochen und jeden der nächsten 36 Monate. Die Eingabe kann "
 "auch als 1W:1D,1M:1W,3Y:1M erfolgen."
 
 #: templates/backends/azure.html:12
