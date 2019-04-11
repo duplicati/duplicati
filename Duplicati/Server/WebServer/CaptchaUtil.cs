@@ -44,6 +44,17 @@ namespace Duplicati.Server.WebServer
                 .ToArray();
 
         /// <summary>
+        /// Approximate the size in pixels of text drawn at the given fontsize
+        /// </summary>
+        private static int ApproxTextWidth(string text, FontFamily fontfamily, int fontsize)
+        {
+            using (var font = new Font(fontfamily, fontsize, GraphicsUnit.Pixel))
+            using (var graphics = Graphics.FromImage(new Bitmap(1, 1))) {
+                return (int) graphics.MeasureString(text, font).Width;
+            }
+        }
+
+        /// <summary>
         /// Creates a random answer.
         /// </summary>
         /// <returns>The random answer.</returns>
@@ -67,20 +78,23 @@ namespace Duplicati.Server.WebServer
         /// <returns>The captcha image.</returns>
         /// <param name="answer">The captcha solution string.</param>
         /// <param name="size">The size of the image, omit to get a size based on the string.</param>
-        /// <param name="fontsize">The size of the font used to create the captcha.</param>
-        public static Bitmap CreateCaptcha(string answer, Size size = default(Size), int fontsize = 24)
+        /// <param name="fontsize">The size of the font used to create the captcha, in pixels.</param>
+        public static Bitmap CreateCaptcha(string answer, Size size = default(Size), int fontsize = 40)
         {
+            var fontfamily = FontFamily.GenericSansSerif;
+            var text_width = ApproxTextWidth(answer, fontfamily, fontsize);
             if (size.Width == 0 || size.Height == 0)
-                size = new Size((answer.Length + 1) * fontsize, fontsize * 2);
+                size = new Size((int) (text_width * 1.2), (int) (fontsize * 1.2));
 
             var bmp = new Bitmap(size.Width, size.Height);
             var rnd = new Random();
-            var stray_x = fontsize / 4;
+            var stray_x = fontsize / 2;
             var stray_y = size.Height / 4;
-
+            var ans_stray_x = fontsize / 3;
+            var ans_stray_y = size.Height / 6;
             using (var graphics = Graphics.FromImage(bmp))
-            using (var font1 = new Font("Ariel", fontsize))
-            using (var font2 = new Font("Ariel", fontsize))
+            using (var font1 = new Font(fontfamily, fontsize, GraphicsUnit.Pixel))
+            using (var font2 = new Font(fontfamily, fontsize, GraphicsUnit.Pixel))
             using (var font3 = new HatchBrush(HatchStyle.Shingle, Color.GhostWhite, Color.DarkBlue))
             {
                 graphics.Clear(Color.White);
@@ -106,7 +120,7 @@ namespace Duplicati.Server.WebServer
                         graphics.DrawLine(pen, rnd.Next(0, stray_x), i + rnd.Next(-stray_y, stray_y), size.Width - rnd.Next(0, stray_x), i + rnd.Next(-stray_y, stray_y));
 
                 // Draw the actual answer
-                graphics.DrawString(answer, font1, font3, ((size.Width - (fontsize * answer.Length)) / 2) + rnd.Next(-stray_x, stray_x), ((size.Height - (fontsize * 2)) / 2) + rnd.Next(-stray_y, stray_y));
+                graphics.DrawString(answer, font1, font3, ((size.Width - text_width) / 2) + rnd.Next(-ans_stray_x, ans_stray_x), ((size.Height - fontsize) / 2) + rnd.Next(-ans_stray_y, ans_stray_y));
 
                 return bmp;
             }
