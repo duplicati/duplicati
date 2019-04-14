@@ -22,7 +22,7 @@ using System.Linq;
 
 namespace Duplicati.CommandLine.ConfigurationImporter
 {
-    public class ConfigurationImporter
+    public static class ConfigurationImporter
     {
         private static readonly string usageString = $"Usage: {nameof(ConfigurationImporter)}.exe <configuration-file> --import-metadata=(true | false) --server-datafolder=<folder containing Duplicati-server.sqlite>";
 
