@@ -374,8 +374,7 @@ namespace Duplicati.Library.Backend
         {
             ulong available;
             ulong total;
-            ulong free;
-            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out free))
+            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out _))
             {
                 return new QuotaInfo((long)total, (long)available);
             }
