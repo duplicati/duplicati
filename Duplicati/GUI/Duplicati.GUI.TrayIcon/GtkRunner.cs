@@ -354,7 +354,7 @@ namespace Duplicati.GUI.TrayIcon
                     break;
             }
 
-            var notification = new Notifications.Notification(title, message, Stock.Info);
+            var notification = new Notifications.Notification(title, message, icon);
             notification.Show();
         }
 
