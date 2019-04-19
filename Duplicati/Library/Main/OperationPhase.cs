@@ -46,6 +46,7 @@ namespace Duplicati.Library.Main
         Restore_Complete,
 
         Recreate_Running,
+        Vacuum_Running,
         Verify_Running,
 
         BugReport_Running,
