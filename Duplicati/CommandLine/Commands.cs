@@ -69,14 +69,13 @@ namespace Duplicati.CommandLine
 
                 while (true)
                 {
-                    Duplicati.Library.Main.OperationPhase phase;
                     float progress;
                     long filesprocessed;
                     long filesizeprocessed;
                     long filecount;
                     long filesize;
                     bool counting;
-                    m_output.OperationProgress.UpdateOverall(out phase, out progress, out filesprocessed, out filesizeprocessed, out filecount, out filesize, out counting);
+                    m_output.OperationProgress.UpdateOverall(out _, out progress, out filesprocessed, out filesizeprocessed, out filecount, out filesize, out counting);
 
                     var files = Math.Max(0, filecount - filesprocessed);
                     var size = Math.Max(0, filesize - filesizeprocessed);

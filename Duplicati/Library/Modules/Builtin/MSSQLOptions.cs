@@ -195,10 +195,7 @@ namespace Duplicati.Library.Modules.Builtin
             foreach (var dbForBackup in dbsForBackup)
                 foreach (var pathForBackup in dbForBackup.DataPaths)
                 {
-                    bool bResult;
-                    Utility.IFilter matchFilter;
-
-                    if (!filterhandler.Matches(pathForBackup, out bResult, out matchFilter))
+                    if (!filterhandler.Matches(pathForBackup, out _, out _))
                     {
                         Logging.Log.WriteInformationMessage(LOGTAG, "IncludeDatabase", "For DB {0} - adding {1}", dbForBackup.Name, pathForBackup);
                         pathsForBackup.Add(pathForBackup);

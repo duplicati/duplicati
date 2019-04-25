@@ -483,8 +483,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">The path to evaluate</param>
         public static bool Matches(IFilter filter, string path)
         {
-            IFilter match;
-            return Matches(filter, path, out match);
+            return Matches(filter, path, out _);
         }
 
         /// <summary>
