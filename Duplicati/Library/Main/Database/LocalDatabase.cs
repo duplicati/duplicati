@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.IO;
@@ -1358,7 +1359,20 @@ ORDER BY
             if (ShouldCloseConnection && m_connection != null)
             {
                 if (m_connection.State == System.Data.ConnectionState.Open)
+                {
+                    using (IDbTransaction transaction = m_connection.BeginTransaction())
+                    {
+                        using (IDbCommand command = m_connection.CreateCommand(transaction))
+                        {
+                            // SQLite recommends that PRAGMA optimize is run just before closing each database connection.
+                            command.ExecuteNonQuery("PRAGMA optimize");
+                            transaction.Commit();
+                        }
+                    }
+
                     m_connection.Close();
+                }
+
                 m_connection.Dispose();
             }
 
