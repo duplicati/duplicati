@@ -232,17 +232,6 @@ namespace Duplicati.GUI.TrayIcon
             }
         }    
 
-        public static Gtk.Image ImageToGtk(System.Drawing.Image image)
-        {
-            using (var stream = new System.IO.MemoryStream()) 
-            {
-                image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                stream.Position = 0;
-                Gtk.Image img = new Gtk.Image(stream);
-                return img;
-            }
-        }
-
         protected static string GetTrayIconFilename(TrayIcons icon)
         {
             switch (icon)
