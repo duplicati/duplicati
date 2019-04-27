@@ -155,11 +155,6 @@ namespace Duplicati.GUI.TrayIcon
                 ((ImageMenuItem) m_item).Image = GetIcon(icon);
             }
             
-            public void SetEnabled(bool isEnabled)
-            {
-                m_item.Sensitive = isEnabled;
-            }
-
             public void SetDefault(bool isDefault)
             {
                 // Do nothing.  Implementation needed for TrayIconBase interface.
