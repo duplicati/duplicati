@@ -27,10 +27,6 @@ namespace Duplicati.GUI.TrayIcon
             public string Endpoint;
             public Dictionary<string, string> Query;
 
-            public BackgroundRequest() 
-            {
-            }
-
             public BackgroundRequest(string method, string endpoint, Dictionary<string, string> query)
             {
                 this.Method = method;
