@@ -13,23 +13,15 @@
   
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="AlphaFS" Version="2.1.3" />
-    <PackageReference Include="AlphaVSS" Version="1.4.0" />
-    <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.5.0" />
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
 	<ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Reference Include="UnixSupport">
-      <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
-    </Reference>
   </ItemGroup>
   
   <ItemGroup>
@@ -44,6 +36,4 @@
     </Content>
   </ItemGroup>
   
-  <Import Project="..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets" Condition="Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" />
-
 </Project>

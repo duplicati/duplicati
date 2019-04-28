@@ -18,6 +18,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
   </ItemGroup>

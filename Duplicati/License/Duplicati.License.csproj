@@ -358,5 +358,10 @@
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
+  </ItemGroup>
 
 </Project>
