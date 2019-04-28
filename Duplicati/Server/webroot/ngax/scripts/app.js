@@ -11,80 +11,80 @@ var backupApp = angular.module(
 );
 
 backupApp.constant('appConfig', {
-    login_url: '/login.html'
+    login_url: '/login.html?v=2.0.0.7'
 });
 
 backupApp.config(['$routeProvider',
     function($routeProvider) {
         $routeProvider.
             when('/home', {
-                templateUrl: 'templates/home.html'
+                templateUrl: 'templates/home.html?v=2.0.0.7'
             }).
             when('/add', {
-                templateUrl: 'templates/addoredit.html'
+                templateUrl: 'templates/addoredit.html?v=2.0.0.7'
             }).
             when('/add-import', {
-                templateUrl: 'templates/addoredit.html'
+                templateUrl: 'templates/addoredit.html?v=2.0.0.7'
             }).
             when('/restorestart', {
-                templateUrl: 'templates/restorewizard.html'
+                templateUrl: 'templates/restorewizard.html?v=2.0.0.7'
             }).
             when('/addstart', {
-                templateUrl: 'templates/addwizard.html'
+                templateUrl: 'templates/addwizard.html?v=2.0.0.7'
             }).
             when('/edit/:backupid', {
-                templateUrl: 'templates/addoredit.html'
+                templateUrl: 'templates/addoredit.html?v=2.0.0.7'
             }).
             when('/restoredirect', {
-                templateUrl: 'templates/restoredirect.html'
+                templateUrl: 'templates/restoredirect.html?v=2.0.0.7'
             }).
             when('/restoredirect-import', {
-                templateUrl: 'templates/restoredirect.html'
+                templateUrl: 'templates/restoredirect.html?v=2.0.0.7'
             }).
             when('/restore/:backupid', {
-                templateUrl: 'templates/restore.html'
+                templateUrl: 'templates/restore.html?v=2.0.0.7'
             }).
             when('/settings', {
-                templateUrl: 'templates/settings.html'
+                templateUrl: 'templates/settings.html?v=2.0.0.7'
             }).
             when('/about', {
-                templateUrl: 'templates/about.html'
+                templateUrl: 'templates/about.html?v=2.0.0.7'
             }).
             when('/delete/:backupid', {
-                templateUrl: 'templates/delete.html'
+                templateUrl: 'templates/delete.html?v=2.0.0.7'
             }).
             when('/log/:backupid', {
-                templateUrl: 'templates/log.html'
+                templateUrl: 'templates/backuplog.html?v=2.0.0.7'
             }).
             when('/log', {
-                templateUrl: 'templates/log.html'
+                templateUrl: 'templates/log.html?v=2.0.0.7'
             }).
             when('/updatechangelog', {
-                templateUrl: 'templates/updatechangelog.html'
+                templateUrl: 'templates/updatechangelog.html?v=2.0.0.7'
             }).
             when('/export/:backupid', {
-                templateUrl: 'templates/export.html'
+                templateUrl: 'templates/export.html?v=2.0.0.7'
             }).
             when('/import', {
-                templateUrl: 'templates/import.html'
+                templateUrl: 'templates/import.html?v=2.0.0.7'
             }).
             when('/restore-import', {
-                templateUrl: 'templates/import.html'
+                templateUrl: 'templates/import.html?v=2.0.0.7'
             }).
             when('/localdb/:backupid', {
-                templateUrl: 'templates/localdatabase.html'
+                templateUrl: 'templates/localdatabase.html?v=2.0.0.7'
             }).
             when('/commandline', {
-                templateUrl: 'templates/commandline.html'
+                templateUrl: 'templates/commandline.html?v=2.0.0.7'
             }).
             when('/commandline/:backupid', {
-                templateUrl: 'templates/commandline.html'
+                templateUrl: 'templates/commandline.html?v=2.0.0.7'
             }).
             when('/commandline/view/:viewid', {
-                templateUrl: 'templates/commandline.html'
+                templateUrl: 'templates/commandline.html?v=2.0.0.7'
             }).
             otherwise({
-                templateUrl: 'templates/home.html'
+                templateUrl: 'templates/home.html?v=2.0.0.7'
                 //redirectTo: '/home'
         });
 }]);

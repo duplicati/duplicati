@@ -95,6 +95,8 @@ namespace Duplicati.Library.Main.Strings
         public static string AsynchronousuploadfolderShort { get { return LC.L(@"The path where ready volumes are placed until uploaded"); } }
         public static string AsynchronousuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, Duplicati will create volumes that can be uploaded. To prevent Duplicati from generating too many volumes, this option limits the number of pending uploads. Set to zero to disable the limit"); } }
         public static string AsynchronousuploadlimitShort { get { return LC.L(@"The number of volumes to create ahead of time"); } }
+        public static string AsynchronousconcurrentuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, the maximum number of concurrent uploads allowed. Set to zero to disable the limit."); } }
+        public static string AsynchronousconcurrentuploadlimitShort { get { return LC.L(@"The number of concurrent uploads allowed"); } }
         public static string DebugoutputLong { get { return LC.L(@"Activating this option will make some error messages more verbose, which may help you track down a particular issue"); } }
         public static string DebugoutputShort { get { return LC.L(@"Enables debugging output"); } }
         public static string LogfileShort { get { return LC.L(@"Log internal information to a file"); } }
@@ -123,7 +125,7 @@ namespace Duplicati.Library.Main.Strings
         public static string UploadUnchangedBackupsShort { get { return LC.L(@"Upload empty backup files"); } }
         public static string QuotasizeLong { get { return LC.L(@"This value can be used to set a known upper limit on the amount of space a backend has. If the backend reports the size itself, this value is ignored"); } }
         public static string QuotasizeShort { get { return LC.L(@"A reported maximum storage"); } }
-        public static string QuotaWarningThresholdLong { get { return LC.L(@"Sets a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less that this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored"); } }
+        public static string QuotaWarningThresholdLong { get { return LC.L(@"Sets a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less than this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored"); } }
         public static string QuotaWarningThresholdShort { get { return LC.L(@"Threshold for warning about low quota"); } }
         public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
         public static string SymlinkpolicyLong(string store, string ignore, string follow) { return LC.L(@"Use this option to handle symlinks differently. The ""{0}"" option will simply record a symlink with its name and destination, and a restore will recreate the symlink as a link. Use the option ""{1}"" to ignore all symlinks and not store any information about them. Previous versions of Duplicati used the setting ""{2}"", which will cause symlinked files to be included and restore as normal files.", store, ignore, follow); }
@@ -151,8 +153,8 @@ namespace Duplicati.Library.Main.Strings
         public static string FilehashlookupsizeShort { get { return LC.L(@"Memory used by the file hash"); } }
         public static string DisablefilepathcacheLong { get { return LC.L(@"This option can be used to reduce the memory footprint by not keeping paths and modification timestamps in memory"); } }
         public static string DisablefilepathcacheShort { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
-		public static string UseblockcacheShort { get { return LC.L(@"This option can be used to increase speed in exchange for extra memory use."); } }
-		public static string UseblockcacheLong { get { return LC.L(@"Store an in-memory block cache"); } }
+	      public static string UseblockcacheShort { get { return LC.L(@"This option can be used to increase speed in exchange for extra memory use."); } }
+	      public static string UseblockcacheLong { get { return LC.L(@"Store an in-memory block cache"); } }
         public static string MetadatahashlookupsizeLong { get { return LC.L(@"A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log."); } }
         public static string MetadatahashlookupsizeShort { get { return LC.L(@"Memory used by the metadata hash"); } }
         public static string NobackendverificationLong { get { return LC.L(@"If this flag is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable."); } }
@@ -195,11 +197,13 @@ namespace Duplicati.Library.Main.Strings
         public static string UploadverificationfileShort { get { return LC.L(@"Determine if verification files are uploaded"); } }
         public static string UploadverificationfileLong { get { return LC.L(@"Use this option to upload a verification file after changing the remote storage. The file is not encrypted and contains the size and SHA256 hashes of all the remote files and can be used to verify the integrity of the files."); } }
         public static string BackendtestsamplesShort { get { return LC.L(@"The number of samples to test after a backup"); } }
-        public static string BackendtestsamplesLong(string optionname) { return LC.L(@"After a backup is completed, some files are selected for verification on the remote backend. Use this option to change how many. If this value is set to 0 or the option --{0} is set, no remote files are verified", optionname); }
+        public static string BackendtestsamplesLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to change how many. If the backup-test-percentage option is also provided, the number of samples tested is the maximum implied by the two options. If this value is set to 0 or the option --{0} is set, no remote files are verified", optionname); }
+        public static string BackendtestpercentageShort { get { return LC.L(@"The percentage of samples to test after a backup"); } }
+        public static string BackendtestpercentageLong { get { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to specify the percentage (between 0 and 100) of files to test. If the backup-test-samples option is also provided, the number of samples tested is the maximum implied by the two options. If the no-backend-verification option is provided, no remote files are verified."); } }
         public static string FullremoteverificationShort { get { return LC.L(@"Activates in-depth verification of files"); } }
-        public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some files are selected for verification on the remote backend. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash, If the option --{0} is set, no remote files are verified. This option is automatically set when then verification is performed directly.", optionname); }
+        public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash, If the option --{0} is set, no remote files are verified. This option is automatically set when then verification is performed directly.", optionname); }
         public static string FilereadbuffersizeShort { get { return LC.L(@"Size of the file read buffer"); } }
-        public static string FilereadbuffersizeLong { get { return LC.L(@"Use this size to control how many bytes a read from a file before processing"); } }
+        public static string FilereadbuffersizeLong { get { return LC.L(@"Use this size to control how many bytes are read from a file before processing"); } }
         public static string AllowpassphrasechangeShort { get { return LC.L(@"Allow the passphrase to change"); } }
         public static string AllowpassphrasechangeLong { get { return LC.L(@"Use this option to allow the passphrase to change, note that this option is not permitted for a backup or repair operation"); } }
         public static string ListsetsonlyShort { get { return LC.L(@"List only filesets"); } }
@@ -259,7 +263,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ConsolelogfiltersShort { get { return LC.L(@"Applies filters to the console log data"); } }
         public static string ConsolelogfiltersLong(string delimiter) { return LogfilelogfiltersLong(delimiter); }
 
-        public static string UsebackgroundiopriorityShort { get { return LC.L("Sets the processe to use low IO priority"); } }
+        public static string UsebackgroundiopriorityShort { get { return LC.L("Sets the process to use low IO priority"); } }
         public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructions the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time"); } }
 
         public static string ExcludeemptyfoldersShort { get { return "Excludes empty folders"; } }

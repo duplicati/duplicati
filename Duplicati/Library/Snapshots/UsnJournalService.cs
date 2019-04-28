@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Snapshots
@@ -124,7 +125,7 @@ namespace Duplicati.Library.Snapshots
                             }
                             else
                             {
-                                changedFolders.Add(Utility.Utility.AppendDirSeparator(entry.Item1));
+                                changedFolders.Add(Util.AppendDirSeparator(entry.Item1));
                             }
                         }
                     }
@@ -160,7 +161,7 @@ namespace Duplicati.Library.Snapshots
                     // use original sources
                     foreach (var path in volumeSources)
                     {
-                        var isFolder = path.EndsWith(Utility.Utility.DirectorySeparatorString, StringComparison.Ordinal);
+                        var isFolder = path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal);
                         if (isFolder)
                         {
                             volumeData.Folders.Add(path);

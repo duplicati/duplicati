@@ -1,3 +1,4 @@
+dist: bionic
 language: csharp
 solution: Duplicati.sln
 dotnet: 2.0.0
@@ -58,6 +59,8 @@ jobs:
     - env: CATEGORY=Utility
     - env: CATEGORY=UriUtility
     - env: CATEGORY=WebApi
+    - env: CATEGORY=IO
+    - env: CATEGORY=ImportExport
 
     - env: CATEGORY=GUI
       addons:

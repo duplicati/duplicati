@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Volumes
         {
         }
 
-        public static string GenerateGuid(Options options)
+        public static string GenerateGuid()
         {
             var s = Guid.NewGuid().ToString("N");
 
@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Volumes
 
         public void ResetRemoteFilename(Options options, DateTime timestamp)
         {
-            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
         }
 
         protected VolumeWriterBase(Options options, DateTime timestamp)
@@ -51,9 +51,6 @@ namespace Duplicati.Library.Main.Volumes
                 m_localfile = Library.Utility.TempFile.CreateInFolder(options.AsynchronousUploadFolder, true);
             else
                 m_localfile = new Library.Utility.TempFile();
-
-            // TODO(danstahr): This is a hack! Figure out why the file is being disposed of prematurely.
-            m_localfile.Protected = true;
 
             ResetRemoteFilename(options, timestamp);
 

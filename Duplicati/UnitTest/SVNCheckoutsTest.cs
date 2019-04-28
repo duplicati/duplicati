@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -27,6 +27,7 @@ using System.Text;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using System.Linq;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.UnitTest
 {
@@ -101,7 +102,7 @@ namespace Duplicati.UnitTest
                 //Filter empty entries, commonly occuring with copy/paste and newlines
                 folders = (from x in folders
                            where !string.IsNullOrWhiteSpace(x)
-                           select Library.Utility.Utility.ExpandEnvironmentVariables(x)).ToArray();
+                           select Environment.ExpandEnvironmentVariables(x)).ToArray();
 
                 foreach (var f in folders)
                     foreach (var n in f.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
@@ -275,7 +276,7 @@ namespace Duplicati.UnitTest
 
                                             //Remove all folders from list
                                             for (int j = 0; j < sourcefiles.Count; j++)
-                                                if (sourcefiles[j].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                                                if (sourcefiles[j].EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
                                                 {
                                                     sourcefiles.RemoveAt(j);
                                                     j--;
@@ -305,27 +306,27 @@ namespace Duplicati.UnitTest
                                             if (!f.StartsWith(usingFHWithRestore ? fhtempsource : folders[i], Utility.ClientFilenameStringComparison))
                                                 throw new Exception(string.Format("Unexpected file found: {0}, path is not a subfolder for {1}", f, folders[i]));
 
-                                            f = f.Substring(Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]).Length);
+                                            f = f.Substring(Util.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]).Length);
 
                                             do
                                             {
                                                 f = System.IO.Path.GetDirectoryName(f);
-                                                partialFolders[Utility.AppendDirSeparator(f)] = null;
+                                                partialFolders[Util.AppendDirSeparator(f)] = null;
                                             } while (f.IndexOf(System.IO.Path.DirectorySeparatorChar) > 0);
                                         }
 
                                         if (partialFolders.ContainsKey(""))
                                             partialFolders.Remove("");
-                                        if (partialFolders.ContainsKey(System.IO.Path.DirectorySeparatorChar.ToString()))
-                                            partialFolders.Remove(System.IO.Path.DirectorySeparatorChar.ToString());
+                                        if (partialFolders.ContainsKey(Util.DirectorySeparatorString))
+                                            partialFolders.Remove(Util.DirectorySeparatorString);
 
                                         List<string> filterlist;
 
-                                        var tfe = Utility.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]);
+                                        var tfe = Util.AppendDirSeparator(usingFHWithRestore ? fhtempsource : folders[i]);
 
                                         filterlist = (from n in partialFolders.Keys
-                                                      where !string.IsNullOrWhiteSpace(n) && n != System.IO.Path.DirectorySeparatorChar.ToString()
-                                                      select Utility.AppendDirSeparator(System.IO.Path.Combine(tfe, n)))
+                                                      where !string.IsNullOrWhiteSpace(n) && n != Util.DirectorySeparatorString
+                                                      select Util.AppendDirSeparator(System.IO.Path.Combine(tfe, n)))
                                                       .Union(testfiles) //Add files with full path
                                                       .Union(new string[] { tfe }) //Ensure root folder is included
                                                       .Distinct()
@@ -367,7 +368,7 @@ namespace Duplicati.UnitTest
                             continue;
                         if (s == logfilename)
                             continue;                        
-                        if (s.StartsWith(Utility.AppendDirSeparator(tf), StringComparison.Ordinal))
+                        if (s.StartsWith(Util.AppendDirSeparator(tf), StringComparison.Ordinal))
                             continue;
 
                         Log.WriteWarningMessage(LOGTAG, "LeftOverTempFile", null, "Found left-over temp file: {0}", s.Substring(tempdir.Length));
@@ -381,7 +382,7 @@ namespace Duplicati.UnitTest
                     }
 
                     foreach (string s in Utility.EnumerateFolders(tempdir))
-                        if (!s.StartsWith(Utility.AppendDirSeparator(tf), StringComparison.Ordinal) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tf) && Utility.AppendDirSeparator(s) != Utility.AppendDirSeparator(tempdir))
+                        if (!s.StartsWith(Util.AppendDirSeparator(tf), StringComparison.Ordinal) && Util.AppendDirSeparator(s) != Util.AppendDirSeparator(tf) && Util.AppendDirSeparator(s) != Util.AppendDirSeparator(tempdir))
                         {
                             Log.WriteWarningMessage(LOGTAG, "LeftOverTempFolder", null, "Found left-over temp folder: {0}", s.Substring(tempdir.Length));
                             BasicSetupHelper.ProgressWriteLine("Found left-over temp folder: {0}", s.Substring(tempdir.Length));

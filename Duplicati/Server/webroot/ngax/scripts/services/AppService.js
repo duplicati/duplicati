@@ -35,19 +35,19 @@ backupApp.service('AppService', function($http, $cookies, $q, $cookies, DialogSe
 
         if (($cookies.get('ui-locale') || '').trim().length > 0)
             options.headers['X-UI-Language'] = $cookies.get('ui-locale');
-  
+
         if (self.proxy_config != null)
             self.proxy_config(method, options, data, targeturl);
 
         return options;
     };
-        
-    var installResponseHook = function(promise) {        
+
+    var installResponseHook = function(promise) {
         var deferred = $q.defer();
-        
+
         promise.then(function successCallback(response) {
             deferred.resolve(response);
-        }, function errorCallback(response) {                            
+        }, function errorCallback(response) {
             if (response.status == 401){
                 DialogService.dismissAll();
                 DialogService.accept('Not logged in', function () {
@@ -55,18 +55,18 @@ backupApp.service('AppService', function($http, $cookies, $q, $cookies, DialogSe
                 });
                 return;
             }
-            deferred.reject(response);    
+            deferred.reject(response);
         });
-        
+
         return deferred.promise;
     };
 
-    this.get = function(url, options) {        
+    this.get = function(url, options) {
         var rurl = this.apiurl + url;
-        
+
         return installResponseHook($http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', options, null, rurl)));
     };
-    
+
     this.patch = function(url, data, options) {
         var rurl = this.apiurl + url;
         return installResponseHook($http.patch(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PATCH', options, data, rurl)));
@@ -88,8 +88,9 @@ backupApp.service('AppService', function($http, $cookies, $q, $cookies, DialogSe
     };
 
 
-    this.get_export_url = function(backupid, passphrase) {
+    this.get_export_url = function(backupid, passphrase, exportPasswords) {
         var rurl = this.apiurl + '/backup/' + backupid + '/export?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
+        rurl += '&export-passwords=' + encodeURIComponent(exportPasswords);
         if ((passphrase || '').trim().length > 0)
             rurl += '&passphrase=' + encodeURIComponent(passphrase);
 

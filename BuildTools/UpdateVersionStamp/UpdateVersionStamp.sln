@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UpdateVersionStamp", "Updat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Common", "..\..\Duplicati\Library\Common\Duplicati.Library.Common.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +21,10 @@ Global
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = UpdateVersionStamp.csproj

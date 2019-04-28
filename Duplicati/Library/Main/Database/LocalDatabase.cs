@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -27,6 +29,9 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_insertlogCommand;
         private readonly System.Data.IDbCommand m_insertremotelogCommand;
         private readonly System.Data.IDbCommand m_insertIndexBlockLink;
+
+        private readonly System.Data.IDbCommand m_findpathprefixCommand;
+        private readonly System.Data.IDbCommand m_insertpathprefixCommand;
 
         protected BasicResults m_result;
 
@@ -106,6 +111,8 @@ namespace Duplicati.Library.Main.Database
             m_selectremotevolumeIdCommand = connection.CreateCommand();
             m_createremotevolumeCommand = connection.CreateCommand();
             m_insertIndexBlockLink = connection.CreateCommand();
+            m_findpathprefixCommand = connection.CreateCommand();
+            m_insertpathprefixCommand = connection.CreateCommand();
 
             m_insertlogCommand.CommandText = @"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (?, ?, ?, ?, ?)";
             m_insertlogCommand.AddParameters(5);
@@ -133,6 +140,12 @@ namespace Duplicati.Library.Main.Database
 
             m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
             m_insertIndexBlockLink.AddParameters(2);
+
+            m_findpathprefixCommand.CommandText = @"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" = ?";
+            m_findpathprefixCommand.AddParameter();
+
+            m_insertpathprefixCommand.CommandText = @"INSERT INTO ""PathPrefix"" (""Prefix"") VALUES (?); SELECT last_insert_rowid(); ";
+            m_insertpathprefixCommand.AddParameter();
         }
 
         internal void SetResult(BasicResults result)
@@ -418,7 +431,7 @@ namespace Duplicati.Library.Main.Database
                 bsIdsSubQuery = string.Format(@"SELECT ""ID"" FROM ""{0}"" ", blocksetidstable);
                 deletecmd.Parameters.Clear();
 
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""File"" WHERE ""BlocksetID"" IN ({0}) OR ""MetadataID"" IN ({0})", bsIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""FileLookup"" WHERE ""BlocksetID"" IN ({0}) OR ""MetadataID"" IN ({0})", bsIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN ({0})", bsIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
@@ -625,7 +638,7 @@ namespace Duplicati.Library.Main.Database
             {
                 get
                 {
-                    return m_reader.ConvertValueToInt64(1);;
+                    return m_reader.ConvertValueToInt64(1);
                 }
             }
 
@@ -799,7 +812,7 @@ ON
                     throw new Exception("Detected non-empty blocksets with no associated blocks!");
                 }
 
-                if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""File"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""ID"" FROM ""Blockset"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
+                if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""ID"" FROM ""Blockset"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
                     throw new Exception("Detected files associated with non-existing blocksets!");
 
                 if (verifyfilelists)
@@ -809,11 +822,17 @@ ON
                     {
                         var expandedCmd = string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS);
                         var expandedlist = cmd2.ExecuteScalarInt64(expandedCmd, 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, filesetid);
-                        //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""File"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+                        //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""FileLookup"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FileLookup"".""BlocksetID"" != ? AND ""FileLookup"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
                         var storedlist = cmd2.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?", 0, filesetid);
 
                         if (expandedlist != storedlist)
-                            throw new Exception(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetid, expandedlist, storedlist));
+                        {
+                            var filesetname = filesetid.ToString();
+                            var fileset = FilesetTimes.Zip(Enumerable.Range(0, FilesetTimes.Count()), (a, b) => new Tuple<long, long, DateTime>(b, a.Key, a.Value)).FirstOrDefault(x => x.Item2 == filesetid);
+                            if (fileset != null)
+                                filesetname = string.Format("version {0}: {1} (database id: {2})", fileset.Item1, fileset.Item3, fileset.Item2);
+                            throw new Interface.UserInformationException(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist), "FilesetDifferences");
+                        }
                     }
                 }
             }
@@ -1083,7 +1102,7 @@ ORDER BY
                     var metablocklisthash = rd.GetValue(7).ToString();
 
                     if (path == lastpath)
-                        Logging.Log.WriteWarningMessage(LOGTAG, "DuplicatePathFound", null, "Duplicate path detected: {0}!", path);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DuplicatePathFound", null, "Duplicate path detected: {0}", path);
 
                     lastpath = path;
 
@@ -1160,6 +1179,8 @@ ORDER BY
                 {
                     using(var cmd = m_connection.CreateCommand())
                     {
+                        // TODO: Optimize this to not rely on the "File" view, and not instantiate the paths in full
+
                         cmd.Transaction = transaction;
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", Tablename));
                         using(var tr = new TemporaryTransactionWrapper(m_connection, transaction))
@@ -1301,7 +1322,6 @@ ORDER BY
                         {
                             yield return new Tuple<string, byte[], int>(curHash, buffer, index);
                             buffer = new byte[blocksize];
-                            curHash = null;
                             index = 0;
                         }
 
@@ -1339,7 +1359,20 @@ ORDER BY
             if (ShouldCloseConnection && m_connection != null)
             {
                 if (m_connection.State == System.Data.ConnectionState.Open)
+                {
+                    using (IDbTransaction transaction = m_connection.BeginTransaction())
+                    {
+                        using (IDbCommand command = m_connection.CreateCommand(transaction))
+                        {
+                            // SQLite recommends that PRAGMA optimize is run just before closing each database connection.
+                            command.ExecuteNonQuery("PRAGMA optimize");
+                            transaction.Commit();
+                        }
+                    }
+
                     m_connection.Close();
+                }
+
                 m_connection.Dispose();
             }
 
@@ -1398,24 +1431,79 @@ ORDER BY
                 if (m_result.EndTime.Ticks == 0)
                     m_result.EndTime = DateTime.UtcNow;
 
-                LogMessage("Result", 
-                    Library.Utility.Utility.PrintSerializeObject(
-                        m_result, 
-                        (StringBuilder)null, 
-                        (prop, item) => 
-                            !typeof(IBackendProgressUpdater).IsAssignableFrom(prop.PropertyType) && 
-                            !typeof(IMessageSink).IsAssignableFrom(prop.PropertyType) && 
-                           !(prop.Name == "MainOperation" && item is BackendWriter) &&
-                           !(prop.Name == "EndTime" && item is BackendWriter) &&
-                           !(prop.Name == "Duration" && item is BackendWriter) &&
-                           !(prop.Name == "BeginTime" && item is BackendWriter), 
-                        recurseobjects: true, 
-                        collectionlimit: 5
-                    ).ToString(),
+                var serializer = new JsonFormatSerializer();
+                LogMessage("Result",
+                    serializer.SerializeResults(m_result),
                     null,
                     null
                 );
             }
         }
+
+        /// <summary>
+        /// The current index into the path prefix buffer
+        /// </summary>
+        private int m_pathPrefixIndex = 0;
+        /// <summary>
+        /// The path prefix lookup list
+        /// </summary>
+        private readonly KeyValuePair<string, long>[] m_pathPrefixLookup = new KeyValuePair<string, long>[5];
+
+        /// <summary>
+        /// Gets the path prefix ID, optionally creating it in the process.
+        /// </summary>
+        /// <returns>The path prefix ID.</returns>
+        /// <param name="prefix">The path to get the prefix for.</param>
+        /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
+        public long GetOrCreatePathPrefix(string prefix, System.Data.IDbTransaction transaction)
+        {
+            // Ring-buffer style lookup
+            for (var i = 0; i < m_pathPrefixLookup.Length; i++)
+            {
+                var ix = (i + m_pathPrefixIndex) % m_pathPrefixLookup.Length;
+                if (string.Equals(m_pathPrefixLookup[ix].Key, prefix, StringComparison.Ordinal))
+                    return m_pathPrefixLookup[ix].Value;
+            }
+
+            m_findpathprefixCommand.Transaction = transaction;
+            m_findpathprefixCommand.SetParameterValue(0, prefix);
+            var id = m_findpathprefixCommand.ExecuteScalarInt64();
+            if (id < 0)
+            {
+                m_insertpathprefixCommand.Transaction = transaction;
+                m_insertpathprefixCommand.SetParameterValue(0, prefix);
+                id = m_insertpathprefixCommand.ExecuteScalarInt64();
+            }
+
+            m_pathPrefixIndex = (m_pathPrefixIndex + 1) % m_pathPrefixLookup.Length;
+            m_pathPrefixLookup[m_pathPrefixIndex] = new KeyValuePair<string, long>(prefix, id);
+
+            return id;
+        }
+
+        /// <summary>
+        /// The path separators on this system
+        /// </summary>
+        private static readonly char[] _pathseparators = new char[] {
+            System.IO.Path.DirectorySeparatorChar,
+            System.IO.Path.AltDirectorySeparatorChar,
+        };
+
+        /// <summary>
+        /// Helper method that splits a path on the last path separator
+        /// </summary>
+        /// <returns>The prefix and name.</returns>
+        /// <param name="path">The path to split.</param>
+        public static KeyValuePair<string, string> SplitIntoPrefixAndName(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentException($"Invalid path: {path}", nameof(path));
+
+            int nLast = path.TrimEnd(_pathseparators).LastIndexOfAny(_pathseparators);
+            if (nLast >= 0)
+                return new KeyValuePair<string, string>(path.Substring(0, nLast + 1), path.Substring(nLast + 1));
+
+            return new KeyValuePair<string, string>(string.Empty, path);
+        }   
     }
 }

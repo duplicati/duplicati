@@ -14,11 +14,13 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -40,9 +42,9 @@ namespace Duplicati.UnitTest
         }
 
         #region IStreamingBackend implementation
-        public void Put(string remotename, Stream stream)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            m_backend.Put(remotename, stream);
+            return m_backend.PutAsync(remotename, stream, cancelToken);
         }
         public void Get(string remotename, Stream stream)
         {
@@ -56,11 +58,11 @@ namespace Duplicati.UnitTest
             return
                 from n in m_backend.List()
                 where !n.IsFolder
-                select new Library.Interface.FileEntry(n.Name);
+                select new FileEntry(n.Name);
         }
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            m_backend.Put(remotename, filename);
+            return m_backend.PutAsync(remotename, filename, cancelToken);
         }
         public void Get(string remotename, string filename)
         {

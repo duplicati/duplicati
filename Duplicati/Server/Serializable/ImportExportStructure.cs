@@ -15,19 +15,16 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
 using System.Collections.Generic;
 
 namespace Duplicati.Server.Serializable
 {
-    internal class ImportExportStructure
+    public class ImportExportStructure
     {
         public string CreatedByVersion { get; set; }
         public Duplicati.Server.Database.Schedule Schedule { get; set; }
         public Duplicati.Server.Database.Backup Backup { get; set; }
         public Dictionary<string, string> DisplayNames { get; set; }
     }
-
-
 }
 

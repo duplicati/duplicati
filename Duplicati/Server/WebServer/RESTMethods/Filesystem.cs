@@ -19,6 +19,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -55,7 +57,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 if (ix > 0)
                 {
                     var tk = path.Substring(0, ix + 1);
-                    var node = SpecialFolders.Nodes.Where(x => x.id.Equals(tk, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    var node = SpecialFolders.Nodes.FirstOrDefault(x => x.id.Equals(tk, StringComparison.OrdinalIgnoreCase));
                     if (node != null)
                     {
                         specialpath = node.resolvedpath;
@@ -66,7 +68,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             path = SpecialFolders.ExpandEnvironmentVariables(path);
 
-            if (Duplicati.Library.Utility.Utility.IsClientLinux && !path.StartsWith("/", StringComparison.Ordinal))
+            if (Platform.IsClientPosix && !path.StartsWith("/", StringComparison.Ordinal))
             {
                 info.ReportClientError("The path parameter must start with a forward-slash", System.Net.HttpStatusCode.BadRequest);
                 return;
@@ -101,11 +103,11 @@ namespace Duplicati.Server.WebServer.RESTMethods
             try
             {
                 if (path != "" && path != "/")
-                    path = Duplicati.Library.Utility.Utility.AppendDirSeparator(path);
+                    path = Util.AppendDirSeparator(path);
 
                 IEnumerable<Serializable.TreeNode> res;
 
-                if (!Library.Utility.Utility.IsClientLinux && (path.Equals("/") || path.Equals("")))
+                if (!Platform.IsClientPosix && (path.Equals("/") || path.Equals("")))
                 {
                     res = DriveInfo.GetDrives()
                             .Where(di =>
@@ -206,17 +208,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return false;
             };
 
-            var systemIO = Library.Utility.Utility.IsClientLinux
-                ? (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOLinux()
-                : (Duplicati.Library.Snapshots.ISystemIO)new Duplicati.Library.Snapshots.SystemIOWindows();
-
-            foreach (var s in System.IO.Directory.EnumerateFileSystemEntries(entrypath))
+            foreach (var s in SystemIO.IO_OS.EnumerateFileSystemEntries(entrypath))
             {
                 Serializable.TreeNode tn = null;
                 try
                 {
-                    var attr = systemIO.GetFileAttributes(s);
-                    var isSymlink = systemIO.IsSymlink(s, attr);
+                    var attr = SystemIO.IO_OS.GetFileAttributes(s);
+                    var isSymlink = SystemIO.IO_OS.IsSymlink(s, attr);
                     var isFolder = (attr & FileAttributes.Directory) != 0;
                     var isFile = !isFolder;
                     var isHidden = (attr & FileAttributes.Hidden) != 0;
@@ -224,7 +222,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     var accessible = isFile || canAccess(s);
                     var isLeaf = isFile || !accessible || isEmptyFolder(s);
 
-                    var rawid = isFolder ? Library.Utility.Utility.AppendDirSeparator(s) : s;
+                    var rawid = isFolder ? Util.AppendDirSeparator(s) : s;
                     if (skipFiles && !isFolder)
                         continue;
 
@@ -234,7 +232,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     tn = new Serializable.TreeNode()
                     {
                         id = rawid,
-                        text = systemIO.PathGetFileName(s),
+                        text = SystemIO.IO_OS.PathGetFileName(s),
                         hidden = isHidden,
                         symlink = isSymlink,
                         iconCls = isFolder ? (accessible ? (isSymlink ? "x-tree-icon-symlink" : "x-tree-icon-parent") : "x-tree-icon-locked") : "x-tree-icon-leaf",

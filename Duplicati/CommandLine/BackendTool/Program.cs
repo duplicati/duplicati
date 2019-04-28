@@ -17,10 +17,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Duplicati.Library.Interface;
+using System.Threading;
 
 namespace Duplicati.CommandLine.BackendTool
 {
@@ -73,7 +74,7 @@ namespace Duplicati.CommandLine.BackendTool
                 }
 
 
-                if (args.Count < 2 || args[0].ToLower() == "help" || args[0] == "?" || command == null)
+                if (args.Count < 2 || String.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase) || args[0] == "?" || command == null)
                 {
                     if (command == null && args.Count >= 2)
                     {
@@ -144,7 +145,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count > 3)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
                            
-                        backend.Put(Path.GetFileName(args[2]), args[2]);
+                        backend.PutAsync(Path.GetFileName(args[2]), args[2], CancellationToken.None).Wait();
                         
                         return 0;
                     }

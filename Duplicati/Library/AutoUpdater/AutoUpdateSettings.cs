@@ -66,10 +66,9 @@ namespace Duplicati.Library.AutoUpdater
 
         private static string ReadResourceText(string name, string oemname)
         {
-            string result;
-            if (_cache.TryGetValue(name, out result))
+            // First try to read from _cache
+            if (_cache.TryGetValue(name, out string result))
                 return result;
-
 
             try
             {
@@ -106,7 +105,7 @@ namespace Duplicati.Library.AutoUpdater
                 if (UsesAlternateURLs)
                     return Environment.GetEnvironmentVariable(string.Format(UPDATEURL_ENVNAME_TEMPLATE, AppName)).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
                 else
-                    return ReadResourceText(UPDATE_URL, OEM_UPDATE_URL).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);; 
+                    return ReadResourceText(UPDATE_URL, OEM_UPDATE_URL).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
             }
         }
 
@@ -180,11 +179,11 @@ namespace Duplicati.Library.AutoUpdater
 
         public static System.Security.Cryptography.RSACryptoServiceProvider SignKey
         {
-            get 
+            get
             { 
                 try
                 {
-                    var key = System.Security.Cryptography.RSACryptoServiceProvider.Create();
+                    var key = System.Security.Cryptography.RSA.Create();
                     key.FromXmlString(ReadResourceText(UPDATE_KEY, OEM_UPDATE_KEY)); 
                     return (System.Security.Cryptography.RSACryptoServiceProvider)key;
                 }

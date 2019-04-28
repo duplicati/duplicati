@@ -15,15 +15,44 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using Duplicati.Library.Utility;
+using Duplicati.Library.Common.IO;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 
 namespace Duplicati.UnitTest
 {
     public class UtilityTests
     {
+        [Test]
+        [Category("Utility")]
+        public static void AppendDirSeparator()
+        {
+            const string noTrailingSlash = @"/a\b/c";
+            string hasTrailingSlash = noTrailingSlash + Util.DirectorySeparatorString;
+
+            string alternateSeparator = null;
+            if (String.Equals(Util.DirectorySeparatorString, "/", StringComparison.Ordinal))
+            {
+                alternateSeparator = @"\";
+            }
+            if (String.Equals(Util.DirectorySeparatorString, @"\", StringComparison.Ordinal))
+            {
+                alternateSeparator = "/";
+            }
+
+            Assert.AreEqual(hasTrailingSlash, Util.AppendDirSeparator(noTrailingSlash));
+            Assert.AreEqual(hasTrailingSlash, Util.AppendDirSeparator(hasTrailingSlash));
+            Assert.AreEqual(hasTrailingSlash, Util.AppendDirSeparator(noTrailingSlash), Util.DirectorySeparatorString);
+            Assert.AreEqual(hasTrailingSlash, Util.AppendDirSeparator(hasTrailingSlash), Util.DirectorySeparatorString);
+
+            Assert.AreEqual(noTrailingSlash + alternateSeparator, Util.AppendDirSeparator(noTrailingSlash, alternateSeparator));
+            Assert.AreEqual(noTrailingSlash + alternateSeparator, Util.AppendDirSeparator(noTrailingSlash + alternateSeparator, alternateSeparator));
+            Assert.AreEqual(hasTrailingSlash + alternateSeparator, Util.AppendDirSeparator(hasTrailingSlash, alternateSeparator));
+        }
+
         [Test]
         [Category("Utility")]
         [TestCase("da-DK")]
@@ -154,7 +183,7 @@ namespace Duplicati.UnitTest
                 string message = $"{value} should be parsed to true.";
 
                 Assert.IsTrue(Utility.ParseBool(value, false), message);
-                Assert.IsTrue(Utility.ParseBool(value.ToUpper(), false), message);
+                Assert.IsTrue(Utility.ParseBool(value.ToUpper(CultureInfo.InvariantCulture), false), message);
                 Assert.IsTrue(Utility.ParseBool($" {value} ", false), message);
             }
 
@@ -163,7 +192,7 @@ namespace Duplicati.UnitTest
                 string message = $"{value} should be parsed to false.";
 
                 Assert.IsFalse(Utility.ParseBool(value, true), message);
-                Assert.IsFalse(Utility.ParseBool(value.ToUpper(), true), message);
+                Assert.IsFalse(Utility.ParseBool(value.ToUpper(CultureInfo.InvariantCulture), true), message);
                 Assert.IsFalse(Utility.ParseBool($" {value} ", true), message);
             }
 

@@ -18,6 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -175,7 +177,6 @@ namespace Duplicati.UnitTest
 
             var round1 = filenames.Take(filenames.Count / 3).ToArray();
             var round2 = filenames.Take((filenames.Count / 3) * 2).ToArray();
-            var round3 = filenames;
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
@@ -183,7 +184,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(res.AddedFiles, round1.Length);
             }
 
-            var dblock_file = Directory
+            var dblock_file = SystemIO.IO_OS
                 .GetFiles(TARGETFOLDER, "*.dblock.zip.aes")
                 .Select(x => new FileInfo(x))
                 .OrderBy(x => x.LastWriteTimeUtc)
@@ -203,8 +204,6 @@ namespace Duplicati.UnitTest
                 var res = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(filenames.Count - round2.Length, res.AddedFiles);
             }
-
-            var last_ts = DateTime.Now;
 
             File.Delete(dblock_file);
 

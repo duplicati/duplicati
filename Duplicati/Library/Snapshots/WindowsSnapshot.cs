@@ -1,36 +1,36 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-using System.Linq;
-
-
+//
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Alphaleonis.Win32.Vss;
+using System.Linq;
+
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
 {
     /// <summary>
     /// This class encapsulates all access to the Windows Volume Shadow copy Services,
     /// implementing the disposable patterns to ensure correct release of resources.
-    /// 
+    ///
     /// The class presents all files and folders with their regular filenames to the caller,
     /// and internally handles the conversion to the shadow path.
     /// </summary>
@@ -44,40 +44,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The main reference to the backup controller
         /// </summary>
-        private IVssBackupComponents m_backup;
-
-        /// <summary>
-        /// The list of snapshot ids for each volume, key is the path root, eg C:\.
-        /// The dictionary is case insensitive
-        /// </summary>
-        private readonly Dictionary<string, Guid> m_volumes;
-
-        /// <summary>
-        /// The mapping of snapshot sources to their snapshot entries , key is the path root, eg C:\.
-        /// The dictionary is case insensitive
-        /// </summary>
-        private readonly Dictionary<string, string> m_volumeMap;
-
-        /// <summary>
-        /// The mapping of snapshot sources to their snapshot entries , key is the path root, eg C:\.
-        /// The dictionary is case insensitive
-        /// </summary>
-        private readonly Dictionary<string, string> m_volumeReverseMap;
-
-        /// <summary>
-        /// A list of mapped drives
-        /// </summary>
-        private List<DefineDosDevice> m_mappedDrives;
-
-        /// <summary>
-        /// A cached lookup for windows methods for dealing with long filenames
-        /// </summary>
-        private static SystemIOWindows IO_WIN = new SystemIOWindows();
-
-        /// <summary>
-        /// Commonly used string element
-        /// </summary>
-        private static string SLASH = Path.DirectorySeparatorChar.ToString();
+        private readonly VssBackupComponents _vssBackupComponents;
 
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
@@ -88,16 +55,7 @@ namespace Duplicati.Library.Snapshots
         {
             try
             {
-                // Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
-                var assemblyLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                if (assemblyLocation == null)
-                    throw new InvalidOperationException();
-
-                var alphadir = Path.Combine(assemblyLocation, "alphavss");
-                var alphadll = Path.Combine(alphadir, VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
-                var vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
-                if (vss == null)
-                    throw new InvalidOperationException();
+                _vssBackupComponents = new VssBackupComponents();
 
                 // Default to exclude the System State writer
                 var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
@@ -109,89 +67,31 @@ namespace Duplicati.Library.Snapshots
                         .Select(x => new Guid(x))
                         .ToArray();
                 }
+                _vssBackupComponents.SetupWriters(null, excludedWriters);
 
-                //Check if we should map any drives
-                var useSubst = Utility.Utility.ParseBoolOption(options, "vss-use-mapping");
+                _vssBackupComponents.InitShadowVolumes(sources);
 
-                //Prepare the backup
-                m_backup = vss.CreateVssBackupComponents();
-                m_backup.InitializeForBackup(null);
-                m_backup.SetContext(VssSnapshotContext.Backup);
-                m_backup.SetBackupState(false, true, VssBackupType.Full, false);
-
-                if (excludedWriters.Length > 0)
-                    m_backup.DisableWriterClasses(excludedWriters.ToArray());
-                
-                try
-                {
-                    m_backup.GatherWriterMetadata();
-                }
-                finally
-                {
-                    m_backup.FreeWriterMetadata();
-                }
-
-                m_backup.StartSnapshotSet();
-
-                //Figure out which volumes are in the set
-                m_volumes = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
-                foreach (var s in sources)
-                {
-                    var drive = Alphaleonis.Win32.Filesystem.Path.GetPathRoot(s);
-                    if (!m_volumes.ContainsKey(drive))
-                    {
-                        //TODO: that seems a bit harsh... we could fall-back to not using VSS for that volume only
-                        if (!m_backup.IsVolumeSupported(drive))
-                            throw new VssVolumeNotSupportedException(drive);
-
-                        m_volumes.Add(drive, m_backup.AddToSnapshotSet(drive));
-                    }
-                }
-
-                //Make all writers aware that we are going to do the backup
-                m_backup.PrepareForBackup();
-
-                //Create the shadow volumes
-                m_backup.DoSnapshotSet();
-
-                //Make a little lookup table for faster translation
-                m_volumeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var kvp in m_volumes)
-                {
-                    m_volumeMap.Add(kvp.Key, m_backup.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject);
-                }
-
-                m_volumeReverseMap = m_volumeMap.ToDictionary(x => x.Value, x => x.Key);
+                _vssBackupComponents.MapVolumesToSnapShots();
 
                 //If we should map the drives, we do that now and update the volumeMap
-                if (useSubst)
+                if (Utility.Utility.ParseBoolOption(options, "vss-use-mapping"))
                 {
-                    m_mappedDrives = new List<DefineDosDevice>();
-                    foreach (var k in new List<string>(m_volumeMap.Keys))
-                    {
-                        try
-                        {
-                            DefineDosDevice d;
-                            m_mappedDrives.Add(d = new DefineDosDevice(m_volumeMap[k]));
-                            m_volumeMap[k] = Utility.Utility.AppendDirSeparator(d.Drive);
-                        }
-						catch(Exception ex)
-                        {
-							Logging.Log.WriteVerboseMessage(LOGTAG, "SubstMappingfailed", ex, "Failed to map VSS path {0} to drive", k);
-                        }
-                    }
+                    _vssBackupComponents.MapDrives();
                 }
             }
-            catch
+            catch (Exception ex1)
             {
+
+                Logging.Log.WriteVerboseMessage(LOGTAG, "WindowsSnapshotCreation", ex1, "Failed to initialize windows snapshot instance");
+
                 //In case we fail in the constructor, we do not want a snapshot to be active
                 try
                 {
                     Dispose();
                 }
-				catch(Exception ex)
+				catch(Exception ex2)
                 {
-					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSCleanupOnError", ex, "Failed during VSS error cleanup");
+					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSCleanupOnError", ex2, "Failed during VSS error cleanup");
                 }
 
                 throw;
@@ -208,30 +108,21 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFolders(string localFolderPath)
         {
-            var root = Utility.Utility.AppendDirSeparator(Alphaleonis.Win32.Filesystem.Path.GetPathRoot(localFolderPath));
-            var volumePath = Utility.Utility.AppendDirSeparator(ConvertToSnapshotPath(root));
-
             string[] tmp = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
 
-            if (SystemIOWindows.IsPathTooLong(spath))
+            try
             {
-                try { tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(spath); }
-                catch (PathTooLongException) { }
-                catch (DirectoryNotFoundException) { }
+                tmp = SystemIO.IO_WIN.GetDirectories(spath); 
             }
-            else
-            {
-                try { tmp = Directory.GetDirectories(spath); }
-                catch (PathTooLongException) { }
-            }
-
-            if (tmp == null)
+            catch (DirectoryNotFoundException) //TODO: Do we really need this??
             {
                 spath = SystemIOWindows.PrefixWithUNC(spath);
-                tmp = Alphaleonis.Win32.Filesystem.Directory.GetDirectories(spath);
+                tmp = SystemIO.IO_WIN.GetDirectories(spath);
             }
 
+            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
+            var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
             volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
 
             for (var i = 0; i < tmp.Length; i++)
@@ -251,38 +142,32 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of non-shadow paths</returns>
         protected override string[] ListFiles(string localFolderPath)
         {
-            var root = Utility.Utility.AppendDirSeparator(Alphaleonis.Win32.Filesystem.Path.GetPathRoot(localFolderPath));
-            var volumePath = Utility.Utility.AppendDirSeparator(ConvertToSnapshotPath(root));
 
-            string[] tmp = null;
+            string[] files = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
 
-            if (SystemIOWindows.IsPathTooLong(spath))
+            // First try without long UNC prefixed
+            try
             {
-                try { tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(spath); }
-                catch (PathTooLongException) { }
-                catch (DirectoryNotFoundException) { }
+                files = SystemIO.IO_WIN.GetFiles(spath);
             }
-            else
-            {
-                try { tmp = Directory.GetFiles(spath); }
-                catch (PathTooLongException) { }
-            }
-
-            if (tmp == null)
+            catch (DirectoryNotFoundException) //TODO: Do we really need this??
             {
                 spath = SystemIOWindows.PrefixWithUNC(spath);
-                tmp = Alphaleonis.Win32.Filesystem.Directory.GetFiles(spath);
+                files = SystemIO.IO_WIN.GetFiles(spath);
             }
 
+            // convert back to non-shadow, i.e., non-vss version
+            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
+            var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
             volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
 
-            for (var i = 0; i < tmp.Length; i++)
+            for (var i = 0; i < files.Length; i++)
             {
-                tmp[i] = root + SystemIOWindows.PrefixWithUNC(tmp[i]).Substring(volumePath.Length);
+                files[i] = root + SystemIOWindows.PrefixWithUNC(files[i]).Substring(volumePath.Length);
             }
 
-            return tmp;
+            return files;
         }
         #endregion
 
@@ -296,16 +181,8 @@ namespace Duplicati.Library.Snapshots
         public override DateTime GetLastWriteTimeUtc(string localPath)
         {
             var spath = ConvertToSnapshotPath(localPath);
-            if (!SystemIOWindows.IsPathTooLong(spath))
-            {
-                try
-                {
-                    return File.GetLastWriteTimeUtc(spath);
-                }
-                catch (PathTooLongException) { }
-            }
 
-            return Alphaleonis.Win32.Filesystem.File.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
+            return SystemIO.IO_WIN.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
 
         /// <summary>
@@ -316,16 +193,8 @@ namespace Duplicati.Library.Snapshots
         public override DateTime GetCreationTimeUtc(string localPath)
         {
             var spath = ConvertToSnapshotPath(localPath);
-            if (!SystemIOWindows.IsPathTooLong(spath))
-            {
-                try
-                {
-                    return File.GetCreationTimeUtc(spath);
-                }
-                catch (PathTooLongException) { }
-            }
 
-            return Alphaleonis.Win32.Filesystem.File.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
+            return SystemIO.IO_WIN.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
         }
 
         /// <summary>
@@ -335,7 +204,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>An open filestream that can be read</returns>
         public override Stream OpenRead(string localPath)
         {
-            return IO_WIN.FileOpenRead(ConvertToSnapshotPath(localPath));
+            return SystemIO.IO_WIN.FileOpenRead(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -345,7 +214,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The lenth of the file</returns>
         public override long GetFileSize(string localPath)
         {
-            return IO_WIN.FileLength(ConvertToSnapshotPath(localPath));
+            return SystemIO.IO_WIN.FileLength(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -355,7 +224,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override FileAttributes GetAttributes(string localPath)
         {
-            return IO_WIN.GetFileAttributes(ConvertToSnapshotPath(localPath));
+            return SystemIO.IO_WIN.GetFileAttributes(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -366,7 +235,7 @@ namespace Duplicati.Library.Snapshots
         public override string GetSymlinkTarget(string localPath)
         {
             var spath = ConvertToSnapshotPath(localPath);
-            return IO_WIN.GetSymlinkTarget(spath);
+            return SystemIO.IO_WIN.GetSymlinkTarget(spath);
         }
 
         /// <summary>
@@ -378,7 +247,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return IO_WIN.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
+            return SystemIO.IO_WIN.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
         }
 
         /// <inheritdoc />
@@ -399,10 +268,10 @@ namespace Duplicati.Library.Snapshots
             if (!Path.IsPathRooted(snapshotPath))
                 throw new InvalidOperationException();
 
-            foreach (var kvp in m_volumeReverseMap)
+            foreach (var kvp in _vssBackupComponents.SnapshotDeviceAndVolumes)
             {
 				if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparison))
-                    return Path.Combine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
+                    return SystemIO.IO_WIN.PathCombine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
             }
 
             throw new InvalidOperationException();
@@ -414,14 +283,15 @@ namespace Duplicati.Library.Snapshots
             if (!Path.IsPathRooted(localPath))
                 throw new InvalidOperationException();
 
-            var root = Alphaleonis.Win32.Filesystem.Path.GetPathRoot(localPath);
-            if (!m_volumeMap.TryGetValue(root, out var volumePath))
-                throw new InvalidOperationException();
+            var root = SystemIO.IO_WIN.GetPathRoot(localPath);
+            var volumePath = _vssBackupComponents.GetVolumeFromCache(root);
 
             // Note: Do NOT use Path.Combine as it strips the UNC path prefix
             var subPath = localPath.Substring(root.Length);
-            if (!volumePath.EndsWith(SLASH, StringComparison.Ordinal) && !subPath.StartsWith(SLASH, StringComparison.Ordinal))
-                volumePath += SLASH;
+            if (!subPath.StartsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
+            {
+                volumePath = Util.AppendDirSeparator(volumePath, Util.DirectorySeparatorString);
+            }
 
             var mappedPath = volumePath + subPath;
             return mappedPath;
@@ -430,13 +300,13 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public override bool FileExists(string localFilePath)
         {
-            return IO_WIN.FileExists(ConvertToSnapshotPath(localFilePath));
+            return SystemIO.IO_WIN.FileExists(ConvertToSnapshotPath(localFilePath));
         }
 
         /// <inheritdoc />
         public override bool DirectoryExists(string localFolderPath)
         {
-            return IO_WIN.DirectoryExists(ConvertToSnapshotPath(localFolderPath));
+            return SystemIO.IO_WIN.DirectoryExists(ConvertToSnapshotPath(localFolderPath));
         }
 
         /// <inheritdoc />
@@ -449,59 +319,7 @@ namespace Duplicati.Library.Snapshots
         {
             if (disposing)
             {
-                try
-                {
-                    if (m_mappedDrives != null)
-                    {
-                        foreach (var d in m_mappedDrives)
-                        {
-                            d.Dispose();
-                        }
-
-                        m_mappedDrives = null;
-                    }
-                }
-				catch (Exception ex)
-                {
-					Logging.Log.WriteVerboseMessage(LOGTAG, "MappedDriveCleanupError", ex, "Failed during VSS mapped drive unmapping");
-                }
-
-				try
-				{
-					m_backup?.BackupComplete();
-				}
-				catch (Exception ex)
-				{
-					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSTerminateError", ex, "Failed to signal VSS completion");
-				}
-
-                try
-                {
-                    if (m_backup != null)
-                    {
-                        foreach (var g in m_volumes.Values)
-                        {
-							try
-							{
-								m_backup.DeleteSnapshot(g, false);
-							}
-							catch (Exception ex)
-							{
-								Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteError", ex, "Failed to close VSS snapshot");
-							}
-                        }
-                    }
-                }
-				catch (Exception ex)
-                {
-					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteCleanError", ex, "Failed during VSS esnapshot closing");
-                }
-
-                if (m_backup != null)
-                {
-                    m_backup.Dispose();
-                    m_backup = null;
-                }
+                _vssBackupComponents.Dispose();
             }
 
             base.Dispose(disposing);

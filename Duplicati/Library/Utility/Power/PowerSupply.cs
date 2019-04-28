@@ -15,6 +15,8 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+using Duplicati.Library.Common;
+
 namespace Duplicati.Library.Utility.Power
 {
     public static class PowerSupply
@@ -31,15 +33,15 @@ namespace Duplicati.Library.Utility.Power
             IPowerSupplyState state;
 
             // Since IsClientLinux returns true when on Mac OS X, we need to check IsClientOSX first.
-            if (Utility.IsClientOSX)
+            if (Platform.IsClientOSX)
             {
                 state = new MacOSPowerSupplyState();
             }
-            else if (Utility.IsClientLinux)
+            else if (Platform.IsClientPosix)
             {
                 state = new LinuxPowerSupplyState();
             }
-            else if (Utility.IsClientWindows)
+            else if (Platform.IsClientWindows)
             {
                 state = new WindowsPowerSupplyState();
             }

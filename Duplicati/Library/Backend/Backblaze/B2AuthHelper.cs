@@ -101,8 +101,6 @@ namespace Duplicati.Library.Backend.Backblaze
                         }
                         catch (Exception ex)
                         {
-                            
-                            var msg = ex.Message;
                             var clienterror = false;
 
                             try
@@ -171,7 +169,7 @@ namespace Duplicati.Library.Backend.Backblaze
             if (ex is WebException && (ex as WebException).Response is HttpWebResponse)
                 return ((ex as WebException).Response as HttpWebResponse).StatusCode;
             else
-                return (HttpStatusCode)0;
+                return default(HttpStatusCode);
         }
             
 

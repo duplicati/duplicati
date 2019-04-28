@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -17,11 +17,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
-using Duplicati.Library.Interface;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -39,8 +42,9 @@ namespace Duplicati.Library.Backend
         private bool m_hasAutenticated;
         private readonly bool m_forceReauth;
 
-        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+        private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
+        private static ISystemIO systemIO = SystemIO.IO_OS;
 
         public File()
         {
@@ -61,16 +65,18 @@ namespace Duplicati.Library.Backend
                 m_password = uri.Password;
             
             if (!System.IO.Path.IsPathRooted(m_path))
-                m_path = System.IO.Path.GetFullPath(m_path);
+                m_path = systemIO.PathGetFullPath(m_path);
 
             if (options.ContainsKey(OPTION_ALTERNATE_PATHS))
             {
-                List<string> paths = new List<string>();
-                paths.Add(m_path);
+                List<string> paths = new List<string>
+                {
+                    m_path
+                };
                 paths.AddRange(options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
 
                 //On windows we expand the drive letter * to all drives
-                if (!Utility.Utility.IsClientLinux)
+                if (!Platform.IsClientPosix)
                 {
                     System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
                     
@@ -101,7 +107,7 @@ namespace Duplicati.Library.Backend
                 {
                     try
                     {
-                        if (System.IO.Directory.Exists(p) && (markerfile == null || System.IO.File.Exists(System.IO.Path.Combine(p, markerfile))))
+                        if (systemIO.DirectoryExists(p) && (markerfile == null || systemIO.FileExists(systemIO.PathCombine(p, markerfile))))
                         {
                             m_path = p;
                             break;
@@ -125,13 +131,10 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                if (!string.IsNullOrEmpty(m_username) && m_password != null)
+                if (!string.IsNullOrEmpty(m_username) && m_password != null && !m_hasAutenticated)
                 {
-                    if (!m_hasAutenticated)
-                    {
-                        Win32.PreAuthenticate(m_path, m_username, m_password, m_forceReauth);
-                        m_hasAutenticated = true;
-                    }
+                    Win32.PreAuthenticate(m_path, m_username, m_password, m_forceReauth);
+                    m_hasAutenticated = true;
                 }
             }
             catch
@@ -142,10 +145,10 @@ namespace Duplicati.Library.Backend
         {
             PreAuthenticate();
 
-            if (!System.IO.Directory.Exists(m_path))
+            if (!systemIO.DirectoryExists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            return System.IO.Path.Combine(m_path, remotename);
+            return systemIO.PathCombine(m_path, remotename);
         }
 
         #region IBackendInterface Members
@@ -169,71 +172,70 @@ namespace Duplicati.Library.Backend
         {
             PreAuthenticate();
 
-            if (!System.IO.Directory.Exists(m_path))
+            if (!systemIO.DirectoryExists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            foreach (string s in System.IO.Directory.EnumerateFiles(m_path))
+            foreach (string s in systemIO.EnumerateFiles(m_path))
             {
-                System.IO.FileInfo fi = new System.IO.FileInfo(s);
-                yield return new FileEntry(fi.Name, fi.Length, fi.LastAccessTime, fi.LastWriteTime);
+                yield return systemIO.FileEntry(s);
             }
 
-            foreach (string s in System.IO.Directory.EnumerateDirectories(m_path))
+            foreach (string s in systemIO.EnumerateDirectories(m_path))
             {
-                System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(s);
-                FileEntry fe = new FileEntry(di.Name, 0, di.LastAccessTime, di.LastWriteTime);
-                fe.IsFolder = true;
-                yield return fe;
+                yield return systemIO.DirectoryEntry(s);
             }
         }
 
 #if DEBUG_RETRY
         private static Random random = new Random();
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using(System.IO.FileStream writestream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
             {
                 if (random.NextDouble() > 0.6666)
                     throw new Exception("Random upload failure");
-                Utility.Utility.CopyStream(stream, writestream);
+                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken);
             }
         }
 #else
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using(System.IO.FileStream writestream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Utility.Utility.CopyStream(stream, writestream, true, m_copybuffer);
+            using (System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
+                await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
         }
 #endif
 
         public void Get(string remotename, System.IO.Stream stream)
         {
-            using (System.IO.FileStream readstream = System.IO.File.Open(GetRemoteName(remotename), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            // FileOpenRead has flags System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read
+            using (System.IO.FileStream readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
                 Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             string path = GetRemoteName(remotename);
             if (m_moveFile)
             {
-                if (System.IO.File.Exists(path))
-                    System.IO.File.Delete(path);
+                if (systemIO.FileExists(path))
+                    systemIO.FileDelete(path);
                 
-                System.IO.File.Move(filename, path);
+                systemIO.FileMove(filename, path);
             }
             else
-                System.IO.File.Copy(filename, path, true);
+                systemIO.FileCopy(filename, path, true);
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string filename)
         {
-            System.IO.File.Copy(GetRemoteName(remotename), filename, true);
+            systemIO.FileCopy(GetRemoteName(remotename), filename, true);
         }
 
         public void Delete(string remotename)
         {
-            System.IO.File.Delete(GetRemoteName(remotename));
+            systemIO.FileDelete(GetRemoteName(remotename));
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -267,10 +269,10 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            if (System.IO.Directory.Exists(m_path))
+            if (systemIO.DirectoryExists(m_path))
                 throw new FolderAreadyExistedException();
 
-            System.IO.Directory.CreateDirectory(m_path);
+            systemIO.DirectoryCreate(m_path);
         }
 
         #endregion
@@ -279,10 +281,8 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            if (m_username != null)
-                m_username = null;
-            if (m_password != null)
-                m_password = null;
+            m_username = null;
+            m_password = null;
         }
 
         #endregion
@@ -295,26 +295,26 @@ namespace Duplicati.Library.Backend
         private System.IO.DriveInfo GetDrive()
         {
             string root;
-            if (Utility.Utility.IsClientLinux)
+            if (Platform.IsClientPosix)
             {
-                string path = Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(m_path));
+                string path = Util.AppendDirSeparator(systemIO.PathGetFullPath(m_path));
                 root = "/";
 
                 //Find longest common prefix from mounted devices
                 //TODO: Can trick this with symlinks, where the symlink is on one mounted volume,
                 // and the actual storage is on another
                 foreach (System.IO.DriveInfo di in System.IO.DriveInfo.GetDrives())
-                    if (path.StartsWith(Utility.Utility.AppendDirSeparator(di.Name), StringComparison.Ordinal) && di.Name.Length > root.Length)
+                    if (path.StartsWith(Util.AppendDirSeparator(di.Name), StringComparison.Ordinal) && di.Name.Length > root.Length)
                         root = di.Name;
             }
             else
             {
-                root = System.IO.Path.GetPathRoot(m_path);
+                root = systemIO.GetPathRoot(m_path);
             }
 
             // On Windows, DriveInfo is only valid for lettered drives. (e.g., not for UNC paths and shares)
             // So only attempt to get it if we aren't on Windows or if the root starts with a letter.
-            if (!Utility.Utility.IsClientWindows || (root.Length > 0 && char.IsLetter(root[0])))
+            if (!Platform.IsClientWindows || (root.Length > 0 && char.IsLetter(root[0])))
             {
                 try
                 {
@@ -338,16 +338,15 @@ namespace Duplicati.Library.Backend
                 {
                     return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
                 }
-                else if (Utility.Utility.IsClientWindows)
+
+                if (Platform.IsClientWindows)
                 {
                     // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
                     // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
                     return GetDiskFreeSpace(m_path);
                 }
-                else
-                {
-                    return null;
-                }
+
+                return null;
             }
         }
 
@@ -360,9 +359,9 @@ namespace Duplicati.Library.Backend
         {
             var source = GetRemoteName(oldname);
             var target = GetRemoteName(newname);
-            if (System.IO.File.Exists(target))
-                System.IO.File.Delete(target);
-            System.IO.File.Move(source, target);
+            if (systemIO.FileExists(target))
+                systemIO.FileDelete(target);
+            systemIO.FileMove(source, target);
         }
 
         /// <summary>
@@ -375,8 +374,7 @@ namespace Duplicati.Library.Backend
         {
             ulong available;
             ulong total;
-            ulong free;
-            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out free))
+            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out _))
             {
                 return new QuotaInfo((long)total, (long)available);
             }

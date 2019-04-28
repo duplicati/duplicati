@@ -30,7 +30,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
     function reloadTexts() {
         self.progress_state_text = {
-            'Backup_Begin': gettextCatalog.getString('Starting Backup ...'),
+            'Backup_Begin': gettextCatalog.getString('Starting backup ...'),
             'Backup_PreBackupVerify': gettextCatalog.getString('Verifying backend data ...'),
             'Backup_PostBackupTest': gettextCatalog.getString('Verifying remote data ...'),
             'Backup_PreviousBackupFinalize': gettextCatalog.getString('Completing previous backup ...'),
@@ -41,8 +41,8 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             'Backup_Compact': gettextCatalog.getString('Compacting remote data ...'),
             'Backup_VerificationUpload': gettextCatalog.getString('Uploading verification file ...'),
             'Backup_PostBackupVerify': gettextCatalog.getString('Verifying backend data ...'),
-            'Backup_Complete': gettextCatalog.getString('Backup Complete!'),
-            'Restore_Begin': gettextCatalog.getString('Starting Restore...'),
+            'Backup_Complete': gettextCatalog.getString('Backup complete!'),
+            'Restore_Begin': gettextCatalog.getString('Starting restore ...'),
             'Restore_RecreateDatabase': gettextCatalog.getString('Rebuilding local database ...'),
             'Restore_PreRestoreVerify': gettextCatalog.getString('Verifying remote data ...'),
             'Restore_CreateFileList': gettextCatalog.getString('Building list of files to restore ...'),
@@ -52,17 +52,18 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             'Restore_PatchWithLocalBlocks': gettextCatalog.getString('Patching files with local blocks ...'),
             'Restore_DownloadingRemoteFiles': gettextCatalog.getString('Downloading files ...'),
             'Restore_PostRestoreVerify': gettextCatalog.getString('Verifying restored files ...'),
-            'Restore_Complete': gettextCatalog.getString('Restore Complete!'),
+            'Restore_Complete': gettextCatalog.getString('Restore complete!'),
             'Recreate_Running': gettextCatalog.getString('Recreating database ...'),
+            'Vacuum_Running': gettextCatalog.getString('Vacuuming database ...'),
             'Repair_Running': gettextCatalog.getString('Repairing database ...'),
-            'Verify_Running': gettextCatalog.getString('Verifying files...'),
+            'Verify_Running': gettextCatalog.getString('Verifying files ...'),
             'BugReport_Running': gettextCatalog.getString('Creating bug report ...'),
             'Delete_Listing': gettextCatalog.getString('Listing remote files ...'),
             'Delete_Deleting': gettextCatalog.getString('Deleting remote files ...'),
-            'PurgeFiles_Begin,': gettextCatalog.getString('Listing remote files for Purge ...'),
+            'PurgeFiles_Begin,': gettextCatalog.getString('Listing remote files for purge ...'),
             'PurgeFiles_Process,': gettextCatalog.getString('Purging files ...'),
             'PurgeFiles_Compact,': gettextCatalog.getString('Compacting remote data ...'),
-            'PurgeFiles_Complete,': gettextCatalog.getString('Purging files Complete!'),
+            'PurgeFiles_Complete,': gettextCatalog.getString('Purging files complete!'),
             'Error': gettextCatalog.getString('Error!')
         };
     };

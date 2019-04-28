@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 //
@@ -23,6 +23,8 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Main
 {
@@ -126,7 +128,7 @@ namespace Duplicati.Library.Main
             return RunAction(new RestoreResults(), ref paths, ref filter, (result) => {
                 new Operation.RestoreHandler(m_backend, m_options, result).Run(paths, filter);
 
-                Library.UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.FilesRestored);
+                Library.UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.RestoredFiles);
                 Library.UsageReporter.Reporter.Report("RESTORE_FILESIZE", result.SizeOfRestoredFiles);
                 Library.UsageReporter.Reporter.Report("RESTORE_DURATION", (long)result.Duration.TotalSeconds);
             });
@@ -153,24 +155,24 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public Duplicati.Library.Interface.IListResults List(Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults List()
         {
-            return List((IEnumerable<string>)null, filter);
+            return List(null, null);
         }
 
-        public Duplicati.Library.Interface.IListResults List (string filterstring, Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults List(string filterstring)
         {
             return List(filterstring == null ? null : new string[] { filterstring }, null);
         }
 
-        public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter)
         {
             return RunAction(new ListResults(), ref filter, (result) => {
                 new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
             });
         }
 
-        public Duplicati.Library.Interface.IListResults ListControlFiles(IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults ListControlFiles(IEnumerable<string> filterstrings, Library.Utility.IFilter filter)
         {
             return RunAction(new ListResults(), ref filter, (result) => {
                 new Operation.ListControlFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
@@ -227,18 +229,6 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new CompactResults(), (result) => {
                 new Operation.CompactHandler(m_backend, m_options, result).Run();
-            });
-        }
-
-        public Duplicati.Library.Interface.IRecreateDatabaseResults RecreateDatabase(string targetpath, Library.Utility.IFilter filter = null)
-        {
-            var t = new string[] { string.IsNullOrEmpty(targetpath) ? m_options.Dbpath : targetpath };
-
-            var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
-
-            return RunAction(new RecreateDatabaseResults(), ref t, ref filter, (result) => {
-                using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
-                    h.Run(t[0], filter, filelistfilter);
             });
         }
 
@@ -542,7 +532,7 @@ namespace Duplicati.Library.Main
             m_options.LoadedModules.Clear();
 
             foreach (Library.Interface.IGenericModule m in DynamicLoader.GenericLoader.Modules)
-                m_options.LoadedModules.Add(new KeyValuePair<bool, Library.Interface.IGenericModule>(Array.IndexOf<string>(m_options.DisableModules, m.Key.ToLower()) < 0 && (m.LoadAsDefault || Array.IndexOf<string>(m_options.EnableModules, m.Key.ToLower()) >= 0), m));
+                m_options.LoadedModules.Add(new KeyValuePair<bool, Library.Interface.IGenericModule>(!m_options.DisableModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase) && (m.LoadAsDefault || m_options.EnableModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase)), m));
 
             // Make the filter read-n-write able in the generic modules
             var pristinefilter = string.Join(System.IO.Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
@@ -557,7 +547,7 @@ namespace Duplicati.Library.Main
             //// Since Configure in RunScript can alter the RawOptions, make sure it is first in the list for Configure
             var LoadedModules = new List<KeyValuePair<bool, Interface.IGenericModule>>();
             foreach (var mx in m_options.LoadedModules)
-                if (mx.Value.ToString().ToLower().Contains("runscript"))
+                if (mx.Value.ToString().IndexOf("runscript", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     LoadedModules.Insert(0, mx);
                 }
@@ -667,7 +657,7 @@ namespace Duplicati.Library.Main
                 selectedRetentionOptions.Add("keep-versions");
             }
 
-            if (m_options.RetentionPolicy.Count() > 0)
+            if (m_options.RetentionPolicy.Any())
             {
                 selectedRetentionOptions.Add("retention-policy");
             }
@@ -744,7 +734,7 @@ namespace Duplicati.Library.Main
                 if (l != null)
                     foreach (Library.Interface.ICommandLineArgument a in l)
                     {
-                        if (supportedOptions.ContainsKey(a.Name) && Array.IndexOf(Options.KnownDuplicates, a.Name.ToLower()) < 0)
+                        if (supportedOptions.ContainsKey(a.Name) && !Options.KnownDuplicates.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
                             Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(a.Name));
 
                         supportedOptions[a.Name] = a;
@@ -752,7 +742,7 @@ namespace Duplicati.Library.Main
                         if (a.Aliases != null)
                             foreach (string s in a.Aliases)
                             {
-                                if (supportedOptions.ContainsKey(s) && Array.IndexOf(Options.KnownDuplicates, s.ToLower()) < 0)
+                                if (supportedOptions.ContainsKey(s) && !Options.KnownDuplicates.Contains(s, StringComparer.OrdinalIgnoreCase))
                                     Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(s));
 
                                 supportedOptions[s] = a;
@@ -825,7 +815,7 @@ namespace Duplicati.Library.Main
             {
                 List<string> expandedSources = new List<string>();
 
-                if (Library.Utility.Utility.IsClientWindows && (inputsource.StartsWith("*:", StringComparison.Ordinal) || inputsource.StartsWith("?:", StringComparison.Ordinal)))
+                if (Platform.IsClientWindows && (inputsource.StartsWith("*:", StringComparison.Ordinal) || inputsource.StartsWith("?:", StringComparison.Ordinal)))
                 {
                     // *: drive paths are only supported on Windows clients
                     // Lazily load the drive info
@@ -840,7 +830,7 @@ namespace Duplicati.Library.Main
                         expandedSources.Add(expandedSource);
                     }
                 }
-                else if (Library.Utility.Utility.IsClientWindows && inputsource.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
+                else if (Platform.IsClientWindows && inputsource.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
                 {
                     // In order to specify a drive by it's volume name, adopt the volume guid path syntax:
                     //   \\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
@@ -898,7 +888,7 @@ namespace Duplicati.Library.Main
                         foundAnyPaths = true;
 
                         if (!fi.Exists)
-                            source = Library.Utility.Utility.AppendDirSeparator(source);
+                            source = Util.AppendDirSeparator(source);
 
                         sources.Add(source);
                     }
@@ -908,7 +898,7 @@ namespace Duplicati.Library.Main
                         {
                             // Try to get attributes. Returns -1 if source doesn't exist, otherwise throws an exception.
                             // In this case, it is irrelevant to use fileinfo or directoryinfo to retrieve attributes.
-                            var attributes = fi.Attributes;
+                            var unused = fi.Attributes;
                         }
                         catch (UnauthorizedAccessException ex)
                         {
@@ -941,14 +931,13 @@ namespace Duplicati.Library.Main
             //Sanity check for multiple inclusions of the same folder
             for (int i = 0; i < sources.Count; i++)
                 for (int j = 0; j < sources.Count; j++)
-                    if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparison) && sources[i].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), Library.Utility.Utility.ClientFilenameStringComparison))
+                    if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparison) && sources[i].EndsWith(Util.DirectorySeparatorString, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         if (filter != null)
                         {
-                            bool includes;
                             bool excludes;
 
-                            FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+                            FilterExpression.AnalyzeFilters(filter, out _, out excludes);
 
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
@@ -1022,8 +1011,7 @@ namespace Duplicati.Library.Main
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
             {
-                long l;
-                if (!long.TryParse(value, out l))
+                if (!long.TryParse(value, out _))
                     return Strings.Controller.UnsupportedIntegerValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path)

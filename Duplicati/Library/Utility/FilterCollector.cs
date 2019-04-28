@@ -47,7 +47,7 @@ namespace Duplicati.Library.Utility
 
                     if (include || exclude)
                     {
-                        m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), include));
+                        m_filters.Add(new Library.Utility.FilterExpression(Environment.ExpandEnvironmentVariables(value), include));
                         return false;
                     }
                 }

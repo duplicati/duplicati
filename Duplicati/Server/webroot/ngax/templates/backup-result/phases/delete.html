@@ -1,0 +1,60 @@
+<span ng-click="dr_expanded = !dr_expanded" style="cursor: pointer">
+    <i class="{{ResultIcon(item.Result.DeleteResults.ParsedResult)}}"></i>
+    <span class="key" translate>Delete Phase (Old Backup Versions)</span>
+    <span class="value"><i class="fa fa-angle-{{dr_expanded ? 'up': 'down'}}"></i></span>
+</span>
+<div ng-show="dr_expanded" class="expanded">
+    <span class="item">
+        <span class="key" translate>Start </span>
+        <span class="value">{{ parseTimestampToSeconds(item.Result.DeleteResults.BeginTime) }}</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>End </span>
+        <span class="value">{{ parseTimestampToSeconds(item.Result.DeleteResults.EndTime) }}</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>Duration </span>
+        <span class="value">{{ formatDuration(item.Result.DeleteResults.Duration) }}</span>
+    </span>
+
+    <div class="horizontal-rule"></div>
+
+    <span class="item">
+        <span ng-click="sets_expanded = !sets_expanded" ng-style="{ cursor: (item.Result.DeleteResults.DeletedSetsActualLength > 0) ? 'pointer' : '' }">
+            <span class="key" translate>Deleted Versions </span>
+            <span class="value">
+                {{ item.Result.DeleteResults.DeletedSetsActualLength }}
+                <i ng-if="item.Result.DeleteResults.DeletedSetsActualLength > 0" class="fa fa-angle-{{sets_expanded ? 'up': 'down'}}"></i>
+            </span>
+        </span>
+        <div ng-show="sets_expanded && item.Result.DeleteResults.DeletedSetsActualLength > 0" class="expanded"">
+            <ul>
+                <li ng-repeat="elem in item.Result.DeleteResults.DeletedSets track by $index">
+                    {{ 'Version ID' | translate }}: {{ elem.Item1 }} - {{ 'Time' | translate }}: {{ parseTimestampToSeconds(elem.Item2) }}
+                </li>
+            </ul>
+        </div>
+        
+    </span>
+
+    <div class="horizontal-rule"></div>
+
+    <!-- ng-if="true" isolates the scope of 'data' in ng-init, this way we can include the same template using the same variable more than one time
+        without them intercepting each other's data. Similar to passing a parameter to the included template -->
+    <span class="item" ng-if="true" 
+        ng-init="data = {
+            'messages': item.Result.DeleteResults.Warnings,
+            'length': item.Result.DeleteResults.WarningsActualLength,
+            'type': 'Warning',
+            'title': gettextCatalog.getString('Warnings') }"
+        ng-include="'templates/backup-result/message-list.html'">
+    </span>
+    <span class="item" ng-if="true"
+        ng-init="data = {
+            'messages': item.Result.DeleteResults.Errors,
+            'length': item.Result.DeleteResults.ErrorsActualLength,
+            'type': 'Error',
+            'title': gettextCatalog.getString('Errors') }"
+        ng-include="'templates/backup-result/message-list.html'">
+    </span>
+</div>

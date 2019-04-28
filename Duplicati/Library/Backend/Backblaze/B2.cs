@@ -14,14 +14,17 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using Duplicati.Library.Utility;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Backblaze
 {
@@ -30,6 +33,7 @@ namespace Duplicati.Library.Backend.Backblaze
         private const string B2_ID_OPTION = "b2-accountid";
         private const string B2_KEY_OPTION = "b2-applicationkey";
 		private const string B2_PAGESIZE_OPTION = "b2-page-size";
+        private const string B2_DOWNLOAD_URL_OPTION = "b2-download-url";
 
 		private const string B2_CREATE_BUCKET_TYPE_OPTION = "b2-create-bucket-type";
         private const string DEFAULT_BUCKET_TYPE = "allPrivate";
@@ -41,6 +45,7 @@ namespace Duplicati.Library.Backend.Backblaze
         private readonly string m_urlencodedprefix;
         private readonly string m_bucketType;
         private readonly int m_pagesize;
+        private readonly string m_downloadUrl;
         private readonly B2AuthHelper m_helper;
         private UploadUrlResponse m_uploadUrl;
 
@@ -57,9 +62,7 @@ namespace Duplicati.Library.Backend.Backblaze
             var uri = new Utility.Uri(url);
 
             m_bucketname = uri.Host;
-            m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             // For B2 we do not use a leading slash
             while(m_prefix.StartsWith("/", StringComparison.Ordinal))
@@ -103,6 +106,12 @@ namespace Duplicati.Library.Backend.Backblaze
                 if (m_pagesize <= 0)
                     throw new UserInformationException(Strings.B2.InvalidPageSizeError(B2_PAGESIZE_OPTION, options[B2_PAGESIZE_OPTION]), "B2InvalidPageSize");
             }
+
+            m_downloadUrl = null;
+            if (options.ContainsKey(B2_DOWNLOAD_URL_OPTION))
+            {
+                m_downloadUrl = options[B2_DOWNLOAD_URL_OPTION];
+            }
 		}
 
         private BucketEntity Bucket
@@ -119,7 +128,7 @@ namespace Duplicati.Library.Backend.Backblaze
                     );
 
                     if (buckets != null && buckets.Buckets != null)
-                        m_bucket = buckets.Buckets.Where(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                        m_bucket = buckets.Buckets.FirstOrDefault(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase));
 
                     if (m_bucket == null)
                         throw new FolderMissingException();
@@ -155,6 +164,16 @@ namespace Duplicati.Library.Backend.Backblaze
             throw new FileMissingException();
         }
 
+        private string DownloadUrl {
+            get {
+                if (string.IsNullOrEmpty(m_downloadUrl)) {
+                    return m_helper.DownloadUrl;
+                } else {
+                    return m_downloadUrl;
+                }
+            }
+        }
+
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -166,12 +185,13 @@ namespace Duplicati.Library.Backend.Backblaze
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.B2.AuthUsernameDescriptionShort, Strings.B2.AuthUsernameDescriptionLong),
                     new CommandLineArgument(B2_CREATE_BUCKET_TYPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2createbuckettypeDescriptionShort, Strings.B2.B2createbuckettypeDescriptionLong, DEFAULT_BUCKET_TYPE),
                     new CommandLineArgument(B2_PAGESIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.B2.B2pagesizeDescriptionShort, Strings.B2.B2pagesizeDescriptionLong, DEFAULT_PAGE_SIZE.ToString()),
+                    new CommandLineArgument(B2_DOWNLOAD_URL_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2downloadurlDescriptionShort, Strings.B2.B2downloadurlDescriptionLong),
 				});
 
             }
         }
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             TempFile tmp = null;
 
@@ -186,14 +206,12 @@ namespace Duplicati.Library.Backend.Backblaze
             string sha1;
             if (measure.CanSeek)
             {
-                // Record the stream position
                 var p = measure.Position;
 
                 // Compute the hash
                 using(var hashalg = HashAlgorithm.Create("sha1"))
                     sha1 = Library.Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
 
-                // Reset the stream position
                 measure.Position = p;
             }
             else
@@ -203,7 +221,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 using(var sr = System.IO.File.OpenWrite(tmp))
                 using(var hc = new HashCalculatingStream(measure, "sha1"))
                 {
-                    Library.Utility.Utility.CopyStream(hc, sr);
+                    await Utility.Utility.CopyStreamAsync(hc, sr, cancelToken).ConfigureAwait(false);
                     sha1 = hc.GetFinalHashString();
                 }
 
@@ -215,8 +233,9 @@ namespace Duplicati.Library.Backend.Backblaze
 
             try
             {
-                var fileinfo = m_helper.GetJSONData<UploadFileResponse>(
+                var fileinfo = await m_helper.GetJSONDataAsync<UploadFileResponse>(
                     UploadUrlData.UploadUrl,
+                    cancelToken,
                     req =>
                     {
                         req.Method = "POST";
@@ -227,12 +246,12 @@ namespace Duplicati.Library.Backend.Backblaze
                         req.ContentLength = stream.Length;
                     },
 
-                    req =>
+                    async (req, reqCancelToken) =>
                     {
-                        using(var rs = req.GetRequestStream())
-                            Utility.Utility.CopyStream(stream, rs);
+                        using (var rs = req.GetRequestStream())
+                            await Utility.Utility.CopyStreamAsync(stream, rs, reqCancelToken);
                     }
-                );
+                ).ConfigureAwait(false);
 
                 // Delete old versions
                 if (m_filecache.ContainsKey(remotename))
@@ -259,14 +278,7 @@ namespace Duplicati.Library.Backend.Backblaze
             }
             finally
             {
-                try
-                {
-                    if (tmp != null)
-                        tmp.Dispose();
-                }
-                catch
-                {
-                }
+                tmp?.Dispose();
             }
         }
 
@@ -277,9 +289,9 @@ namespace Duplicati.Library.Backend.Backblaze
                 List();
 
             if (m_filecache != null && m_filecache.ContainsKey(remotename))
-                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/b2api/v1/b2_download_file_by_id?fileId={1}", m_helper.DownloadUrl, Library.Utility.Uri.UrlEncode(GetFileID(remotename)))));
+                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/b2api/v1/b2_download_file_by_id?fileId={1}", DownloadUrl, Library.Utility.Uri.UrlEncode(GetFileID(remotename)))));
             else
-                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/{1}{2}", m_helper.DownloadUrl, m_urlencodedprefix, Library.Utility.Uri.UrlPathEncode(remotename))));
+                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/{1}{2}", DownloadUrl, m_urlencodedprefix, Library.Utility.Uri.UrlPathEncode(remotename))));
 
             try
             {
@@ -351,10 +363,10 @@ namespace Duplicati.Library.Backend.Backblaze
                 ).ToList();
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)

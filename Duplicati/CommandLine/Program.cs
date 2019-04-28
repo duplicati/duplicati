@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 //
@@ -19,11 +19,10 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using Duplicati.Library.Localization.Short;
-using Duplicati.Library.Utility;
 using System.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.CommandLine
 {
@@ -51,7 +50,7 @@ namespace Duplicati.CommandLine
             {
                 //If we are on Windows, append the bundled "win-tools" programs to the search path
                 //We add it last, to allow the user to override with other versions
-                if (Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     string wintools = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "win-tools");
                     Environment.SetEnvironmentVariable("PATH",
@@ -234,7 +233,7 @@ namespace Duplicati.CommandLine
             }
             else
             {
-                Commands.PrintInvalidCommand(outwriter, command, cargs);
+                Commands.PrintInvalidCommand(outwriter, command);
                 return 200;
             }
         }
@@ -256,6 +255,7 @@ namespace Duplicati.CommandLine
                 if (ex is Duplicati.Library.Interface.UserInformationException && !verboseErrors)
                 {
                     errwriter.WriteLine();
+                    errwriter.WriteLine("ErrorID: {0}", ((Duplicati.Library.Interface.UserInformationException)ex).HelpID);
                     errwriter.WriteLine(ex.Message);
                 }
                 else if (!(ex is Library.Interface.CancelException))
@@ -298,7 +298,7 @@ namespace Duplicati.CommandLine
         {
             try
             {
-                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Environment.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
                 var newsource = new List<string>();
                 string newtarget = null;
                 string prependfilter = null;

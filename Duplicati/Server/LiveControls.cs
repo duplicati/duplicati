@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Server
 {
@@ -210,7 +211,7 @@ namespace Duplicati.Server
 
             try
             {
-                if (!Library.Utility.Utility.IsClientLinux)
+                if (!Platform.IsClientPosix)
                     RegisterHibernateMonitor();
             }
             catch { }
@@ -339,15 +340,6 @@ namespace Duplicati.Server
         {
             //TODO-DNC
             //Microsoft.Win32.SystemEvents.PowerModeChanged += new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
-        }
-
-        /// <summary>
-        /// Method for calling a Win32 API
-        /// </summary>
-        private void UnregisterHibernateMonitor()
-        {
-            //TODO-DNC
-            //Microsoft.Win32.SystemEvents.PowerModeChanged -= new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
         }
 
         /// <summary>

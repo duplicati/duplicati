@@ -18,6 +18,9 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
+
 using System.Security.Cryptography;
 
 namespace Duplicati.CommandLine.RecoveryTool
@@ -139,7 +142,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                             else
                             {
                                 Array.Resize(ref largestprefixparts, ni - 1);
-                                largestprefix = string.Join(Path.DirectorySeparatorChar.ToString(), largestprefixparts);
+                                largestprefix = string.Join(Util.DirectorySeparatorString, largestprefixparts);
                             }
                         }
                     }
@@ -148,14 +151,13 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Restoring {0} files to {1}", filecount, string.IsNullOrWhiteSpace(targetpath) ? "original position" : targetpath);
 
-                if (Library.Utility.Utility.IsClientLinux || largestprefix.Length > 0)
-                    largestprefix = Library.Utility.Utility.AppendDirSeparator(largestprefix);
+                if (Platform.IsClientPosix || largestprefix.Length > 0)
+                    largestprefix = Util.AppendDirSeparator(largestprefix);
 
                 if (!string.IsNullOrEmpty(largestprefix))
                     Console.WriteLine("Removing common prefix {0} from files", largestprefix);
 
                 var i = 0L;
-                var errors = 0L;
                 foreach (var f in List.EnumerateFilesInDList(filelist, filter, options))
                 {
                     try
@@ -235,7 +237,6 @@ namespace Duplicati.CommandLine.RecoveryTool
                     catch (Exception ex)
                     {
                         Console.WriteLine(" error: {0}", ex);
-                        errors++;
                     }
                     i++;
                 }

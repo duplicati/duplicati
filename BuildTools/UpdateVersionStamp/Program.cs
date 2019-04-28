@@ -19,6 +19,9 @@ namespace UpdateVersionStamp
             FILEMAP.Add("AssemblyInfo.cs", new Regex(@"(\[assembly\: AssemblyVersion\(\""" + versionre + @"""\)\])|(\[assembly\: AssemblyFileVersion\(\""" + versionre + @"\""\)\])|(\[assembly\: AssemblyFileVersionAttribute\(\""" + versionre + @"\""\)\])"));
             FILEMAP.Add("UpgradeData.wxi", new Regex(@"\<\?define ProductVersion\=\""" + versionre + @"\"" \?\>"));
             FILEMAP.Add("AssemblyRedirects.xml", new Regex(@"newVersion\=\""" + versionre + @"\"""));
+            FILEMAP.Add("index.html", new Regex(@"\?v\=" + versionre));
+            FILEMAP.Add("login.html", new Regex(@"\?v\=" + versionre));
+            FILEMAP.Add("app.js", new Regex(@"\?v\=" + versionre));
         }
         
         private class Options
@@ -30,7 +33,7 @@ namespace UpdateVersionStamp
             
             public void Fixup()
             {
-                sourcefolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(System.IO.Path.GetFullPath(sourcefolder.Replace("/", DIR_SEP)));
+                sourcefolder = Duplicati.Library.Common.IO.Util.AppendDirSeparator(System.IO.Path.GetFullPath(sourcefolder.Replace("/", DIR_SEP)));
                 if (ignorefilter != null)
                     ignorefilter =ignorefilter.Replace("/", DIR_SEP);
             }
@@ -54,7 +57,8 @@ namespace UpdateVersionStamp
             
             Func<string, bool> isFile = (string x) => !x.EndsWith(DIR_SEP);
             
-            var paths = Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(opt.sourcefolder, filter)
+            var paths = Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(opt.sourcefolder)
+                .Where(x => Duplicati.Library.Utility.FilterExpression.Matches(filter, x))
                 .Where(x => isFile(x) && FILEMAP.ContainsKey(Path.GetFileName(x)))
                 .Select(x =>
             {

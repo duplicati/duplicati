@@ -17,13 +17,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Renci.SshNet;
 using Renci.SshNet.Common;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -78,8 +81,10 @@ namespace Duplicati.Library.Backend
 
             m_path = uri.Path;
 
-            if (!string.IsNullOrWhiteSpace(m_path) && !m_path.EndsWith("/", StringComparison.Ordinal))
-                m_path += "/";
+            if (!string.IsNullOrWhiteSpace(m_path))
+            {
+                m_path = Util.AppendDirSeparator(m_path, "/");
+            }
 
             if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
@@ -112,7 +117,25 @@ namespace Duplicati.Library.Backend
         public void CreateFolder()
         {
             CreateConnection();
-            m_con.CreateDirectory(m_path);
+
+            // Since the SftpClient.CreateDirectory method does not create all the parent directories
+            // as needed, this has to be done manually.
+            string partialPath = String.Empty;
+            foreach (string part in m_path.Split('/').Where(x => !String.IsNullOrEmpty(x)))
+            {
+                partialPath += $"/{part}";
+                if (this.m_con.Exists(partialPath))
+                {
+                    if (!this.m_con.GetAttributes(partialPath).IsDirectory)
+                    {
+                        throw new ArgumentException($"The path {partialPath} already exists and is not a directory.");
+                    }
+                }
+                else
+                {
+                    this.m_con.CreateDirectory(partialPath);
+                }
+            }
         }
 
         public string DisplayName
@@ -125,10 +148,10 @@ namespace Duplicati.Library.Backend
             get { return "ssh"; }
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -203,11 +226,12 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);
             m_con.UploadFile(stream, remotename);
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -268,10 +292,10 @@ namespace Duplicati.Library.Backend
                 string hostFingerprint = e.HostKeyName + " " + e.KeyLength.ToString() + " " + BitConverter.ToString(e.FingerPrint).Replace('-', ':');
 
                 if (string.IsNullOrEmpty(m_fingerprint))
-                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower(), SSH_FINGERPRINT_OPTION, SSH_FINGERPRINT_ACCEPT_ANY_OPTION), hostFingerprint, m_fingerprint);
+                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(hostFingerprint.ToLower(CultureInfo.InvariantCulture), SSH_FINGERPRINT_OPTION, SSH_FINGERPRINT_ACCEPT_ANY_OPTION), hostFingerprint, m_fingerprint);
 
-                if (hostFingerprint.ToLower() != m_fingerprint.ToLower())
-                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower()), hostFingerprint, m_fingerprint);
+                if (!String.Equals(hostFingerprint, m_fingerprint, StringComparison.OrdinalIgnoreCase))
+                    throw new Library.Utility.HostKeyException(Strings.SSHv2Backend.FingerprintNotMatchManagedError(hostFingerprint.ToLower(CultureInfo.InvariantCulture)), hostFingerprint, m_fingerprint);
                 else
                     e.CanTrust = true;
             };
@@ -291,11 +315,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(path))
                 return;
 
-            string working_dir = m_con.WorkingDirectory;
-
-            if (!working_dir.EndsWith("/", StringComparison.Ordinal))
-                working_dir += "/";
-
+            string working_dir = Util.AppendDirSeparator(m_con.WorkingDirectory, "/");
             if (working_dir == path)
                 return;
 

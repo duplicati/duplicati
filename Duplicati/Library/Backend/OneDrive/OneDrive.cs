@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Net;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
@@ -46,22 +47,13 @@ namespace Duplicati.Library.Backend
             var uri = new Utility.Uri(url);
 
             m_rootfolder = uri.Host;
-            m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))
                 authid = options[AUTHID_OPTION];
 
             m_oauth = new OAuthHelper(authid, this.ProtocolKey);
-        }
-
-        private class WLID_Service_Response
-        {
-            public string access_token { get; set; }
-            [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-            public int expires { get; set; }
         }
 
         private class WLID_DataItem
@@ -89,16 +81,6 @@ namespace Duplicati.Library.Backend
         {
             public string name;
             public string description;
-        }
-
-        private class WLID_ContinuationResponse
-        {
-            [Newtonsoft.Json.JsonProperty("uploadUrl")]
-            public string UploadUrl { get; set; }
-            [Newtonsoft.Json.JsonProperty("expirationDateTime", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-            public DateTime Expires { get; set; } 
-            [Newtonsoft.Json.JsonProperty("nextExpectedRanges")]
-            public string[] NextRanges { get; set; }
         }
 
         private class WLID_UserInfo

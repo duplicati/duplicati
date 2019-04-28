@@ -51,7 +51,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrEmpty(datestring)) 
                 return offset;
 
-            if (datestring.Trim().ToLower() == "now")
+            if (String.Equals(datestring.Trim(), "now", StringComparison.OrdinalIgnoreCase))
                 return DateTime.Now;
 
             long l;

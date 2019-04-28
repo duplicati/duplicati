@@ -57,9 +57,8 @@ namespace Duplicati.Library.Main
             var lst = m_lookup[key];
             if (lst == null)
                 lst = m_lookup[key] = new SortedList<string, T>(1);
-            
-            T tmp;
-            if (!lst.TryGetValue(hash + ':' + size.ToString(), out tmp))
+
+            if (!lst.TryGetValue(hash + ':' + size.ToString(), out _))
             {
                 lst.Add(hash + ':' + size.ToString(), value);
                 return true;

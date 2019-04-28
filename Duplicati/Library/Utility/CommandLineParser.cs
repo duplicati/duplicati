@@ -54,7 +54,7 @@ namespace Duplicati.Library.Utility
                         key = args[i];
 
                     //Skip the leading --
-                    key = key.Substring(2).ToLower();
+                    key = key.Substring(2).ToLower(System.Globalization.CultureInfo.InvariantCulture);
                     if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("\"", StringComparison.Ordinal) && value.EndsWith("\"", StringComparison.Ordinal))
                         value = value.Substring(1, value.Length - 2);
 

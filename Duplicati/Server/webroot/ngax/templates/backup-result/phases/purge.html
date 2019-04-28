@@ -1,0 +1,52 @@
+<span ng-click="pr_expanded = !pr_expanded" style="cursor: pointer">
+    <i class="{{ResultIcon(item.Result.PurgeResults.ParsedResult)}}"></i>
+    <span class="key" translate>Purge Phase</span>
+    <span class="value"><i class="fa fa-angle-{{pr_expanded ? 'up': 'down'}}"></i></span>
+</span>
+<div ng-show="pr_expanded" class="expanded">
+    <span class="item">
+        <span class="key" translate>Start </span>
+        <span class="value">{{ parseTimestampToSeconds(item.Result.PurgeResults.BeginTime) }}</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>End </span>
+        <span class="value">{{ parseTimestampToSeconds(item.Result.PurgeResults.EndTime) }}</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>Duration </span>
+        <span class="value">{{ formatDuration(item.Result.PurgeResults.Duration) }}</span>
+    </span>
+
+    <div class="horizontal-rule"></div>
+
+    <span class="item">
+        <span class="key" translate>Removed files </span>
+        <span class="value">{{ item.Result.PurgeResults.RemovedFileCount }} 
+            ({{ formatSize(item.Result.PurgeResults.RemovedFileSize) }})</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>Rewritten File Lists </span>
+        <span class="value">{{ item.Result.PurgeResults.RewrittenFileLists }}</span>
+    </span>
+
+    <div class="horizontal-rule"></div>
+
+    <!-- ng-if="true" isolates the scope of 'data' in ng-init, this way we can include the same template using the same variable more than one time
+        without them intercepting each other's data. Similar to passing a parameter to the included template -->
+    <span class="item" ng-if="true" 
+        ng-init="data = {
+            'messages': item.Result.PurgeResults.Warnings,
+            'length': item.Result.PurgeResults.WarningsActualLength,
+            'type': 'Warning',
+            'title': gettextCatalog.getString('Warnings') }"
+        ng-include="'templates/backup-result/message-list.html'">
+    </span>
+    <span class="item" ng-if="true"
+        ng-init="data = {
+            'messages': item.Result.PurgeResults.Errors,
+            'length': item.Result.PurgeResults.ErrorsActualLength,
+            'type': 'Error',
+            'title': gettextCatalog.getString('Errors') }"
+        ng-include="'templates/backup-result/message-list.html'">
+    </span>
+</div>

@@ -1,9 +1,10 @@
 # Translators:
-# Marc Riera Irigoyen <marc.riera.irigoyen@gmail.com>, 2018
+# Marc Riera <marc.riera.irigoyen@gmail.com>, 2018
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Marc Riera Irigoyen <marc.riera.irigoyen@gmail.com>, 2018\n"
+"Last-Translator: Marc Riera <marc.riera.irigoyen@gmail.com>, 2018\n"
 "Language-Team: Catalan (https://www.transifex.com/duplicati/teams/67655/ca/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -12,33 +13,33 @@ msgstr ""
 
 #: templates/advancedoptionseditor.html:48
 msgid "- pick an option -"
-msgstr ""
+msgstr "- trieu una opció -"
 
 #: templates/delete.html:7 templates/localdatabase.html:4
 msgid "...loading..."
-msgstr ""
+msgstr "S'està carregant..."
 
 #: templates/backends/openstack.html:44
 msgid "API Key"
-msgstr ""
+msgstr "Clau API"
 
 #: scripts/services/EditUriBuiltins.js:828 templates/backends/s3.html:54
 #: templates/backends/s3.html:55
 msgid "AWS Access ID"
-msgstr ""
+msgstr "ID d'accés d'AWS"
 
 #: scripts/services/EditUriBuiltins.js:829 templates/backends/s3.html:58
 #: templates/backends/s3.html:59
 msgid "AWS Access Key"
-msgstr ""
+msgstr "Clau d'accés d'AWS"
 
 #: scripts/services/EditUriBuiltins.js:138
 msgid "AWS IAM Policy"
-msgstr ""
+msgstr "Política IAM d'AWS"
 
-#: index.html:225 index.html:241
+#: index.html:227 index.html:243
 msgid "About"
-msgstr "Quant a"
+msgstr "Quant al Duplicati"
 
 #: templates/about.html:2
 msgid "About {{appname}}"
@@ -62,7 +63,7 @@ msgstr "Nom del compte"
 
 #: templates/notificationarea.html:29 templates/updatechangelog.html:11
 msgid "Activate"
-msgstr "Activate"
+msgstr "Activa"
 
 #: scripts/controllers/AboutController.js:54
 #: scripts/controllers/UpdateChangelogController.js:18
@@ -73,56 +74,60 @@ msgstr "Ha fallat l'activació:"
 msgid "Add a new backup"
 msgstr "Afegeix una nova còpia de seguretat"
 
-#: templates/addoredit.html:149
+#: templates/addoredit.html:153
 msgid "Add a path directly"
-msgstr ""
+msgstr "Afegeix un camí directament"
 
 #: templates/advancedoptionseditor.html:46
 msgid "Add advanced option"
-msgstr ""
+msgstr "Afegeix una opció avançada"
 
-#: index.html:213
+#: index.html:215
 msgid "Add backup"
 msgstr "Afegeix una còpia de seguretat"
 
-#: templates/addoredit.html:203
+#: templates/addoredit.html:207
 msgid "Add filter"
 msgstr "Afegeix un filtre"
 
-#: templates/addoredit.html:152
+#: templates/addoredit.html:156
 msgid "Add path"
-msgstr ""
+msgstr "Afegeix un camí"
+
+#: templates/backup-result/top-right-box.html:11
+msgid "Added"
+msgstr "S'ha afegit"
 
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
 msgid "Adjust bucket name?"
-msgstr ""
+msgstr "Voleu modificar el nom del contenidor?"
 
 #: scripts/services/EditUriBuiltins.js:757
 msgid "Adjust path name?"
-msgstr ""
+msgstr "Voleu modificar el camí?"
 
 #: templates/restoredirect.html:66 templates/restoredirect.html:74
 msgid "Advanced Options"
 msgstr "Opcions avançades"
 
-#: templates/addoredit.html:372 templates/edituri.html:28
+#: templates/addoredit.html:376 templates/edituri.html:28
 msgid "Advanced options"
 msgstr "Opcions avançades"
 
-#: templates/home.html:30
+#: templates/home.html:37
 msgid "Advanced:"
 msgstr "Avançat:"
 
 #: scripts/directives/sourceFolderPicker.js:423
 msgid "All Hyper-V Machines"
-msgstr ""
+msgstr "Totes les màquines de l'Hyper-V"
 
 #: scripts/directives/sourceFolderPicker.js:455
 msgid "All Microsoft SQL Databases"
-msgstr ""
+msgstr "Totes les bases de dades SQL de Microsoft"
 
-#: templates/settings.html:129
+#: templates/settings.html:134
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
 "information. They contain information about hardware and operating system, "
@@ -130,48 +135,55 @@ msgid ""
 "similar data. They do not contain paths, filenames, usernames, passwords or "
 "similar sensitive information."
 msgstr ""
+"Tots els informes d'ús s'envien anònimament i no contenen cap informació "
+"personal. Contenen informació sobre el maquinari i el sistema operatiu, el "
+"tipus de capa d'accés de dades, la durada de la còpia de seguretat, la mida "
+"general de les dades d'origen i dades similars. No contenen camins, noms de "
+"fitxers, noms d'usuari, contrasenyes o dades sensibles similars."
 
-#: templates/settings.html:13
+#: templates/settings.html:17
 msgid "Allow remote access (requires restart)"
-msgstr ""
+msgstr "Permet l'accés remot (cal reiniciar el programa)"
 
-#: templates/addoredit.html:274
+#: templates/addoredit.html:278
 msgid "Allowed days"
-msgstr ""
+msgstr "Dies permesos"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
-msgstr ""
+msgstr "S'ha trobat un fitxer existent a la nova ubicació"
 
 #: scripts/controllers/LocalDatabaseController.js:72
 msgid ""
 "An existing file was found at the new location\n"
 "Are you sure you want the database to point to an existing file?"
 msgstr ""
+"S'ha trobat un fitxer existent a la nova ubicació.\n"
+"Segur que voleu que la base de dades apunti a un fitxer existent?"
 
-#: scripts/controllers/EditBackupController.js:428
+#: scripts/controllers/EditBackupController.js:447
 msgid ""
 "An existing local database for the storage has been found.\n"
 "Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
 "\n"
 " Do you wish to use the existing database?"
 msgstr ""
-"An existing local database for the storage has been found.\n"
-"Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
+"S'ha trobat una base de dades local existent per a l'emmagatzematge.\n"
+"Si reaprofiteu la base de dades, permetreu que les instàncies de la línia d'ordres i del servidor funcionin amb el mateix emmagatzematge remot.\n"
 "\n"
-" Do you wish to use the existing database?"
+" Voleu fer servir la base de dades existent?"
 
-#: templates/settings.html:117
+#: templates/settings.html:122
 msgid "Anonymous usage reports"
-msgstr ""
+msgstr "Informes d'ús anònims"
 
 #: scripts/services/AppUtils.js:204
 msgid "Applications"
-msgstr ""
+msgstr "Aplicacions"
 
 #: templates/export.html:8
 msgid "As Command-line"
-msgstr ""
+msgstr "Com a línia d'ordres"
 
 #: scripts/services/EditUriBuiltins.js:710 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/msgroup.html:13
@@ -179,130 +191,145 @@ msgstr ""
 #: templates/backends/oauth.html:9 templates/backends/sharepoint.html:8
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
-msgstr ""
+msgstr "AuthID"
 
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
 msgid "Authentication password"
-msgstr ""
+msgstr "Contrasenya per a l'autenticació"
 
 #: templates/backends/generic.html:19 templates/backends/openstack.html:31
 msgid "Authentication username"
-msgstr ""
+msgstr "Nom d'usuari per a l'autenticació"
 
-#: scripts/controllers/EditBackupController.js:337
+#: scripts/controllers/EditBackupController.js:356
 msgid "Autogenerated passphrase"
-msgstr ""
+msgstr "Contrasenya generada automàticament"
 
-#: templates/addoredit.html:254
+#: templates/addoredit.html:258
 msgid "Automatically run backups."
-msgstr ""
+msgstr "Executa les còpies de seguretat automàticament."
 
 #: templates/backends/b2.html:12
-msgid "B2 Account ID"
-msgstr ""
+msgid "B2 Account ID or Application ID"
+msgstr "ID del compte o ID d'aplicació de B2"
 
 #: templates/backends/b2.html:16
 msgid "B2 Application Key"
-msgstr ""
+msgstr "Clau d'aplicació de B2"
 
 #: scripts/services/EditUriBuiltins.js:875 templates/backends/b2.html:13
 msgid "B2 Cloud Storage Account ID"
-msgstr ""
+msgstr "ID del compte de B2 Cloud Storage"
 
 #: scripts/services/EditUriBuiltins.js:876 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
-msgstr ""
+msgstr "Clau d'aplicació de B2 Cloud Storage"
 
-#: templates/restore.html:132 templates/restore.html:70
+#: templates/restore.html:143 templates/restore.html:70
 msgid "Back"
-msgstr ""
+msgstr "Enrere"
 
 #: templates/about.html:67
 msgid "Backend modules:"
-msgstr ""
+msgstr "Mòduls de rerefons:"
 
 #: scripts/services/ServerStatus.js:44
-msgid "Backup Complete!"
-msgstr ""
+msgid "Backup complete!"
+msgstr "S'ha completat la còpia de seguretat!"
 
-#: templates/addoredit.html:88
+#: templates/addoredit.html:92
 msgid "Backup destination"
+msgstr "Destinació de la còpia de seguretat"
+
+#: templates/restore.html:131
+msgid ""
+"Backup is encrypted but no passphrase is available.\n"
+"                    Type a passphrase below to use for restoring your files,\n"
+"                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by\n"
+"                    invoking your system's keychain."
 msgstr ""
+"La còpia de seguretat està xifrada però no hi ha cap contrasenya disponible.\n"
+"                    Escriviu una contrasenya a sota per restaurar els fitxers\n"
+"                    o, en cas de fer servir xifratge GPG, deixeu el camp en blanc perquè el GPG obtingui la contrasenya\n"
+"                    des del clauer del sistema."
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
 msgid "Backup location"
-msgstr ""
+msgstr "Ubicació de la còpia de seguretat"
 
-#: templates/addoredit.html:315
+#: templates/addoredit.html:319
 msgid "Backup retention"
-msgstr ""
+msgstr "Preservació de la còpia de seguretat"
 
-#: templates/home.html:66
+#: templates/home.html:73
 msgid "Backup:"
-msgstr ""
+msgstr "Còpia de seguretat:"
 
-#: templates/settings.html:94
+#: templates/settings.html:99
 msgid "Beta"
-msgstr ""
+msgstr "Beta"
 
 #: scripts/services/AppUtils.js:68
 msgid "Broken access"
-msgstr ""
+msgstr "L'accés està trencat"
 
 #: templates/backends/file.html:8 templates/restore.html:91
 msgid "Browse"
-msgstr ""
+msgstr "Navega"
 
 #: scripts/controllers/SystemSettingsController.js:33
 msgid "Browser default"
-msgstr ""
+msgstr "Valor per defecte del navegador"
 
 #: scripts/services/EditUriBuiltins.js:787
 #: scripts/services/EditUriBuiltins.js:827
 #: scripts/services/EditUriBuiltins.js:874
 #: scripts/services/EditUriBuiltins.js:884
 msgid "Bucket Name"
-msgstr ""
+msgstr "Nom del contenidor"
 
 #: templates/backends/gcs.html:15
 msgid "Bucket create location"
-msgstr ""
+msgstr "Ubicació de creació del contenidor"
 
 #: templates/backends/s3.html:26
 msgid "Bucket create region"
-msgstr ""
+msgstr "Regió de creació del contenidor"
 
 #: templates/backends/b2.html:2 templates/backends/b2.html:3
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
 #: templates/backends/s3.html:19 templates/backends/s3.html:20
 msgid "Bucket name"
-msgstr ""
+msgstr "Nom del contenidor"
 
 #: templates/backends/gcs.html:26
 msgid "Bucket storage class"
-msgstr ""
+msgstr "Classe d'emmagatzematge del contenidor"
 
 #: scripts/services/ServerStatus.js:48
 msgid "Building list of files to restore ..."
-msgstr ""
+msgstr "S'està construint la llista de fitxers que es restauraran..."
 
-#: scripts/controllers/RestoreController.js:361
+#: scripts/controllers/RestoreController.js:363
 msgid "Building partial temporary database ..."
-msgstr ""
+msgstr "S'està construint una base de dades parcial temporal..."
 
 #: templates/restore.html:59
 msgid "Busy ..."
-msgstr ""
+msgstr "Espereu un moment..."
 
-#: templates/settings.html:14
+#: templates/settings.html:18
 msgid ""
 "By allowing remote access, the server listens to requests from any machine "
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
+"Si permeteu l'accés remot, el servidor escolta les peticions de qualsevol "
+"ordinador de la xarxa. Si activeu aquesta opció, assegureu-vos que sempre "
+"feu servir l'ordinador en una xarxa protegida amb un tallafoc."
 
-#: templates/settings.html:25
+#: templates/settings.html:29
 msgid ""
 "By default, the tray icon will open the user interface with a token than "
 "unlocks the user interface. This ensures that you can access the user "
@@ -310,24 +337,31 @@ msgid ""
 " you prefer having to type in the password, even when accessing the user "
 "interface from the tray icon, enable this option."
 msgstr ""
+"Per defecte, la icona de la safata del sistema obre la interfície d'usuari "
+"amb un testimoni que la desbloca. Això assegura que podeu accedir a la "
+"interfície d'usuari des de la icona de la safata del sistema, mentre que els"
+" altres han d'introduir una contrasenya. Si preferiu haver d'introduir la "
+"contrasenya, fins i tot quan accediu a la interfície d'usuari des de la "
+"icona de la safata del sistema, activeu aquesta opció."
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
-msgstr ""
+msgstr "Fitxers de memòria cau"
 
-#: templates/settings.html:104
+#: templates/settings.html:109
 msgid "Canary"
 msgstr "Canary"
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
-#: scripts/controllers/EditBackupController.js:322
-#: scripts/controllers/EditBackupController.js:337
-#: scripts/controllers/EditBackupController.js:371
-#: scripts/controllers/EditBackupController.js:380
-#: scripts/controllers/EditBackupController.js:407
-#: scripts/controllers/EditBackupController.js:428
-#: scripts/controllers/EditBackupController.js:75
+#: scripts/controllers/EditBackupController.js:341
+#: scripts/controllers/EditBackupController.js:356
+#: scripts/controllers/EditBackupController.js:390
+#: scripts/controllers/EditBackupController.js:399
+#: scripts/controllers/EditBackupController.js:426
+#: scripts/controllers/EditBackupController.js:447
+#: scripts/controllers/EditBackupController.js:95
+#: scripts/controllers/ExportController.js:13
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
@@ -338,14 +372,14 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:757
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856 templates/delete.html:54
-#: templates/export.html:26 templates/settings.html:159
+#: templates/export.html:30 templates/settings.html:164
 #: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Cancel·la"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "Cannot move to existing file"
-msgstr ""
+msgstr "No s'ha pogut canviar al fitxer existent"
 
 #: templates/about.html:5
 msgid "Changelog"
@@ -357,11 +391,11 @@ msgstr "Registre de canvis del {{appname}} {{version}}"
 
 #: scripts/controllers/UpdateChangelogController.js:24
 msgid "Check failed:"
-msgstr ""
+msgstr "Ha fallat la comprovació:"
 
 #: templates/about.html:36
 msgid "Check for updates now"
-msgstr ""
+msgstr "Comprova ara si hi ha actualitzacions"
 
 #: templates/captcha.html:10
 msgid "Checking ..."
@@ -373,28 +407,40 @@ msgstr "S'està comprovant si hi ha actualitzacions..."
 
 #: templates/edituri.html:16
 msgid "Chose a storage type to get started"
-msgstr ""
+msgstr "Trieu un tipus d'emmagatzematge per començar"
 
 #: templates/backends/gcs.html:11 templates/backends/msgroup.html:16
 #: templates/backends/oauth.html:11 templates/backends/sharepoint.html:11
 msgid "Click the AuthID link to create an AuthID"
-msgstr ""
+msgstr "Feu clic a l'enllaç d'AuthID per crear una AuthID"
 
-#: index.html:150 index.html:201
+#: index.html:152 index.html:203
 msgid "Click to set throttle options"
-msgstr ""
+msgstr "Feu clic per definir les opcions de velocitat"
 
-#: templates/home.html:35
+#: templates/home.html:42
 msgid "Commandline ..."
-msgstr ""
+msgstr "Línia d'ordres..."
 
-#: templates/home.html:34
+#: templates/backup-result/phases/compact.html:3
+msgid "Compact Phase"
+msgstr "Fase de compactació"
+
+#: templates/home.html:41
 msgid "Compact now"
-msgstr ""
+msgstr "Compacta ara"
 
 #: scripts/services/ServerStatus.js:41 scripts/services/ServerStatus.js:64
 msgid "Compacting remote data ..."
 msgstr "S'estan compactant les dades remotes..."
+
+#: templates/backup-result/box.html:30
+msgid ""
+"Complete log\n"
+"            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
+msgstr ""
+"Registre complet\n"
+"            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup ..."
@@ -406,7 +452,7 @@ msgstr "S'està completant la còpia de seguretat anterior..."
 
 #: templates/about.html:68
 msgid "Compression modules:"
-msgstr ""
+msgstr "Mòduls de compressió:"
 
 #: scripts/directives/sourceFolderPicker.js:381
 msgid "Computer"
@@ -416,7 +462,7 @@ msgstr "Ordinador"
 msgid "Configuration file:"
 msgstr "Fitxer de configuració:"
 
-#: templates/home.html:22
+#: templates/home.html:29
 msgid "Configuration:"
 msgstr "Configuració:"
 
@@ -428,200 +474,208 @@ msgstr "Configura una nova còpia de seguretat"
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Confirm delete"
-msgstr ""
+msgstr "Confirma l'eliminació"
+
+#: templates/settings.html:12
+msgid "Confirm password"
+msgstr "Confirmeu la contrasenya"
 
 #: scripts/services/EditUriBackendConfig.js:66
 msgid "Confirmation required"
-msgstr ""
+msgstr "Es requereix una confirmació"
 
 #: templates/restoredirect.html:80
 msgid "Connect"
-msgstr ""
+msgstr "Connecta"
 
-#: index.html:313
+#: index.html:315
 msgid "Connect now"
-msgstr ""
+msgstr "Connecta ara"
 
-#: index.html:309
+#: index.html:311
 msgid "Connecting to server ..."
-msgstr ""
+msgstr "S'està connectant al servidor..."
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
-msgstr ""
+msgstr "S'està connectant a la tasca..."
 
-#: index.html:314
+#: index.html:316
 msgid "Connecting..."
-msgstr ""
+msgstr "S'està connectant..."
 
-#: index.html:305
+#: index.html:307
 msgid "Connection lost"
-msgstr ""
+msgstr "S'ha perdut la connexió"
 
 #: scripts/directives/backupEditUri.js:51
 #: scripts/directives/backupEditUri.js:54
 msgid "Connection worked!"
-msgstr ""
+msgstr "Ha funcionat la connexió!"
 
 #: scripts/services/EditUriBuiltins.js:778 templates/backends/azure.html:2
 msgid "Container name"
-msgstr ""
+msgstr "Nom del contenidor"
 
 #: templates/backends/openstack.html:49
 msgid "Container region"
-msgstr ""
+msgstr "Regió del contenidor"
 
 #: templates/restore.html:69
 msgid "Continue"
-msgstr ""
+msgstr "Continua"
 
-#: scripts/controllers/EditBackupController.js:407
+#: scripts/controllers/EditBackupController.js:426
 msgid "Continue without encryption"
-msgstr ""
+msgstr "Continua sense xifratge"
 
 #: scripts/controllers/DialogController.js:16
 msgid "Copied!"
-msgstr ""
+msgstr "S'ha copiat!"
 
 #: templates/copy_clipboard_buttons.html:3
 msgid "Copy"
-msgstr ""
+msgstr "Copia"
 
-#: templates/addoredit.html:99 templates/restoredirect.html:42
+#: templates/addoredit.html:103 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
-msgstr ""
+msgstr "Copia l'URL de destinació al porta-retalls"
 
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
-msgstr ""
+msgstr "Ha fallat la còpia. Copieu l'URL manualment"
 
 #: scripts/services/AppUtils.js:639
 msgid "Core options"
-msgstr ""
+msgstr "Opcions principals"
 
 #: scripts/controllers/StateController.js:34
 msgid "Counting ({{files}} files found, {{size}})"
-msgstr ""
+msgstr "S'està comptant (s'han trobat {{files}} fitxers, {{size}})"
 
-#: templates/settings.html:124
+#: templates/settings.html:129
 msgid "Crashes only"
-msgstr ""
+msgstr "Només fallades"
 
-#: templates/home.html:41
+#: templates/home.html:48
 msgid "Create bug report ..."
-msgstr ""
+msgstr "Crea un informe d'error..."
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
-msgstr ""
+msgstr "Voleu crear una carpeta?"
 
 #: scripts/services/EditUriBuiltins.js:124
 msgid "Created new limited user"
-msgstr ""
+msgstr "S'ha creat un nou usuari limitat"
 
 #: scripts/services/ServerStatus.js:59
 msgid "Creating bug report ..."
-msgstr ""
+msgstr "S'està creant un informe d'error..."
 
 #: scripts/services/EditUriBuiltins.js:115
 msgid "Creating new user with limited access ..."
-msgstr ""
+msgstr "S'està creant un nou usuari amb accés limitat..."
 
 #: scripts/services/ServerStatus.js:49
 msgid "Creating target folders ..."
-msgstr ""
+msgstr "S'estan creant les carpetes de destinació..."
 
-#: scripts/controllers/RestoreController.js:356
+#: scripts/controllers/RestoreController.js:358
 msgid "Creating temporary backup ..."
-msgstr ""
+msgstr "S'està creant una còpia de seguretat temporal..."
 
 #: scripts/services/EditUriBuiltins.js:115
 msgid "Creating user..."
-msgstr ""
+msgstr "S'està creant l'usuari..."
 
-#: templates/home.html:71
+#: templates/home.html:78
 msgid "Current action:"
-msgstr ""
+msgstr "Acció actual:"
 
-#: templates/home.html:81
+#: templates/home.html:88
 msgid "Current file:"
-msgstr ""
+msgstr "Fitxer actual:"
 
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
-msgstr ""
+msgstr "La versió actual és {{versionname}} ({{versionnumber}})"
 
 #: templates/backends/s3.html:14
 msgid "Custom S3 endpoint"
-msgstr ""
+msgstr "Extrem d'S3 personalitzat"
 
 #: templates/backends/openstack.html:13
 msgid "Custom authentication url"
-msgstr ""
+msgstr "URL d'autenticació personalitzat"
 
-#: templates/addoredit.html:321
+#: templates/addoredit.html:325
 msgid "Custom backup retention"
-msgstr ""
+msgstr "Preservació de còpies de seguretat personalitzada"
 
 #: templates/backends/gcs.html:18
 msgid "Custom location ({{server}})"
-msgstr ""
+msgstr "Ubicació personalitzada ({{server}})"
 
 #: templates/backends/s3.html:32
 msgid "Custom region for creating buckets"
-msgstr ""
+msgstr "Regió de creació de contenidors personalitzada"
 
 #: templates/backends/s3.html:29
 msgid "Custom region value ({{region}})"
-msgstr ""
+msgstr "Valor de regió personalitzat ({{region}})"
 
 #: templates/backends/openstack.html:10 templates/backends/s3.html:11
 msgid "Custom server url ({{server}})"
-msgstr ""
+msgstr "URL del servidor personalitzat ({{server}})"
 
 #: templates/backends/gcs.html:29 templates/backends/s3.html:41
 msgid "Custom storage class ({{class}})"
-msgstr ""
+msgstr "Classe d'emmagatzematge personalitzada ({{class}})"
 
-#: templates/home.html:32
+#: templates/home.html:39
 msgid "Database ..."
-msgstr ""
+msgstr "Base de dades..."
 
-#: scripts/services/AppUtils.js:91 templates/addoredit.html:347
+#: scripts/services/AppUtils.js:91 templates/addoredit.html:351
 msgid "Days"
-msgstr ""
+msgstr "Dies"
 
 #: scripts/controllers/SystemSettingsController.js:34
 msgid "Default"
-msgstr ""
+msgstr "Per defecte"
 
-#: templates/settings.html:81
+#: templates/settings.html:86
 msgid "Default ({{channelname}})"
-msgstr ""
+msgstr "Per defecte ({{channelname}})"
 
 #: scripts/services/AppUtils.js:185
 msgid "Default excludes"
-msgstr ""
+msgstr "Exclusions per defecte"
 
-#: templates/settings.html:144
+#: templates/settings.html:149
 msgid "Default options"
-msgstr ""
+msgstr "Opcions per defecte"
 
 #: templates/localdatabase.html:19
 msgid "Delete"
 msgstr "Elimina"
 
-#: templates/home.html:26
+#: templates/home.html:33
 msgid "Delete ..."
 msgstr "Elimina..."
+
+#: templates/backup-result/phases/delete.html:3
+msgid "Delete Phase (Old Backup Versions)"
+msgstr "Fase d'eliminació (Versions antigues de la còpia de seguretat)"
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
 msgstr "Elimina la còpia de seguretat"
 
-#: templates/addoredit.html:318
+#: templates/addoredit.html:322
 msgid "Delete backups that are older than"
-msgstr "Elimina les còpies de seguretat més antigues que"
+msgstr "Elimina les còpies de seguretat anteriors a"
 
 #: templates/delete.html:13
 msgid "Delete local database"
@@ -638,6 +692,20 @@ msgstr "Elimina la base de dades local"
 #: templates/delete.html:41
 msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
 msgstr ""
+"Voleu eliminar {{filecount}} fitxers ({{filesize}}) de l'emmagatzematge "
+"remot?"
+
+#: templates/backup-result/top-right-box.html:19
+msgid "Deleted"
+msgstr "Eliminat"
+
+#: templates/backup-result/phases/delete.html:24
+msgid "Deleted Versions"
+msgstr "Versions eliminades"
+
+#: templates/backup-result/phases/compact.html:23
+msgid "Deleted files"
+msgstr "Fitxers eliminats"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
@@ -646,6 +714,14 @@ msgstr "S'estan eliminant els fitxers remots..."
 #: scripts/services/ServerStatus.js:40
 msgid "Deleting unwanted files ..."
 msgstr "S'estan eliminant els fitxers no desitjats..."
+
+#: templates/addoredit.html:43
+msgid "Description (optional)"
+msgstr "Descripció (opcional)"
+
+#: templates/home.html:17
+msgid "Description:"
+msgstr "Descripció:"
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
@@ -657,23 +733,23 @@ msgstr "Destinació"
 
 #: templates/backends/sharepoint.html:2
 msgid "Destination path"
-msgstr ""
+msgstr "Camí de destinació"
 
-#: templates/restore.html:141
+#: templates/restore.html:151
 msgid ""
 "Did we help save your files? If so, please consider supporting Duplicati "
 "with a donation. We suggest {{smallamount}} for private use and "
 "{{largeamount}} for commercial use."
 msgstr ""
 "Us hem ajudat a protegir els vostres fitxers? En cas que sí, penseu a ajudar"
-" el Duplicati amb una donació. Us suggerim {{smallamount}} per a un ús "
-"privat i {{largeamount}} per a un ús comercial."
+" el Duplicati amb una donació. Us suggerim que doneu {{smallamount}} si en "
+"feu un ús privat i {{largeamount}} per a un ús comercial."
 
 #: templates/restorewizard.html:9
 msgid "Direct restore from backup files ..."
-msgstr ""
+msgstr "Restaura directament des dels fitxers de còpia de seguretat"
 
-#: templates/log.html:31
+#: templates/log.html:32
 msgid "Disabled"
 msgstr "Desactivat"
 
@@ -685,69 +761,93 @@ msgstr "Ignora"
 msgid "Dismiss all"
 msgstr "Ignora-ho tot"
 
-#: templates/settings.html:63
+#: templates/settings.html:68
 msgid "Display and color theme"
-msgstr ""
+msgstr "Visualització i tema de color"
 
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
-msgstr ""
+msgstr "Segur que voleu eliminar la còpia de seguretat «{{name}}»?"
 
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Do you really want to delete the local database for: {{name}}"
-msgstr ""
+msgstr "Segur que voleu eliminar la base de dades local de «{{name}}»?"
 
 #: templates/backends/openstack.html:26
 msgid "Domain Name"
 msgstr "Nom del domini"
 
-#: index.html:142 index.html:249
+#: index.html:144 index.html:251
 msgid "Donate"
-msgstr "Fes una donació"
+msgstr "Feu una donació"
 
-#: templates/settings.html:71 templates/settings.html:73
+#: templates/settings.html:76 templates/settings.html:78
 msgid "Donation messages"
-msgstr ""
+msgstr "Missatges de donació"
 
-#: templates/settings.html:75
+#: templates/settings.html:80
 msgid "Donation messages are hidden, click to show"
-msgstr ""
+msgstr "Els missatges de donació estan amagats, feu clic per mostrar-los"
 
-#: templates/settings.html:74
+#: templates/settings.html:79
 msgid "Donation messages are visible, click to hide"
-msgstr ""
+msgstr "Els missatges de donació són visibles, feu clic per amagar-los"
 
-#: templates/export.html:45
+#: templates/export.html:49
 msgid "Done"
 msgstr "Fet"
 
 #: templates/notificationarea.html:16
 msgid "Download"
-msgstr ""
+msgstr "Baixa"
+
+#: templates/backup-result/phases/compact.html:28
+msgid "Downloaded files"
+msgstr "Fitxers baixats"
 
 #: templates/notificationarea.html:30
 msgid "Downloading ..."
-msgstr ""
+msgstr "S'està baixant..."
 
 #: scripts/services/ServerStatus.js:53
 msgid "Downloading files ..."
-msgstr ""
+msgstr "S'estan baixant els fitxers..."
 
 #: templates/notificationarea.html:24
 msgid "Downloading update..."
-msgstr ""
+msgstr "S'està baixant l'actualització..."
 
 #: scripts/services/AppUtils.js:301
 msgid "Duplicate option {{opt}}"
-msgstr ""
+msgstr "Opció duplicada {{opt}}"
 
-#: index.html:269
+#: index.html:271
 msgid "Duplicati Website"
 msgstr "Lloc web del Duplicati"
 
-#: index.html:257
+#: index.html:259
 msgid "Duplicati forum"
 msgstr "Fòrum del Duplicati"
+
+#: templates/settings.html:53
+msgid ""
+"Duplicati will run when started, but will remain in a paused state for the "
+"duration. Duplicati will occupy minimal system resources and no backups will"
+" be run."
+msgstr ""
+"El Duplicati s'executarà quan arrenqui, però es mantindrà pausat durant el "
+"període especificat. El Duplicati ocuparà els recursos del sistema mínims i "
+"no s'executaran còpies de seguretat."
+
+#: templates/backup-result/phases/compact.html:16
+#: templates/backup-result/phases/delete.html:16
+#: templates/backup-result/phases/purge.html:16
+#: templates/backup-result/phases/recreate-database.html:16
+#: templates/backup-result/phases/repair.html:16
+#: templates/backup-result/phases/test.html:16
+#: templates/backup-result/top-left-box.html:11
+msgid "Duration"
+msgstr "Durada"
 
 #: templates/delete.html:15
 msgid ""
@@ -755,9 +855,9 @@ msgid ""
 "            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
-"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
-"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
-"            If you are using the local database for backups from the commandline, you should keep the database."
+"Cada còpia de seguretat té una base de dades local associada que emmagatzema informació sobre la còpia de seguretat remota a l'ordinador local.\n"
+"            Quan elimineu una còpia de seguretat, també podeu eliminar la base de dades local sense que això afecti la possibilitat de restaurar els fitxers remots.\n"
+"            Si feu servir la base de dades local per a còpies de seguretat des de la línia d'ordres, hauríeu de mantenir la base de dades."
 
 #: templates/localdatabase.html:8
 msgid ""
@@ -766,31 +866,35 @@ msgid ""
 "faster to perform many operations, and reduces the amount of data that needs"
 " to be downloaded for each operation."
 msgstr ""
+"Cada còpia de seguretat té una base de dades local associada que emmagatzema"
+" informació sobre la còpia de seguretat remota a l'ordinador local.\\nAixò "
+"fa que es puguin fer diverses operacions més ràpidament i redueix la "
+"quantitat de dades que cal baixar durant cada operació."
 
-#: templates/home.html:24
+#: templates/home.html:31
 msgid "Edit ..."
 msgstr "Edita..."
 
-#: templates/addoredit.html:170 templates/addoredit.html:383
-#: templates/edituri.html:39 templates/settings.html:148
+#: templates/addoredit.html:174 templates/addoredit.html:387
+#: templates/edituri.html:39 templates/settings.html:153
 msgid "Edit as list"
 msgstr "Edita com a llista"
 
-#: templates/addoredit.html:173 templates/addoredit.html:386
-#: templates/edituri.html:42 templates/settings.html:154
+#: templates/addoredit.html:177 templates/addoredit.html:390
+#: templates/edituri.html:42 templates/settings.html:159
 msgid "Edit as text"
 msgstr "Edita com a text"
 
-#: templates/export.html:18
+#: templates/export.html:22
 msgid "Encrypt file"
-msgstr ""
+msgstr "Xifra el fitxer"
 
-#: templates/addoredit.html:43 templates/restore.html:22
+#: templates/addoredit.html:47 templates/restore.html:22
 #: templates/restoredirect.html:22 templates/restoredirect.html:58
 msgid "Encryption"
 msgstr "Xifratge"
 
-#: scripts/controllers/EditBackupController.js:380
+#: scripts/controllers/EditBackupController.js:399
 msgid "Encryption changed"
 msgstr "S'ha canviat el xifratge"
 
@@ -798,12 +902,22 @@ msgstr "S'ha canviat el xifratge"
 msgid "Encryption modules:"
 msgstr "Mòduls de xifratge:"
 
-#: scripts/controllers/EditBackupController.js:75
+#: templates/backup-result/phases/compact.html:12
+#: templates/backup-result/phases/delete.html:12
+#: templates/backup-result/phases/purge.html:12
+#: templates/backup-result/phases/recreate-database.html:12
+#: templates/backup-result/phases/repair.html:12
+#: templates/backup-result/phases/test.html:12
+#: templates/backup-result/top-left-box.html:7
+msgid "End"
+msgstr "Final"
+
+#: scripts/controllers/EditBackupController.js:95
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
-msgstr ""
+msgstr "Introduïu l'URL"
 
-#: templates/addoredit.html:335
+#: templates/addoredit.html:339
 msgid ""
 "Enter a retention strategy manually. Placeholders are D/W/Y for "
 "days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. "
@@ -811,237 +925,265 @@ msgid ""
 "the next 4 weeks, and one for each of the next 36 months. This can also be "
 "written as 1W:1D,1M:1W,3Y:1M."
 msgstr ""
+"Introduïu un pla de preservació manualment. Les expressions són D/W/Y per a "
+"dies/setmanes/anys i U per a il·limitat. La sintaxi és: 7D:1D,4W:1W,36M:1M. "
+"Aquest exemple preserva una còpia de seguretat per a cadascun dels pròxims 7"
+" dies, per a cadascuna de les pròximes 4 setmanes, i per a cadascun dels "
+"pròxims 36 mesos. Això també es pot escriure així: 1W:1D,1M:1W,3Y:1M."
 
 #: templates/backends/azure.html:12
 msgid "Enter access key"
-msgstr ""
+msgstr "Introduïu la clau d'accés"
 
 #: templates/backends/azure.html:8
 msgid "Enter account name"
-msgstr ""
+msgstr "Introduïu el compte d'usuari"
 
 #: templates/restoredirect.html:61
 msgid "Enter backup passphrase, if any"
-msgstr ""
+msgstr "Introduïu la contrasenya de la còpia de seguretat, si en té"
 
 #: templates/addwizard.html:10
 msgid "Enter configuration details"
-msgstr ""
+msgstr "Introduïu els detalls de configuració"
 
 #: templates/backends/azure.html:3
 msgid "Enter container name"
-msgstr ""
+msgstr "Introduïu el nom del contenidor"
 
-#: templates/export.html:22 templates/import.html:15
+#: templates/export.html:26 templates/import.html:15
 msgid "Enter encryption passphrase"
-msgstr ""
+msgstr "Introduïu la contrasenya de xifratge"
 
-#: templates/addoredit.html:192
+#: templates/addoredit.html:196
 msgid "Enter expression here"
-msgstr ""
+msgstr "Introduïu l'expressió aquí"
 
 #: templates/backends/jottacloud.html:3 templates/backends/mega.html:3
 msgid "Enter folder path name"
-msgstr ""
+msgstr "Introduïu el camí de la carpeta"
 
 #: scripts/services/AppUtils.js:122
 msgid "Enter one option per line in command-line format, eg. {0}"
 msgstr ""
+"Introduïu una opció per línia en el format de la línia d'ordres; per "
+"exemple: {0}"
 
 #: templates/backends/file.html:7 templates/backends/generic.html:14
 #: templates/backends/msgroup.html:8 templates/backends/oauth.html:3
 #: templates/restore.html:90
 msgid "Enter the destination path"
-msgstr ""
+msgstr "Introduïu el camí de destinació"
 
 #: templates/backends/msgroup.html:3
 msgid "Enter the email address of the Office 365 group"
-msgstr ""
+msgstr "Introduïu l'adreça electrònica del grup de l'Office 365"
 
 #: templates/backends/sharepoint.html:3
 msgid ""
 "Enter the full destination path, including the server name, but without "
 "https"
 msgstr ""
+"Introduïu el camí de destinació complet, incloent-hi el nom del servidor, "
+"però sense el prefix «https»"
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
-#: scripts/controllers/ExportController.js:28
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
-#: scripts/controllers/RestoreController.js:291
-#: scripts/controllers/RestoreController.js:331
-#: scripts/controllers/RestoreController.js:378
-#: scripts/controllers/RestoreController.js:411
-#: scripts/controllers/RestoreController.js:421
-#: scripts/controllers/RestoreController.js:88
+#: scripts/controllers/ExportController.js:43
+#: scripts/controllers/RestoreController.js:115
+#: scripts/controllers/RestoreController.js:145
+#: scripts/controllers/RestoreController.js:292
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:380
+#: scripts/controllers/RestoreController.js:413
+#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:89
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
 #: scripts/directives/backupEditUri.js:143
 #: scripts/directives/backupEditUri.js:170
 #: scripts/directives/backupEditUri.js:205
-#: scripts/directives/backupEditUri.js:239 scripts/services/AppUtils.js:301
+#: scripts/directives/backupEditUri.js:239
+#: scripts/directives/notificationArea.js:41
+#: scripts/directives/notificationArea.js:43 scripts/services/AppUtils.js:301
 #: scripts/services/AppUtils.js:347 scripts/services/AppUtils.js:349
 #: scripts/services/AppUtils.js:357 scripts/services/AppUtils.js:359
 msgid "Error"
-msgstr ""
+msgstr "Error"
 
 #: scripts/services/ServerStatus.js:66
 msgid "Error!"
-msgstr ""
+msgstr "S'ha produït un error!"
 
-#: templates/settings.html:123
+#: templates/settings.html:128
 msgid "Errors and crashes"
-msgstr ""
+msgstr "Errors i fallades"
 
-#: templates/addoredit.html:210
+#: templates/backup-result/top-right-box.html:3
+msgid "Examined"
+msgstr "Examinat"
+
+#: templates/addoredit.html:214
 msgid "Exclude"
-msgstr ""
+msgstr "Exclusions"
 
 #: scripts/services/AppUtils.js:125
 msgid "Exclude directories whose names contain"
-msgstr ""
+msgstr "Exclou carpetes amb un nom que contingui"
 
 #: scripts/services/AppUtils.js:179
 msgid "Exclude expression"
-msgstr ""
+msgstr "Exclou una expressió"
 
 #: scripts/services/AppUtils.js:143
 msgid "Exclude file"
-msgstr ""
+msgstr "Exclou un fitxer"
 
 #: scripts/services/AppUtils.js:149
 msgid "Exclude file extension"
-msgstr ""
+msgstr "Exclou una extensió de fitxer"
 
 #: scripts/services/AppUtils.js:131
 msgid "Exclude files whose names contain"
-msgstr ""
+msgstr "Exclou fitxers amb un nom que contingui"
 
 #: scripts/services/AppUtils.js:164
 msgid "Exclude filter group"
-msgstr ""
+msgstr "Exclou un grup de filtres"
 
 #: scripts/services/AppUtils.js:137
 msgid "Exclude folder"
-msgstr ""
+msgstr "Exclou una carpeta"
 
 #: scripts/services/AppUtils.js:154
 msgid "Exclude regular expression"
-msgstr ""
+msgstr "Exclou una expressió regular"
 
 #: scripts/controllers/LocalDatabaseController.js:72
 msgid "Existing file found"
-msgstr ""
+msgstr "S'ha trobat un fitxer existent"
 
-#: templates/settings.html:99
+#: templates/settings.html:104
 msgid "Experimental"
-msgstr ""
+msgstr "Experimental"
 
-#: templates/export.html:27
+#: templates/export.html:31
 msgid "Export"
-msgstr ""
+msgstr "Exporta"
 
-#: templates/home.html:25
+#: templates/home.html:32
 msgid "Export ..."
-msgstr ""
+msgstr "Exporta..."
 
 #: templates/export.html:2
 msgid "Export backup configuration"
-msgstr ""
+msgstr "Exporta la configuració de la còpia de seguretat"
 
 #: templates/delete.html:31 templates/delete.html:34
 msgid "Export configuration"
-msgstr ""
+msgstr "Exporta la configuració"
 
-#: templates/export.html:31
+#: templates/export.html:18
+msgid "Export passwords"
+msgstr "Exporta les contrasenyes"
+
+#: templates/export.html:35
 msgid "Exporting ..."
-msgstr ""
+msgstr "S'està exportant..."
 
 #: templates/externallink.html:1
 msgid "External link"
-msgstr ""
+msgstr "Enllaç extern"
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
-msgstr ""
+msgstr "FTP (alternatiu)"
 
-#: scripts/controllers/RestoreController.js:378
+#: scripts/controllers/RestoreController.js:380
 msgid "Failed to build temporary database: {{message}}"
-msgstr ""
+msgstr "No s'ha pogut crear la base de dades temporal: {{message}}"
 
 #: scripts/directives/backupEditUri.js:143
 #: scripts/directives/backupEditUri.js:205
 #: scripts/directives/backupEditUri.js:239
 msgid "Failed to connect:"
-msgstr ""
+msgstr "No s'ha pogut connectar:"
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
-#: scripts/controllers/ExportController.js:28
-#: scripts/controllers/LogController.js:78
-#: scripts/controllers/RestoreController.js:291
-#: scripts/controllers/RestoreController.js:331
-#: scripts/controllers/RestoreController.js:421
-#: scripts/controllers/RestoreController.js:88
+#: scripts/controllers/ExportController.js:43
+#: scripts/controllers/RestoreController.js:292
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:89
 #: scripts/controllers/RestoreDirectController.js:110
 #: scripts/controllers/RestoreDirectController.js:74
+#: scripts/services/LogService.js:30
 msgid "Failed to connect: {{message}}"
-msgstr ""
+msgstr "No s'ha pogut connectar: {{message}}"
 
 #: scripts/controllers/LocalDatabaseController.js:38
 msgid "Failed to delete:"
-msgstr ""
+msgstr "No s'ha pogut eliminar:"
 
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:115
+#: scripts/controllers/RestoreController.js:145
 msgid "Failed to fetch path information: {{message}}"
-msgstr ""
+msgstr "No s'ha pogut recollir la informació dels camins: {{message}}"
+
+#: scripts/directives/notificationArea.js:45
+msgid "Failed to find backup:"
+msgstr "No s'ha pogut trobar la còpia de seguretat:"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
-msgstr ""
+msgstr "No s'ha pogut importar:"
 
-#: scripts/controllers/EditBackupController.js:668
+#: scripts/controllers/EditBackupController.js:694
 msgid "Failed to read backup defaults:"
 msgstr ""
+"No s'han pogut llegir els valors per defecte de la còpia de seguretat:"
 
-#: scripts/controllers/RestoreController.js:411
+#: scripts/controllers/RestoreController.js:413
 msgid "Failed to restore files: {{message}}"
-msgstr ""
+msgstr "No s'han pogut restaurar els fitxers: {{message}}"
 
-#: scripts/controllers/SystemSettingsController.js:113
+#: scripts/controllers/SystemSettingsController.js:116
 msgid "Failed to save:"
-msgstr ""
+msgstr "No s'ha pogut desar:"
 
-#: scripts/controllers/RestoreController.js:120
-#: scripts/controllers/RestoreController.js:159
+#: scripts/controllers/RestoreController.js:121
+#: scripts/controllers/RestoreController.js:160
 msgid "Fetching path information ..."
-msgstr ""
+msgstr "S'està recollint la informació dels camins..."
 
 #: scripts/services/AppUtils.js:74
 msgid "File"
-msgstr ""
+msgstr "Fitxer"
 
-#: templates/addoredit.html:233
+#: templates/backup-result/top-right-box.html:1
+msgid "Files"
+msgstr "Fitxers"
+
+#: templates/addoredit.html:237
 msgid "Files larger than:"
-msgstr ""
+msgstr "Fitxers més grans que:"
 
-#: templates/addoredit.html:159
+#: templates/addoredit.html:163
 msgid "Filters"
-msgstr ""
+msgstr "Filtres"
 
 #: templates/commandline.html:60
 msgid "Finished!"
-msgstr ""
+msgstr "S'ha acabat!"
 
 #: scripts/controllers/AppController.js:170
 msgid "First run setup"
-msgstr ""
+msgstr "Configuració inicial"
 
 #: scripts/services/AppUtils.js:51
 msgid "Folder"
-msgstr ""
+msgstr "Carpeta"
 
 #: templates/backends/b2.html:7 templates/backends/file.html:22
 #: templates/backends/file.html:6 templates/backends/jottacloud.html:2
@@ -1049,109 +1191,114 @@ msgstr ""
 #: templates/backends/sia.html:6 templates/restore.html:105
 #: templates/restore.html:89
 msgid "Folder path"
-msgstr ""
+msgstr "Camí de la carpeta"
 
 #: scripts/services/AppUtils.js:108
 msgid "Fri"
-msgstr ""
+msgstr "Divendres"
 
 #: scripts/services/AppUtils.js:84
 msgid "GByte"
-msgstr ""
+msgstr "GBytes"
 
 #: scripts/services/AppUtils.js:117
 msgid "GByte/s"
-msgstr ""
+msgstr "GByte/s"
 
 #: templates/backends/gcs.html:38
 msgid "GCS Project ID"
-msgstr ""
+msgstr "ID del projecte de GCS"
 
-#: templates/about.html:4 templates/addoredit.html:24 templates/log.html:9
+#: templates/about.html:4 templates/addoredit.html:24
+#: templates/backuplog.html:6
 msgid "General"
-msgstr ""
+msgstr "General"
 
 #: templates/addoredit.html:36
 msgid "General backup settings"
-msgstr ""
+msgstr "Paràmetres generals de la còpia de seguretat"
 
-#: templates/addoredit.html:301
+#: templates/addoredit.html:305
 msgid "General options"
-msgstr ""
+msgstr "Opcions generals"
 
-#: templates/addoredit.html:69
+#: templates/addoredit.html:73
 msgid "Generate"
-msgstr ""
+msgstr "Genera"
 
 #: templates/backends/s3.html:63
 msgid "Generate IAM access policy"
-msgstr ""
+msgstr "Genera una política d'accés IAM"
 
-#: scripts/controllers/RestoreController.js:66
+#: scripts/controllers/RestoreController.js:67
 msgid "Getting file versions ..."
-msgstr ""
+msgstr "S'estan obtenint les versions dels fitxers..."
 
 #: scripts/services/EditUriBuiltins.js:729
 #: scripts/services/EditUriBuiltins.js:740 templates/backends/msgroup.html:2
 msgid "Group email"
-msgstr ""
+msgstr "Adreça electrònica del grup"
 
 #: scripts/controllers/EditBackupController.js:19
 msgid "Hidden files"
-msgstr ""
+msgstr "Fitxers ocults"
 
-#: templates/addoredit.html:64
+#: templates/addoredit.html:68
 msgid "Hide"
-msgstr ""
+msgstr "Amaga"
 
 #: templates/backends/file.html:15 templates/restore.html:98
 msgid "Hide hidden folders"
-msgstr ""
+msgstr "Amaga les carpetes ocultes"
 
-#: index.html:210 scripts/services/AppUtils.js:62
+#: index.html:212 scripts/services/AppUtils.js:62
 msgid "Home"
-msgstr ""
+msgstr "Inici"
 
-#: templates/settings.html:17
+#: templates/settings.html:21
 msgid "Hostnames"
-msgstr ""
+msgstr "Noms"
 
 #: scripts/services/AppUtils.js:100 scripts/services/AppUtils.js:90
-#: templates/settings.html:47
+#: templates/settings.html:51
 msgid "Hours"
-msgstr ""
+msgstr "Hores"
 
 #: templates/restore.html:111
 msgid "How do you want to handle existing files?"
-msgstr ""
+msgstr "Què voleu fer amb els fitxers existents?"
 
 #: scripts/services/AppUtils.js:64
 msgid "Hyper-V Machine"
-msgstr ""
+msgstr "Màquina de l'Hyper-V"
 
 #: scripts/directives/sourceFolderPicker.js:438
 msgid "Hyper-V Machine:"
-msgstr ""
+msgstr "Màquina de l'Hyper-V:"
 
 #: scripts/directives/sourceFolderPicker.js:417
 #: scripts/services/AppUtils.js:66
 msgid "Hyper-V Machines"
-msgstr ""
+msgstr "Màquines de l'Hyper-V"
 
 #: scripts/directives/sourceFolderPicker.js:56
 #: scripts/directives/sourceFolderPicker.js:62
 msgid "ID:"
-msgstr ""
+msgstr "ID:"
 
-#: templates/addoredit.html:257
+#: templates/addoredit.html:261
 msgid "If a date was missed, the job will run as soon as possible."
 msgstr ""
+"Si s'ha sobrepassat una data, la tasca s'executarà tan aviat com sigui "
+"possible."
 
-#: templates/addoredit.html:355
+#: templates/addoredit.html:359
 msgid ""
 "If at least one newer backup is found, all backups older than this date are "
 "deleted."
 msgstr ""
+"Si es troba com a mínim una còpia de seguretat més recent, s'eliminaran "
+"totes les còpies de seguretat anteriors a aquesta data."
 
 #: templates/localdatabase.html:13
 msgid ""
@@ -1159,13 +1306,20 @@ msgid ""
 "that you perform a repair operation to synchronize the database.\\nIf the "
 "repair is unsuccesful, you can delete the local database and re-generate."
 msgstr ""
+"Si la còpia de seguretat i l'emmagatzematge remot no estan sincronitzats, el"
+" Duplicati us demanarà que inicieu una reparació per sincronitzar la base de"
+" dades.\\nSi falla la reparació, podeu eliminar la base de dades local i "
+"tornar a generar-la."
 
-#: templates/export.html:41
+#: templates/export.html:45
 msgid ""
 "If the backup file was not downloaded automatically, <a "
 "href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
 " as ...&quot;</a>"
 msgstr ""
+"Si el fitxer de còpia de seguretat no s'ha baixat automàticament, <a "
+"href=\"{{DownloadURL}}\" target=\"_blank\">feu clic amb el botó dret i trieu"
+" «Anomena i desa...»</a>"
 
 #: templates/notificationarea.html:7
 msgid ""
@@ -1173,373 +1327,399 @@ msgid ""
 "href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
 "&quot;Save as ...&quot;</a>"
 msgstr ""
+"Si el fitxer de còpia de seguretat no s'ha baixat automàticament, <a "
+"href=\"{{item.DownloadLink}}\" target=\"_blank\">feu clic amb el botó dret i"
+" trieu «Anomena i desa...»</a>"
 
 #: scripts/services/EditUriBackendConfig.js:106
 msgid ""
 "If you do not enter a path, all files will be stored in the login folder.\n"
 "Are you sure this is what you want?"
 msgstr ""
+"Si no introduïu un camí, s'emmagatzemaran tots els fitxers a la carpeta d'inici de sessió.\n"
+"Segur que voleu fer això?"
 
 #: templates/backends/openstack.html:40
 msgid "If you do not enter an API Key, the tenant name is required"
-msgstr ""
+msgstr "Si no introduïu una clau API, heu d'indicar el nom d'inquilí"
 
 #: templates/delete.html:32
 msgid ""
 "If you want to use the backup later, you can export the configuration before"
 " deleting it"
 msgstr ""
+"Si voleu fer servir la còpia de seguretat més endavant, podeu exportar la "
+"configuració abans d'eliminar-la"
 
 #: scripts/controllers/AppController.js:171
 msgid ""
 "If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
 "Do you want to set a password now?"
 msgstr ""
+"Si el vostre ordinador es troba en un entorn multiusuari (és a dir, si a l'ordinador hi ha més d'un compte), heu de definir una contrasenya per evitar que altres usuaris accedeixin a dades del vostre compte.\n"
+"Voleu definir una contrasenya ara?"
 
 #: templates/import.html:31
 msgid "Import"
-msgstr ""
+msgstr "Importa"
 
-#: templates/addoredit.html:96 templates/restoredirect.html:39
+#: templates/addoredit.html:100 templates/restoredirect.html:39
 msgid "Import Destination URL"
-msgstr ""
+msgstr "Importa un URL de destinació"
 
 #: templates/import.html:3
 msgid "Import backup configuration"
-msgstr ""
+msgstr "Importa una configuració de còpia de seguretat"
 
 #: scripts/directives/backupEditUri.js:159
 msgid "Import completed, but no certificates were found after the import"
-msgstr ""
+msgstr "S'ha completat la importació, però no s'han trobat certificats"
 
 #: scripts/directives/backupEditUri.js:159
 msgid "Import failed"
-msgstr ""
+msgstr "Ha fallat la importació"
 
 #: templates/addwizard.html:15
 msgid "Import from a file"
-msgstr ""
+msgstr "Importa des d'un fitxer"
 
 #: templates/import.html:19
 msgid "Import metadata"
-msgstr ""
+msgstr "Importa les metadades"
 
 #: templates/import.html:35
 msgid "Importing ..."
-msgstr ""
+msgstr "S'està important..."
 
-#: scripts/controllers/EditBackupController.js:143
+#: scripts/controllers/EditBackupController.js:163
 msgid "Include a file?"
-msgstr ""
+msgstr "Voleu incloure un fitxer?"
 
 #: scripts/services/AppUtils.js:175
 msgid "Include expression"
-msgstr ""
+msgstr "Inclou una expressió"
 
 #: scripts/services/AppUtils.js:159
 msgid "Include regular expression"
-msgstr ""
+msgstr "Inclou una expressió regular"
 
 #: templates/captcha.html:11
 msgid "Incorrect answer, try again"
-msgstr ""
+msgstr "La resposta és incorrecta, torneu-ho a provar"
 
-#: templates/settings.html:105
+#: templates/settings.html:110
 msgid ""
 "Individual builds for developers only. Not for use with important data."
 msgstr ""
+"Compilacions individuals només per a desenvolupadors. No ho feu servir amb "
+"dades importants."
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
-msgstr ""
+msgstr "Informació"
 
 #: templates/notificationarea.html:28 templates/updatechangelog.html:10
 msgid "Install"
-msgstr ""
+msgstr "Instal·la"
 
 #: scripts/controllers/UpdateChangelogController.js:14
 msgid "Install failed:"
-msgstr ""
+msgstr "Ha fallat la instal·lació:"
 
 #: scripts/services/EditUriBuiltins.js:932
 msgid "Invalid characters in path"
-msgstr ""
+msgstr "El camí conté caràcters no vàlids"
 
-#: scripts/controllers/EditBackupController.js:269
-#: scripts/controllers/EditBackupController.js:276
-#: scripts/controllers/EditBackupController.js:283
+#: scripts/controllers/EditBackupController.js:288
+#: scripts/controllers/EditBackupController.js:295
+#: scripts/controllers/EditBackupController.js:302
 msgid "Invalid retention time"
-msgstr ""
+msgstr "El període de preservació no és vàlid"
 
 #: scripts/services/EditUriBuiltins.js:686
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
 msgstr ""
+"És possible connectar-se a alguns servidors FTP sense contrasenya.\n"
+"Segur que el vostre servidor FTP suporta l'accés sense contrasenya?"
 
 #: scripts/services/AppUtils.js:82
 msgid "KByte"
-msgstr ""
+msgstr "KBytes"
 
 #: scripts/services/AppUtils.js:115
 msgid "KByte/s"
-msgstr ""
+msgstr "KByte/s"
 
-#: templates/addoredit.html:319
+#: templates/addoredit.html:323
 msgid "Keep a specific number of backups"
-msgstr ""
+msgstr "Preserva un nombre específic de còpies de seguretat"
 
-#: templates/addoredit.html:317
+#: templates/addoredit.html:321
 msgid "Keep all backups"
-msgstr ""
+msgstr "Preserva totes les còpies de seguretat"
 
 #: templates/backends/openstack.html:18
 msgid "Keystone API version"
-msgstr ""
+msgstr "Versió de l'API de Keystone"
 
-#: templates/settings.html:53
+#: templates/settings.html:58
 msgid "Language in user interface"
-msgstr ""
+msgstr "Idioma de la interfície d'usuari"
 
-#: scripts/controllers/RestoreController.js:37
+#: scripts/controllers/RestoreController.js:38
 msgid "Last month"
-msgstr ""
+msgstr "El mes passat"
 
-#: templates/home.html:46
+#: templates/home.html:53
 msgid "Last successful backup:"
-msgstr ""
+msgstr "Última còpia de seguretat completada:"
 
 #: templates/restorewizard.html:27
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr ""
+"Última restauració completada: {{time}} (durada: {{duration || '0 segons'}})"
 
-#: scripts/controllers/RestoreController.js:56
+#: scripts/controllers/RestoreController.js:57
 msgid "Latest"
-msgstr ""
+msgstr "Versió més recent"
 
 #: templates/about.html:6
 msgid "Libraries"
-msgstr ""
+msgstr "Biblioteques"
 
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates ..."
-msgstr ""
+msgstr "S'estan llistant les dates de la còpia de seguretat..."
 
 #: scripts/services/ServerStatus.js:60
 msgid "Listing remote files ..."
-msgstr ""
+msgstr "S'estan llistant els fitxers remots..."
 
 #: scripts/services/ServerStatus.js:62
-msgid "Listing remote files for Purge ..."
-msgstr ""
+msgid "Listing remote files for purge ..."
+msgstr "S'estan llistant els fitxers remots que es purgaran..."
 
-#: templates/log.html:8
+#: templates/log.html:7
 msgid "Live"
-msgstr ""
+msgstr "En viu"
 
 #: templates/addwizard.html:16
 msgid "Load a configuration from an exported job or a storage provider"
 msgstr ""
+"Importeu una configuració des d'una tasca exportada o des d'un proveïdor "
+"d'emmagatzematge"
 
 #: templates/restorewizard.html:16
 msgid "Load destination from an exported job or a storage provider"
 msgstr ""
+"Importeu una destinació des d'una tasca exportada o des d'un proveïdor "
+"d'emmagatzematge"
 
-#: templates/log.html:23 templates/log.html:54 templates/log.html:68
+#: templates/backuplog.html:26 templates/backuplog.html:44
+#: templates/log.html:24
 msgid "Load older data"
-msgstr ""
+msgstr "Carrega dades més antigues"
 
 #: templates/about.html:45 templates/about.html:50 templates/about.html:56
-#: templates/captcha.html:14 templates/log.html:15 templates/log.html:22
-#: templates/log.html:45 templates/log.html:53 templates/log.html:60
-#: templates/log.html:67 templates/updatechangelog.html:7
+#: templates/backuplog.html:12 templates/backuplog.html:25
+#: templates/backuplog.html:32 templates/backuplog.html:43
+#: templates/captcha.html:14 templates/log.html:12 templates/log.html:23
+#: templates/updatechangelog.html:7
 msgid "Loading ..."
-msgstr ""
+msgstr "S'està carregant..."
 
 #: templates/delete.html:40
 msgid "Loading remote storage usage ..."
-msgstr ""
+msgstr "S'està carregant l'ús de l'emmagatzematge remot..."
 
 #: scripts/services/EditUriBuiltins.js:945
 msgid "Local Repository"
-msgstr ""
+msgstr "Dipòsit local"
 
 #: templates/localdatabase.html:2
 msgid "Local database for"
-msgstr ""
+msgstr "Base de dades local de"
 
 #: templates/localdatabase.html:26
 msgid "Local database path:"
-msgstr ""
+msgstr "Camí de la base de dades local:"
 
 #: templates/backends/rclone.html:2
 msgid "Local repository"
-msgstr ""
+msgstr "Dipòsit local"
 
 #: scripts/services/SystemInfo.js:81
 msgid "Local storage"
-msgstr ""
+msgstr "Emmagatzematge local"
 
 #: templates/localdatabase.html:23
 msgid "Location"
-msgstr ""
+msgstr "Ubicació"
 
 #: templates/backends/gcs.html:21
 msgid "Location where buckets are created"
-msgstr ""
+msgstr "Ubicació on es creen els contenidors"
 
-#: templates/log.html:4
+#: templates/backuplog.html:3
 msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
-msgstr ""
+msgstr "Dades de registre de <b>{{Backup.Backup.Name}}</b>"
 
 #: templates/log.html:3
 msgid "Log data from the server"
-msgstr ""
+msgstr "Dades de registre del servidor"
 
-#: index.html:228
+#: index.html:230
 msgid "Log out"
-msgstr ""
+msgstr "Surt"
 
 #: scripts/services/AppUtils.js:83
 msgid "MByte"
-msgstr ""
+msgstr "MBytes"
 
 #: scripts/services/AppUtils.js:116
 msgid "MByte/s"
-msgstr ""
+msgstr "MByte/s"
 
 #: templates/localdatabase.html:11
 msgid "Maintenance"
-msgstr ""
+msgstr "Manteniment"
 
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
-msgstr ""
+msgstr "Escriviu el camí manualment"
 
 #: templates/throttle.html:15
 msgid "Max download speed"
-msgstr ""
+msgstr "Velocitat màxima de baixada"
 
 #: templates/throttle.html:5
 msgid "Max upload speed"
-msgstr ""
+msgstr "Velocitat màxima de càrrega"
 
-#: index.html:146 templates/addoredit.html:123 templates/addoredit.html:165
-#: templates/addoredit.html:378 templates/addoredit.html:91
+#: index.html:148 templates/addoredit.html:127 templates/addoredit.html:169
+#: templates/addoredit.html:382 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
-msgstr ""
+msgstr "Menú"
 
 #: scripts/directives/sourceFolderPicker.js:471
 msgid "Microsoft SQL Database:"
-msgstr ""
+msgstr "Base de dades SQL de Microsoft:"
 
 #: scripts/directives/sourceFolderPicker.js:449
 msgid "Microsoft SQL Databases"
-msgstr ""
+msgstr "Bases de dades SQL de Microsoft"
 
 #: templates/backends/sia.html:14
 msgid "Minimum redundancy"
-msgstr ""
+msgstr "Redundància mínima"
 
 #: scripts/services/EditUriBuiltins.js:936
 msgid "Minimum redundancy is 1.0"
-msgstr ""
+msgstr "La redundància mínima és de 1.0"
 
 #: scripts/services/AppUtils.js:89 scripts/services/AppUtils.js:99
-#: templates/settings.html:46
+#: templates/settings.html:50
 msgid "Minutes"
-msgstr ""
+msgstr "Minuts"
 
-#: scripts/controllers/EditBackupController.js:219
+#: scripts/controllers/EditBackupController.js:239
 msgid "Missing name"
-msgstr ""
+msgstr "No s'ha definit un nom"
 
-#: scripts/controllers/EditBackupController.js:227
+#: scripts/controllers/EditBackupController.js:246
 msgid "Missing passphrase"
-msgstr ""
+msgstr "No s'ha definit una contrasenya"
 
-#: scripts/controllers/EditBackupController.js:240
+#: scripts/controllers/EditBackupController.js:259
 msgid "Missing sources"
-msgstr ""
+msgstr "No s'ha definit un origen"
+
+#: templates/backup-result/top-right-box.html:15
+msgid "Modified"
+msgstr "Modificat"
 
 #: scripts/services/AppUtils.js:104
 msgid "Mon"
-msgstr ""
+msgstr "Dilluns"
 
-#: scripts/services/AppUtils.js:93 templates/addoredit.html:349
+#: scripts/services/AppUtils.js:93 templates/addoredit.html:353
 msgid "Months"
-msgstr ""
+msgstr "Mesos"
 
 #: templates/localdatabase.html:34
 msgid "Move existing database"
-msgstr ""
+msgstr "Mou una base de dades existent"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Move failed:"
-msgstr ""
+msgstr "No s'ha pogut moure:"
 
 #: scripts/services/AppUtils.js:54
 msgid "My Documents"
-msgstr ""
+msgstr "Documents"
 
 #: scripts/services/AppUtils.js:56
 msgid "My Music"
-msgstr ""
+msgstr "Música"
 
 #: templates/addoredit.html:40
 msgid "My Photos"
-msgstr ""
+msgstr "Fotografies"
 
 #: scripts/services/AppUtils.js:58
 msgid "My Pictures"
-msgstr ""
+msgstr "Imatges"
 
 #: templates/addoredit.html:39
 msgid "Name"
-msgstr ""
+msgstr "Nom"
 
-#: templates/home.html:53
+#: templates/home.html:60
 msgid "Never"
-msgstr ""
+msgstr "Mai"
 
 #: templates/notificationarea.html:22
 msgid "New update found: {{message}}"
-msgstr ""
+msgstr "Hi ha una nova actualització: {{message}}"
 
 #: scripts/services/EditUriBuiltins.js:124
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
 msgstr ""
+"El nou nom d'usuari és {{user}}.\n"
+"S'han actualitzat les credencials per fer servir el nou usuari limitat"
 
-#: templates/addoredit.html:109 templates/addoredit.html:242
-#: templates/addoredit.html:292 templates/addoredit.html:78
+#: templates/addoredit.html:113 templates/addoredit.html:246
+#: templates/addoredit.html:296 templates/addoredit.html:82
 #: templates/addwizard.html:28 templates/restoredirect.html:52
 #: templates/restorewizard.html:36
 msgid "Next"
-msgstr ""
+msgstr "Següent"
 
-#: templates/home.html:57
+#: templates/home.html:64
 msgid "Next scheduled run:"
-msgstr ""
+msgstr "Pròxima execució programada:"
 
-#: index.html:185
+#: index.html:187
 msgid "Next scheduled task:"
-msgstr ""
+msgstr "Pròxima tasca programada:"
 
-#: index.html:182
+#: index.html:184
 msgid "Next task:"
-msgstr ""
+msgstr "Pròxima tasca:"
 
-#: templates/addoredit.html:260
+#: templates/addoredit.html:264
 msgid "Next time"
-msgstr ""
+msgstr "La pròxima vegada"
 
 #: scripts/controllers/DeleteController.js:77
-#: scripts/controllers/EditBackupController.js:133
-#: scripts/controllers/EditBackupController.js:143
-#: scripts/controllers/EditBackupController.js:428
+#: scripts/controllers/EditBackupController.js:153
+#: scripts/controllers/EditBackupController.js:163
+#: scripts/controllers/EditBackupController.js:447
 #: scripts/controllers/HomeController.js:7
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
@@ -1553,7 +1733,7 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
 msgid "No"
-msgstr ""
+msgstr "No"
 
 #: scripts/directives/backupEditUri.js:210
 msgid ""
@@ -1561,145 +1741,176 @@ msgid ""
 "\n"
 "Do you want to approve the reported host key?"
 msgstr ""
+"No s'ha especificat cap certificat anteriorment, comproveu amb l'administrador del servidor que la clau és correcta: {{key}} \n"
+"\n"
+"Voleu aprovar aquesta clau d'amfitrió?"
 
 #: templates/edituri.html:12
 msgid "No editor found for the &quot;{{backend}}&quot; storage type"
 msgstr ""
+"No s'ha trobat cap editor per a l'emmagatzematge del tipus «{{backend}}»"
 
-#: scripts/controllers/EditBackupController.js:407 templates/addoredit.html:45
+#: scripts/controllers/EditBackupController.js:426 templates/addoredit.html:49
 msgid "No encryption"
-msgstr ""
+msgstr "Sense xifratge"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:193
 msgid "No items selected"
-msgstr ""
+msgstr "No s'ha seleccionat cap element"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:193
 msgid "No items to restore, please select one or more items"
-msgstr ""
+msgstr "No hi ha elements per restaurar, seleccioneu-ne un o més"
 
-#: scripts/controllers/ExportController.js:10
+#: scripts/controllers/ExportController.js:57
 msgid "No passphrase entered"
-msgstr ""
+msgstr "No s'ha introduït cap contrasenya"
 
-#: index.html:187
+#: index.html:189
 msgid "No scheduled tasks"
-msgstr ""
+msgstr "No hi ha tasques planificades"
 
 #: scripts/controllers/AppController.js:172
 msgid "No, my machine has only a single account"
-msgstr ""
+msgstr "No, al meu ordinador només hi ha un compte d'usuari"
 
-#: scripts/controllers/EditBackupController.js:233
+#: scripts/controllers/EditBackupController.js:252
 msgid "Non-matching passphrase"
-msgstr ""
+msgstr "La contrasenya no coincideix"
 
-#: templates/settings.html:125
+#: templates/settings.html:130
 msgid "None / disabled"
-msgstr ""
+msgstr "Cap / desactivat"
 
-#: templates/addoredit.html:324
+#: scripts/controllers/ExportController.js:13
+msgid "Not using encryption"
+msgstr "Xifratge desactivat"
+
+#: templates/addoredit.html:328
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr ""
+"No s'eliminarà res. La mida de la còpia de seguretat augmentarà després de "
+"cada canvi."
 
 #: scripts/controllers/AppController.js:44
 #: scripts/controllers/AppController.js:59
-#: scripts/controllers/EditBackupController.js:75
-#: scripts/controllers/EditBackupController.js:83
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:95
 #: scripts/controllers/RestoreDirectController.js:24
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:124 templates/restore.html:146
-#: templates/settings.html:160
+#: scripts/services/EditUriBuiltins.js:124 templates/restore.html:156
+#: templates/settings.html:165
 msgid "OK"
-msgstr ""
+msgstr "D'acord"
 
-#: templates/addoredit.html:342
+#: templates/addoredit.html:346
 msgid ""
 "Once there are more backups than the specified number, the oldest backups "
 "are deleted."
 msgstr ""
+"Una vegada hi ha més còpies de seguretat que el nombre especificat, "
+"s'eliminen les còpies de seguretat més antigues."
 
 #: templates/backends/openstack.html:7
 msgid "OpenStack AuthURI"
-msgstr ""
+msgstr "AuthURI de l'OpenStack"
 
 #: scripts/services/SystemInfo.js:50
 msgid "OpenStack Object Storage / Swift"
-msgstr ""
+msgstr "OpenStack Object Storage / Swift"
+
+#: templates/backup-result/top-right-box.html:7
+msgid "Opened"
+msgstr "Obert"
 
 #: scripts/services/EditUriBuiltins.js:803
 msgid "Openstack API Key are not supported in v3 keystone API."
 msgstr ""
+"Les claus API de l'OpenStack no són compatibles amb l'API v3 de Keystone."
 
 #: scripts/services/AppUtils.js:195
 msgid "Operating System"
-msgstr ""
+msgstr "Sistema operatiu"
 
-#: scripts/controllers/SystemSettingsController.js:124
-#: scripts/controllers/SystemSettingsController.js:135
+#: templates/backuplog.html:16
+msgid "Operation"
+msgstr "Operació"
+
+#: scripts/controllers/SystemSettingsController.js:127
+#: scripts/controllers/SystemSettingsController.js:138
 msgid "Operation failed:"
-msgstr ""
+msgstr "Ha fallat l'operació:"
 
-#: templates/home.html:16
+#: templates/home.html:23
 msgid "Operations:"
-msgstr ""
+msgstr "Operacions:"
 
 #: templates/backends/file.html:34
 msgid "Optional authentication password"
-msgstr ""
+msgstr "Contrasenya per a l'autenticació (opcional)"
 
 #: templates/backends/file.html:30
 msgid "Optional authentication username"
-msgstr ""
+msgstr "Nom d'usuari per a l'autenticació (opcional)"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/settings.html:147 templates/settings.html:153
+#: templates/settings.html:152 templates/settings.html:158
 msgid "Options"
-msgstr ""
+msgstr "Opcions"
 
-#: templates/settings.html:145
+#: templates/settings.html:150
 msgid ""
 "Options added here are applied to all backups, but can be overridden in each"
 " individual backup"
 msgstr ""
+"Les opcions afegides aquí s'apliquen a totes les còpies de seguretat, però "
+"es poden redefinir a cada còpia de seguretat"
 
 #: templates/restore.html:81
 msgid "Original location"
-msgstr ""
+msgstr "Ubicació original"
 
 #: scripts/services/SystemInfo.js:84
 msgid "Others"
-msgstr ""
+msgstr "Altres"
 
-#: templates/addoredit.html:328
+#: templates/addoredit.html:332
 msgid ""
 "Over time backups will be deleted automatically. There will remain one "
 "backup for each of the last 7 days, each of the last 4 weeks, each of the "
 "last 12 months. There will always be at least one remaining backup."
 msgstr ""
+"Al llarg del temps, les còpies de seguretat s'eliminaran automàticament. Es "
+"conservarà una còpia de seguretat per a cadascun dels darrers 7 dies, les "
+"darreres 4 setmanes i els darrers 12 mesos. Sempre hi haurà com a mínim una "
+"còpia de seguretat restant."
 
 #: templates/restore.html:114
 msgid "Overwrite"
-msgstr ""
+msgstr "Sobreescriu-los"
 
-#: templates/addoredit.html:54 templates/export.html:21
-#: templates/restoredirect.html:60
+#: templates/addoredit.html:58 templates/export.html:25
+#: templates/restore.html:130 templates/restoredirect.html:60
 msgid "Passphrase"
-msgstr ""
+msgstr "Contrasenya"
 
 #: templates/import.html:14
 msgid "Passphrase (if encrypted)"
-msgstr ""
+msgstr "Contrasenya (si el fitxer està xifrat)"
 
-#: scripts/controllers/EditBackupController.js:371
+#: scripts/controllers/EditBackupController.js:390
 msgid "Passphrase changed"
-msgstr ""
+msgstr "S'ha canviat la contrasenya"
 
-#: scripts/controllers/EditBackupController.js:233
+#: scripts/controllers/EditBackupController.js:252
 msgid "Passphrases are not matching"
-msgstr ""
+msgstr "Les contrasenyes no coincideixen"
+
+#: scripts/controllers/EditBackupController.js:29
+msgid "Passphrases do not match"
+msgstr "Les contrasenyes no coincideixen"
 
 #: scripts/services/EditUriBuiltins.js:910
 #: scripts/services/EditUriBuiltins.js:920 templates/backends/file.html:33
@@ -1708,546 +1919,582 @@ msgstr ""
 #: templates/backends/mega.html:12 templates/backends/openstack.html:34
 #: templates/settings.html:8
 msgid "Password"
-msgstr ""
-
-#: scripts/controllers/EditBackupController.js:29
-msgid "Passwords do not match"
-msgstr ""
+msgstr "Contrasenya"
 
 #: scripts/services/ServerStatus.js:52
 msgid "Patching files with local blocks ..."
-msgstr ""
+msgstr "S'estan aplicant pedaços als fitxers amb blocs locals..."
 
 #: scripts/services/EditUriBuiltins.js:895
 msgid "Path"
-msgstr ""
+msgstr "Camí"
 
-#: scripts/controllers/EditBackupController.js:133
+#: scripts/controllers/EditBackupController.js:153
 msgid "Path not found"
-msgstr ""
+msgstr "No s'ha trobat el camí"
 
 #: templates/backends/generic.html:13 templates/backends/msgroup.html:7
 #: templates/backends/oauth.html:2
 msgid "Path on server"
-msgstr ""
+msgstr "Camí al servidor"
 
 #: templates/backends/b2.html:8 templates/backends/s3.html:50
 msgid "Path or subfolder in the bucket"
-msgstr ""
+msgstr "Camí o subcarpeta al contenidor"
 
-#: templates/settings.html:31
+#: templates/settings.html:35
 msgid "Pause"
-msgstr ""
+msgstr "Pausa"
 
-#: templates/settings.html:29
+#: templates/settings.html:33
 msgid "Pause after startup or hibernation"
-msgstr ""
+msgstr "Pausa després de l'arrencada o la hibernació"
 
 #: scripts/controllers/AppController.js:42
 msgid "Pause options"
-msgstr ""
+msgstr "Opcions de pausa"
 
 #: templates/restore.html:123
 msgid "Permissions"
-msgstr ""
+msgstr "Permisos"
 
 #: templates/restore.html:85
 msgid "Pick location"
-msgstr ""
+msgstr "Trieu una ubicació"
 
 #: templates/restorewizard.html:10
 msgid "Point to your backup files and restore from there"
 msgstr ""
+"Indiqueu on són els vostres fitxers de còpia de seguretat i feu una "
+"restauració des d'allà"
 
 #: templates/backends/generic.html:9
 msgid "Port"
-msgstr ""
+msgstr "Port"
 
-#: templates/settings.html:24
+#: templates/settings.html:28
 msgid "Prevent tray icon automatic log-in"
-msgstr ""
+msgstr "Impedeix l'inici de sessió automàtic de la safata del sistema"
 
-#: templates/addoredit.html:110 templates/addoredit.html:243
-#: templates/addoredit.html:293 templates/addoredit.html:405
+#: templates/addoredit.html:114 templates/addoredit.html:247
+#: templates/addoredit.html:297 templates/addoredit.html:409
 #: templates/restoredirect.html:81
 msgid "Previous"
-msgstr ""
+msgstr "Enrere"
 
-#: templates/home.html:73
+#: templates/home.html:80
 msgid "Progress:"
-msgstr ""
+msgstr "Progrés:"
 
 #: templates/backends/gcs.html:39
 msgid "ProjectID is optional if the bucket exist"
-msgstr ""
+msgstr "La ProjectID és opcional si el contenidor existeix"
 
 #: scripts/services/SystemInfo.js:83
 msgid "Proprietary"
-msgstr ""
+msgstr "De propietat"
+
+#: templates/backup-result/phases/purge.html:3
+msgid "Purge Phase"
+msgstr "Fase de purga"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
-msgstr ""
+msgstr "S'estan purgant els fitxers..."
 
 #: scripts/services/ServerStatus.js:65
-msgid "Purging files Complete!"
-msgstr ""
+msgid "Purging files complete!"
+msgstr "S'han purgat els fitxers!"
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
-msgstr ""
+msgstr "S'està reconstruint la base de dades local..."
 
 #: templates/localdatabase.html:20
 msgid "Recreate (delete and repair)"
-msgstr ""
+msgstr "Recrea (elimina i repara)"
+
+#: templates/backup-result/phases/recreate-database.html:3
+msgid "Recreate Database Phase"
+msgstr "Fase de recreació de la base de dades"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database ..."
-msgstr ""
+msgstr "S'està recreant la base de dades..."
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup ..."
-msgstr ""
+msgstr "S'està registrant una còpia de seguretat temporal..."
 
-#: scripts/controllers/EditBackupController.js:118
+#: scripts/controllers/EditBackupController.js:138
 msgid "Relative paths not allowed"
-msgstr ""
+msgstr "No es permet l'ús de camins relatius"
 
 #: templates/captcha.html:7
 msgid "Reload"
-msgstr ""
+msgstr "Actualitza"
 
-#: templates/log.html:10
+#: templates/backuplog.html:7
 msgid "Remote"
-msgstr ""
+msgstr "Remot"
 
 #: scripts/services/EditUriBuiltins.js:946
 msgid "Remote Path"
-msgstr ""
+msgstr "Camí remot"
 
 #: scripts/services/EditUriBuiltins.js:944
 msgid "Remote Repository"
-msgstr ""
+msgstr "Dipòsit remot"
 
 #: templates/backends/rclone.html:10
 msgid "Remote path"
-msgstr ""
+msgstr "Camí remot"
 
 #: templates/backends/rclone.html:6
 msgid "Remote repository"
-msgstr ""
+msgstr "Dipòsit remot"
 
-#: templates/addoredit.html:303
+#: templates/addoredit.html:307
 msgid "Remote volume size"
-msgstr ""
+msgstr "Mida dels volums remots"
 
-#: templates/addoredit.html:199
+#: templates/addoredit.html:203
 msgid "Remove"
-msgstr ""
+msgstr "Elimina"
 
 #: templates/advancedoptionseditor.html:40
 msgid "Remove option"
-msgstr ""
+msgstr "Elimina l'opció"
+
+#: templates/backup-result/phases/purge.html:23
+msgid "Removed files"
+msgstr "Fitxers eliminats"
 
 #: templates/localdatabase.html:18 templates/notificationarea.html:14
 msgid "Repair"
-msgstr ""
+msgstr "Repara"
+
+#: templates/backup-result/phases/repair.html:3
+msgid "Repair Phase"
+msgstr "Fase de reparació"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
-msgstr ""
+msgstr "S'està reparant la base de dades..."
 
-#: templates/addoredit.html:58
+#: templates/addoredit.html:62
 msgid "Repeat Passphrase"
-msgstr ""
+msgstr "Repetiu la contrasenya"
 
-#: templates/home.html:38
+#: templates/home.html:45
 msgid "Reporting:"
-msgstr ""
+msgstr "S'està informant:"
 
 #: templates/localdatabase.html:31
 msgid "Reset"
-msgstr ""
+msgstr "Reinicialitza"
 
-#: index.html:216 templates/restore.html:131
+#: index.html:218 templates/restore.html:142
 msgid "Restore"
-msgstr ""
+msgstr "Restaura"
 
 #: scripts/services/ServerStatus.js:55
-msgid "Restore Complete!"
-msgstr ""
+msgid "Restore complete!"
+msgstr "S'ha completat la restauració!"
 
 #: templates/restore.html:45
 msgid "Restore files"
-msgstr ""
+msgstr "Restaura fitxers"
 
-#: templates/home.html:19
+#: templates/home.html:26
 msgid "Restore files ..."
-msgstr ""
+msgstr "Restaura fitxers..."
 
 #: templates/restore.html:46
 msgid "Restore files from {{backupname}}"
-msgstr ""
+msgstr "Restaura fitxers des de {{backupname}}"
 
 #: templates/restore.html:48
 msgid "Restore from"
-msgstr ""
+msgstr "Restaura des de"
 
 #: templates/import.html:4
 msgid "Restore from backup configuration"
-msgstr ""
+msgstr "Restaura des d'una configuració de còpia de seguretat"
 
 #: templates/restorewizard.html:15
 msgid "Restore from configuration ..."
-msgstr ""
+msgstr "Restaura des d'una configuració..."
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
 msgid "Restore options"
-msgstr ""
+msgstr "Opcions de restauració"
 
 #: templates/restore.html:126
 msgid "Restore read/write permissions"
-msgstr ""
+msgstr "Restaura els permisos de lectura/escriptura"
 
-#: scripts/controllers/RestoreController.js:371
-#: scripts/controllers/RestoreController.js:393
+#: scripts/controllers/RestoreController.js:373
+#: scripts/controllers/RestoreController.js:395
 msgid "Restoring files ..."
-msgstr ""
+msgstr "S'estan restaurant els fitxers..."
 
-#: index.html:219
+#: index.html:221
 msgid "Resume"
-msgstr ""
+msgstr "Reprèn"
 
-#: templates/addoredit.html:265
+#: templates/backup-result/phases/purge.html:28
+msgid "Rewritten File Lists"
+msgstr "Llistes de fitxers reescrits"
+
+#: templates/addoredit.html:269
 msgid "Run again every"
-msgstr ""
+msgstr "Torna a executar cada"
 
-#: templates/home.html:18 templates/home.html:53
+#: templates/home.html:25 templates/home.html:60
 msgid "Run now"
-msgstr ""
+msgstr "Executa ara"
 
 #: scripts/controllers/StateController.js:25
 msgid "Running ..."
-msgstr ""
+msgstr "S'està executant..."
 
 #: templates/commandline.html:58
 msgid "Running ...."
-msgstr ""
+msgstr "S'està executant..."
 
 #: templates/commandline.html:47
 msgid "Running commandline entry"
-msgstr ""
+msgstr "S'està executant una entrada de la línia d'ordres"
 
-#: index.html:174
+#: index.html:176
 msgid "Running task:"
-msgstr ""
+msgstr "Tasca en execució:"
 
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
-msgstr ""
+msgstr "Compatible amb S3"
 
-#: templates/settings.html:82
+#: templates/settings.html:87
 msgid "Same as the base install version: {{channelname}}"
-msgstr ""
+msgstr "La mateixa que la versió base d'instal·lació: {{channelname}}"
 
 #: scripts/services/AppUtils.js:109
 msgid "Sat"
-msgstr ""
+msgstr "Dissabte"
 
-#: templates/addoredit.html:404 templates/localdatabase.html:32
+#: templates/addoredit.html:408 templates/localdatabase.html:32
 msgid "Save"
-msgstr ""
+msgstr "Desa"
 
 #: templates/localdatabase.html:33
 msgid "Save and repair"
-msgstr ""
+msgstr "Desa i repara"
 
 #: templates/restore.html:118
 msgid "Save different versions with timestamp in file name"
-msgstr ""
+msgstr "Desa les versions diferents amb una marca horària al nom del fitxer"
 
 #: templates/import.html:24
 msgid "Save immediately"
-msgstr ""
+msgstr "Desa immediatament"
 
 #: scripts/services/ServerStatus.js:50
 msgid "Scanning existing files ..."
-msgstr ""
+msgstr "S'estan escanejant els fitxers existents..."
 
 #: scripts/services/ServerStatus.js:51
 msgid "Scanning for local blocks ..."
-msgstr ""
+msgstr "S'estan cercant blocs locals..."
 
-#: templates/addoredit.html:251 templates/addoredit.html:27
+#: templates/addoredit.html:255 templates/addoredit.html:27
 msgid "Schedule"
-msgstr ""
+msgstr "Planificació"
 
 #: templates/restore.html:60
 msgid "Search"
-msgstr ""
+msgstr "Cerca"
 
 #: templates/restore.html:56
 msgid "Search for files"
-msgstr ""
+msgstr "Cerca fitxers"
 
-#: scripts/services/AppUtils.js:98 templates/settings.html:45
+#: scripts/services/AppUtils.js:98 templates/settings.html:49
 msgid "Seconds"
-msgstr ""
+msgstr "Segons"
 
-#: templates/log.html:29
+#: templates/log.html:30
 msgid "Select a log level and see messages as they happen:"
-msgstr ""
+msgstr "Trieu un nivell de registre i vegeu els nous missatges al moment:"
 
 #: templates/restore.html:23 templates/restore.html:38
 #: templates/restoredirect.html:23
 msgid "Select files"
-msgstr ""
+msgstr "Seleccioneu els fitxers"
 
 #: scripts/services/EditUriBuiltins.js:928 templates/backends/s3.html:8
 #: templates/backends/sia.html:2
 msgid "Server"
-msgstr ""
+msgstr "Servidor"
 
 #: templates/backends/generic.html:7
 msgid "Server and port"
-msgstr ""
+msgstr "Servidor i port"
 
 #: templates/backends/generic.html:8
 msgid "Server hostname or IP"
-msgstr ""
+msgstr "Nom del servidor o IP"
 
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
 msgid "Server is currently paused,"
-msgstr ""
+msgstr "El servidor està pausat actualment,"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server is currently paused, do you want to resume now?"
-msgstr ""
+msgstr "El servidor està pausat actualment, voleu reprendre la tasca ara?"
 
 #: templates/backends/sia.html:10
 msgid "Server password"
-msgstr ""
+msgstr "Contrasenya del servidor"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server paused"
-msgstr ""
+msgstr "S'ha pausat el servidor"
 
 #: templates/about.html:72
 msgid "Server state properties"
-msgstr ""
+msgstr "Propietats de l'estat del servidor"
 
-#: index.html:222 templates/settings.html:2
+#: index.html:224 templates/settings.html:2
 msgid "Settings"
-msgstr ""
+msgstr "Configuració"
 
-#: templates/addoredit.html:65 templates/notificationarea.html:12
+#: templates/addoredit.html:69 templates/notificationarea.html:12
 #: templates/notificationarea.html:32
 msgid "Show"
-msgstr ""
+msgstr "Mostra"
 
-#: templates/addoredit.html:128
+#: templates/addoredit.html:132
 msgid "Show advanced editor"
-msgstr ""
+msgstr "Mostra l'editor avançat"
 
-#: templates/addoredit.html:139 templates/backends/file.html:16
+#: templates/addoredit.html:143 templates/backends/file.html:16
 #: templates/restore.html:99
 msgid "Show hidden folders"
-msgstr ""
+msgstr "Mostra les carpetes ocultes"
 
 #: templates/about.html:8
 msgid "Show log"
-msgstr ""
+msgstr "Mostra el registre"
 
-#: templates/home.html:40
+#: templates/home.html:47
 msgid "Show log ..."
-msgstr ""
+msgstr "Mostra el registre..."
 
-#: templates/addoredit.html:131
+#: templates/addoredit.html:135
 msgid "Show treeview"
-msgstr ""
+msgstr "Mostra la vista en arbre"
 
 #: templates/backends/sia.html:11
 msgid "Sia server password"
-msgstr ""
+msgstr "Contrasenya del servidor de Sia"
 
-#: templates/addoredit.html:320
+#: templates/addoredit.html:324
 msgid "Smart backup retention"
-msgstr ""
+msgstr "Preservació de còpies de seguretat intel·ligent"
 
 #: templates/backends/openstack.html:45
 msgid ""
 "Some OpenStack providers allow an API key instead of a password and tenant "
 "name"
 msgstr ""
+"Alguns proveïdors de l'OpenStack permeten fer servir una clau API en comptes"
+" d'una contrasenya i un nom d'inquilí"
 
 #: templates/addoredit.html:26
 msgid "Source Data"
-msgstr ""
+msgstr "Dades d'origen"
 
-#: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:120
+#: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:124
 msgid "Source data"
-msgstr ""
+msgstr "Dades d'origen"
 
-#: templates/addoredit.html:145
+#: templates/addoredit.html:149
 msgid "Source folders"
-msgstr ""
+msgstr "Carpetes d'origen"
 
-#: templates/home.html:62
+#: templates/home.html:69
 msgid "Source:"
-msgstr ""
+msgstr "Origen:"
 
-#: templates/settings.html:100
+#: templates/settings.html:105
 msgid "Specific builds for developers only. Not for use with important data."
 msgstr ""
+"Compilacions específiques només per a desenvolupadors. No ho feu servir amb "
+"dades importants."
 
 #: scripts/services/SystemInfo.js:82
 msgid "Standard protocols"
-msgstr ""
+msgstr "Protocols estàndard"
+
+#: templates/backup-result/phases/compact.html:8
+#: templates/backup-result/phases/delete.html:8
+#: templates/backup-result/phases/purge.html:8
+#: templates/backup-result/phases/recreate-database.html:8
+#: templates/backup-result/phases/repair.html:8
+#: templates/backup-result/phases/test.html:8
+#: templates/backup-result/top-left-box.html:3
+msgid "Start"
+msgstr "Inici"
 
 #: scripts/services/ServerStatus.js:33
-msgid "Starting Backup ..."
-msgstr ""
+msgid "Starting backup ..."
+msgstr "S'està iniciant la còpia de seguretat..."
 
 #: scripts/services/ServerStatus.js:45
-msgid "Starting Restore..."
-msgstr ""
+msgid "Starting restore ..."
+msgstr "S'està iniciant la restauració..."
 
-#: scripts/controllers/RestoreController.js:367
-#: scripts/controllers/RestoreController.js:391
+#: scripts/controllers/RestoreController.js:369
+#: scripts/controllers/RestoreController.js:393
 msgid "Starting the restore process ..."
-msgstr ""
+msgstr "S'està iniciant el procés de restauració..."
 
 #: scripts/controllers/StateController.js:112
 msgid "Stop after the current file"
-msgstr ""
+msgstr "Atura després del fitxer actual"
 
 #: scripts/controllers/StateController.js:103
 msgid "Stop after upload"
-msgstr ""
+msgstr "Atura després de la càrrega"
 
 #: scripts/controllers/StateController.js:103
 #: scripts/controllers/StateController.js:112
 msgid "Stop now"
-msgstr ""
+msgstr "Atura ara"
 
 #: scripts/controllers/StateController.js:101
 msgid "Stop running backup"
-msgstr ""
+msgstr "Atura la còpia de seguretat en execució"
 
 #: scripts/controllers/StateController.js:110
 msgid "Stop running task"
-msgstr ""
+msgstr "Atura la tasca en execució"
 
-#: index.html:170
+#: index.html:172
 msgid "Stopping after upload:"
-msgstr ""
+msgstr "S'aturarà després de la càrrega:"
 
-#: index.html:175
+#: index.html:177
 msgid "Stopping task:"
-msgstr ""
+msgstr "S'està aturant la tasca:"
 
 #: templates/edituri.html:3
 msgid "Storage Type"
-msgstr ""
+msgstr "Tipus d'emmagatzematge"
 
 #: templates/backends/s3.html:38
 msgid "Storage class"
-msgstr ""
+msgstr "Classe d'emmagatzematge"
 
 #: templates/backends/gcs.html:32
 msgid "Storage class for creating a bucket"
-msgstr ""
+msgstr "Classe d'emmagatzematge per crear un contenidor"
 
-#: templates/log.html:7
+#: templates/log.html:6
 msgid "Stored"
-msgstr ""
+msgstr "Emmagatzemat"
 
 #: scripts/controllers/EditBackupController.js:33
 msgid "Strong"
-msgstr ""
+msgstr "Forta"
 
 #: scripts/directives/backupEditUri.js:51
 #: scripts/directives/backupEditUri.js:54
 msgid "Success"
-msgstr ""
+msgstr "Èxit"
 
 #: scripts/services/AppUtils.js:110
 msgid "Sun"
-msgstr ""
+msgstr "Diumenge"
 
 #: scripts/services/AppUtils.js:72
 msgid "Symbolic link"
-msgstr ""
+msgstr "Enllaç simbòlic"
 
 #: scripts/services/AppUtils.js:192
 msgid "System Files"
-msgstr ""
+msgstr "Fitxers del sistema"
 
-#: templates/settings.html:120
+#: templates/settings.html:125
 msgid "System default ({{levelname}})"
-msgstr ""
+msgstr "Valor per defecte del sistema ({{levelname}})"
 
 #: scripts/controllers/EditBackupController.js:20
 msgid "System files"
-msgstr ""
+msgstr "Fitxers del sistema"
 
 #: templates/about.html:7
 msgid "System info"
-msgstr ""
+msgstr "Informació del sistema"
 
 #: templates/about.html:64
 msgid "System properties"
-msgstr ""
+msgstr "Propietats del sistema"
 
 #: scripts/services/AppUtils.js:85
 msgid "TByte"
-msgstr ""
+msgstr "TBytes"
 
 #: scripts/services/AppUtils.js:118
 msgid "TByte/s"
-msgstr ""
+msgstr "TByte/s"
 
 #: templates/backends/sia.html:7
 msgid "Target path, ie /backup"
-msgstr ""
+msgstr "Camí de destinació (per exemple, /backup)"
 
 #: templates/waitarea.html:5
 msgid "Task is running"
-msgstr ""
+msgstr "La tasca s'està executant"
 
 #: scripts/services/AppUtils.js:201
 msgid "Temporary Files"
-msgstr ""
+msgstr "Fitxers temporals"
 
 #: scripts/controllers/EditBackupController.js:21
 msgid "Temporary files"
-msgstr ""
+msgstr "Fitxers temporals"
 
 #: templates/backends/openstack.html:39
 msgid "Tenant Name"
-msgstr ""
+msgstr "Nom de l'inquilí"
+
+#: templates/backup-result/phases/test.html:3
+msgid "Test Phase"
+msgstr "Fase de comprovació"
 
 #: templates/edituri.html:21
 msgid "Test connection"
-msgstr ""
+msgstr "Comprova la connexió"
 
 #: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
 msgid "Testing ..."
-msgstr ""
+msgstr "S'està comprovant..."
 
 #: scripts/directives/backupEditUri.js:44
 msgid "Testing connection ..."
-msgstr ""
+msgstr "S'està comprovant la connexió..."
 
 #: scripts/services/EditUriBuiltins.js:45
 msgid "Testing permissions ..."
-msgstr ""
+msgstr "S'estan comprovant els permisos..."
 
 #: scripts/services/EditUriBuiltins.js:45
 msgid "Testing permissions..."
-msgstr ""
+msgstr "S'estan comprovant els permisos..."
 
 #: scripts/services/EditUriBuiltins.js:884
 #: scripts/services/EditUriBuiltins.js:895
@@ -2255,33 +2502,62 @@ msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
+"El camp «{{fieldname}}» conté un caràcter no vàlid: {{character}} (valor: "
+"{{value}}, índex: {{pos}})"
+
+#: scripts/directives/notificationArea.js:43
+msgid "The backup is missing, has it been deleted?"
+msgstr "No s'ha trobat la còpia de seguretat; l'heu eliminat?"
+
+#: scripts/directives/notificationArea.js:41
+msgid ""
+"The backup was temporary and does not exist anymore, so the log data is lost"
+msgstr ""
+"La còpia de seguretat era temporal i ja no existeix, per la qual cosa s'han "
+"perdut les dades del registre"
 
 #: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
+"El nom del contenidor ha d'estar en minúscules; voleu convertir-lo "
+"automàticament?"
 
 #: scripts/services/EditUriBuiltins.js:839
 msgid ""
 "The bucket name should start with your username, prepend automatically?"
 msgstr ""
+"El nom del contenidor ha de començar amb el vostre nom d'usuari; voleu "
+"afegir-lo automàticament?"
 
-#: index.html:306
+#: scripts/controllers/ExportController.js:13
+msgid ""
+"The configuration should be kept safe. Are you sure you want to save an "
+"unencrypted file containing your passwords?"
+msgstr ""
+"És recomanable que deseu la configuració en un lloc segur. Segur que voleu "
+"desar un fitxer sense xifrar amb les vostres contrasenyes?"
+
+#: index.html:308
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
 msgstr ""
+"S'ha perdut la connexió amb el servidor. Es tornarà a intentar en "
+"{{time}}..."
 
-#: templates/settings.html:67
+#: templates/settings.html:72
 msgid "The dark theme (by Michal)"
-msgstr ""
+msgstr "Tema fosc (per Michal)"
 
-#: templates/settings.html:66
+#: templates/settings.html:71
 msgid "The default blue on white theme (by Alex)"
-msgstr ""
+msgstr "Tema per defecte, blau sobre blanc (per Alex)"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
 msgstr ""
+"La carpeta {{folder}} no existeix.\n"
+"Voleu crear-la ara?"
 
 #: scripts/directives/backupEditUri.js:212
 msgid ""
@@ -2289,23 +2565,33 @@ msgid ""
 "\n"
 "Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
 msgstr ""
+"La clau de l'amfitrió ha canviat, comproveu amb l'administrador del servidor que això és correcte, o podríeu ser víctima d'un atac d'intermediari.\n"
+"\n"
+"Voleu substituir la clau d'amfitrió actual («{{prev}}») amb la clau d'amfitrió «{{key}}»?"
 
-#: scripts/controllers/EditBackupController.js:133
+#: scripts/controllers/SystemSettingsController.js:90
+msgid "The passwords do not match"
+msgstr "Les contrasenyes no coincideixen"
+
+#: scripts/controllers/EditBackupController.js:153
 msgid "The path does not appear to exist, do you want to add it anyway?"
-msgstr ""
+msgstr "Sembla que el camí no existeix, voleu afegir-lo igualment?"
 
-#: scripts/controllers/EditBackupController.js:143
+#: scripts/controllers/EditBackupController.js:163
 msgid ""
 "The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n"
 "\n"
 "Do you want to include the specified file?"
 msgstr ""
+"El camí no acaba amb un caràcter «{{dirsep}}», la qual cosa vol dir que heu triat un fitxer, no una carpeta.\n"
+"\n"
+"Voleu incloure el fitxer especificat?"
 
-#: scripts/controllers/EditBackupController.js:118
+#: scripts/controllers/EditBackupController.js:138
 msgid ""
 "The path must be an absolute path, i.e. it must start with a forward slash "
 "'/'"
-msgstr ""
+msgstr "El camí ha de ser absolut, és a dir, ha de començar amb una barra «/»"
 
 #: scripts/services/EditUriBuiltins.js:757
 msgid ""
@@ -2313,49 +2599,64 @@ msgid ""
 "\n"
 "Do you want to add the prefix to the path automatically?"
 msgstr ""
+"El camí ha de començar per «{{prefix1}}» o «{{prefix2}}»; si no, no podreu veure els fitxers des de la interfície web de hubiC.\n"
+"\n"
+"Voleu afegir el prefix al camí automàticament?"
 
 #: templates/backends/s3.html:28
 msgid "The region parameter is only applied when creating a new bucket"
-msgstr ""
+msgstr "El paràmetre de regió només s'aplica quan es crea un contenidor"
 
 #: templates/backends/openstack.html:50
 msgid "The region parameter is only used when creating a bucket"
-msgstr ""
+msgstr "El paràmetre de regió només es fa servir quan es crea un contenidor"
 
 #: scripts/directives/backupEditUri.js:87
 msgid ""
 "The server certificate could not be validated.\n"
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
 msgstr ""
+"No s'ha pogut validar el certificat del servidor.\n"
+"Voleu aprovar el certificat SSL amb la suma «{{hash}}»?"
 
 #: templates/backends/s3.html:40
 msgid "The storage class affects the availability and price for a stored file"
 msgstr ""
+"La classe d'emmagatzematge afecta la disponibilitat i el preu dels fitxers "
+"emmagatzemats"
 
 #: scripts/controllers/RestoreDirectController.js:106
 msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
 msgstr ""
+"La carpeta de destinació conté fitxers encriptats; introduïu-ne la "
+"contrasenya"
 
 #: scripts/services/EditUriBuiltins.js:50
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
 msgstr ""
+"L'usuari té massa permisos. Voleu crear un nou usuari limitat, amb permisos "
+"només per al camí seleccionat?"
 
-#: scripts/controllers/RestoreController.js:305
+#: scripts/controllers/RestoreController.js:306
 msgid ""
 "This backup was created on another operating system. Restoring files without"
 " specifying a destination folder can cause files to be restored in "
 "unexpected places. Are you sure you want to continue without choosing a "
 "destination folder?"
 msgstr ""
+"Aquesta còpia de seguretat s'ha creat en un altre sistema operatiu. Si "
+"restaureu fitxers sense especificar una carpeta de destinació, pot ser que "
+"es restaurin fitxers en llocs inesperats. Segur que voleu continuar sense "
+"seleccionar una carpeta de destinació?"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:37
 msgid "This month"
-msgstr ""
+msgstr "Aquest mes"
 
-#: templates/addoredit.html:308
+#: templates/addoredit.html:312
 msgid ""
 "This option does not relate to your maximum backup or file size, nor does it"
 " affect deduplication rates. <external-link "
@@ -2363,34 +2664,48 @@ msgid ""
 "size'\">See this page before you change the remote volume size.</external-"
 "link>"
 msgstr ""
+"Aquesta opció no està relacionada amb la mida màxima de la còpia de "
+"seguretat ni dels fitxers, ni afecta el percentatge de desduplicació. "
+"<external-link link=\"'https://www.duplicati.com/articles/Choosing-Sizes"
+"/#remote-volume-size'\">Consulteu aquesta pàgina abans de canviar la mida "
+"dels volums remots.</external-link>"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:36
 msgid "This week"
-msgstr ""
+msgstr "Aquesta setmana"
 
 #: scripts/controllers/AppController.js:57
 msgid "Throttle settings"
-msgstr ""
+msgstr "Opcions de velocitat"
 
 #: scripts/services/AppUtils.js:107
 msgid "Thu"
-msgstr ""
+msgstr "Dijous"
+
+#: templates/backup-result/phases/delete.html:33
+#: templates/backup-result/top-left-box.html:1
+msgid "Time"
+msgstr "Hora"
 
 #: templates/export.html:14
 msgid "To File"
-msgstr ""
+msgstr "A un fitxer"
 
 #: scripts/controllers/DeleteController.js:66
 msgid ""
 "To confirm you want to delete all remote files for \"{{name}}\", please "
 "enter the word you see below"
 msgstr ""
+"Per confirmar que voleu eliminar tots els fitxers remots de «{{name}}, "
+"escriviu la paraula que veieu a continuació"
 
-#: scripts/controllers/ExportController.js:10
+#: scripts/controllers/ExportController.js:57
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr ""
+"Per fer una exportació sense contrasenya, desactiveu la casella «Xifra el "
+"fitxer»"
 
-#: templates/settings.html:19
+#: templates/settings.html:23
 msgid ""
 "To prevent various DNS based attacks, Duplicati limits the allowed hostnames"
 " to the ones listed here. Direct IP access and localhost is always allowed. "
@@ -2399,104 +2714,125 @@ msgid ""
 "feature is disabled. If the field is empty, only IP address and localhost "
 "access is allowed."
 msgstr ""
+"Per evitar diversos atacs basats en el DNS, el Duplicati limita els noms de "
+"servidor permesos als d'aquesta llista. Sempre es permet l'accés directe a "
+"localhost o per IP. Podeu indicar diversos noms de servidor separant-los amb"
+" un punt i coma. Si cap dels noms d'ordinador permesos és un asterisc (*), "
+"es permeten tots els noms d'ordinador i es desactiva aquesta característica."
+" Si el camp és buit, només es permet l'accés a localhost o per adreça IP."
 
-#: scripts/controllers/RestoreController.js:33
+#: scripts/controllers/RestoreController.js:34
 msgid "Today"
-msgstr ""
+msgstr "Avui"
 
 #: scripts/directives/backupEditUri.js:214
 msgid "Trust host certificate?"
-msgstr ""
+msgstr "Voleu confiar en el certificat de l'amfitrió?"
 
 #: scripts/directives/backupEditUri.js:87
 msgid "Trust server certificate?"
-msgstr ""
+msgstr "Voleu confiar en el certificat del servidor?"
 
-#: templates/settings.html:95
+#: templates/settings.html:100
 msgid ""
 "Try out the new features that we are working on. Currently the most stable "
 "version available. Test Restore data before using this in production "
 "environments."
 msgstr ""
+"Proveu les noves característiques que estem preparant. És la versió més "
+"estable disponible actualment. Proveu la funció de restauració abans de fer-"
+"ho servir en entorns de producció."
 
 #: scripts/services/AppUtils.js:105
 msgid "Tue"
-msgstr ""
+msgstr "Dimarts"
+
+#: templates/restore.html:138
+msgid "Type passphrase here."
+msgstr "Escriviu la contrasenya aquí."
 
 #: templates/restore.html:57
 msgid "Type to highlight files"
-msgstr ""
+msgstr "Escriviu per ressaltar fitxers"
 
 #: templates/restorewizard.html:25
 msgid "Unknown backup size and versions"
 msgstr ""
+"No s'han pogut determinar la mida de la còpia de seguretat i les versions"
 
-#: templates/pause.html:31
+#: templates/pause.html:46
 msgid "Until resumed"
-msgstr ""
+msgstr "Fins que es reprengui"
 
-#: templates/settings.html:78
+#: templates/settings.html:83
 msgid "Update channel"
-msgstr ""
+msgstr "Canal d'actualitzacions"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Update failed:"
-msgstr ""
+msgstr "Ha fallat l'actualització:"
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid "Updating with existing database"
-msgstr ""
+msgstr "S'està actualitzant amb una base de dades existent"
+
+#: templates/backup-result/phases/compact.html:33
+msgid "Uploaded files"
+msgstr "Fitxers carregats"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
-msgstr ""
+msgstr "S'està carregant el fitxer de verificació..."
 
-#: templates/settings.html:127
+#: templates/settings.html:132
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"link\">public usage"
 " statistics</external-link>"
 msgstr ""
+"Els informes d'ús ens ajuden a millorar l'experiència d'usuari i a avaluar "
+"l'impacte de les noves característiques. Els fem servir per generar "
+"<external-link link=\"link\">estadístiques d'ús públiques</external-link>"
 
-#: templates/settings.html:115
+#: templates/settings.html:120
 msgid "Usage statistics"
-msgstr ""
+msgstr "Estadístiques d'ús"
 
-#: templates/settings.html:121
+#: templates/settings.html:126
 msgid "Usage statistics, warnings, errors, and crashes"
-msgstr ""
+msgstr "Estadístiques d'ús, avisos, errors i fallades"
 
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
-msgstr ""
+msgstr "Fes servir SSL"
 
-#: scripts/controllers/EditBackupController.js:428
+#: scripts/controllers/EditBackupController.js:447
 msgid "Use existing database?"
-msgstr ""
+msgstr "Voleu fer servir la base de dades existent?"
 
-#: scripts/controllers/EditBackupController.js:322
+#: scripts/controllers/EditBackupController.js:341
 msgid "Use weak passphrase"
-msgstr ""
+msgstr "Fes servir una contrasenya dèbil"
 
 #: scripts/controllers/EditBackupController.js:30
 msgid "Useless"
-msgstr ""
+msgstr "Inútil"
 
 #: scripts/directives/sourceFolderPicker.js:374
 msgid "User data"
-msgstr ""
+msgstr "Dades d'usuari"
 
 #: templates/backends/openstack.html:27
 msgid "User domain name"
-msgstr ""
+msgstr "Nom de domini de l'usuari"
 
 #: scripts/services/EditUriBuiltins.js:50
 msgid "User has too many permissions"
-msgstr ""
+msgstr "L'usuari té massa permisos"
 
-#: templates/settings.html:51
+#: templates/settings.html:56
 msgid "User interface settings"
-msgstr ""
+msgstr "Paràmetres de la interfície d'usuari"
 
 #: scripts/services/EditUriBuiltins.js:681
 #: scripts/services/EditUriBuiltins.js:786
@@ -2506,121 +2842,135 @@ msgstr ""
 #: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
 #: templates/backends/mega.html:8 templates/backends/openstack.html:30
 msgid "Username"
-msgstr ""
+msgstr "Nom d'usuari"
 
-#: templates/addoredit.html:151
+#: templates/addoredit.html:155
 msgid "Validating ..."
-msgstr ""
+msgstr "S'està validant..."
 
-#: templates/home.html:33
+#: templates/backup-result/phases/test.html:20
+msgid "Verifications"
+msgstr "Verificacions"
+
+#: templates/home.html:40
 msgid "Verify files"
-msgstr ""
+msgstr "Verifica els fitxers"
 
 #: scripts/services/CaptchaService.js:32 templates/notificationarea.html:31
 msgid "Verifying ..."
-msgstr ""
+msgstr "S'està verificant..."
 
 #: scripts/services/CaptchaService.js:32
 msgid "Verifying answer"
-msgstr ""
+msgstr "S'està verificant la resposta"
 
 #: scripts/services/ServerStatus.js:34 scripts/services/ServerStatus.js:43
 msgid "Verifying backend data ..."
-msgstr ""
+msgstr "S'estan verificant les dades del rerefons..."
 
 #: scripts/services/ServerStatus.js:58
-msgid "Verifying files..."
-msgstr ""
+msgid "Verifying files ..."
+msgstr "S'estan verificant els fitxers..."
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
-msgstr ""
+msgstr "S'estan verificant les dades remotes..."
 
 #: scripts/services/ServerStatus.js:54
 msgid "Verifying restored files ..."
-msgstr ""
+msgstr "S'estan verificant els fitxers restaurats..."
+
+#: templates/backup-result/phases/delete.html:33
+msgid "Version ID"
+msgstr "ID de la versió"
 
 #: scripts/controllers/EditBackupController.js:34
 msgid "Very strong"
-msgstr ""
+msgstr "Molt forta"
 
 #: scripts/controllers/EditBackupController.js:31
 msgid "Very weak"
-msgstr ""
+msgstr "Molt dèbil"
 
-#: index.html:254
+#: index.html:256
 msgid "Visit us on"
-msgstr ""
+msgstr "Visiteu-nos a"
 
 #: templates/delete.html:21
 msgid ""
 "WARNING: The remote database is found to be in use by the commandline "
 "library"
 msgstr ""
+"AVÍS: La biblioteca de la línia d'ordres està fent servir la base de dades "
+"remota"
 
 #: templates/delete.html:44
 msgid "WARNING: This will prevent you from restoring the data in the future."
-msgstr ""
+msgstr "AVÍS: Això impedirà que restaureu les dades més endavant."
 
 #: templates/waitarea.html:2
 msgid "Waiting for task to begin"
-msgstr ""
+msgstr "S'està esperant que la tasca comenci"
 
 #: templates/commandline.html:54
 msgid "Waiting for task to start ...."
-msgstr ""
+msgstr "S'està esperant que la tasca comenci..."
 
 #: scripts/services/ServerStatus.js:39
-msgid "Waiting for upload ..."
-msgstr ""
+msgid "Waiting for upload to finish ..."
+msgstr "S'està esperant que la càrrega acabi..."
 
-#: templates/settings.html:122
+#: templates/settings.html:127
 msgid "Warnings, errors and crashes"
-msgstr ""
+msgstr "Avisos, errors i fallades"
 
-#: templates/restore.html:142
+#: templates/restore.html:152
 msgid ""
 "We accept donations via different services, such as OpenCollective, PayPal, "
 "BountySource and various crypto currencies."
 msgstr ""
+"Acceptem donacions mitjançant diversos serveis, com ara OpenCollective, "
+"PayPal, BountySource i diverses criptomonedes."
 
-#: templates/addoredit.html:50
+#: templates/addoredit.html:54
 msgid "We recommend that you encrypt all backups stored outside your system"
 msgstr ""
+"És recomanable que xifreu totes les còpies de seguretat emmagatzemades fora "
+"del vostre ordinador"
 
 #: scripts/controllers/EditBackupController.js:32
 msgid "Weak"
-msgstr ""
+msgstr "Dèbil"
 
-#: scripts/controllers/EditBackupController.js:322
+#: scripts/controllers/EditBackupController.js:341
 msgid "Weak passphrase"
-msgstr ""
+msgstr "Contrasenya dèbil"
 
 #: scripts/services/AppUtils.js:106
 msgid "Wed"
-msgstr ""
+msgstr "Dimecres"
 
-#: scripts/services/AppUtils.js:92 templates/addoredit.html:348
+#: scripts/services/AppUtils.js:92 templates/addoredit.html:352
 msgid "Weeks"
-msgstr ""
+msgstr "Setmanes"
 
 #: templates/restorewizard.html:3
 msgid "Where do you want to restore from?"
-msgstr ""
+msgstr "Des d'on voleu fer la restauració?"
 
 #: templates/restore.html:78
 msgid "Where do you want to restore the files to?"
-msgstr ""
+msgstr "On voleu restaurar els fitxers?"
 
-#: scripts/services/AppUtils.js:94 templates/addoredit.html:350
+#: scripts/services/AppUtils.js:94 templates/addoredit.html:354
 msgid "Years"
-msgstr ""
+msgstr "Anys"
 
 #: scripts/controllers/AppController.js:172
 #: scripts/controllers/DeleteController.js:77
-#: scripts/controllers/EditBackupController.js:133
-#: scripts/controllers/EditBackupController.js:143
-#: scripts/controllers/EditBackupController.js:428
+#: scripts/controllers/EditBackupController.js:153
+#: scripts/controllers/EditBackupController.js:163
+#: scripts/controllers/EditBackupController.js:447
 #: scripts/controllers/HomeController.js:7
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
@@ -2634,197 +2984,222 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
 msgid "Yes"
-msgstr ""
+msgstr "Sí"
 
-#: scripts/controllers/EditBackupController.js:337
+#: scripts/controllers/EditBackupController.js:356
 msgid "Yes, I have stored the passphrase safely"
-msgstr ""
+msgstr "Sí, he desat la contrasenya en un lloc segur"
 
-#: scripts/controllers/EditBackupController.js:380
+#: scripts/controllers/ExportController.js:13
+msgid "Yes, I understand the risk"
+msgstr "Sí, entenc els riscos"
+
+#: scripts/controllers/EditBackupController.js:399
 msgid "Yes, I'm brave!"
-msgstr ""
+msgstr "Sí, no tinc por!"
 
-#: scripts/controllers/EditBackupController.js:371
+#: scripts/controllers/EditBackupController.js:390
 msgid "Yes, please break my backup!"
-msgstr ""
+msgstr "Sí, destrossa'm la còpia de seguretat!"
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:35
 msgid "Yesterday"
-msgstr ""
+msgstr "Ahir"
 
 #: scripts/directives/backupEditUri.js:153
 msgid ""
 "You appear to be running Mono with no SSL certificates loaded.\n"
 "Do you want to import the list of trusted certificates from Mozilla?"
 msgstr ""
+"Sembla que esteu executant el Mono sense haver carregat cap certificat SSL.\n"
+"Voleu importar la llista de certificats de confiança de Mozilla?"
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid ""
 "You are changing the database path away from an existing database.\n"
 "Are you sure this is what you want?"
 msgstr ""
+"Esteu canviant el camí d'una base de dades existent.\n"
+"Segur que voleu fer això?"
 
 #: templates/about.html:27
 msgid "You are currently running {{appname}} {{version}}"
-msgstr ""
+msgstr "Actualment esteu executant el {{appname}} {{version}}"
 
 #: scripts/controllers/StateController.js:102
 msgid ""
 "You can stop the backup immediately, or stop after the current file has been"
 " uploaded."
 msgstr ""
+"Podeu aturar la còpia de seguretat immediatament, o aturar-la després que "
+"s'hagi carregat el fitxer actual."
 
 #: scripts/controllers/StateController.js:111
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and the stop."
 msgstr ""
+"Podeu aturar la tasca immediatament, o deixar que el procés acabi les "
+"accions sobre el fitxer actual i després s'aturi."
 
-#: scripts/controllers/EditBackupController.js:380
+#: scripts/controllers/EditBackupController.js:399
 msgid ""
 "You have changed the encryption mode. This may break stuff. You are "
 "encouraged to create a new backup instead"
 msgstr ""
+"Heu canviat el mode de xifratge. Pot ser que això trenqui alguna cosa. És "
+"recomanable que creeu una nova còpia de seguretat en comptes de fer això"
 
-#: scripts/controllers/EditBackupController.js:371
+#: scripts/controllers/EditBackupController.js:390
 msgid ""
 "You have changed the passphrase, which is not supported. You are encouraged "
 "to create a new backup instead."
 msgstr ""
+"Heu canviat la contrasenya, i això no està implementat. És recomanable que "
+"creeu una nova còpia de seguretat en comptes de fer això."
 
-#: scripts/controllers/EditBackupController.js:407
+#: scripts/controllers/EditBackupController.js:426
 msgid ""
 "You have chosen not to encrypt the backup. Encryption is recommended for all"
 " data stored on a remote server."
 msgstr ""
+"Heu decidit no xifrar la còpia de seguretat. És recomanable que xifreu totes"
+" les dades emmagatzemades en un servidor remot."
 
-#: scripts/controllers/RestoreController.js:299
+#: scripts/controllers/RestoreController.js:300
 msgid "You have chosen to restore to a new location, but not entered one"
 msgstr ""
+"Heu decidit fer la restauració en una nova ubicació, però no n'heu indicat "
+"cap"
 
-#: scripts/controllers/EditBackupController.js:337
+#: scripts/controllers/EditBackupController.js:356
 msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
 "of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
 msgstr ""
+"Heu generat una contrasenya forta. Assegureu-vos que heu copiat la "
+"contrasenya en un lloc segur, perquè no podreu recuperar les dades si la "
+"perdeu."
 
-#: scripts/controllers/EditBackupController.js:240
+#: scripts/controllers/EditBackupController.js:259
 msgid "You must choose at least one source folder"
-msgstr ""
+msgstr "Heu de triar com a mínim una carpeta d'origen"
 
 #: scripts/services/EditUriBuiltins.js:797
 msgid "You must enter a domain name to use v3 API"
-msgstr ""
+msgstr "Heu d'introduir un nom de domini per fer servir l'API v3"
 
-#: scripts/controllers/EditBackupController.js:219
+#: scripts/controllers/EditBackupController.js:239
 msgid "You must enter a name for the backup"
-msgstr ""
+msgstr "Heu d'introduir un nom per a la còpia de seguretat"
 
-#: scripts/controllers/EditBackupController.js:227
+#: scripts/controllers/EditBackupController.js:246
 msgid "You must enter a passphrase or disable encryption"
-msgstr ""
+msgstr "Heu d'introduir una contrasenya o desactivar el xifratge"
 
 #: scripts/services/EditUriBuiltins.js:794
 msgid "You must enter a password to use v3 API"
-msgstr ""
+msgstr "Heu d'introduir una contrasenya per fer servir l'API v3"
 
-#: scripts/controllers/EditBackupController.js:276
+#: scripts/controllers/EditBackupController.js:295
 msgid "You must enter a positive number of backups to keep"
 msgstr ""
+"Heu d'introduir un nombre positiu de còpies de seguretat que voleu preservar"
 
 #: scripts/services/EditUriBuiltins.js:800
 msgid "You must enter a tenant (aka project) name to use v3 API"
-msgstr ""
+msgstr "Heu d'introduir un nom d'inquilí (projecte) per fer servir l'API v3"
 
 #: scripts/services/EditUriBuiltins.js:814
 msgid "You must enter a tenant name if you do not provide an API Key"
-msgstr ""
+msgstr "Heu d'introduir un nom d'inquilí si no proporcioneu una clau API"
 
-#: scripts/controllers/EditBackupController.js:269
+#: scripts/controllers/EditBackupController.js:288
 msgid "You must enter a valid duration for the time to keep backups"
 msgstr ""
+"Heu d'introduir una durada vàlida de preservació de les còpies de seguretat"
 
-#: scripts/controllers/EditBackupController.js:283
+#: scripts/controllers/EditBackupController.js:302
 msgid "You must enter a valid rentention policy string"
-msgstr ""
+msgstr "Heu d'introduir una expressió de pla de preservació vàlida"
 
 #: scripts/services/EditUriBuiltins.js:811
 msgid "You must enter either a password or an API Key"
-msgstr ""
+msgstr "Heu d'introduir una contrasenya o una clau API"
 
 #: scripts/services/EditUriBuiltins.js:818
 msgid "You must enter either a password or an API Key, not both"
-msgstr ""
+msgstr "Heu d'introduir una contrasenya o una clau API, no totes dues"
 
 #: scripts/services/EditUriBackendConfig.js:115
 msgid "You must fill in the password"
-msgstr ""
+msgstr "Heu d'introduir la contrasenya"
 
 #: scripts/services/EditUriBackendConfig.js:92
 msgid "You must fill in the server name or address"
-msgstr ""
+msgstr "Heu d'introduir el nom o l'adreça del servidor"
 
 #: scripts/services/EditUriBackendConfig.js:113
 #: scripts/services/EditUriBackendConfig.js:122
 msgid "You must fill in the username"
-msgstr ""
+msgstr "Heu d'introduir el nom d'usuari"
 
 #: scripts/services/EditUriBackendConfig.js:78
 msgid "You must fill in {{field}}"
-msgstr ""
+msgstr "Heu d'introduir el camp «{{field}}»"
 
 #: scripts/services/EditUriBuiltins.js:790
 msgid "You must select or fill in the AuthURI"
-msgstr ""
+msgstr "Heu de triar o introduir l'AuthURI"
 
 #: scripts/services/EditUriBuiltins.js:832
 msgid "You must select or fill in the server"
-msgstr ""
+msgstr "Heu de triar o introduir el servidor"
 
 #: scripts/services/EditUriBackendConfig.js:99
 msgid "You must specify a path"
-msgstr ""
+msgstr "Heu d'especificar un camí"
 
 #: scripts/services/EditUriBackendConfig.js:85
 msgid "You should fill in {{field}}{{reason}}"
-msgstr ""
+msgstr "Heu d'introduir el camp «{{field}}»{{reason}}"
 
-#: templates/restore.html:139
+#: templates/restore.html:149
 msgid "Your files and folders have been restored successfully."
-msgstr ""
+msgstr "S'han restaurat els fitxers i carpetes correctament."
 
-#: scripts/controllers/EditBackupController.js:322
+#: scripts/controllers/EditBackupController.js:341
 msgid "Your passphrase is easy to guess. Consider changing passphrase."
-msgstr ""
+msgstr "La contrasenya és fàcil d'endevinar. Penseu a canviar la contrasenya."
 
 #: templates/backends/gcs.html:3 templates/backends/openstack.html:3
 msgid "bucket/folder/subfolder"
-msgstr ""
+msgstr "contenidor/carpeta/subcarpeta"
 
 #: scripts/services/AppUtils.js:81
 msgid "byte"
-msgstr ""
+msgstr "bytes"
 
 #: scripts/services/AppUtils.js:114
 msgid "byte/s"
-msgstr ""
+msgstr "byte/s"
 
-#: templates/addoredit.html:268 templates/addoredit.html:351
+#: templates/addoredit.html:272 templates/addoredit.html:355
 #: templates/advancedoptionseditor.html:28
 #: templates/advancedoptionseditor.html:35
 msgid "custom"
-msgstr ""
+msgstr "personalitzat"
 
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
 msgid "resume now"
-msgstr ""
+msgstr "reprèn ara"
 
 #: scripts/services/EditUriBuiltins.js:729
 #: scripts/services/EditUriBuiltins.js:740
 msgid "unless you are explicitly specifying --group-id"
-msgstr ""
+msgstr "excepte si especifiqueu explícitament el paràmetre --group-id"
 
 #: templates/about.html:12
 msgid ""
@@ -2833,26 +3208,39 @@ msgid ""
 "<a href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is licensed "
 "under the <a href=\"{{licenselink}}\">{{licensename}}</a>."
 msgstr ""
+"El {{appname}} ha estat desenvolupat principalment per <a "
+"href=\"{{mail1}}\">{{dev1}}</a> i <a href=\"{{mail2}}\">{{dev2}}</a>. Podeu "
+"baixar-vos el {{appname}} des de <a "
+"href=\"{{websitelink}}\">{{websitename}}</a>. El {{appname}} està publicat "
+"sota la <a href=\"{{licenselink}}\">{{licensename}}</a>."
+
+#: templates/backup-result/message-list.html:3
+msgid "{{data.title}}"
+msgstr "{{data.title}}"
 
 #: scripts/controllers/StateController.js:50
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
-msgstr ""
+msgstr "Queden {{files}} fitxers ({{size}}) {{speed_txt}}"
 
-#: templates/home.html:67 templates/restorewizard.html:23
+#: templates/home.html:74 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} versió"
+msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} versions"
 
 #: templates/pause.html:26
 msgid "{{number}} Hour"
-msgstr ""
+msgstr "{{number}} hora"
+
+#: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
+msgid "{{number}} Hours"
+msgstr "{{number}} hores"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6
 msgid "{{number}} Minutes"
-msgstr ""
+msgstr "{{number}} minuts"
 
-#: templates/home.html:47
+#: templates/home.html:54
 msgid "{{time}} (took {{duration}})"
-msgstr ""
+msgstr "{{time}} (ha trigat {{duration}})"

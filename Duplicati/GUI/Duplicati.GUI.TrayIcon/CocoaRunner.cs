@@ -33,7 +33,7 @@ namespace Duplicati.GUI.TrayIcon
             
             public NSMenuItem MenuItem { get { return m_item; } }
             
-            public MenuItemWrapper(string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
+            public MenuItemWrapper(string text, Action callback, IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
             {
                 if (text == "-")
                     m_item = NSMenuItem.SeparatorItem;
@@ -58,28 +58,24 @@ namespace Duplicati.GUI.TrayIcon
             }
             
             #region IMenuItem implementation
-            public string Text {
-                set {
-                    m_item.Title = value;
-                }
-            }
-
-            public Duplicati.GUI.TrayIcon.MenuIcons Icon {
-                set {
-                }
-            }
-
-            public bool Enabled {
-                set {
-                    m_item.Enabled = value;
-                }
-            }
-
-            public bool Default
+            public void SetText(string text)
             {
-                set
-                {
-                }
+                m_item.Title = text;
+            }
+
+            public void SetIcon(MenuIcons icons)
+            {
+                // Do nothing.  Implementation needed for IMenuItem interface.
+            }
+
+            public void SetEnabled(bool isEnabled)
+            {
+                m_item.Enabled = isEnabled;
+            }
+
+            public void SetDefault(bool isDefault)
+            {
+                // Do nothing.  Implementation needed for IMenuItem interface.
             }
             #endregion
         }
@@ -189,17 +185,9 @@ namespace Duplicati.GUI.TrayIcon
                 action();
         }
 
-        protected override Duplicati.GUI.TrayIcon.TrayIcons Icon 
-        {
-            set 
-            {
-                m_statusItem.Image = GetIcon(value);
-            }
-        }
-
         protected override Duplicati.GUI.TrayIcon.IMenuItem CreateMenuItem (string text, Duplicati.GUI.TrayIcon.MenuIcons icon, Action callback, System.Collections.Generic.IList<Duplicati.GUI.TrayIcon.IMenuItem> subitems)
         {
-            return new MenuItemWrapper(text, icon, callback, subitems);
+            return new MenuItemWrapper(text, callback, subitems);
         }
 
         protected override void Exit()
@@ -214,7 +202,12 @@ namespace Duplicati.GUI.TrayIcon
                     0, 0, 0, null, 0, 0, 0), true);
             }
         }
-        
+
+        protected override void SetIcon(TrayIcons icon)
+        {
+            m_statusItem.Image = GetIcon(icon);
+        }
+
         protected override void SetMenu(System.Collections.Generic.IEnumerable<Duplicati.GUI.TrayIcon.IMenuItem> items)
         {
             m_statusItem.Menu = new NSMenu();

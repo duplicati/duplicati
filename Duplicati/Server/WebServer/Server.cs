@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using HttpServer.HttpModules;
 using System.Security.Cryptography.X509Certificates;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Server.WebServer
 {
@@ -74,14 +75,13 @@ namespace Duplicati.Server.WebServer
         /// <param name="options">A set of options</param>
         public Server(IDictionary<string, string> options)
         {
-            int port;
             string portstring;
             IEnumerable<int> ports = null;
             options.TryGetValue(OPTION_PORT, out portstring);
             if (!string.IsNullOrEmpty(portstring))
                 ports = 
                     from n in portstring.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                where int.TryParse(n, out port)
+                                where int.TryParse(n, out _)
                                 select int.Parse(n);
 
             if (ports == null || !ports.Any())
@@ -248,9 +248,9 @@ namespace Duplicati.Server.WebServer
                 if (!string.IsNullOrWhiteSpace(userroot)
                     &&
                     (
-                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison)
+                        userroot.StartsWith(Util.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison)
                         ||
-                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparison)
+                        userroot.StartsWith(Util.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparison)
                     )
                 )
 #endif

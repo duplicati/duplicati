@@ -281,8 +281,8 @@ namespace Duplicati.Server
                                     var entry = Program.DataConnection.GetBackup(id);
                                     if (entry != null)
                                     {
-                                        Dictionary<string, string> options = Duplicati.Server.Runner.GetCommonOptions(entry, Duplicati.Server.Serialization.DuplicatiOperation.Backup);
-                                        Duplicati.Server.Runner.ApplyOptions(entry, Duplicati.Server.Serialization.DuplicatiOperation.Backup, options);
+                                        Dictionary<string, string> options = Duplicati.Server.Runner.GetCommonOptions();
+                                        Duplicati.Server.Runner.ApplyOptions(entry, options);
                                         if ((new Duplicati.Library.Main.Options(options)).DisableOnBattery && (Duplicati.Library.Utility.Power.PowerSupply.GetSource() == Duplicati.Library.Utility.Power.PowerSupply.Source.Battery))
                                         {
                                             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "BackupDisabledOnBattery", "Scheduled backup disabled while on battery power.");
@@ -374,10 +374,11 @@ namespace Duplicati.Server
         /// <returns>True if the backup is allowed to run, false otherwise</returns>
         private static bool IsDateAllowed(DateTime time, DayOfWeek[] allowedDays)
         {
+            var localTime = time.ToLocalTime();
             if (allowedDays == null || allowedDays.Length == 0)
                 return true;
             else
-                return Array.IndexOf<DayOfWeek>(allowedDays, time.DayOfWeek) >= 0; 
+                return Array.IndexOf<DayOfWeek>(allowedDays, localTime.DayOfWeek) >= 0; 
         }
 
     }

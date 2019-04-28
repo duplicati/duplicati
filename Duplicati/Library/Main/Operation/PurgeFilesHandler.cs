@@ -85,7 +85,7 @@ namespace Duplicati.Library.Main.Operation
                     db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false, null);
 
                     if (m_options.NoBackendverification)
-                        FilelistProcessor.VerifyLocalList(backend, m_options, db, m_result.BackendWriter);
+                        FilelistProcessor.VerifyLocalList(backend, db);
                     else
                         FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, null);
                 }

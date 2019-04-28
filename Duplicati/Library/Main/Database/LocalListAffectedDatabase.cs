@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Database
 
             var sql = string.Format(
                 @"SELECT DISTINCT ""FilesetID"" FROM (" +
-                @"SELECT ""FilesetID"" FROM ""FilesetEntry"" WHERE ""FileID"" IN ( SELECT ""ID"" FROM ""File"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN ( SELECT ""ID"" From ""Block"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({0})))))" +
+                @"SELECT ""FilesetID"" FROM ""FilesetEntry"" WHERE ""FileID"" IN ( SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN ( SELECT ""ID"" From ""Block"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({0})))))" +
                 " UNION " +
                 @"SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({0}))" +
                 ")",
@@ -137,9 +137,9 @@ namespace Duplicati.Library.Main.Database
         {
             var sql = string.Format(
                 @"SELECT DISTINCT ""Name"" FROM ( " +
-                @" SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({0}))))))) " +
+                @" SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({0}))))))) " +
                 @" UNION " +
-                @" SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""Metadataset"" WHERE ""ID"" IN ( SELECT ""MetadataID"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({0}))))))))" +
+                @" SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""Metadataset"" WHERE ""ID"" IN ( SELECT ""MetadataID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({0}))))))))" +
                 @")",
                 string.Join(",", items.Select(x => "?"))
             );

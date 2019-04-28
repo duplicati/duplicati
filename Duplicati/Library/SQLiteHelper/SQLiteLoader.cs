@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.SQLiteHelper
 {
@@ -33,9 +34,6 @@ namespace Duplicati.Library.SQLiteHelper
         /// A cached copy of the type
         /// </summary>
         private static Type m_type = null;
-
-
-        private const string SQLiteAssembly = "System.Data.SQLite.dll";
 
         /// <summary>
         /// Helper method with logic to handle opening a database in possibly encrypted format
@@ -267,14 +265,14 @@ namespace Duplicati.Library.SQLiteHelper
             // Check if SQLite database exists before opening a connection to it.
             // This information is used to 'fix' permissions on a newly created file.
             var fileExists = false;
-            if (!Library.Utility.Utility.IsClientWindows)
+            if (!Platform.IsClientWindows)
                 fileExists = File.Exists(path);
 
             con.ConnectionString = "Data Source=" + path;
             con.Open();
 
             // If we are non-Windows, make the file only accessible by the current user
-            if (!Library.Utility.Utility.IsClientWindows && !fileExists)
+            if (!Platform.IsClientWindows && !fileExists)
                 SetUnixPermissionUserRWOnly(path);
         }
 

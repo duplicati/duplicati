@@ -8,6 +8,7 @@ using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Newtonsoft.Json;
 using Duplicati.Library.Localization.Short;
+using System.Threading;
 
 namespace Duplicati.Library.Main
 {
@@ -249,7 +250,6 @@ namespace Duplicati.Library.Main
             private readonly LocalDatabase m_database;
             private readonly System.Threading.Thread m_callerThread;
             private List<IDbEntry> m_dbqueue;
-            private readonly IBackendWriter m_stats;
 
             private interface IDbEntry { }
 
@@ -274,10 +274,9 @@ namespace Duplicati.Library.Main
                 public string Newname;
             }
 
-            public DatabaseCollector(LocalDatabase database, IBackendWriter stats)
+            public DatabaseCollector(LocalDatabase database)
             {
                 m_database = database;
-                m_stats = stats;
                 m_dbqueue = new List<IDbEntry>();
                 if (m_database != null)
                     m_callerThread = System.Threading.Thread.CurrentThread;
@@ -379,7 +378,7 @@ namespace Duplicati.Library.Main
             m_numberofretries = options.NumberOfRetries;
             m_retrydelay = options.RetryDelay;
 
-            m_db = new DatabaseCollector(database, statwriter);
+            m_db = new DatabaseCollector(database);
 
             m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
             if (m_backend == null)
@@ -634,7 +633,7 @@ namespace Duplicati.Library.Main
         private void RenameFileAfterError(FileEntryItem item)
         {
             var p = VolumeBase.ParseFilename(item.RemoteFilename);
-            var guid = VolumeWriterBase.GenerateGuid(m_options);
+            var guid = VolumeWriterBase.GenerateGuid();
             var time = p.Time.Ticks == 0 ? p.Time : p.Time.AddSeconds(1);
             var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
             var oldname = item.RemoteFilename;
@@ -736,11 +735,11 @@ namespace Duplicati.Library.Main
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
-                using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
-                    ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
+                using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
+                    ((Library.Interface.IStreamingBackend)m_backend).PutAsync(item.RemoteFilename, pgs, CancellationToken.None).Wait();
             }
             else
-                m_backend.Put(item.RemoteFilename, item.LocalFilename);
+                m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, CancellationToken.None).Wait();
 
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
@@ -752,7 +751,7 @@ namespace Duplicati.Library.Main
 
             if (m_options.ListVerifyUploads)
             {
-                var f = m_backend.List().Where(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var f = m_backend.List().FirstOrDefault(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase));
                 if (f == null)
                     throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
                 else if (f.Size != item.Size && f.Size >= 0)
@@ -830,7 +829,7 @@ namespace Duplicati.Library.Main
                         using (var ss = new ShaderStream(nextTierWriter, false))
                         {
                             using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
-                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                             {
                                 taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
                                 if (taskDecrypter != null) taskDecrypter.Start();
@@ -859,7 +858,7 @@ namespace Duplicati.Library.Main
                     // are properly ended and tidied up. For what is thrown: If exceptions in main thread occured (download) it is thrown,
                     // then hasher task is checked and last decryption. This resembles old logic.
                     try { retHashcode = taskHasher.Result; }
-                    catch (AggregateException ex) { if (!hadException) { hadException = true; throw ex.InnerExceptions[0]; } }
+                    catch (AggregateException ex) { if (!hadException) { hadException = true; throw ex.Flatten().InnerException; } }
                     finally
                     {
                         if (taskDecrypter != null)
@@ -870,10 +869,11 @@ namespace Duplicati.Library.Main
                                 if (!hadException)
                                 {
                                     hadException = true;
-                                    if (ex.InnerExceptions[0] is System.Security.Cryptography.CryptographicException)
-                                        throw ex.InnerExceptions[0];
+                                    AggregateException flattenedException = ex.Flatten();
+                                    if (flattenedException.InnerException is System.Security.Cryptography.CryptographicException)
+                                        throw flattenedException.InnerException;
                                     else
-                                        throw new System.Security.Cryptography.CryptographicException(ex.InnerExceptions[0].Message, ex.InnerExceptions[0]);
+                                        throw new System.Security.Cryptography.CryptographicException(flattenedException.InnerException.Message, flattenedException.InnerException);
                                 }
                             }
                         }
@@ -915,7 +915,7 @@ namespace Duplicati.Library.Main
                     using (var ss = new ShaderStream(hs, true))
                     {
                         using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
-                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, item.Size, pg => HandleProgress(ts, pg)))
+                        using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                         { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;
@@ -1378,25 +1378,19 @@ namespace Duplicati.Library.Main
 
         public void WaitForComplete(LocalDatabase db, System.Data.IDbTransaction transation)
         {
-            try
-            {
-                m_statwriter.BackendProgressUpdater.SetBlocking(true);
-                m_db.FlushDbMessages(db, transation);
-                if (m_lastException != null)
-                    throw m_lastException;
+            m_statwriter.BackendProgressUpdater.SetBlocking(true);
+            m_db.FlushDbMessages(db, transation);
+            if (m_lastException != null)
+                throw m_lastException;
 
-                var item = new FileEntryItem(OperationType.Terminate, null);
-                if (m_queue.Enqueue(item))
-                    item.WaitForComplete();
+            var item = new FileEntryItem(OperationType.Terminate, null);
+            if (m_queue.Enqueue(item))
+                item.WaitForComplete();
 
-                m_db.FlushDbMessages(db, transation);
+            m_db.FlushDbMessages(db, transation);
 
-                if (m_lastException != null)
-                    throw m_lastException;
-            }
-            finally
-            {
-            }
+            if (m_lastException != null)
+                throw m_lastException;
         }
 
         public void WaitForEmpty(LocalDatabase db, System.Data.IDbTransaction transation)
