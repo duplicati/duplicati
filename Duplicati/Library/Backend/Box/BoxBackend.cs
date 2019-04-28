@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Box
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class BoxBackend : IBackend, IStreamingBackend
     {
 		private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
