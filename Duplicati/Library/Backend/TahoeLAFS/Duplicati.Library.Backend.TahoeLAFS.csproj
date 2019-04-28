@@ -11,7 +11,7 @@
     <Description>TahoeLAFS backend for Duplicati</Description>
     <PackageId>TahoeLAFS</PackageId>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
