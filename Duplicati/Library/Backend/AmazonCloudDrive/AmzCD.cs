@@ -74,6 +74,8 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AmzCD(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
