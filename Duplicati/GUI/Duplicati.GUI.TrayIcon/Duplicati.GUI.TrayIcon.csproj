@@ -61,7 +61,6 @@
     <StartupObject>Duplicati.GUI.TrayIcon.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
-    
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CoCoL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
@@ -193,6 +192,10 @@
     <ProjectReference Include="..\..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
       <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
       <Name>Duplicati.Library.Backend.WEBDAV</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj">
+      <Project>{d63e53e4-a458-4c2f-914d-92f715f58acf}</Project>
+      <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Server\Duplicati.Server.csproj">
       <Project>{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}</Project>
