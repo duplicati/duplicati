@@ -32,10 +32,14 @@ namespace Duplicati.Library.Backend.AzureBlob
     {
         private readonly AzureBlobWrapper _azureBlob;
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AzureBlobBackend()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AzureBlobBackend(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
