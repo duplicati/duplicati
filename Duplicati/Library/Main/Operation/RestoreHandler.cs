@@ -5,6 +5,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Main.Operation
 {

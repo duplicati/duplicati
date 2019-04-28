@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Security.Cryptography;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -207,7 +208,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                             textJSON = sourceStreamReader.ReadToEnd();
                                             JToken token = JObject.Parse(textJSON);
                                             var fileInfoBlocks = new FileInfo(Path.Combine(targetfolder, cmfileNew.Replace("vol/", "")));
-                                            var filehasher = HashAlgorithmHelper.Create(m_Options.FileHashAlgorithm);
+                                            var filehasher = HashAlgorithm.Create(m_Options.FileHashAlgorithm);
 
                                             using (var fileStream = fileInfoBlocks.Open(FileMode.Open))
                                             {

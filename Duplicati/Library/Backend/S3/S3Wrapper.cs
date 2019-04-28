@@ -100,7 +100,7 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
+            using (GetObjectResponse objectGetResponse = m_client.GetObjectAsync(objectGetRequest).GetAwaiter().GetResult())
             using(System.IO.Stream s = objectGetResponse.ResponseStream)
             {
                 try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }

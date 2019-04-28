@@ -64,14 +64,15 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public AzureBlobWrapper(string accountName, string accessKey, string containerName)
         {
-            OperationContext.GlobalSendingRequest += (sender, args) =>
-            {
-                args.Request.UserAgent = string.Format(
-                    "APN/1.0 Duplicati/{0} AzureBlob/2.0 {1}",
-                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
-                    Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent
-                );
-            };
+            //TODO-DNC Missing UserAgent property in DNC
+            //OperationContext.GlobalSendingRequest += (sender, args) =>
+            //{
+            //    args.Request.UserAgent = string.Format(
+            //        "APN/1.0 Duplicati/{0} AzureBlob/2.0 {1}",
+            //        System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
+            //        Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent
+            //    );
+            //};
 
             var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
                 accountName, accessKey);
@@ -108,7 +109,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public virtual async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
-            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, cancelToken);
+            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, source.Length, default, default, new OperationContext(), cancelToken);
         }
 
         public void DeleteObject(string keyName)

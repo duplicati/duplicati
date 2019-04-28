@@ -23,6 +23,12 @@
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="UnixSupport">
+      <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   
   <ItemGroup>
     <Content Include="lvm-scripts\create-lvm-snapshot.sh">

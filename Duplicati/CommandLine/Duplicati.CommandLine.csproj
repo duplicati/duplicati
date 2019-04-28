@@ -19,6 +19,7 @@
     <Compile Remove="BackendTester\**" />
     <Compile Remove="BackendTool\**" />
     <Compile Remove="RecoveryTool\**" />
+    <Compile Remove="ConfigurationImporter\**" />
   </ItemGroup>
   
   <ItemGroup>	
