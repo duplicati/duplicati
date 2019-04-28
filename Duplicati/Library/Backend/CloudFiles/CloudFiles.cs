@@ -52,10 +52,14 @@ namespace Duplicati.Library.Backend
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public CloudFiles()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public CloudFiles(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
