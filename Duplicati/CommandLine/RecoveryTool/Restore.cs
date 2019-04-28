@@ -156,7 +156,6 @@ namespace Duplicati.CommandLine.RecoveryTool
                     Console.WriteLine("Removing common prefix {0} from files", largestprefix);
 
                 var i = 0L;
-                var errors = 0L;
                 foreach (var f in List.EnumerateFilesInDList(filelist, filter, options))
                 {
                     try
@@ -236,7 +235,6 @@ namespace Duplicati.CommandLine.RecoveryTool
                     catch (Exception ex)
                     {
                         Console.WriteLine(" error: {0}", ex);
-                        errors++;
                     }
                     i++;
                 }

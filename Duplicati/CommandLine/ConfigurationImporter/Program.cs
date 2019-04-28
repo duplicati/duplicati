@@ -14,8 +14,6 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using Duplicati.Library.SQLiteHelper;
-using Duplicati.Server;
 using Duplicati.Server.Serializable;
 using Duplicati.Server.WebServer.RESTMethods;
 using System;
@@ -24,47 +22,36 @@ using System.Linq;
 
 namespace Duplicati.CommandLine.ConfigurationImporter
 {
-    public class ConfigurationImporter
+    public static class ConfigurationImporter
     {
-        private static readonly string usageString = $"Usage: {nameof(ConfigurationImporter)}.exe <configuration-file> --import-metadata=(true | false) [<advanced-option>]...";
+        private static readonly string usageString = $"Usage: {nameof(ConfigurationImporter)}.exe <configuration-file> --import-metadata=(true | false) --server-datafolder=<folder containing Duplicati-server.sqlite>";
 
         public static void Main(string[] args)
         {
-            if (args.Length < 2)
+            if (args.Length != 3)
             {
                 throw new ArgumentException($"Incorrect number of input arguments.  {ConfigurationImporter.usageString}");
             }
 
             string configurationFile = args[0];
-            Dictionary<string, string> importOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string> { args[1] });
+            Dictionary<string, string> importOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args.Skip(1).ToList());
             if (!importOptions.TryGetValue("import-metadata", out string importMetadataString))
             {
                 throw new ArgumentException($"Invalid import-metadata argument.  {ConfigurationImporter.usageString}");
             }
             bool importMetadata = Duplicati.Library.Utility.Utility.ParseBool(importMetadataString, false);
 
-            // This removes the ID and DBPath from the backup configuration.
-            ImportExportStructure importedStructure = Backups.LoadConfiguration(configurationFile, importMetadata, () => ConfigurationImporter.ReadPassword($"Password for {configurationFile}: "));
-
-            Dictionary<string, string> advancedOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(new List<string>(args.Skip(2)));
-
-            // This will create the Duplicati-server.sqlite database file if it doesn't exist.
-            Duplicati.Server.Database.Connection connection = Program.GetDatabaseConnection(advancedOptions);
-
-            if (connection.Backups.Any(x => x.Name.Equals(importedStructure.Backup.Name, StringComparison.OrdinalIgnoreCase)))
+            if (!importOptions.TryGetValue("server-datafolder", out string serverDatafolder))
             {
-                throw new InvalidOperationException($"A backup with the name {importedStructure.Backup.Name} already exists.");
+                throw new ArgumentException($"Invalid server-datafolder argument.  {ConfigurationImporter.usageString}");
             }
 
-            string error = connection.ValidateBackup(importedStructure.Backup, importedStructure.Schedule);
-            if (!string.IsNullOrWhiteSpace(error))
+            Dictionary<string, string> advancedOptions = new Dictionary<string, string>
             {
-                throw new InvalidOperationException(error);
-            }
+                { "server-datafolder", serverDatafolder }
+            };
 
-            // This creates a new ID and DBPath.
-            connection.AddOrUpdateBackupAndSchedule(importedStructure.Backup, importedStructure.Schedule);
-
+            ImportExportStructure importedStructure = Backups.ImportBackup(configurationFile, importMetadata, () => ConfigurationImporter.ReadPassword($"Password for {configurationFile}: "), advancedOptions);
             Console.WriteLine($"Imported \"{importedStructure.Backup.Name}\" with ID {importedStructure.Backup.ID} and local database at {importedStructure.Backup.DBPath}.");
         }
 

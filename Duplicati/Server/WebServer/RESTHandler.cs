@@ -203,14 +203,13 @@ namespace Duplicati.Server.WebServer
                         var wex = ex;
                         while (wex is System.Reflection.TargetInvocationException && wex.InnerException != wex)
                             wex = wex.InnerException;
-                            
-
+                        
                         info.BodyWriter.WriteJsonObject(new
                         {
-                            Message = ex.Message,
-                            Type = ex.GetType().Name,
+                            Message = wex.Message,
+                            Type = wex.GetType().Name,
                             #if DEBUG
-                            Stacktrace = ex.ToString()
+                            Stacktrace = wex.ToString()
                             #endif
                         });
                         info.BodyWriter.Flush();

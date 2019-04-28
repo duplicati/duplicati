@@ -7,7 +7,7 @@
 # Andrea Ricci <rccndr+github@gmail.com>, 2016
 # Massimo Piceni <massimo.piceni@inwind.it>, 2017
 # Andrea De Lunardi <a.delunardi@arca.com>, 2017
-# Francesco Infantini <infantini.francesco@gmail.com>, 2017
+# Francesco Infantini <infantini.francesco@gmail.com>, 2018
 # Folgore101 <andrea.gramegna@gmail.com>, 2018
 # 
 #, fuzzy
@@ -398,7 +398,7 @@ msgstr "Opzioni aggiuntive per GPG da riga di comando per la crittografia"
 #: Library/Encryption/Strings.cs:22
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
-msgstr ""
+msgstr "Impossibile eseguire GPG con \"{0} {1}\": {2}"
 
 #: Library/Encryption/Strings.cs:23
 msgid ""
@@ -4444,7 +4444,7 @@ msgstr "Applica filtri ai dati registrati nella console"
 
 #: Library/Main/Strings.cs:262
 msgid "Sets the process to use low IO priority"
-msgstr ""
+msgstr "Imposta il processo in modo che utilizzi una priorità IO bassa"
 
 #: Library/Main/Strings.cs:263
 msgid ""
@@ -4611,10 +4611,15 @@ msgstr "Accetta qualsiasi certificato del server"
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash (SHA256) to approve it "
+"certificates), you can supply the certificate hash (SHA1) to approve it "
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
+"Se il certificato del server è segnalato come non valido (ad esempio con "
+"certificati auto firmati), è possibile fornire l'hash del certificato "
+"(SHA1) per approvarlo comunque. Il valore hash deve essere inserito in un "
+"formato esadecimale senza spazi o due punti. Puoi inserire più hash separati"
+" da virgole."
 
 #: Library/Modules/Builtin/Strings.cs:25
 msgid "Optionally accept a known SSL certificate"

@@ -101,7 +101,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Common", "Duplicati\Library\Common\Duplicati.Library.Common.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigurationImporter", "Duplicati\ConfigurationImporter\ConfigurationImporter.csproj", "{864B98B9-1B56-40D9-9733-9002E5B9B9D5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ConfigurationImporter", "Duplicati\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{B93E3BF0-DAA7-49B7-B07D-0559C5816735}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -305,10 +305,10 @@ Global
 		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{864B98B9-1B56-40D9-9733-9002E5B9B9D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{864B98B9-1B56-40D9-9733-9002E5B9B9D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{864B98B9-1B56-40D9-9733-9002E5B9B9D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{864B98B9-1B56-40D9-9733-9002E5B9B9D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

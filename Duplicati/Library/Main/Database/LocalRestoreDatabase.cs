@@ -215,6 +215,8 @@ namespace Duplicati.Library.Main.Database
                     // better suited to speed up commit on UpdateBlocks
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FileIdIndexIndex"" ON ""{0}"" (""FileId"", ""Index"")", m_tempblocktable));
 
+                    // TODO: Optimize to use the path prefix
+
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, restore everything

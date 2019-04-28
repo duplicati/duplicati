@@ -396,7 +396,7 @@ msgstr "Extra GPG opdrachtregel opties voor versleuteling"
 #: Library/Encryption/Strings.cs:22
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
-msgstr ""
+msgstr "Uitvoeren GPG mislukt met \"{0} {1}\": {2}"
 
 #: Library/Encryption/Strings.cs:23
 msgid ""
@@ -4472,7 +4472,7 @@ msgstr "Past filters toe op de console log-gegevens"
 
 #: Library/Main/Strings.cs:262
 msgid "Sets the process to use low IO priority"
-msgstr ""
+msgstr "Stelt het proces in voor laag IO gebruik"
 
 #: Library/Main/Strings.cs:263
 msgid ""
@@ -4642,10 +4642,15 @@ msgstr "Accepteer ieder servercertificaat"
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash (SHA256) to approve it "
+"certificates), you can supply the certificate hash (SHA1) to approve it "
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
+"Als uw servercertificaat is gerapporteerd als ongeldig (bijvoorbeeld met "
+"zelfondertekende certificaten), kan de certificaat hash (SHA 256) worden "
+"opgegeven om het toch goed te keuren. De hash-waarde moet worden ingegeven "
+"in hex formaat zonder spaties of dubbele punten. Meerdere hashes kunnen "
+"gescheiden door komma's worden ingegeven. "
 
 #: Library/Modules/Builtin/Strings.cs:25
 msgid "Optionally accept a known SSL certificate"

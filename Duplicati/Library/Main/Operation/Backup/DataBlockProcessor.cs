@@ -14,14 +14,12 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
 using CoCoL;
-using System.Threading.Tasks;
-using Duplicati.Library.Main.Database;
-using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Main.Operation.Common;
-using System.IO;
-using System.Linq;
+using Duplicati.Library.Main.Volumes;
+using System;
+using System.Threading.Tasks;
+using static Duplicati.Library.Main.Operation.Common.BackendHandler;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -52,7 +50,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 try
                 {
-                    while(true)
+                    while (true)
                     {
                         var b = await self.Input.ReadAsync();
 
@@ -73,7 +71,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             blockvolume = new BlockVolumeWriter(options);
                             blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
 
-							indexvolume = noIndexFiles ? null : new TemporaryIndexVolume(options);
+                            indexvolume = noIndexFiles ? null : new TemporaryIndexVolume(options);
                         }
 
                         var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);
@@ -95,12 +93,24 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 //When uploading a new volume, we register the volumes and then flush the transaction
                                 // this ensures that the local database and remote storage are as closely related as possible
                                 await database.UpdateRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                            
+
                                 blockvolume.Close();
 
                                 await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
-                                await self.Output.WriteAsync(new VolumeUploadRequest(blockvolume, indexvolume));
+                                FileEntryItem blockEntry = CreateFileEntryForUpload(blockvolume, options);
+
+                                IndexVolumeWriter indexVolumeWriter = null;
+                                FileEntryItem indexEntry = null;
+                                if (indexvolume != null)
+                                {
+                                    indexVolumeWriter = await indexvolume.CreateVolume(blockvolume.RemoteFilename, blockEntry.Hash, blockEntry.Size, options, database);
+                                    indexEntry = CreateFileEntryForUpload(indexVolumeWriter, options);
+                                }
+
+                                var uploadRequest = new VolumeUploadRequest(blockvolume, blockEntry, indexVolumeWriter, indexEntry);
+                                await self.Output.WriteAsync(uploadRequest);
+
                                 blockvolume = null;
                                 indexvolume = null;
                             }
@@ -111,14 +121,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                         await taskreader.ProgressAsync;
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     if (ex.IsRetiredException())
                     {
                         // If we have collected data, merge all pending volumes into a single volume
                         if (blockvolume != null && blockvolume.SourceSize > 0)
                         {
-                            await self.SpillPickup.WriteAsync(new VolumeUploadRequest(blockvolume, indexvolume));
+                            await self.SpillPickup.WriteAsync(new SpillVolumeRequest(blockvolume, indexvolume));
                         }
                     }
 
@@ -127,8 +137,13 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-
-
+        private static FileEntryItem CreateFileEntryForUpload(VolumeWriterBase volume, Options options)
+        {
+            var fileEntry = new FileEntryItem(BackendActionType.Put, volume.RemoteFilename);
+            fileEntry.SetLocalfilename(volume.LocalFilename);
+            fileEntry.Encrypt(options);
+            fileEntry.UpdateHashAndSize(options);
+            return fileEntry;
+        }
     }
 }
-

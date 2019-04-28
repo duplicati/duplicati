@@ -14,29 +14,29 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using Duplicati.Library.Backend.GoogleServices;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
-
-using Newtonsoft.Json;
-
-using Duplicati.Library.Backend.GoogleServices;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
-using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.GoogleDrive
 {
     public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
-        private const string DISABLE_TEAMDRIVE_OPTION = "googledrive-disable-teamdrive";
+        private const string TEAMDRIVE_ID = "googledrive-teamdrive-id";
         private const string FOLDER_MIMETYPE = "application/vnd.google-apps.folder";
 
         private readonly string m_path;
-        private readonly bool m_useTeamDrive = true;
+        private readonly string m_teamDriveID;
         private readonly OAuthHelper m_oauth;
         private readonly Dictionary<string, GoogleDriveFolderItem[]> m_filecache;
 
@@ -56,8 +56,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
             if (options.ContainsKey(AUTHID_OPTION))
                 authid = options[AUTHID_OPTION];
 
-            if (options.ContainsKey(DISABLE_TEAMDRIVE_OPTION))
-                m_useTeamDrive = !Library.Utility.Utility.ParseBoolOption(options, DISABLE_TEAMDRIVE_OPTION);
+            if (options.ContainsKey(TEAMDRIVE_ID))
+                m_teamDriveID = options[TEAMDRIVE_ID];
 
             m_oauth = new OAuthHelper(authid, this.ProtocolKey) { AutoAuthHeader = true };
             m_filecache = new Dictionary<string, GoogleDriveFolderItem[]>();
@@ -65,7 +65,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         private string GetFolderId(string path, bool autocreate = false)
         {
-            var curparent = GetAboutInfo().rootFolderId;
+            var curparent = m_teamDriveID ?? GetAboutInfo().rootFolderId;
             var curdisplay = new StringBuilder("/");
 
             foreach (var p in path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
@@ -133,7 +133,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -155,7 +155,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                 var isUpdate = !string.IsNullOrWhiteSpace(fileId);
 
-                var url = WebApi.GoogleDrive.PutUrl(fileId);
+                var url = WebApi.GoogleDrive.PutUrl(fileId, m_teamDriveID != null);
 
                 var item = new GoogleDriveFolderItem
                 {
@@ -163,10 +163,11 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     description = remotename,
                     mimeType = "application/octet-stream",
                     labels = new GoogleDriveFolderItemLabels { hidden = true },
-                    parents = new GoogleDriveParentReference[] { new GoogleDriveParentReference { id = CurrentFolderId } }
+                    parents = new GoogleDriveParentReference[] { new GoogleDriveParentReference { id = CurrentFolderId } },
+                    teamDriveId = m_teamDriveID
                 };
 
-                var res = GoogleCommon.ChunckedUploadWithResume<GoogleDriveFolderItem, GoogleDriveFolderItem>(m_oauth, item, url, stream, isUpdate ? "PUT" : "POST");
+                var res = await GoogleCommon.ChunkedUploadWithResumeAsync<GoogleDriveFolderItem, GoogleDriveFolderItem>(m_oauth, item, url, stream, cancelToken, isUpdate ? "PUT" : "POST");
                 m_filecache[remotename] = new GoogleDriveFolderItem[] { res };
             }
             catch
@@ -249,10 +250,10 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -267,7 +268,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             {
                 foreach (var fileid in from n in GetFileEntries(remotename) select n.id)
                 {
-                    var url = WebApi.GoogleDrive.DeleteUrl(Library.Utility.Uri.UrlPathEncode(fileid), m_useTeamDrive);
+                    var url = WebApi.GoogleDrive.DeleteUrl(Library.Utility.Uri.UrlPathEncode(fileid), m_teamDriveID);
                     m_oauth.GetJSONData<object>(url, x =>
                     {
                         x.Method = "DELETE";
@@ -316,10 +317,10 @@ namespace Duplicati.Library.Backend.GoogleDrive
                                             CommandLineArgument.ArgumentType.Password,
                                             Strings.GoogleDrive.AuthidShort,
                                             Strings.GoogleDrive.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("googledrive"))),
-                    new CommandLineArgument(DISABLE_TEAMDRIVE_OPTION,
-                                            CommandLineArgument.ArgumentType.Boolean,
-                                            Strings.GoogleDrive.DisableTeamDriveShort,
-                                            Strings.GoogleDrive.DisableTeamDriveLong),
+                    new CommandLineArgument(TEAMDRIVE_ID,
+                                            CommandLineArgument.ArgumentType.String,
+                                            Strings.GoogleDrive.TeamDriveIdShort,
+                                            Strings.GoogleDrive.TeamDriveIdLong),
                 });
 
         public string Description
@@ -340,7 +341,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 try
                 {
                     GoogleDriveAboutResponse about = this.GetAboutInfo();
-                    return new QuotaInfo(about.quotaBytesTotal ?? -1, about.quotaBytesUsed ?? -1);
+                    return new QuotaInfo(about.quotaBytesTotal ?? -1, about.quotaBytesTotal - about.quotaBytesUsed ?? -1);
                 }
                 catch
                 {
@@ -454,6 +455,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
             public long? fileSize { get; set; }
             public long? quotaBytesUsed { get; set; }
 
+            public string teamDriveId { get; set; }
+
             public GoogleDriveParentReference[] parents { get; set; }
         }
 
@@ -480,7 +483,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             };
 
             var encodedFileQuery = Library.Utility.Uri.UrlEncode(string.Join(" and ", fileQuery.Where(x => x != null)));
-            var url = WebApi.GoogleDrive.ListUrl(encodedFileQuery, m_useTeamDrive);
+            var url = WebApi.GoogleDrive.ListUrl(encodedFileQuery, m_teamDriveID);
 
             while (true)
             {
@@ -492,7 +495,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 if (string.IsNullOrWhiteSpace(token))
                     break;
 
-                url = WebApi.GoogleDrive.ListUrl(encodedFileQuery, m_useTeamDrive, token);
+                url = WebApi.GoogleDrive.ListUrl(encodedFileQuery, m_teamDriveID, token);
             }
         }
 
@@ -514,7 +517,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(folder));
 
-            return m_oauth.GetJSONData<GoogleDriveFolderItem>(WebApi.GoogleDrive.CreateFolderUrl(m_useTeamDrive), x =>
+            return m_oauth.GetJSONData<GoogleDriveFolderItem>(WebApi.GoogleDrive.CreateFolderUrl(m_teamDriveID), x =>
             {
                 x.Method = "POST";
                 x.ContentType = "application/json; charset=UTF-8";

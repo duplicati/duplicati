@@ -17,9 +17,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Interface
 {
@@ -35,7 +34,8 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="stream">The stream to read from</param>
-        void Put(string remotename, System.IO.Stream stream);
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken);
 
         /// <summary>
         /// Downloads a file with the remote data

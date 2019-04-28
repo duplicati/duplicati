@@ -175,8 +175,8 @@ Usage: compare <storage-URL> [<base-version>] [<compare-to>] [<options>]
 
   Compares two backups and shows differences. If no versions are given, changes are shown between the two latest backups. The versions can either be timestamps or backup version numbers. If only one version is given, the most recent backup is compared to that version.
 
-  --verbose
-    Shows names of files
+  --full-result
+    Shows all changes
   --include=<filter>
     Adds an include filter (for verbose output)
   --exclude=<filter>

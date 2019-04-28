@@ -1,13 +1,13 @@
 # Translators:
 # Miguel Angel Gabriel <magabriel@gmail.com>, 2017
 # Arsix Deetwo <r6d2@msn.com>, 2017
-# Andres Rusconi <arusconi@gmail.com>, 2018
 # Pruebas, 2018
+# Andres Rusconi <arusconi@gmail.com>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Pruebas, 2018\n"
+"Last-Translator: Andres Rusconi <arusconi@gmail.com>, 2019\n"
 "Language-Team: Spanish (https://www.transifex.com/duplicati/teams/67655/es/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -99,7 +99,7 @@ msgstr "Añadir ruta"
 
 #: templates/backup-result/top-right-box.html:11
 msgid "Added"
-msgstr ""
+msgstr "Agregado"
 
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
@@ -182,7 +182,7 @@ msgstr "Informes de uso anónimos"
 
 #: scripts/services/AppUtils.js:204
 msgid "Applications"
-msgstr ""
+msgstr "Aplicaciones"
 
 #: templates/export.html:8
 msgid "As Command-line"
@@ -214,7 +214,7 @@ msgstr "Ejecutar automáticamente las copias de seguridad."
 
 #: templates/backends/b2.html:12
 msgid "B2 Account ID or Application ID"
-msgstr ""
+msgstr "B2 ID de Cuenta o ID de Aplicación"
 
 #: templates/backends/b2.html:16
 msgid "B2 Application Key"
@@ -238,7 +238,7 @@ msgstr "Módulos de respaldo:"
 
 #: scripts/services/ServerStatus.js:44
 msgid "Backup complete!"
-msgstr ""
+msgstr "Respaldo completo!"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
@@ -251,6 +251,10 @@ msgid ""
 "                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by\n"
 "                    invoking your system's keychain."
 msgstr ""
+"La copia está encriptada, pero no se dispone de la frase de cifrado.\n"
+"Ingrese una frase de cifrado a continuación para poder restaurar sus archivos o,\n"
+"en caso de cifrado GPG, deje en blanco para permitir que gpg recupere la frase de cifrado\n"
+"invocando la cadena de claves de su sistema."
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
@@ -324,6 +328,9 @@ msgid ""
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
+"Permitiendo el acceso remoto, el servidor atenderá requerimientos desde\n"
+"cualquier equipo de su red. Si Ud. habilita esta opción, asegurese siempre de usar\n"
+"la computadora dentro de una red protegida por un firewall."
 
 #: templates/settings.html:29
 msgid ""
@@ -333,10 +340,16 @@ msgid ""
 " you prefer having to type in the password, even when accessing the user "
 "interface from the tray icon, enable this option."
 msgstr ""
+"Por defecto, el ícono en la barra de taréas abrirá la interface de usuario "
+"con un token que destraba la misma. Esto asegura que Ud. puede acceder a la "
+"interface de usuario desde dicho ícono, mientras que a otros le será "
+"requerida una contraseña. Si Ud prefiere tener que ingresar una contraseña, "
+"auún cuando acceda a la interface de usuario desde el ícono en la barra de "
+"taréas, habilite esta opción."
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
-msgstr ""
+msgstr "Archivos caché"
 
 #: templates/settings.html:109
 msgid "Canary"
@@ -406,7 +419,7 @@ msgstr "Haga clic en el enlace de AuthID para crear una AuthID"
 
 #: index.html:152 index.html:203
 msgid "Click to set throttle options"
-msgstr ""
+msgstr "Acceda para opciones de aceleración"
 
 #: templates/home.html:42
 msgid "Commandline ..."
@@ -414,7 +427,7 @@ msgstr "Línea de comandos ..."
 
 #: templates/backup-result/phases/compact.html:3
 msgid "Compact Phase"
-msgstr ""
+msgstr "Fase de compactación"
 
 #: templates/home.html:41
 msgid "Compact now"
@@ -466,7 +479,7 @@ msgstr "Confirmar borrado"
 
 #: templates/settings.html:12
 msgid "Confirm password"
-msgstr ""
+msgstr "Confirme contraseña"
 
 #: scripts/services/EditUriBackendConfig.js:66
 msgid "Confirmation required"
@@ -639,7 +652,7 @@ msgstr "({{channelname}}) por defecto"
 
 #: scripts/services/AppUtils.js:185
 msgid "Default excludes"
-msgstr ""
+msgstr "Exclusiones por defecto"
 
 #: templates/settings.html:149
 msgid "Default options"
@@ -655,7 +668,7 @@ msgstr "Eliminar ..."
 
 #: templates/backup-result/phases/delete.html:3
 msgid "Delete Phase (Old Backup Versions)"
-msgstr ""
+msgstr "Elimine Fase (Versiones Antiguas del Respaldo)"
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
@@ -685,15 +698,15 @@ msgstr ""
 
 #: templates/backup-result/top-right-box.html:19
 msgid "Deleted"
-msgstr ""
+msgstr "Eliminado"
 
 #: templates/backup-result/phases/delete.html:24
 msgid "Deleted Versions"
-msgstr ""
+msgstr "Versiones eliminadas"
 
 #: templates/backup-result/phases/compact.html:23
 msgid "Deleted files"
-msgstr ""
+msgstr "Archivos eliminados"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
@@ -705,11 +718,11 @@ msgstr "Eliminando archivos no deseados ..."
 
 #: templates/addoredit.html:43
 msgid "Description (optional)"
-msgstr ""
+msgstr "Descripción (opcional)"
 
 #: templates/home.html:17
 msgid "Description:"
-msgstr ""
+msgstr "Descripción:"
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
@@ -823,6 +836,8 @@ msgid ""
 "duration. Duplicati will occupy minimal system resources and no backups will"
 " be run."
 msgstr ""
+"Duplicati se ejecutará cuando inicie, pero permanecerá en stand-by mientras se ejecute.\n"
+"Duplicati ocupará minimos recursos del sistema y ningúna tarea de respaldo se ejectutará."
 
 #: templates/backup-result/phases/compact.html:16
 #: templates/backup-result/phases/delete.html:16
@@ -832,7 +847,7 @@ msgstr ""
 #: templates/backup-result/phases/test.html:16
 #: templates/backup-result/top-left-box.html:11
 msgid "Duration"
-msgstr ""
+msgstr "Duración"
 
 #: templates/delete.html:15
 msgid ""
@@ -895,7 +910,7 @@ msgstr "Módulos de cifrado:"
 #: templates/backup-result/phases/test.html:12
 #: templates/backup-result/top-left-box.html:7
 msgid "End"
-msgstr ""
+msgstr "Fin"
 
 #: scripts/controllers/EditBackupController.js:95
 #: scripts/controllers/RestoreDirectController.js:24
@@ -910,6 +925,11 @@ msgid ""
 "the next 4 weeks, and one for each of the next 36 months. This can also be "
 "written as 1W:1D,1M:1W,3Y:1M."
 msgstr ""
+"Ingrese una estrategia de retención en forma manual. Los campos son D/W/Y "
+"para dias/semanas/años y U para \"ilimitado\". La sintaxis es: "
+"7D:1D,4W:1W,36M:1M. Este ejemplo mantiene una copia para cada uno de los 7 "
+"dias, una para cada una de las 4 semanas y una por cada uno de los próximos "
+"36 meses. Esto también puede escribirse como 1W:1D,1M:1W,3Y:1M."
 
 #: templates/backends/azure.html:12
 msgid "Enter access key"
@@ -957,13 +977,15 @@ msgstr "Introduzca la ruta de destino"
 
 #: templates/backends/msgroup.html:3
 msgid "Enter the email address of the Office 365 group"
-msgstr ""
+msgstr "Ingrese la dirección de mail del grupo de Office 365"
 
 #: templates/backends/sharepoint.html:3
 msgid ""
 "Enter the full destination path, including the server name, but without "
 "https"
 msgstr ""
+"Ingrese el camino completo del destino, inclyendo el nombre del servidor, "
+"pero omitiendo \"https\""
 
 #: scripts/controllers/CommandlineController.js:170
 #: scripts/controllers/CommandlineController.js:74
@@ -999,7 +1021,7 @@ msgstr "Errores y bloqueos"
 
 #: templates/backup-result/top-right-box.html:3
 msgid "Examined"
-msgstr ""
+msgstr "Examinado"
 
 #: templates/addoredit.html:214
 msgid "Exclude"
@@ -1027,7 +1049,7 @@ msgstr "Excluir archivos cuyos nombres contengan"
 
 #: scripts/services/AppUtils.js:164
 msgid "Exclude filter group"
-msgstr ""
+msgstr "Excluir grupo de filtros"
 
 #: scripts/services/AppUtils.js:137
 msgid "Exclude folder"
@@ -1063,7 +1085,7 @@ msgstr "Exportar configuración"
 
 #: templates/export.html:18
 msgid "Export passwords"
-msgstr ""
+msgstr "Exportar contraseñas"
 
 #: templates/export.html:35
 msgid "Exporting ..."
@@ -1071,7 +1093,7 @@ msgstr "Exportando ..."
 
 #: templates/externallink.html:1
 msgid "External link"
-msgstr ""
+msgstr "Enlace externo"
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
@@ -1111,7 +1133,7 @@ msgstr "Error al recuperar información de la ruta: {{message}}"
 
 #: scripts/directives/notificationArea.js:45
 msgid "Failed to find backup:"
-msgstr ""
+msgstr "Error para encontrar respaldo:"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
@@ -1140,7 +1162,7 @@ msgstr "Archivo"
 
 #: templates/backup-result/top-right-box.html:1
 msgid "Files"
-msgstr ""
+msgstr "Archivos"
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
@@ -1214,7 +1236,7 @@ msgstr "Recuperando versiones de ficheros..."
 #: scripts/services/EditUriBuiltins.js:729
 #: scripts/services/EditUriBuiltins.js:740 templates/backends/msgroup.html:2
 msgid "Group email"
-msgstr ""
+msgstr "Correo del grupo"
 
 #: scripts/controllers/EditBackupController.js:19
 msgid "Hidden files"
@@ -1273,6 +1295,8 @@ msgid ""
 "If at least one newer backup is found, all backups older than this date are "
 "deleted."
 msgstr ""
+"Si al menos una copia mas nueva es encontrada, todas las copias anteriores\n"
+"a ese día s eliminarán."
 
 #: templates/localdatabase.html:13
 msgid ""
@@ -1330,6 +1354,11 @@ msgid ""
 "If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
 "Do you want to set a password now?"
 msgstr ""
+"Si su máquina está tiene un entonrno multiusuario\n"
+"( por ej: su máquina tiene una o mas cuentas), Ud necesita\n"
+"configurar una  contraseña para impedir que otros usuarios\n"
+"accedan a los datos de su cuenta.\n"
+"Quiere configurar una contraseña ahora ?"
 
 #: templates/import.html:31
 msgid "Import"
@@ -2267,7 +2296,7 @@ msgstr ""
 
 #: templates/addoredit.html:324
 msgid "Smart backup retention"
-msgstr ""
+msgstr "Retención de copias inteligente"
 
 #: templates/backends/openstack.html:45
 msgid ""

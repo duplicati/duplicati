@@ -235,168 +235,6 @@ namespace Duplicati.Library.Main
             get { return new string[] { "auth-password", "auth-username" }; }
         }
 
-
-        /// <summary>
-        /// Gets all commands that effect a backup
-        /// </summary>
-        public static string[] BackupOptions
-        {
-            get
-            {
-                return new string[] {
-                    "dblock-size",
-                    "disable-autocreate-folder",
-                    "disable-filetime-check",
-                    "check-filetime-only",
-                    "disable-time-tolerance",
-                    "allow-missing-source",
-                    "skip-files-larger-than",
-                    "upload-unchanged-backups",
-                    "list-verify-uploads",
-                    "control-files",
-                    "snapshot-policy",
-                    "vss-exclude-writers",
-                    "vss-use-mapping",
-                    "usn-policy",
-                    "hyperv-backup-vm",
-                    "symlink-policy",
-                    "hardlink-policy",
-                    "exclude-files-attributes",
-                    "compression-extension-file",
-                    "full-remote-verification",
-                    "disable-synthetic-filelist",
-                    "disable-file-scanner",
-                    "disable-on-battery"
-                };
-            }
-        }
-
-        /// <summary>
-        /// Gets all options that affect a connection
-        /// </summary>
-        public static string[] ConnectionOptions
-        {
-            get
-            {
-                return new string[] {
-                    "thread-priority",
-                    "number-of-retries",
-                    "retry-delay",
-                    "synchronous-upload",
-                    "asynchronous-upload-limit",
-                    "asynchronous-upload-folder",
-                    "disable-streaming-transfer",
-                    "max-upload-pr-second",
-                    "max-download-pr-second",
-                    "no-connection-reuse",
-                    "allow-sleep",
-                    "use-background-io-priority"
-                };
-            }
-        }
-
-        /// <summary>
-        /// Gets all options that affect a filename parsing
-        /// </summary>
-        public static string[] FilenameOptions
-        {
-            get
-            {
-                return new string[] {
-                    "prefix",
-                    "tempdir"
-                };
-            }
-        }
-
-        /// <summary>
-        /// Gets all options that can be used for debugging
-        /// </summary>
-        public static string[] DebugOptions
-        {
-            get
-            {
-                return new string[] {
-                    "debug-output",
-                    "debug-retry-errors",
-                    "log-file",
-                    "log-file-log-level",
-                    "log-file-log-filter",
-                    "console-log-level",
-                    "console-log-filter",
-                    "profile-all-database-queries"
-                };
-            }
-        }
-
-        /// <summary>
-        /// Gets all options that affect module loading
-        /// </summary>
-        public static string[] ModuleOptions
-        {
-            get
-            {
-                return new string[] {
-                    "encryption-module",
-                    "compression-module",
-                    "enable-module",
-                    "disable-module",
-                    "no-encryption"
-                };
-            }
-        }
-
-        /// <summary>
-        /// Gets all options that affect encryption
-        /// </summary>
-        public static string[] EncryptionOptions
-        {
-            get
-            {
-                return new string[] {
-                    "encryption-module",
-                    "passphrase",
-                    "no-encryption"
-                };
-            }
-        }
-
-        /// <summary>
-        /// Gets all options that affect cleanup commands
-        /// </summary>
-        public static string[] CleanupOptions
-        {
-            get
-            {
-                return new string[] {
-                    "dry-run",
-                    "allow-full-removal"
-                };
-            }
-        }
-
-        /// <summary>
-        /// Gets all options that affect restore commands
-        /// </summary>
-        public static string[] RestoreOptions
-        {
-            get
-            {
-                return new string[] {
-                    "skip-file-hash-checks",
-                    "dont-read-manifests",
-                    "restore-path",
-                    "time",
-                    "version",
-                    "allow-passphrase-change",
-                    "no-local-db",
-                    "no-local-blocks",
-                    "full-block-verification",
-                    "dont-compress-restore-paths"
-                };
-            }
-        }
-        
         /// <summary>
         /// A default backup name
         /// </summary>
@@ -451,6 +289,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
                     new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "4"),
+                    new CommandLineArgument("asynchronous-concurrent-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousconcurrentuploadlimitShort, Strings.Options.AsynchronousconcurrentuploadlimitLong, "4"),
                     new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong, System.IO.Path.GetTempPath()),
 
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
@@ -511,7 +350,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipmetadataShort, Strings.Options.SkipmetadataLong, "false"),
                     new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
                     new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
-                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true"),
+                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true", null, null, Strings.Options.VerboseDeprecated),
                     new CommandLineArgument("use-block-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UseblockcacheShort, Strings.Options.UseblockcacheLong, "false"),
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, Strings.Options.DeletedfilesLong("changed-files")),
@@ -1204,6 +1043,23 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the number of concurrent volume uploads allowed. Zero for unlimited.
+        /// </summary>
+        public int AsynchronousConcurrentUploadLimit
+        {
+            get
+            {
+                if (!m_options.TryGetValue("asynchronous-concurrent-upload-limit", out var value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return 4;
+                else
+                    return int.Parse(value);
+            }
+        }
+
+        /// <summary>
         /// Gets the number of volumes to create ahead of time when using async transfers,
         /// a value of zero indicates no limit
         /// </summary>
@@ -1356,7 +1212,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                System.IO.FileAttributes res = (System.IO.FileAttributes)0;
+                System.IO.FileAttributes res = default(System.IO.FileAttributes);
                 string v;
                 if (!m_options.TryGetValue("exclude-files-attributes", out v))
                     return res;
@@ -1573,19 +1429,6 @@ namespace Duplicati.Library.Main
         public bool DisableSyntheticFilelist
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "disable-synthetic-filelist"); }
-        }
-
-        /// <summary>
-        /// Flag indicating if the filepath cache is disabled
-        /// </summary>
-        public bool UseFilepathCache
-        {
-            get
-            {
-                string s;
-                m_options.TryGetValue("disable-filepath-cache", out s);
-                return !Library.Utility.Utility.ParseBool(s, true);
-            }
         }
 
         /// <summary>

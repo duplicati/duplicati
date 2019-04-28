@@ -52,9 +52,6 @@ namespace Duplicati.Library.Main.Volumes
             else
                 m_localfile = new Library.Utility.TempFile();
 
-            // TODO(danstahr): This is a hack! Figure out why the file is being disposed of prematurely.
-            m_localfile.Protected = true;
-
             ResetRemoteFilename(options, timestamp);
 
             m_localFileStream = new System.IO.FileStream(m_localfile, FileMode.Create, FileAccess.Write, FileShare.Read);

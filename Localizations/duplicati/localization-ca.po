@@ -4,7 +4,7 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# Marc Riera Irigoyen <marc.riera.irigoyen@gmail.com>, 2018
+# Marc Riera <marc.riera.irigoyen@gmail.com>, 2018
 # 
 #, fuzzy
 msgid ""
@@ -13,7 +13,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-12-11 12:26+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Marc Riera Irigoyen <marc.riera.irigoyen@gmail.com>, 2018\n"
+"Last-Translator: Marc Riera <marc.riera.irigoyen@gmail.com>, 2018\n"
 "Language-Team: Catalan (https://www.transifex.com/duplicati/teams/67655/ca/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -31,6 +31,8 @@ msgid ""
 "Failed to create, open or upgrade the database.\n"
 "Error message: {0}"
 msgstr ""
+"Failed to create, open or upgrade the database.\n"
+"Missatge d'error: {0}"
 
 #: Server/Strings.cs:10
 msgid "Displays this help"
@@ -45,7 +47,7 @@ msgstr ""
 #: Server/Strings.cs:14
 #, csharp-format
 msgid "--{0}: {1}"
-msgstr ""
+msgstr "--{0}: {1}"
 
 #: Server/Strings.cs:15 CommandLine/Strings.cs:21
 #, csharp-format
@@ -105,6 +107,8 @@ msgid ""
 "Unable to start up, perhaps another process is already running?\n"
 "Error message: {0}"
 msgstr ""
+"Unable to start up, perhaps another process is already running?\n"
+"Missatge d'error: {0}"
 
 #: Server/Strings.cs:26
 msgid "Disables database encryption"
@@ -179,7 +183,7 @@ msgstr ""
 
 #: Server/Strings.cs:39
 msgid "Sets the folder where settings are stored"
-msgstr ""
+msgstr "Definexi la carpeta on es desen els paràmetres"
 
 #: Server/Strings.cs:40
 #, csharp-format
@@ -191,7 +195,7 @@ msgstr ""
 
 #: Server/Strings.cs:41
 msgid "Sets the database encryption key"
-msgstr ""
+msgstr "Defineix la clau de xifratge de la base de dades"
 
 #: Server/Strings.cs:42
 #, csharp-format
@@ -391,19 +395,19 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:10
 msgid "Boolean"
-msgstr ""
+msgstr "Booleà"
 
 #: Library/Interface/Strings.cs:11
 msgid "Enumeration"
-msgstr ""
+msgstr "Enumeració"
 
 #: Library/Interface/Strings.cs:12
 msgid "Flags"
-msgstr ""
+msgstr "Senyaladors"
 
 #: Library/Interface/Strings.cs:13
 msgid "Integer"
-msgstr ""
+msgstr "Enter"
 
 #: Library/Interface/Strings.cs:14
 msgid "Path"
@@ -411,11 +415,11 @@ msgstr "Camí"
 
 #: Library/Interface/Strings.cs:15
 msgid "Size"
-msgstr ""
+msgstr "Mida"
 
 #: Library/Interface/Strings.cs:16
 msgid "String"
-msgstr ""
+msgstr "Cadena"
 
 #: Library/Interface/Strings.cs:17
 msgid "Timespan"
@@ -423,7 +427,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:18
 msgid "Unknown"
-msgstr ""
+msgstr "Desconeguda"
 
 #: Library/Interface/Strings.cs:21
 #, csharp-format
@@ -449,16 +453,20 @@ msgid ""
 "You have not entered a path. This will store all backups in the default "
 "directory. Is this what you want?"
 msgstr ""
+"You have not entered a path. Això emmagatzemarà totes les còpies de "
+"seguretat a la carpeta per defecte. Is this what you want?"
 
 #: Library/Interface/Strings.cs:26
 msgid "You must enter a password"
-msgstr ""
+msgstr "Heu d'introduir una contrasenya"
 
 #: Library/Interface/Strings.cs:27
 msgid ""
 "You have not entered a password.\n"
 "Proceed without a password?"
 msgstr ""
+"No heu introduït una contrasenya.\n"
+"Voleu continuar sense cap contrasenya?"
 
 #: Library/Interface/Strings.cs:29
 msgid "You must enter the name of the server"
@@ -488,7 +496,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:38
 msgid "Folder created!"
-msgstr ""
+msgstr "S'ha creat la carpeta!"
 
 #: Library/Interface/Strings.cs:39
 msgid "The requested folder does not exist"
@@ -501,7 +509,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:41
 msgid "Cancelled"
-msgstr ""
+msgstr "Cancel·lat"
 
 #: Library/Interface/CustomExceptions.cs:82
 #: Library/Interface/CustomExceptions.cs:90
@@ -515,6 +523,9 @@ msgid ""
 "Error message: {0}\n"
 "Command: {1} {2}"
 msgstr ""
+"The external command failed to start.\n"
+"Missatge d'error: {0}\n"
+"Ordre: {1} {2}"
 
 #: Library/Snapshots/Strings.cs:7
 #, csharp-format
@@ -754,7 +765,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:18
 msgid "FTP"
-msgstr ""
+msgstr "FTP"
 
 #: Library/Backend/FTP/Strings.cs:19 Library/Backend/WEBDAV/Strings.cs:15
 #: Library/Backend/TahoeLAFS/Strings.cs:8
@@ -1608,7 +1619,7 @@ msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:11
 msgid "Target path, ie /backup"
-msgstr "Target path, ie /backup"
+msgstr "Camí de destinació (per exemple, /backup)"
 
 #: Library/Backend/Sia/Strings.cs:12 Library/Backend/Sia/Strings.cs:13
 msgid "Sia password"
@@ -1616,7 +1627,7 @@ msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:14
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: Library/Backend/Sia/Strings.cs:15
 msgid "Minimum value is 3."
@@ -2016,7 +2027,7 @@ msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:13
 msgid "WebDAV"
-msgstr ""
+msgstr "WebDAV"
 
 #: Library/Backend/WEBDAV/Strings.cs:14
 #, csharp-format
@@ -2429,7 +2440,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:47
 msgid "Max number of kilobytes to download pr. second"
-msgstr ""
+msgstr "Max number of kilobytes to download pr. segon"
 
 #: Library/Main/Strings.cs:48
 msgid ""
@@ -2440,7 +2451,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:49
 msgid "Max number of kilobytes to upload pr. second"
-msgstr ""
+msgstr "Max number of kilobytes to upload pr. segon"
 
 #: Library/Main/Strings.cs:50
 msgid ""
@@ -3651,7 +3662,7 @@ msgstr "Introduïu la contrasenya de xifratge"
 
 #: Library/Modules/Builtin/Strings.cs:13
 msgid "The passphrases do not match"
-msgstr ""
+msgstr "Les contrasenyes no coincideixen"
 
 #: Library/Modules/Builtin/Strings.cs:16
 msgid ""
@@ -3693,7 +3704,7 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash (SHA256) to approve it "
+"certificates), you can supply the certificate hash (SHA1) to approve it "
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
@@ -3725,7 +3736,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:30
 msgid "Configure http requests"
-msgstr ""
+msgstr "Configura les peticions HTTP"
 
 #: Library/Modules/Builtin/Strings.cs:31
 msgid "Alternate OAuth URL"
@@ -3836,6 +3847,9 @@ msgid ""
 "until the script has completed or timed out. If the script returns a non-"
 "zero error code or times out, the operation will be aborted."
 msgstr ""
+"Executa un script abans de fer una operació. The operation will block until "
+"the script has completed or timed out. If the script returns a non-zero "
+"error code or times out, the operation will be aborted."
 
 #: Library/Modules/Builtin/Strings.cs:59
 msgid "Run a required script on startup"
@@ -3850,12 +3864,12 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:184
 #, csharp-format
 msgid "Selects the output format for results. Available formats: {0}"
-msgstr ""
+msgstr "Selects the output format for results. Formats disponibles: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:62
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
-msgstr ""
+msgstr "S'ha produït un error en executar l'script «{0}»: {1}"
 
 #: Library/Modules/Builtin/Strings.cs:63
 #, csharp-format
@@ -3867,6 +3881,8 @@ msgid ""
 "Executes a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
 msgstr ""
+"Executa un script abans de fer una operació. The operation will block until "
+"the script has completed or timed out."
 
 #: Library/Modules/Builtin/Strings.cs:65
 msgid "Run a script on startup"
@@ -3915,6 +3931,15 @@ msgid ""
 "\n"
 "All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 msgstr ""
+"Aquest valor pot ser un nom de fitxer. If the file exists, the file contents will be used as the message body.\n"
+"\n"
+"In the message body, certain tokens are replaced:\n"
+"%OPERATIONNAME% - The name of the operation, normally \"Backup\"\n"
+"%REMOTEURL% - Remote server url\n"
+"%LOCALPATH% - The path to the local files or folders involved in the operation (if any)\n"
+"%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success\n"
+"\n"
+"All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 
 #: Library/Modules/Builtin/Strings.cs:83
 msgid "The message body"
@@ -3972,6 +3997,10 @@ msgid ""
 " \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup "
 "operations to send an email."
 msgstr ""
+"Podeu especificar una opció entre: «{0}», «{1}», «{2}», «{3}».  You can "
+"supply multiple options with a comma separator, e.g. \"{0},{1}\". The "
+"special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause "
+"all backup operations to send an email."
 
 #: Library/Modules/Builtin/Strings.cs:101
 #: Library/Modules/Builtin/Strings.cs:133
@@ -4043,7 +4072,7 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:119
 #: Library/Modules/Builtin/Strings.cs:149
 msgid "The message template"
-msgstr ""
+msgstr "La plantilla del missatge"
 
 #: Library/Modules/Builtin/Strings.cs:120
 #: Library/Modules/Builtin/Strings.cs:150
@@ -4058,6 +4087,15 @@ msgid ""
 "\n"
 "All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 msgstr ""
+"Aquest valor pot ser un nom de fitxer. If the file exists, the file contents will be used as the message.\n"
+"\n"
+"In the message, certain tokens are replaced:\n"
+"%OPERATIONNAME% - The name of the operation, normally \"Backup\"\n"
+"%REMOTEURL% - Remote server url\n"
+"%LOCALPATH% - The path to the local files or folders involved in the operation (if any)\n"
+"%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success\n"
+"\n"
+"All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 
 #: Library/Modules/Builtin/Strings.cs:129
 msgid "The XMPP username"
@@ -4084,6 +4122,8 @@ msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
 "You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
 msgstr ""
+"Podeu especificar una opció entre: «{0}», «{1}», «{2}», «{3}».  \n"
+"You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
 
 #: Library/Modules/Builtin/Strings.cs:136
 #: Library/Modules/Builtin/Strings.cs:166
@@ -4185,7 +4225,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:179
 msgid "Log message filter"
-msgstr ""
+msgstr "Filtre de missatges de registre"
 
 #: Library/Modules/Builtin/Strings.cs:180
 msgid ""
@@ -4195,7 +4235,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:181
 msgid "Limits log lines"
-msgstr ""
+msgstr "Limita les línies de l'informe"
 
 #: Library/Modules/Builtin/Strings.cs:182
 msgid ""
@@ -4275,27 +4315,27 @@ msgstr ""
 #: Library/Utility/Strings.cs:28
 #, csharp-format
 msgid "{0} bytes"
-msgstr ""
+msgstr "{0} bytes"
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format
 msgid "{0:N} GB"
-msgstr ""
+msgstr "{0:N} GB"
 
 #: Library/Utility/Strings.cs:30
 #, csharp-format
 msgid "{0:N} KB"
-msgstr ""
+msgstr "{0:N} KB"
 
 #: Library/Utility/Strings.cs:31
 #, csharp-format
 msgid "{0:N} MB"
-msgstr ""
+msgstr "{0:N} MB"
 
 #: Library/Utility/Strings.cs:32
 #, csharp-format
 msgid "{0:N} TB"
-msgstr ""
+msgstr "{0:N} TB"
 
 #: Library/Utility/Strings.cs:33
 #, csharp-format

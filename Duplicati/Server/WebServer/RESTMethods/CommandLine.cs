@@ -24,6 +24,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class CommandLine : IRESTMethodGET, IRESTMethodPOST
     {
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<CommandLine>();
+
         private class LogWriter : System.IO.TextWriter
         {
             private readonly ActiveRun m_target;
@@ -60,15 +62,30 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 {
                     m_target.LastAccess = DateTime.Now;
 
-                    if (m_sb.Length != 0)
+                    //Avoid writing the log if it does not exist
+                    if (m_target.IsLogDisposed)
                     {
-                        m_target.Log.Add(m_sb + value);
-                        m_sb.Length = 0;
-                        m_newlinechars = 0;
+                        Program.LogHandler.WriteMessage(new Library.Logging.LogEntry("Attempted to write message after closing: {0}", new object[] { value }, Library.Logging.LogMessageType.Warning, LOGTAG, "CommandLineOutputAfterLogClosed", null));
+                        return;
                     }
-                    else
+
+                    try
                     {
-                        m_target.Log.Add(value);
+                        if (m_sb.Length != 0)
+                        {
+                            m_target.Log.Add(m_sb + value);
+                            m_sb.Length = 0;
+                            m_newlinechars = 0;
+                        }
+                        else
+                        {
+                            m_target.Log.Add(value);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // This can happen on a very unlucky race where IsLogDisposed is set right after the check
+                        Program.LogHandler.WriteMessage(new Library.Logging.LogEntry("Failed to forward commandline message: {0}", new object[] { value }, Library.Logging.LogMessageType.Warning, LOGTAG, "CommandLineOutputAfterLogClosed", ex));
                     }
                 }
             }
@@ -84,6 +101,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             public readonly object Lock = new object();
             public bool Finished = false;
             public bool Started = false;
+            public bool IsLogDisposed = false;
             public System.Threading.Thread Thread;
         }
 
@@ -188,17 +206,26 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             while (m_activeItems.Count > 0)
             {
-                var oldest = m_activeItems.Values.OrderBy(x => x.LastAccess).FirstOrDefault();
-                if (oldest != null && DateTime.Now - oldest.LastAccess > TimeSpan.FromMinutes(5))
-                {
-                    m_activeItems.Remove(oldest.ID);
-                    oldest.Log.Dispose();
+                var oldest = m_activeItems.Values
+                    .OrderBy(x => x.LastAccess)
+                    .FirstOrDefault();
 
-                    // Fix all expired, or stop running
-                    continue;
+                if (oldest != null)
+                {
+                    // If the task has finished, we just wait a little to allow the UI to pick it up
+                    var timeout = oldest.Finished ? TimeSpan.FromMinutes(5) : TimeSpan.FromDays(1);
+                    if (DateTime.Now - oldest.LastAccess > timeout)
+                    {
+                        oldest.IsLogDisposed = true;
+                        m_activeItems.Remove(oldest.ID);
+                        oldest.Log.Dispose();
+
+                        // Fix all expired, or stop running
+                        continue;
+                    }
                 }
 
-                await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(60)).ConfigureAwait(false);
+                await System.Threading.Tasks.Task.Delay(TimeSpan.FromMinutes(1)).ConfigureAwait(false);
             }
         }
 

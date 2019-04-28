@@ -1,10 +1,10 @@
 # Translators:
-# Marc Riera Irigoyen <marc.riera.irigoyen@gmail.com>, 2018
+# Marc Riera <marc.riera.irigoyen@gmail.com>, 2018
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Marc Riera Irigoyen <marc.riera.irigoyen@gmail.com>, 2018\n"
+"Last-Translator: Marc Riera <marc.riera.irigoyen@gmail.com>, 2018\n"
 "Language-Team: Catalan (https://www.transifex.com/duplicati/teams/67655/ca/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -96,7 +96,7 @@ msgstr "Afegeix un camí"
 
 #: templates/backup-result/top-right-box.html:11
 msgid "Added"
-msgstr ""
+msgstr "S'ha afegit"
 
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
@@ -235,7 +235,7 @@ msgstr "Mòduls de rerefons:"
 
 #: scripts/services/ServerStatus.js:44
 msgid "Backup complete!"
-msgstr ""
+msgstr "S'ha completat la còpia de seguretat!"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
@@ -248,6 +248,10 @@ msgid ""
 "                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by\n"
 "                    invoking your system's keychain."
 msgstr ""
+"La còpia de seguretat està xifrada però no hi ha cap contrasenya disponible.\n"
+"                    Escriviu una contrasenya a sota per restaurar els fitxers\n"
+"                    o, en cas de fer servir xifratge GPG, deixeu el camp en blanc perquè el GPG obtingui la contrasenya\n"
+"                    des del clauer del sistema."
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
@@ -309,7 +313,7 @@ msgstr "S'està construint la llista de fitxers que es restauraran..."
 
 #: scripts/controllers/RestoreController.js:363
 msgid "Building partial temporary database ..."
-msgstr "S'està construint la base de dades parcial temporal..."
+msgstr "S'està construint una base de dades parcial temporal..."
 
 #: templates/restore.html:59
 msgid "Busy ..."
@@ -420,7 +424,7 @@ msgstr "Línia d'ordres..."
 
 #: templates/backup-result/phases/compact.html:3
 msgid "Compact Phase"
-msgstr ""
+msgstr "Fase de compactació"
 
 #: templates/home.html:41
 msgid "Compact now"
@@ -435,6 +439,8 @@ msgid ""
 "Complete log\n"
 "            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 msgstr ""
+"Registre complet\n"
+"            <i class=\"fa fa-angle-{{log_expanded ? 'up': 'down'}}\"></i>"
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup ..."
@@ -472,7 +478,7 @@ msgstr "Confirma l'eliminació"
 
 #: templates/settings.html:12
 msgid "Confirm password"
-msgstr ""
+msgstr "Confirmeu la contrasenya"
 
 #: scripts/services/EditUriBackendConfig.js:66
 msgid "Confirmation required"
@@ -661,7 +667,7 @@ msgstr "Elimina..."
 
 #: templates/backup-result/phases/delete.html:3
 msgid "Delete Phase (Old Backup Versions)"
-msgstr ""
+msgstr "Fase d'eliminació (Versions antigues de la còpia de seguretat)"
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
@@ -691,15 +697,15 @@ msgstr ""
 
 #: templates/backup-result/top-right-box.html:19
 msgid "Deleted"
-msgstr ""
+msgstr "Eliminat"
 
 #: templates/backup-result/phases/delete.html:24
 msgid "Deleted Versions"
-msgstr ""
+msgstr "Versions eliminades"
 
 #: templates/backup-result/phases/compact.html:23
 msgid "Deleted files"
-msgstr ""
+msgstr "Fitxers eliminats"
 
 #: scripts/services/ServerStatus.js:61
 msgid "Deleting remote files ..."
@@ -711,11 +717,11 @@ msgstr "S'estan eliminant els fitxers no desitjats..."
 
 #: templates/addoredit.html:43
 msgid "Description (optional)"
-msgstr ""
+msgstr "Descripció (opcional)"
 
 #: templates/home.html:17
 msgid "Description:"
-msgstr ""
+msgstr "Descripció:"
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
@@ -797,7 +803,7 @@ msgstr "Baixa"
 
 #: templates/backup-result/phases/compact.html:28
 msgid "Downloaded files"
-msgstr ""
+msgstr "Fitxers baixats"
 
 #: templates/notificationarea.html:30
 msgid "Downloading ..."
@@ -829,6 +835,9 @@ msgid ""
 "duration. Duplicati will occupy minimal system resources and no backups will"
 " be run."
 msgstr ""
+"El Duplicati s'executarà quan arrenqui, però es mantindrà pausat durant el "
+"període especificat. El Duplicati ocuparà els recursos del sistema mínims i "
+"no s'executaran còpies de seguretat."
 
 #: templates/backup-result/phases/compact.html:16
 #: templates/backup-result/phases/delete.html:16
@@ -838,7 +847,7 @@ msgstr ""
 #: templates/backup-result/phases/test.html:16
 #: templates/backup-result/top-left-box.html:11
 msgid "Duration"
-msgstr ""
+msgstr "Durada"
 
 #: templates/delete.html:15
 msgid ""
@@ -901,7 +910,7 @@ msgstr "Mòduls de xifratge:"
 #: templates/backup-result/phases/test.html:12
 #: templates/backup-result/top-left-box.html:7
 msgid "End"
-msgstr ""
+msgstr "Final"
 
 #: scripts/controllers/EditBackupController.js:95
 #: scripts/controllers/RestoreDirectController.js:24
@@ -1012,7 +1021,7 @@ msgstr "Errors i fallades"
 
 #: templates/backup-result/top-right-box.html:3
 msgid "Examined"
-msgstr ""
+msgstr "Examinat"
 
 #: templates/addoredit.html:214
 msgid "Exclude"
@@ -1076,7 +1085,7 @@ msgstr "Exporta la configuració"
 
 #: templates/export.html:18
 msgid "Export passwords"
-msgstr ""
+msgstr "Exporta les contrasenyes"
 
 #: templates/export.html:35
 msgid "Exporting ..."
@@ -1120,11 +1129,11 @@ msgstr "No s'ha pogut eliminar:"
 #: scripts/controllers/RestoreController.js:115
 #: scripts/controllers/RestoreController.js:145
 msgid "Failed to fetch path information: {{message}}"
-msgstr "No s'ha pogut recollir la informació del camí: {{message}}"
+msgstr "No s'ha pogut recollir la informació dels camins: {{message}}"
 
 #: scripts/directives/notificationArea.js:45
 msgid "Failed to find backup:"
-msgstr ""
+msgstr "No s'ha pogut trobar la còpia de seguretat:"
 
 #: scripts/directives/backupEditUri.js:170
 msgid "Failed to import:"
@@ -1146,7 +1155,7 @@ msgstr "No s'ha pogut desar:"
 #: scripts/controllers/RestoreController.js:121
 #: scripts/controllers/RestoreController.js:160
 msgid "Fetching path information ..."
-msgstr "S'està recollint la informació del camí..."
+msgstr "S'està recollint la informació dels camins..."
 
 #: scripts/services/AppUtils.js:74
 msgid "File"
@@ -1154,7 +1163,7 @@ msgstr "Fitxer"
 
 #: templates/backup-result/top-right-box.html:1
 msgid "Files"
-msgstr ""
+msgstr "Fitxers"
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
@@ -1490,7 +1499,7 @@ msgstr "S'estan llistant els fitxers remots..."
 
 #: scripts/services/ServerStatus.js:62
 msgid "Listing remote files for purge ..."
-msgstr ""
+msgstr "S'estan llistant els fitxers remots que es purgaran..."
 
 #: templates/log.html:7
 msgid "Live"
@@ -1630,7 +1639,7 @@ msgstr "No s'ha definit un origen"
 
 #: templates/backup-result/top-right-box.html:15
 msgid "Modified"
-msgstr ""
+msgstr "Modificat"
 
 #: scripts/services/AppUtils.js:104
 msgid "Mon"
@@ -1775,7 +1784,7 @@ msgstr "Cap / desactivat"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Not using encryption"
-msgstr ""
+msgstr "Xifratge desactivat"
 
 #: templates/addoredit.html:328
 msgid "Nothing will be deleted. The backup size will grow with each change."
@@ -1814,7 +1823,7 @@ msgstr "OpenStack Object Storage / Swift"
 
 #: templates/backup-result/top-right-box.html:7
 msgid "Opened"
-msgstr ""
+msgstr "Obert"
 
 #: scripts/services/EditUriBuiltins.js:803
 msgid "Openstack API Key are not supported in v3 keystone API."
@@ -1827,7 +1836,7 @@ msgstr "Sistema operatiu"
 
 #: templates/backuplog.html:16
 msgid "Operation"
-msgstr ""
+msgstr "Operació"
 
 #: scripts/controllers/SystemSettingsController.js:127
 #: scripts/controllers/SystemSettingsController.js:138
@@ -1901,7 +1910,7 @@ msgstr "Les contrasenyes no coincideixen"
 
 #: scripts/controllers/EditBackupController.js:29
 msgid "Passphrases do not match"
-msgstr ""
+msgstr "Les contrasenyes no coincideixen"
 
 #: scripts/services/EditUriBuiltins.js:910
 #: scripts/services/EditUriBuiltins.js:920 templates/backends/file.html:33
@@ -1987,7 +1996,7 @@ msgstr "De propietat"
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
-msgstr ""
+msgstr "Fase de purga"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Purging files ..."
@@ -1995,7 +2004,7 @@ msgstr "S'estan purgant els fitxers..."
 
 #: scripts/services/ServerStatus.js:65
 msgid "Purging files complete!"
-msgstr ""
+msgstr "S'han purgat els fitxers!"
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database ..."
@@ -2007,7 +2016,7 @@ msgstr "Recrea (elimina i repara)"
 
 #: templates/backup-result/phases/recreate-database.html:3
 msgid "Recreate Database Phase"
-msgstr ""
+msgstr "Fase de recreació de la base de dades"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database ..."
@@ -2059,7 +2068,7 @@ msgstr "Elimina l'opció"
 
 #: templates/backup-result/phases/purge.html:23
 msgid "Removed files"
-msgstr ""
+msgstr "Fitxers eliminats"
 
 #: templates/localdatabase.html:18 templates/notificationarea.html:14
 msgid "Repair"
@@ -2067,7 +2076,7 @@ msgstr "Repara"
 
 #: templates/backup-result/phases/repair.html:3
 msgid "Repair Phase"
-msgstr ""
+msgstr "Fase de reparació"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Repairing database ..."
@@ -2091,7 +2100,7 @@ msgstr "Restaura"
 
 #: scripts/services/ServerStatus.js:55
 msgid "Restore complete!"
-msgstr ""
+msgstr "S'ha completat la restauració!"
 
 #: templates/restore.html:45
 msgid "Restore files"
@@ -2137,7 +2146,7 @@ msgstr "Reprèn"
 
 #: templates/backup-result/phases/purge.html:28
 msgid "Rewritten File Lists"
-msgstr ""
+msgstr "Llistes de fitxers reescrits"
 
 #: templates/addoredit.html:269
 msgid "Run again every"
@@ -2338,15 +2347,15 @@ msgstr "Protocols estàndard"
 #: templates/backup-result/phases/test.html:8
 #: templates/backup-result/top-left-box.html:3
 msgid "Start"
-msgstr ""
+msgstr "Inici"
 
 #: scripts/services/ServerStatus.js:33
 msgid "Starting backup ..."
-msgstr ""
+msgstr "S'està iniciant la còpia de seguretat..."
 
 #: scripts/services/ServerStatus.js:45
 msgid "Starting restore ..."
-msgstr ""
+msgstr "S'està iniciant la restauració..."
 
 #: scripts/controllers/RestoreController.js:369
 #: scripts/controllers/RestoreController.js:393
@@ -2465,7 +2474,7 @@ msgstr "Nom de l'inquilí"
 
 #: templates/backup-result/phases/test.html:3
 msgid "Test Phase"
-msgstr ""
+msgstr "Fase de comprovació"
 
 #: templates/edituri.html:21
 msgid "Test connection"
@@ -2498,12 +2507,14 @@ msgstr ""
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
-msgstr ""
+msgstr "No s'ha trobat la còpia de seguretat; l'heu eliminat?"
 
 #: scripts/directives/notificationArea.js:41
 msgid ""
 "The backup was temporary and does not exist anymore, so the log data is lost"
 msgstr ""
+"La còpia de seguretat era temporal i ja no existeix, per la qual cosa s'han "
+"perdut les dades del registre"
 
 #: scripts/services/EditUriBuiltins.js:856
 msgid "The bucket name should be all lower-case, convert automatically?"
@@ -2523,6 +2534,8 @@ msgid ""
 "The configuration should be kept safe. Are you sure you want to save an "
 "unencrypted file containing your passwords?"
 msgstr ""
+"És recomanable que deseu la configuració en un lloc segur. Segur que voleu "
+"desar un fitxer sense xifrar amb les vostres contrasenyes?"
 
 #: index.html:308
 msgid "The connection to the server is lost, attempting again in {{time}} ..."
@@ -2558,7 +2571,7 @@ msgstr ""
 
 #: scripts/controllers/SystemSettingsController.js:90
 msgid "The passwords do not match"
-msgstr ""
+msgstr "Les contrasenyes no coincideixen"
 
 #: scripts/controllers/EditBackupController.js:153
 msgid "The path does not appear to exist, do you want to add it anyway?"
@@ -2672,7 +2685,7 @@ msgstr "Dijous"
 #: templates/backup-result/phases/delete.html:33
 #: templates/backup-result/top-left-box.html:1
 msgid "Time"
-msgstr ""
+msgstr "Hora"
 
 #: templates/export.html:14
 msgid "To File"
@@ -2736,7 +2749,7 @@ msgstr "Dimarts"
 
 #: templates/restore.html:138
 msgid "Type passphrase here."
-msgstr ""
+msgstr "Escriviu la contrasenya aquí."
 
 #: templates/restore.html:57
 msgid "Type to highlight files"
@@ -2765,7 +2778,7 @@ msgstr "S'està actualitzant amb una base de dades existent"
 
 #: templates/backup-result/phases/compact.html:33
 msgid "Uploaded files"
-msgstr ""
+msgstr "Fitxers carregats"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file ..."
@@ -2837,7 +2850,7 @@ msgstr "S'està validant..."
 
 #: templates/backup-result/phases/test.html:20
 msgid "Verifications"
-msgstr ""
+msgstr "Verificacions"
 
 #: templates/home.html:40
 msgid "Verify files"
@@ -2857,7 +2870,7 @@ msgstr "S'estan verificant les dades del rerefons..."
 
 #: scripts/services/ServerStatus.js:58
 msgid "Verifying files ..."
-msgstr ""
+msgstr "S'estan verificant els fitxers..."
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data ..."
@@ -2869,7 +2882,7 @@ msgstr "S'estan verificant els fitxers restaurats..."
 
 #: templates/backup-result/phases/delete.html:33
 msgid "Version ID"
-msgstr ""
+msgstr "ID de la versió"
 
 #: scripts/controllers/EditBackupController.js:34
 msgid "Very strong"
@@ -2979,7 +2992,7 @@ msgstr "Sí, he desat la contrasenya en un lloc segur"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Yes, I understand the risk"
-msgstr ""
+msgstr "Sí, entenc els riscos"
 
 #: scripts/controllers/EditBackupController.js:399
 msgid "Yes, I'm brave!"
@@ -3203,7 +3216,7 @@ msgstr ""
 
 #: templates/backup-result/message-list.html:3
 msgid "{{data.title}}"
-msgstr ""
+msgstr "{{data.title}}"
 
 #: scripts/controllers/StateController.js:50
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
@@ -3221,7 +3234,7 @@ msgstr "{{number}} hora"
 
 #: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
 msgid "{{number}} Hours"
-msgstr ""
+msgstr "{{number}} hores"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6

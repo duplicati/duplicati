@@ -199,7 +199,7 @@ namespace Duplicati.Library.Main
 
             System.Text.StringBuilder backupName = new System.Text.StringBuilder();
             for (var i = 0; i < 10; i++)
-                backupName.Append(rnd.Next('A', 'Z' + 1));
+                backupName.Append((char)rnd.Next('A', 'Z' + 1));
 
             return backupName.ToString();
         }

@@ -1,0 +1,7 @@
+{
+    "name": "FluentFTP",
+    "description": "An FTP and FTPS client for .NET & .NET Standard, optimized for speed.",
+    "link": "https://github.com/robinrodricks/FluentFTP",
+    "license": "MIT",
+    "notes": ""
+}

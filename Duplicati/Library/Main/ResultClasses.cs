@@ -37,7 +37,8 @@ namespace Duplicati.Library.Main
         /// <param name="type">The event type</param>
         /// <param name="path">Path to the resource</param>
         /// <param name="size">Size of the file or progress</param>
-        void SendEvent(BackendActionType action, BackendEventType type, string path, long size);
+        /// <param name="updateProgress">Whether this event should update the backend progress count</param>
+        void SendEvent(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true);
 
         /// <summary>
         /// Gets the backend progress updater.
@@ -108,7 +109,7 @@ namespace Duplicati.Library.Main
 
         public override OperationMode MainOperation { get { return m_parent.MainOperation; } }
 
-        public void SendEvent(BackendActionType action, BackendEventType type, string path, long size)
+        public void SendEvent(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true)
         {
             if (type == BackendEventType.Started)
             {
@@ -141,7 +142,7 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            base.AddBackendEvent(action, type, path, size);
+            base.AddBackendEvent(action, type, path, size, updateProgress);
         }
 
         IBackendProgressUpdater IBackendWriter.BackendProgressUpdater { get { return base.BackendProgressUpdater; } }
@@ -300,11 +301,11 @@ namespace Duplicati.Library.Main
 
         private static bool m_is_reporting = false;
 
-        public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+        public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true)
         {
             if (m_parent != null)
             {
-                m_parent.AddBackendEvent(action, type, path, size);
+                m_parent.AddBackendEvent(action, type, path, size, updateProgress);
             }
             else
             {
@@ -316,7 +317,7 @@ namespace Duplicati.Library.Main
                     try
                     {
                         m_is_reporting = true;
-                        if (type == BackendEventType.Started)
+                        if (type == BackendEventType.Started && updateProgress)
                             this.BackendProgressUpdater.StartAction(action, path, size);
 
                         Logging.Log.WriteInformationMessage(LOGTAG, "BackendEvent", "Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size));

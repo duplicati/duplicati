@@ -1,4 +1,9 @@
-﻿using System;
+﻿using Duplicati.Library.Backend.MicrosoftGraph;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,13 +12,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
-
-using Duplicati.Library.Backend.MicrosoftGraph;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
-
-using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -327,22 +326,22 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fileStream = File.OpenRead(filename))
             {
-                this.Put(remotename, fileStream);
+                return PutAsync(remotename, fileStream, cancelToken);
             }
         }
 
-        public void Put(string remotename, Stream stream)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             // PUT only supports up to 4 MB file uploads. There's a separate process for larger files.
             if (stream.Length < PUT_MAX_SIZE)
             {
                 StreamContent streamContent = new StreamContent(stream);
                 streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                var response = this.m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)), streamContent).Await();
+                var response = await m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)), streamContent);
                 
                 // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
                 this.ParseResponse<DriveItem>(response);
@@ -359,7 +358,7 @@ namespace Duplicati.Library.Backend
                 // Indicate that we want to replace any existing content with this new data we're uploading
                 this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } });
 
-                HttpResponseMessage createSessionResponse = this.m_client.SendAsync(createSessionRequest).Await();
+                HttpResponseMessage createSessionResponse = await m_client.SendAsync(createSessionRequest);
                 UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
 
                 // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
@@ -369,7 +368,7 @@ namespace Duplicati.Library.Backend
                 int read = 0;
                 for (int offset = 0; offset < stream.Length; offset += read)
                 {
-                    read = stream.Read(fragmentBuffer, 0, bufferSize);
+                    read = await stream.ReadAsync(fragmentBuffer, 0, bufferSize, cancelToken).ConfigureAwait(false);
 
                     int retryCount = this.fragmentRetryCount;
                     for (int attempt = 0; attempt < retryCount; attempt++)
@@ -385,7 +384,7 @@ namespace Duplicati.Library.Backend
                         try
                         {
                             // The uploaded put requests will error if they are authenticated
-                            response = this.m_client.SendAsync(request, false).Await();
+                            response = await m_client.SendAsync(request, false);
 
                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
                             this.ParseResponse<UploadSession>(response);

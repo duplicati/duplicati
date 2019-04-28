@@ -1,3 +1,78 @@
+2019-04-11 - 2.0.4.17_canary_2019-04-11
+==========
+* Improved code quality, thanks @warwickmm
+* Fixed an issue where index files were not generated, thanks @seantempleton
+* Masked password fields in UI, thanks @drwtsn32x
+* Added `fr_CA` translation and updated `fr` translation, thanks @flafleur
+* Improved default exclude filters to catch Chrome file on Mac/Linux, thanks @flafleur
+* Added support for Google Team Drive, thanks @mukut1994
+* Fixed random database names being numeric
+* Corrected description for approving self-signed certificates, thanks @flafleur
+* Click on balloon tip on Windows now opens the browser, thanks @flafleur
+* Fixed an error that prevented bug report databases from being created, thanls @pectojin
+* Fixed documentation for buffer sizes, thanks @jonmikeiv
+* Fixed an issue where an upload error would not be reported, thanks @warwickmm
+* Improved documentation, thanks @space-alien
+* Fixed captcha generating out-of-bounds characters, thanks @oslerw
+
+2019-03-28 - 2.0.4.16_canary_2019-03-28
+==========
+* Fixed an issue with Sia authentication, thanks @Ajedi32
+* Improved documentation, thanks @kesava-wow
+* Improved code quality, thanks @warwickmm
+* Added custom B2 download url option, thanks @aahung
+* Updated list of Wasabi and S3 storage destinations, thanks @FroggieFrog
+* Fixed a case where temporary files were not removed, thanks @warwickmm
+* Code refactor and quality improvement, thanks @verhoek
+* Added option for parallel uploads, thanks @seantempleton
+* Improved exception messages, thanks @warwickmm
+* Implemented Jottacloud multithreading uploads, thanks @nescafe2002
+
+2019-02-06 - 2.0.4.15_canary_2019-02-06
+==========
+* Fixed an issue with backup of a Windows drive (without a path)
+* Clarified the B2 user interface, thanks @Pectojin
+
+2019-01-30 - 2.0.4.14_canary_2019-01-30
+==========
+* Fixed an issue with upgrading the database from a previous version
+* If you used v2.0.4.13, your database is likely broken, see the forum for details: https://forum.duplicati.com/t/release-2-0-4-13-canary-2019-01-29/
+
+2019-01-29 - 2.0.4.13_canary_2019-01-29
+==========
+* Added tests and improved code quality, thanks @warwickmm
+* Changed the internal storage of paths to use a prefix method. This should reduce the size of the database significantly and enable much faster database queries later on
+* Increased timeouts for reading the output from the commandline process to allow long running background jobs
+
+2019-01-16 - 2.0.4.12_canary_2019-01-16
+==========
+* Many source code quality improvements, thanks @warwickmm
+* Added test percentage option, thanks @warwickmm
+* Fixed an issue with the log page not loading, thanks @LacunaSoftware
+* Updated the Mega API, thanks @Pectojin
+* Added tool to import a CLI backup into the server, thanks @warwickmm
+* Improved build tools to separate and simplify the GPG signing step, thanks @v$
+* Fixed a case where listing files backed up from a UNC path are not shown, tha$
+* Removed the unused file lookup table, thanks @Pectojin
+* Fixed an issue with the FTP backend where it would sporadically create files $
+* Fixed quota reporting from GoogleDrive, thanks @warwickmm
+* Improved code quality, thanks @verhoek
+* (rebuild of 2.0.4.11)
+
+2019-01-16 - 2.0.4.11_canary_2019-01-16
+==========
+* Many source code quality improvements, thanks @warwickmm
+* Added test percentage option, thanks @warwickmm
+* Fixed an issue with the log page not loading, thanks @LacunaSoftware
+* Updated the Mega API, thanks @Pectojin
+* Added tool to import a CLI backup into the server, thanks @warwickmm
+* Improved build tools to separate and simplify the GPG signing step, thanks @verhoek
+* Fixed a case where listing files backed up from a UNC path are not shown, thanks @mnaimann
+* Removed the unused file lookup table, thanks @Pectojin
+* Fixed an issue with the FTP backend where it would sporadically create files in the root folder of the server, thanks @balchen
+* Fixed quota reporting from GoogleDrive, thanks @warwickmm
+* Improved code quality, thanks @verhoek
+
 2018-12-29 - 2.0.4.10_canary_2018-12-29
 ==========
 * Improved passphrase export, thanks @Pectojin

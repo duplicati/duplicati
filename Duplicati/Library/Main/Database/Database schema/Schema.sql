@@ -82,21 +82,39 @@ CREATE TABLE "FilesetEntry" (
 CREATE INDEX "FilesetentryFileIdIndex" on "FilesetEntry" ("FileID");
 
 
+/*
+The PathPrefix contains a set
+of path prefixes, used to minimize
+the space required to store paths
+*/
+CREATE TABLE "PathPrefix" (
+    "ID" INTEGER PRIMARY KEY,
+    "Prefix" TEXT NOT NULL
+);
+CREATE UNIQUE INDEX "PathPrefixPrefix" ON "PathPrefix" ("Prefix");
 
 /*
-The FileEntry contains an ID
+The FileLookup table contains an ID
 for each path and each version
 of the data and metadata
 */
-CREATE TABLE "File" (
-	"ID" INTEGER PRIMARY KEY,
-	"Path" TEXT NOT NULL,
-	"BlocksetID" INTEGER NOT NULL,
-	"MetadataID" INTEGER NOT NULL
+CREATE TABLE "FileLookup" (
+    "ID" INTEGER PRIMARY KEY,
+    "PrefixID" INTEGER NOT NULL,
+    "Path" TEXT NOT NULL,
+    "BlocksetID" INTEGER NOT NULL,
+    "MetadataID" INTEGER NOT NULL
 );
 
-/* Fast path based lookup */
-CREATE UNIQUE INDEX "FilePath" ON "File" ("Path", "BlocksetID", "MetadataID");
+/* Fast path based lookup, single properties are auto-indexed */
+CREATE UNIQUE INDEX "FileLookupPath" ON "FileLookup" ("PrefixID", "Path", "BlocksetID", "MetadataID");
+
+/*
+The File view contains an ID
+for each path and each version
+of the data and metadata
+*/
+CREATE VIEW "File" AS SELECT "A"."ID" AS "ID", "B"."Prefix" || "A"."Path" AS "Path", "A"."BlocksetID" AS "BlocksetID", "A"."MetadataID" AS "MetadataID" FROM "FileLookup" "A", "PathPrefix" "B" WHERE "A"."PrefixID" = "B"."ID";
 
 /*
 The blocklist hashes are hashes of
@@ -244,4 +262,16 @@ CREATE TABLE "Configuration" (
 	"Value" TEXT NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (7);
+/*
+USN tracking table
+*/
+CREATE TABLE "ChangeJournalData" (
+    "ID" INTEGER PRIMARY KEY,
+    "FilesetID" INTEGER NOT NULL,       
+    "VolumeName" TEXT NOT NULL,         
+    "JournalID" INTEGER NOT NULL,       
+    "NextUsn" INTEGER NOT NULL,         
+    "ConfigHash" TEXT NOT NULL  
+);
+
+INSERT INTO "Version" ("Version") VALUES (9);

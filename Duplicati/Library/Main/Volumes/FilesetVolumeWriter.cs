@@ -34,16 +34,18 @@ namespace Duplicati.Library.Main.Volumes
 
             if (metablocklisthashes != null)
             {
-                //Slightly akward, but we avoid writing if there are no entries 
-                var en = metablocklisthashes.GetEnumerator();
-                if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
+                // Slightly awkward, but we avoid writing if there are no entries.
+                using (var en = metablocklisthashes.GetEnumerator())
                 {
-                    m_writer.WritePropertyName("metablocklists");
-                    m_writer.WriteStartArray();
-                    m_writer.WriteValue(en.Current);
-                    while (en.MoveNext())
+                    if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
+                    {
+                        m_writer.WritePropertyName("metablocklists");
+                        m_writer.WriteStartArray();
                         m_writer.WriteValue(en.Current);
-                    m_writer.WriteEndArray();
+                        while (en.MoveNext())
+                            m_writer.WriteValue(en.Current);
+                        m_writer.WriteEndArray();
+                    }
                 }
             }
             else if (!string.IsNullOrWhiteSpace(metablockhash))
@@ -150,6 +152,7 @@ namespace Duplicati.Library.Main.Volumes
         public override void Dispose()
         {
             this.Close();
+            base.Dispose();
         }
 
         public long FileCount { get { return m_filecount; } }

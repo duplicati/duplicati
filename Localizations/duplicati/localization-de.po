@@ -4,12 +4,11 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# Mario Kiefer <mario.kiefer@a1.net>, 2016
 # Jürg Rast <juergr@gmail.com>, 2016
 # F M, 2016
 # S M <transifex.com@d00d.de>, 2016
-# agrajaghh <agrajaghh@gmail.com>, 2017
 # M D, 2017
+# agrajaghh <agrajaghh@gmail.com>, 2017
 # Sven Dummis <sven.dummis@gmail.com>, 2017
 # Tobi Tobsen <github@tobsen.de>, 2017
 # Bruno Holliger <bholliger@gmx.net>, 2017
@@ -18,7 +17,6 @@
 # ForGorNorPor, 2017
 # Chris K <github@mail.christosoft.de>, 2017
 # jakob ecker <jakob.ecker@gmx.at>, 2017
-# Ettore Atalan <atalanttore@googlemail.com>, 2017
 # Markus Greitner, 2017
 # TheForcer, 2017
 # Simon Walter <simon.walter@hp-factory.de>, 2017
@@ -26,6 +24,7 @@
 # Napitek <root@napitek.co>, 2017
 # Tim Parth <github_com@tparth.de>, 2017
 # Stefan Simmerstatter, 2017
+# Mario Kiefer <mario.kiefer@a1.net>, 2017
 # Christof Barth <barth@medienwissenschaft.de>, 2017
 # Mynyx <henry@hogrebe.name>, 2017
 # Sec Ret, 2017
@@ -33,6 +32,7 @@
 # Dominik Schmelz <dominik@schmelz.cc>, 2017
 # Stefan Sitzmann <github@stevies.de>, 2017
 # Tobias Schwendemann <admin@lyrex.net>, 2017
+# Ettore Atalan <atalanttore@googlemail.com>, 2017
 # Alexander Niederklapfer <alex@krmpfkrmpf-studios.com>, 2018
 # Manfred Mueller <manfred.mueller@fluxflux.net>, 2018
 # Philip De, 2018
@@ -427,7 +427,7 @@ msgstr "Zusätzliche GPG-Befehlszeilenoptionen für die Verschlüsselung"
 #: Library/Encryption/Strings.cs:22
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
-msgstr ""
+msgstr "Fehler beim Ausführen von GPG mit \"{0} {1}\": {2}"
 
 #: Library/Encryption/Strings.cs:23
 msgid ""
@@ -4499,7 +4499,7 @@ msgstr "Übernehme Filter auf die Konsolenprotokolldaten"
 
 #: Library/Main/Strings.cs:262
 msgid "Sets the process to use low IO priority"
-msgstr ""
+msgstr "Festlegen, dass der Prozess eine niedrige I/O-Priorität verwendet"
 
 #: Library/Main/Strings.cs:263
 msgid ""
@@ -4667,10 +4667,15 @@ msgstr "Jedes Serverzertifikat akzeptieren"
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash (SHA256) to approve it "
+"certificates), you can supply the certificate hash (SHA1) to approve it "
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
+"Wenn das Serverzertifikat als ungültig gemeldet wurde (z. B. bei selbst "
+"signierten Zertifikaten), kann der Zertifikatshash für eine Akzeptierung "
+"genommen werden. Als Angabe erfolgt der Hash-Wert in Hex-Format ohne "
+"Leerzeichen. Komma separiert ist es möglich verschiedene Hash-Werte "
+"anzugeben."
 
 #: Library/Modules/Builtin/Strings.cs:25
 msgid "Optionally accept a known SSL certificate"

@@ -45,10 +45,9 @@ namespace Duplicati.Server.Database
                 
                 if (days == null)
                     return null;
-                
-                DayOfWeek dw = DayOfWeek.Monday;
+
                 return (from n in days 
-                        where Enum.TryParse<DayOfWeek>(n, true, out dw)
+                        where Enum.TryParse<DayOfWeek>(n, true, out _)
                         select (DayOfWeek)Enum.Parse(typeof(DayOfWeek), n, true))
                         .ToArray();
             }

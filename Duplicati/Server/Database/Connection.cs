@@ -47,12 +47,11 @@ namespace Duplicati.Server.Database
         {
             lock(m_lock)
             {
-                long id;
-                if (!long.TryParse(backupid, out id))
+                if (!long.TryParse(backupid, out long id))
                     id = -1;
                 ((System.Data.IDbDataParameter)m_errorcmd.Parameters[0]).Value = id;
                 ((System.Data.IDbDataParameter)m_errorcmd.Parameters[1]).Value = message;
-                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[2]).Value = ex == null ? null : ex.ToString();
+                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[2]).Value = ex?.ToString();
                 ((System.Data.IDbDataParameter)m_errorcmd.Parameters[3]).Value = NormalizeDateTimeToEpochSeconds(DateTime.UtcNow);
                 m_errorcmd.ExecuteNonQuery();
             }
@@ -179,8 +178,8 @@ namespace Duplicati.Server.Database
                         tr.Commit();
                 }
         }
-        
-        internal ISetting[] GetSettings(long id)
+
+        public ISetting[] GetSettings(long id)
         {
             lock(m_lock)
                 return ReadFromDb(
@@ -540,13 +539,13 @@ namespace Duplicati.Server.Database
                            
                             return new object[] {
                                 n.Name,
-                                n.Description == null ? "" : n.Description, // Description is optional but the column is set to NOT NULL, an additional check is welcome
+                                n.Description ?? "" , // Description is optional but the column is set to NOT NULL, an additional check is welcome
                                 string.Join(",", n.Tags ?? new string[0]),
                                 n.TargetURL,
-                                update ? (object)item.ID : (object)n.DBPath 
+                                update ? item.ID : n.DBPath
                             };
                         });
-                        
+
                     if (!update)
                         using(var cmd = m_connection.CreateCommand())
                         {

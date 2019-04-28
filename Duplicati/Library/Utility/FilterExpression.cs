@@ -397,7 +397,7 @@ namespace Duplicati.Library.Utility
             if (m_filters.Count == 0)
                 this.Type = FilterType.Empty;
             else
-                this.Type = (FilterType)m_filters.Max((a) => a.Type);
+                this.Type = m_filters.Max((a) => a.Type);
         }
         
         private static IEnumerable<string> Expand(string filter)
@@ -483,8 +483,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">The path to evaluate</param>
         public static bool Matches(IFilter filter, string path)
         {
-            IFilter match;
-            return Matches(filter, path, out match);
+            return Matches(filter, path, out _);
         }
 
         /// <summary>

@@ -14,13 +14,15 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
-using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
-using System.Collections.Generic;
+using Duplicati.Library.Interface;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Box
 {
@@ -196,7 +198,7 @@ namespace Duplicati.Library.Backend.Box
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var createreq = new CreateItemRequest() {
                 Name = remotename,
@@ -212,24 +214,20 @@ namespace Duplicati.Library.Backend.Box
 
             try
             {
-                FileEntity res;
+                string url;
+                var items = new List<MultipartItem>(2);
+
                 if (existing)
-                {
-                    res = m_oauth.PostMultipartAndGetJSONData<FileList>(
-                        string.Format("{0}/{1}/content", BOX_UPLOAD_URL, m_filecache[remotename]),
-                        new MultipartItem(stream, "file", remotename)
-                    ).Entries.First();
-                }
+                    url = $"{BOX_UPLOAD_URL}/{m_filecache[remotename]}/content";
                 else
                 {
-
-                    res = m_oauth.PostMultipartAndGetJSONData<FileList>(
-                        string.Format("{0}/content", BOX_UPLOAD_URL),
-                        new MultipartItem(createreq, "attributes"),
-                        new MultipartItem(stream, "file", remotename)
-                    ).Entries.First();
+                    url = $"{BOX_UPLOAD_URL}/content";
+                    items.Add(new MultipartItem(createreq, "attributes"));
                 }
 
+                items.Add(new MultipartItem(stream, "file", remotename));
+
+                var res = (await m_oauth.PostMultipartAndGetJSONDataAsync<FileList>(url, null, cancelToken, items.ToArray())).Entries.First();
                 m_filecache[remotename] = res.ID;
             }
             catch
@@ -257,10 +255,10 @@ namespace Duplicati.Library.Backend.Box
                 select (IFileEntry)new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)

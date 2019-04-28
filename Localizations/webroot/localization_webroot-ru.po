@@ -1,17 +1,17 @@
 # Translators:
 # Vadim P <kladzey@gmail.com>, 2017
-# Jony Rh <jonyrh@mail.ru>, 2017
-# dartraiden, 2017
-# Alex McArrow <alex.mcarrow@gmail.com>, 2017
 # Rondo Van <hope2013@mail.ru>, 2017
+# Alex McArrow <alex.mcarrow@gmail.com>, 2017
+# Jony Rh <jonyrh@mail.ru>, 2017
 # Andrey, 2017
-# Valery <valery.naumenko@gmail.com>, 2017
+# Valery <valery.naumenko@gmail.com>, 2018
 # Dmitry Kartsyn <kd@sparta-it.ru>, 2018
+# dartraiden, 2018
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Dmitry Kartsyn <kd@sparta-it.ru>, 2018\n"
+"Last-Translator: dartraiden, 2018\n"
 "Language-Team: Russian (https://www.transifex.com/duplicati/teams/67655/ru/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"

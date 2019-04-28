@@ -15,8 +15,9 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -45,12 +46,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var remotename = info.Request.QueryString["filename"].Value;
 
             using(var ms = new System.IO.MemoryStream())   
-            using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
+            using(var b = Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
             {
-                using(var tf = new Duplicati.Library.Utility.TempFile())
+                using(var tf = new Library.Utility.TempFile())
                 {
                     System.IO.File.WriteAllText(tf, data);
-                    b.Put(remotename, tf);
+                    b.PutAsync(remotename, tf, CancellationToken.None).Wait();
                 }
             }
 
