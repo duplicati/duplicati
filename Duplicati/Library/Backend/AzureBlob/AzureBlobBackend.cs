@@ -78,11 +78,6 @@ namespace Duplicati.Library.Backend.AzureBlob
             get { return "azure"; }
         }
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public IEnumerable<IFileEntry> List()
         {
             return _azureBlob.ListContainerEntries();
