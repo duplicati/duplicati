@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class AzureBlobBackend : IStreamingBackend
     {
         private readonly AzureBlobWrapper _azureBlob;
