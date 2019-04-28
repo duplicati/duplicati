@@ -27,6 +27,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class CloudFiles : IBackend, IStreamingBackend
     {
         public const string AUTH_URL_US = "https://identity.api.rackspacecloud.com/auth";
