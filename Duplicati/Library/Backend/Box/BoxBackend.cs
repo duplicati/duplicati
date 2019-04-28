@@ -91,10 +91,14 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public BoxBackend()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public BoxBackend(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
