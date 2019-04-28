@@ -292,11 +292,6 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Members
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public string[] DNSName
         {
             get { return new string[] { new Uri(m_authUrl).Host, string.IsNullOrWhiteSpace(m_storageUrl) ? null : new Uri(m_storageUrl).Host }; }
