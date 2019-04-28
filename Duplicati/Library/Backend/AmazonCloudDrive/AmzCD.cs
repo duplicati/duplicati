@@ -68,6 +68,8 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             m_waitUntilRemotename = new Dictionary<string, DateTime>();
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AmzCD()
         {
         }
