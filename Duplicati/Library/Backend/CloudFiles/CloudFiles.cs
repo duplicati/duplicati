@@ -35,12 +35,6 @@ namespace Duplicati.Library.Backend
         public const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
         private const string DUMMY_HOSTNAME = "api.mosso.com";
 
-        public static readonly KeyValuePair<string, string>[] KNOWN_CLOUDFILES_PROVIDERS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("Rackspace US", AUTH_URL_US),
-            new KeyValuePair<string, string>("Rackspace UK", AUTH_URL_UK),
-        };
-
-
         private const int ITEM_LIST_LIMIT = 1000;
         private readonly string m_username;
         private readonly string m_password;
