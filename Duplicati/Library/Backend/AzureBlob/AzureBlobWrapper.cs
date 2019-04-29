@@ -109,7 +109,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public virtual async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
-            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, source.Length, default, default, new OperationContext(), cancelToken);
+            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, source.Length, default(AccessCondition), default(BlobRequestOptions), new OperationContext(), cancelToken);
         }
 
         public void DeleteObject(string keyName)
