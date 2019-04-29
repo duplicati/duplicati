@@ -130,12 +130,7 @@
   
   <ItemGroup>
     <EmbeddedResource Include="newbackup.json" />
-    <EmbeddedResource Include="Database\Database schema\Schema.sql" />
-    <EmbeddedResource Include="Database\Database schema\1. Add Notifications.sql" />
-    <EmbeddedResource Include="Database\Database schema\2. Add UIStorage.sql" />
-    <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
-    <EmbeddedResource Include="Database\Database schema\4. Add autoincrement to backup id.sql" />
-    <EmbeddedResource Include="Database\Database schema\5. Extend notification table.sql" />
+    <EmbeddedResource Include="Database\Database schema\**" />
   </ItemGroup>
   
   <ItemGroup>

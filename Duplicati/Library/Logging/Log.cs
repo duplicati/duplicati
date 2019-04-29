@@ -454,16 +454,16 @@ namespace Duplicati.Library.Logging
 
                     return sc;
                     */
-                    throw new NotImplementedException();
+
+                    return m_root;
                 }
             }
             private set
             {
-                throw new NotImplementedException();
-                /* TODO-DNC - No supported Remoting - https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md
-                    
                 lock (m_lock)
                 {
+                    /* TODO-DNC - No supported Remoting - https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md
+
                     if (value != null)
                     {
                         m_log_instances[value.InstanceID] = value;
@@ -473,10 +473,9 @@ namespace Duplicati.Library.Logging
                     {
                         System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LOGICAL_CONTEXT_KEY, null);
                     }
+                    */
                 }
-                */
             }
         }
-    
     }
 }
