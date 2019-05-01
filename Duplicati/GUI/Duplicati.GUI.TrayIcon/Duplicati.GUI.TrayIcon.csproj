@@ -9,7 +9,7 @@
     <Company>Duplicati Team</Company>
     <Authors>Duplicati Team</Authors>
     <Description>The Duplicati Tray implementation</Description>
-    <PackageId>Server</PackageId>
+    <PackageId>TrayIcon</PackageId>
     <AssemblyName>Duplicati.GUI.TrayIcon</AssemblyName>
     <RootNamespace>Duplicati.GUI.TrayIcon</RootNamespace>
     <ApplicationIcon>Duplicati.ico</ApplicationIcon>
