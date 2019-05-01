@@ -15,11 +15,11 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Matrix.vNext" Version="2.0.1" />
+    <PackageReference Include="Matrix.vNext" Version="2.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="MailKit" Version="1.18.1.1" />
-    <PackageReference Include="MimeKit" Version="1.18.1" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.8.2" />
+    <PackageReference Include="MailKit" Version="2.1.4" />
+    <PackageReference Include="MimeKit" Version="2.1.4" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.5" />
   </ItemGroup>
   
   <ItemGroup>

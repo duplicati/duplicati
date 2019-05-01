@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
-    <PackageReference Include="Microsoft.SharePointOnline.CSOM" Version="16.1.7414.1200" />
+    <PackageReference Include="Microsoft.SharePointOnline.CSOM" Version="16.1.8810.1200" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">

@@ -20,9 +20,9 @@
   
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.8.2" />
-    <PackageReference Include="System.Drawing.Common" Version="4.5.0" />
-    <PackageReference Include="System.Security.Principal.Windows" Version="4.5.0" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.5" />
+    <PackageReference Include="System.Drawing.Common" Version="4.5.1" />
+    <PackageReference Include="System.Security.Principal.Windows" Version="4.5.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -13,9 +13,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Core" Version="3.3.21.17" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.5.5" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.17.2" />
+    <PackageReference Include="AWSSDK.Core" Version="3.3.101.4" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.101.2" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.101.11" />
   </ItemGroup>
   
   <ItemGroup>
