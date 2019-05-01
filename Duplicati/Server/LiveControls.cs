@@ -338,8 +338,7 @@ namespace Duplicati.Server
         /// </summary>
         private void RegisterHibernateMonitor()
         {
-            //TODO-DNC
-            //Microsoft.Win32.SystemEvents.PowerModeChanged += new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
+            Microsoft.Win32.SystemEvents.PowerModeChanged += new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
         }
 
         /// <summary>
@@ -349,56 +348,55 @@ namespace Duplicati.Server
         /// <param name="_e">The event information</param>
         private void SystemEvents_PowerModeChanged(object sender, object _e)
         {
-            //TODO-DNC
-            //Microsoft.Win32.PowerModeChangedEventArgs e = _e as Microsoft.Win32.PowerModeChangedEventArgs;
-            //if (e == null)
-            //    return;
+            Microsoft.Win32.PowerModeChangedEventArgs e = _e as Microsoft.Win32.PowerModeChangedEventArgs;
+            if (e == null)
+                return;
 
-            //if (e.Mode == Microsoft.Win32.PowerModes.Suspend)
-            //{
-            //    //If we are running, register as being paused due to suspending
-            //    if (this.m_state == LiveControlState.Running)
-            //    {
-            //        this.SetPauseMode();
-            //        m_pausedForSuspend = true;
-            //        m_suspendMinimumPause = new DateTime(0);
-            //    }
-            //    else
-            //    {
-            //        if (m_waitTimeExpiration.Ticks != 0)
-            //        {
-            //            m_pausedForSuspend = true;
-            //            m_suspendMinimumPause = this.EstimatedPauseEnd;
-            //            ResetTimer(null);
-            //        }
+            if (e.Mode == Microsoft.Win32.PowerModes.Suspend)
+            {
+                //If we are running, register as being paused due to suspending
+                if (this.m_state == LiveControlState.Running)
+                {
+                    this.SetPauseMode();
+                    m_pausedForSuspend = true;
+                    m_suspendMinimumPause = new DateTime(0);
+                }
+                else
+                {
+                    if (m_waitTimeExpiration.Ticks != 0)
+                    {
+                        m_pausedForSuspend = true;
+                        m_suspendMinimumPause = this.EstimatedPauseEnd;
+                        ResetTimer(null);
+                    }
 
-            //    }
-            //}
-            //else if (e.Mode == Microsoft.Win32.PowerModes.Resume)
-            //{
-            //    //If we have been been paused due to suspending, we un-pause now
-            //    if (m_pausedForSuspend)
-            //    {
-            //        long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
-                    
-            //        var appset = Program.DataConnection.ApplicationSettings;
-            //        if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
-            //            try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
-            //            catch { }
+                }
+            }
+            else if (e.Mode == Microsoft.Win32.PowerModes.Resume)
+            {
+                //If we have been been paused due to suspending, we un-pause now
+                if (m_pausedForSuspend)
+                {
+                    long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
 
-            //        if (delayTicks > 0)
-            //        {
-            //            this.Pause(TimeSpan.FromTicks(delayTicks));
-            //        }
-            //        else
-            //        {
-            //            this.Resume();
-            //        }
-            //    }
+                    var appset = Program.DataConnection.ApplicationSettings;
+                    if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
+                        try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
+                        catch { }
 
-            //    m_pausedForSuspend = false;
-            //    m_suspendMinimumPause = new DateTime(0);
-            //}
+                    if (delayTicks > 0)
+                    {
+                        this.Pause(TimeSpan.FromTicks(delayTicks));
+                    }
+                    else
+                    {
+                        this.Resume();
+                    }
+                }
+
+                m_pausedForSuspend = false;
+                m_suspendMinimumPause = new DateTime(0);
+            }
         }
 
     }
