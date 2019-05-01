@@ -27,7 +27,6 @@
     <Reference Include="SharePointPnP.Client">
       <HintPath>..\..\..\..\thirdparty\SharePointPnP-Sites-Core\SharePointPnP.Client.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web" />
   </ItemGroup>
 
 </Project>
