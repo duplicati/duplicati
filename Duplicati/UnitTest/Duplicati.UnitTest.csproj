@@ -72,8 +72,6 @@
     </ProjectReference>
     <ProjectReference Include="..\License\Duplicati.License.csproj">
     </ProjectReference>
-    <ProjectReference Include="..\WindowsService\WindowsService.csproj">
-    </ProjectReference>
 	  <ProjectReference Include="..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Server\Duplicati.Server.csproj">
