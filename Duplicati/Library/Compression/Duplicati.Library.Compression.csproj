@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="sharpcompress" Version="0.21.1" />
+    <PackageReference Include="sharpcompress" Version="0.23.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">

@@ -16,7 +16,7 @@
   
   <ItemGroup>
     <PackageReference Include="CoCoL" Version="1.6.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
 
   <ItemGroup>

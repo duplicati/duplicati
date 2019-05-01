@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Version>2.0.0.7</Version>
     
-    <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
+    <Copyright>LGPL, Copyright ï¿½ Duplicati Team 2015</Copyright>
     <Product>Duplicati.Library.Backend.OAuthHelper</Product>
     <Company>Duplicati Team</Company>
     <Authors>Duplicati Team</Authors>
@@ -13,7 +13,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
 
   <ItemGroup>
