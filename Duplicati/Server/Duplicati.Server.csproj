@@ -48,11 +48,8 @@
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
     </ProjectReference>
-    <!--
-    TODO-DNC
-    <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
+    <ProjectReference Include="..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
     </ProjectReference>
-    -->
     <ProjectReference Include="..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">

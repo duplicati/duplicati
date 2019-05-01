@@ -31,11 +31,8 @@
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj">
     </ProjectReference>
-    <!--
-    TODO-DNC
-    <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
+    <ProjectReference Include="..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
     </ProjectReference>
-    -->
     <ProjectReference Include="..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">

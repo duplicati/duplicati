@@ -158,20 +158,16 @@
       <Link>licenses\WindowsAzure\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\SharePoint.CSOM\download.txt">
-      <Link>licenses\\SharePointCSOM\download.txt</Link>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\download.txt">
+      <Link>licenses\SharePointPnP-Sites-Core\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\SharePoint.CSOM\license.txt">
-      <Link>licenses\\SharePointCSOM\license.txt</Link>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\license.txt">
+      <Link>licenses\SharePointPnP-Sites-Core\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\SharePoint.CSOM\MicrosoftSharePointClientComponentsEULA.rtf">
-      <Link>licenses\\SharePointCSOM\MicrosoftSharePointClientComponentsEULA.rtf</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharePoint.CSOM\licensedata.json">
-      <Link>licenses\\SharePointCSOM\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\licensedata.json">
+      <Link>licenses\SharePointPnP-Sites-Core\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="acknowledgements.txt">

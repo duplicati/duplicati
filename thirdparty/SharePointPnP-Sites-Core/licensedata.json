@@ -1,0 +1,7 @@
+{
+    "name": "SharePointPnP-Sites-Core",
+    "description": "Office 365 Dev PnP Core component (.NET) targeted for increasing developer productivity with CSOM based solutions. ",
+    "link": "https://github.com/SharePoint/PnP-Sites-Core",
+    "license": "license.txt",
+    "notes": ""
+}

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <Version>2.0.0.7</Version>
     
     <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
@@ -16,22 +16,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
-    <PackageReference Include="Microsoft.SharePointOnline.CSOM" Version="16.1.8810.1200" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <Reference Include="Microsoft.SharePoint.Client.Portable">
-      <HintPath>..\..\..\..\thirdparty\SharePoint.CSOM\Microsoft.SharePoint.Client.Portable.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.Runtime.Portable">
-      <HintPath>..\..\..\..\thirdparty\SharePoint.CSOM\Microsoft.SharePoint.Client.Runtime.Portable.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.SharePoint.Client.Runtime.Windows">
-      <HintPath>..\..\..\..\thirdparty\SharePoint.CSOM\Microsoft.SharePoint.Client.Runtime.Windows.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
@@ -40,6 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="SharePointPnP.Client">
+      <HintPath>..\..\..\..\thirdparty\SharePointPnP-Sites-Core\SharePointPnP.Client.dll</HintPath>
+    </Reference>
     <Reference Include="System.Web" />
   </ItemGroup>
 
