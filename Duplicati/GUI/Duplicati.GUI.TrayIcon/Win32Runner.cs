@@ -42,7 +42,6 @@ namespace Duplicati.GUI.TrayIcon
 
         private void MessageMonitor_MessageReceived(IntPtr hwnd, Win32NativeWindow.WindowsMessage message, IntPtr wParam, IntPtr lParam)
         {
-            Console.WriteLine("Message: " + message);
             switch (message)
             {
                 case Win32NativeWindow.WindowsMessage.WM_SHOWWINDOW:
@@ -56,6 +55,7 @@ namespace Duplicati.GUI.TrayIcon
                     break;
                 case (Win32NativeWindow.WindowsMessage)WM_TRAYICON_1:
                     var llpTray = (Win32NativeWindow.WindowsMessage)((uint)lParam.ToInt32() & 0x0000FFFF);
+
                     switch (llpTray)
                     {
                         case Win32NativeWindow.WindowsMessage.WM_LBUTTONDBLCLK:
