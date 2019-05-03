@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <Version>2.0.0.7</Version>
     <OutputType>Exe</OutputType>
     <Copyright>LGPL, Copyright ? Duplicati Team 2015</Copyright>
@@ -17,8 +17,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\**" />
-    <Content Include="SVGIcons\**">
+    <Content Include="TrayResources\SVGIcons\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TrayResources\WinIcons\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\..\thirdparty\rumps\rumps.py">
@@ -26,7 +28,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <EmbeddedResource Include="TrayResources\OSXIcons\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="CoCoL" Version="1.6.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />

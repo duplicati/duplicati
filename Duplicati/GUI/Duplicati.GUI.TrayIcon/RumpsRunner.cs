@@ -96,7 +96,7 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         private static readonly System.Reflection.Assembly ASSEMBLY = System.Reflection.Assembly.GetExecutingAssembly();
-        private static readonly string ICON_PATH = ASSEMBLY.GetName().Name + ".OSX_Icons.";
+        private static readonly string ICON_PATH = ASSEMBLY.GetName().Name + ".TrayResources.OSXIcons.";
 
         private static readonly string ICON_NORMAL = ICON_PATH + "normal.png";
         private static readonly string ICON_PAUSED = ICON_PATH + "normal-pause.png";
