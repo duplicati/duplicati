@@ -134,9 +134,10 @@ namespace Duplicati.Library
             CreateBoundary(out var boundary, out var bodyTerminator);
 
             var req = PreparePostMultipart(url, setup, boundary, bodyTerminator, out var headers, parts);
+            var areq = new AsyncHttpRequest(req);
             var buffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
-            using (var rs = await req.GetRequestStreamAsync().ConfigureAwait(false))
+            using (var rs = areq.GetRequestStream())
             {
                 foreach (var p in headers)
                 {
