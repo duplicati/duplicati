@@ -498,8 +498,8 @@ namespace Duplicati.Library.Main.Database
                         blocksize / hashsize
                     );
 
-                var missingBlockInfo = 
-                    @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""VolumeID"" < 0 ";
+                var missingBlockInfo =
+                    @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""VolumeID"" < 0 AND SIZE > 0";
             
                 var missingBlocklistVolumes = string.Format(
                     @"SELECT ""VolumeID"" FROM ""Block"", (" +
