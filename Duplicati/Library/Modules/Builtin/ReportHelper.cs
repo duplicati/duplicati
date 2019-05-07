@@ -292,7 +292,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected virtual string ReplaceTemplate(string input, object result, bool subjectline)
         {
             // For JSON, ignore the template and just use the contents
-            if (ExportFormat == ResultExportFormat.Json)
+            if (ExportFormat == ResultExportFormat.Json && !subjectline)
             {
                 var extra = new Dictionary<string, string>();
 
