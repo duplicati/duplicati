@@ -88,11 +88,6 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 m_menu.Image = GetIcon(icon);
             }
 
-            public void SetEnabled(bool isEnabled)
-            {
-                m_menu.Enabled = isEnabled;
-            }
-
             public void SetDefault(bool value)
             {
                 m_menu.Font = new System.Drawing.Font(m_menu.Font, System.Drawing.FontStyle.Bold);
