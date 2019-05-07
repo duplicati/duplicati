@@ -491,6 +491,12 @@ namespace Duplicati.GUI.TrayIcon
             ExecuteAndNotify("POST", "/serverstate/resume", req);
         }
 
+        public void DismissNotification(long id)
+        {
+            var req = new Dictionary<string, string>();
+            ExecuteAndNotify("DELETE", string.Format("/notification/{0}", Library.Utility.Uri.UrlPathEncode(id.ToString())), req);
+        }
+
         public void Dispose()
         {
             Close();
