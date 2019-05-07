@@ -491,6 +491,14 @@ namespace Duplicati.GUI.TrayIcon
             ExecuteAndNotify("POST", "/serverstate/resume", req);
         }
 
+        public void RunBackup(long id, bool forcefull = false)
+        {
+            var req = new Dictionary<string, string>();
+            if (forcefull)
+                req.Add("full", "true");
+            ExecuteAndNotify("POST", string.Format("/backup/{0}/start", Library.Utility.Uri.UrlPathEncode(id.ToString())), req);
+        }
+  
         public void DismissNotification(long id)
         {
             var req = new Dictionary<string, string>();
