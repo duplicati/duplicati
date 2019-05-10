@@ -351,8 +351,8 @@ namespace Duplicati.Library.Utility
         /// <inheritdoc />
         public string GetFilterHash()
         {
-            var hash = MD5HashHelper.GetHash(m_filters.Select(x => x.Filter));
-			return Utility.ByteArrayAsHexString(hash);
+            var hash = MD5HashHelper.GetHash(m_filters?.Select(x => x.Filter));
+            return Utility.ByteArrayAsHexString(hash);
         }
 
         /// <summary>
@@ -587,9 +587,9 @@ namespace Duplicati.Library.Utility
         /// <param name="second">Second.</param>
         public static FilterExpression Combine(FilterExpression first, FilterExpression second)
         {
-            if (first == null)
+            if (first == null || first.Empty)
                 return second;
-            if (second == null)
+            if (second == null || second.Empty)
                 return first;
 
             if (first.Result != second.Result)
