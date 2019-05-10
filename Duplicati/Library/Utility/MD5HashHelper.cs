@@ -50,10 +50,13 @@ namespace Duplicati.Library.Utility
         {
             using (var md5 = MD5.Create())
             {
-                foreach (var str in inputStrings)
+                if (inputStrings != null)
                 {
-                    var inputBuffer = Encoding.UTF8.GetBytes(str);
-                    md5.TransformBlock(inputBuffer, 0, inputBuffer.Length, inputBuffer, 0);
+                    foreach (var str in inputStrings)
+                    {
+                        var inputBuffer = Encoding.UTF8.GetBytes(str);
+                        md5.TransformBlock(inputBuffer, 0, inputBuffer.Length, inputBuffer, 0);
+                    }
                 }
  
                 md5.TransformFinalBlock(new byte[0], 0, 0);
