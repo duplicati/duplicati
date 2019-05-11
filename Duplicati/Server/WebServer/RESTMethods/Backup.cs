@@ -247,6 +247,15 @@ namespace Duplicati.Server.WebServer.RESTMethods
             DoRepair(backup, info, true);
         }
 
+        private void Vacuum(IBackup backup, RequestInfo info)
+        {
+            var task = Runner.CreateTask(DuplicatiOperation.Vacuum, backup);
+            Program.WorkThread.AddTask(task);
+            Program.StatusEventNotifyer.SignalNewEvent();
+
+            info.OutputOK(new { Status = "OK", ID = task.TaskID });
+        }
+
         private void Verify(IBackup backup, RequestInfo info)
         {
             var task = Runner.CreateTask(DuplicatiOperation.Verify, backup);
@@ -478,6 +487,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                         case "repairupdate":
                             RepairUpdate(bk, info);
+                            return;
+
+                        case "vacuum":
+                            Vacuum(bk, info);
                             return;
 
                         case "verify":
