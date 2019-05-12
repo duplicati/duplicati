@@ -216,8 +216,9 @@ namespace Duplicati.Server
 
             if (parameterFileOption != null && !string.IsNullOrEmpty(commandlineOptions[parameterFileOption]))
             {
+                string filename = commandlineOptions[parameterFileOption];
                 commandlineOptions.Remove(parameterFileOption);
-                if (!ReadOptionsFromFile(commandlineOptions[parameterFileOption], ref filter, args, commandlineOptions))
+                if (!ReadOptionsFromFile(filename, ref filter, args, commandlineOptions))
                     return 100;
             }
 
