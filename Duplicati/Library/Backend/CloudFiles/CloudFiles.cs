@@ -27,17 +27,13 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class CloudFiles : IBackend, IStreamingBackend
     {
         public const string AUTH_URL_US = "https://identity.api.rackspacecloud.com/auth";
         public const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
         private const string DUMMY_HOSTNAME = "api.mosso.com";
-
-        public static readonly KeyValuePair<string, string>[] KNOWN_CLOUDFILES_PROVIDERS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("Rackspace US", AUTH_URL_US),
-            new KeyValuePair<string, string>("Rackspace UK", AUTH_URL_UK),
-        };
-
 
         private const int ITEM_LIST_LIMIT = 1000;
         private readonly string m_username;
@@ -50,10 +46,14 @@ namespace Duplicati.Library.Backend
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public CloudFiles()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public CloudFiles(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
@@ -285,11 +285,6 @@ namespace Duplicati.Library.Backend
         #endregion
 
         #region IStreamingBackend Members
-
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
 
         public string[] DNSName
         {
