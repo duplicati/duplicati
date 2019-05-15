@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Box
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class BoxBackend : IBackend, IStreamingBackend
     {
 		private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
@@ -89,10 +91,14 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public BoxBackend()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public BoxBackend(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);

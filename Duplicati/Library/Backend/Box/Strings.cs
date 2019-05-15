@@ -20,7 +20,6 @@ namespace Duplicati.Library.Backend.Strings
     internal static class Box {
         public static string Description { get { return LC.L(@"This backend can read and write data to Box.com. Supported format is ""box://folder/subfolder""."); } }
         public static string DisplayName { get { return LC.L(@"Box.com"); } }
-        public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID, you can get it from: {0}", url); }
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string ReallydeleteShort { get { return LC.L(@"Force delete files"); } }
