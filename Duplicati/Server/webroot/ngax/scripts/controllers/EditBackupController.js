@@ -297,7 +297,10 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             return;
         }
 
-        if ($scope.KeepType == 'custom' && (opts['retention-policy'] || '').indexOf(':') <= 0)
+        var retentionPolicy = (opts['retention-policy'] || '');
+        var valid_chars = /^((\d+[shDWMY]|U):(\d+[shDWMY]|U),?)+$/;
+        var valid_commas = /^(\d*\w:\d*\w,)*\d*\w:\d*\w$/;
+        if ($scope.KeepType == 'custom' && (retentionPolicy.indexOf(':') <= 0 || valid_chars.test(retentionPolicy) == false || valid_commas.test(retentionPolicy) == false))
         {
             DialogService.dialog(gettextCatalog.getString('Invalid retention time'), gettextCatalog.getString('You must enter a valid rentention policy string'));
             $scope.CurrentStep = 4;
