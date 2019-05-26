@@ -18,6 +18,7 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Duplicati.Library.Utility;
@@ -60,14 +61,14 @@ namespace Duplicati.Library
         /// <param name="request">Http request</param>
         /// <param name="authenticate">Whether to authenticate the request</param>
         /// <returns>Http response</returns>
-        public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, bool authenticate)
+        public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, bool authenticate, CancellationToken token)
         {
             if (!authenticate)
             {
                 this.PreventAuthentication(request);
             }
 
-            return await this.SendAsync(request).ConfigureAwait(false);
+            return await this.SendAsync(request, token).ConfigureAwait(false);
         }
 
         /// <summary>

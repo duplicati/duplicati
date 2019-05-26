@@ -341,7 +341,7 @@ namespace Duplicati.Library.Backend
             {
                 StreamContent streamContent = new StreamContent(stream);
                 streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                var response = await m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)), streamContent);
+                var response = await m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)), streamContent, cancelToken);
                 
                 // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
                 this.ParseResponse<DriveItem>(response);
@@ -358,7 +358,7 @@ namespace Duplicati.Library.Backend
                 // Indicate that we want to replace any existing content with this new data we're uploading
                 this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } });
 
-                HttpResponseMessage createSessionResponse = await m_client.SendAsync(createSessionRequest);
+                HttpResponseMessage createSessionResponse = await m_client.SendAsync(createSessionRequest, cancelToken);
                 UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
 
                 // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
@@ -384,7 +384,7 @@ namespace Duplicati.Library.Backend
                         try
                         {
                             // The uploaded put requests will error if they are authenticated
-                            response = await m_client.SendAsync(request, false);
+                            response = await m_client.SendAsync(request, false, cancelToken);
 
                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
                             this.ParseResponse<UploadSession>(response);
