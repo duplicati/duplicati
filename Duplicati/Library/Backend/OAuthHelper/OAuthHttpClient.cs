@@ -60,6 +60,7 @@ namespace Duplicati.Library
         /// </summary>
         /// <param name="request">Http request</param>
         /// <param name="authenticate">Whether to authenticate the request</param>
+        /// <param name="token">The cancellation token</param>
         /// <returns>Http response</returns>
         public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, bool authenticate, CancellationToken token)
         {
