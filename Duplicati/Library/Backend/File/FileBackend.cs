@@ -165,11 +165,6 @@ namespace Duplicati.Library.Backend
             get { return "file"; }
         }
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public IEnumerable<IFileEntry> List()
         {
             PreAuthenticate();
