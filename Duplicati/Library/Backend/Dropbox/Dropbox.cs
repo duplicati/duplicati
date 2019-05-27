@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class Dropbox : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
@@ -16,10 +18,14 @@ namespace Duplicati.Library.Backend
         private readonly string m_path;
         private readonly DropboxHelper dbx;
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public Dropbox()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public Dropbox(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
