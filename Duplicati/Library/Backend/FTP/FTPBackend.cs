@@ -167,11 +167,6 @@ namespace Duplicati.Library.Backend
             get { return "ftp"; }
         }
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         private T HandleListExceptions<T>(Func<T> func, System.Net.FtpWebRequest req)
         {
             T ret = default(T);
