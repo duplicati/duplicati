@@ -284,11 +284,6 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        public static bool PreAuthenticate(string path, string username, string password, bool forceReauth)
-        {
-            return Win32.PreAuthenticate(path, username, password, forceReauth);
-        }
-
         private System.IO.DriveInfo GetDrive()
         {
             string root;
