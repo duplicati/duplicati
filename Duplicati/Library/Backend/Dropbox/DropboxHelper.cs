@@ -268,7 +268,7 @@ namespace Duplicati.Library.Backend
         // ReSharper disable once UnusedMember.Global
         // This is serialized into JSON and provided in the Dropbox request header.
         // A value of false indicates that the session should not be closed.
-        public bool close => false;
+        public static bool close => false;
     }
 
     public class UploadSessionAppendArg
