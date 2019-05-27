@@ -339,14 +339,19 @@ namespace Duplicati.Library.Backend
         [JsonProperty(".tag")]
         public string tag { get; set; }
         public string name { get; set; }
-        public string id { get; set; }
-
         public string server_modified { get; set; }
-        public string rev { get; set; }
         public ulong size { get; set; }
-
         public bool IsFile { get { return tag == "file"; } }
 
+        // While this is unused, the Dropbox API v2 documentation does not
+        // declare this to be optional.
+        // ReSharper disable once UnusedMember.Global
+        public string id { get; set; }
+
+        // While this is unused, the Dropbox API v2 documentation does not
+        // declare this to be optional.
+        // ReSharper disable once UnusedMember.Global
+        public string rev { get; set; }
     }
 
     public class FileMetaData : MetaData
