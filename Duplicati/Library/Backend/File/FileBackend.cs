@@ -28,6 +28,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
