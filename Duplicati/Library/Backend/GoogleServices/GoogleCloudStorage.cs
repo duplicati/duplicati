@@ -28,6 +28,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class GoogleCloudStorage : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
