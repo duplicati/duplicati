@@ -29,6 +29,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.GoogleDrive
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
