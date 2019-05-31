@@ -79,7 +79,6 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         {
             public string kind { get; set; }
             public string nextPageToken { get; set; }
-            public string[] prefixes { get; set; }
             public BucketResourceItem[] items { get; set; }
         }
 
