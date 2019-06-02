@@ -77,24 +77,15 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         private class ListBucketResponse
         {
-            public string kind { get; set; }
             public string nextPageToken { get; set; }
             public BucketResourceItem[] items { get; set; }
         }
 
         private class BucketResourceItem
         {
-            public string kind { get; set; }
-            public string id { get; set; }
-            public string selfLink { get; set; }
             public string name { get; set; }
-            public string contentType { get; set; }
             public DateTime? updated { get; set; }
-            public string storageClass { get; set; }
             public long? size { get; set; }
-            public string md5Hash { get; set; }
-
-            public string mediaLink { get; set; }
         }
 
         private class CreateBucketRequest
