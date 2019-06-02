@@ -26,6 +26,8 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class Jottacloud : IBackend, IStreamingBackend
     {
         private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
