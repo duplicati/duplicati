@@ -397,11 +397,6 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Members
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public string[] DNSName
         {
             get { return new string[] { new Uri(JFS_ROOT).Host, new Uri(JFS_ROOT_UPLOAD).Host }; }
