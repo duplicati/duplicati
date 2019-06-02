@@ -395,8 +395,6 @@ namespace Duplicati.Library.Backend
             return CreateRequest(method, url, queryparams);
         }
 
-        #region IStreamingBackend Members
-
         public string[] DNSName
         {
             get { return new string[] { new Uri(JFS_ROOT).Host, new Uri(JFS_ROOT_UPLOAD).Host }; }
@@ -577,7 +575,5 @@ namespace Duplicati.Library.Backend
                 catch { }
             }
         }
-
-        #endregion
     }
 }
