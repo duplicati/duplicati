@@ -20,10 +20,8 @@ namespace Duplicati.Library.Backend.Strings
     internal static class HubiC {
         public static string Description { get { return LC.L(@"This backend can read and write data to HubiC. Supported format is ""hubic://container/folder""."); } }
         public static string DisplayName { get { return LC.L(@"HubiC"); } }
-        public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID, you can get it from: {0}", url); }
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-
     }
 }
 

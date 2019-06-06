@@ -23,6 +23,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.HubiC
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class HubiCBackend : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
