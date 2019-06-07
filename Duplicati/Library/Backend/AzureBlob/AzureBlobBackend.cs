@@ -26,14 +26,20 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class AzureBlobBackend : IStreamingBackend
     {
         private readonly AzureBlobWrapper _azureBlob;
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AzureBlobBackend()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AzureBlobBackend(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
@@ -76,11 +82,6 @@ namespace Duplicati.Library.Backend.AzureBlob
         public string ProtocolKey
         {
             get { return "azure"; }
-        }
-
-        public bool SupportsStreaming
-        {
-            get { return true; }
         }
 
         public IEnumerable<IFileEntry> List()

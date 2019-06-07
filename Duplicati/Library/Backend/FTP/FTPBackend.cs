@@ -28,6 +28,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class FTP : IBackend, IStreamingBackend
     {
         private System.Net.NetworkCredential m_userInfo;
@@ -163,11 +165,6 @@ namespace Duplicati.Library.Backend
         public string ProtocolKey
         {
             get { return "ftp"; }
-        }
-
-        public bool SupportsStreaming
-        {
-            get { return true; }
         }
 
         private T HandleListExceptions<T>(Func<T> func, System.Net.FtpWebRequest req)

@@ -1,3 +1,16 @@
+2019-05-12 - 2.0.4.18_canary_2019-05-12
+==========
+* Improved UI progress to show the VACUUM step, thanks @drwtsn32x
+* Fixed GTK tray icons, thanks @warwickmm
+* Improved error reporting from the webserver, thanks @warwickmm
+* Code cleanup and quality improvements, thanks @warwickmm
+* Ignoring empty remote files on restore, which speeds up recovery, thanks @pectojin
+* Fixed subject line in email status messages, thanks @pectojin
+* Fixed issues with Box and Amazon introduced in the latest canary, thanks @warwickmm
+* Fixed issues with readling parameter file, thanks @warwickmm
+* Improved filter handling for empty filters, thanks @dgehri
+* Added API method to allow calling the VACUUM command from the browser, hanks @drwtsn32x
+
 2019-04-11 - 2.0.4.17_canary_2019-04-11
 ==========
 * Improved code quality, thanks @warwickmm
