@@ -68,11 +68,6 @@ namespace Duplicati.GUI.TrayIcon
                 // Do nothing.  Implementation needed for IMenuItem interface.
             }
 
-            public void SetEnabled(bool isEnabled)
-            {
-                m_item.Enabled = isEnabled;
-            }
-
             public void SetDefault(bool isDefault)
             {
                 // Do nothing.  Implementation needed for IMenuItem interface.

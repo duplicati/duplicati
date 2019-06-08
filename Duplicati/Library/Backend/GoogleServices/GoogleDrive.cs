@@ -29,6 +29,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.GoogleDrive
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
@@ -407,70 +409,38 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         private class GoogleDriveParentReference
         {
-            public string kind { get; set; }
             public string id { get; set; }
-            public string selfLink { get; set; }
-            public string parentLink { get; set; }
-            public bool? isRoot { get; set; }
         }
 
         private class GoogleDriveListResponse
         {
-            public string kind { get; set; }
-            public string etag { get; set; }
-            public string selfLink { get; set; }
             public string nextPageToken { get; set; }
-            public string nextLink { get; set; }
             public GoogleDriveFolderItem[] items { get; set; }
         }
 
         private class GoogleDriveFolderItemLabels
         {
-            public bool starred { get; set; }
             public bool hidden { get; set; }
-            public bool thrashed { get; set; }
-            public bool restricted { get; set; }
-            public bool viewed { get; set; }
         }
 
         private class GoogleDriveFolderItem
         {
-            public string kind { get; set; }
             public string id { get; set; }
-            public string etag { get; set; }
-            public string selfLink { get; set; }
             public string title { get; set; }
             public string description { get; set; }
             public string mimeType { get; set; }
-
             public GoogleDriveFolderItemLabels labels { get; set; }
-
             public DateTime? createdDate { get; set; }
             public DateTime? modifiedDate { get; set; }
-
-            public string downloadUrl { get; set; }
-
-            public string originalFilename { get; set; }
-            public string md5Checksum { get; set; }
             public long? fileSize { get; set; }
-            public long? quotaBytesUsed { get; set; }
-
             public string teamDriveId { get; set; }
-
             public GoogleDriveParentReference[] parents { get; set; }
         }
 
         private class GoogleDriveAboutResponse
         {
-            public string kind { get; set; }
-            public string etag { get; set; }
-            public string selfLink { get; set; }
-            public string name { get; set; }
             public long? quotaBytesTotal { get; set; }
             public long? quotaBytesUsed { get; set; }
-            public long? quotaBytesUsedAggregate { get; set; }
-            public long? quotaBytesUsedInTrash { get; set; }
-            public string quotaType { get; set; }
             public string rootFolderId { get; set; }
         }
 

@@ -156,6 +156,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj">
+      <Project>{7b1c019b-c4aa-4480-a259-790e125b36ce}</Project>
+      <Name>Duplicati.CommandLine.ConfigurationImporter</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
       <Name>Duplicati.Library.Backend.CloudFiles</Name>
@@ -343,10 +347,6 @@
     <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj">
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
       <Name>Duplicati.Library.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ConfigurationImporter\ConfigurationImporter.csproj">
-      <Project>{864B98B9-1B56-40D9-9733-9002E5B9B9D5}</Project>
-      <Name>ConfigurationImporter</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

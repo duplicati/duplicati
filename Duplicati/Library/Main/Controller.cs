@@ -935,10 +935,9 @@ namespace Duplicati.Library.Main
                     {
                         if (filter != null)
                         {
-                            bool includes;
                             bool excludes;
 
-                            FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+                            FilterExpression.AnalyzeFilters(filter, out _, out excludes);
 
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
@@ -1012,8 +1011,7 @@ namespace Duplicati.Library.Main
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
             {
-                long l;
-                if (!long.TryParse(value, out l))
+                if (!long.TryParse(value, out _))
                     return Strings.Controller.UnsupportedIntegerValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path)

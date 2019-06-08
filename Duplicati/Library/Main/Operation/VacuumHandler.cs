@@ -22,6 +22,7 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false))
             {
                 m_result.SetDatabase(db);
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
                 db.Vacuum();
             }
         }

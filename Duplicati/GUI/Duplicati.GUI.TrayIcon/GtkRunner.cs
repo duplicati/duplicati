@@ -155,11 +155,6 @@ namespace Duplicati.GUI.TrayIcon
                 ((ImageMenuItem) m_item).Image = GetIcon(icon);
             }
             
-            public void SetEnabled(bool isEnabled)
-            {
-                m_item.Sensitive = isEnabled;
-            }
-
             public void SetDefault(bool isDefault)
             {
                 // Do nothing.  Implementation needed for TrayIconBase interface.
@@ -231,17 +226,6 @@ namespace Duplicati.GUI.TrayIcon
                 return pixbuf;
             }
         }    
-
-        public static Gtk.Image ImageToGtk(System.Drawing.Image image)
-        {
-            using (var stream = new System.IO.MemoryStream()) 
-            {
-                image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                stream.Position = 0;
-                Gtk.Image img = new Gtk.Image(stream);
-                return img;
-            }
-        }
 
         protected static string GetTrayIconFilename(TrayIcons icon)
         {
@@ -354,7 +338,7 @@ namespace Duplicati.GUI.TrayIcon
                     break;
             }
 
-            var notification = new Notifications.Notification(title, message, Stock.Info);
+            var notification = new Notifications.Notification(title, message, icon);
             notification.Show();
         }
 

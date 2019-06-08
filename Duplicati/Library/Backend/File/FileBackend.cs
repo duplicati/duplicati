@@ -28,6 +28,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
@@ -163,11 +165,6 @@ namespace Duplicati.Library.Backend
             get { return "file"; }
         }
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public IEnumerable<IFileEntry> List()
         {
             PreAuthenticate();
@@ -287,11 +284,6 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        public static bool PreAuthenticate(string path, string username, string password, bool forceReauth)
-        {
-            return Win32.PreAuthenticate(path, username, password, forceReauth);
-        }
-
         private System.IO.DriveInfo GetDrive()
         {
             string root;
@@ -374,8 +366,7 @@ namespace Duplicati.Library.Backend
         {
             ulong available;
             ulong total;
-            ulong free;
-            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out free))
+            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out _))
             {
                 return new QuotaInfo((long)total, (long)available);
             }

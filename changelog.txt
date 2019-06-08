@@ -1,3 +1,33 @@
+2019-05-12 - 2.0.4.18_canary_2019-05-12
+==========
+* Improved UI progress to show the VACUUM step, thanks @drwtsn32x
+* Fixed GTK tray icons, thanks @warwickmm
+* Improved error reporting from the webserver, thanks @warwickmm
+* Code cleanup and quality improvements, thanks @warwickmm
+* Ignoring empty remote files on restore, which speeds up recovery, thanks @pectojin
+* Fixed subject line in email status messages, thanks @pectojin
+* Fixed issues with Box and Amazon introduced in the latest canary, thanks @warwickmm
+* Fixed issues with readling parameter file, thanks @warwickmm
+* Improved filter handling for empty filters, thanks @dgehri
+* Added API method to allow calling the VACUUM command from the browser, hanks @drwtsn32x
+
+2019-04-11 - 2.0.4.17_canary_2019-04-11
+==========
+* Improved code quality, thanks @warwickmm
+* Fixed an issue where index files were not generated, thanks @seantempleton
+* Masked password fields in UI, thanks @drwtsn32x
+* Added `fr_CA` translation and updated `fr` translation, thanks @flafleur
+* Improved default exclude filters to catch Chrome file on Mac/Linux, thanks @flafleur
+* Added support for Google Team Drive, thanks @mukut1994
+* Fixed random database names being numeric
+* Corrected description for approving self-signed certificates, thanks @flafleur
+* Click on balloon tip on Windows now opens the browser, thanks @flafleur
+* Fixed an error that prevented bug report databases from being created, thanls @pectojin
+* Fixed documentation for buffer sizes, thanks @jonmikeiv
+* Fixed an issue where an upload error would not be reported, thanks @warwickmm
+* Improved documentation, thanks @space-alien
+* Fixed captcha generating out-of-bounds characters, thanks @oslerw
+
 2019-03-28 - 2.0.4.16_canary_2019-03-28
 ==========
 * Fixed an issue with Sia authentication, thanks @Ajedi32

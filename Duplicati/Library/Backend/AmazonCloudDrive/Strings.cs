@@ -24,7 +24,6 @@ namespace Duplicati.Library.Backend.Strings
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string DisplayName { get { return LC.L(@"Amazon Cloud Drive"); } }
-        public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID, you can get it from: {0}", url); }
         public static string LabelsShort { get { return LC.L(@"The labels to set"); } }
         public static string LabelsLong { get { return LC.L(@"Use this option to set labels on the files and folders created"); } }
         public static string MultipleEntries(string folder, string parent) { return LC.L(@"There is more than one item named ""{0}"" in the folder ""{1}""", folder, parent); }

@@ -92,19 +92,6 @@ namespace Duplicati.Library.Backend.AzureBlob
             _container.GetBlockBlobReference(keyName).DownloadToStream(target);
         }
 
-        public void GetFileObject(string keyName, string localfile)
-        {
-            _container.GetBlockBlobReference(keyName).DownloadToFile(localfile, FileMode.Create);
-        }
-
-        public Task AddFileObject(string keyName, string localfile, CancellationToken cancelToken)
-        {
-            using (var fs = File.Open(localfile, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                return AddFileStream(keyName, fs, cancelToken);
-            }
-        }
-
         public virtual async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
             await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, cancelToken);

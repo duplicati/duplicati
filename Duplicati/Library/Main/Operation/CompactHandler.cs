@@ -113,8 +113,6 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                     long blocksInVolume = 0;
-                    long discardedBlocks = 0;
-                    long discardedSize = 0;
                     byte[] buffer = new byte[m_options.Blocksize];
                     var remoteList = db.GetRemoteVolumes().Where(n => n.State == RemoteVolumeState.Uploaded || n.State == RemoteVolumeState.Verified).ToArray();
 
@@ -202,11 +200,6 @@ namespace Duplicati.Library.Main.Operation
                                                     deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
                                                     deleteableVolumes = new List<IRemoteVolume>();
                                                 }
-                                            }
-                                            else
-                                            {
-                                                discardedBlocks++;
-                                                discardedSize += e.Value;
                                             }
                                         }
                                     }

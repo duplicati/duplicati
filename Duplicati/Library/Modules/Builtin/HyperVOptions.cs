@@ -197,10 +197,7 @@ namespace Duplicati.Library.Modules.Builtin
             foreach (var guestForBackup in guestsForBackup)
                 foreach (var pathForBackup in guestForBackup.DataPaths)
                 {
-                    bool bResult;
-                    Utility.IFilter matchFilter;
-
-                    if (!filterhandler.Matches(pathForBackup, out bResult, out matchFilter))
+                    if (!filterhandler.Matches(pathForBackup, out _, out _))
                     {
                         Logging.Log.WriteInformationMessage(LOGTAG, "IncludeHyperV", "For VM {0} - adding {1}", guestForBackup.Name, pathForBackup);
                         pathsForBackup.Add(pathForBackup);
