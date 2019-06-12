@@ -22,10 +22,14 @@ namespace Duplicati.Library.Backend.Sia
         private readonly float m_redundancy;
         private readonly string m_authorization;
 
-        public Sia() {
-
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
+        public Sia()
+        {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public Sia(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
