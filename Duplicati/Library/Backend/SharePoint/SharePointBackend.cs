@@ -95,11 +95,6 @@ namespace Duplicati.Library.Backend
             get { return Strings.SharePoint.Description; }
         }
 
-        public virtual bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public virtual IList<ICommandLineArgument> SupportedCommands
         {
             get
