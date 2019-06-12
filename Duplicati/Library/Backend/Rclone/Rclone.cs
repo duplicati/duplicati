@@ -95,11 +95,6 @@ namespace Duplicati.Library.Backend
             get { return "rclone"; }
         }
 
-        public bool SupportsStreaming
-        {
-            get { return false; }
-        }
-
         private async Task<string> RcloneCommandExecuter(String command, String arguments, CancellationToken cancelToken)
         {
             StringBuilder outputBuilder = new StringBuilder();
