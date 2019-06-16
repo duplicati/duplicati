@@ -26,6 +26,8 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class Jottacloud : IBackend, IStreamingBackend
     {
         private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
@@ -393,13 +395,6 @@ namespace Duplicati.Library.Backend
             return CreateRequest(method, url, queryparams);
         }
 
-        #region IStreamingBackend Members
-
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public string[] DNSName
         {
             get { return new string[] { new Uri(JFS_ROOT).Host, new Uri(JFS_ROOT_UPLOAD).Host }; }
@@ -580,7 +575,5 @@ namespace Duplicati.Library.Backend
                 catch { }
             }
         }
-
-        #endregion
     }
 }
