@@ -32,6 +32,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class Rclone : IBackend
     {
         private const string OPTION_LOCAL_REPO = "rclone-local-repository";
@@ -91,11 +93,6 @@ namespace Duplicati.Library.Backend
         public string ProtocolKey
         {
             get { return "rclone"; }
-        }
-
-        public bool SupportsStreaming
-        {
-            get { return false; }
         }
 
         private async Task<string> RcloneCommandExecuter(String command, String arguments, CancellationToken cancelToken)
