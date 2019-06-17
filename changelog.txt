@@ -1,3 +1,11 @@
+2019-06-17 - 2.0.4.19_canary_2019-06-17
+==========
+* Show vacuum operation in status, thanks @drwtsn32x
+* Remove deprectated options and code from backends, thanks @warwickmm
+* Improved timeout handling for OAuth login, thanks @warwickmm
+* Improved names of backup databases, thanks @drwtsn32x
+* Removed the Google Plus icon, thanks @locked-fg
+
 2019-05-12 - 2.0.4.18_canary_2019-05-12
 ==========
 * Improved UI progress to show the VACUUM step, thanks @drwtsn32x
