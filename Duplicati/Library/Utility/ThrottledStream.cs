@@ -133,7 +133,7 @@ namespace Duplicati.Library.Utility
 				var chunksize = (int)Math.Min(remaining, m_readspeed <= 0 ? remaining : m_readspeed * 2);
 				DelayIfRequired(ref m_readspeed, chunksize, ref m_last_read_sample, ref m_current_read_counter, ref m_current_read_speed);
 
-				var actual = m_basestream.Read(buffer, offset, chunksize);
+				var actual = m_basestream.Read(buffer, offset + count - remaining, chunksize);
 
 				if (actual <= 0)
 					break;
