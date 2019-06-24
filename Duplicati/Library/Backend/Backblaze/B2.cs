@@ -320,7 +320,8 @@ namespace Duplicati.Library.Backend.Backblaze
                     string.Format("{0}/b2api/v1/b2_list_file_versions", m_helper.APIUrl),
                     new ListFilesRequest() {
                         BucketID = Bucket.BucketID,
-                    MaxFileCount = m_pagesize,
+                        MaxFileCount = m_pagesize,
+                        Prefix = m_prefix,
                         StartFileID = nextFileID,
                         StartFileName = nextFileName
                     }
@@ -506,6 +507,8 @@ namespace Duplicati.Library.Backend.Backblaze
             public string StartFileID { get; set; }
             [JsonProperty("maxFileCount")]
             public long MaxFileCount { get; set; }
+            [JsonProperty("prefix")]
+            public string Prefix { get; set; }
         }
 
         private class ListFilesResponse
