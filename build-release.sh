@@ -354,9 +354,11 @@ ${RELEASE_CHANGEINFO_NEWS}
 	DISCOURSE_APIKEY=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 2)
 
 	curl -X POST "https://forum.duplicati.com/posts" \
+		-H "Content-Type: multipart/form-data" \
+		-H "Accept: application/json" \
 		-F "api_key=${DISCOURSE_APIKEY}" \
 		-F "api_username=${DISCOURSE_USERNAME}" \
-		-F "category=Releases" \
+		-F "category=10" \
 		-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
 		-F "raw=${body}"
 fi
