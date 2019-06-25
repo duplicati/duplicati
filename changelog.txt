@@ -1,3 +1,7 @@
+2019-06-25 - 2.0.4.20_canary_2019-06-25
+==========
+* Added warnings about AmzCD closing
+
 2019-06-17 - 2.0.4.19_canary_2019-06-17
 ==========
 * Show vacuum operation in status, thanks @drwtsn32x
