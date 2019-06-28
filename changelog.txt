@@ -1,3 +1,14 @@
+2019-06-28 - 2.0.4.21_experimental_2019-06-28
+==========
+This is a cumulative release for more than 6 months of hard work.
+Most of these are speedup improvements, error handling and general quality fixes.
+
+This release will give a warning for all users of the Amazon Cloud Drive backen, as it is being discontinued by Amazon:
+https://forum.duplicati.com/t/amazon-cloud-drive-discontinued/7391
+
+A big thanks to the community members who work hard with fixing issues and responding on the forum:
+https://forum.duplicati.com
+
 2019-06-25 - 2.0.4.20_canary_2019-06-25
 ==========
 * Added warnings about AmzCD closing
