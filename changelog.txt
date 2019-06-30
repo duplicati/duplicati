@@ -1,3 +1,10 @@
+2019-06-30 - 2.0.4.22_canary_2019-06-30
+==========
+* Fixed link to usage reporter, thanks @warwickmm
+* Fixed using the B2 prefix, thanks @drwtsn32x
+* Fixed data corruption caused by upload throttling, thanks @ts678
+* Fixed data corruption caused by compacting, thanks @ts678 and @warwickmm
+
 2019-06-28 - 2.0.4.21_experimental_2019-06-28
 ==========
 This is a cumulative release for more than 6 months of hard work.
