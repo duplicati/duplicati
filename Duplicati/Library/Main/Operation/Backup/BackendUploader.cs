@@ -216,7 +216,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     catch
                     {
-                        /* As we are cancelling all threads we do not need to alert the user to any of these exceptions */
+                        // As we are cancelling all threads we do not need to alert the user to any of these exceptions.
                     }
                     finally
                     {
