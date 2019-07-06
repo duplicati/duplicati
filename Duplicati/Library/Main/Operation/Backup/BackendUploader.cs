@@ -443,7 +443,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
         }
 
-        private class Worker
+        private class Worker : IDisposable
         {
             public Task Task;
             public IBackend Backend;
@@ -452,6 +452,12 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 Backend = backend;
                 Task = Task.FromResult(true);
+            }
+
+            public void Dispose()
+            {
+                this.Task?.Dispose();
+                this.Backend?.Dispose();
             }
         }
     }
