@@ -116,9 +116,9 @@ namespace Duplicati.Library.Utility
         }
 
 		/// <summary>
-		/// Read the specified buffer, offset and count.
+		/// Read from this stream into a buffer.
 		/// </summary>
-		/// <param name="buffer">The buffer to read from.</param>
+		/// <param name="buffer">The buffer to write to.</param>
 		/// <param name="offset">The offset into the buffer.</param>
 		/// <param name="count">The number of bytes to read.</param>
         public override int Read(byte[] buffer, int offset, int count)
