@@ -77,7 +77,7 @@ namespace Duplicati.Library
             {
                 return await this.SendAsync(request, cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 throw new TimeoutException($"HTTP timeout {this.Timeout} exceeded.");
             }
