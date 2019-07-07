@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
+using System.IO;
 
 namespace Duplicati.UnitTest
 {
@@ -202,6 +203,38 @@ namespace Duplicati.UnitTest
                 Assert.IsTrue(Utility.ParseBool(value, returnsTrue));
                 Assert.IsFalse(Utility.ParseBool(value, false));
                 Assert.IsFalse(Utility.ParseBool(value, returnsFalse));
+            }
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void ThrottledStreamWrite()
+        {
+            byte[] initialBuffer = {0x10, 0x20, 0x30, 0x40, 0x50};
+            byte[] source = {0x60, 0x70, 0x80, 0x90};
+            const int offset = 1;
+            const int bytesToWrite = 3;
+
+            using (MemoryStream baseStream = new MemoryStream(initialBuffer))
+            {
+                const int readSpeed = 1;
+                const int writeSpeed = 1;
+
+                ThrottledStream throttledStream = new ThrottledStream(baseStream, readSpeed, writeSpeed);
+                throttledStream.Write(source, offset, bytesToWrite);
+
+                byte[] result = baseStream.ToArray();
+                for (int k = 0; k < result.Length; k++)
+                {
+                    if (k < bytesToWrite)
+                    {
+                        Assert.AreEqual(source[offset + k], result[k]);
+                    }
+                    else
+                    {
+                        Assert.AreEqual(initialBuffer[k], result[k]);
+                    }
+                }
             }
         }
     }
