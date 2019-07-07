@@ -147,9 +147,9 @@ namespace Duplicati.Library.Utility
         }
 
 		/// <summary>
-		/// Write the specified buffer, offset and count.
+		/// Write from a buffer to this stream.
 		/// </summary>
-		/// <param name="buffer">The buffer to write to.</param>
+		/// <param name="buffer">The buffer to read from.</param>
 		/// <param name="offset">The offset into the buffer.</param>
 		/// <param name="count">The number of bytes to write.</param>
         public override void Write(byte[] buffer, int offset, int count)
