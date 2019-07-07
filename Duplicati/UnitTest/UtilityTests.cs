@@ -208,6 +208,42 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
+        public static void ThrottledStreamRead()
+        {
+            byte[] sourceBuffer = {0x10, 0x20, 0x30, 0x40, 0x50};
+            byte[] destinationBuffer = new byte[sourceBuffer.Length + 1];
+            const int offset = 1;
+            const int bytesToRead = 3;
+
+            using (MemoryStream baseStream = new MemoryStream(sourceBuffer))
+            {
+                const int readSpeed = 1;
+                const int writeSpeed = 1;
+
+                ThrottledStream throttledStream = new ThrottledStream(baseStream, readSpeed, writeSpeed);
+                int bytesRead = throttledStream.Read(destinationBuffer, offset, bytesToRead);
+                Assert.AreEqual(bytesToRead, bytesRead);
+
+                for (int k = 0; k < destinationBuffer.Length; k++)
+                {
+                    if (k < offset)
+                    {
+                        Assert.AreEqual(default(byte), destinationBuffer[k]);
+                    }
+                    else if (k < offset + bytesToRead)
+                    {
+                        Assert.AreEqual(sourceBuffer[k - offset], destinationBuffer[k]);
+                    }
+                    else
+                    {
+                        Assert.AreEqual(default(byte), destinationBuffer[k]);
+                    }
+                }
+            }
+        }
+
+        [Test]
+        [Category("Utility")]
         public static void ThrottledStreamWrite()
         {
             byte[] initialBuffer = {0x10, 0x20, 0x30, 0x40, 0x50};
