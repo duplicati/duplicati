@@ -226,11 +226,7 @@ namespace Duplicati.UnitTest
 
                 for (int k = 0; k < destinationBuffer.Length; k++)
                 {
-                    if (k < offset)
-                    {
-                        Assert.AreEqual(default(byte), destinationBuffer[k]);
-                    }
-                    else if (k < offset + bytesToRead)
+                    if (offset <= k && k < offset + bytesToRead)
                     {
                         Assert.AreEqual(sourceBuffer[k - offset], destinationBuffer[k]);
                     }
