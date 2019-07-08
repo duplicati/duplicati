@@ -187,7 +187,7 @@ namespace Duplicati.Library.Backend
             if (errorBuilder.Length > 0) {
                 throw new Exception(errorBuilder.ToString());
             }
-            Console.Error.WriteLine(errorBuilder);
+
             return outputBuilder.ToString();
         }
 
