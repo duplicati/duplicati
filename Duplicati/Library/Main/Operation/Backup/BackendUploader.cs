@@ -181,7 +181,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
                                 }
 
-                                workers.RemoveAll(w => w.Task == finishedTask);
+                                Worker finishedWorker = workers.Single(w => w.Task == finishedTask);
+                                workers.Remove(finishedWorker);
+                                finishedWorker.Dispose();
                             }
                             
                             flush.SetFlushed(lastSize);
@@ -212,7 +214,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         await Task.WhenAll(workers.Select(w => w.Task));
                     }
-                    catch { /* As we are cancelling all threads we do not need to alert the user to any of these exceptions */ }
+                    catch
+                    {
+                        // As we are cancelling all threads we do not need to alert the user to any of these exceptions.
+                    }
+                    finally
+                    {
+                        workers.ForEach(w => w.Dispose());
+                    }
                     throw;
                 }
 
@@ -224,6 +233,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 finally
                 {
                     m_stats.SetBlocking(false);
+                    workers.ForEach(w => w.Dispose());
                 }
             });
         }
@@ -443,7 +453,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
         }
 
-        private class Worker
+        private class Worker : IDisposable
         {
             public Task Task;
             public IBackend Backend;
@@ -452,6 +462,12 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 Backend = backend;
                 Task = Task.FromResult(true);
+            }
+
+            public void Dispose()
+            {
+                this.Task?.Dispose();
+                this.Backend?.Dispose();
             }
         }
     }
