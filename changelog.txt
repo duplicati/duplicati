@@ -1,3 +1,14 @@
+2019-07-14 - 2.0.4.23_beta_2019-07-14
+==========
+This update only contains warnings to inform users on Amazon Cloud Drive that the service is discontinued.
+The update will warn users running or configuring a backup stored on Amazon Cloud Drive.
+
+This does **NOT** affect other Amazon services such as S3.
+If you do not use Amazon Cloud Drive, you can skip this update.
+
+For more information on the changes, please see:
+https://forum.duplicati.com/t/amazon-cloud-drive-discontinued/7391
+
 2019-06-30 - 2.0.4.22_canary_2019-06-30
 ==========
 * Fixed link to usage reporter, thanks @warwickmm
