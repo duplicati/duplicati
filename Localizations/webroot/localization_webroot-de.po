@@ -341,9 +341,9 @@ msgid ""
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
-"Bei erlauben des Remotezugriffes, wird der Server auf jede Anfrage von jedem"
-" Computer aus dem Netzwerk hören. Wenn Du diese Option aktivierst, stelle "
-"bitte sicher, dass Du ein Computer aus einemmit einer Firewall geschützten "
+"Wenn der Remotezugriff erlaubt wird, wird der Server auf Anfragen von jedem"
+" Computer aus dem Netzwerk antworten. Wenn Du diese Option aktivierst stelle "
+"bitte sicher, dass Du ein Computer aus einem mit einer Firewall geschützten "
 "Netzwerk verwendest."
 
 #: templates/settings.html:29
