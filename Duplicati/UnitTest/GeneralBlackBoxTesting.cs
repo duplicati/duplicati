@@ -36,13 +36,29 @@ namespace Duplicati.UnitTest
         {
             get
             {
-                var rx = new System.Text.RegularExpressions.Regex("r(?<number>\\d+)");
-                return 
-                    from n in Directory.EnumerateDirectories(SOURCE_FOLDERS)
-                    let m = rx.Match(n)
+                var rx = new System.Text.RegularExpressions.Regex(@"r(?<number>\d+)");
+
+                try
+                {
+                    var folders = from n in Directory.EnumerateDirectories(SOURCE_FOLDERS)
+                        let m = rx.Match(n)
                         where m.Success
-                    orderby int.Parse(m.Groups["number"].Value)
-                    select n;
+                        orderby int.Parse(m.Groups["number"].Value)
+                        select n;
+
+                    var testFolders = folders as string[] ?? folders.ToArray();
+
+                    if (!testFolders.Any())
+                    {
+                        throw new Exception($"Missing data in '{SOURCE_FOLDERS}' with required minimum of 1 sub-folder with the naming convention of '{rx}'");
+                    }
+
+                    return testFolders;
+                }
+                catch (DirectoryNotFoundException ex)
+                {
+                    throw new Exception($"Missing data directory '{SOURCE_FOLDERS}'");
+                }
             }
         }
 
