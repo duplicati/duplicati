@@ -50,7 +50,9 @@ namespace Duplicati.UnitTest
                     var testFolders = folders as string[] ?? folders.ToArray();
 
                     if (!testFolders.Any())
+                    {
                         BasicSetupHelper.ProgressWriteLine($"Missing data in '{SOURCE_FOLDERS}' with required minimum of 1 sub-folder with the naming convention of '{rx}'");
+                    }
 
                     return testFolders;
                 }
