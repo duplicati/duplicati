@@ -19,6 +19,7 @@ using System.Linq;
 using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Reflection;
 
 namespace Duplicati.UnitTest
@@ -36,7 +37,7 @@ namespace Duplicati.UnitTest
         {
             get
             {
-                var rx = new System.Text.RegularExpressions.Regex(@"r(?<number>\d+)");
+                var rx = new Regex(@"r(?<number>\d+)");
 
                 try
                 {
@@ -49,15 +50,14 @@ namespace Duplicati.UnitTest
                     var testFolders = folders as string[] ?? folders.ToArray();
 
                     if (!testFolders.Any())
-                    {
-                        throw new Exception($"Missing data in '{SOURCE_FOLDERS}' with required minimum of 1 sub-folder with the naming convention of '{rx}'");
-                    }
+                        BasicSetupHelper.ProgressWriteLine($"Missing data in '{SOURCE_FOLDERS}' with required minimum of 1 sub-folder with the naming convention of '{rx}'");
 
                     return testFolders;
                 }
-                catch (DirectoryNotFoundException ex)
+                catch (DirectoryNotFoundException)
                 {
-                    throw new Exception($"Missing data directory '{SOURCE_FOLDERS}'");
+                    BasicSetupHelper.ProgressWriteLine($"Missing data directory '{SOURCE_FOLDERS}'");
+                    return null;
                 }
             }
         }

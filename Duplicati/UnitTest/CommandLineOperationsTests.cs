@@ -76,10 +76,7 @@ namespace Duplicati.UnitTest
             var backupargs = (new string[] { "backup", target, DATAFOLDER }.Union(opts)).ToArray();
 
             if (SourceDataFolders == null || SourceDataFolders.Count() < 3)
-            {
-                ProgressWriteLine($"ERROR: A minimum of 3 data folders are required in {SOURCEFOLDER}.");
-                throw new Exception("Failed during initial minimum data folder check");
-            }
+                ProgressWriteLine($"A minimum of 3 data folders are required in {SOURCEFOLDER}.");
 
             foreach (var n in SourceDataFolders)
             {
