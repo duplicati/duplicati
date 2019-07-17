@@ -274,7 +274,7 @@ namespace Duplicati.Library.Main.Operation
                             SystemIO.IO_OS.DirectoryCreate(folderpath);
                         }
 
-                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
+                        ApplyMetadata(targetpath, metainfo.Value, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Overwrite, options.Dryrun);
                     }
                     catch (Exception ex)
                     {
@@ -473,7 +473,7 @@ namespace Duplicati.Library.Main.Operation
             result.EndTime = DateTime.UtcNow;
         }
 
-        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool restoreSymlinkMetadata, bool dryrun)
+        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool restoreSymlinkMetadata, bool overwrite, bool dryrun)
         {
             using(var tr = new System.IO.StreamReader(stream))
             using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
@@ -492,7 +492,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Make the symlink first, otherwise we cannot apply metadata to it
                 if (metadata.TryGetValue("CoreSymlinkTarget", out k))
-                    SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget);
+                    SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget, overwrite);
                 // If the target is a folder, make sure we create it first
                 else if (isDirTarget && !SystemIO.IO_OS.DirectoryExists(targetpath))
                     SystemIO.IO_OS.DirectoryCreate(targetpath);

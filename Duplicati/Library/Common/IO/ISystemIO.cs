@@ -54,7 +54,7 @@ namespace Duplicati.Library.Common.IO
         FileStream FileCreate(string path);
         FileAttributes GetFileAttributes(string path);
         void SetFileAttributes(string path, FileAttributes attributes);
-        void CreateSymlink(string symlinkfile, string target, bool asDir);
+        void CreateSymlink(string symlinkfile, string target, bool overwrite, bool asDir);
         string GetSymlinkTarget(string path);
         string PathGetDirectoryName(string path);
         string PathGetFileName(string path);

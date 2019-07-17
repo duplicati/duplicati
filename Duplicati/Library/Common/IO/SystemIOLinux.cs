@@ -101,7 +101,7 @@ namespace Duplicati.Library.Common.IO
             File.SetAttributes(path, attributes);
         }
 
-        public void CreateSymlink(string symlinkfile, string target, bool asDir)
+        public void CreateSymlink(string symlinkfile, string target, bool overwrite, bool asDir)
         {
             UnixSupport.File.CreateSymlink(symlinkfile, target);
         }

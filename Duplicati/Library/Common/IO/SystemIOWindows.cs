@@ -158,7 +158,7 @@ namespace Duplicati.Library.Common.IO
                                                     string path, bool prefixWithUnc = false)
         {
             // Wrap void into bool return type to avoid code duplication. Code at anytime available for replacement.
-            PathTooLongFuncWrapper(p => { nativeIOFunc(p); return true; }, p => { alternativeIOFunc(p); return true; } , path, prefixWithUnc);
+            PathTooLongFuncWrapper(p => { nativeIOFunc(p); return true; }, p => { alternativeIOFunc(p); return true; }, path, prefixWithUnc);
         }
 
         private static void PathTooLongActionWrapper(Action<string> nativeIOFunc,
@@ -428,7 +428,8 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry DirectoryEntry(string path)
         {
-            IFileEntry DirectoryEntryNative(string p) {
+            IFileEntry DirectoryEntryNative(string p)
+            {
                 var dInfo = new DirectoryInfo(p);
                 return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
                 {
@@ -547,45 +548,54 @@ namespace Duplicati.Library.Common.IO
 
             return combinedPath;
         }
-        
-        public void CreateSymlink(string symlinkfile, string target, bool asDir)
-        {
-            if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
-                throw new System.IO.IOException($"File already exists: {symlinkfile}");
 
+        public void CreateSymlink(string symlinkfile, string target, bool asDir, bool overwrite)
+        {
+            if (overwrite)
+            {
+                if (asDir)
+                {
+                    if (DirectoryExists(symlinkfile))
+                    {
+                        DirectoryDelete(symlinkfile);
+                    }
+                }
+                else
+                {
+                    if (FileExists(symlinkfile))
+                    {
+                        FileDelete(symlinkfile);
+                    }
+                }
+            }
+            else
+            {
+                if ((!asDir && FileExists(symlinkfile)) || (asDir && DirectoryExists(symlinkfile)))
+                {
+                    throw new System.IO.IOException($"File already exists: {symlinkfile}");
+                }
+            }
+
+            //TODO: AlphaFS says this method with SymbolicLinkTarget is obsolete
             Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile),
-                target,
-                AlphaFS.PathFormat.LongFullPath);
+                                                                     target,
+                                                                     asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File,
+                                                                     AlphaFS.PathFormat.LongFullPath);
 
             //Sadly we do not get a notification if the creation fails :(
             System.IO.FileAttributes attr = 0;
             if ((!asDir && FileExists(symlinkfile)) || (asDir && DirectoryExists(symlinkfile)))
+            {
                 try { attr = GetFileAttributes(symlinkfile); }
                 catch { }
+            }
 
             if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
+            {
                 throw new System.IO.IOException($"Unable to create symlink, check account permissions: {symlinkfile}");
+            }
         }
 
-        //public void CreateSymlink(string symlinkfile, string target, bool asDir)
-        //{
-        //    if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
-        //        throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
-
-        //    Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile),
-        //                                                         target,
-        //                                                         asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File,
-        //                                                         AlphaFS.PathFormat.LongFullPath);
-
-        //    //Sadly we do not get a notification if the creation fails :(
-        //    System.IO.FileAttributes attr = 0;
-        //    if ((!asDir && FileExists(symlinkfile)) || (asDir && DirectoryExists(symlinkfile)))
-        //        try { attr = GetFileAttributes(symlinkfile); }
-        //        catch { }
-
-        //    if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
-        //        throw new System.IO.IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
-        //}
         #endregion
     }
 }
