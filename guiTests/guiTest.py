@@ -15,6 +15,7 @@ if "TRAVIS_BUILD_NUMBER" in os.environ:
         print "No sauce labs login credentials found. Stopping tests..."
         sys.exit(0)
 
+    print "Using SAUCELABS"
     capabilities = {'browserName': "firefox"}
     capabilities['platform'] = "Windows 7"
     capabilities['version'] = "48.0"
