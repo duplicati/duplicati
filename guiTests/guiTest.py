@@ -15,6 +15,7 @@ if "TRAVIS_BUILD_NUMBER" in os.environ:
         print "No sauce labs login credentials found. Stopping tests..."
         sys.exit(0)
 
+    print "Using SAUCELABS"
     capabilities = {'browserName': "firefox"}
     capabilities['platform'] = "Windows 7"
     capabilities['version'] = "48.0"
@@ -87,7 +88,8 @@ RESTORE_FOLDER = os.path.abspath("duplicati_gui_test_restore")
 DIRECT_RESTORE_FOLDER = os.path.abspath("duplicati_gui_test_direct_restore")
 
 # wait 5 seconds for duplicati server to start
-time.sleep(5)
+#time.sleep(5)
+time.sleep(60)
 
 driver.implicitly_wait(10)
 driver.get("http://localhost:8200/ngax/index.html")
