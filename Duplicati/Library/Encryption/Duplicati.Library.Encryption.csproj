@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -12,7 +12,7 @@
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
@@ -36,8 +36,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SharpAESCrypt, Version=1.3.1.0, Culture=neutral, PublicKeyToken=da45da0a7b8da0d2, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\SharpAESCrypt.exe.1.3.2\lib\net45\SharpAESCrypt.exe</HintPath>
+    <Reference Include="SharpAESCrypt, Version=1.3.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\SharpAESCrypt.exe.1.3.3\lib\netstandard2.0\SharpAESCrypt.exe</HintPath>
     </Reference>
     <Reference Include="System" />
   </ItemGroup>
