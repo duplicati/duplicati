@@ -48,16 +48,29 @@ namespace Duplicati.CommandLine
             FROM_COMMANDLINE = true;
             try
             {
-                //If we are on Windows, append the bundled "win-tools" programs to the search path
+                //If we are on Windows, append the gpg4win path and append the bundled "win-tools" programs to the search path
                 //We add it last, to allow the user to override with other versions
                 if (Platform.IsClientWindows)
                 {
+                    var ExternalGpgPath = @"C:\Program Files (x86)\GnuPG\bin";
+                    var gpg4win = System.IO.Path.Combine(ExternalGpgPath, "gpg.exe");
+
+                    if (File.Exists(gpg4win))
+                    {
+                        Environment.SetEnvironmentVariable("PATH",
+                            Environment.GetEnvironmentVariable("PATH") +
+                            System.IO.Path.PathSeparator +
+                            gpg4win
+                        );
+                    }
+
                     string wintools = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "win-tools");
+
                     Environment.SetEnvironmentVariable("PATH",
                         Environment.GetEnvironmentVariable("PATH") +
-                        System.IO.Path.PathSeparator.ToString() +
+                        System.IO.Path.PathSeparator +
                         wintools +
-                        System.IO.Path.PathSeparator.ToString() +
+                        System.IO.Path.PathSeparator +
                         System.IO.Path.Combine(wintools, "gpg") //GPG needs to be in a subfolder for wrapping reasons
                     );
                 }
@@ -112,13 +125,15 @@ namespace Duplicati.CommandLine
 
         public static IEnumerable<string> SupportedCommands { get { return CommandMap.Keys; } }
 
-        private static int ShowChangeLog(TextWriter outwriter) {
+        private static int ShowChangeLog(TextWriter outwriter)
+        {
             var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
             outwriter.WriteLine(System.IO.File.ReadAllText(path));
             return 0;
         }
 
-        private static void CheckForUpdates(TextWriter outwriter){
+        private static void CheckForUpdates(TextWriter outwriter)
+        {
             var update = Library.AutoUpdater.UpdaterManager.LastUpdateCheckVersion;
             if (update == null)
                 update = Library.AutoUpdater.UpdaterManager.CheckForUpdate();
@@ -140,7 +155,8 @@ namespace Duplicati.CommandLine
             }
         }
 
-        private static int ParseCommandLine(TextWriter outwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args) {
+        private static int ParseCommandLine(TextWriter outwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args)
+        {
             List<string> cargs = new List<string>(args);
 
             var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
@@ -168,7 +184,7 @@ namespace Duplicati.CommandLine
             }
 
             // try and parse all parameter file aliases
-            foreach (string parameterOption in new []{ "parameters-file", "parameters-file", "parameterfile"} )
+            foreach (string parameterOption in new[] { "parameters-file", "parameters-file", "parameterfile" })
             {
                 if (options.ContainsKey(parameterOption) && !string.IsNullOrEmpty(options[parameterOption]))
                 {
@@ -305,7 +321,8 @@ namespace Duplicati.CommandLine
                 string appendfilter = null;
                 string replacefilter = null;
 
-                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) =>
+                {
                     if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
                     {
                         newsource.Add(value);
@@ -347,27 +364,27 @@ namespace Duplicati.CommandLine
                     filter = newfilter;
 
                 if (!string.IsNullOrWhiteSpace(prependfilter))
-                    filter = Library.Utility.FilterExpression.Combine(Library.Utility.FilterExpression.Deserialize(prependfilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries)), filter);
+                    filter = Library.Utility.FilterExpression.Combine(Library.Utility.FilterExpression.Deserialize(prependfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)), filter);
 
                 if (!string.IsNullOrWhiteSpace(appendfilter))
-                    filter = Library.Utility.FilterExpression.Combine(filter, Library.Utility.FilterExpression.Deserialize(appendfilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries)));
+                    filter = Library.Utility.FilterExpression.Combine(filter, Library.Utility.FilterExpression.Deserialize(appendfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)));
 
                 if (!string.IsNullOrWhiteSpace(replacefilter))
-                    filter = Library.Utility.FilterExpression.Deserialize(replacefilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
+                    filter = Library.Utility.FilterExpression.Deserialize(replacefilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
 
                 foreach (KeyValuePair<String, String> keyvalue in opt)
                     options[keyvalue.Key] = keyvalue.Value;
 
                 if (!string.IsNullOrEmpty(newtarget))
-                   {
-                       if (cargs.Count <= 1)
-                           cargs.Add(newtarget);
-                       else
-                           cargs[1] = newtarget;
-                   }
+                {
+                    if (cargs.Count <= 1)
+                        cargs.Add(newtarget);
+                    else
+                        cargs[1] = newtarget;
+                }
 
                 if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
-                       cargs.AddRange(newsource);
+                    cargs.AddRange(newsource);
                 else if (newsource.Count > 0)
                     Library.Logging.Log.WriteVerboseMessage(LOGTAG, "NotUsingBackupSources", Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
 
