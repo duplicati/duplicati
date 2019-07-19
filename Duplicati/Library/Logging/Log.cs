@@ -282,6 +282,18 @@ namespace Duplicati.Library.Logging
         /// <param name="message">The message to write</param>
         /// <param name="tag">The tag-type for this message</param>
         /// <param name="id">The message id</param>
+        /// <param name="arguments">The message format arguments</param>
+        public static void WriteWarningMessage(string tag, string id, string message, params object[] arguments)
+        {
+            WriteMessage(LogMessageType.Warning, tag, id, null, message, arguments);
+        }
+
+        /// <summary>
+        /// Writes a warning message to the current log destination
+        /// </summary>
+        /// <param name="message">The message to write</param>
+        /// <param name="tag">The tag-type for this message</param>
+        /// <param name="id">The message id</param>
         /// <param name="ex">The exception to attach</param>
         /// <param name="arguments">The message format arguments</param>
         public static void WriteWarningMessage(string tag, string id, Exception ex, string message, params object[] arguments)
