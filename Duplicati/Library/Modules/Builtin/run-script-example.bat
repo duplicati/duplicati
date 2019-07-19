@@ -142,7 +142,7 @@ GOTO end
 :ON_BEFORE
 
 REM If the operation is a backup starting, 
-REM then we check if the --volsize option is unset
+REM then we check if the --dblock-size option is unset
 REM or 50mb, and change it to 25mb, otherwise we 
 REM leave it alone
 
@@ -162,7 +162,7 @@ GOTO end
 
 :SET_VOLSIZE
 REM Write the option to stdout to change it
-echo --volsize=25mb
+echo --dblock-size=25mb
 GOTO end
 
 
