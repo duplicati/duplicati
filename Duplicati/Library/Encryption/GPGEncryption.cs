@@ -95,9 +95,8 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// The PGP program to use, should be with absolute path
         /// </summary>
-        //private string b_programpath;
-        private string m_programpath { get; set; } = GetGpgExePath();
-        
+        private readonly string m_programpath = "gpg";
+
         /// <summary>
         /// Commandline switches for encryption
         /// </summary>
@@ -272,15 +271,6 @@ namespace Duplicati.Library.Encryption
             object[] tmp = (object[])x;
             Utility.Utility.CopyStream((Stream)tmp[0], (Stream)tmp[1]);
             ((Stream)tmp[1]).Close();
-        }
-
-        /// <summary>
-        /// Determines the path to the GPG exe
-        /// </summary>
-        private static string GetGpgExePath()
-        {
-            var gpg4win = System.IO.Path.GetFullPath(@"C:\Program Files (x86)\GnuPG\bin\gpg.exe");
-            return File.Exists(gpg4win) ? gpg4win : "gpg";
         }
     }
 }
