@@ -277,7 +277,7 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// Determines the path to the GPG exe
         /// </summary>
-        private static string GetGpgExePath()
+        public static string GetGpgExePath()
         {
             var gpg4win = System.IO.Path.GetFullPath(@"C:\Program Files (x86)\GnuPG\bin\gpg.exe");
             return File.Exists(gpg4win) ? gpg4win : "gpg";
