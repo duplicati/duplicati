@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Duplicati.Library.Interface;
@@ -526,26 +527,45 @@ namespace Duplicati.Library.Main.Operation
                     return;
                 }
 
-                if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
+                try
                 {
-                    if (isDirTarget)
-                        SystemIO.IO_OS.DirectorySetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
-                    else
-                        SystemIO.IO_OS.FileSetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
-                }
+                    if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
+                    {
+                        if (isDirTarget)
+                            SystemIO.IO_OS.DirectorySetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                        else
+                            SystemIO.IO_OS.FileSetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                    }
 
-                if (metadata.TryGetValue("CoreCreatetime", out k) && long.TryParse(k, out t))
+                    if (metadata.TryGetValue("CoreCreatetime", out k) && long.TryParse(k, out t))
+                    {
+                        if (isDirTarget)
+                            SystemIO.IO_OS.DirectorySetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                        else
+                            SystemIO.IO_OS.FileSetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                    }
+
+                    if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse(k, true, out fa))
+                        SystemIO.IO_OS.SetFileAttributes(targetpath, fa);
+
+                    SystemIO.IO_OS.SetMetadata(path, metadata, restorePermissions);
+                }
+                catch (IOException)
                 {
-                    if (isDirTarget)
-                        SystemIO.IO_OS.DirectorySetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                    if (isDirTarget && Directory.Exists(targetpath))
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DirectoryIsLocked", $"Metadata for target directory not updated since it is locked: {targetpath}");
+                    }
+                    else if (!isDirTarget && File.Exists(targetpath))
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FileIsLocked", $"Metadata for target file not updated since it is locked: {targetpath}");
+                    }
                     else
-                        SystemIO.IO_OS.FileSetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                    {
+                        // not a lock problem, IOException occurred but the target does not exist so something else went wrong
+                        throw;
+                    }
                 }
-
-                if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse(k, true, out fa))
-                    SystemIO.IO_OS.SetFileAttributes(targetpath, fa);
-
-                SystemIO.IO_OS.SetMetadata(path, metadata, restorePermissions);
             }
         }
 
