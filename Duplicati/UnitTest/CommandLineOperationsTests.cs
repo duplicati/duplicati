@@ -75,12 +75,7 @@ namespace Duplicati.UnitTest
             var opts = from n in TestOptions select string.Format("--{0}=\"{1}\"", n.Key, n.Value);
             var backupargs = (new string[] { "backup", target, DATAFOLDER }.Union(opts)).ToArray();
 
-            if (SourceDataFolders == null || SourceDataFolders.Count() < 3)
-            {
-                ProgressWriteLine($"A minimum of 3 data folders are required in {SOURCEFOLDER}.");
-            }
-
-            foreach (var n in SourceDataFolders)
+            foreach(var n in SourceDataFolders)
             {
                 var foldername = Path.GetFileName(n);
                 var targetfolder = Path.Combine(DATAFOLDER, foldername);
@@ -100,11 +95,11 @@ namespace Duplicati.UnitTest
             }
 
             ProgressWriteLine("Running unchanged backup ...");
-            using(new Library.Logging.Timer(LOGTAG, "UnchangedBackup", "Unchanged backup"))
+            using(new Library.Logging.Timer(LOGTAG, "UnchangedBackupe", "Unchanged backup"))
                 Duplicati.CommandLine.Program.RealMain(backupargs);
 
             var datafolders = Directory.EnumerateDirectories(DATAFOLDER);
-            
+
             var f = datafolders.Skip(datafolders.Count() / 2).First();
 
             ProgressWriteLine("Renaming folder {0}", Path.GetFileName(f));
@@ -124,7 +119,7 @@ namespace Duplicati.UnitTest
             Directory.Delete(rm1, true);
             Directory.Delete(rm2, true);
             var rmfiles = Directory.EnumerateFiles(rm3, "*", SearchOption.AllDirectories);
-            foreach (var n in rmfiles.Take(rmfiles.Count() / 2))
+            foreach(var n in rmfiles.Take(rmfiles.Count() / 2))
                 File.Delete(n);
 
             ProgressWriteLine("Running backup with deleted data...");
@@ -203,10 +198,6 @@ namespace Duplicati.UnitTest
                 if (Duplicati.CommandLine.Program.RealMain((new string[] { "test", target, "all" }.Union(opts)).ToArray()) != 0)
                     throw new Exception("Failed during final remote verification");
 
-            foreach (var datafolder in datafolders)
-            {
-                Directory.Delete(datafolder, true);
-            }
         }
     }
 }
