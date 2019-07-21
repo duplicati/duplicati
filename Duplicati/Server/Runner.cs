@@ -503,6 +503,9 @@ namespace Duplicati.Server
                                         where !string.IsNullOrWhiteSpace(p)
                                         select p).ToArray();
 
+                                if (backup.Metadata.ContainsKey("LastCompactFinished"))
+                                    controller.LastCompact = Library.Utility.Utility.DeserializeDateTime(backup.Metadata["LastCompactFinished"]);
+
                                 var r = controller.Backup(sources, filter);
                                 UpdateMetadata(backup, r);
                                 return r;
@@ -545,7 +548,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.Compact:
                             {
-                            var r = controller.Compact();
+                                var r = controller.Compact();
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
@@ -724,6 +727,14 @@ namespace Duplicati.Server
                 backup.Metadata["LastRestoreFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
             }
 
+            if (result is Duplicati.Library.Interface.ICompactResults)
+            {
+                var r = (Duplicati.Library.Interface.ICompactResults)result;
+                backup.Metadata["LastCompactDuration"] = r.Duration.ToString();
+                backup.Metadata["LastCompactStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastCompactFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+            }
+
             if (result is Duplicati.Library.Interface.IParsedBackendStatistics)
             {
                 var r = (Duplicati.Library.Interface.IParsedBackendStatistics)result;
@@ -746,6 +757,9 @@ namespace Duplicati.Server
                 backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(result.BeginTime.ToUniversalTime());
                 backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
                 backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
+
+                if (r.CompactResults != null)
+                    UpdateMetadata(backup, r.CompactResults);
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
