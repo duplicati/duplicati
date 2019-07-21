@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
 
-            if (!m_options.NoAutoCompact && (m_lastcompact > DateTime.MinValue) && (m_lastcompact.Add(m_options.AutoCompactInterval) >= DateTime.Now))
+            if (!m_options.NoAutoCompact && (m_lastcompact > DateTime.MinValue) && (m_lastcompact.Add(m_options.AutoCompactInterval) > DateTime.Now))
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Skipping auto compaction until {0}", m_lastcompact.Add(m_options.AutoCompactInterval));
                 m_options.RawOptions["no-auto-compact"] = "true";
