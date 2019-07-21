@@ -405,7 +405,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
                     new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
 
-                    new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0s"),
+                    new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
                 });
 
                 return lst;
