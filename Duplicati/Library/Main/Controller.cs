@@ -1,5 +1,5 @@
 ﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2019, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 //
 // This library is free software; you can redistribute it and/or
@@ -16,12 +16,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
-using System.Linq;
-
-
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
@@ -83,6 +82,11 @@ namespace Duplicati.Library.Main
         private ControllerMultiLogTarget m_logTarget;
 
         /// <summary>
+        /// The cancellation token for the running task
+        /// </summary>
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        /// <summary>
         /// Constructs a new interface for performing backup and restore operations
         /// </summary>
         /// <param name="backend">The url for the backend to use</param>
@@ -115,7 +119,9 @@ namespace Duplicati.Library.Main
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
                 using (var h = new Operation.BackupHandler(m_backend, m_options, result))
-                    h.Run(ExpandInputSources(inputsources, filter), filter);
+                {
+                    h.Run(ExpandInputSources(inputsources, filter), filter, cancellationTokenSource.Token);
+                }
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
                 Library.UsageReporter.Reporter.Report("BACKUP_FILESIZE", result.SizeOfExaminedFiles);
@@ -288,7 +294,7 @@ namespace Duplicati.Library.Main
             {
                 return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>
                 {
-                    new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter), filter);
+                    new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter), filter, cancellationTokenSource.Token);
                 });
             }
         }
@@ -1067,11 +1073,16 @@ namespace Duplicati.Library.Main
                 ct.Resume();
         }
 
-        public void Stop()
+        public void Stop(bool allowCurrentFileToFinish)
         {
             var ct = m_currentTask;
-            if (ct != null)
-                ct.Stop();
+            if (ct == null) return;
+            if (allowCurrentFileToFinish)
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "CancellationRequested", "Cancellation Requested");
+                cancellationTokenSource.Cancel();
+            }
+            ct.Stop(allowCurrentFileToFinish);
         }
 
         public void Abort()

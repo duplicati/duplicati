@@ -65,7 +65,12 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
             else if ($scope.state.lastPgEvent.Phase == 'Backup_Complete' || $scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload')
             {
                 pg = 1;
-            } 
+            }
+            else if ($scope.state.lastPgEvent != null && $scope.state.lastPgEvent.Phase == 'Paused_WaitForUpload')
+            {
+                var speed_txt = ($scope.state.lastPgEvent.BackendSpeed < 0) ? "" : " at "+AppUtils.formatSizeString($scope.state.lastPgEvent.BackendSpeed)+"/s";
+                text = text + speed_txt;    
+            }
             else if ($scope.state.lastPgEvent.OverallProgress > 0) {
                 pg = $scope.state.lastPgEvent.OverallProgress;
             }
@@ -88,19 +93,21 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         function handleClick(ix) {
             if (ix == 0) 
             {
-                AppService.post('/task/' + taskId + '/stop');
+                AppService.post('/task/' + taskId + '/stopaftercurrentfile');
                 $scope.StopReqId = taskId;
             }
-            else if (ix == 1)
-                AppService.post('/task/' + taskId + '/abort');
+            else if (ix == 1) {
+                AppService.post('/task/' + taskId + '/stopnow');
+                $scope.StopReqId = taskId;
+            }
         };
 
         if (txt.indexOf('Backup_') == 0)
         {
             DialogService.dialog(
                 gettextCatalog.getString('Stop running backup'),
-                gettextCatalog.getString('You can stop the backup immediately, or stop after the current file has been uploaded.'),
-                [gettextCatalog.getString('Stop after upload'), gettextCatalog.getString('Stop now'), gettextCatalog.getString('Cancel')],
+                gettextCatalog.getString('You can stop the backup after any file uploads currently in progress have finished.'),
+                [gettextCatalog.getString('Stop after current file'), gettextCatalog.getString('Stop now'), gettextCatalog.getString('Cancel')],
                 handleClick
             );
         }
@@ -108,7 +115,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         {
             DialogService.dialog(
                 gettextCatalog.getString('Stop running task'),
-                gettextCatalog.getString('You can stop the task immediately, or allow the process to continue its current file and the stop.'),
+                gettextCatalog.getString('You can stop the task immediately, or allow the process to continue its current file and then stop.'),
                 [gettextCatalog.getString('Stop after the current file'), gettextCatalog.getString('Stop now'), gettextCatalog.getString('Cancel')],
                 handleClick
             );
