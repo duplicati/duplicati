@@ -2313,7 +2313,7 @@ msgid "Stop after the current file"
 msgstr "Parar após o ficheiro atual"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after upload"
+msgid "Stop after the current file"
 msgstr "Parar depois de carregar"
 
 #: scripts/controllers/StateController.js:103
@@ -2330,7 +2330,7 @@ msgid "Stop running task"
 msgstr "Parar tarefa em execução"
 
 #: index.html:172
-msgid "Stopping after upload:"
+msgid "Stopping after the current file:"
 msgstr "Parar depois de carregar:"
 
 #: index.html:177

@@ -2324,7 +2324,7 @@ msgid "Stop after the current file"
 msgstr "Opriți după fișierul curent"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after upload"
+msgid "Stop after the current file"
 msgstr "Opriți după încărcare"
 
 #: scripts/controllers/StateController.js:103
@@ -2341,7 +2341,7 @@ msgid "Stop running task"
 msgstr "Opriți executarea sarcinii"
 
 #: index.html:172
-msgid "Stopping after upload:"
+msgid "Stopping after the current file:"
 msgstr "Oprirea după încărcare:"
 
 #: index.html:177

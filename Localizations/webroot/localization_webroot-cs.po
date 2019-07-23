@@ -2348,7 +2348,7 @@ msgid "Stop after the current file"
 msgstr "Zastavit po stávajícím souboru"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after upload"
+msgid "Stop after the current file"
 msgstr "Zastavit po nahrání"
 
 #: scripts/controllers/StateController.js:103
@@ -2365,7 +2365,7 @@ msgid "Stop running task"
 msgstr "Zastavit probíhající úlohu"
 
 #: index.html:172
-msgid "Stopping after upload:"
+msgid "Stopping after the current file:"
 msgstr "Zastavování po nahrávání:"
 
 #: index.html:177

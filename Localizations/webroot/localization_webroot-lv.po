@@ -2274,7 +2274,7 @@ msgid "Stop after the current file"
 msgstr ""
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after upload"
+msgid "Stop after the current file"
 msgstr "Pārtraukt pēc augšupielādes"
 
 #: scripts/controllers/StateController.js:103
@@ -2291,7 +2291,7 @@ msgid "Stop running task"
 msgstr "Pārtraukt uzdevuma izpildi"
 
 #: index.html:172
-msgid "Stopping after upload:"
+msgid "Stopping after the current file:"
 msgstr ""
 
 #: index.html:177

@@ -2372,7 +2372,7 @@ msgid "Stop after the current file"
 msgstr "Beende nach aktueller Datei"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after upload"
+msgid "Stop after the current file"
 msgstr "Beende nach Hochladen"
 
 #: scripts/controllers/StateController.js:103
@@ -2389,7 +2389,7 @@ msgid "Stop running task"
 msgstr "Beende laufenden Vorgang"
 
 #: index.html:172
-msgid "Stopping after upload:"
+msgid "Stopping after the current file:"
 msgstr "Beende nach Hochladen"
 
 #: index.html:177

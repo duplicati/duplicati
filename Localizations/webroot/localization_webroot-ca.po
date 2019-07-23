@@ -2367,7 +2367,7 @@ msgid "Stop after the current file"
 msgstr "Atura després del fitxer actual"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after upload"
+msgid "Stop after the current file"
 msgstr "Atura després de la càrrega"
 
 #: scripts/controllers/StateController.js:103
@@ -2384,7 +2384,7 @@ msgid "Stop running task"
 msgstr "Atura la tasca en execució"
 
 #: index.html:172
-msgid "Stopping after upload:"
+msgid "Stopping after the current file:"
 msgstr "S'aturarà després de la càrrega:"
 
 #: index.html:177
