@@ -153,11 +153,11 @@ GOTO end
 
 :ON_BEFORE_BACKUP
 REM Check if volsize is either not set, or set to 50mb
-IF "%DUPLICATI__dblock-_size%" == "" GOTO SET_VOLSIZE
-IF "%DUPLICATI__dblock-_size%" == "50mb" GOTO SET_VOLSIZE
+IF "%DUPLICATI__dblock_size%" == "" GOTO SET_VOLSIZE
+IF "%DUPLICATI__dblock_size%" == "50mb" GOTO SET_VOLSIZE
 
 REM We write this to stderr, and it will show up as a warning in the logfile
-echo Not setting volumesize, it was already set to %DUPLICATI__dblock-_size% 1>&2
+echo Not setting volumesize, it was already set to %DUPLICATI__dblock_size% 1>&2
 GOTO end
 
 :SET_VOLSIZE

@@ -139,13 +139,13 @@ then
 	
 	if [ "$OPERATIONNAME" == "Backup" ]
 	then
-		if [ "$DUPLICATI__dblock-_size" == "" ] || ["$DUPLICATI__dblock-_size" == "50mb"]
+		if [ "$DUPLICATI__dblock_size" == "" ] || ["$DUPLICATI__dblock_size" == "50mb"]
 		then
 			# Write the option to stdout to change it
 			echo "--dblock-size=25mb"
 		else
 			# We write this to stderr, and it will show up as a warning in the logfile
-			echo "Not setting volumesize, it was already set to $DUPLICATI__dblock-_size" >&2
+			echo "Not setting volumesize, it was already set to $DUPLICATI__dblock_size" >&2
 		fi
 	else
 		# This will be ignored
