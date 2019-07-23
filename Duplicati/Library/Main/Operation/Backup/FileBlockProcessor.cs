@@ -52,7 +52,10 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     try
                     {
-                        if (token.IsCancellationRequested) break;
+                        if (token.IsCancellationRequested)
+                        {
+                            break;
+                        }
 
                         var hint = options.GetCompressionHintFromFilename(e.Path);
                         var oldHash = e.OldId < 0 ? null : await database.GetFileHashAsync(e.OldId);

@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The cancellation token for the running task
         /// </summary>
-        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource m_cancellationTokenSource = new CancellationTokenSource();
 
         /// <summary>
         /// Constructs a new interface for performing backup and restore operations
@@ -120,7 +120,7 @@ namespace Duplicati.Library.Main
 
                 using (var h = new Operation.BackupHandler(m_backend, m_options, result))
                 {
-                    h.Run(ExpandInputSources(inputsources, filter), filter, cancellationTokenSource.Token);
+                    h.Run(ExpandInputSources(inputsources, filter), filter, m_cancellationTokenSource.Token);
                 }
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
@@ -294,7 +294,7 @@ namespace Duplicati.Library.Main
             {
                 return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>
                 {
-                    new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter), filter, cancellationTokenSource.Token);
+                    new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter), filter, m_cancellationTokenSource.Token);
                 });
             }
         }
@@ -1080,7 +1080,7 @@ namespace Duplicati.Library.Main
             if (allowCurrentFileToFinish)
             {
                 Logging.Log.WriteVerboseMessage(LOGTAG, "CancellationRequested", "Cancellation Requested");
-                cancellationTokenSource.Cancel();
+                m_cancellationTokenSource.Cancel();
             }
             ct.Stop(allowCurrentFileToFinish);
         }
