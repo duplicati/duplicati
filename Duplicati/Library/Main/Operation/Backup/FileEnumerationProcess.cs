@@ -83,6 +83,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                             {
                             }
 
+                            if (token.IsCancellationRequested) return false;
+
                             return AttributeFilter(x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
                         });
                     }
@@ -103,6 +105,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                         });
                     }
 
+                    if (token.IsCancellationRequested) return;
+
                     var source = ExpandWorkList(worklist, mixinqueue, emitfilter, enumeratefilter);
                     if (excludeemptyfolders)
                         source = ExcludeEmptyFolders(source);
@@ -110,8 +114,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                     // Process each path, and dequeue the mixins with symlinks as we go
                     foreach (var s in source)
                     {
+                        if (token.IsCancellationRequested) break;
+
                         if (!await taskreader.ProgressAsync)
+                        {
                             return;
+                        }
 
                         await self.Output.WriteAsync(s);
                     }

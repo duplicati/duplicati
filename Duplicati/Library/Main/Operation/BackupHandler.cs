@@ -101,7 +101,7 @@ namespace Duplicati.Library.Main.Operation
         {
             if (m_options.UsnStrategy == Options.OptimizationStrategy.Off) return null;
             var journalData = m_database.GetChangeJournalData(lastfilesetid);
-            var service = new UsnJournalService(sources, snapshot, filter, journalData);
+            var service = new UsnJournalService(sources, snapshot, filter, journalData, cancellationTokenSource.Token);
 
             foreach (var volumeData in service.VolumeDataList)
             {
