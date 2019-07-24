@@ -189,7 +189,7 @@ namespace Duplicati.Library.Main.Operation
                                         options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames,
                                         options.ChangedFilelist, taskreader, token),
                                     Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
-                                    Backup.MetadataPreProcess.Run(snapshot, options, database, lastfilesetid),
+                                    Backup.MetadataPreProcess.Run(snapshot, options, database, lastfilesetid, token),
                                     Backup.SpillCollectorProcess.Run(options, database, taskreader),
                                     Backup.ProgressHandler.Run(result)
                             }
