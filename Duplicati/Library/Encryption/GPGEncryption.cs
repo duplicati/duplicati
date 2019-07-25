@@ -98,7 +98,6 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// The PGP program to use, should be with absolute path
         /// </summary>
-        //private string b_programpath;
         private string m_programpath { get; set; } = GetGpgProgramPath();
         
         /// <summary>

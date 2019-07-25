@@ -38,7 +38,6 @@ namespace Duplicati.CommandLine
         [STAThread]
         public static int Main(string[] args)
         {
-            Console.WriteLine($"RealMain args : {args}");
             Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }

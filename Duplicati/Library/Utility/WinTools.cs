@@ -27,7 +27,10 @@ namespace Duplicati.Library.Utility
     {
         public static string GetWindowsGpgExePath()
         {
-            if (!Platform.IsClientWindows) return null;
+            if (!Platform.IsClientWindows)
+            {
+                return null;
+            }
 
             // return gpg4win if it exists
             var location32 = Library.Utility.RegistryUtility.GetDataByValueName(@"SOFTWARE\WOW6432Node\GnuPG", "Install Directory");
@@ -40,10 +43,10 @@ namespace Duplicati.Library.Utility
             }
 
             // otherwise return our included win-tools
-            return System.IO.Path.Combine(
-                System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? throw new InvalidOperationException(),
-                "win-tools",
-                "gpg.exe");
+            var wintoolsPath = System.IO.Path.Combine(
+                System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                "win-tools", "gpg.exe");
+            return string.IsNullOrEmpty(wintoolsPath) ? null : wintoolsPath;
         }
     }
 }
