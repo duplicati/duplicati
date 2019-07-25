@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Localization.Short;
 using System.IO;
-using Duplicati.Library.Common;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.CommandLine
 {
@@ -38,6 +38,7 @@ namespace Duplicati.CommandLine
         [STAThread]
         public static int Main(string[] args)
         {
+            Console.WriteLine($"RealMain args : {args}");
             Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
         }
@@ -48,33 +49,6 @@ namespace Duplicati.CommandLine
             FROM_COMMANDLINE = true;
             try
             {
-                //If we are on Windows, append the gpg4win path and append the bundled "win-tools" programs to the search path
-                //We add it last, to allow the user to override with other versions
-                if (Platform.IsClientWindows)
-                {
-                    var ExternalGpgPath = @"C:\Program Files (x86)\GnuPG\bin";
-                    var gpg4win = System.IO.Path.Combine(ExternalGpgPath, "gpg.exe");
-
-                    if (File.Exists(gpg4win))
-                    {
-                        Environment.SetEnvironmentVariable("PATH",
-                            Environment.GetEnvironmentVariable("PATH") +
-                            System.IO.Path.PathSeparator +
-                            gpg4win
-                        );
-                    }
-
-                    string wintools = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "win-tools");
-
-                    Environment.SetEnvironmentVariable("PATH",
-                        Environment.GetEnvironmentVariable("PATH") +
-                        System.IO.Path.PathSeparator +
-                        wintools +
-                        System.IO.Path.PathSeparator +
-                        System.IO.Path.Combine(wintools, "gpg") //GPG needs to be in a subfolder for wrapping reasons
-                    );
-                }
-
                 return RunCommandLine(Console.Out, Console.Error, c => { }, args);
             }
             finally
@@ -87,38 +61,36 @@ namespace Duplicati.CommandLine
         {
             get
             {
-                var knownCommands = new Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.OrdinalIgnoreCase);
-                knownCommands["help"] = Commands.Help;
-                knownCommands["example"] = Commands.Examples;
-                knownCommands["examples"] = Commands.Examples;
-
-                knownCommands["find"] = Commands.List;
-                knownCommands["list"] = Commands.List;
-
-                knownCommands["delete"] = Commands.Delete;
-                knownCommands["backup"] = Commands.Backup;
-                knownCommands["restore"] = Commands.Restore;
-
-                knownCommands["repair"] = Commands.Repair;
-                knownCommands["purge"] = Commands.PurgeFiles;
-                knownCommands["list-broken-files"] = Commands.ListBrokenFiles;
-                knownCommands["purge-broken-files"] = Commands.PurgeBrokenFiles;
-
-                knownCommands["compact"] = Commands.Compact;
-                knownCommands["create-report"] = Commands.CreateBugReport;
-                knownCommands["compare"] = Commands.ListChanges;
-                knownCommands["test"] = Commands.Test;
-                knownCommands["verify"] = Commands.Test;
-                knownCommands["test-filters"] = Commands.TestFilters;
-                knownCommands["test-filter"] = Commands.TestFilters;
-                knownCommands["affected"] = Commands.Affected;
-                knownCommands["vacuum"] = Commands.Vacuum;
-
-                knownCommands["system-info"] = Commands.SystemInfo;
-                knownCommands["systeminfo"] = Commands.SystemInfo;
-
-                knownCommands["send-mail"] = Commands.SendMail;
-
+                var knownCommands =
+                    new Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>,
+                        Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["help"] = Commands.Help,
+                        ["example"] = Commands.Examples,
+                        ["examples"] = Commands.Examples,
+                        ["find"] = Commands.List,
+                        ["list"] = Commands.List,
+                        ["delete"] = Commands.Delete,
+                        ["backup"] = Commands.Backup,
+                        ["restore"] = Commands.Restore,
+                        ["repair"] = Commands.Repair,
+                        ["purge"] = Commands.PurgeFiles,
+                        ["list-broken-files"] = Commands.ListBrokenFiles,
+                        ["purge-broken-files"] = Commands.PurgeBrokenFiles,
+                        ["compact"] = Commands.Compact,
+                        ["create-report"] = Commands.CreateBugReport,
+                        ["compare"] = Commands.ListChanges,
+                        ["test"] = Commands.Test,
+                        ["verify"] = Commands.Test,
+                        ["test-filters"] = Commands.TestFilters,
+                        ["test-filter"] = Commands.TestFilters,
+                        ["affected"] = Commands.Affected,
+                        ["vacuum"] = Commands.Vacuum,
+                        ["system-info"] = Commands.SystemInfo,
+                        ["systeminfo"] = Commands.SystemInfo,
+                        ["send-mail"] = Commands.SendMail
+                    };
+                
                 return knownCommands;
             }
         }

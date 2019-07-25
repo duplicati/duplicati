@@ -21,6 +21,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common;
+using Duplicati.Library.Logging;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Encryption
 {
@@ -96,7 +99,7 @@ namespace Duplicati.Library.Encryption
         /// The PGP program to use, should be with absolute path
         /// </summary>
         //private string b_programpath;
-        private string m_programpath { get; set; } = GetGpgExePath();
+        private string m_programpath { get; set; } = GetGpgProgramPath();
         
         /// <summary>
         /// Commandline switches for encryption
@@ -275,12 +278,13 @@ namespace Duplicati.Library.Encryption
         }
 
         /// <summary>
-        /// Determines the path to the GPG exe
+        /// Determines the path to the GPG program
         /// </summary>
-        public static string GetGpgExePath()
+        public static string GetGpgProgramPath()
         {
-            var gpg4win = System.IO.Path.GetFullPath(@"C:\Program Files (x86)\GnuPG\bin\gpg.exe");
-            return File.Exists(gpg4win) ? gpg4win : "gpg";
+            Log.WriteInformationMessage("GetGpgProgramPath", "gpg", Platform.IsClientWindows ? WinTools.GetWindowsGpgExePath() : "gpg");
+            // for Windows return the full path, otherwise just return "gpg"
+            return Platform.IsClientWindows ? WinTools.GetWindowsGpgExePath() : "gpg";
         }
     }
 }

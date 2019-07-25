@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -51,6 +51,10 @@
     <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj">
+      <Project>{d63e53e4-a458-4c2f-914d-92f715f58acf}</Project>
+      <Name>Duplicati.Library.Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
