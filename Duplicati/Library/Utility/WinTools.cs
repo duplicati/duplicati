@@ -17,8 +17,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
-
-using System;
 using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Utility
@@ -32,14 +30,21 @@ namespace Duplicati.Library.Utility
                 return null;
             }
 
-            // return gpg4win if it exists
-            var location32 = Library.Utility.RegistryUtility.GetDataByValueName(@"SOFTWARE\WOW6432Node\GnuPG", "Install Directory");
-            var location64 = Library.Utility.RegistryUtility.GetDataByValueName(@"SOFTWARE\GnuPG", "Install Directory");
-            var gpg4winLocation = string.IsNullOrEmpty(location64) ? location32 : location64;
-
-            if (!string.IsNullOrEmpty(gpg4winLocation))
+            try
             {
-                return System.IO.Path.Combine(gpg4winLocation, "bin", "gpg.exe");
+                // return gpg4win if it exists
+                var location32 = Library.Utility.RegistryUtility.GetDataByValueName(@"SOFTWARE\WOW6432Node\GnuPG", "Install Directory");
+                var location64 = Library.Utility.RegistryUtility.GetDataByValueName(@"SOFTWARE\GnuPG", "Install Directory");
+                var gpg4winLocation = string.IsNullOrEmpty(location64) ? location32 : location64;
+
+                if (!string.IsNullOrEmpty(gpg4winLocation))
+                {
+                    return System.IO.Path.Combine(gpg4winLocation, "bin", "gpg.exe");
+                }
+            }
+            catch
+            {
+                // NOOP
             }
 
             // otherwise return our included win-tools

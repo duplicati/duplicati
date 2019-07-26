@@ -25,9 +25,25 @@ namespace Duplicati.Library.Utility
     {
         public static string GetDataByValueName(string parentKeyName, string name)
         {
-            var parentKey = Registry.LocalMachine.OpenSubKey(parentKeyName);
-            // if the registry item does not exist a null is returned
-            return parentKey?.GetValue(name).ToString();
+            try
+            {
+                // check currentUser first, if null, then check LocalMachine
+                // if a registry item does not exist a null is returned
+                var cuParentKey = Registry.CurrentUser.OpenSubKey(parentKeyName, RegistryKeyPermissionCheck.ReadSubTree);
+                if (cuParentKey?.GetValue(name) != null)
+                {
+                    return cuParentKey.GetValue(name).ToString();
+                }
+
+                var lmParentKey = Registry.LocalMachine.OpenSubKey(parentKeyName, RegistryKeyPermissionCheck.ReadSubTree);
+                return lmParentKey.GetValue(name).ToString();
+            }
+            catch
+            {
+                // NOOP
+            }
+
+            return null;
         }
 
     }
