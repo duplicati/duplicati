@@ -1,21 +1,21 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
+﻿#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
+//
 #endregion
 using System;
 using System.Collections.Generic;
@@ -86,7 +86,7 @@ namespace Duplicati.Library.Encryption
         /// The command used to signal encryption (--symmetric)
         /// </summary>
         private const string GPG_ENCRYPTION_COMMAND = "--symmetric";
-        
+
         /// <summary>
         /// The command used to signal decryption (--decrypt)
         /// </summary>
@@ -154,11 +154,11 @@ namespace Duplicati.Library.Encryption
 
             var encryptOptions = options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS) ? options[COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS] : GPG_ENCRYPTION_DEFAULT_OPTIONS;
             var encryptCmd = options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND) ? options[COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND] : GPG_ENCRYPTION_COMMAND;
-            m_encryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS + " " + encryptOptions +  " " + encryptCmd;
+            m_encryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS + " " + encryptOptions + " " + encryptCmd;
 
             var decryptOptions = options.ContainsKey(COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS) ? options[COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS] : GPG_DECRYPTION_DEFAULT_OPTIONS;
             var decryptCmd = options.ContainsKey(COMMANDLINE_OPTIONS_DECRYPTION_COMMAND) ? options[COMMANDLINE_OPTIONS_DECRYPTION_COMMAND] : GPG_DECRYPTION_COMMAND;
-            m_decryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS + " " +  decryptOptions + " "  + decryptCmd;
+            m_decryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS + " " + decryptOptions + " " + decryptCmd;
 
 
             if (options.ContainsKey(COMMANDLINE_OPTIONS_PATH))
@@ -200,7 +200,7 @@ namespace Duplicati.Library.Encryption
         }
 
         #endregion
-        
+
         /// <summary>
         /// Internal helper that wraps GPG usage
         /// </summary>

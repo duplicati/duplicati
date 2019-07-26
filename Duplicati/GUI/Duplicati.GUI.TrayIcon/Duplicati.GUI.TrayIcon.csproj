@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -25,7 +25,7 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <ApplicationIcon>Duplicati.ico</ApplicationIcon>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -67,6 +67,12 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CoCoL, Version=1.5.0.19417, Culture=neutral, PublicKeyToken=0983de3c914beeaa, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\CoCoL.1.6.1\lib\net45\CoCoL.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
@@ -98,12 +104,6 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Drawing" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="CoCoL">
-      <HintPath>..\..\..\packages\CoCoL.1.5.1\lib\net45\CoCoL.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IBrowserWindow.cs" />
@@ -114,6 +114,7 @@
     <None Include="app.config" />
     <None Include="app.manifest" />
     <None Include="Duplicati.snk" />
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -153,11 +154,10 @@
     <EmbeddedResource Include="Resources\context_menu_pause.ico" />
     <EmbeddedResource Include="Resources\context_menu_play.ico" />
     <EmbeddedResource Include="Resources\context_menu_quit.ico" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj">
-      <Project>{7b1c019b-c4aa-4480-a259-790e125b36ce}</Project>
+      <Project>{b93e3bf0-daa7-49b7-b07d-0559c5816735}</Project>
       <Name>Duplicati.CommandLine.ConfigurationImporter</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
@@ -247,10 +247,6 @@
     <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
       <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
       <Name>Duplicati.Library.DynamicLoader</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Encryption\Duplicati.Library.Encryption.csproj">
-      <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
-      <Name>Duplicati.Library.Encryption</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj">
       <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
@@ -430,4 +426,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
 </Project>

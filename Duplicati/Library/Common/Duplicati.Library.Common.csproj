@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -14,11 +14,13 @@
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,6 +42,15 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AlphaFS, Version=2.2.0.0, Culture=neutral, PublicKeyToken=4d31a58f7d7ad5c9, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\AlphaFS.2.2.6\lib\net452\AlphaFS.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaVSS.Common, Version=1.4.0.0, Culture=neutral, PublicKeyToken=959d3993561034e3, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\AlphaVSS.1.4.0\lib\net45\AlphaVSS.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="UnixSupport">
       <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
@@ -49,15 +60,6 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Transactions" />
-    <Reference Include="AlphaVSS.Common">
-      <HintPath>..\..\..\packages\AlphaVSS.1.4.0\lib\net45\AlphaVSS.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="AlphaFS">
-      <HintPath>..\..\..\packages\AlphaFS.2.1.3\lib\net45\AlphaFS.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -95,9 +97,12 @@
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="IO\" />
-    <Folder Include="Platform\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets" Condition="Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets'))" />
+  </Target>
 </Project>

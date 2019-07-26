@@ -27,7 +27,7 @@
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
     <PropertyRef Id="NETFRAMEWORK45"/>
-    <Condition Message="The .NET Framework 4.5 must be installed ([NETFRAMEWORK45])">
+    <Condition Message="The .NET Framework 4.6.2 must be installed ([WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED])">
       <![CDATA[Installed OR NETFRAMEWORK45]]>
     </Condition>
 
