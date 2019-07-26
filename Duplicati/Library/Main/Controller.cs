@@ -83,11 +83,6 @@ namespace Duplicati.Library.Main
         private ControllerMultiLogTarget m_logTarget;
 
         /// <summary>
-        /// Time of last compact operation
-        /// </summary>
-        private DateTime m_lastcompact;
-
-        /// <summary>
         /// Constructs a new interface for performing backup and restore operations
         /// </summary>
         /// <param name="backend">The url for the backend to use</param>
@@ -117,9 +112,9 @@ namespace Duplicati.Library.Main
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
 
-            if (!m_options.NoAutoCompact && (m_lastcompact > DateTime.MinValue) && (m_lastcompact.Add(m_options.AutoCompactInterval) > DateTime.Now))
+            if (!m_options.NoAutoCompact && (LastCompact > DateTime.MinValue) && (LastCompact.Add(m_options.AutoCompactInterval) > DateTime.Now))
             {
-                Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Skipping auto compaction until {0}", m_lastcompact.Add(m_options.AutoCompactInterval));
+                Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Skipping auto compaction until {0}", LastCompact.Add(m_options.AutoCompactInterval));
                 m_options.RawOptions["no-auto-compact"] = "true";
             }
 
@@ -1108,11 +1103,10 @@ namespace Duplicati.Library.Main
             set { m_options.MaxDownloadPrSecond = value; }
         }
 
-        public DateTime LastCompact
-        {
-            get { return m_lastcompact; }
-            set { m_lastcompact = value; }
-        }
+        /// <summary>
+        /// Time of last compact operation
+        /// </summary>
+        public DateTime LastCompact { get; set; }
 
         #region IDisposable Members
 
