@@ -39,7 +39,7 @@ namespace Duplicati.Library.Utility
 
             if (!string.IsNullOrEmpty(gpg4winLocation))
             {
-                return string.IsNullOrEmpty(gpg4winLocation) ? null : System.IO.Path.Combine(gpg4winLocation, "bin", "gpg.exe");
+                return System.IO.Path.Combine(gpg4winLocation, "bin", "gpg.exe");
             }
 
             // otherwise return our included win-tools
