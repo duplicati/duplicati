@@ -20,7 +20,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
     EditUriBackendConfig.templates['onedrivev2']  = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sharepoint']  = 'templates/backends/sharepoint.html';
     EditUriBackendConfig.templates['msgroup']     = 'templates/backends/msgroup.html';
-    EditUriBackendConfig.templates['amzcd']       = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['amzcd']       = 'templates/backends/amzcd.html';
     EditUriBackendConfig.templates['openstack']   = 'templates/backends/openstack.html';
     EditUriBackendConfig.templates['azure']       = 'templates/backends/azure.html';
     EditUriBackendConfig.templates['gcs']         = 'templates/backends/gcs.html';

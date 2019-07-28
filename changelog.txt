@@ -1,3 +1,44 @@
+2019-07-14 - 2.0.4.23_beta_2019-07-14
+==========
+This update only contains warnings to inform users on Amazon Cloud Drive that the service is discontinued.
+The update will warn users running or configuring a backup stored on Amazon Cloud Drive.
+
+This does **NOT** affect other Amazon services such as S3.
+If you do not use Amazon Cloud Drive, you can skip this update.
+
+For more information on the changes, please see:
+https://forum.duplicati.com/t/amazon-cloud-drive-discontinued/7391
+
+2019-06-30 - 2.0.4.22_canary_2019-06-30
+==========
+* Fixed link to usage reporter, thanks @warwickmm
+* Fixed using the B2 prefix, thanks @drwtsn32x
+* Fixed data corruption caused by upload throttling, thanks @ts678
+* Fixed data corruption caused by compacting, thanks @ts678 and @warwickmm
+
+2019-06-28 - 2.0.4.21_experimental_2019-06-28
+==========
+This is a cumulative release for more than 6 months of hard work.
+Most of these are speedup improvements, error handling and general quality fixes.
+
+This release will give a warning for all users of the Amazon Cloud Drive backen, as it is being discontinued by Amazon:
+https://forum.duplicati.com/t/amazon-cloud-drive-discontinued/7391
+
+A big thanks to the community members who work hard with fixing issues and responding on the forum:
+https://forum.duplicati.com
+
+2019-06-25 - 2.0.4.20_canary_2019-06-25
+==========
+* Added warnings about AmzCD closing
+
+2019-06-17 - 2.0.4.19_canary_2019-06-17
+==========
+* Show vacuum operation in status, thanks @drwtsn32x
+* Remove deprectated options and code from backends, thanks @warwickmm
+* Improved timeout handling for OAuth login, thanks @warwickmm
+* Improved names of backup databases, thanks @drwtsn32x
+* Removed the Google Plus icon, thanks @locked-fg
+
 2019-05-12 - 2.0.4.18_canary_2019-05-12
 ==========
 * Improved UI progress to show the VACUUM step, thanks @drwtsn32x
