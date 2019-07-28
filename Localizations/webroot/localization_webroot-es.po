@@ -2358,7 +2358,7 @@ msgid "Stop after the current file"
 msgstr "Detener después del archivo actual"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after the current file"
+msgid "Stop after upload"
 msgstr "Detener después de cargar"
 
 #: scripts/controllers/StateController.js:103
@@ -2375,7 +2375,7 @@ msgid "Stop running task"
 msgstr "Detener tarea en ejecución"
 
 #: index.html:172
-msgid "Stopping after the current file:"
+msgid "Stopping after upload:"
 msgstr "Deteniendo después de cargar:"
 
 #: index.html:177

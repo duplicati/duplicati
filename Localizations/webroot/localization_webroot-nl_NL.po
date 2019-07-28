@@ -2357,7 +2357,7 @@ msgid "Stop after the current file"
 msgstr "Stop na het huidige bestand"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after the current file"
+msgid "Stop after upload"
 msgstr "Stop na de upload"
 
 #: scripts/controllers/StateController.js:103
@@ -2374,7 +2374,7 @@ msgid "Stop running task"
 msgstr "Stop de taak in uitvoering"
 
 #: index.html:172
-msgid "Stopping after the current file:"
+msgid "Stopping after upload:"
 msgstr "Stop na de upload:"
 
 #: index.html:177

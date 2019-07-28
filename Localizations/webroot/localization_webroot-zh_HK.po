@@ -2269,7 +2269,7 @@ msgid "Stop after the current file"
 msgstr "現時檔案完成後停止"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after the current file"
+msgid "Stop after upload"
 msgstr "上傳後停止"
 
 #: scripts/controllers/StateController.js:103
@@ -2286,7 +2286,7 @@ msgid "Stop running task"
 msgstr "停止正在進行的工作"
 
 #: index.html:172
-msgid "Stopping after the current file:"
+msgid "Stopping after upload:"
 msgstr "上傳後停止："
 
 #: index.html:177

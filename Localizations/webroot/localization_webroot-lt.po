@@ -2342,7 +2342,7 @@ msgid "Stop after the current file"
 msgstr "Stabdyti po dabartinio failo"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after the current file"
+msgid "Stop after upload"
 msgstr "Stabdyti po įkėlimo"
 
 #: scripts/controllers/StateController.js:103
@@ -2359,7 +2359,7 @@ msgid "Stop running task"
 msgstr "Stabdyti vykdomą užduotį"
 
 #: index.html:172
-msgid "Stopping after the current file:"
+msgid "Stopping after upload:"
 msgstr "Stabdoma po įkėlimo:"
 
 #: index.html:177

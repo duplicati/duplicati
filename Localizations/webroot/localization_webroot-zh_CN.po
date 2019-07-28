@@ -2296,7 +2296,7 @@ msgid "Stop after the current file"
 msgstr "当前文件完成后停止"
 
 #: scripts/controllers/StateController.js:103
-msgid "Stop after the current file"
+msgid "Stop after upload"
 msgstr "上传完成后停止"
 
 #: scripts/controllers/StateController.js:103
@@ -2313,7 +2313,7 @@ msgid "Stop running task"
 msgstr "停止正在运行的任务"
 
 #: index.html:172
-msgid "Stopping after the current file:"
+msgid "Stopping after upload:"
 msgstr "于此完成后停止："
 
 #: index.html:177
