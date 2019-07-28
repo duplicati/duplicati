@@ -33,6 +33,8 @@ namespace Duplicati.Library.Backend
     /// moves away from SharePoint as OD4B base, this allows to reimplement it without breaking existing
     /// configurations...
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
+    // This constructor is needed by the BackendLoader.
     public class OneDriveForBusinessBackend : SharePointBackend
     {
         public override string ProtocolKey

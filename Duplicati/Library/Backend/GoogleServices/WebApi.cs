@@ -167,11 +167,6 @@ namespace Duplicati.Library.Backend.WebApi
             });
         }
 
-        public static string RenameUrl(string fileId)
-        {
-            return FileQueryUrl(Uri.UrlPathEncode(fileId));
-        }
-
         public static string DeleteUrl(string fileId, string teamDriveId)
         {
             return FileQueryUrl(Uri.UrlPathEncode(fileId), AddTeamDriveParam(teamDriveId));

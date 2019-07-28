@@ -25,6 +25,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Mega
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class MegaBackend: IBackend, IStreamingBackend
     {
         private readonly string m_username = null;

@@ -133,19 +133,19 @@ LOCALPATH=$DUPLICATI__LOCALPATH
 if [ "$EVENTNAME" == "BEFORE" ]
 then
 	# If the operation is a backup starting, 
-	# then we check if the --volsize option is unset
+	# then we check if the --dblock-size option is unset
 	# or 50mb, and change it to 25mb, otherwise we 
 	# leave it alone
 	
 	if [ "$OPERATIONNAME" == "Backup" ]
 	then
-		if [ "$DUPLICATI__volsize" == "" ] || ["$DUPLICATI__volsize" == "50mb"]
+		if [ "$DUPLICATI__dblock_size" == "" ] || ["$DUPLICATI__dblock_size" == "50mb"]
 		then
 			# Write the option to stdout to change it
-			echo "--volsize=25mb"
+			echo "--dblock-size=25mb"
 		else
 			# We write this to stderr, and it will show up as a warning in the logfile
-			echo "Not setting volumesize, it was already set to $DUPLICATI__volsize" >&2
+			echo "Not setting volumesize, it was already set to $DUPLICATI__dblock_size" >&2
 		fi
 	else
 		# This will be ignored

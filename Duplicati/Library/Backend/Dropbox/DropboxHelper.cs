@@ -265,7 +265,10 @@ namespace Duplicati.Library.Backend
 
     public class UploadSessionStartArg
     {
-        public bool close { get; set; }
+        // ReSharper disable once UnusedMember.Global
+        // This is serialized into JSON and provided in the Dropbox request header.
+        // A value of false indicates that the session should not be closed.
+        public static bool close => false;
     }
 
     public class UploadSessionAppendArg
@@ -336,16 +339,19 @@ namespace Duplicati.Library.Backend
         [JsonProperty(".tag")]
         public string tag { get; set; }
         public string name { get; set; }
-        public string path_lower { get; set; }
-        public string path_display { get; set; }
-        public string id { get; set; }
-
         public string server_modified { get; set; }
-        public string rev { get; set; }
         public ulong size { get; set; }
-
         public bool IsFile { get { return tag == "file"; } }
 
+        // While this is unused, the Dropbox API v2 documentation does not
+        // declare this to be optional.
+        // ReSharper disable once UnusedMember.Global
+        public string id { get; set; }
+
+        // While this is unused, the Dropbox API v2 documentation does not
+        // declare this to be optional.
+        // ReSharper disable once UnusedMember.Global
+        public string rev { get; set; }
     }
 
     public class FileMetaData : MetaData

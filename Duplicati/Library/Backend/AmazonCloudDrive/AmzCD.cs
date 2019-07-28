@@ -27,6 +27,8 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AmazonCloudDrive
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class AmzCD : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
@@ -68,10 +70,14 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             m_waitUntilRemotename = new Dictionary<string, DateTime>();
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AmzCD()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AmzCD(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
