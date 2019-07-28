@@ -405,6 +405,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
                     new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
 
+                    new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
                 });
 
                 return lst;
@@ -1632,6 +1633,20 @@ namespace Duplicati.Library.Main
         public bool NoAutoCompact
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-auto-compact"); }
+        }
+
+        /// <summary>
+        /// Gets the minimum time that must elapse after last compaction before running next automatic compaction
+        /// </summary>
+        public TimeSpan AutoCompactInterval
+        {
+            get
+            {
+                if (!m_options.ContainsKey("auto-compact-interval") || string.IsNullOrEmpty(m_options["auto-compact-interval"]))
+                    return TimeSpan.Zero;
+                else
+                    return Library.Utility.Timeparser.ParseTimeSpan(m_options["auto-compact-interval"]);
+            }
         }
 
         /// <summary>
