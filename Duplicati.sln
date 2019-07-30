@@ -101,7 +101,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Common", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ConfigurationImporter", "Duplicati\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{B93E3BF0-DAA7-49B7-B07D-0559C5816735}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{314BDAE4-0F0E-42C8-A0C3-2C70232CF0B7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{2CF2D90E-C25B-47AD-91E0-98451BAB8058}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -305,10 +305,10 @@ Global
 		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Release|Any CPU.Build.0 = Release|Any CPU
-		{314BDAE4-0F0E-42C8-A0C3-2C70232CF0B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{314BDAE4-0F0E-42C8-A0C3-2C70232CF0B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{314BDAE4-0F0E-42C8-A0C3-2C70232CF0B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{314BDAE4-0F0E-42C8-A0C3-2C70232CF0B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
