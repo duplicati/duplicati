@@ -112,11 +112,8 @@ namespace Duplicati.Library.Main
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
 
-            if (!m_options.NoAutoCompact && (LastCompact > DateTime.MinValue) && (LastCompact.Add(m_options.AutoCompactInterval) > DateTime.Now))
-            {
-                Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Skipping auto compaction until {0}", LastCompact.Add(m_options.AutoCompactInterval));
-                m_options.RawOptions["no-auto-compact"] = "true";
-            }
+            CheckAutoCompactInterval();
+            CheckAutoVacuumInterval();
 
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
@@ -233,6 +230,8 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.ICompactResults Compact()
         {
+            CheckAutoVacuumInterval();
+
             return RunAction(new CompactResults(), (result) => {
                 new Operation.CompactHandler(m_backend, m_options, result).Run();
             });
@@ -362,7 +361,7 @@ namespace Duplicati.Library.Main
 
         public Library.Interface.IVacuumResults Vacuum()
         {
-            return RunAction(new VacuumResult(), result => {
+            return RunAction(new VacuumResults(), result => {
                 new Operation.VacuumHandler(m_options, result).Run();
             });
         }
@@ -1107,6 +1106,29 @@ namespace Duplicati.Library.Main
         /// Time of last compact operation
         /// </summary>
         public DateTime LastCompact { get; set; }
+
+        /// <summary>
+        /// Time of last vacuum operation
+        /// </summary>
+        public DateTime LastVacuum { get; set; }
+
+        private void CheckAutoCompactInterval()
+        {
+            if (!m_options.NoAutoCompact && (LastCompact > DateTime.MinValue) && (LastCompact.Add(m_options.AutoCompactInterval) > DateTime.Now))
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Skipping auto compaction until {0}", LastCompact.Add(m_options.AutoCompactInterval));
+                m_options.RawOptions["no-auto-compact"] = "true";
+            }
+        }
+
+        private void CheckAutoVacuumInterval()
+        {
+            if (m_options.AutoVacuum && (LastVacuum > DateTime.MinValue) && (LastVacuum.Add(m_options.AutoVacuumInterval) > DateTime.Now))
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "VacuumResults", "Skipping auto vacuum until {0}", LastVacuum.Add(m_options.AutoVacuumInterval));
+                m_options.RawOptions["auto-vacuum"] = "false";
+            }
+        }
 
         #region IDisposable Members
 

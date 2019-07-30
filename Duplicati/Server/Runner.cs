@@ -492,6 +492,12 @@ namespace Duplicati.Server
                     ((RunnerData)data).Controller = controller;
                     data.UpdateThrottleSpeed();
 
+                    if (backup.Metadata.ContainsKey("LastCompactFinished"))
+                        controller.LastCompact = Library.Utility.Utility.DeserializeDateTime(backup.Metadata["LastCompactFinished"]);
+
+                    if (backup.Metadata.ContainsKey("LastVacuumFinished"))
+                        controller.LastVacuum = Library.Utility.Utility.DeserializeDateTime(backup.Metadata["LastVacuumFinished"]);
+
                     switch (data.Operation)
                     {
                         case DuplicatiOperation.Backup:
@@ -502,9 +508,6 @@ namespace Duplicati.Server
                                         let p = SpecialFolders.ExpandEnvironmentVariables(n)
                                         where !string.IsNullOrWhiteSpace(p)
                                         select p).ToArray();
-
-                                if (backup.Metadata.ContainsKey("LastCompactFinished"))
-                                    controller.LastCompact = Library.Utility.Utility.DeserializeDateTime(backup.Metadata["LastCompactFinished"]);
 
                                 var r = controller.Backup(sources, filter);
                                 UpdateMetadata(backup, r);
@@ -701,13 +704,23 @@ namespace Duplicati.Server
             );
         }
 
-        private static void UpdateLastCompactMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.ICompactResults r)
+        private static void UpdateMetadataLastCompact(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.ICompactResults r)
         {
             if (r != null)
             {
                 backup.Metadata["LastCompactDuration"] = r.Duration.ToString();
                 backup.Metadata["LastCompactStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
                 backup.Metadata["LastCompactFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+            }
+        }
+
+        private static void UpdateMetadataLastVacuum(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IVacuumResults r)
+        {
+            if (r != null)
+            {
+                backup.Metadata["LastVacuumDuration"] = r.Duration.ToString();
+                backup.Metadata["LastVacuumStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastVacuumFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
             }
         }
 
@@ -751,7 +764,19 @@ namespace Duplicati.Server
             }
 
             if (result is Duplicati.Library.Interface.ICompactResults)
-                UpdateLastCompactMetadata(backup, (Duplicati.Library.Interface.ICompactResults)result);
+            {
+                var r = (Duplicati.Library.Interface.ICompactResults)result;
+                UpdateMetadataLastCompact(backup, r);
+
+                if (r.VacuumResults != null)
+                    UpdateMetadataLastVacuum(backup, r.VacuumResults);
+            }
+
+            if (result is Duplicati.Library.Interface.IVacuumResults)
+            {
+                var r = (Duplicati.Library.Interface.IVacuumResults)result;
+                UpdateMetadataLastVacuum(backup, r);
+            }
 
             if (result is Duplicati.Library.Interface.IBackupResults)
             {
@@ -764,7 +789,10 @@ namespace Duplicati.Server
                 backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
 
                 if (r.CompactResults != null)
-                    UpdateLastCompactMetadata(backup, r.CompactResults);
+                    UpdateMetadataLastCompact(backup, r.CompactResults);
+
+                if (r.VacuumResults != null)
+                    UpdateMetadataLastVacuum(backup, r.VacuumResults);
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {

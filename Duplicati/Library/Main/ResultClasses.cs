@@ -579,6 +579,7 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.Backup; } }
 
         public ICompactResults CompactResults { get; internal set; }
+        public IVacuumResults VacuumResults { get; internal set; }
         public IDeleteResults DeleteResults { get; internal set; }
         public IRepairResults RepairResults { get; internal set; }
         public ITestResults TestResults { get; internal set; }
@@ -588,6 +589,7 @@ namespace Duplicati.Library.Main
             get
             {
                 if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Error) ||
+                    (VacuumResults  != null && VacuumResults.ParsedResult  == ParsedResultType.Error) ||
                     (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Error) ||
                     (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Error) || 
                     (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Error) ||
@@ -596,6 +598,7 @@ namespace Duplicati.Library.Main
                     return ParsedResultType.Error;
                 }
                 else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Warning) ||
+                         (VacuumResults  != null && VacuumResults.ParsedResult  == ParsedResultType.Warning) ||
                          (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Warning) ||
                          (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Warning) ||
                          (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Warning) ||
@@ -829,6 +832,8 @@ namespace Duplicati.Library.Main
         public long UploadedFileSize { get; internal set; }
         public bool Dryrun { get; internal set; }
 
+        public IVacuumResults VacuumResults { get; internal set; }
+
         public override OperationMode MainOperation { get { return OperationMode.Compact; } }
 
         public CompactResults() : base() { }
@@ -969,8 +974,11 @@ namespace Duplicati.Library.Main
         public IEnumerable<string> Lines { get; set; }
     }
 
-    internal class VacuumResult : BasicResults, IVacuumResults
+    internal class VacuumResults : BasicResults, IVacuumResults
     {
+        public VacuumResults() : base() { }
+        public VacuumResults(BasicResults p) : base(p) { }
+
         public override OperationMode MainOperation { get { return OperationMode.Vacuum; } }
     }
 }
