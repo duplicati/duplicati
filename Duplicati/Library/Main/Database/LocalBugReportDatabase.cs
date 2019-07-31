@@ -63,10 +63,13 @@ namespace Duplicati.Library.Main.Database
                 }
 
                 cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = ""ERASED!"" WHERE ""Message"" LIKE ""%/%"" OR ""Message"" LIKE ""%:\%"" ");                
-                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = ""ERASED!"" WHERE ""Exception"" LIKE ""%/%"" OR ""Exception"" LIKE ""%:\%"" ");                
+                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = ""ERASED!"" WHERE ""Exception"" LIKE ""%/%"" OR ""Exception"" LIKE ""%:\%"" ");
+
+                cmd.ExecuteNonQuery(@"UPDATE ""Configuration"" SET ""Value"" = ""ERASED!"" WHERE ""Key"" = ""passphrase"" ");
 
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""FixedFile"" AS SELECT ""B"".""ID"" AS ""ID"", ""A"".""Obfuscated"" AS ""Path"", ""B"".""BlocksetID"" AS ""BlocksetID"", ""B"".""MetadataID"" AS ""MetadataID"" FROM ""{0}"" ""A"", ""File"" ""B"" WHERE ""A"".""RealPath"" = ""B"".""Path"" ", tablename));
                 cmd.ExecuteNonQuery(@"DROP VIEW ""File"" ");
+                cmd.ExecuteNonQuery(@"DROP TABLE ""FileLookup"" ");
                 cmd.ExecuteNonQuery(@"DROP TABLE ""PathPrefix"" ");
 
                 cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tablename));
