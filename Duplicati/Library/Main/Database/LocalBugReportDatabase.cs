@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Database
                 }
 
                 cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = ""ERASED!"" WHERE ""Message"" LIKE ""%/%"" OR ""Message"" LIKE ""%:\%"" ");                
-                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = ""ERASED!"" WHERE ""Exception"" LIKE ""%/%"" OR ""Exception"" LIKE ""%:\%"" ");
+                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = ""ERASED!"" WHERE ""Exception"" LIKE ""%/%"" OR ""Exception"" LIKE ""%:\%"" ");                
 
                 cmd.ExecuteNonQuery(@"UPDATE ""Configuration"" SET ""Value"" = ""ERASED!"" WHERE ""Key"" = ""passphrase"" ");
 
