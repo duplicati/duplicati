@@ -75,8 +75,6 @@ namespace Duplicati.Library.Main.Database
 
                     string q = string.Join(",", Enumerable.Repeat("?", sliceLen));
 
-                    Logging.Log.WriteInformationMessage("TEMP-DEBUG", "TEMP-DEBUG", "total {0}, sliceStart {1}, sliceEnd {2}, sliceLen {3}", toDelete.Length, sliceStart, sliceEnd, sliceLen);
-
                     //First we remove unwanted entries
                     deleted += cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @") ", toDelete.Skip(sliceStart).Take(sliceLen).Select(x => NormalizeDateTimeToEpochSeconds(x)).Cast<object>().ToArray());
                 }
