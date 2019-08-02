@@ -26,10 +26,10 @@ namespace Duplicati.GUI.TrayIcon
     {
         private const string WINDOW_CLASSNAME = "DuplicatiMessageMonitorWindowTrayIcon";
         private const int TRAY_ICON_ID_1 = 1;
-        public const int WM_TRAYICON_1 = Win32NativeNotifyIcon.WM_APP + 1;
+        private const int WM_TRAYICON_1 = Win32NativeNotifyIcon.WM_APP + 1;
         private readonly Win32Window m_window = new Win32Window();
         private Win32NotifyIcon m_ntfIcon;
-        private bool m_TrayIconCreated = false;
+        private bool m_TrayIconCreated;
         List<Win32MenuItem> m_TrayContextMenu;
 
         public override void Init(string[] args)
@@ -42,36 +42,38 @@ namespace Duplicati.GUI.TrayIcon
 
         private void MessageMonitor_MessageReceived(IntPtr hwnd, Win32NativeWindow.WindowsMessage message, IntPtr wParam, IntPtr lParam)
         {
-            switch (message)
+            if (message == Win32NativeWindow.WindowsMessage.WM_SHOWWINDOW)
             {
-                case Win32NativeWindow.WindowsMessage.WM_SHOWWINDOW:
-                    if (!m_TrayIconCreated)
-                    {
-                        m_ntfIcon = new Win32NotifyIcon(m_window.Handle, TRAY_ICON_ID_1, WM_TRAYICON_1,
-                            Win32IconLoader.TrayNormalIcon, Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName);
-                        m_ntfIcon.Create();
-                        m_TrayIconCreated = true;
-                    }
-                    break;
-                case (Win32NativeWindow.WindowsMessage)WM_TRAYICON_1:
-                    var llpTray = (Win32NativeWindow.WindowsMessage)((uint)lParam.ToInt32() & 0x0000FFFF);
+                if (!m_TrayIconCreated)
+                {
+                    m_ntfIcon = new Win32NotifyIcon(m_window.Handle, TRAY_ICON_ID_1, WM_TRAYICON_1,
+                        Win32IconLoader.TrayNormalIcon, Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName);
+                    m_ntfIcon.Create();
+                    m_TrayIconCreated = true;
+                }
+            }
 
-                    switch (llpTray)
-                    {
-                        case Win32NativeWindow.WindowsMessage.WM_LBUTTONDBLCLK:
-                            m_onDoubleClick?.Invoke();
-                            break;
-                        case Win32NativeWindow.WindowsMessage.WM_LBUTTONUP:
-                            m_onSingleClick?.Invoke();
-                            break;
-                        case Win32NativeWindow.WindowsMessage.WM_CONTEXTMENU:
-                            Win32NativeMenu.ShowContextMenu(m_window.Handle, m_TrayContextMenu)?.Callback?.Invoke();
-                            break;
-                        case Win32NativeWindow.WindowsMessage.NIN_BALLOONUSERCLICK:
-                            m_onNotificationClick?.Invoke();
-                            break;
-                    }
-                    break;
+            if (message == (Win32NativeWindow.WindowsMessage)WM_TRAYICON_1)
+            {
+                var llpTray = (Win32NativeWindow.WindowsMessage)((uint)lParam.ToInt32() & 0x0000FFFF);
+
+                switch (llpTray)
+                {
+                    case Win32NativeWindow.WindowsMessage.WM_LBUTTONDBLCLK:
+                        m_onDoubleClick?.Invoke();
+                        break;
+                    case Win32NativeWindow.WindowsMessage.WM_LBUTTONUP:
+                        m_onSingleClick?.Invoke();
+                        break;
+                    case Win32NativeWindow.WindowsMessage.WM_CONTEXTMENU:
+                        Win32NativeMenu.ShowContextMenu(m_window.Handle, m_TrayContextMenu)?.Callback?.Invoke();
+                        break;
+                    case Win32NativeWindow.WindowsMessage.NIN_BALLOONUSERCLICK:
+                        m_onNotificationClick?.Invoke();
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -144,6 +146,8 @@ namespace Duplicati.GUI.TrayIcon
                     m_ntfIcon?.SetIcon(Win32IconLoader.TrayWorkingIcon);
                     break;
                 case TrayIcons.Idle:
+                    m_ntfIcon?.SetIcon(Win32IconLoader.TrayNormalIcon);
+                    break;
                 default:
                     m_ntfIcon?.SetIcon(Win32IconLoader.TrayNormalIcon);
                     break;

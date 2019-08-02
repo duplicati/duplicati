@@ -19,5 +19,9 @@
   <ItemGroup>    
     <EmbeddedResource Include="..\..\..\Localizations\duplicati\*.mo" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
+  </ItemGroup>
 
 </Project>

@@ -75,10 +75,12 @@ namespace Duplicati.GUI.TrayIcon
         private static SafeIconHandle LoadIcon(string filename)
         {
             lock (LOCK)
+            {
                 if (ICONS.TryGetValue(filename, out SafeIconHandle ico))
                     return ico;
                 else
                     return new SafeIconHandle(LoadImage(IntPtr.Zero, Path.Combine(m_icofolder, filename), IMAGE_ICON, 16, 16, LR.LR_LOADFROMFILE));
+            }
         }
 
         public static SafeIconHandle TrayNormalIcon { get { return LoadIcon("TrayNormal.ico"); } }

@@ -21,6 +21,7 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Localization.Short;
+using Duplicati.Logging.Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Localization
 {
@@ -34,11 +35,10 @@ namespace Duplicati.Library.Localization
         /// </summary>
         private static Dictionary<CultureInfo, ILocalizationService> Services = new Dictionary<CultureInfo, ILocalizationService>();
 
-        /* TODO-DNC
         /// <summary>
         /// The key for accessing logical context
         /// </summary>
-        internal const string LOGICAL_CONTEXT_KEY = "DUPLICATI_LOCALIZATION_CULTURE_CONTEXT"; */
+        internal const string LOGICAL_CONTEXT_KEY = "DUPLICATI_LOCALIZATION_CULTURE_CONTEXT";
 
         /// <summary>
         /// Regular expression to match a locale
@@ -94,11 +94,10 @@ namespace Duplicati.Library.Localization
         { 
             get 
             {
-                /* TODO-DNC - No supported Remoting - https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md
-                var lc = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LOGICAL_CONTEXT_KEY) as string;
+                var lc = CallContext.GetData(LOGICAL_CONTEXT_KEY) as string;
+
                 if (!string.IsNullOrWhiteSpace(lc))
                     return Get(new CultureInfo(lc));
-                    */
                 return Get(CultureInfo.CurrentCulture); 
             } 
         }

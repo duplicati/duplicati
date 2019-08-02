@@ -44,7 +44,8 @@ namespace Duplicati.GUI.TrayIcon
 
         public void CreateWindow(string ClassName)
         {
-            if (string.IsNullOrEmpty(ClassName)) throw new ArgumentException("ClassName is null or empty");
+            if (string.IsNullOrEmpty(ClassName))
+                throw new ArgumentException("ClassName is null or empty");
 
             if (Handle != IntPtr.Zero | m_classAtom != IntPtr.Zero)
                 return;
@@ -74,7 +75,7 @@ namespace Duplicati.GUI.TrayIcon
             Win32NativeWindow.ShowWindow(Handle, 1);
             Win32NativeWindow.ShowWindow(Handle, 0);
 
-            Win32NativeWindow.MSG msg = new Win32NativeWindow.MSG();
+            var msg = new Win32NativeWindow.MSG();
 
             while (Win32NativeWindow.GetMessage(out msg, IntPtr.Zero, 0, 0))
             {
