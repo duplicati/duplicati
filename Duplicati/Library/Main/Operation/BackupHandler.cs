@@ -528,7 +528,7 @@ namespace Duplicati.Library.Main.Operation
                                 
                             m_transaction = null;
 
-                            if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
+                            if (m_result.TaskControlRendevouz() != TaskControlState.Abort)
                             {
                                 if (m_options.NoBackendverification)
                                     UpdateStorageStatsFromDatabase();
