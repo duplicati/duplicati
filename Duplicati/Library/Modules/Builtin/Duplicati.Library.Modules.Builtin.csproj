@@ -17,8 +17,8 @@
   <ItemGroup>
     <PackageReference Include="Matrix.vNext" Version="2.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="MailKit" Version="2.1.4" />
-    <PackageReference Include="MimeKit" Version="2.1.4" />
+    <PackageReference Include="MailKit" Version="2.2.0" />
+    <PackageReference Include="MimeKit" Version="2.2.0" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.5" />
   </ItemGroup>
   

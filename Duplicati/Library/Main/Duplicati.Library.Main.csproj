@@ -52,6 +52,7 @@
     <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
     <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
     <EmbeddedResource Include="Database\Database schema\8. Add volume USN.sql" />
+    <EmbeddedResource Include="Database\Database schema\9. Refactor Paths.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
