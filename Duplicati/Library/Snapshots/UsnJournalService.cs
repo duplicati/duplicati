@@ -336,7 +336,10 @@ namespace Duplicati.Library.Snapshots
             List<string> parents = null;
             while (folder != null)
             {
-                if (m_token.IsCancellationRequested) break;
+                if (m_token.IsCancellationRequested)
+                {
+                    break;
+                }
 
                 // first check cache
                 if (cache.TryGetValue(folder, out var include))

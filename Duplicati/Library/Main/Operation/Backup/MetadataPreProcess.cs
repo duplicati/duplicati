@@ -120,7 +120,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (CHECKFILETIMEONLY || DISABLEFILETIMECHECK)
                             {
                                 var tmp = await database.GetFileLastModifiedAsync(prefixid, split.Value, lastfilesetid, false);
-                                await self.Output.WriteAsync(new FileEntry()
+                                await self.Output.WriteAsync(new FileEntry
                                 {
                                     OldId = tmp.Item1,
                                     Path = path,
