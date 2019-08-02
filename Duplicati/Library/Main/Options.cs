@@ -406,6 +406,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
 
                     new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
+                    new CommandLineArgument("auto-vacuum-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoVacuumIntervalShort, Strings.Options.AutoVacuumIntervalLong, "0m"),
                 });
 
                 return lst;
@@ -1803,6 +1804,20 @@ namespace Duplicati.Library.Main
         public bool AutoVacuum
         {
             get { return GetBool("auto-vacuum"); }
+        }
+
+        /// <summary>
+        /// Gets the minimum time that must elapse after last vacuum before running next automatic vacuum
+        /// </summary>
+        public TimeSpan AutoVacuumInterval
+        {
+            get
+            {
+                if (!m_options.ContainsKey("auto-vacuum-interval") || string.IsNullOrEmpty(m_options["auto-vacuum-interval"]))
+                    return TimeSpan.Zero;
+                else
+                    return Library.Utility.Timeparser.ParseTimeSpan(m_options["auto-vacuum-interval"]);
+            }
         }
 
         /// <summary>

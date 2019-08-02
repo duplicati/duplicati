@@ -282,6 +282,8 @@ namespace Duplicati.Library.Main.Strings
 
         public static string AutoCompactIntervalShort { get { return "Minimum time between auto compactions"; } }
         public static string AutoCompactIntervalLong { get { return "The minimum amount of time that must elapse after the last compaction before another will be automatically triggered at the end of a backup job. Automatic compaction can be a long-running process and may not be desirable to run after every single backup."; } }
+        public static string AutoVacuumIntervalShort { get { return "Minimum time between auto vacuums"; } }
+        public static string AutoVacuumIntervalLong { get { return "The minimum amount of time that must elapse after the last vacuum before another will be automatically triggered at the end of a backup job. Automatic vacuum can be a long-running process and may not be desirable to run after every single backup."; } }
     }
 
     internal static class Common
