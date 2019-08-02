@@ -137,7 +137,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             else
                             {
                                 var res = await database.GetFileEntryAsync(prefixid, split.Value, lastfilesetid);
-                                await self.Output.WriteAsync(new FileEntry()
+                                await self.Output.WriteAsync(new FileEntry
                                 {
                                     OldId = res == null ? -1 : res.id,
                                     Path = path,
@@ -154,7 +154,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         catch (Exception ex)
                         {
-                            if (ex.IsRetiredException() || token.IsCancellationRequested) continue;
+                            if (ex.IsRetiredException() || token.IsCancellationRequested)
+                            {
+                                continue;
+                            }
                             Logging.Log.WriteWarningMessage(FILELOGTAG, "ProcessingMetadataFailed", ex,
                                 "Failed to process entry, path: {0}", path);
                         }

@@ -416,7 +416,10 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var folder in volumeData.Folders)
             {
-                if (m_token.IsCancellationRequested) break;
+                if (m_token.IsCancellationRequested)
+                {
+                    break;
+                }
 
                 if (path.Equals(folder, Utility.Utility.ClientFilenameStringComparison))
                     return true; // do not append from previous set, already scanned
