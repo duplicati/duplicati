@@ -76,7 +76,7 @@ echo "travis_fold:end:download_extract_testdata"
 # run unit tests
 echo "travis_fold:start:unit_test"
 if [[ "$CATEGORY" != "GUI"  && "$CATEGORY" != "" ]]; then
-    mono ./testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe \
+    mono ./testrunner/NUnit.ConsoleRunner.3.10.0/tools/nunit3-console.exe \
     ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==$CATEGORY --workers=1
 fi
 echo "travis_fold:end:unit_test"
