@@ -405,6 +405,7 @@ namespace Duplicati.Library.Main
             {
                 m_filesprocessed = count;
                 m_filesizeprocessed = size;
+                m_curfileoffset = 0;
             }
         }
         
