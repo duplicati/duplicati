@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
@@ -162,9 +163,18 @@ namespace Duplicati.Library.Main.Database
     
                     while (filecount != foundfiles && maxpath.Length > 0)
                     {
-                        cmd.SetParameterValue(0, maxpath.Length);
-                        cmd.SetParameterValue(1, maxpath);
-
+                        if (Platform.IsClientWindows)
+                        {
+                            cmd.SetParameterValue(0, maxpath.Length);
+                            cmd.SetParameterValue(1, maxpath);
+                        }
+                        else
+                        {
+                            var mp = Util.AppendDirSeparator(maxpath, dirsep);
+                            cmd.SetParameterValue(0, mp.Length);
+                            cmd.SetParameterValue(1, mp);
+                        }
+                        
                         foundfiles = cmd.ExecuteScalarInt64(0);
 
                         if (filecount != foundfiles)
