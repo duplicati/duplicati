@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
 using Duplicati.Library.Common;
 using Duplicati.Library.Interface;
@@ -77,98 +75,117 @@ namespace Duplicati.GUI.TrayIcon
         
         public static void RealMain(string[] _args)
         {
-            try
+            List<string> args = new List<string>(_args);
+            Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
+
+            if (Platform.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
+                Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+
+            foreach (string s in args)
+                if (
+                    s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("usage", StringComparison.OrdinalIgnoreCase) ||
+                    s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
+                    options["help"] = "";
+
+            if (options.ContainsKey("help"))
             {
+                Console.WriteLine("Supported commandline arguments:");
+                Console.WriteLine();
 
-                List<string> args = new List<string>(_args);
-                Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
-
-                if (Platform.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
-                    Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
-
-                foreach (string s in args)
-                    if (
-                        s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
-                        s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
-                        s.Equals("usage", StringComparison.OrdinalIgnoreCase) ||
-                        s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
-                        options["help"] = "";
-
-                if (options.ContainsKey("help"))
+                foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
                 {
-                    Console.WriteLine("Supported commandline arguments:");
-                    Console.WriteLine();
-
-                    foreach (Library.Interface.ICommandLineArgument arg in SupportedCommands)
-                    {
-                        Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
-                        if (arg.Name == TOOLKIT_OPTION)
-                            Console.WriteLine("    Supported toolkits: {0}{1}", string.Join(", ", arg.ValidValues), Environment.NewLine);
-                    }
-
-                    Console.WriteLine("Additionally, these server options are also supported:");
-                    Console.WriteLine();
-
-                    foreach (Library.Interface.ICommandLineArgument arg in Duplicati.Server.Program.SupportedCommands)
-                        Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
-
-                    return;
+                    Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
+                    if (arg.Name == TOOLKIT_OPTION)
+                        Console.WriteLine("    Supported toolkits: {0}{1}", string.Join(", ", arg.ValidValues), Environment.NewLine);
                 }
 
-                options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
+                Console.WriteLine("Additionally, these server options are also supported:");
+                Console.WriteLine();
 
-                string toolkit;
-                if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
-                {
+                foreach (Library.Interface.ICommandLineArgument arg in Duplicati.Server.Program.SupportedCommands)
+                    Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
+
+                return;
+            }
+
+            options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
+
+            string toolkit;
+            if (!options.TryGetValue(TOOLKIT_OPTION, out toolkit))
+            {
 #if !(__MonoCS__ || __WindowsGTK__ || ENABLE_GTK)
-                    if (Platform.IsClientPosix && !Platform.IsClientOSX)
-                        Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
+                if (Platform.IsClientPosix && !Platform.IsClientOSX)
+                    Console.WriteLine("Warning: this build does not support GTK, rebuild with ENABLE_GTK defined");
 #endif
-                    toolkit = GetDefaultToolKit();
-                }
-                else
-                {
-                    if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
-                        toolkit = TOOLKIT_WINDOWS_FORMS;
+                toolkit = GetDefaultToolKit();
+            }
+            else
+            {
+                if (TOOLKIT_WINDOWS_FORMS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
+                    toolkit = TOOLKIT_WINDOWS_FORMS;
 #if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
                 else if (TOOLKIT_GTK.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_GTK;
                 else if (TOOLKIT_GTK_APP_INDICATOR.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_GTK_APP_INDICATOR;
 #endif
-                    else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
-                        toolkit = TOOLKIT_COCOA;
-                    else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
-                        toolkit = TOOLKIT_RUMPS;
-                    else
-                        toolkit = GetDefaultToolKit();
+                else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
+                    toolkit = TOOLKIT_COCOA;
+                else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
+                    toolkit = TOOLKIT_RUMPS;
+                else
+                    toolkit = GetDefaultToolKit();
+            }
+
+            HostedInstanceKeeper hosted = null;
+
+            string password = null;
+            var saltedpassword = false;
+
+            if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
+            {
+                try
+                {
+                    hosted = new HostedInstanceKeeper(_args);
+                }
+                catch (Server.SingleInstance.MultipleInstanceException)
+                {
+                    return;
                 }
 
-                HostedInstanceKeeper hosted = null;
+                // We have a hosted server, if this is the first run, 
+                // we should open the main page
+                openui = Duplicati.Server.Program.IsFirstRun || Duplicati.Server.Program.ServerPortChanged;
+                password = Duplicati.Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
+                saltedpassword = true;
+                // Tell the hosted server it was started by the TrayIcon
+                Duplicati.Server.Program.Origin = "Tray icon";
 
-                string password = null;
-                var saltedpassword = false;
+                var cert = Duplicati.Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
+                var scheme = "http";
 
-                if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
+                if (cert != null && cert.HasPrivateKey)
+                    scheme = "https";
+
+                serverURL = (new UriBuilder(serverURL)
                 {
-                    try
-                    {
-                        hosted = new HostedInstanceKeeper(_args);
-                    }
-                    catch (Server.SingleInstance.MultipleInstanceException)
-                    {
-                        return;
-                    }
+                    Port = Duplicati.Server.Program.ServerPort,
+                    Scheme = scheme
+                }).Uri;
+            }
+            else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
+            {
+                databaseConnection = Server.Program.GetDatabaseConnection(options);
 
-                    // We have a hosted server, if this is the first run, 
-                    // we should open the main page
-                    openui = Duplicati.Server.Program.IsFirstRun || Duplicati.Server.Program.ServerPortChanged;
-                    password = Duplicati.Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
-                    saltedpassword = true;
-                    // Tell the hosted server it was started by the TrayIcon
-                    Duplicati.Server.Program.Origin = "Tray icon";
+                if (databaseConnection != null)
+                {
+                    disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
+                    password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
+                    saltedpassword = false;
 
-                    var cert = Duplicati.Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
+                    var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
                     var scheme = "http";
 
                     if (cert != null && cert.HasPrivateKey)
@@ -176,138 +193,102 @@ namespace Duplicati.GUI.TrayIcon
 
                     serverURL = (new UriBuilder(serverURL)
                     {
-                        Port = Duplicati.Server.Program.ServerPort,
+                        Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
                         Scheme = scheme
                     }).Uri;
                 }
-                else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
-                {
-                    databaseConnection = Server.Program.GetDatabaseConnection(options);
-
-                    if (databaseConnection != null)
-                    {
-                        disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
-                        password = databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
-                        saltedpassword = false;
-
-                        var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
-                        var scheme = "http";
-
-                        if (cert != null && cert.HasPrivateKey)
-                            scheme = "https";
-
-                        serverURL = (new UriBuilder(serverURL)
-                        {
-                            Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
-                            Scheme = scheme
-                        }).Uri;
-                    }
-                }
-
-                string pwd;
-
-                if (options.TryGetValue("webserver-password", out pwd))
-                {
-                    password = pwd;
-                    saltedpassword = false;
-                }
-
-                string url;
-
-                if (options.TryGetValue(HOSTURL_OPTION, out url))
-                    serverURL = new Uri(url);
-
-                StartTray(_args, options, toolkit, hosted, password, saltedpassword);
             }
-            catch (Exception ex)
+
+            string pwd;
+
+            if (options.TryGetValue("webserver-password", out pwd))
             {
-                File.AppendAllText(@"c:\temp\debug.log", ex.ToString());
-                throw;
+                password = pwd;
+                saltedpassword = false;
             }
+
+            string url;
+
+            if (options.TryGetValue(HOSTURL_OPTION, out url))
+                serverURL = new Uri(url);
+
+            StartTray(_args, options, toolkit, hosted, password, saltedpassword);
         }
 
         private static void StartTray(string[] _args, Dictionary<string, string> options, string toolkit, HostedInstanceKeeper hosted, string password, bool saltedpassword)
         {
-            try
+            using (hosted)
             {
-                using (hosted)
+                var reSpawn = 0;
+
+                do
                 {
-                    var reSpawn = 0;
-
-                    do
+                    try
                     {
-                        try
+                        System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
+                        using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, disableTrayIconLogin, options))
                         {
-                            System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
-
-                            using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, disableTrayIconLogin, options))
+                            using (var tk = RunTrayIcon(toolkit))
                             {
-                                using (var tk = RunTrayIcon(toolkit))
+                                if (hosted != null && Server.Program.ApplicationInstance != null)
+                                    Server.Program.ApplicationInstance.SecondInstanceDetected +=
+                                        new Server.SingleInstance.SecondInstanceDelegate(
+                                            x => { tk.ShowUrlInWindow(serverURL.ToString()); });
+
+                                // TODO: If we change to hosted browser this should be a callback
+                                if (openui)
                                 {
-                                    if (hosted != null && Server.Program.ApplicationInstance != null)
-                                        Server.Program.ApplicationInstance.SecondInstanceDetected +=
-                                            new Server.SingleInstance.SecondInstanceDelegate(
-                                                x => { tk.ShowUrlInWindow(serverURL.ToString()); });
-
-                                    // TODO: If we change to hosted browser this should be a callback
-                                    if (openui)
+                                    try
                                     {
-                                        try
-                                        {
-                                            tk.ShowUrlInWindow(Connection.StatusWindowURL);
+                                        tk.ShowUrlInWindow(Connection.StatusWindowURL);
 
-                                            Duplicati.Server.Program.IsFirstRun = false;
-                                            Duplicati.Server.Program.ServerPortChanged = false;
-                                        }
-                                        catch
-                                        {
-                                        }
+                                        Duplicati.Server.Program.IsFirstRun = false;
+                                        Duplicati.Server.Program.ServerPortChanged = false;
                                     }
-
-                                    // If the server shuts down, shut down the tray-icon as well
-                                    Action shutdownEvent = () =>
+                                    catch
                                     {
-                                        // Make sure we do not start again after 
-                                        // a controlled exit
-                                        reSpawn = 100;
-                                        tk.InvokeExit();
-                                    };
-
-                                    if (hosted != null)
-                                        hosted.InstanceShutdown += shutdownEvent;
-
-                                    tk.Init(_args);
-
-                                    // If the tray-icon quits, stop the server
-                                    reSpawn = 100;
-
-                                    // Make sure that the server shutdown does not access the tray-icon,
-                                    // as it would be disposed by now
-                                    if (hosted != null)
-                                        hosted.InstanceShutdown -= shutdownEvent;
+                                    }
                                 }
+
+                                // If the server shuts down, shut down the tray-icon as well
+                                Action shutdownEvent = () =>
+                                {
+                                    // Make sure we do not start again after 
+                                    // a controlled exit
+                                    reSpawn = 100;
+                                    tk.InvokeExit();
+                                };
+
+                                if (hosted != null)
+                                    hosted.InstanceShutdown += shutdownEvent;
+
+                                tk.Init(_args);
+
+                                // If the tray-icon quits, stop the server
+                                reSpawn = 100;
+
+                                // Make sure that the server shutdown does not access the tray-icon,
+                                // as it would be disposed by now
+                                if (hosted != null)
+                                    hosted.InstanceShutdown -= shutdownEvent;
                             }
                         }
-                        catch (WebException ex)
-                        {
-                            System.Diagnostics.Trace.WriteLine("Request error: " + ex);
-                            Console.WriteLine("Request error: " + ex);
+                    }
+                    catch (WebException ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine("Request error: " + ex);
+                        Console.WriteLine("Request error: " + ex);
 
-                            reSpawn++;
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Trace.WriteLine("Unexpected error: " + ex);
-                            Console.WriteLine("Unexpected error: " + ex);
-                            return;
-                        }
-                    } while (reSpawn < 3);
-                }
-            }
-            catch (Exception ex)
-            {
-                File.AppendAllText(@"c:\temp\debug.log", ex.ToString());
-                throw;
+                        reSpawn++;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine("Unexpected error: " + ex);
+                        Console.WriteLine("Unexpected error: " + ex);
+                        return;
+                    }
+                } while (reSpawn < 3);
             }
         }
 
