@@ -168,7 +168,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperation(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader, long lastfilesetid, CancellationToken token)
+        private static async Task RunMainOperation(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader, long filesetid, long lastfilesetid, CancellationToken token)
         {
             using (new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
@@ -238,7 +238,17 @@ namespace Duplicati.Library.Main.Operation
                         await database.UpdateChangeJournalDataAsync(data, lastfilesetid);
                     }
                 }
-                
+
+                if (token.IsCancellationRequested)
+                {
+
+                    result.PartialBackup = true;
+                }
+                else
+                {
+                    await database.UpdateFilesetAndMarkAsFullBackupAsync(filesetid);
+                }
+
                 result.OperationProgressUpdater.UpdatefileCount(result.ExaminedFiles, result.SizeOfExaminedFiles, true);
             }
         }
@@ -479,7 +489,7 @@ namespace Duplicati.Library.Main.Operation
                                 // Run the backup operation
                                 if (await m_result.TaskReader.ProgressAsync)
                                 {
-                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid, token).ConfigureAwait(false);
+                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, filesetid, lastfilesetid, token).ConfigureAwait(false);
                                 }
                             }
                             finally

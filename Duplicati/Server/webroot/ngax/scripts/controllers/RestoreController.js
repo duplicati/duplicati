@@ -54,6 +54,9 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         for(var n in $scope.Filesets) {
             var item = $scope.Filesets[n];
             item.DisplayLabel = item.Version + ': ' + AppUtils.toDisplayDateAndTime(AppUtils.parseDate(item.Time));
+            if (item.IsFullBackup === 0) {
+                item.DisplayLabel = item.DisplayLabel + ' (partial)';
+            }
             item.GroupLabel = n == 0 ? gettextCatalog.getString('Latest') : createGroupLabel(AppUtils.parseDate(item.Time));
 
             filesetStamps[item.Version + ''] = item.Time;

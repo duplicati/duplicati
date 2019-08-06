@@ -668,12 +668,14 @@ namespace Duplicati.Library.Main
     internal class ListResultFileset : Duplicati.Library.Interface.IListResultFileset
     {
         public long Version { get; private set; }
+        public int IsFullBackup { get; private set; }
         public DateTime Time { get; private set; }
         public long FileCount { get; private set; }
         public long FileSizes { get; private set; }
-        public ListResultFileset(long version, DateTime time, long fileCount, long fileSizes)
+        public ListResultFileset(long version, int isFullBackup, DateTime time, long fileCount, long fileSizes)
         {
             this.Version = version;
+            this.IsFullBackup = isFullBackup;
             this.Time = time;
             this.FileCount = fileCount;
             this.FileSizes = fileSizes;

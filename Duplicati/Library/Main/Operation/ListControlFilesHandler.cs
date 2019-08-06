@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main.Operation
                                     if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
                                         files.Add(new ListResultFile(cf.Key, null));
                             
-                            m_result.SetResult(new Library.Interface.IListResultFileset[] { new ListResultFileset(fileversion.Key, fileversion.Value.Time, -1, -1) }, files);
+                            m_result.SetResult(new Library.Interface.IListResultFileset[] { new ListResultFileset(fileversion.Key, 0, fileversion.Value.Time, -1, -1) }, files);
                             lastEx = null;
                             break;
                         }

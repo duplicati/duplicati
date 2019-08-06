@@ -91,6 +91,7 @@ namespace Duplicati.Library.Interface
     public interface IListResultFileset
     {
         long Version { get; }
+        int IsFullBackup { get; }
         DateTime Time { get; }
         long FileCount { get; }
         long FileSizes { get; }
