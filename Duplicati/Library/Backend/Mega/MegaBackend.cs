@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -41,6 +40,12 @@ namespace Duplicati.Library.Backend.Mega
 
         public MegaBackend()
         {
+        }
+
+        private class NodeFileEntry
+        {
+            public IFileEntry FileEntry { get; set; }
+            public INode Node { get; set; }
         }
 
         private MegaApiClient Client
@@ -143,13 +148,7 @@ namespace Duplicati.Library.Backend.Mega
                 return m_rootFolder;
             }
         }
-
-        private class NodeFileEntry
-        {
-            public IFileEntry FileEntry { get; set; }
-            public INode INode { get; set; }
-        }
-
+        
         private void ResetFileCache(IEnumerable<INode> list = null)
         {
             if (m_rootFolder == null)
@@ -219,7 +218,7 @@ namespace Duplicati.Library.Backend.Mega
                         newNode.ModificationDate ?? new DateTime(0),
                         newNode.ModificationDate ?? new DateTime(0));
 
-                    m_listcache.Add(new NodeFileEntry {FileEntry = newFileEntry, INode = newNode});
+                    m_listcache.Add(new NodeFileEntry {FileEntry = newFileEntry, Node = newNode});
                 }
                 catch (Exception e)
                 {
@@ -241,7 +240,7 @@ namespace Duplicati.Library.Backend.Mega
                 ResetFileCache();
             }
 
-            using (Stream s = Client.Download(GetFileNode(remotename).INode))
+            using (Stream s = Client.Download(GetFileNode(remotename).Node))
             {
                 Library.Utility.Utility.CopyStream(s, stream);
             }
@@ -286,7 +285,7 @@ namespace Duplicati.Library.Backend.Mega
                             n.Size, 
                             n.ModificationDate ?? new DateTime(0),
                             n.ModificationDate ?? new DateTime(0));
-                        items.Add(new NodeFileEntry {FileEntry = newFileEntry, INode = n});
+                        items.Add(new NodeFileEntry {FileEntry = newFileEntry, Node = n});
                         continue;
                     }
                     case NodeType.Directory:
@@ -347,7 +346,7 @@ namespace Duplicati.Library.Backend.Mega
                     throw new FileMissingException();
                 }
 
-                Client.Delete(m_listcache.First(x => x.FileEntry.Name == remotename).INode, false);
+                Client.Delete(m_listcache.First(x => x.FileEntry.Name == remotename).Node, false);
 
                 m_listcache.RemoveAll(x => x.FileEntry.Name == remotename);
             }
