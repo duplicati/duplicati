@@ -38,6 +38,7 @@ namespace Duplicati.Library.Common.IO
         DateTime DirectoryGetCreationTimeUtc(string path);
 
 
+        FileInfo FileInfo(string path);
         IFileEntry FileEntry(string path);
         void FileMove(string source, string target);
         void FileDelete(string path);
@@ -65,10 +66,11 @@ namespace Duplicati.Library.Common.IO
         string GetPathRoot(string path);
         string[] GetDirectories(string path);
         string[] GetFiles(string path);
-        string[] GetFiles(string path, string searchPattern);
+        string[] GetFiles(string path, string searchPattern, SearchOption searchOption = default);
         DateTime GetCreationTimeUtc(string path);
         DateTime GetLastWriteTimeUtc(string path);
         IEnumerable<string> EnumerateFileSystemEntries(string path);
+        IEnumerable<string> EnumerateFilenameOnlyRecursively(string path);
         IEnumerable<string> EnumerateFiles(string path);
         IEnumerable<string> EnumerateDirectories(string path);
 

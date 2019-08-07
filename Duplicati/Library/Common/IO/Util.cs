@@ -50,8 +50,7 @@ namespace Duplicati.Library.Common.IO
         {
             return !path.EndsWith(separator, StringComparison.Ordinal) ? path + separator : path;
         }
-
-
+        
         /// <summary>
         /// Guesses the directory separator from the path
         /// </summary>
@@ -61,5 +60,22 @@ namespace Duplicati.Library.Common.IO
         {
             return string.IsNullOrWhiteSpace(path) || path.StartsWith("/", StringComparison.Ordinal) ? "/" : "\\";
         }
+
+        //public static string GetExtendedFolderUsingFilename(string fullPath)
+        //{
+        //    var subfolder1 = fullPath.Substring(10, 4);
+        //    var subfolder2 = fullPath.Substring(14, 3);
+        //    var extendedPath = SystemIO.IO_OS.PathCombine(Path.GetPathRoot(fullPath), subfolder1, subfolder2);
+        //    return extendedPath;
+        //}
+
+        //public static string GetExtendedFolderUsingFilename(string currentPath, string filename)
+        //{
+        //    var subfolder1 = filename.Substring(10, 4);
+        //    var subfolder2 = filename.Substring(14, 3);
+        //    var extendedPath = SystemIO.IO_OS.PathCombine(currentPath, subfolder1, subfolder2);
+        //    return extendedPath;
+        //}
+
     }
 }

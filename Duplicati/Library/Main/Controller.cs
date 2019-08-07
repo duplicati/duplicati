@@ -425,7 +425,7 @@ namespace Duplicati.Library.Main
                         // Perform the module shutdown
                         OnOperationComplete(ex);
 
-                        // Log this as a normal operation, as the script rasing the exception,
+                        // Log this as a normal operation, as the script raising the exception,
                         // has already populated either warning or log messages as required
                         Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
 

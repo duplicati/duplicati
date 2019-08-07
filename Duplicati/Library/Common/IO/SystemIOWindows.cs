@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.IO;
 using System.Linq;
-
 using AlphaFS = Alphaleonis.Win32.Filesystem;
 using Duplicati.Library.Interface;
 
@@ -158,7 +157,7 @@ namespace Duplicati.Library.Common.IO
                                                     string path, bool prefixWithUnc = false)
         {
             // Wrap void into bool return type to avoid code duplication. Code at anytime available for replacement.
-            PathTooLongFuncWrapper(p => { nativeIOFunc(p); return true; }, p => { alternativeIOFunc(p); return true; } , path, prefixWithUnc);
+            PathTooLongFuncWrapper(p => { nativeIOFunc(p); return true; }, p => { alternativeIOFunc(p); return true; }, path, prefixWithUnc);
         }
 
         private static void PathTooLongActionWrapper(Action<string> nativeIOFunc,
@@ -198,6 +197,11 @@ namespace Duplicati.Library.Common.IO
         {
             return PathTooLongFuncWrapper(System.IO.Directory.Exists,
                                           Alphaleonis.Win32.Filesystem.Directory.Exists, path, true);
+        }
+
+        public System.IO.FileInfo FileInfo(string path)
+        {
+            return new System.IO.FileInfo(path);
         }
 
         public void FileDelete(string path)
@@ -258,6 +262,10 @@ namespace Duplicati.Library.Common.IO
 
         public System.IO.FileStream FileCreate(string path)
         {
+            if (!DirectoryExists(Path.GetDirectoryName(path)))
+            {
+                DirectoryCreate(Path.GetDirectoryName(path));
+            }
             return PathTooLongFuncWrapper(System.IO.File.Create, Alphaleonis.Win32.Filesystem.File.Create, path, true);
         }
 
@@ -299,6 +307,11 @@ namespace Duplicati.Library.Common.IO
                                           path, true).Select(StripUNCPrefix).AsEnumerable();
         }
 
+        public IEnumerable<string> EnumerateFilenameOnlyRecursively(string path)
+        {
+            return System.IO.Directory.GetFiles(path, "*", SearchOption.AllDirectories).Select(StripUNCPrefix).AsEnumerable();
+        }
+        
         public IEnumerable<string> EnumerateFiles(string path)
         {
             return PathTooLongFuncWrapper(System.IO.Directory.EnumerateFiles,
@@ -395,9 +408,9 @@ namespace Duplicati.Library.Common.IO
             return PathTooLongFuncWrapper(Directory.GetFiles, AlphaFS.Directory.GetFiles, path, false);
         }
 
-        public string[] GetFiles(string path, string searchPattern)
+        public string[] GetFiles(string path, string searchPattern, SearchOption searchOption = default)
         {
-            return PathTooLongFuncWrapper(p => Directory.GetFiles(p, searchPattern), p => AlphaFS.Directory.GetFiles(p, searchPattern), path, false);
+            return PathTooLongFuncWrapper(p => Directory.GetFiles(p, searchPattern, searchOption), p => AlphaFS.Directory.GetFiles(p, searchPattern, searchOption), path, false);
         }
 
         public DateTime GetCreationTimeUtc(string path)
@@ -428,7 +441,8 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry DirectoryEntry(string path)
         {
-            IFileEntry DirectoryEntryNative(string p) {
+            IFileEntry DirectoryEntryNative(string p)
+            {
                 var dInfo = new DirectoryInfo(p);
                 return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
                 {

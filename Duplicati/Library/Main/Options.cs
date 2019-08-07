@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System.Globalization;
+using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main
 {
@@ -84,7 +85,7 @@ namespace Duplicati.Library.Main
         /// The default threshold for warning about coming close to quota
         /// </summary>
         private const int DEFAULT_QUOTA_WARNING_THRESHOLD = 10;
-
+        
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
@@ -358,6 +359,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
+                    new CommandLineArgument("backend-folder-depth", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BackendFolderDepthShort, Strings.Options.BackendFolderDepthLong, "2"),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
                     new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0"),
@@ -1345,11 +1347,43 @@ namespace Duplicati.Library.Main
                 return (int)blocksize;
             }
         }
-        
-		/// <summary>
+
+        /// <summary>
+        /// Cache for the folder depth value
+        /// </summary>
+        private int m_folderdepth = -1;
+
+        /// <summary>
+        /// Gets the depth for the folders used
+        /// </summary>
+        public int FolderDepth
+        {
+            get
+            {
+                // defer to value when set directly
+                if (m_folderdepth != -1)
+                {
+                    return m_folderdepth;
+                }
+
+                string folderdepth;
+                if (!m_options.TryGetValue("folderdepth", out folderdepth))
+                {
+                    return VolumeBase.DEFAULT_FOLDER_DEPTH;
+                }
+
+                return folderdepth != null ? Convert.ToInt32(folderdepth) : VolumeBase.DEFAULT_FOLDER_DEPTH;
+            }
+            set
+            {
+                m_folderdepth = value;
+            }
+        }
+
+        /// <summary>
         /// Cache for the block hash size value, to avoid creating new hash instances just to get the size
         /// </summary>
-		private KeyValuePair<string, int> m_cachedBlockHashSize;
+        private KeyValuePair<string, int> m_cachedBlockHashSize;
 
         /// <summary>
         /// Gets the size of the blockhash in bytes.

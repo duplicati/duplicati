@@ -309,16 +309,19 @@ namespace Duplicati.Library.Main.Operation
 
             return PerformDelete(backend, db.GetDeletableVolumes(deleteableVolumes, transaction));
         }
-            
-        
+
         private IEnumerable<KeyValuePair<string, long>> PerformDelete(BackendManager backend, IEnumerable<IRemoteVolume> list)
         {
             foreach(var f in list)
             {
                 if (!m_options.Dryrun)
+                {
                     backend.Delete(f.Name, f.Size);
+                }
                 else
+                {
                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFile", "Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size));
+                }
 
                 yield return new KeyValuePair<string, long>(f.Name, f.Size);
             }               

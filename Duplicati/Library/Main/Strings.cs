@@ -279,6 +279,8 @@ namespace Duplicati.Library.Main.Strings
         public static string ProfilealldatabasequeriesLong { get { return LC.L("To improve performance of the backups, frequent database queries are not logged by default. Enable this option to log all database queries, and remember to set either --{0}={2} or --{1}={2} to report the additional log data", "console-log-level", "log-file-log-level", nameof(Logging.LogMessageType.Profiling)); } }
         public static string RebuildmissingdblockfilesShort { get { return "Rebuild dblock files when missing"; } }
         public static string RebuildmissingdblockfilesLong { get { return "If dblock files are missing from the destination, you can attempt to rebuild them using local source data. However, since the local data may have changed, it may not be possible to retrieve all the required data and the process may be slow. Use this option to attempt to rebuild missing dblock files."; } }
+        public static string BackendFolderDepthShort { get { return "Folder depth to be used on the back-end for placement of the backup files."; } }
+        public static string BackendFolderDepthLong { get { return "The maximum number of files per folder on the back-end system may be limited or impact performance. This option controls the folder depth within the destination folder. Valid values are 0 and 2. The default value is 2."; } }
     }
 
     internal static class Common

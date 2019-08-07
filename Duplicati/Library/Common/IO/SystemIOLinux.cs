@@ -41,6 +41,11 @@ namespace Duplicati.Library.Common.IO
             return Directory.Exists(NormalizePath(path));
         }
 
+        public System.IO.FileInfo FileInfo(string path)
+        {
+            return new System.IO.FileInfo(path);
+        }
+
         public void FileDelete(string path)
         {
             File.Delete(path);
@@ -110,7 +115,7 @@ namespace Duplicati.Library.Common.IO
         {
             return UnixSupport.File.GetSymlinkTarget(NormalizePath(path));
         }
-        
+
         public string PathGetDirectoryName(string path)
         {
             return Path.GetDirectoryName(NormalizePath(path));
@@ -121,12 +126,16 @@ namespace Duplicati.Library.Common.IO
             return Directory.EnumerateFileSystemEntries(path);
         }
 
+        public IEnumerable<string> EnumerateFilenameOnlyRecursively(string path)
+        {
+            return Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+        }
+
         public IEnumerable<string> EnumerateFiles(string path)
         {
             return Directory.EnumerateFiles(path);
         }
-
-
+        
         public string PathGetFileName(string path)
         {
             return Path.GetFileName(path);
@@ -136,7 +145,7 @@ namespace Duplicati.Library.Common.IO
         {
             return Path.GetExtension(path);
         }
-        
+
         public string PathChangeExtension(string path, string extension)
         {
             return Path.ChangeExtension(path, extension);
@@ -189,7 +198,7 @@ namespace Duplicati.Library.Common.IO
 
             var n = UnixSupport.File.GetExtendedAttributes(f, isSymlink, followSymlink);
             if (n != null)
-                foreach(var x in n)
+                foreach (var x in n)
                     dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
 
             var fse = UnixSupport.File.GetUserGroupAndPermissions(f);
@@ -213,7 +222,7 @@ namespace Duplicati.Library.Common.IO
 
             var f = NormalizePath(file);
 
-            foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
+            foreach (var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
                 UnixSupport.File.SetExtendedAttribute(f, x.Key, x.Value);
 
             if (restorePermissions && data.ContainsKey("unix:uid-gid-perm"))
@@ -256,9 +265,9 @@ namespace Duplicati.Library.Common.IO
             return Directory.GetFiles(path);
         }
 
-        public string[] GetFiles(string path, string searchPattern)
+        public string[] GetFiles(string path, string searchPattern, SearchOption searchOption = default)
         {
-            return Directory.GetFiles(path, searchPattern);
+            return Directory.GetFiles(path, searchPattern, searchOption);
         }
 
         public DateTime GetCreationTimeUtc(string path)

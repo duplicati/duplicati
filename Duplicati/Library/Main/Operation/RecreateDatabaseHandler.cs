@@ -541,7 +541,7 @@ namespace Duplicati.Library.Main.Operation
                 foreach(var compmodule in Library.DynamicLoader.CompressionLoader.Keys)
                     foreach(var encmodule in Library.DynamicLoader.EncryptionLoader.Keys.Union(new string[] { "" }))
                     {
-                        var testfilename = VolumeBase.GenerateFilename(p.FileType, p.Prefix, p.Guid, p.Time, compmodule, encmodule);
+                        var testfilename = VolumeBase.GenerateFilename(p.FileType, m_options, p.Guid, p.Time, compmodule, encmodule);
                         var tvid = restoredb.GetRemoteVolumeID(testfilename);
                         if (tvid >= 0)
                         {

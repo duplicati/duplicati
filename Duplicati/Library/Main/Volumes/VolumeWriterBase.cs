@@ -1,5 +1,4 @@
 ﻿using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using System;
 using System.IO;
 
@@ -41,7 +40,7 @@ namespace Duplicati.Library.Main.Volumes
 
         public void ResetRemoteFilename(Options options, DateTime timestamp)
         {
-            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+            m_volumename = GenerateFilename(this.FileType, options, GenerateGuid(), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
         }
 
         protected VolumeWriterBase(Options options, DateTime timestamp)

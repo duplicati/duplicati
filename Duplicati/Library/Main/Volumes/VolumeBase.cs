@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main.Volumes
@@ -12,16 +10,17 @@ namespace Duplicati.Library.Main.Volumes
         {
             public const string ENCODING = "utf8";
             public const long VERSION = 2;
+            
+            public long Version { get; set; }
+            public string Created { get; set; }
+            public string Encoding { get; set; }
+            public long Blocksize { get; set; }
+            public string BlockHash { get; set; }
+            public string FileHash { get; set; }
+            public string AppVersion { get; set; }
+            public int FolderDepth { get; set; }
 
-            public long Version;
-            public string Created;
-            public string Encoding;
-            public long Blocksize;
-            public string BlockHash;
-            public string FileHash;
-            public string AppVersion;
-
-            public static string GetManifestInstance(long blocksize, string blockhash, string filehash)
+            public static string GetManifestInstance(long blocksize, string blockhash, string filehash, int folderDepth = DEFAULT_FOLDER_DEPTH)
             {
                 return JsonConvert.SerializeObject(new ManifestData()
                 {
@@ -31,10 +30,11 @@ namespace Duplicati.Library.Main.Volumes
                     Created = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow),
                     BlockHash = blockhash,
                     FileHash = filehash,
-                    AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()
+                    AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                    FolderDepth = folderDepth
                 });
             }
-
+            
             public static void VerifyManifest(string manifest, long blocksize, string blockhash, string filehash)
             {
                 var d = JsonConvert.DeserializeObject<ManifestData>(manifest);
@@ -51,7 +51,6 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
         
-
         private class ParsedVolume : IParsedVolume
         {
             public RemoteVolumeType FileType { get; private set; }
@@ -74,12 +73,14 @@ namespace Duplicati.Library.Main.Volumes
                 dict[RemoteVolumeType.Index] = "dindex";
                 
                 var reversedict = new Dictionary<string, RemoteVolumeType>(System.StringComparer.OrdinalIgnoreCase);
-                foreach(var x in dict)
+                foreach (var x in dict)
+                {
                     reversedict[x.Value] = x.Key;
+                }
                                 
                 REMOTE_TYPENAME_MAP = dict;
                 REVERSE_REMOTE_TYPENAME_MAP = reversedict;
-                FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
+                FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<path>.*[\\\/])?(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
             }
 
             private ParsedVolume() { }
@@ -89,7 +90,7 @@ namespace Duplicati.Library.Main.Volumes
                 var m = FILENAME_REGEXP.Match(filename);
                 if (!m.Success || m.Length != filename.Length)
                     return null;
-
+                
                 RemoteVolumeType t;
                 if (!REVERSE_REMOTE_TYPENAME_MAP.TryGetValue(m.Groups["filetype"].Value, out t))
                     return null;
@@ -109,20 +110,39 @@ namespace Duplicati.Library.Main.Volumes
         
         public static string GenerateFilename(RemoteVolumeType filetype, Options options, string guid, DateTime timestamp)
         {
-            return GenerateFilename(filetype, options.Prefix, guid, timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+            return GenerateFilename(filetype, options, guid, timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
         }
 
-        public static string GenerateFilename(RemoteVolumeType filetype, string prefix, string guid, DateTime timestamp, string compressionmodule, string encryptionmodule)
+        public static string GenerateFilename(RemoteVolumeType filetype, Options options, string guid, DateTime timestamp, string compressionmodule, string encryptionmodule)
         {
             string volumename;
 
             if (filetype == RemoteVolumeType.Files)
-                volumename = prefix + "-" + Library.Utility.Utility.SerializeDateTime(timestamp) + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
+            {
+                volumename = $"{options.Prefix}-{Library.Utility.Utility.SerializeDateTime(timestamp)}.{(ParsedVolume.REMOTE_TYPENAME_MAP[filetype])}.{compressionmodule}";
+            }
             else
-                volumename = prefix + "-" + (filetype == RemoteVolumeType.Blocks ? "b" : "i") + guid + "." + (ParsedVolume.REMOTE_TYPENAME_MAP[filetype]) + "." + compressionmodule;
+            {
+                var partialFilename = $"{(filetype == RemoteVolumeType.Blocks ? "b" : "i")}{guid}.{(ParsedVolume.REMOTE_TYPENAME_MAP[filetype])}.{compressionmodule}";
+
+                if (options.FolderDepth == 2)
+                {
+                    var subfolder1 = partialFilename.Substring(0, 4);
+                    var subfolder2 = partialFilename.Substring(4, 3);
+                    subfolder1 = string.IsNullOrEmpty(subfolder1) ? string.Empty : subfolder1 + @"/";
+                    subfolder2 = string.IsNullOrEmpty(subfolder2) ? string.Empty : subfolder2 + @"/";
+                    volumename = $"{subfolder1}{subfolder2}{options.Prefix}-{partialFilename}";
+                }
+                else
+                {
+                    volumename = $"{options.Prefix}-{partialFilename}";
+                }
+            }
 
             if (!string.IsNullOrEmpty(encryptionmodule))
+            {
                 volumename += "." + encryptionmodule;
+            }
                 
             return volumename;
         }
@@ -136,7 +156,7 @@ namespace Duplicati.Library.Main.Volumes
         {
             return ParsedVolume.Parse(filename);
         }
-
+        
         protected const string MANIFEST_FILENAME = "manifest";
         protected const string FILELIST = "filelist.json";
 
@@ -145,18 +165,23 @@ namespace Duplicati.Library.Main.Volumes
 
         protected const string CONTROL_FILES_FOLDER = "extra/";
 
+        protected internal const int DEFAULT_FOLDER_DEPTH = 2;
+
         public static readonly System.Text.Encoding ENCODING = System.Text.Encoding.UTF8;
         protected readonly long m_blocksize;
         protected readonly string m_blockhash;
         protected readonly string m_filehash;
 		protected readonly long m_blockhashsize;
+        protected readonly int m_folderdepth;
 
         protected VolumeBase(Options options)
         {
+            Console.WriteLine($"***** VolumeBase:Base instantiated");
             m_blocksize = options.Blocksize;
             m_blockhash = options.BlockHashAlgorithm;
             m_filehash = options.FileHashAlgorithm;
 			m_blockhashsize = options.BlockhashSize;
+            m_folderdepth = options.FolderDepth;
         }
     }
 }

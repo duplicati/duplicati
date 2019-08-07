@@ -22,8 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Interface;
@@ -142,6 +140,9 @@ namespace Duplicati.Library.Main.Operation
             {
                 try
                 {
+                    // determine the folder depth using the database
+                    //m_options.FolderDepth = m_database.GetRemoteFolderDepth();
+
                     if (m_options.NoBackendverification)
                     {
                         FilelistProcessor.VerifyLocalList(backend, m_database);
@@ -376,6 +377,9 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(m_database, m_options);
                 Utility.VerifyParameters(m_database, m_options);
 
+                // determine the folder depth using the database
+                m_options.FolderDepth = m_database.GetRemoteFolderDepth();
+
                 var probe_path = m_database.GetFirstPath();
                 if (probe_path != null && Util.GuessDirSeparator(probe_path) != Util.DirectorySeparatorString)
                     throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"), "CrossOsDatabaseReuseNotSupported");
@@ -449,6 +453,8 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Grab the previous backup ID, if any
                                 var prevfileset = m_database.FilesetTimes.FirstOrDefault();
+                                Console.WriteLine($"prevfileset.Value: {prevfileset.Value}");
+                                Console.WriteLine($"m_database.OperationTimestamp: {m_database.OperationTimestamp}");
                                 if (prevfileset.Value.ToUniversalTime() > m_database.OperationTimestamp.ToUniversalTime())
                                     throw new Exception(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()));
                                 

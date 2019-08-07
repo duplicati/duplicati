@@ -634,7 +634,7 @@ namespace Duplicati.Library.Main
             var p = VolumeBase.ParseFilename(item.RemoteFilename);
             var guid = VolumeWriterBase.GenerateGuid();
             var time = p.Time.Ticks == 0 ? p.Time : p.Time.AddSeconds(1);
-            var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
+            var newname = VolumeBase.GenerateFilename(p.FileType, m_options, guid, time, p.CompressionModule, p.EncryptionModule);
             var oldname = item.RemoteFilename;
 
             m_statwriter.SendEvent(item.BackendActionType, BackendEventType.Rename, oldname, item.Size);

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Main.Database
@@ -306,6 +308,22 @@ namespace Duplicati.Library.Main.Database
                     rd.GetValue(0).ToString(),
                     (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(1).ToString())
                 );
+            }
+        }
+
+        public int GetRemoteFolderDepth()
+        {
+            using (var cmd = m_connection.CreateCommand())
+            {
+                using (var rd = cmd.ExecuteReader(@"SELECT LENGTH(""Name"") - LENGTH(REPLACE(""Name"",""/"","""")) as ""FolderDepth"" FROM ""RemoteVolume"" ORDER BY ""FolderDepth"" DESC LIMIT 1"))
+                {
+                    if (rd.Read())
+                    {
+                        var i = rd.GetInt32(0);
+                        return i;
+                    }
+                    return VolumeBase.DEFAULT_FOLDER_DEPTH;
+                }
             }
         }
 

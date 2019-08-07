@@ -37,12 +37,14 @@ namespace Duplicati.Library.Backend
         private const string OPTION_MOVE_FILE = "use-move-for-put";
         private const string OPTION_FORCE_REAUTH = "force-smb-authentication";
 
-        private readonly string m_path;
         private string m_username;
         private string m_password;
         private readonly bool m_moveFile;
         private bool m_hasAutenticated;
         private readonly bool m_forceReauth;
+
+        private readonly string m_path;
+        private int m_path_length => m_path.Length + 1;
 
         private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
@@ -165,18 +167,30 @@ namespace Duplicati.Library.Backend
             get { return "file"; }
         }
 
+        public IFileEntry FileEntry(string path)
+        {
+            var fileInfo = systemIO.FileInfo(path);
+            var fullPathWithDestinationPathRemoved = fileInfo.FullName.Remove(0, m_path_length);
+            var fullPathNormalized = fullPathWithDestinationPathRemoved.Replace(@"\", @"/");
+            return new FileEntry(fullPathNormalized, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
+        }
+
         public IEnumerable<IFileEntry> List()
         {
             PreAuthenticate();
 
             if (!systemIO.DirectoryExists(m_path))
-                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
-
-            foreach (string s in systemIO.EnumerateFiles(m_path))
             {
-                yield return systemIO.FileEntry(s);
+                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
             }
 
+            foreach (string s in systemIO.EnumerateFilenameOnlyRecursively(m_path))
+            {
+                var f = FileEntry(s);
+                yield return f;
+            }
+
+            // the backend does not worry about directories so no need to enumerate
             foreach (string s in systemIO.EnumerateDirectories(m_path))
             {
                 yield return systemIO.DirectoryEntry(s);
@@ -190,7 +204,9 @@ namespace Duplicati.Library.Backend
             using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
             {
                 if (random.NextDouble() > 0.6666)
+                {
                     throw new Exception("Random upload failure");
+                }
                 await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken);
             }
         }
@@ -198,7 +214,9 @@ namespace Duplicati.Library.Backend
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             using (System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
+            {
                 await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
+            }
         }
 #endif
 
