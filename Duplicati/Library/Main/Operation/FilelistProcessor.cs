@@ -254,9 +254,11 @@ namespace Duplicati.Library.Main.Operation
                 }
 
             log.AssignedQuotaSpace = options.QuotaSize;
-            
-            foreach(var s in remotelist)
+
+            foreach (var s in remotelist)
+            {
                 lookup[s.File.Name] = s;
+            }
                     
             var missing = new List<RemoteVolumeEntry>();
             var missingHash = new List<Tuple<long, RemoteVolumeEntry>>();

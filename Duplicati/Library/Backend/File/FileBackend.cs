@@ -44,7 +44,7 @@ namespace Duplicati.Library.Backend
         private readonly bool m_forceReauth;
 
         private readonly string m_path;
-        private int m_path_length => m_path.Length + 1;
+        private int m_path_length => m_path.Length;
 
         private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 

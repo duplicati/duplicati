@@ -268,7 +268,9 @@ namespace Duplicati.Library.Main.Operation
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
             {
                 using(new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
+                {
                     FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                }
                 backend.WaitForComplete(m_database, null);
             }
 

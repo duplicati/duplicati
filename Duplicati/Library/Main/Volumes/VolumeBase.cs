@@ -176,7 +176,6 @@ namespace Duplicati.Library.Main.Volumes
 
         protected VolumeBase(Options options)
         {
-            Console.WriteLine($"***** VolumeBase:Base instantiated");
             m_blocksize = options.Blocksize;
             m_blockhash = options.BlockHashAlgorithm;
             m_filehash = options.FileHashAlgorithm;
