@@ -375,18 +375,22 @@ namespace Duplicati.Library.Main
         
         public void StartFile(string filename, long size)
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 m_curfilename = filename;
                 m_curfilesize = size;
+                Logging.Log.WriteInformationMessage("DEBUG-TEMP", "DEBUG-TEMP", "StartFile - setting m_curfileoffset = 0, currently = {0}", m_curfileoffset);
                 m_curfileoffset = 0;
             }
         }
         
         public void UpdateFileProgress(long offset)
         {
-            lock(m_lock)
+            lock (m_lock)
+            {
+                Logging.Log.WriteInformationMessage("DEBUG-TEMP", "DEBUG-TEMP", "UpdateFileProgress - setting m_curfileoffset = {0}, currently = {1}", offset, m_curfileoffset);
                 m_curfileoffset = offset;
+            }
         }
         
         public void UpdatefileCount(long filecount, long filesize, bool done)
@@ -401,10 +405,11 @@ namespace Duplicati.Library.Main
         
         public void UpdatefilesProcessed(long count, long size)
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 m_filesprocessed = count;
                 m_filesizeprocessed = size;
+                Logging.Log.WriteInformationMessage("DEBUG-TEMP", "DEBUG-TEMP", "UpdatefilesProcessed - setting m_curfileoffset = 0, currently = {0}", m_curfileoffset);
                 m_curfileoffset = 0;
             }
         }
