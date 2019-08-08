@@ -375,7 +375,7 @@ namespace Duplicati.Library.Main
         
         public void StartFile(string filename, long size)
         {
-            lock (m_lock)
+            lock(m_lock)
             {
                 m_curfilename = filename;
                 m_curfilesize = size;
@@ -384,7 +384,7 @@ namespace Duplicati.Library.Main
         
         public void UpdateFileProgress(long offset)
         {
-            lock (m_lock)
+            lock(m_lock)
                 m_curfileoffset = offset;
         }
         
@@ -400,7 +400,7 @@ namespace Duplicati.Library.Main
         
         public void UpdatefilesProcessed(long count, long size)
         {
-            lock (m_lock)
+            lock(m_lock)
             {
                 m_filesprocessed = count;
                 m_filesizeprocessed = size;
