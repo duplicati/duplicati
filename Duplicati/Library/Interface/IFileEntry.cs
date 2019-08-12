@@ -41,7 +41,8 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// The name of the file or folder
         /// </summary>
-        string Name { get; }
+        string Name { get; set; }
+
         /// <summary>
         /// The size of the file or folder
         /// </summary>
