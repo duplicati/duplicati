@@ -174,7 +174,7 @@ namespace Duplicati.Library.Backend
             get { return "file"; }
         }
 
-        public IFileEntry FileEntry(string path)
+        public IFileEntry GetNewFileEntry(string path)
         {
             var fileInfo = systemIO.FileInfo(path);
             var fullPathWithDestinationPathRemoved = fileInfo.FullName.Remove(0, m_path_length);
@@ -193,7 +193,7 @@ namespace Duplicati.Library.Backend
 
             foreach (string s in systemIO.EnumerateFilenameOnlyRecursively(m_path))
             {
-                var f = FileEntry(s);
+                var f = GetNewFileEntry(s);
                 yield return f;
             }
 
