@@ -370,8 +370,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
 
-                    new CommandLineArgument("max-files-per-remote-subfolder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BackendMaxFilesPerFolderShort, Strings.Options.BackendMaxFilesPerFolderLong, DEFAULT_BACKEND_MAX_FILES_PER_FOLDER.ToString()),
-                    new CommandLineArgument("max-folders-per-remote-subfolder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BackendMaxFoldersPerFolderShort, Strings.Options.BackendMaxFoldersPerFolderLong, DEFAULT_BACKEND_MAX_FOLDERS_PER_FOLDER.ToString()),
+                    new CommandLineArgument("max-files-per-remote-subfolder", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendMaxFilesPerFolderShort, Strings.Options.BackendMaxFilesPerFolderLong, DEFAULT_BACKEND_MAX_FILES_PER_FOLDER.ToString()),
+                    new CommandLineArgument("max-folders-per-remote-subfolder", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendMaxFoldersPerFolderShort, Strings.Options.BackendMaxFoldersPerFolderLong, DEFAULT_BACKEND_MAX_FOLDERS_PER_FOLDER.ToString()),
 
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
 
