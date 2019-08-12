@@ -48,7 +48,7 @@ namespace Duplicati.Library.Backend
         private string m_path
         {
             get => _m_path;
-            set => _m_path = value.Replace(@"\", @"/").EndsWith("/") ? value : $"{value}{Path.DirectorySeparatorChar}";
+            set => _m_path = Util.AppendDirSeparator(value, Path.DirectorySeparatorChar.ToString());
         }
 
         private int m_path_length => m_path.Length;
