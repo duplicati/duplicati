@@ -1,5 +1,5 @@
 ﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2019, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
@@ -22,6 +22,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,11 +44,17 @@ namespace Duplicati.Library.Backend
         private bool m_hasAutenticated;
         private readonly bool m_forceReauth;
 
-        private readonly string m_path;
+        private string _m_path;
+        private string m_path
+        {
+            get => _m_path;
+            set => _m_path = value.Replace(@"\", @"/").EndsWith("/") ? value : $"{value}{Path.DirectorySeparatorChar}";
+        }
+
         private int m_path_length => m_path.Length;
 
         private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
-
+        
         private static ISystemIO systemIO = SystemIO.IO_OS;
 
         public File()
