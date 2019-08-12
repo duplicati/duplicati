@@ -126,5 +126,21 @@ namespace Duplicati.Library.Common.IO
             m_lastModification = lastModified;
             m_lastAccess = lastAccess;
         }
+
+        /// <summary>
+        /// Constructs an entry supplying all information
+        /// </summary>
+        /// <param name="filename">The name of the file or folder</param>
+        /// <param name="size">The size of the file or folder</param>
+        /// <param name="lastAccess">The time the file or folder was last accessed</param>
+        /// <param name="lastModified">The time the file or folder was last modified</param>
+        /// <param name="isFolder">Is the entry a folder</param>
+        public FileEntry(string filename, long size, DateTime lastAccess, DateTime lastModified, bool isFolder)
+            : this(filename, size)
+        {
+            m_lastModification = lastModified;
+            m_lastAccess = lastAccess;
+            m_isFolder = isFolder;
+        }
     }
 }
