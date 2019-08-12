@@ -85,6 +85,16 @@ namespace Duplicati.Library.Main
         /// The default threshold for warning about coming close to quota
         /// </summary>
         private const int DEFAULT_QUOTA_WARNING_THRESHOLD = 10;
+
+        /// <summary>
+        /// The default max for files per folder on the backend
+        /// </summary>
+        private const int DEFAULT_BACKEND_MAX_FILES_PER_FOLDER = 2000;
+
+        /// <summary>
+        /// The default max for folders per folder on the backend
+        /// </summary>
+        private const int DEFAULT_BACKEND_MAX_FOLDERS_PER_FOLDER = 1000;
         
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
@@ -359,8 +369,12 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
-                    new CommandLineArgument("backend-folder-depth", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BackendFolderDepthShort, Strings.Options.BackendFolderDepthLong, "2"),
+
+                    new CommandLineArgument("max-files-per-remote-subfolder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BackendMaxFilesPerFolderShort, Strings.Options.BackendMaxFilesPerFolderLong, DEFAULT_BACKEND_MAX_FILES_PER_FOLDER.ToString()),
+                    new CommandLineArgument("max-folders-per-remote-subfolder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.BackendMaxFoldersPerFolderShort, Strings.Options.BackendMaxFoldersPerFolderLong, DEFAULT_BACKEND_MAX_FOLDERS_PER_FOLDER.ToString()),
+
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
+
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
                     new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0"),
                     new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), "false"),
@@ -1349,34 +1363,32 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Cache for the folder depth value
+        /// This option is not exposed to the user but is set by the BackupHandler
+        /// Gets/Sets the total file count of the backend
         /// </summary>
-        private int m_folderdepth = -1;
+        public long BackendRemoteVolumeCount { get; set; }
 
         /// <summary>
-        /// Gets the depth for the folders used
+        /// Cache for the max files per folder value
         /// </summary>
-        public int FolderDepth
+        public long BackendMaxFilesPerFolder
         {
             get
             {
-                // defer to value when set directly
-                if (m_folderdepth != -1)
-                {
-                    return m_folderdepth;
-                }
-
-                string folderdepth;
-                if (!m_options.TryGetValue("folderdepth", out folderdepth))
-                {
-                    return VolumeBase.DEFAULT_FOLDER_DEPTH;
-                }
-
-                return folderdepth != null ? Convert.ToInt32(folderdepth) : VolumeBase.DEFAULT_FOLDER_DEPTH;
+                m_options.TryGetValue("max-folders-per-remote-subfolder", out var v);
+                return string.IsNullOrEmpty(v) ? DEFAULT_BACKEND_MAX_FILES_PER_FOLDER : Math.Max(0, long.Parse(v));
             }
-            set
+        }
+
+        /// <summary>
+        /// Cache for the max folders per folder value
+        /// </summary>
+        public long BackendMaxFoldersPerFolder
+        {
+            get
             {
-                m_folderdepth = value;
+                m_options.TryGetValue("max-files-per-remote-subfolder", out var v);
+                return string.IsNullOrEmpty(v) ? DEFAULT_BACKEND_MAX_FOLDERS_PER_FOLDER : Math.Max(0, long.Parse(v));
             }
         }
 
@@ -1980,7 +1992,7 @@ namespace Duplicati.Library.Main
         /// Gets a list of modules, the key indicates if they are loaded 
         /// </summary>
         public List<KeyValuePair<bool, Library.Interface.IGenericModule>> LoadedModules { get { return m_loadedModules; } }
-
+        
         /// <summary>
         /// Helper method to extract boolean values.
         /// If the option is not present, it it's value is false.

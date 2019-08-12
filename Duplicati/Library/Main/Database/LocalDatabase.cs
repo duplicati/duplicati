@@ -310,21 +310,22 @@ namespace Duplicati.Library.Main.Database
                 );
             }
         }
-
-        public int GetRemoteFolderDepth()
+        
+        public long GetRemoteVolumeCount()
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                using (var rd = cmd.ExecuteReader(@"SELECT LENGTH(""Name"") - LENGTH(REPLACE(""Name"",""/"","""")) as ""FolderDepth"" FROM ""RemoteVolume"" ORDER BY ""FolderDepth"" DESC LIMIT 1"))
+                using (var rd = cmd.ExecuteReader(@"SELECT COUNT(ID) AS ""RemoteVolumeCount"" FROM ""Remotevolume"" "))
                 {
                     if (rd.Read())
                     {
-                        var i = rd.GetInt32(0);
-                        return i;
+                        long i = rd.GetInt64(0);
+                        return  i;
                     }
-                    return VolumeBase.DEFAULT_FOLDER_DEPTH;
                 }
             }
+
+            return -1;
         }
 
         public IEnumerable<RemoteVolumeEntry> GetRemoteVolumes(System.Data.IDbTransaction transaction = null)
@@ -1522,6 +1523,6 @@ ORDER BY
                 return new KeyValuePair<string, string>(path.Substring(0, nLast + 1), path.Substring(nLast + 1));
 
             return new KeyValuePair<string, string>(string.Empty, path);
-        }   
+        }
     }
 }

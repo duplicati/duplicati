@@ -11,7 +11,12 @@ namespace Duplicati.Library.Main.Volumes
         protected Stream m_localFileStream;
         protected string m_volumename;
         public string LocalFilename { get { return m_localfile; } }
-        public string RemoteFilename { get { return m_volumename; } }
+        public string RemoteFilename
+        {
+            get { return m_volumename; }
+            set => m_volumename = value;
+        }
+
         public Library.Utility.TempFile TempFile { get { return m_localfile; } }
 
         public abstract RemoteVolumeType FileType { get; }

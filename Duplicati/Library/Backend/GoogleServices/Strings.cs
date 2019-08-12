@@ -43,8 +43,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string DisplayName { get { return LC.L(@"Google Drive"); } }
         public static string MultipleEntries(string folder, string parent) { return LC.L(@"There is more than one item named ""{0}"" in the folder ""{1}""", folder, parent); }
-        public static string TeamDriveIdShort { get { return LC.L("Team drive ID"); } }
-        public static string TeamDriveIdLong { get { return LC.L("This option sets the team drive to use. Leaving it empty uses the personal drive"); } }
+        public static string DriveIdShort { get { return LC.L("Drive ID"); } }
+        public static string DriveIdLong { get { return LC.L("This option sets the drive to use. Leaving it empty uses the personal drive"); } }
     }
 }
 

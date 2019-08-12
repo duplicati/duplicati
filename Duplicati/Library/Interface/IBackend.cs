@@ -39,7 +39,7 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// The localized name to display for this backend
         /// </summary>
-        string DisplayName { get;}
+        string DisplayName { get; }
 
         /// <summary>
         /// The protocol key, eg. ftp, http or ssh

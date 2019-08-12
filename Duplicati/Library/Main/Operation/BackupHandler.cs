@@ -380,7 +380,7 @@ namespace Duplicati.Library.Main.Operation
                 Utility.VerifyParameters(m_database, m_options);
 
                 // determine the folder depth using the database
-                m_options.FolderDepth = m_database.GetRemoteFolderDepth();
+                //m_options.FolderDepth = m_database.GetRemoteFolderDepth();
 
                 var probe_path = m_database.GetFirstPath();
                 if (probe_path != null && Util.GuessDirSeparator(probe_path) != Util.DirectorySeparatorString)
@@ -455,8 +455,6 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Grab the previous backup ID, if any
                                 var prevfileset = m_database.FilesetTimes.FirstOrDefault();
-                                Console.WriteLine($"prevfileset.Value: {prevfileset.Value}");
-                                Console.WriteLine($"m_database.OperationTimestamp: {m_database.OperationTimestamp}");
                                 if (prevfileset.Value.ToUniversalTime() > m_database.OperationTimestamp.ToUniversalTime())
                                     throw new Exception(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()));
                                 
@@ -469,8 +467,10 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
 
                                 var repcnt = 0;
-                                while(repcnt < 100 && await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename) >= 0)
+                                while (repcnt < 100 && await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename) >= 0)
+                                {
                                     filesetvolume.ResetRemoteFilename(m_options, m_database.OperationTimestamp.AddSeconds(repcnt++));
+                                }
 
                                 if (await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename) >= 0)
                                     throw new Exception("Unable to generate a unique fileset name");
@@ -482,6 +482,7 @@ namespace Duplicati.Library.Main.Operation
                                 var journalService = GetJournalService(sources, snapshot, filter, lastfilesetid);
 
                                 // Run the backup operation
+                                m_options.BackendRemoteVolumeCount = backendManager.RemoteVolumeCount;
                                 if (await m_result.TaskReader.ProgressAsync)
                                     await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid).ConfigureAwait(false);
                             }

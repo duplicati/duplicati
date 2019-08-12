@@ -37,6 +37,7 @@ namespace Duplicati.Library.Main.Operation
         public static void VerifyLocalList(BackendManager backend, LocalDatabase database)
         {
             var locallist = database.GetRemoteVolumes();
+
             foreach(var i in locallist)
             {
                 switch (i.State)

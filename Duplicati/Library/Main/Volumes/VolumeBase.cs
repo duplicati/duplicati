@@ -18,9 +18,8 @@ namespace Duplicati.Library.Main.Volumes
             public string BlockHash { get; set; }
             public string FileHash { get; set; }
             public string AppVersion { get; set; }
-            public int FolderDepth { get; set; }
 
-            public static string GetManifestInstance(long blocksize, string blockhash, string filehash, int folderDepth = DEFAULT_FOLDER_DEPTH)
+            public static string GetManifestInstance(long blocksize, string blockhash, string filehash)
             {
                 return JsonConvert.SerializeObject(new ManifestData()
                 {
@@ -30,8 +29,7 @@ namespace Duplicati.Library.Main.Volumes
                     Created = Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow),
                     BlockHash = blockhash,
                     FileHash = filehash,
-                    AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                    FolderDepth = folderDepth
+                    AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()
                 });
             }
             
@@ -108,43 +106,42 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
         
-        public static string GenerateFilename(RemoteVolumeType filetype, Options options, string guid, DateTime timestamp)
+        public static string GenerateFilename(RemoteVolumeType fileType, Options options, string guid, DateTime timestamp)
         {
-            return GenerateFilename(filetype, options, guid, timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+            return GenerateFilename(fileType, options, guid, timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
         }
 
-        public static string GenerateFilename(RemoteVolumeType filetype, Options options, string guid, DateTime timestamp, string compressionmodule, string encryptionmodule)
+        public static string GenerateFilename(RemoteVolumeType fileType, Options options, string guid, DateTime timestamp, string compressionModule, string encryptionModule)
         {
-            string volumename;
+            string volumeName;
 
-            if (filetype == RemoteVolumeType.Files)
+            var targetFolder = SubFolderMethodFillFolders(options);
+
+            if (fileType == RemoteVolumeType.Files)
             {
-                volumename = $"{options.Prefix}-{Library.Utility.Utility.SerializeDateTime(timestamp)}.{(ParsedVolume.REMOTE_TYPENAME_MAP[filetype])}.{compressionmodule}";
+                volumeName = $"{targetFolder}{options.Prefix}-{Library.Utility.Utility.SerializeDateTime(timestamp)}.{ParsedVolume.REMOTE_TYPENAME_MAP[fileType]}.{compressionModule}";
             }
             else
             {
-                var partialFilename = $"{(filetype == RemoteVolumeType.Blocks ? "b" : "i")}{guid}.{(ParsedVolume.REMOTE_TYPENAME_MAP[filetype])}.{compressionmodule}";
-
-                if (options.FolderDepth == 2)
-                {
-                    var subfolder1 = partialFilename.Substring(0, 4);
-                    var subfolder2 = partialFilename.Substring(4, 3);
-                    subfolder1 = string.IsNullOrEmpty(subfolder1) ? string.Empty : subfolder1 + @"/";
-                    subfolder2 = string.IsNullOrEmpty(subfolder2) ? string.Empty : subfolder2 + @"/";
-                    volumename = $"{subfolder1}{subfolder2}{options.Prefix}-{partialFilename}";
-                }
-                else
-                {
-                    volumename = $"{options.Prefix}-{partialFilename}";
-                }
+                volumeName = $"{targetFolder}{options.Prefix}-{(fileType == RemoteVolumeType.Blocks ? "b" : "i")}{guid}.{ParsedVolume.REMOTE_TYPENAME_MAP[fileType]}.{compressionModule}";
             }
 
-            if (!string.IsNullOrEmpty(encryptionmodule))
+            if (!string.IsNullOrEmpty(encryptionModule))
             {
-                volumename += "." + encryptionmodule;
+                volumeName += "." + encryptionModule;
             }
-                
-            return volumename;
+
+            return volumeName;
+        }
+        
+        private static string SubFolderMethodFillFolders(Options options)
+        {
+            long volumeCountFromDatabase = options.BackendRemoteVolumeCount;
+            long maxFilesPerFolder = options.BackendMaxFilesPerFolder;
+            long numSubFoldersPerFolder = options.BackendMaxFoldersPerFolder;
+            string targetFolder = SubFolderFilePlacementUtils.GetFileFolderPathPlacementUsingFlatStructure(volumeCountFromDatabase, maxFilesPerFolder, numSubFoldersPerFolder);
+            SubFolderFilePlacementUtils.VolumeFileCount++;
+            return targetFolder;
         }
 
         public static IParsedVolume ParseFilename(Library.Interface.IFileEntry file)
@@ -165,14 +162,15 @@ namespace Duplicati.Library.Main.Volumes
 
         protected const string CONTROL_FILES_FOLDER = "extra/";
 
-        protected internal const int DEFAULT_FOLDER_DEPTH = 2;
-
         public static readonly System.Text.Encoding ENCODING = System.Text.Encoding.UTF8;
         protected readonly long m_blocksize;
         protected readonly string m_blockhash;
         protected readonly string m_filehash;
 		protected readonly long m_blockhashsize;
-        protected readonly int m_folderdepth;
+        protected readonly long m_backendmaxfilesperfolder;
+        protected readonly long m_Backendmaxfoldersperfolder;
+
+        public static string TargetFolder { get; set; }
 
         protected VolumeBase(Options options)
         {
@@ -180,7 +178,8 @@ namespace Duplicati.Library.Main.Volumes
             m_blockhash = options.BlockHashAlgorithm;
             m_filehash = options.FileHashAlgorithm;
 			m_blockhashsize = options.BlockhashSize;
-            m_folderdepth = options.FolderDepth;
+            m_backendmaxfilesperfolder = options.BackendMaxFilesPerFolder;
+            m_Backendmaxfoldersperfolder = options.BackendMaxFoldersPerFolder;
         }
     }
 }

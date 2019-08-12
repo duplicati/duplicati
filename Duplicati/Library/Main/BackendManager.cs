@@ -364,10 +364,11 @@ namespace Duplicati.Library.Main
         private readonly TimeSpan m_retrydelay;
 
         public string BackendUrl { get { return m_backendurl; } }
+        public long RemoteVolumeCount { get; private set; }
 
         public bool HasDied { get { return m_lastException != null; } }
         public Exception LastException { get { return m_lastException; } }
-
+        
         public BackendManager(string backendurl, Options options, IBackendWriter statwriter, LocalDatabase database)
         {
             m_options = options;
@@ -403,6 +404,9 @@ namespace Duplicati.Library.Main
                     if (state == TaskControlState.Abort)
                         m_thread.Abort();
                 };
+
+            RemoteVolumeCount = database.GetRemoteVolumeCount();
+
             m_queue = new BlockingQueue<FileEntryItem>(options.SynchronousUpload ? 1 : (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit));
             m_thread = new System.Threading.Thread(this.ThreadRun);
             m_thread.Name = "Backend Async Worker";
@@ -623,7 +627,7 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            //Make sure everything in the queue is signalled
+            //Make sure everything in the queue is signaled
             FileEntryItem i;
             while ((i = m_queue.Dequeue()) != null)
                 i.SignalComplete();
