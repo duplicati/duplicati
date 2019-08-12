@@ -1,11 +1,28 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+#endregion
+using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Volumes
 {
     public class SubFolderFilePlacementUtils
     {
-        private static readonly SemaphoreSlim VolumeFileCountUpdateSemaphore = new SemaphoreSlim(1, 1);
         private static readonly object _additionalVolumeFileCountLock = new object();
         private static long _additionalVolumeFileCount;
 
@@ -14,12 +31,10 @@ namespace Duplicati.Library.Main.Volumes
             get => _additionalVolumeFileCount;
             set
             {
-                //VolumeFileCountUpdateSemaphore.Wait();
                 lock (_additionalVolumeFileCountLock)
                 {
                     _additionalVolumeFileCount = value;
                 }
-                //VolumeFileCountUpdateSemaphore.Release();
             }
         }
 
