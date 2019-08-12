@@ -5,6 +5,7 @@ using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -269,20 +270,46 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
+            return GetRemoteList(this.RootPath);
+        }
+        
+        private IEnumerable<FileEntry> GetRemoteList(string currentPath)
+        {
             try
             {
-                return this.Enumerate<DriveItem>(string.Format("{0}/root:{1}:/children", this.DrivePrefix, this.RootPath))
-                    .Where(item => item.IsFile && !item.IsDeleted) // Exclude non-files and deleted items (not sure if they show up in this listing, but make sure anyway)
+                // remove /rootpath so we have a relative path
+                string relativePath = currentPath.Remove(0, this.RootPath.Length);
+                while (relativePath.StartsWith("/"))
+                {
+                    relativePath = relativePath.Remove(0, 1);
+                }
+
+                List<FileEntry> foundFiles = new List<FileEntry>();
+                
+                List<FileEntry> theFullList = this.Enumerate<DriveItem>(
+                        $"{this.DrivePrefix}/root:{currentPath}:/children")
+                    .Where(item => !item.IsDeleted) // Exclude deleted items (not sure if they show up in this listing, but make sure anyway)
                     .Select(item =>
                         new FileEntry(
-                            item.Name,
+                            string.IsNullOrEmpty(relativePath) ? item.Name : $"{relativePath}/{item.Name}",
                             item.Size ?? 0, // Files should always have a size, but folders don't need it
                             item.FileSystemInfo?.LastAccessedDateTime?.UtcDateTime ?? new DateTime(),
-                            item.FileSystemInfo?.LastModifiedDateTime?.UtcDateTime ?? item.LastModifiedDateTime?.UtcDateTime ?? new DateTime()));
+                            item.FileSystemInfo?.LastModifiedDateTime?.UtcDateTime ?? item.LastModifiedDateTime?.UtcDateTime ?? new DateTime(),
+                            item.IsFolder)).ToList();
+
+                foundFiles.AddRange(theFullList.Where(x => !x.IsFolder));
+
+                foreach (FileEntry subFolder in theFullList.Where(x => x.IsFolder))
+                {
+                    IEnumerable<FileEntry> subFolderFiles = GetRemoteList($"{currentPath}/{subFolder.Name}");
+                    foundFiles.AddRange(subFolderFiles);
+                }
+
+                return foundFiles.ToList();
             }
             catch (DriveItemNotFoundException ex)
             {
-                // If there's an 'item not found' exception here, it means the root folder didn't exist.
+                // If there's an 'item not found' exception here, it means a folder didn't exist, usually the root folder
                 throw new FolderMissingException(ex);
             }
         }
