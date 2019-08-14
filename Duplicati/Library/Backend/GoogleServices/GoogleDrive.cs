@@ -49,7 +49,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         private static readonly Dictionary<string, string> m_folderCache = new Dictionary<string, string>();
 
         private string m_rootFolderId;
-        
+
         public GoogleDrive()
         {
         }
@@ -416,7 +416,6 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         public void Delete(string remotename)
         {
-            File.AppendAllText("debug.log", $"delete: remotename: {remotename}{Environment.NewLine}");
             try
             {
                 foreach (var fileid in from n in GetFileEntries(remotename) select n.id)
