@@ -38,7 +38,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
     public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
-        private const string TEAMDRIVE_ID = "googledrive-teamdrive-id";
+        private const string DRIVE_ID = "googledrive-teamdrive-id";
         private const string FOLDER_MIMETYPE = "application/vnd.google-apps.folder";
 
         private readonly string m_rootPath;
@@ -66,9 +66,9 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 authid = options[AUTHID_OPTION];
             }
 
-            if (options.ContainsKey(TEAMDRIVE_ID))
+            if (options.ContainsKey(DRIVE_ID))
             {
-                m_driveID = options[TEAMDRIVE_ID];
+                m_driveID = options[DRIVE_ID];
             }
 
             m_oauth = new OAuthHelper(authid, this.ProtocolKey) { AutoAuthHeader = true };
@@ -460,7 +460,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                                             CommandLineArgument.ArgumentType.Password,
                                             Strings.GoogleDrive.AuthidShort,
                                             Strings.GoogleDrive.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("googledrive"))),
-                    new CommandLineArgument(TEAMDRIVE_ID,
+                    new CommandLineArgument(DRIVE_ID,
                                             CommandLineArgument.ArgumentType.String,
                                             Strings.GoogleDrive.DriveIdShort,
                                             Strings.GoogleDrive.DriveIdLong),
