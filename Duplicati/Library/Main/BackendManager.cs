@@ -405,8 +405,6 @@ namespace Duplicati.Library.Main
                         m_thread.Abort();
                 };
 
-            RemoteVolumeCount = database.GetRemoteVolumeCount();
-
             m_queue = new BlockingQueue<FileEntryItem>(options.SynchronousUpload ? 1 : (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit));
             m_thread = new System.Threading.Thread(this.ThreadRun);
             m_thread.Name = "Backend Async Worker";
