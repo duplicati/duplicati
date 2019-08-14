@@ -81,7 +81,7 @@ namespace Duplicati.Library.Common.IO
         /// <summary>
         /// Helper function to initialize the instance to default values
         /// </summary>
-        private FileEntry()
+        public FileEntry()
         {
             m_name = null;
             m_lastAccess = new DateTime();
@@ -136,10 +136,8 @@ namespace Duplicati.Library.Common.IO
         /// <param name="lastModified">The time the file or folder was last modified</param>
         /// <param name="isFolder">Is the entry a folder</param>
         public FileEntry(string filename, long size, DateTime lastAccess, DateTime lastModified, bool isFolder)
-            : this(filename, size)
+            : this(filename, size, lastAccess, lastModified)
         {
-            m_lastModification = lastModified;
-            m_lastAccess = lastAccess;
             m_isFolder = isFolder;
         }
     }
