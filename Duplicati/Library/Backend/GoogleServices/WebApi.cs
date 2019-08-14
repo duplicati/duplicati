@@ -1,19 +1,22 @@
-﻿//  Copyright (C) 2018, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+﻿#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+#endregion
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using Duplicati.Library.Utility;
@@ -39,7 +42,6 @@ namespace Duplicati.Library.Backend.WebApi
             new KeyValuePair<string, string>("Western United States", "US-WEST1"),
         };
 
-
         public static readonly KeyValuePair<string, string>[] KNOWN_GCS_STORAGE_CLASSES = {
             new KeyValuePair<string, string>("(default)", null),
             new KeyValuePair<string, string>("Standard", "STANDARD"),
@@ -49,8 +51,7 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string[] Hosts()
         {
-            return new [] { new System.Uri(Url.UPLOAD).Host,
-                new System.Uri(Url.API).Host };
+            return new [] { new System.Uri(Url.UPLOAD).Host, new System.Uri(Url.API).Host };
         }
 
         public static string DeleteUrl(string bucketId, string objectId)
@@ -167,20 +168,20 @@ namespace Duplicati.Library.Backend.WebApi
             });
         }
 
-        public static string DeleteUrl(string fileId, string teamDriveId)
+        public static string DeleteUrl(string fileId, string driveId)
         {
-            return FileQueryUrl(Uri.UrlPathEncode(fileId), AddTeamDriveParam(teamDriveId));
+            return FileQueryUrl(Uri.UrlPathEncode(fileId), AddDriveParam(driveId));
         }
 
-        public static string PutUrl(string fileId, bool useTeamDrive)
+        public static string PutUrl(string fileId, bool useDrive)
         {
             var queryParams = new NameValueCollection {
                 { QueryParam.UploadType,
                     QueryValue.Resumable } };
 
-            if (useTeamDrive)
+            if (useDrive)
             {
-                queryParams.Add(QueryParam.SupportsTeamDrive, QueryValue.True);
+                queryParams.Add(QueryParam.SupportsAllDrives, QueryValue.True);
             }
 
             return !string.IsNullOrWhiteSpace(fileId) ?
@@ -188,12 +189,12 @@ namespace Duplicati.Library.Backend.WebApi
                       FileUploadUrl(queryParams);
         }
 
-        public static string ListUrl(string fileQuery, string teamDriveId)
+        public static string ListUrl(string fileQuery, string driveId)
         {
-            return ListUrl(fileQuery, teamDriveId, null);
+            return ListUrl(fileQuery, driveId, null);
         }
         
-        public static string ListUrl(string fileQuery, string teamDriveId, string token)
+        public static string ListUrl(string fileQuery, string driveId, string token)
         {
             var queryParams = new NameValueCollection
             {
@@ -201,7 +202,7 @@ namespace Duplicati.Library.Backend.WebApi
                     fileQuery }
             };
 
-            queryParams.Add(AddTeamDriveParam(teamDriveId));
+            queryParams.Add(AddDriveParam(driveId));
             
             if (token != null)
             {
@@ -211,9 +212,9 @@ namespace Duplicati.Library.Backend.WebApi
             return FileQueryUrl(queryParams);
         }
 
-        public static string CreateFolderUrl(string teamDriveId)
+        public static string CreateFolderUrl(string driveId)
         {
-            return FileQueryUrl(AddTeamDriveParam(teamDriveId));
+            return FileQueryUrl(AddDriveParam(driveId));
         }
 
         public static string AboutInfoUrl()
@@ -235,9 +236,9 @@ namespace Duplicati.Library.Backend.WebApi
 
         private static class QueryParam
         {
-            public const string SupportsTeamDrive = "supportsTeamDrives";
-            public const string IncludeTeamDrive = "includeTeamDriveItems";
-            public const string TeamDriveId = "teamDriveId";
+            public const string SupportsAllDrives = "supportsAllDrives";
+            public const string IncludeAllDrivees = "includeItemsFromAllDrives";
+            public const string driveId = "driveId";
             public const string corpora = "corpora";
             public const string File = "q";
             public const string PageToken = "pageToken";
@@ -250,7 +251,7 @@ namespace Duplicati.Library.Backend.WebApi
             public const string True = "true";
             public const string Resumable = "resumable";
             public const string Media = "media";
-            public const string TeamDrive = "teamDrive";
+            public const string AllDrives = "allDrives";
         }
 
         private static string FileQueryUrl(NameValueCollection values)
@@ -275,17 +276,17 @@ namespace Duplicati.Library.Backend.WebApi
             return Uri.UriBuilder(Url.UPLOAD, Path.File, values);
         }
 
-        private static NameValueCollection AddTeamDriveParam(string teamDriveId)
+        private static NameValueCollection AddDriveParam(string driveId)
         {
-            return teamDriveId != null ? new NameValueCollection {
-                { WebApi.GoogleDrive.QueryParam.SupportsTeamDrive,
+            return driveId != null ? new NameValueCollection {
+                { WebApi.GoogleDrive.QueryParam.SupportsAllDrives,
                     WebApi.GoogleDrive.QueryValue.True },
-                { WebApi.GoogleDrive.QueryParam.TeamDriveId,  
-                    teamDriveId },
-                { WebApi.GoogleDrive.QueryParam.IncludeTeamDrive,
+                { WebApi.GoogleDrive.QueryParam.driveId,  
+                    driveId },
+                { WebApi.GoogleDrive.QueryParam.IncludeAllDrivees,
                     WebApi.GoogleDrive.QueryValue.True },
                 { WebApi.GoogleDrive.QueryParam.corpora,
-                    WebApi.GoogleDrive.QueryValue.TeamDrive }
+                    WebApi.GoogleDrive.QueryValue.AllDrives }
 
             } : new NameValueCollection( );
         }
