@@ -506,25 +506,14 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     throw new UserInformationException(string.Format(Strings.GoogleDrive.MultipleEntries(oldname, m_rootPath)), "GoogleDriveMultipleEntries");
                 }
 
-                var newfile = JsonConvert.DeserializeObject<GoogleDriveFolderItem>(JsonConvert.SerializeObject(files[0]));
-                newfile.title = newname;
-                newfile.parents = new GoogleDriveParentReference[] { new GoogleDriveParentReference { id = GetRootFolderId } };
-                var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(newfile));
-
-                var nf = m_oauth.GetJSONData<GoogleDriveFolderItem>(WebApi.GoogleDrive.GetUrl(files[0].id), x =>
+                using (var cToken = new CancellationTokenSource())
                 {
-                    x.Method = "PUT";
-                    x.ContentLength = data.Length;
-                    x.ContentType = "application/json; charset=UTF-8";
-                }, x =>
-                {
-                    using (var rs = x.GetRequestStream())
-                    {
-                        rs.Write(data, 0, data.Length);
-                    }
-                });
+                    Stream stream = new MemoryStream();
+                    Get(oldname, stream);
+                    PutAsync(newname, stream, cToken.Token).Wait(cToken.Token);
+                    Delete(oldname);
+                }
 
-                m_fileCache[newname] = new GoogleDriveFolderItem[] { nf };
                 m_fileCache.Remove(oldname);
             }
             catch
