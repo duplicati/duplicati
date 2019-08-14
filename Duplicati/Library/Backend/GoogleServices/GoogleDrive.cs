@@ -449,7 +449,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
             var fileQuery = new string[] {
                 string.IsNullOrEmpty(name) ? null : string.Format("title = '{0}'", EscapeTitleEntries(name)),
                 onlyFolders == null ? null : string.Format("mimeType {0}= '{1}'", onlyFolders.Value ? "" : "!", FOLDER_MIMETYPE),
-                string.Format("'{0}' in parents", EscapeTitleEntries(parentfolder))
+                string.Format("'{0}' in parents", EscapeTitleEntries(parentfolder)),
+                "trashed=false"
             };
 
             var encodedFileQuery = Library.Utility.Uri.UrlEncode(string.Join(" and ", fileQuery.Where(x => x != null)));
