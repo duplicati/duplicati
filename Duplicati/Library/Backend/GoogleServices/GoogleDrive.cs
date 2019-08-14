@@ -552,6 +552,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         public class RemoteFileEntry : FileEntry
         {
             public string ID { get; set; }
+            public string Path { get; set; }
         }
 
         private class GoogleDriveParentReference
