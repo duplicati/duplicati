@@ -57,6 +57,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         private static readonly string DEFAULT_SSL_PROTOCOLS_STRING = DEFAULT_SSL_PROTOCOLS.ToString();
         // ReSharper restore InconsistentNaming
 
+        private readonly List<string> m_fileCache = new List<string>();
+        private static readonly List<string> m_folderCache = new List<string>();
+
+        private readonly string m_rootPath;
+
         private readonly string _url;
         private readonly bool _listVerify = true;
         private readonly FtpEncryptionMode _encryptionMode;
@@ -106,7 +111,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         /// </summary>
         public AlternativeFtpBackend()
         {
-
         }
 
         /// <summary>
@@ -152,6 +156,10 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
             _url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
             _url = Common.IO.Util.AppendDirSeparator(_url, "/");
+
+            var rootUrl = new Uri(this._url);
+            m_rootPath = "/" + (rootUrl.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? rootUrl.AbsolutePath.Substring(0, rootUrl.AbsolutePath.Length - 1) : rootUrl.AbsolutePath);
+
             _listVerify = !CoreUtility.ParseBoolOption(options, "disable-upload-verify");
 
             // Process the aftp-data-connection-type option
@@ -199,40 +207,57 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             return List("");
         }
 
-        public IEnumerable<IFileEntry> List(string filename)
+        public IEnumerable<IFileEntry> List(string remoteFolder)
         {
-            return List(filename, false);
-        }
-
-        private IEnumerable<IFileEntry> List(string filename, bool stripFile)
-        {
-            var list = new List<IFileEntry>();
-            string remotePath = filename;
+            List<IFileEntry> list;
 
             try
             {
                 var ftpClient = CreateClient();
 
-                // Get the remote path
-                var url = new Uri(this._url);
-                remotePath = "/" + (url.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath);
+                var remoteFolderPath = string.IsNullOrEmpty(remoteFolder)
+                    ? m_rootPath
+                    : $"{m_rootPath}/{remoteFolder}";
 
-                if (!string.IsNullOrEmpty(filename))
+                list = GetRemoteList(remoteFolderPath, ftpClient);
+
+            } // Message "Directory not found." string
+            catch (FtpCommandException ex)
+            {
+                if (ex.Message == "Directory not found.")
                 {
-                    if (!stripFile)
-                    {
-                        // Append the filename
-                        remotePath += filename;
-                    }
-                    else if (filename.Contains("/"))
-                    {
-                        remotePath += filename.Substring(0, filename.LastIndexOf("/", StringComparison.Ordinal));
-                    }
-                    // else: stripping the filename in this case ignoring it
+                    throw new FolderMissingException(Strings.MissingFolderError(remoteFolder, ex.Message), ex);
                 }
 
-                foreach (FtpListItem item in ftpClient.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size | FtpListOption.DerefLinks))
+                throw;
+            }
+
+            return list.Where(x => x.IsFolder == false);
+        }
+
+        private List<IFileEntry> GetRemoteList(string remoteFolderPath, FtpClient ftpClient)
+        {
+            var items = new List<IFileEntry>();
+
+            try
+            {
+                var relativePath = remoteFolderPath.Remove(0, m_rootPath.Length);
+
+                while (relativePath.StartsWith("/"))
                 {
+                    relativePath = relativePath.Remove(0, 1);
+                }
+
+                foreach (FtpListItem item in ftpClient.GetListing(remoteFolderPath, FtpListOption.Modify | FtpListOption.Size | FtpListOption.DerefLinks))
+                {
+                    string itemFullPath = string.IsNullOrEmpty(remoteFolderPath)
+                        ? item.Name
+                        : $"{remoteFolderPath}/{item.Name}";
+
+                    string itemRelativePath = string.IsNullOrEmpty(relativePath)
+                        ? item.Name
+                        : $"{relativePath}/{item.Name}";
+
                     switch (item.Type)
                     {
                         case FtpFileSystemObjectType.Directory:
@@ -242,19 +267,34 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                                     continue;
                                 }
 
-                                list.Add(new FileEntry(item.Name, -1, new DateTime(), item.Modified)
+                                items.Add(new FileEntry(itemRelativePath, -1, new DateTime(), item.Modified)
                                 {
                                     IsFolder = true,
                                 });
 
-                                break;
-                            }
-                        case FtpFileSystemObjectType.File:
-                            {
-                                list.Add(new FileEntry(item.Name, item.Size, new DateTime(), item.Modified));
+                                lock (m_folderCache)
+                                {
+                                    m_folderCache.Add(itemRelativePath);
+                                }
+
+                                items.AddRange(GetRemoteList(itemFullPath, ftpClient));
 
                                 break;
                             }
+
+                        case FtpFileSystemObjectType.File:
+                            {
+                                items.Add(new FileEntry(itemRelativePath,
+                                    item.Size, new DateTime(), item.Modified));
+
+                                lock (m_fileCache)
+                                {
+                                    m_fileCache.Add(itemRelativePath);
+                                }
+
+                                break;
+                            }
+
                         case FtpFileSystemObjectType.Link:
                             {
                                 if (item.Name == "." || item.Name == "..")
@@ -273,65 +313,103 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                                                     continue;
                                                 }
 
-                                                list.Add(new FileEntry(item.Name, -1, new DateTime(), item.Modified)
+                                                items.Add(new FileEntry(itemRelativePath, -1, new DateTime(), item.Modified)
                                                 {
                                                     IsFolder = true,
                                                 });
 
-                                                break;
-                                            }
-                                        case FtpFileSystemObjectType.File:
-                                            {
-                                                list.Add(new FileEntry(item.Name, item.Size, new DateTime(), item.Modified));
+                                                lock (m_folderCache)
+                                                {
+                                                    m_folderCache.Add(itemRelativePath);
+                                                }
+
+                                                items.AddRange(GetRemoteList(itemFullPath, ftpClient));
 
                                                 break;
                                             }
+
+                                        case FtpFileSystemObjectType.File:
+                                            {
+                                                items.Add(new FileEntry(itemRelativePath, item.Size, new DateTime(), item.Modified));
+
+                                                lock (m_fileCache)
+                                                {
+                                                    m_fileCache.Add(itemRelativePath);
+                                                }
+
+                                                break;
+                                            }
+
+                                        case FtpFileSystemObjectType.Link:
+                                            break;
+
+                                        default:
+                                            throw new ArgumentOutOfRangeException();
                                     }
                                 }
+
                                 break;
                             }
 
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
                 }
-            }//         Message    "Directory not found."    string
-            catch (FtpCommandException ex)
+            }
+            catch (Exception ex)
             {
-                if (ex.Message == "Directory not found.")
-                {
-                    throw new FolderMissingException(Strings.MissingFolderError(remotePath, ex.Message), ex);
-                }
-
+                Console.WriteLine(ex);
                 throw;
             }
 
-            return list;
+            return items;
+        }
+
+        public FileEntry GetFileInfo(string remotename)
+        {
+            var ftpClient = CreateClient();
+
+            var filename = SystemIO.IO_OS.PathGetFileName(remotename);
+            var relativePath = remotename.Substring(0, remotename.Length - filename.Length);
+
+            IEnumerable<FileEntry> items = from n in ftpClient.GetListing(relativePath, FtpListOption.Modify | FtpListOption.Size | FtpListOption.DerefLinks).Where(x => x.Name == remotename)
+                                           select new FileEntry
+                                           {
+                                               Name = n.Name,
+                                               Size = n.Size,
+                                               IsFolder = n.Type == FtpFileSystemObjectType.Directory,
+                                               LastAccess = n.Modified,
+                                               LastModification = n.Modified
+                                           };
+
+            return items.First();
         }
 
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
             string remotePath = remotename;
-            long streamLen;
+
+            var path = SystemIO.IO_OS.PathGetDirectoryName(remotename);
 
             try
             {
                 var ftpClient = CreateClient();
 
+                long streamLen;
+
                 try
                 {
                     streamLen = input.Length;
                 }
-                catch (NotSupportedException) { streamLen = -1; }
-
-                // Get the remote path
-                remotePath = "";
-
-                if (!string.IsNullOrEmpty(remotename))
+                catch (NotSupportedException)
                 {
-                    // Append the filename
-                    remotePath += remotename;
+                    streamLen = -1;
                 }
 
-                var success = await ftpClient.UploadAsync(input, remotePath, FtpExists.Overwrite, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
+                CreateFolder(path);
+
+                bool success = await ftpClient.UploadAsync(input, $"{m_rootPath}/{remotename}", FtpExists.Overwrite, createRemoteDir: true, token: cancelToken, progress: null).ConfigureAwait(false);
+
                 if (!success)
                 {
                     throw new UserInformationException(string.Format(Strings.ErrorWriteFile, remotename), "AftpPutFailure");
@@ -339,22 +417,12 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                 if (_listVerify)
                 {
-                    var fileEntries = List(remotename, true);
+                    FileEntry remoteFileInfo = GetFileInfo(remotename);
 
-                    foreach (var fileEntry in fileEntries)
+                    if (remoteFileInfo.Size != streamLen)
                     {
-                        if (fileEntry.Name.Equals(remotename) || fileEntry.Name.EndsWith("/" + remotename, StringComparison.Ordinal) || fileEntry.Name.EndsWith("\\" + remotename, StringComparison.Ordinal))
-                        {
-                            if (fileEntry.Size < 0 || streamLen < 0 || fileEntry.Size == streamLen)
-                            {
-                                return;
-                            }
-
-                            throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, fileEntry.Size, streamLen), "AftpListVerifySizeFailure");
-                        }
+                        throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteFileInfo.Size, streamLen), "AftpListVerifySizeFailure");
                     }
-
-                    throw new UserInformationException(Strings.ListVerifyFailure(remotename, fileEntries.Select(n => n.Name)), "AftpListVerifySizeFailure");
                 }
             }
             catch (FtpCommandException ex)
@@ -380,16 +448,12 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         {
             var ftpClient = CreateClient();
 
-            // Get the remote path
-            var remotePath = "";
-
-            if (!string.IsNullOrEmpty(remotename))
+            if (string.IsNullOrEmpty(remotename))
             {
-                // Append the filename
-                remotePath += remotename;
+                return;
             }
 
-            using (var inputStream = ftpClient.OpenRead(remotePath))
+            using (var inputStream = ftpClient.OpenRead(remotename))
             {
                 try
                 {
@@ -400,7 +464,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                     inputStream.Close();
                 }
             }
-
         }
 
         public void Get(string remotename, string localname)
@@ -415,17 +478,19 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         {
             var ftpClient = CreateClient();
 
-            // Get the remote path
-            var remotePath = "";
-
-            if (!string.IsNullOrEmpty(remotename))
+            if (string.IsNullOrEmpty(remotename))
             {
-                // Append the filename
-                remotePath += remotename;
+                return;
             }
+
+            var remotePath = $"{m_rootPath}/{remotename}";
 
             ftpClient.DeleteFile(remotePath);
 
+            lock (m_fileCache)
+            {
+                m_fileCache.Remove(remotePath);
+            }
         }
 
         /// <summary>
@@ -509,18 +574,36 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public void CreateFolder()
+        public void CreateFolder(string folderToCreate)
         {
-            var client = CreateClient();
-
-            var url = new Uri(_url);
+            if (string.IsNullOrEmpty(folderToCreate))
+            {
+                return;
+            }
 
             // Get the remote path
-            var remotePath = url.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+            var pathToCreate = $"{m_rootPath}/{folderToCreate}";
 
-            // Try to create the directory 
-            client.CreateDirectory(remotePath, true);
+            lock (folderToCreate)
+            {
+                if (m_folderCache.Contains(pathToCreate))
+                {
+                    return;
+                }
 
+                var ftpClient = CreateClient();
+
+                if (ftpClient.DirectoryExists(pathToCreate)) return;
+
+                ftpClient.CreateDirectory(pathToCreate);
+
+                m_folderCache.Add(pathToCreate);
+            }
+        }
+
+        public void CreateFolder()
+        {
+            CreateFolder(m_rootPath);
         }
 
         public void Dispose()
