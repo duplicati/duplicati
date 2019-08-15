@@ -1,19 +1,22 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+﻿#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+#endregion
 using CG.Web.MegaApiClient;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -205,13 +208,14 @@ namespace Duplicati.Library.Backend.Mega
 
                 try
                 {
-                    var newNode = await Client.UploadAsync(stream, filename, targetFolder, new Progress(), null, cancelToken);
                     if (m_listcache.Any(x => x.FileEntry.Name == remotename))
                     {
                         // replacing existing file
                         Delete(remotename);
                     }
 
+                    var newNode = await Client.UploadAsync(stream, filename, targetFolder, new Progress(), null, cancelToken);
+                    
                     FileEntry newFileEntry = new FileEntry(
                         string.IsNullOrEmpty(path) ? newNode.Name : $"{path}/{newNode.Name}",
                         newNode.Size,
@@ -341,7 +345,7 @@ namespace Duplicati.Library.Backend.Mega
                     ResetFileCache();
                 }
 
-                if (m_listcache.Any(x => x.FileEntry.Name != remotename))
+                if (m_listcache.Single(x => x.FileEntry.Name == remotename) == null)
                 {
                     throw new FileMissingException();
                 }
