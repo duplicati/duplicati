@@ -168,7 +168,7 @@ namespace Duplicati.Library.Main.Database
                 var remotevolid = m_parentdb.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                 var filesetid = m_parentdb.CreateFileset(remotevolid, timestamp, m_transaction);
                 using (var cmd = m_connection.CreateCommand(m_transaction))
-                    cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""IsFullBackup"", ""Lastmodified"") SELECT ?, ""FileID"", ""IsFullBackup"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN ""{0}"" ", m_tablename), filesetid, ParentID);
+                    cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT ?, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN ""{0}"" ", m_tablename), filesetid, ParentID);
 
                 return new Tuple<long, long>(remotevolid, filesetid);
             }
