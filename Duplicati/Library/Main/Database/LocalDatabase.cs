@@ -571,7 +571,10 @@ namespace Duplicati.Library.Main.Database
             {
                 using (var rd = cmd.ExecuteReader($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = {NormalizeDateTimeToEpochSeconds(filesetTime)}"))
                 {
-                    if (!rd.Read()) return false;
+                    if (!rd.Read())
+                    {
+                        return false;
+                    }
                     var isFullBackup = rd.GetInt32(0);
                     return isFullBackup == 1;
                 }
