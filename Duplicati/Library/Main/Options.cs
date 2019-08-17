@@ -421,6 +421,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
                     new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
 
+                    new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
+                    new CommandLineArgument("auto-vacuum-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoVacuumIntervalShort, Strings.Options.AutoVacuumIntervalLong, "0m"),
                 });
 
                 return lst;
@@ -1681,6 +1683,20 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the minimum time that must elapse after last compaction before running next automatic compaction
+        /// </summary>
+        public TimeSpan AutoCompactInterval
+        {
+            get
+            {
+                if (!m_options.ContainsKey("auto-compact-interval") || string.IsNullOrEmpty(m_options["auto-compact-interval"]))
+                    return TimeSpan.Zero;
+                else
+                    return Library.Utility.Timeparser.ParseTimeSpan(m_options["auto-compact-interval"]);
+            }
+        }
+
+        /// <summary>
         /// Gets a flag indicating if compacting should not be done automatically
         /// </summary>
         public bool AllowMissingSource
@@ -1834,6 +1850,20 @@ namespace Duplicati.Library.Main
         public bool AutoVacuum
         {
             get { return GetBool("auto-vacuum"); }
+        }
+
+        /// <summary>
+        /// Gets the minimum time that must elapse after last vacuum before running next automatic vacuum
+        /// </summary>
+        public TimeSpan AutoVacuumInterval
+        {
+            get
+            {
+                if (!m_options.ContainsKey("auto-vacuum-interval") || string.IsNullOrEmpty(m_options["auto-vacuum-interval"]))
+                    return TimeSpan.Zero;
+                else
+                    return Library.Utility.Timeparser.ParseTimeSpan(m_options["auto-vacuum-interval"]);
+            }
         }
 
         /// <summary>

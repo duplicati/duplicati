@@ -284,6 +284,11 @@ namespace Duplicati.Library.Main.Strings
         public static string BackendMaxFilesPerFolderLong { get { return "The maximum number of files per folder on the remote destination provides the ability to limit the number of files in a directory. This option may be used to limit the files in a directory to be below the maximum allowed by the remote destination."; } }
         public static string BackendMaxFoldersPerFolderShort { get { return "Maximum number of folders per folder on the remote destination."; } }
         public static string BackendMaxFoldersPerFolderLong { get { return "The maximum number of folders per folder on the remote destination provides the ability to limit the number of folders in a folder. This option may be used to limit the folders in a folder to be below the maximum allowed by the remote destination."; } }
+        
+        public static string AutoCompactIntervalShort { get { return "Minimum time between auto compactions"; } }
+        public static string AutoCompactIntervalLong { get { return "The minimum amount of time that must elapse after the last compaction before another will be automatically triggered at the end of a backup job. Automatic compaction can be a long-running process and may not be desirable to run after every single backup."; } }
+        public static string AutoVacuumIntervalShort { get { return "Minimum time between auto vacuums"; } }
+        public static string AutoVacuumIntervalLong { get { return "The minimum amount of time that must elapse after the last vacuum before another will be automatically triggered at the end of a backup job. Automatic vacuum can be a long-running process and may not be desirable to run after every single backup."; } }
     }
 
     internal static class Common

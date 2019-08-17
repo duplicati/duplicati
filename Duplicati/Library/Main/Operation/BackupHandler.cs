@@ -545,8 +545,8 @@ namespace Duplicati.Library.Main.Operation
                         m_database.PurgeLogData(m_options.LogRetention);
                         if (m_options.AutoVacuum)
                         {
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
-                            m_database.Vacuum();
+                            m_result.VacuumResults = new VacuumResults(m_result);
+                            new VacuumHandler(m_options, (VacuumResults)m_result.VacuumResults).Run();
                         }
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         return;
