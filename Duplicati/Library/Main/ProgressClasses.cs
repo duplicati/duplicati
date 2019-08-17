@@ -379,7 +379,6 @@ namespace Duplicati.Library.Main
             {
                 m_curfilename = filename;
                 m_curfilesize = size;
-                m_curfileoffset = 0;
             }
         }
         
@@ -405,6 +404,7 @@ namespace Duplicati.Library.Main
             {
                 m_filesprocessed = count;
                 m_filesizeprocessed = size;
+                m_curfileoffset = 0;
             }
         }
         
