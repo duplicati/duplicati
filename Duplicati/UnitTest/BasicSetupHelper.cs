@@ -79,6 +79,12 @@ namespace Duplicati.UnitTest
             if (DEBUG_OUTPUT)
                 Console.SetOut(TestContext.Progress);
 
+            this.RemoveSourceData();
+        }
+
+        [OneTimeTearDown]
+        public void RemoveSourceData()
+        {
             ProgressWriteLine("Deleting backup data and log...");
             if (Directory.Exists(DATAFOLDER))
                 Directory.Delete(DATAFOLDER, true);
@@ -90,7 +96,6 @@ namespace Duplicati.UnitTest
             if (Directory.Exists(TARGETFOLDER))
                 Directory.Delete(TARGETFOLDER, true);
         }
-
 
         protected virtual Dictionary<string, string> TestOptions
         {
