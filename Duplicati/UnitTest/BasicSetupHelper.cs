@@ -85,12 +85,10 @@ namespace Duplicati.UnitTest
         [OneTimeTearDown]
         public void RemoveSourceData()
         {
-            ProgressWriteLine("Deleting backup data and log...");
             if (Directory.Exists(DATAFOLDER))
                 Directory.Delete(DATAFOLDER, true);
             if (File.Exists(LOGFILE))
                 File.Delete(LOGFILE);
-            ProgressWriteLine("Deleting older data");
             if (File.Exists(DBFILE))
                 File.Delete(DBFILE);
             if (Directory.Exists(TARGETFOLDER))
