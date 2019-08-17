@@ -142,7 +142,7 @@ GOTO end
 :ON_BEFORE
 
 REM If the operation is a backup starting, 
-REM then we check if the --volsize option is unset
+REM then we check if the --dblock-size option is unset
 REM or 50mb, and change it to 25mb, otherwise we 
 REM leave it alone
 
@@ -153,16 +153,16 @@ GOTO end
 
 :ON_BEFORE_BACKUP
 REM Check if volsize is either not set, or set to 50mb
-IF "%DUPLICATI__volsize%" == "" GOTO SET_VOLSIZE
-IF "%DUPLICATI__volsize%" == "50mb" GOTO SET_VOLSIZE
+IF "%DUPLICATI__dblock_size%" == "" GOTO SET_VOLSIZE
+IF "%DUPLICATI__dblock_size%" == "50mb" GOTO SET_VOLSIZE
 
 REM We write this to stderr, and it will show up as a warning in the logfile
-echo Not setting volumesize, it was already set to %DUPLICATI__volsize% 1>&2
+echo Not setting volumesize, it was already set to %DUPLICATI__dblock_size% 1>&2
 GOTO end
 
 :SET_VOLSIZE
 REM Write the option to stdout to change it
-echo --volsize=25mb
+echo --dblock-size=25mb
 GOTO end
 
 
