@@ -142,6 +142,7 @@ namespace Duplicati.Library.Interface
         bool Dryrun { get; }
         
         ICompactResults CompactResults { get; }
+        IVacuumResults VacuumResults { get; }
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
     }
@@ -178,6 +179,8 @@ namespace Duplicati.Library.Interface
         long DownloadedFileSize { get; }
         long UploadedFileSize { get; }
         bool Dryrun { get; }
+
+        IVacuumResults VacuumResults { get; }
     }
     
     public interface ICreateLogDatabaseResults : IBasicResults
