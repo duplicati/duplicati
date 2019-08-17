@@ -55,7 +55,13 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter);
             void TakeFirst ();
         }
-        
+
+        public static class BackupType
+        {
+            public const int PARTIAL_BACKUP = 0;
+            public const int FULL_BACKUP = 1;
+        }
+
         private class FileSets : IFileSets
         {
             private readonly System.Data.IDbConnection m_connection;
@@ -367,13 +373,22 @@ namespace Duplicati.Library.Main.Database
                                 @"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC ")
                         )
                         {
+                            // partial backup sets are only included until the first full backup is encountered
+                            var isFullBackupEncountered = false;
                             while (rd.Read())
                             {
                                 var id = rd.GetInt64(0);
-                                var isFullBackup = rd.GetInt32(1);
+                                var isFullBackup = rd.GetInt32(BackupType.FULL_BACKUP);
                                 var e = dict[id];
+                                
+                                if (isFullBackupEncountered && isFullBackup != BackupType.FULL_BACKUP) continue;
 
                                 yield return new Fileset(e, isFullBackup, m_filesets[e].Value, -1L, -1L);
+
+                                if (!isFullBackupEncountered && isFullBackup == BackupType.FULL_BACKUP)
+                                {
+                                    isFullBackupEncountered = true;
+                                }
                             }
                         }
                     }
