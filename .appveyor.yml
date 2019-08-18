@@ -28,7 +28,7 @@ test_script:
             .\packages\OpenCover.4.6.166\tools\OpenCover.Console.exe `
             -register:user `
             -target:.\packages\NUnit.ConsoleRunner.3.4.0\tools\nunit3-console.exe `
-            "-targetargs:""$elem"" /framework:net-4.5 /result:""$testResultsFile""" `
+            "-targetargs:""$elem"" /framework:net-4.5 /where:cat!=BulkData /result:""$testResultsFile""" `
             "-filter:+[Duplicati.Library.Main]* -[UnitTest]*" `
             -output:opencover.xml `
             -returntargetcode `
