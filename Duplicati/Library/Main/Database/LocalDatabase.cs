@@ -215,9 +215,25 @@ namespace Duplicati.Library.Main.Database
             get
             {
                 using (var cmd = m_connection.CreateCommand())
-                using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
+                using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
+                {
+                    var isFullBackupEncountered = false;
                     while (rd.Read())
-                        yield return new KeyValuePair<long, DateTime>(rd.GetInt64(0), ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime());
+                    {
+                        var id = rd.GetInt64(0);
+                        var isFullBackup = rd.GetInt32(1);
+                        var timeStamp = ParseFromEpochSeconds(rd.GetInt64(2)).ToLocalTime();
+
+                        if (isFullBackupEncountered && isFullBackup != BackupType.FULL_BACKUP) continue;
+
+                        yield return new KeyValuePair<long, DateTime>(id, timeStamp);
+
+                        if (!isFullBackupEncountered && isFullBackup == BackupType.FULL_BACKUP)
+                        {
+                            isFullBackupEncountered = true;
+                        }
+                    }
+                }
             }
         }
 
@@ -576,7 +592,7 @@ namespace Duplicati.Library.Main.Database
                         return false;
                     }
                     var isFullBackup = rd.GetInt32(0);
-                    return isFullBackup == 1;
+                    return isFullBackup == BackupType.FULL_BACKUP;
                 }
             }
         }
@@ -1536,6 +1552,15 @@ ORDER BY
                 return new KeyValuePair<string, string>(path.Substring(0, nLast + 1), path.Substring(nLast + 1));
 
             return new KeyValuePair<string, string>(string.Empty, path);
+        }
+
+        /// <summary>
+        /// Defines the backups types
+        /// </summary>
+        public static class BackupType
+        {
+            public const int PARTIAL_BACKUP = 0;
+            public const int FULL_BACKUP = 1;
         }
     }
 }
