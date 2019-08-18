@@ -100,7 +100,7 @@ namespace Duplicati.UnitTest
         }
 
         [TearDown]
-        public void TearDown()
+        public virtual void TearDown()
         {
             if (Directory.Exists(this.DATAFOLDER))
             {

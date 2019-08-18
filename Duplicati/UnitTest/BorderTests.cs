@@ -24,6 +24,18 @@ namespace Duplicati.UnitTest
 {
     public class BorderTests : BasicSetupHelper
     {
+        private readonly string recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+
+        public override void TearDown()
+        {
+            base.TearDown();
+
+            if (File.Exists(this.recreatedDatabaseFile))
+            {
+                File.Delete(this.recreatedDatabaseFile);
+            }
+        }
+
         [Test]
         [Category("Border")]
         public void Run10kNoProgress()
@@ -264,11 +276,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
-            var newdb = Path.Combine(Path.GetDirectoryName(DBFILE), Path.ChangeExtension(Path.GetFileNameWithoutExtension(DBFILE) + "-recreated", Path.GetExtension(DBFILE)));
-            if (File.Exists(newdb))
-                File.Delete(newdb);
-
-            testopts["dbpath"] = newdb;
+            testopts["dbpath"] = this.recreatedDatabaseFile;
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Repair();
