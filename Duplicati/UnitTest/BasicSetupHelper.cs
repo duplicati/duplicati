@@ -89,12 +89,12 @@ namespace Duplicati.UnitTest
         {
             if (Directory.Exists(DATAFOLDER))
                 Directory.Delete(DATAFOLDER, true);
+            if (Directory.Exists(TARGETFOLDER))
+                Directory.Delete(TARGETFOLDER, true);
             if (File.Exists(LOGFILE))
                 File.Delete(LOGFILE);
             if (File.Exists(DBFILE))
                 File.Delete(DBFILE);
-            if (Directory.Exists(TARGETFOLDER))
-                Directory.Delete(TARGETFOLDER, true);
         }
 
         protected virtual Dictionary<string, string> TestOptions
