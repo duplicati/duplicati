@@ -300,10 +300,6 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
-            if (Directory.Exists(RESTOREFOLDER))
-                Directory.Delete(RESTOREFOLDER, true);
-            Directory.CreateDirectory(RESTOREFOLDER);
-
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER, no_local_blocks = true }), null))
             {
                 var r = c.Restore(null);

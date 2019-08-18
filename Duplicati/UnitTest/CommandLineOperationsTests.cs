@@ -174,9 +174,6 @@ namespace Duplicati.UnitTest
             datafolders = Directory.EnumerateDirectories(DATAFOLDER);
             var rf = datafolders.Skip(datafolders.Count() - 2).First();
 
-            if (Directory.Exists(RESTOREFOLDER))
-                Directory.Delete(RESTOREFOLDER, true);
-
             ProgressWriteLine("Partial restore of {0} ...", Path.GetFileName(rf));
             using(new Library.Logging.Timer(LOGTAG, "PartialRestore", "Partial restore"))
                 Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, rf + "*", "--restore-path=\"" + RESTOREFOLDER + "\"" }.Union(opts)).ToArray());
@@ -185,8 +182,7 @@ namespace Duplicati.UnitTest
             using (new Library.Logging.Timer(LOGTAG, "VerifiationOfPartialRestore", "Verification of partial restored files"))
                 TestUtils.VerifyDir(rf, RESTOREFOLDER, true);
 
-            if (Directory.Exists(RESTOREFOLDER))
-                Directory.Delete(RESTOREFOLDER, true);
+            Directory.Delete(RESTOREFOLDER, true);
 
             ProgressWriteLine("Partial restore of {0} without local db...", Path.GetFileName(rf));
             using(new Library.Logging.Timer(LOGTAG, "PartialRestoreWithoutLocalDb", "Partial restore without local db"))
@@ -196,8 +192,7 @@ namespace Duplicati.UnitTest
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfPartialRestore", "Verification of partial restored files"))
                 TestUtils.VerifyDir(rf, RESTOREFOLDER, true);
             
-            if (Directory.Exists(RESTOREFOLDER))
-                Directory.Delete(RESTOREFOLDER, true);
+            Directory.Delete(RESTOREFOLDER, true);
 
             ProgressWriteLine("Full restore ...");
             using(new Library.Logging.Timer(LOGTAG, "FullRestore", "Full restore"))
@@ -208,8 +203,7 @@ namespace Duplicati.UnitTest
                 foreach(var s in Directory.EnumerateDirectories(DATAFOLDER))
                     TestUtils.VerifyDir(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true);
 
-            if (Directory.Exists(RESTOREFOLDER))
-                Directory.Delete(RESTOREFOLDER, true);
+            Directory.Delete(RESTOREFOLDER, true);
 
             ProgressWriteLine("Full restore without local db...");
             using(new Library.Logging.Timer(LOGTAG, "FullRestoreWithoutDb", "Full restore without local db"))

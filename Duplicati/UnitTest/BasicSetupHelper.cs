@@ -96,6 +96,7 @@ namespace Duplicati.UnitTest
         {
             Directory.CreateDirectory(this.DATAFOLDER);
             Directory.CreateDirectory(this.TARGETFOLDER);
+            Directory.CreateDirectory(this.RESTOREFOLDER);
         }
 
         [TearDown]
@@ -108,6 +109,10 @@ namespace Duplicati.UnitTest
             if (Directory.Exists(this.TARGETFOLDER))
             {
                 Directory.Delete(this.TARGETFOLDER, true);
+            }
+            if (Directory.Exists(this.RESTOREFOLDER))
+            {
+                Directory.Delete(this.RESTOREFOLDER, true);
             }
             if (File.Exists(this.LOGFILE))
             {
