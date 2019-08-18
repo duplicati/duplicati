@@ -19,18 +19,15 @@ using System.Linq;
 using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Reflection;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {
-    public class GeneralBlackBoxTesting
+    public class GeneralBlackBoxTesting : BasicSetupHelper
     {
-        private static readonly string SOURCE_FOLDERS =
-            Path.Combine(
-                string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
-                ? Path.Combine(Library.Utility.Utility.HOME_PATH, "duplicati_testdata")
-                : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER")
-            , "DSMCBE");
+        private static readonly string SOURCE_FOLDERS = Path.Combine(BASEFOLDER, "DSMCBE");
 
         protected IEnumerable<string> TestFolders
         {
@@ -62,6 +59,21 @@ namespace Duplicati.UnitTest
                 return x == "x" ? null : x;
             }
         }
+
+        public override void PrepareSourceData()
+        {
+            base.PrepareSourceData();
+            
+            const string filename = "DSMCBE.zip";
+            string tempZipFile = Path.Combine(BASEFOLDER, filename);
+            using (WebClient client = new WebClient())
+            {
+                client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{filename}", tempZipFile);
+            }
+            
+            System.IO.Compression.ZipFile.ExtractToDirectory(tempZipFile, BASEFOLDER);
+        }
+
         [Test]
         [Category("SVNData")]
         public void TestWithSVNShort()

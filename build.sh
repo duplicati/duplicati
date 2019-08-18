@@ -38,15 +38,7 @@ list_dir .
 
 if [ ! -d ~/tmp ]; then mkdir ~/tmp; fi
 if [ ! -d ~/download ]; then mkdir ~/download; fi
-if [ ! -d ~/download/svn ]; then mkdir ~/download/svn; fi
 if [ ! -d ~/download/bulk ]; then mkdir ~/download/bulk; fi
-
-if [ "$CATEGORY" == "SVNData" ] || [ "$CATEGORY" == "SVNDataLong" ]; then
-    # test if zip file exists and contains no errors
-    unzip -t ~/download/svn/DSMCBE.zip &> /dev/null || \
-    wget --progress=dot:giga "https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip" -O ~/download/svn/DSMCBE.zip
-    list_dir ~/download/svn
-fi
 
 if [ "$CATEGORY" == "BulkNormal" ] || [ "$CATEGORY" == "BulkNoSize" ];  then
     # test if zip file exists and contains no errors
@@ -56,12 +48,6 @@ if [ "$CATEGORY" == "BulkNormal" ] || [ "$CATEGORY" == "BulkNoSize" ];  then
 fi
 
 rm -rf ~/duplicati_testdata && mkdir ~/duplicati_testdata
-
-if [ "$CATEGORY" == "SVNData" ] || [ "$CATEGORY" == "SVNDataLong" ]; then
-    mkdir ~/duplicati_testdata/DSMCBE
-    unzip -q ~/download/svn/DSMCBE.zip -d ~/duplicati_testdata/
-    list_dir ~/duplicati_testdata/DSMCBE
-fi
 
 if [ "$CATEGORY" == "BulkNormal" ] || [ "$CATEGORY" == "BulkNoSize" ]; then
     mkdir ~/duplicati_testdata/data
