@@ -30,8 +30,6 @@ namespace Duplicati.UnitTest
         [Category("Purge")]
         public void PurgeTest()
         {
-            PrepareSourceData();
-
             var blocksize = 1024 * 10;
             var basedatasize = 0;
 
@@ -157,8 +155,6 @@ namespace Duplicati.UnitTest
         [Category("Purge")]
         public void PurgeBrokenFilesTest()
         {
-            PrepareSourceData();
-
             var blocksize = 1024 * 10;
             var basedatasize = 0;
 

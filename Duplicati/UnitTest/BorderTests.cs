@@ -28,7 +28,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run10kNoProgress()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => { 
                 opts["disable-file-scanner"] = "true"; 
             });
@@ -38,7 +37,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run10k()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10);
         }
 
@@ -46,7 +44,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run10mb()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => { 
                 opts["blocksize"] = "10mb";
             });
@@ -56,7 +53,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run100k()
         {
-            PrepareSourceData();
             RunCommands(1024 * 100);
         }
 
@@ -64,7 +60,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run12345_1()
         {
-            PrepareSourceData();
             RunCommands(12345);
         }
 
@@ -72,7 +67,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run12345_2()
         {
-            PrepareSourceData();
             RunCommands(12345, 1024 * 1024 * 10);
         }
 
@@ -80,7 +74,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunNoMetadata()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["skip-metadata"] = "true";
             });
@@ -91,7 +84,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunMD5()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["block-hash-algorithm"] = "MD5";
                 opts["file-hash-algorithm"] = "MD5";
@@ -102,7 +94,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunSHA384()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["block-hash-algorithm"] = "SHA384";
                 opts["file-hash-algorithm"] = "SHA384";
@@ -113,7 +104,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunMixedBlockFile_1()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["block-hash-algorithm"] = "MD5";
                 opts["file-hash-algorithm"] = "SHA1";
@@ -124,7 +114,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunMixedBlockFile_2()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["block-hash-algorithm"] = "MD5";
                 opts["file-hash-algorithm"] = "SHA256";
@@ -135,7 +124,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunNoIndexFiles()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["index-file-policy"] = "None";
             });
@@ -145,7 +133,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunSlimIndexFiles()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["index-file-policy"] = "Lookup";
             });
@@ -155,7 +142,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunQuickTimestamps()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts =>
             {
                 opts["check-filetime-only"] = "true";
@@ -166,7 +152,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunFullScan()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts =>
             {
                 opts["disable-filetime-check"] = "true";

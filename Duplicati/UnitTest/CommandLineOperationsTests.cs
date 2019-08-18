@@ -64,8 +64,6 @@ namespace Duplicati.UnitTest
         [Category("BulkNormal")]
         public void RunCommands()
         {
-            if (Directory.Exists(DATAFOLDER))
-                PrepareSourceData();
             DoRunCommands(TARGETFOLDER);
         }
 
@@ -74,8 +72,6 @@ namespace Duplicati.UnitTest
         [Category("BulkNoSize")]
         public void RunCommandsWithoutSize()
         {
-            if (Directory.Exists(DATAFOLDER))
-                PrepareSourceData();
             DoRunCommands(new SizeOmittingBackend().ProtocolKey + "://" + TARGETFOLDER);
         }
 

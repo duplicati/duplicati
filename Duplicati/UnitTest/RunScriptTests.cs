@@ -30,8 +30,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunScriptBefore()
         {
-            PrepareSourceData();
-
             var blocksize = 10 * 1024;
             var options = TestOptions;
             options["blocksize"] = blocksize.ToString() + "b";

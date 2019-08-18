@@ -80,8 +80,6 @@ namespace Duplicati.UnitTest
                 Console.SetOut(TestContext.Progress);
 
             this.RemoveSourceData();
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
         }
 
         [OneTimeTearDown]
@@ -89,6 +87,34 @@ namespace Duplicati.UnitTest
         {
             if (Directory.Exists(BASEFOLDER))
                 Directory.Delete(BASEFOLDER, true);
+        }
+
+        [SetUp]
+        public void CleanTargetDataDirectory()
+        {
+            Directory.CreateDirectory(this.DATAFOLDER);
+            Directory.CreateDirectory(this.TARGETFOLDER);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            if (Directory.Exists(this.DATAFOLDER))
+            {
+                Directory.Delete(this.DATAFOLDER, true);
+            }
+            if (Directory.Exists(this.TARGETFOLDER))
+            {
+                Directory.Delete(this.TARGETFOLDER, true);
+            }
+            if (File.Exists(this.LOGFILE))
+            {
+                File.Delete(this.LOGFILE);
+            }
+            if (File.Exists(this.DBFILE))
+            {
+                File.Delete(this.DBFILE);
+            }
         }
 
         protected virtual Dictionary<string, string> TestOptions
