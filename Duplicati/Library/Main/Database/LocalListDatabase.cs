@@ -56,12 +56,6 @@ namespace Duplicati.Library.Main.Database
             void TakeFirst ();
         }
 
-        public static class BackupType
-        {
-            public const int PARTIAL_BACKUP = 0;
-            public const int FULL_BACKUP = 1;
-        }
-
         private class FileSets : IFileSets
         {
             private readonly System.Data.IDbConnection m_connection;
@@ -378,14 +372,14 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 var id = rd.GetInt64(0);
-                                var isFullBackup = rd.GetInt32(1);
+                                var backupType = rd.GetInt32(1);
                                 var e = dict[id];
                                 
-                                if (isFullBackupEncountered && isFullBackup != BackupType.FULL_BACKUP) continue;
+                                if (isFullBackupEncountered && backupType != BackupType.FULL_BACKUP) continue;
 
-                                yield return new Fileset(e, isFullBackup, m_filesets[e].Value, -1L, -1L);
+                                yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
 
-                                if (!isFullBackupEncountered && isFullBackup == BackupType.FULL_BACKUP)
+                                if (!isFullBackupEncountered && backupType == BackupType.FULL_BACKUP)
                                 {
                                     isFullBackupEncountered = true;
                                 }
