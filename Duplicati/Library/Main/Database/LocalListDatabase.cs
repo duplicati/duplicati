@@ -378,7 +378,7 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 var id = rd.GetInt64(0);
-                                var isFullBackup = rd.GetInt32(BackupType.FULL_BACKUP);
+                                var isFullBackup = rd.GetInt32(1);
                                 var e = dict[id];
                                 
                                 if (isFullBackupEncountered && isFullBackup != BackupType.FULL_BACKUP) continue;
