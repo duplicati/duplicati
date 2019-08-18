@@ -447,10 +447,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                 throw;
             }
-            catch (Exception ex)
-            {
-                throw;
-            }
         }
         
         public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
