@@ -19,6 +19,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 
 namespace Duplicati.UnitTest
 {
@@ -42,6 +43,20 @@ namespace Duplicati.UnitTest
                     orderby x
                     select x;
             }
+        }
+
+        public override void PrepareSourceData()
+        {
+            base.PrepareSourceData();
+            
+            const string filename = "data.zip";
+            string tempZipFile = Path.Combine(BASEFOLDER, filename);
+            using (WebClient client = new WebClient())
+            {
+                client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{filename}", tempZipFile);
+            }
+            
+            System.IO.Compression.ZipFile.ExtractToDirectory(tempZipFile, BASEFOLDER);
         }
 
         [Test]

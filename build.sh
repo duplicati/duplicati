@@ -32,32 +32,9 @@ msbuild /p:Configuration=Release Duplicati.sln
 cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 echo "travis_fold:end:build_duplicati"
 
-# download and extract testdata
-echo "travis_fold:start:download_extract_testdata"
-list_dir .
-
-if [ ! -d ~/tmp ]; then mkdir ~/tmp; fi
-if [ ! -d ~/download ]; then mkdir ~/download; fi
-if [ ! -d ~/download/bulk ]; then mkdir ~/download/bulk; fi
-
-if [ "$CATEGORY" == "BulkNormal" ] || [ "$CATEGORY" == "BulkNoSize" ];  then
-    # test if zip file exists and contains no errors
-    unzip -t ~/download/bulk/data.zip &> /dev/null || \
-    wget --progress=dot:giga "https://s3.amazonaws.com/duplicati-test-file-hosting/data.zip" -O ~/download/bulk/data.zip
-    list_dir ~/download/bulk
-fi
-
 rm -rf ~/duplicati_testdata && mkdir ~/duplicati_testdata
-
-if [ "$CATEGORY" == "BulkNormal" ] || [ "$CATEGORY" == "BulkNoSize" ]; then
-    mkdir ~/duplicati_testdata/data
-    unzip -q ~/download/bulk/data.zip -d ~/duplicati_testdata/
-    list_dir ~/duplicati_testdata/data
-fi
-
 chown -R $TESTUSER ~/duplicati_testdata/
 chmod -R 755 ~/duplicati_testdata
-echo "travis_fold:end:download_extract_testdata"
 
 # run unit tests
 echo "travis_fold:start:unit_test"
