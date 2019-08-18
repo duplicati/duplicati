@@ -77,7 +77,9 @@ namespace Duplicati.UnitTest
         public virtual void OneTimeSetUp()
         {
             if (DEBUG_OUTPUT)
+            {
                 Console.SetOut(TestContext.Progress);
+            }
 
             if (Directory.Exists(BASEFOLDER))
             {
@@ -90,7 +92,9 @@ namespace Duplicati.UnitTest
         public void OneTimeTearDown()
         {
             if (Directory.Exists(BASEFOLDER))
+            {
                 Directory.Delete(BASEFOLDER, true);
+            }
         }
 
         [SetUp]
