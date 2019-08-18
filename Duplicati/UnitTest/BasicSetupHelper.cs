@@ -87,14 +87,8 @@ namespace Duplicati.UnitTest
         [OneTimeTearDown]
         public void RemoveSourceData()
         {
-            if (Directory.Exists(DATAFOLDER))
-                Directory.Delete(DATAFOLDER, true);
-            if (Directory.Exists(TARGETFOLDER))
-                Directory.Delete(TARGETFOLDER, true);
-            if (File.Exists(LOGFILE))
-                File.Delete(LOGFILE);
-            if (File.Exists(DBFILE))
-                File.Delete(DBFILE);
+            if (Directory.Exists(BASEFOLDER))
+                Directory.Delete(BASEFOLDER, true);
         }
 
         protected virtual Dictionary<string, string> TestOptions
