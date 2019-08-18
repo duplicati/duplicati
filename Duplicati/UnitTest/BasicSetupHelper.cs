@@ -81,20 +81,8 @@ namespace Duplicati.UnitTest
                 Console.SetOut(TestContext.Progress);
             }
 
-            if (Directory.Exists(BASEFOLDER))
-            {
-                Directory.Delete(BASEFOLDER, true);
-            }
             Directory.CreateDirectory(BASEFOLDER);
-        }
-
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
-        {
-            if (Directory.Exists(BASEFOLDER))
-            {
-                Directory.Delete(BASEFOLDER, true);
-            }
+            this.TearDown();
         }
 
         [SetUp]
