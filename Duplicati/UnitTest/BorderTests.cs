@@ -24,14 +24,6 @@ namespace Duplicati.UnitTest
 {
     public class BorderTests : BasicSetupHelper
     {
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
-
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
-        }
-
         [Test]
         [Category("Border")]
         public void Run10kNoProgress()

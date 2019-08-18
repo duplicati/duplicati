@@ -24,15 +24,6 @@ namespace Duplicati.UnitTest
 {
     public class Issue1410 : BasicSetupHelper
     {
-        [OneTimeSetUp]
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
-
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
-        }
-
         [Test]
         [Category("Targeted")]
         public void RunCommands()

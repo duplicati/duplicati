@@ -80,6 +80,8 @@ namespace Duplicati.UnitTest
                 Console.SetOut(TestContext.Progress);
 
             this.RemoveSourceData();
+            Directory.CreateDirectory(DATAFOLDER);
+            Directory.CreateDirectory(TARGETFOLDER);
         }
 
         [OneTimeTearDown]

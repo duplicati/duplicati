@@ -26,14 +26,6 @@ namespace Duplicati.UnitTest
 {
     public class RunScriptTests : BasicSetupHelper
     {
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
-
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
-        }
-
         [Test]
         [Category("Border")]
         public void RunScriptBefore()
