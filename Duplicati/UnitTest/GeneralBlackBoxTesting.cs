@@ -43,7 +43,7 @@ namespace Duplicati.UnitTest
             }
         }
 
-        protected Dictionary<string, string> TestOptions
+        protected override Dictionary<string, string> TestOptions
         {
             get
             {
