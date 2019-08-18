@@ -85,6 +85,12 @@ namespace Duplicati.UnitTest
             this.TearDown();
         }
 
+        [OneTimeTearDown]
+        public virtual void OneTimeTearDown()
+        {
+            // No-op by default.
+        }
+
         [SetUp]
         public void SetUp()
         {

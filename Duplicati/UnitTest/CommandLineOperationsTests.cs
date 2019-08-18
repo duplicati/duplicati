@@ -29,10 +29,13 @@ namespace Duplicati.UnitTest
         /// The log tag
         /// </summary>
         private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<CommandLineOperationsTests>();
+        
         /// <summary>
         /// The folder that contains all the source data which the test is based on
         /// </summary>
         protected readonly string SOURCEFOLDER = Path.Combine(BASEFOLDER, "data");
+
+        private readonly string zipFilename = "data.zip";
 
         protected virtual IEnumerable<string> SourceDataFolders
         {
@@ -49,14 +52,27 @@ namespace Duplicati.UnitTest
         {
             base.OneTimeSetUp();
             
-            const string filename = "data.zip";
-            string tempZipFile = Path.Combine(BASEFOLDER, filename);
+            string tempZipFile = Path.Combine(BASEFOLDER, this.zipFilename);
             using (WebClient client = new WebClient())
             {
-                client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{filename}", tempZipFile);
+                client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{this.zipFilename}", tempZipFile);
             }
             
             System.IO.Compression.ZipFile.ExtractToDirectory(tempZipFile, BASEFOLDER);
+        }
+
+        public override void OneTimeTearDown()
+        {
+            if (Directory.Exists(this.SOURCEFOLDER))
+            {
+                Directory.Delete(this.SOURCEFOLDER, true);
+            }
+            
+            string zipFile = Path.Combine(BASEFOLDER, this.zipFilename);
+            if (File.Exists(zipFile))
+            {
+                File.Delete(zipFile);
+            }
         }
 
         [Test]

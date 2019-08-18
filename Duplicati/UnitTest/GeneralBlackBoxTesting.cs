@@ -28,6 +28,7 @@ namespace Duplicati.UnitTest
     public class GeneralBlackBoxTesting : BasicSetupHelper
     {
         private static readonly string SOURCE_FOLDERS = Path.Combine(BASEFOLDER, "DSMCBE");
+        private readonly string zipFilename = "DSMCBE.zip";
 
         protected IEnumerable<string> TestFolders
         {
@@ -64,14 +65,27 @@ namespace Duplicati.UnitTest
         {
             base.OneTimeSetUp();
             
-            const string filename = "DSMCBE.zip";
-            string tempZipFile = Path.Combine(BASEFOLDER, filename);
+            string tempZipFile = Path.Combine(BASEFOLDER, this.zipFilename);
             using (WebClient client = new WebClient())
             {
-                client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{filename}", tempZipFile);
+                client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{this.zipFilename}", tempZipFile);
             }
             
             System.IO.Compression.ZipFile.ExtractToDirectory(tempZipFile, BASEFOLDER);
+        }
+
+        public override void OneTimeTearDown()
+        {
+            if (Directory.Exists(SOURCE_FOLDERS))
+            {
+                Directory.Delete(SOURCE_FOLDERS, true);
+            }
+
+            string zipFile = Path.Combine(BASEFOLDER, this.zipFilename);
+            if (File.Exists(zipFile))
+            {
+                File.Delete(zipFile);
+            }
         }
 
         [Test]
