@@ -44,12 +44,6 @@ namespace Duplicati.UnitTest
             }
         }
 
-        [OneTimeSetUp]
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
-        }
-
         [Test]
         [Category("BulkData")]
         [Category("BulkNormal")]
