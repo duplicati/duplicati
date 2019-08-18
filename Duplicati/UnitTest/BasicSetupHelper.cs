@@ -79,7 +79,11 @@ namespace Duplicati.UnitTest
             if (DEBUG_OUTPUT)
                 Console.SetOut(TestContext.Progress);
 
-            this.OneTimeTearDown();
+            if (Directory.Exists(BASEFOLDER))
+            {
+                Directory.Delete(BASEFOLDER, true);
+            }
+            Directory.CreateDirectory(BASEFOLDER);
         }
 
         [OneTimeTearDown]
