@@ -60,9 +60,9 @@ namespace Duplicati.UnitTest
             }
         }
 
-        public override void PrepareSourceData()
+        public override void OneTimeSetUp()
         {
-            base.PrepareSourceData();
+            base.OneTimeSetUp();
             
             const string filename = "DSMCBE.zip";
             string tempZipFile = Path.Combine(BASEFOLDER, filename);

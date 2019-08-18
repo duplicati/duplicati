@@ -74,23 +74,23 @@ namespace Duplicati.UnitTest
         }
 
         [OneTimeSetUp]
-        public virtual void PrepareSourceData()
+        public virtual void OneTimeSetUp()
         {
             if (DEBUG_OUTPUT)
                 Console.SetOut(TestContext.Progress);
 
-            this.RemoveSourceData();
+            this.OneTimeTearDown();
         }
 
         [OneTimeTearDown]
-        public void RemoveSourceData()
+        public void OneTimeTearDown()
         {
             if (Directory.Exists(BASEFOLDER))
                 Directory.Delete(BASEFOLDER, true);
         }
 
         [SetUp]
-        public void CleanTargetDataDirectory()
+        public void SetUp()
         {
             Directory.CreateDirectory(this.DATAFOLDER);
             Directory.CreateDirectory(this.TARGETFOLDER);
