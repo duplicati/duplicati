@@ -197,11 +197,6 @@ namespace Duplicati.UnitTest
             using (new Library.Logging.Timer(LOGTAG, "TestRemoteData", "Test remote data"))
                 if (Duplicati.CommandLine.Program.RealMain((new string[] { "test", target, "all" }.Union(opts)).ToArray()) != 0)
                     throw new Exception("Failed during final remote verification");
-
-            foreach (var datafolder in datafolders)
-            {
-                Directory.Delete(datafolder, true);
-            }
         }
     }
 }
