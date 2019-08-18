@@ -23,6 +23,7 @@ using Duplicati.Library.Interface;
 using FluentFTP;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Security;
@@ -367,22 +368,32 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         public FileEntry GetFileInfo(string remotename)
         {
-            var ftpClient = CreateClient();
+            IEnumerable<FileEntry> items;
 
-            var filename = SystemIO.IO_OS.PathGetFileName(remotename);
-            var relativePath = remotename.Substring(0, remotename.Length - filename.Length);
+            try
+            {
+                var ftpClient = CreateClient();
 
-            IEnumerable<FileEntry> items = from n in ftpClient.GetListing(relativePath, FtpListOption.Modify | FtpListOption.Size | FtpListOption.DerefLinks).Where(x => x.Name == remotename)
-                                           select new FileEntry
-                                           {
-                                               Name = n.Name,
-                                               Size = n.Size,
-                                               IsFolder = n.Type == FtpFileSystemObjectType.Directory,
-                                               LastAccess = n.Modified,
-                                               LastModification = n.Modified
-                                           };
+                var filename = SystemIO.IO_OS.PathGetFileName(remotename);
+                var relativePath = remotename.Substring(0, remotename.Length - filename.Length);
 
-            return items.First();
+                items = from n in ftpClient.GetListing($"{m_rootPath}/{relativePath}", FtpListOption.Modify | FtpListOption.Size | FtpListOption.DerefLinks).Where(x => x.Name == filename)
+                    select new FileEntry
+                    {
+                        Name = n.Name,
+                        Size = n.Size,
+                        IsFolder = n.Type == FtpFileSystemObjectType.Directory,
+                        LastAccess = n.Modified,
+                        LastModification = n.Modified
+                    };
+
+                return items.First();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
         }
 
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
@@ -407,14 +418,16 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 }
 
                 CreateFolder(path);
-
+                
                 bool success = await ftpClient.UploadAsync(input, $"{m_rootPath}/{remotename}", FtpExists.Overwrite, createRemoteDir: true, token: cancelToken, progress: null).ConfigureAwait(false);
-
+                
                 if (!success)
                 {
                     throw new UserInformationException(string.Format(Strings.ErrorWriteFile, remotename), "AftpPutFailure");
                 }
 
+                Thread.Sleep(500); // without some sleep GetFileInfo() will fail
+                
                 if (_listVerify)
                 {
                     FileEntry remoteFileInfo = GetFileInfo(remotename);
@@ -434,8 +447,12 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                 throw;
             }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
-
+        
         public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
