@@ -372,9 +372,12 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 var id = rd.GetInt64(0);
+
+                                if (!dict.ContainsKey(id)) continue;
+
                                 var backupType = rd.GetInt32(1);
                                 var e = dict[id];
-                                
+
                                 if (isFullBackupEncountered && backupType != BackupType.FULL_BACKUP) continue;
 
                                 yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
