@@ -36,6 +36,7 @@ namespace Duplicati.UnitTest
         protected readonly string SOURCEFOLDER = Path.Combine(BASEFOLDER, "data");
 
         private readonly string zipFilename = "data.zip";
+        private string zipFilepath => Path.Combine(BASEFOLDER, this.zipFilename);
 
         protected virtual IEnumerable<string> SourceDataFolders
         {
@@ -52,13 +53,12 @@ namespace Duplicati.UnitTest
         {
             base.OneTimeSetUp();
             
-            string tempZipFile = Path.Combine(BASEFOLDER, this.zipFilename);
             using (WebClient client = new WebClient())
             {
-                client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{this.zipFilename}", tempZipFile);
+                client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{this.zipFilename}", this.zipFilepath);
             }
             
-            System.IO.Compression.ZipFile.ExtractToDirectory(tempZipFile, BASEFOLDER);
+            System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
         }
 
         public override void OneTimeTearDown()
@@ -67,11 +67,9 @@ namespace Duplicati.UnitTest
             {
                 Directory.Delete(this.SOURCEFOLDER, true);
             }
-            
-            string zipFile = Path.Combine(BASEFOLDER, this.zipFilename);
-            if (File.Exists(zipFile))
+            if (File.Exists(this.zipFilepath))
             {
-                File.Delete(zipFile);
+                File.Delete(this.zipFilepath);
             }
         }
 
