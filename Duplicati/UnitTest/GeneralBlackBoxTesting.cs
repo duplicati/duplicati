@@ -92,6 +92,7 @@ namespace Duplicati.UnitTest
         {
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, TestTarget);
         }
+        
         [Test]
         [Category("SVNDataLong")]
         public void TestWithSVNLong()
