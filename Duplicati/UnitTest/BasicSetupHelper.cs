@@ -83,6 +83,7 @@ namespace Duplicati.UnitTest
 
             Directory.CreateDirectory(BASEFOLDER);
             this.TearDown();
+            this.OneTimeTearDown();
         }
 
         [OneTimeTearDown]
