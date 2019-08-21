@@ -442,9 +442,11 @@ namespace Duplicati.Library.Main.Database
                 if (m_tablename != null)
                 {
                     try 
-                    { 
-                        using(var cmd = m_connection.CreateCommand())
+                    {
+                        using (var cmd = m_connection.CreateCommand())
+                        {
                             cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tablename));
+                        }
                     }
                     catch {}
                     finally { m_tablename = null; }
