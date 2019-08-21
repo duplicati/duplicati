@@ -414,6 +414,10 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 var id = rd.GetInt64(0);
+                                if (!dict.ContainsKey(id))
+                                {
+                                    continue;
+                                }
                                 var isFullBackup = rd.GetInt32(1);
                                 var e = dict[id];
 
