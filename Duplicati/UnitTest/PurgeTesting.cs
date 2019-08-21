@@ -156,7 +156,7 @@ namespace Duplicati.UnitTest
                 Console.WriteLine("Files:");
                 Console.WriteLine("  " + string.Join(Environment.NewLine + "  ", files.Select(x => string.Format("{0}: {1}", x.Path, string.Join(" - ", x.Sizes.Select(y => y.ToString()))))));
 
-                Assert.AreEqual(4, filesets.Length, "Incorrect number of filesets after final backup");
+                Assert.AreEqual(1, filesets.Length, "Incorrect number of filesets after final backup");
                 Assert.AreEqual(filenames.Count + 1, filecount, "Incorrect number of files after final backup");
             }
         }
