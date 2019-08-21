@@ -26,6 +26,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.ExceptionServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
@@ -288,12 +289,17 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public FileEntry CreateParityFile(FileEntryItem item, Options options)
         {
+            var parityRedundancy = 1;
+            var parityNumberOfRecoveryFiles = 1;
+
             var tempPath = Path.GetDirectoryName(item.LocalFilename);
             var parFilename = $"{item.RemoteFilename}.par2";
 
             SystemIO.IO_OS.FileMove(item.LocalFilename, $"{tempPath}/{item.RemoteFilename}");
 
-            var output = LaunchCommandLineApp($@"win-tools/par2.exe", $@"create -r1 -n1 ""{tempPath}/{parFilename}"" ""{tempPath}/{item.RemoteFilename}"" ");
+            bool output = ParityLaunchCommandLineApp(
+                @"win-tools/par2.exe", 
+                $@"create -q -r{parityRedundancy} -n{parityNumberOfRecoveryFiles} ""{tempPath}/{parFilename}"" ""{tempPath}/{item.RemoteFilename}"" ");
 
             Logging.Log.WriteProfilingMessage(LOGTAG, "CreateParityFile", $"Source file: {item.RemoteFilename} output:{output}");
 
@@ -316,10 +322,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                 SystemIO.IO_OS.FileLength($"{tempPath}/{item.RemoteFilename}.par2.zip"));
         }
 
-        static string LaunchCommandLineApp(string exePath, string args)
+        static bool ParityLaunchCommandLineApp(string exePath, string args)
         {
-            // Use ProcessStartInfo class.
-            ProcessStartInfo startInfo = new ProcessStartInfo
+            StringBuilder outputBuilder = new StringBuilder();
+            StringBuilder errorBuilder = new StringBuilder();
+            Process process = null;
+
+            ProcessStartInfo psi = new ProcessStartInfo
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -329,25 +338,37 @@ namespace Duplicati.Library.Main.Operation.Backup
                 Arguments = args
             };
 
+#if DEBUG
+            //Console.Error.WriteLine($"command executing: {exePath} {args}");
+#endif
+
             try
             {
                 // Start the process with the info we specified.
                 // Call WaitForExit and then the using-statement will close.
-                using (Process exeProcess = Process.Start(startInfo))
+                using (process = Process.Start(psi))
                 {
-                    StreamReader reader = exeProcess.StandardOutput;
+                    StreamReader reader = process.StandardOutput;
                     string output = reader.ReadToEnd();
-                    exeProcess.WaitForExit();
-                    Console.WriteLine($"exit code: {exeProcess.ExitCode}");
-                    return output;
+                    process.WaitForExit();
+                    if (process.ExitCode != 0)
+                    {
+                        throw new Exception("Failed to create parity file.");
+                    }
+                    return true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Log error.
+                Logging.Log.WriteErrorMessage(LOGTAG, "ParityLaunchCommandLineApp", ex, $"Failed to create parity file. {ex.Message}");
+            }
+            finally
+            {
+                process?.Dispose();
+                GC.Collect();
             }
 
-            return "";
+            return false;
         }
 
         private async Task<bool> DoWithRetry(Func<Task> method, FileEntryItem item, Worker worker, CancellationToken cancelToken)
@@ -476,7 +497,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
 
-            //if (item.IsParityProtected || !string.IsNullOrEmpty(item.ParityFile))
             if (m_options.EnableParityFile)
             {
                 var beginParity = DateTime.Now;
