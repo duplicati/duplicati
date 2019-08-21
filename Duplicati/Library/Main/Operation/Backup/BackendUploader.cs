@@ -270,10 +270,12 @@ namespace Duplicati.Library.Main.Operation.Backup
             if (cancelToken.IsCancellationRequested)
                 return false;
 
-            //if (m_options.EnableParityFile)
-            var parityItem = CreateParityFile(item, m_options);
-            item.IsParityProtected = true;
-            item.ParityFile = parityItem.Name;
+            if (m_options.EnableParityFile)
+            {
+                var parityItem = CreateParityFile(item, m_options);
+                item.IsParityProtected = true;
+                item.ParityFile = parityItem.Name;
+            }
 
             return await DoWithRetry(async () =>
             {
@@ -473,8 +475,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
-            
-            if (item.IsParityProtected || !string.IsNullOrEmpty(item.ParityFile))
+
+            //if (item.IsParityProtected || !string.IsNullOrEmpty(item.ParityFile))
+            if (m_options.EnableParityFile)
             {
                 var beginParity = DateTime.Now;
 
