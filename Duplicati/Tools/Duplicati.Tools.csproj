@@ -44,9 +44,6 @@
     <Content Include="utility-scripts\README.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="win-tools\par2.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="win-tools\README.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -76,6 +73,10 @@
     </Content>
     <Content Include="..\..\thirdparty\gpg\libiconv-2.dll">
       <Link>win-tools\libiconv-2.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\par2\par2.exe">
+      <Link>win-tools\par2.exe</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\gpg\zlib1.dll">
