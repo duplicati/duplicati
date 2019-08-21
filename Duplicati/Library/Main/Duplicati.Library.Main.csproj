@@ -44,6 +44,11 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.IO.Compression, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.IO.Compression.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
   </ItemGroup>
@@ -146,6 +151,10 @@
     <Compile Include="ProcessController.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj">
+      <Project>{19ecce09-b5eb-406c-8c57-bac66997d469}</Project>
+      <Name>Duplicati.Library.Compression</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>

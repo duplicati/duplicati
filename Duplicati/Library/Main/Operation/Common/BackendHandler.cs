@@ -17,6 +17,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
@@ -58,6 +59,14 @@ namespace Duplicati.Library.Main.Operation.Common
             /// The name of the local file
             /// </summary>
             public string LocalFilename { get { return LocalTempfile; } }
+            /// <summary>
+            /// The name of the parity file
+            /// </summary>
+            public string ParityFile { get; set; }
+            /// <summary>
+            /// A flag indicating if the file has a parity file
+            /// </summary>
+            public bool IsParityProtected = false;
             /// <summary>
             /// A reference to a temporary file that is disposed upon
             /// failure or completion of the item
@@ -159,6 +168,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     finally { this.LocalTempfile = null; }
                 }
             }
+            
         }
 
 

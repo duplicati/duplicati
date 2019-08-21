@@ -186,10 +186,14 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="backend">The backend instance to use</param>
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
-        /// <param name="protectedfile">A filename that should be excempted for deletion</param>
+        /// <param name="protectedfile">A filename that should be exempted for deletion</param>
         public static RemoteAnalysisResult RemoteListAnalysis(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, string protectedfile)
         {
             var rawlist = backend.List();
+
+            // ignore/remove par2 files from list
+            rawlist = rawlist.Where(x => !x.Name.EndsWith("par2.zip")).ToList();
+
             var lookup = new Dictionary<string, Volumes.IParsedVolume>();
             protectedfile = protectedfile ?? string.Empty;
 

@@ -22,11 +22,14 @@ using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Compression;
 using static Duplicati.Library.Main.Operation.Common.BackendHandler;
 
 namespace Duplicati.Library.Main.Operation.Backup
@@ -261,11 +264,16 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
         }
-
+        
         private async Task<bool> UploadFileAsync(FileEntryItem item, Worker worker, CancellationToken cancelToken)
         {
             if (cancelToken.IsCancellationRequested)
                 return false;
+
+            //if (m_options.EnableParityFile)
+            var parityItem = CreateParityFile(item, m_options);
+            item.IsParityProtected = true;
+            item.ParityFile = parityItem.Name;
 
             return await DoWithRetry(async () =>
             {
@@ -274,6 +282,70 @@ namespace Duplicati.Library.Main.Operation.Backup
                 await DoPut(item, worker.Backend, cancelToken).ConfigureAwait(false);
             },
             item, worker, cancelToken).ConfigureAwait(false);
+        }
+
+        public FileEntry CreateParityFile(FileEntryItem item, Options options)
+        {
+            var tempPath = Path.GetDirectoryName(item.LocalFilename);
+            var parFilename = $"{item.RemoteFilename}.par2";
+
+            SystemIO.IO_OS.FileMove(item.LocalFilename, $"{tempPath}/{item.RemoteFilename}");
+
+            var output = LaunchCommandLineApp($@"win-tools/par2.exe", $@"create -r1 -n1 ""{tempPath}/{parFilename}"" ""{tempPath}/{item.RemoteFilename}"" ");
+
+            Logging.Log.WriteProfilingMessage(LOGTAG, "CreateParityFile", $"Source file: {item.RemoteFilename} output:{output}");
+
+            var parFiles = Directory.GetFiles($"{Path.GetDirectoryName(item.LocalFilename)}",
+                $"{item.RemoteFilename}*.par2");
+
+            FileZip.CreateZip(
+                parFiles,
+                $"{tempPath}/{item.RemoteFilename}.par2.zip");
+
+            foreach (var parFile in parFiles)
+            {
+                File.Delete(parFile);
+            }
+
+            SystemIO.IO_OS.FileMove($"{tempPath}/{item.RemoteFilename}", item.LocalFilename);
+            
+            return new FileEntry(
+                $"{tempPath}/{item.RemoteFilename}.par2.zip",
+                SystemIO.IO_OS.FileLength($"{tempPath}/{item.RemoteFilename}.par2.zip"));
+        }
+
+        static string LaunchCommandLineApp(string exePath, string args)
+        {
+            // Use ProcessStartInfo class.
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                FileName = exePath,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                RedirectStandardOutput = true,
+                Arguments = args
+            };
+
+            try
+            {
+                // Start the process with the info we specified.
+                // Call WaitForExit and then the using-statement will close.
+                using (Process exeProcess = Process.Start(startInfo))
+                {
+                    StreamReader reader = exeProcess.StandardOutput;
+                    string output = reader.ReadToEnd();
+                    exeProcess.WaitForExit();
+                    Console.WriteLine($"exit code: {exeProcess.ExitCode}");
+                    return output;
+                }
+            }
+            catch
+            {
+                // Log error.
+            }
+
+            return "";
         }
 
         private async Task<bool> DoWithRetry(Func<Task> method, FileEntryItem item, Worker worker, CancellationToken cancelToken)
@@ -400,11 +472,44 @@ namespace Duplicati.Library.Main.Operation.Backup
                 await backend.PutAsync(item.RemoteFilename, item.LocalFilename, cancelToken).ConfigureAwait(false);
 
             var duration = DateTime.Now - begin;
-            m_progressUpdater.EndFileProgress(item.RemoteFilename);
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
+            
+            if (item.IsParityProtected || !string.IsNullOrEmpty(item.ParityFile))
+            {
+                var beginParity = DateTime.Now;
 
+                if (!m_options.DisableStreamingTransfers && backend is IStreamingBackend streamingBackend2)
+                {
+                    using (var fs = File.OpenRead(item.ParityFile))
+                    using (var ts = new ThrottledStream(fs, m_initialUploadThrottleSpeed, 0))
+                    using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg, item.RemoteFilename)))
+                    {
+                        await streamingBackend2
+                            .PutAsync($"{item.RemoteFilename}.par2.zip", pgs, cancelToken)
+                            .ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    await backend.PutAsync(
+                        $"{item.RemoteFilename}.par2.zip",
+                        item.ParityFile, cancelToken).ConfigureAwait(false);
+                }
+
+                var durationParity = DateTime.Now - begin;
+                Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s",
+                    Library.Utility.Utility.FormatSizeString(SystemIO.IO_OS.FileLength(item.ParityFile)), durationParity,
+                    Library.Utility.Utility.FormatSizeString((long) (item.Size / durationParity.TotalSeconds)));
+
+                File.Delete(item.ParityFile);
+            }
+
+            m_progressUpdater.EndFileProgress(item.RemoteFilename);
+            
             if (item.TrackedInDb)
+            {
                 await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
+            }
 
             await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size);
 
