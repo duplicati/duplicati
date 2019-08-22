@@ -26,20 +26,10 @@ namespace Duplicati.UnitTest
 {
     public class RunScriptTests : BasicSetupHelper
     {
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
-
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
-        }
-
         [Test]
         [Category("Border")]
         public void RunScriptBefore()
         {
-            PrepareSourceData();
-
             var blocksize = 10 * 1024;
             var options = TestOptions;
             options["blocksize"] = blocksize.ToString() + "b";

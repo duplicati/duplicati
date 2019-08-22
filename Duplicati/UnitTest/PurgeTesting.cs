@@ -26,20 +26,10 @@ namespace Duplicati.UnitTest
 {
     public class PurgeTesting : BasicSetupHelper
     {
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
-
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
-        }
-
         [Test]
         [Category("Purge")]
         public void PurgeTest()
         {
-            PrepareSourceData();
-
             var blocksize = 1024 * 10;
             var basedatasize = 0;
 
@@ -165,8 +155,6 @@ namespace Duplicati.UnitTest
         [Category("Purge")]
         public void PurgeBrokenFilesTest()
         {
-            PrepareSourceData();
-
             var blocksize = 1024 * 10;
             var basedatasize = 0;
 
