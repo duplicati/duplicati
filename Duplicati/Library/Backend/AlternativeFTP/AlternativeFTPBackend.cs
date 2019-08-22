@@ -337,25 +337,23 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                     throw new UserInformationException(string.Format(Strings.ErrorWriteFile, remotename), "AftpPutFailure");
                 }
 
-                if (_listVerify)
+                // check remote file size; matching file size indicates completion
+                var sleepTime = 250;
+                var maxVerifyMilliseconds = 5000;
+                var m = maxVerifyMilliseconds;
+                long remoteSize = 0;
+                while (m > 0)
                 {
-                    var fileEntries = List(remotename, true);
-
-                    foreach (var fileEntry in fileEntries)
+                    remoteSize = ftpClient.GetFileSize(remotePath);
+                    if (streamLen == remoteSize)
                     {
-                        if (fileEntry.Name.Equals(remotename) || fileEntry.Name.EndsWith("/" + remotename, StringComparison.Ordinal) || fileEntry.Name.EndsWith("\\" + remotename, StringComparison.Ordinal))
-                        {
-                            if (fileEntry.Size < 0 || streamLen < 0 || fileEntry.Size == streamLen)
-                            {
-                                return;
-                            }
-
-                            throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, fileEntry.Size, streamLen), "AftpListVerifySizeFailure");
-                        }
+                        return;
                     }
-
-                    throw new UserInformationException(Strings.ListVerifyFailure(remotename, fileEntries.Select(n => n.Name)), "AftpListVerifySizeFailure");
+                    m -= sleepTime;
+                    Thread.Sleep(sleepTime);
                 }
+
+                throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "AftpListVerifySizeFailure");
             }
             catch (FtpCommandException ex)
             {
