@@ -33,6 +33,7 @@
     <Reference Include="nunit.framework">
       <HintPath>..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="SVNCheckoutsTest.cs" />
