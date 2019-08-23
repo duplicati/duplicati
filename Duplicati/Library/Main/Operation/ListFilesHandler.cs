@@ -65,7 +65,6 @@ namespace Duplicati.Library.Main.Operation
 
                         if (m_options.ListSetsOnly)
                         {
-                            var q = filesets.QuickSets;
                             m_result.SetResult(
                                 filesets.QuickSets.Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes)).ToArray(),
                                 null
