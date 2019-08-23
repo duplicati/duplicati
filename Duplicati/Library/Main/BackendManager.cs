@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Newtonsoft.Json;
 using Duplicati.Library.Localization.Short;
 using System.Threading;
+using Duplicati.Library.Compression;
 
 namespace Duplicati.Library.Main
 {
@@ -19,6 +23,8 @@ namespace Duplicati.Library.Main
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
 
         public const string VOLUME_HASH = "SHA256";
+
+        private static readonly object m_RepairRemoteFileUsingParity_lock = new object();
 
         /// <summary>
         /// Class to represent hash failures
@@ -215,7 +221,7 @@ namespace Duplicati.Library.Main
             {
                 if (this.LocalTempfile != null)
                     try { this.LocalTempfile.Dispose(); }
-                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
                     finally { this.LocalTempfile = null; }
             }
 
@@ -531,7 +537,7 @@ namespace Duplicati.Library.Main
                                     try
                                     {
                                         var names = m_backend.DNSName ?? new string[0];
-                                        foreach(var name in names)
+                                        foreach (var name in names)
                                             if (!string.IsNullOrWhiteSpace(name))
                                                 System.Net.Dns.GetHostEntry(name);
                                     }
@@ -801,11 +807,11 @@ namespace Duplicati.Library.Main
                     decryptTarget = new TempFile();
                     decryptToStream = System.IO.File.OpenWrite(decryptTarget);
                     taskDecrypter = new System.Threading.Tasks.Task(() =>
-                            {
-                                using (var input = linkForkDecryptor.ReaderStream)
-                                using (var output = decryptToStream)
-                                    lock (m_encryptionLock) { useDecrypter.Decrypt(input, output); }
-                            }
+                    {
+                        using (var input = linkForkDecryptor.ReaderStream)
+                        using (var output = decryptToStream)
+                            lock (m_encryptionLock) { useDecrypter.Decrypt(input, output); }
+                    }
                         );
                 }
 
@@ -813,10 +819,10 @@ namespace Duplicati.Library.Main
                 linkForkHasher = new DirectStreamLink(1 << 16, false, false, nextTierWriter);
                 nextTierWriter = linkForkHasher.WriterStream;
                 taskHasher = new System.Threading.Tasks.Task<string>(() =>
-                        {
-                            using (var input = linkForkHasher.ReaderStream)
-                                return CalculateFileHash(input);
-                        }
+                {
+                    using (var input = linkForkHasher.ReaderStream)
+                        return CalculateFileHash(input);
+                }
                     );
 
                 // OK, forks with tasks are set up, so let's do the download which is performed in main thread.
@@ -879,10 +885,19 @@ namespace Duplicati.Library.Main
                     }
                 }
 
-                if (useDecrypter != null) // return decrypted temp file
-                { retTarget = decryptTarget; decryptTarget = null; }
-                else // return downloaded file
-                { retTarget = dlTarget; dlTarget = null; }
+                if (retHashcode == item.Hash)
+                {
+                    if (useDecrypter != null) // return decrypted temp file
+                    {
+                        retTarget = decryptTarget;
+                        decryptTarget = null;
+                    }
+                    else // return downloaded file
+                    {
+                        retTarget = dlTarget;
+                        dlTarget = null;
+                    }
+                }
             }
             finally
             {
@@ -928,6 +943,24 @@ namespace Duplicati.Library.Main
                     retHashcode = CalculateFileHash(dlTarget);
                 }
 
+                if (m_options.EnableParityFile && retHashcode != item.Hash)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "coreDoGetSequential", null,
+                        $"Remote file hash is incorrect and indicates file corruption. File repair using the parity file will be attempted. File:{item.RemoteFilename}");
+                    dlTarget = RepairRemoteFileUsingParity(item, dlTarget, out retHashcode, out retDownloadSize);
+
+                    if (retHashcode == item.Hash)
+                    {
+                        Logging.Log.WriteInformationMessage(LOGTAG, "coreDoGetSequential", 
+                            $"Remote file has been repaired using the parity file. File: {item.RemoteFilename}");
+                    }
+                    else
+                    {
+                        Logging.Log.WriteErrorMessage(LOGTAG, "coreDoGetSequential", null,
+                            $"Remote file could not be repaired using the parity file. File: {item.RemoteFilename}");
+                    }
+                }
+
                 // Decryption is not placed in the stream stack because there seemed to be an effort
                 // to throw a CryptographicException on fail. If in main stack, we cannot differentiate
                 // in which part of the stack the source of an exception resides.
@@ -952,13 +985,182 @@ namespace Duplicati.Library.Main
             }
             finally
             {
-                if (dlTarget != null) dlTarget.Dispose();
-                if (decryptTarget != null) decryptTarget.Dispose();
+                dlTarget?.Dispose();
+                decryptTarget?.Dispose();
             }
 
             return retTarget;
         }
+        
+        public static bool ParityLaunchCommandLineApp(string exePath, string args)
+        {
+            StringBuilder outputBuilder = new StringBuilder();
+            StringBuilder errorBuilder = new StringBuilder();
+            Process process = null;
 
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                FileName = exePath,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                RedirectStandardOutput = true,
+                Arguments = args
+            };
+
+#if DEBUG
+            //Console.Error.WriteLine($"command executing: {exePath} {args}");
+#endif
+
+            try
+            {
+                // Start the process with the info we specified.
+                // Call WaitForExit and then the using-statement will close.
+                using (process = Process.Start(psi))
+                {
+                    StreamReader reader = process.StandardOutput;
+                    string output = reader.ReadToEnd();
+                    process.WaitForExit();
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "ParityLaunchCommandLineApp", $"{exePath}{Environment.NewLine}{Regex.Replace(output, @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline)}");
+                    if (process.ExitCode != 0)
+                    {
+                        throw new Exception("Failed to create parity file.");
+                    }
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "ParityLaunchCommandLineApp", ex, $"{exePath} Failed to create parity file. {ex.Message}");
+            }
+            finally
+            {
+                process?.Dispose();
+                GC.Collect();
+            }
+
+            return false;
+        }
+
+        public static void ReplaceData(string filename, int position, byte[] data)
+        {
+            using (Stream stream = File.Open(filename, FileMode.Open))
+            {
+                stream.Position = position;
+                stream.Write(data, 0, data.Length);
+            }
+        }
+
+        private static IDisposable AcquireLock(int repoId, string itemKey)
+        {
+            return new ItemLock(repoId, itemKey);
+        }
+
+        private class ItemLock : IDisposable
+        {
+            // https://codereview.stackexchange.com/questions/105523/item-level-locks-for-a-large-number-of-items
+            private static object _listLock = new object();
+            private static List<ItemLock> _locks = new List<ItemLock>();
+            private readonly Tuple<int, string> _name;
+            public object Lock { get; private set; }
+            public ItemLock(int repoId, string itemKey)
+            {
+                lock (_listLock)
+                {
+                    _name = Tuple.Create(repoId, itemKey);
+                    var existing = _locks.Find(l => l._name.Equals(_name));
+                    // Allow one lock instance per name
+                    Lock = existing == null ? new object() : existing.Lock;
+                    _locks.Add(this);
+                }
+            }
+            public void Dispose()
+            {
+                lock (_listLock)
+                {
+                    _locks.Remove(this);
+                }
+            }
+        }
+
+        private TempFile RepairRemoteFileUsingParity(FileEntryItem item, TempFile repairTarget, out string retHashcode, out long retDownloadSize)
+        {
+            if (!m_options.EnableParityFile)
+            {
+                retHashcode = item.Hash;
+                retDownloadSize = item.Size;
+                return repairTarget;
+            }
+            
+            using (AcquireLock(1, item.RemoteFilename))
+            {
+                TempFile dlParityTarget = new TempFile();
+                List<string> unzippedFiles = new List<string>();
+
+                try
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RepairFileUsingParity", $"***** attempting to repair file: {item.RemoteFilename}");
+                    var remoteParityZipFile = $"{item.RemoteFilename}.par2.zip";
+                    var tempParityZipFile =
+                        $"{Path.Combine(Path.GetTempPath(), Path.GetFileName(dlParityTarget.Name) ?? throw new InvalidOperationException())}";
+                    var parTargetFile = Path.Combine(Path.GetTempPath(),
+                        Path.GetFileName(item.RemoteFilename) ?? throw new InvalidOperationException());
+                    var parMainFile = $"{parTargetFile}.par2";
+
+                    m_backend.Get(remoteParityZipFile, dlParityTarget);
+
+                    unzippedFiles = FileZip.UnZip(tempParityZipFile);
+
+                    if (File.Exists(parTargetFile))
+                    {
+                        File.Delete(parTargetFile);
+                    }
+
+                    File.Move(repairTarget.Name, parTargetFile);
+
+                    //ReplaceData(parTargetFile, 10, BitConverter.GetBytes((UInt32)0xDEADBEEF));
+
+                    bool output = ParityLaunchCommandLineApp(
+                        @"win-tools/par2.exe",
+                        $@"repair -q ""{parMainFile}"" ""{parTargetFile}"" ");
+
+                    retHashcode = CalculateFileHash(parTargetFile);
+                    retDownloadSize = new FileInfo(parTargetFile).Length;
+                    if (retHashcode == item.Hash)
+                    {
+                        m_backend.PutAsync(item.RemoteFilename, parTargetFile, CancellationToken.None).Wait();
+                        Logging.Log.WriteInformationMessage(LOGTAG, "RepairRemoteFileUsingParity",
+                            $"The remote file has been replaced with the repaired file. File: {item.RemoteFilename}");
+                    }
+
+                    File.Move(parTargetFile, repairTarget.Name);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RepairFileUsingParity", ex,
+                        $"Exception attempting to repair file: {item.RemoteFilename}");
+                    throw;
+                }
+                finally
+                {
+                    dlParityTarget.Dispose();
+                    foreach (var file in unzippedFiles)
+                    {
+                        File.Delete(file);
+                    }
+
+                    var extraCopies =
+                        Directory.GetFiles(Path.GetTempPath(), $"{Path.GetFileName(item.RemoteFilename)}.*");
+                    foreach (var file in extraCopies)
+                    {
+                        File.Delete(file);
+                    }
+                }
+
+                return repairTarget;
+            }
+        }
+        
         private void DoGet(FileEntryItem item)
         {
             Library.Utility.TempFile tmpfile = null;
@@ -1013,9 +1215,19 @@ namespace Duplicati.Library.Main
                 string fileHash;
                 long dataSizeDownloaded;
                 if (m_options.DisablePipedStreaming)
+                {
                     tmpfile = coreDoGetSequential(item, useDecrypter, out dataSizeDownloaded, out fileHash);
+                }
                 else
+                {
                     tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
+
+                    if (m_options.EnableParityFile && fileHash != item.Hash)
+                    {
+                        // fallback to coreDoGetSequential() which can handle parity repairs
+                        tmpfile = coreDoGetSequential(item, useDecrypter, out dataSizeDownloaded, out fileHash);
+                    }
+                }
 
                 var duration = DateTime.Now - begin;
                 Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
@@ -1053,12 +1265,10 @@ namespace Duplicati.Library.Main
                     item.Result = tmpfile;
                     tmpfile = null;
                 }
-
             }
             catch
             {
-                if (tmpfile != null)
-                    tmpfile.Dispose();
+                tmpfile?.Dispose();
 
                 throw;
             }

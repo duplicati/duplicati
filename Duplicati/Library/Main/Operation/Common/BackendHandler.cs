@@ -348,7 +348,8 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             await m_stats.SendEventAsync(BackendActionType.List, BackendEventType.Started, null, -1);
 
-            var r = m_backend.List().ToList();
+            // ignore par2 files
+            var r = m_backend.List().Where(x => !x.Name.EndsWith(".par2.zip")).ToList();
 
             var sb = new StringBuilder();
             sb.AppendLine("[");

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 
@@ -18,5 +19,23 @@ namespace Duplicati.Library.Compression
 
             return File.Exists(zipFilename);
         }
+
+        public static List<string> UnZip(string zipFilename)
+        {
+            var unzippedFiles = new List<string>();
+
+            using (var archive = ZipFile.Open(zipFilename, ZipArchiveMode.Read))
+            {
+                foreach (ZipArchiveEntry entry in archive.Entries)
+                {
+                    string destinationPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(zipFilename), entry.FullName));
+                    entry.ExtractToFile(destinationPath);
+                    unzippedFiles.Add(destinationPath);
+                }
+            }
+
+            return unzippedFiles;
+        }
+
     }
 }

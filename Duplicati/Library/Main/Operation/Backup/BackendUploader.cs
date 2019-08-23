@@ -297,7 +297,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             SystemIO.IO_OS.FileMove(item.LocalFilename, $"{tempPath}/{item.RemoteFilename}");
 
-            bool output = ParityLaunchCommandLineApp(
+            bool output = BackendManager.ParityLaunchCommandLineApp(
                 @"win-tools/par2.exe", 
                 $@"create -q -r{parityRedundancy} -n{parityNumberOfRecoveryFiles} ""{tempPath}/{parFilename}"" ""{tempPath}/{item.RemoteFilename}"" ");
 
@@ -321,56 +321,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 $"{tempPath}/{item.RemoteFilename}.par2.zip",
                 SystemIO.IO_OS.FileLength($"{tempPath}/{item.RemoteFilename}.par2.zip"));
         }
-
-        static bool ParityLaunchCommandLineApp(string exePath, string args)
-        {
-            StringBuilder outputBuilder = new StringBuilder();
-            StringBuilder errorBuilder = new StringBuilder();
-            Process process = null;
-
-            ProcessStartInfo psi = new ProcessStartInfo
-            {
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                FileName = exePath,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                RedirectStandardOutput = true,
-                Arguments = args
-            };
-
-#if DEBUG
-            //Console.Error.WriteLine($"command executing: {exePath} {args}");
-#endif
-
-            try
-            {
-                // Start the process with the info we specified.
-                // Call WaitForExit and then the using-statement will close.
-                using (process = Process.Start(psi))
-                {
-                    StreamReader reader = process.StandardOutput;
-                    string output = reader.ReadToEnd();
-                    process.WaitForExit();
-                    if (process.ExitCode != 0)
-                    {
-                        throw new Exception("Failed to create parity file.");
-                    }
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logging.Log.WriteErrorMessage(LOGTAG, "ParityLaunchCommandLineApp", ex, $"Failed to create parity file. {ex.Message}");
-            }
-            finally
-            {
-                process?.Dispose();
-                GC.Collect();
-            }
-
-            return false;
-        }
-
+        
         private async Task<bool> DoWithRetry(Func<Task> method, FileEntryItem item, Worker worker, CancellationToken cancelToken)
         {
             item.IsRetry = false;
