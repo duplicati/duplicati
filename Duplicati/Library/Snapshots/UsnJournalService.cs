@@ -202,7 +202,10 @@ namespace Duplicati.Library.Snapshots
                 var cache = new Dictionary<string, bool>();
                 foreach (var source in m_sources)
                 {
-                    if (m_token.IsCancellationRequested) break;
+                    if (m_token.IsCancellationRequested)
+                    {
+                        break;
+                    }
 
                     cache[source] = true;
                 }
@@ -218,7 +221,10 @@ namespace Duplicati.Library.Snapshots
                 {
                     foreach (var folder in FilterExcludedFolders(volumeData.Value.Folders, filter, cache).Where(m_snapshot.DirectoryExists))
                     {
-                        if (m_token.IsCancellationRequested) break;
+                        if (m_token.IsCancellationRequested)
+                        {
+                            break;
+                        }
 
                         yield return folder;
                     }
@@ -234,7 +240,10 @@ namespace Duplicati.Library.Snapshots
                 {
                     foreach (var files in FilterExcludedFiles(volumeData.Value.Files, filter, cache).Where(m_snapshot.FileExists))
                     {
-                        if (m_token.IsCancellationRequested) break;
+                        if (m_token.IsCancellationRequested)
+                        {
+                            break;
+                        }
 
                         yield return files;
                     }
@@ -258,7 +267,10 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var file in files)
             {
-                if (m_token.IsCancellationRequested) break;
+                if (m_token.IsCancellationRequested)
+                {
+                    break;
+                }
 
                 var attr = m_snapshot.FileExists(file) ? m_snapshot.GetAttributes(file) : FileAttributes.Normal;
                 try
@@ -301,7 +313,10 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var folder in folders)
             {
-                if (m_token.IsCancellationRequested) break;
+                if (m_token.IsCancellationRequested)
+                {
+                    break;
+                }
 
                 try
                 {
