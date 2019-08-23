@@ -14,11 +14,6 @@ build:
     verbosity: minimal
 test_script:
     - ps: |
-        Start-FileDownload https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip
-
-        7z x DSMCBE.zip -otestdata
-        mkdir .\testData\data
-
         nuget install OpenCover -Version 4.6.166 -OutputDirectory packages
         nuget install coveralls.net -Version 0.6.0 -OutputDirectory packages
         nuget install NUnit.Runners -Version 3.4.0 -OutputDirectory packages
