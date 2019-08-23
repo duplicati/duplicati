@@ -26,14 +26,6 @@ namespace Duplicati.UnitTest
 {
     public class FilterTest : BasicSetupHelper
     {
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
-
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
-        }
-
         [Test]
         [Category("Filter")]
         public void TestEmptyFolderExclude()
