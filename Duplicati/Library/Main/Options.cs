@@ -271,8 +271,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
                     new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
 
-                    new CommandLineArgument("enable-parity-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.EnableParityFileShort, Strings.Options.EnableParityFileLong, "false"),
-
+                    new CommandLineArgument("parity-file-redundancy", CommandLineArgument.ArgumentType.Integer, Strings.Options.ParityFileRedundancyShort, Strings.Options.ParityFileRedundancyLong, "0"),
+                    
                     new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
                     new CommandLineArgument("check-filetime-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CheckfiletimeonlyShort, Strings.Options.CheckfiletimeonlyLong, "false"),
                     //new CommandLineArgument("disable-usn-diff-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableusndiffcheckShort, Strings.Options.DisableusndiffcheckLong, "false"),
@@ -572,6 +572,18 @@ namespace Duplicati.Library.Main
         /// A value indicating if a parity file is to be created for a remote file
         /// </summary>
         public bool EnableParityFile { get { return GetBool("enable-parity-file"); } }
+
+        /// <summary>
+        /// A value indicating the percentage of redundancy for the parity file, if enabled.
+        /// </summary>
+        public int ParityFileRedundancy
+        {
+            get
+            {
+                m_options.TryGetValue("parity-file-redundancy", out var v);
+                return string.IsNullOrEmpty(v) ? DEFAULT_KEEP_VERSIONS : Math.Max(0, int.Parse(v));
+            }
+        }
 
         /// <summary>
         /// A value indicating if USN numbers are used to get list of changed files

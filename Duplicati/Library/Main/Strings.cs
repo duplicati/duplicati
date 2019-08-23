@@ -285,9 +285,8 @@ namespace Duplicati.Library.Main.Strings
         public static string AutoVacuumIntervalShort { get { return "Minimum time between auto vacuums"; } }
         public static string AutoVacuumIntervalLong { get { return "The minimum amount of time that must elapse after the last vacuum before another will be automatically triggered at the end of a backup job. Automatic vacuum can be a long-running process and may not be desirable to run after every single backup."; } }
 
-        public static string EnableParityFileShort { get { return "Enable the creation of parity files for all remote files."; } }
-        public static string EnableParityFileLong { get { return LC.L("When this flag is enabled, a scheduled backup will create a parity file for each remote file. A parity file may be used to repair a corrupted remote file."); } }
-
+        public static string ParityFileRedundancyShort { get { return LC.L("Controls the creation and redundancy percentage of parity files for all remote files."); } }
+        public static string ParityFileRedundancyLong { get { return LC.L("This setting controls the creation and redundancy percentage of parity files for all remote files. Valid values are 0-100. A value of 0 disables creation of parity files. A value of 1 through 100 controls the percentage of redundancy. See 'par2cmdline' for more information about par2 files."); } }
     }
 
     internal static class Common
