@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
@@ -165,11 +166,11 @@ namespace Duplicati.Library.Main.Database
     
                     while (filecount != foundfiles && maxpath.Length > 0)
                     {
-                        var mp = Util.AppendDirSeparator(maxpath, dirsep);
-                        cmd.SetParameterValue(0, mp.Length);
-                        cmd.SetParameterValue(1, mp);
+                        cmd.SetParameterValue(0, maxpath.Length);
+                        cmd.SetParameterValue(1, maxpath);
+                        
                         foundfiles = cmd.ExecuteScalarInt64(0);
-    
+
                         if (filecount != foundfiles)
                         {
                             var oldlen = maxpath.Length;
@@ -193,8 +194,8 @@ namespace Duplicati.Library.Main.Database
 
                         return roots.Concat(rootsUNC).Select(x => GetLargestPrefix(filter, x).First()).Distinct().ToArray();
                     }
-    
-                    return 
+
+                    return
                         new IFileversion[] {
                             new FileversionFixed { Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep) }
                         };
