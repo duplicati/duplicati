@@ -20,11 +20,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
     public class CommandLineOperationsTests : BasicSetupHelper
     {
+        private static string S3_URL = $"https://s3.amazonaws.com/duplicati-test-file-hosting/";
+
         /// <summary>
         /// The log tag
         /// </summary>
@@ -37,7 +43,7 @@ namespace Duplicati.UnitTest
 
         private readonly string zipFilename = "data.zip";
         private string zipFilepath => Path.Combine(BASEFOLDER, this.zipFilename);
-
+        
         private readonly string zipAlternativeFilename = "data-alternative.zip";
         private string zipAlternativeFilepath => Path.Combine(BASEFOLDER, this.zipAlternativeFilename);
 
@@ -58,12 +64,8 @@ namespace Duplicati.UnitTest
 
             if (!File.Exists($@"{BASEFOLDER}\{zipAlternativeFilename}"))
             {
-                using (WebClient client = new WebClient())
-                {
-                    client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{this.zipFilename}",
-                        this.zipFilepath);
-                }
-
+                var url = $"{S3_URL}{this.zipFilename}";
+                DownloadS3FileIfNewer(zipFilepath, url);
                 System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
             }
             else
@@ -72,15 +74,43 @@ namespace Duplicati.UnitTest
             }
         }
 
+        private void DownloadS3FileIfNewer(string destinationFilePath, string url)
+        {
+            var webRequest = (HttpWebRequest)WebRequest.Create(url);
+
+            if (File.Exists(destinationFilePath))
+            {
+                webRequest.IfModifiedSince = File.GetLastWriteTimeUtc(destinationFilePath);
+            }
+
+            try
+            {
+                // check if the file should be downloaded, exception if not
+                var checkIfChangedWebResponse = (HttpWebResponse)webRequest.GetResponse();
+
+                using (WebClient client = new WebClient())
+                {
+                    client.DownloadFile(url, destinationFilePath);
+                }
+            }
+            catch (WebException ex)
+            {
+                if (ex.Response == null){
+                    throw;
+                }
+
+                if (((HttpWebResponse) ex.Response).StatusCode != HttpStatusCode.NotModified)
+                {
+                    throw;
+                }
+            }
+        }
+
         public override void OneTimeTearDown()
         {
             if (Directory.Exists(this.SOURCEFOLDER))
             {
                 Directory.Delete(this.SOURCEFOLDER, true);
-            }
-            if (File.Exists(this.zipFilepath))
-            {
-                File.Delete(this.zipFilepath);
             }
         }
 
