@@ -168,7 +168,7 @@ namespace Duplicati.Library.Main.Volumes
         protected readonly string m_filehash;
 		protected readonly long m_blockhashsize;
         protected readonly long m_backendmaxfilesperfolder;
-        protected readonly long m_Backendmaxfoldersperfolder;
+        protected readonly long m_backendmaxfoldersperfolder;
 
         public static string TargetFolder { get; set; }
 
@@ -179,7 +179,7 @@ namespace Duplicati.Library.Main.Volumes
             m_filehash = options.FileHashAlgorithm;
 			m_blockhashsize = options.BlockhashSize;
             m_backendmaxfilesperfolder = options.BackendMaxFilesPerFolder;
-            m_Backendmaxfoldersperfolder = options.BackendMaxFoldersPerFolder;
+            m_backendmaxfoldersperfolder = options.BackendMaxFoldersPerFolder;
         }
     }
 }
