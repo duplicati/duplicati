@@ -105,8 +105,9 @@ namespace Duplicati.UnitTest
                 var foldername = Path.GetFileName(n);
                 var targetfolder = Path.Combine(DATAFOLDER, foldername);
                 ProgressWriteLine("Adding folder {0} to source", foldername);
-                TestUtils.CopyDirectoryRecursive(n, targetfolder);
 
+                Directory.Move(n, targetfolder);
+                
                 var size = Directory.EnumerateFiles(targetfolder, "*", SearchOption.AllDirectories).Select(x => new FileInfo(x).Length).Sum();
 
                 ProgressWriteLine("Running backup with {0} data added ...", Duplicati.Library.Utility.Utility.FormatSizeString(size));
