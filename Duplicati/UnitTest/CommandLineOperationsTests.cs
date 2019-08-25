@@ -58,7 +58,7 @@ namespace Duplicati.UnitTest
         {
             base.OneTimeSetUp();
 
-            if (!File.Exists($@"{BASEFOLDER}\{zipAlternativeFilename}"))
+            if (!File.Exists(zipAlternativeFilepath))
             {
                 var url = $"{S3_URL}{this.zipFilename}";
                 DownloadS3FileIfNewer(zipFilepath, url);
