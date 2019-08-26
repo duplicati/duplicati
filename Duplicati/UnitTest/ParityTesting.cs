@@ -26,20 +26,10 @@ namespace Duplicati.UnitTest
 {
     public class ParityTesting : BasicSetupHelper
     {
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
-
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
-        }
-
         [Test]
         [Category("Parity")]
         public void ParityCreationTest()
         {
-            PrepareSourceData();
-
             var blocksize = 1024 * 10;
             var basedatasize = 0;
 
