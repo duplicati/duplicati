@@ -31,7 +31,7 @@ namespace Duplicati.Library.Backend.Mega
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class MegaBackend: IBackend, IStreamingBackend
+    public class MegaBackend : IBackend, IStreamingBackend
     {
         private readonly string m_username = null;
         private readonly string m_password = null;
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Backend.Mega
 
             m_prefix = uri.HostAndPath ?? "";
         }
-        
+
         private void GetCurrentFolder(bool autocreate = false)
         {
             try
@@ -106,10 +106,10 @@ namespace Duplicati.Library.Backend.Mega
                 foreach (var n in parts)
                 {
                     var item = nodes.FirstOrDefault(
-                        x => x.Name == n 
-                             && x.Type == NodeType.Directory 
-                             && x.ParentId == parent.Id 
-                             && x.Type != NodeType.Trash 
+                        x => x.Name == n
+                             && x.Type == NodeType.Directory
+                             && x.ParentId == parent.Id
+                             && x.Type != NodeType.Trash
                              && x.Type != NodeType.Inbox);
 
                     if (item == null)
@@ -138,7 +138,7 @@ namespace Duplicati.Library.Backend.Mega
                 throw;
             }
         }
-        
+
         private INode CurrentFolder
         {
             get
@@ -151,7 +151,7 @@ namespace Duplicati.Library.Backend.Mega
                 return m_rootFolder;
             }
         }
-        
+
         private void ResetFileCache(IEnumerable<INode> list = null)
         {
             if (m_rootFolder == null)
@@ -179,7 +179,7 @@ namespace Duplicati.Library.Backend.Mega
             {
                 return m_listcache.First(x => x.FileEntry.Name == name);
             }
-            
+
             throw new FileMissingException();
         }
 
@@ -215,14 +215,14 @@ namespace Duplicati.Library.Backend.Mega
                     }
 
                     var newNode = await Client.UploadAsync(stream, filename, targetFolder, new Progress(), null, cancelToken);
-                    
+
                     FileEntry newFileEntry = new FileEntry(
                         string.IsNullOrEmpty(path) ? newNode.Name : $"{path}/{newNode.Name}",
                         newNode.Size,
                         newNode.ModificationDate ?? new DateTime(0),
                         newNode.ModificationDate ?? new DateTime(0));
 
-                    m_listcache.Add(new NodeFileEntry {FileEntry = newFileEntry, Node = newNode});
+                    m_listcache.Add(new NodeFileEntry { FileEntry = newFileEntry, Node = newNode });
                 }
                 catch (Exception e)
                 {
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Backend.Mega
         #endregion
 
         #region IBackend implementation
-        
+
         public IEnumerable<IFileEntry> List()
         {
             if (m_listcache == null)
@@ -265,9 +265,9 @@ namespace Duplicati.Library.Backend.Mega
         }
 
         private List<NodeFileEntry> GetNodeFileEntryList(
-            IEnumerable<INode> nodes, 
-            INode directoryNode, 
-            string currentPath = null, 
+            IEnumerable<INode> nodes,
+            INode directoryNode,
+            string currentPath = null,
             bool includeThisDirectoryNodePath = true)
         {
             var path = string.Empty;
@@ -283,21 +283,21 @@ namespace Duplicati.Library.Backend.Mega
                 switch (n.Type)
                 {
                     case NodeType.File:
-                    {
-                        FileEntry newFileEntry = new FileEntry(
-                            string.IsNullOrEmpty(path) ? n.Name : $"{path}/{n.Name}", 
-                            n.Size, 
-                            n.ModificationDate ?? new DateTime(0),
-                            n.ModificationDate ?? new DateTime(0));
-                        items.Add(new NodeFileEntry {FileEntry = newFileEntry, Node = n});
-                        continue;
-                    }
+                        {
+                            FileEntry newFileEntry = new FileEntry(
+                                string.IsNullOrEmpty(path) ? n.Name : $"{path}/{n.Name}",
+                                n.Size,
+                                n.ModificationDate ?? new DateTime(0),
+                                n.ModificationDate ?? new DateTime(0));
+                            items.Add(new NodeFileEntry { FileEntry = newFileEntry, Node = n });
+                            continue;
+                        }
                     case NodeType.Directory:
-                    {
-                        List<NodeFileEntry> subFolderItems = GetNodeFileEntryList(nodes, n, path);
-                        items.AddRange(subFolderItems);
-                        break;
-                    }
+                        {
+                            List<NodeFileEntry> subFolderItems = GetNodeFileEntryList(nodes, n, path);
+                            items.AddRange(subFolderItems);
+                            break;
+                        }
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -314,7 +314,7 @@ namespace Duplicati.Library.Backend.Mega
             {
                 return currentFolder;
             }
-            
+
             INode workingFolder = currentFolder;
             foreach (string folderToCreate in foldersToCreate)
             {
