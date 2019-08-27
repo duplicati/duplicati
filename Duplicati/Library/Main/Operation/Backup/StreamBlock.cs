@@ -69,7 +69,10 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public StreamReadLimitLengthWrapper(Stream innerStream, long size)
         {
-            if (size < 0) throw new ArgumentOutOfRangeException(nameof(size));
+            if (size < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(size));
+            }
 
             m_innerStream = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
             m_endPosition = m_innerStream.Position + size;
@@ -193,7 +196,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             long maxCount = m_endPosition - pos;
             if (count > maxCount)
             {
-                count = (int)maxCount;
+                return (int)maxCount;
             }
 
             return count;
