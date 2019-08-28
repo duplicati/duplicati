@@ -603,7 +603,10 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                 var ftpClient = CreateClient();
 
-                if (ftpClient.DirectoryExists(pathToCreate)) return;
+                if (ftpClient.DirectoryExists(pathToCreate))
+                {
+                    return;
+                }
 
                 ftpClient.CreateDirectory(pathToCreate);
 

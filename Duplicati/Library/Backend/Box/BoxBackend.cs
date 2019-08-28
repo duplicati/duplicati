@@ -126,7 +126,10 @@ namespace Duplicati.Library.Backend.Box
         {
             get
             {
-                if (m_rootFolderId != null) return m_rootFolderId;
+                if (m_rootFolderId != null)
+                {
+                    return m_rootFolderId;
+                }
 
                 m_rootFolderId = GetFolderId(m_rootPath, false);
 
@@ -151,7 +154,9 @@ namespace Duplicati.Library.Backend.Box
                 if (el == null)
                 {
                     if (!autocreate)
+                    {
                         throw new FolderMissingException();
+                    }
 
                     el = m_oauth.PostAndGetJSONData<ListFolderResponse>(
                         $"{BOX_API_URL}/folders",

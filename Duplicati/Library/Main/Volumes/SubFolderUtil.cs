@@ -79,7 +79,10 @@ namespace Duplicati.Library.Main.Volumes
                     for (var j = 1; j <= numSubFoldersPerFolder; j++)
                     {
                         newItems.Add(string.IsNullOrEmpty(item) ? $"{j}/" : $"{item}{j}/");
-                        if (stepPointer++ != step) continue;
+                        if (stepPointer++ != step)
+                        {
+                            continue;
+                        }
                         return string.IsNullOrEmpty(item) ? $"{j}/" : $"{item}{j}/";
                     }
                 }

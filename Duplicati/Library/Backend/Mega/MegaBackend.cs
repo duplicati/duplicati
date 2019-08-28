@@ -56,7 +56,10 @@ namespace Duplicati.Library.Backend.Mega
         {
             get
             {
-                if (m_client != null) return m_client;
+                if (m_client != null)
+                {
+                    return m_client;
+                }
 
                 var cl = new MegaApiClient();
                 cl.Login(m_username, m_password);

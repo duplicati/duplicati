@@ -124,7 +124,10 @@ namespace Duplicati.Library.Backend.GoogleDrive
         {
             get
             {
-                if (m_rootFolderId != null) return m_rootFolderId;
+                if (m_rootFolderId != null)
+                {
+                    return m_rootFolderId;
+                }
 
                 m_rootFolderId = GetFolderId(m_rootPath, false);
 
