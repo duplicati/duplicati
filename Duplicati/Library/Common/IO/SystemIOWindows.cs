@@ -408,9 +408,14 @@ namespace Duplicati.Library.Common.IO
             return PathTooLongFuncWrapper(Directory.GetFiles, AlphaFS.Directory.GetFiles, path, false);
         }
 
-        public string[] GetFiles(string path, string searchPattern, SearchOption searchOption = default(SearchOption))
+        public string[] GetFiles(string path, string searchPattern, SearchOption searchOption)
         {
             return PathTooLongFuncWrapper(p => Directory.GetFiles(p, searchPattern, searchOption), p => AlphaFS.Directory.GetFiles(p, searchPattern, searchOption), path, false);
+        }
+
+        public IEnumerable<string> GetFiles(string path, string searchPattern)
+        {
+            return GetFiles(path, searchPattern, default(SearchOption));
         }
 
         public DateTime GetCreationTimeUtc(string path)

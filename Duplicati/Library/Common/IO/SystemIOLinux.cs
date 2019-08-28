@@ -265,9 +265,14 @@ namespace Duplicati.Library.Common.IO
             return Directory.GetFiles(path);
         }
 
-        public string[] GetFiles(string path, string searchPattern, SearchOption searchOption = default(SearchOption))
+        public string[] GetFiles(string path, string searchPattern, SearchOption searchOption)
         {
             return Directory.GetFiles(path, searchPattern, searchOption);
+        }
+
+        public IEnumerable<string> GetFiles(string path, string searchPattern)
+        {
+            return GetFiles(path, searchPattern, default(SearchOption));
         }
 
         public DateTime GetCreationTimeUtc(string path)

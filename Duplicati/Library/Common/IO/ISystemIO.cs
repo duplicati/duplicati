@@ -66,7 +66,8 @@ namespace Duplicati.Library.Common.IO
         string GetPathRoot(string path);
         string[] GetDirectories(string path);
         string[] GetFiles(string path);
-        string[] GetFiles(string path, string searchPattern, SearchOption searchOption = default(SearchOption));
+        string[] GetFiles(string path, string searchPattern, SearchOption searchOption);
+        IEnumerable<string> GetFiles(string systemTempPath, string applicationPrefix);
         DateTime GetCreationTimeUtc(string path);
         DateTime GetLastWriteTimeUtc(string path);
         IEnumerable<string> EnumerateFileSystemEntries(string path);
