@@ -1378,7 +1378,8 @@ namespace Duplicati.Library.Main
             get
             {
                 m_options.TryGetValue("max-folders-per-remote-subfolder", out var v);
-                return string.IsNullOrEmpty(v) ? DEFAULT_BACKEND_MAX_FILES_PER_FOLDER : Math.Max(0, long.Parse(v));
+                //return string.IsNullOrEmpty(v) ? DEFAULT_BACKEND_MAX_FILES_PER_FOLDER : Math.Max(0, long.Parse(v));
+                return string.IsNullOrEmpty(v) ? 0 : Math.Max(0, long.Parse(v));
             }
         }
 
@@ -1390,7 +1391,8 @@ namespace Duplicati.Library.Main
             get
             {
                 m_options.TryGetValue("max-files-per-remote-subfolder", out var v);
-                return string.IsNullOrEmpty(v) ? DEFAULT_BACKEND_MAX_FOLDERS_PER_FOLDER : Math.Max(0, long.Parse(v));
+                //return string.IsNullOrEmpty(v) ? DEFAULT_BACKEND_MAX_FOLDERS_PER_FOLDER : Math.Max(0, long.Parse(v));
+                return string.IsNullOrEmpty(v) ? 0 : Math.Max(0, long.Parse(v));
             }
         }
 

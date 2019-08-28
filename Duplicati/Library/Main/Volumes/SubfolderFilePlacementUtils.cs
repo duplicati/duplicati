@@ -52,6 +52,11 @@ namespace Duplicati.Library.Main.Volumes
 
         public static string GetFileFolderPathPlacementUsingFlatStructure(long volumeCount, long maxFilesPerFolder, long numSubFoldersPerFolder)
         {
+            if (maxFilesPerFolder == 0 || numSubFoldersPerFolder == 0)
+            {
+                return string.Empty;
+            }
+
             long combinedFileCount = volumeCount + _additionalVolumeFileCount;
             int step = (int)(combinedFileCount / maxFilesPerFolder);
             List<string> items = GetFolderPathsForLevel(numSubFoldersPerFolder, step);
