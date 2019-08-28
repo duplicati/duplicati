@@ -21,7 +21,7 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Volumes
 {
-    public class SubFolderFilePlacementUtils
+    public class SubFolderUtil
     {
         private static readonly object _additionalVolumeFileCountLock = new object();
         private static long _additionalVolumeFileCount;

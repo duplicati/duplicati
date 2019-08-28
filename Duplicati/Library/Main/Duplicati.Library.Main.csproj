@@ -79,7 +79,7 @@
     <Compile Include="Volumes\IFileEntry.cs" />
     <Compile Include="Volumes\InvalidManifestException.cs" />
     <Compile Include="Volumes\IParsedVolume.cs" />
-    <Compile Include="Volumes\SubFolderFilePlacementUtils.cs" />
+    <Compile Include="Volumes\SubFolderUtil.cs" />
     <Compile Include="Volumes\VolumeBase.cs" />
     <Compile Include="Volumes\VolumeReaderBase.cs" />
     <Compile Include="Volumes\VolumeWriterBase.cs" />
