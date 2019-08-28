@@ -192,7 +192,9 @@ namespace Duplicati.Library.Main
                 {
                     var p = System.Security.Cryptography.HashAlgorithm.Create(h);
                     if (p != null)
+                    {
                         r.Add(h);
+                    }
                 }
                 catch
                 {
@@ -465,10 +467,15 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("skip-files-larger-than") || string.IsNullOrEmpty(m_options["skip-files-larger-than"]))
+                if (!m_options.ContainsKey("skip-files-larger-than") ||
+                    string.IsNullOrEmpty(m_options["skip-files-larger-than"]))
+                {
                     return long.MaxValue;
+                }
                 else
+                {
                     return Library.Utility.Sizeparser.ParseSize(m_options["skip-files-larger-than"], "mb");
+                }
             }
         }
 
@@ -514,9 +521,13 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("time") || string.IsNullOrEmpty(m_options["time"]))
+                {
                     return new DateTime(0, DateTimeKind.Utc);
+                }
                 else
+                {
                     return Library.Utility.Timeparser.ParseTimeInterval(m_options["time"], DateTime.Now);
+                }
             }
         }
         
@@ -530,23 +541,32 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("version", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return null;
+                }
                 
                 var versions = v.Split(new char[]{','}, StringSplitOptions.RemoveEmptyEntries);
                 if (v.Length == 0)
+                {
                     return null;
+                }
                 
                 var res = new List<long>();
-                foreach(var n in versions)
+                foreach(var n in versions){
                     if (n.Contains('-'))
                     {
                         //TODO: Throw errors if too many entries?
                         var parts = n.Split(new char[]{'-'}, StringSplitOptions.RemoveEmptyEntries).Select(x => Convert.ToInt64(x.Trim())).ToArray();
-                        for(var i = Math.Min(parts[0], parts[1]); i <= Math.Max(parts[0], parts[1]); i++)
+                        for (var i = Math.Min(parts[0], parts[1]); i <= Math.Max(parts[0], parts[1]); i++)
+                        {
                             res.Add(i);
+                        }
                     }
                     else
+                    {
                         res.Add(Convert.ToInt64(n));
+                    }
+                }
                         
                 return res.ToArray();
             }
@@ -627,14 +647,20 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("force-locale"))
+                {
                     return System.Threading.Thread.CurrentThread.CurrentCulture;
+                }
                 else
                 {
                     var localestring = m_options["force-locale"];
                     if (string.IsNullOrWhiteSpace(localestring))
+                    {
                         return System.Globalization.CultureInfo.InvariantCulture;
+                    }
                     else
+                    {
                         return new System.Globalization.CultureInfo(localestring);
+                    }
                 }
             }
         }
@@ -647,9 +673,13 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("thread-priority") || string.IsNullOrEmpty(m_options["thread-priority"]))
+                {
                     return null;
+                }
                 else
+                {
                     return m_options["thread-priority"];
+                }
             }
         }
 
@@ -668,7 +698,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("prefix", out v);
                 if (!string.IsNullOrEmpty(v))
+                {
                     return v;
+                }
                     
                 return "duplicati";
             }
@@ -684,7 +716,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("keep-versions", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return DEFAULT_KEEP_VERSIONS;
+                }
                 
                 return Math.Max(0, int.Parse(v));
             }
@@ -699,9 +733,11 @@ namespace Duplicati.Library.Main
             {
                 string v;
                 m_options.TryGetValue("keep-time", out v);
-                
+
                 if (string.IsNullOrEmpty(v))
+                {
                     return new DateTime(0);
+                }
 
                 TimeSpan tolerance =
                     this.DisableTimeTolerance ?
@@ -722,7 +758,8 @@ namespace Duplicati.Library.Main
 
                 string v;
                 m_options.TryGetValue("retention-policy", out v);
-                if (string.IsNullOrEmpty(v)) { 
+                if (string.IsNullOrEmpty(v))
+                {
                     return retentionPolicyConfig;
                 }
 
@@ -745,9 +782,13 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("passphrase") || string.IsNullOrEmpty(m_options["passphrase"]))
+                {
                     return null;
+                }
                 else
+                {
                     return m_options["passphrase"];
+                }
             }
         }
 
@@ -759,12 +800,18 @@ namespace Duplicati.Library.Main
         {
             //If the encryption module was specified explicitly, don't change it
             if (m_options.ContainsKey("no-encryption") || m_options.ContainsKey("encryption-module"))
+            {
                 return;
+            }
 
             if (string.IsNullOrEmpty(lastSetting))
+            {
                 m_options["no-encryption"] = "";
+            }
             else
+            {
                 m_options["encryption-module"] = lastSetting;
+            }
         }
 
         /// <summary>
@@ -781,11 +828,15 @@ namespace Duplicati.Library.Main
             {
                 //Disabled?
                 if (NoEncryption)
+                {
                     return null;
+                }
 
                 //Specified?
                 if (m_options.ContainsKey("encryption-module"))
+                {
                     return m_options["encryption-module"];
+                }
 
                 return "aes";
             }
@@ -799,7 +850,9 @@ namespace Duplicati.Library.Main
         {
             //If a compression module is explicitly selected, don't change it
             if (m_options.ContainsKey("compression-module"))
+            {
                 return;
+            }
 
             m_options["compression-module"] = lastSetting;
         }
@@ -812,9 +865,13 @@ namespace Duplicati.Library.Main
             get
             {
                 if (m_options.ContainsKey("compression-module"))
+                {
                     return m_options["compression-module"];
+                }
                 else
+                {
                     return "zip";
+                }
             }
         }
 
@@ -827,12 +884,16 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("number-of-retries") || string.IsNullOrEmpty(m_options["number-of-retries"]))
+                {
                     return 5;
+                }
                 else
                 {
                     int x = int.Parse(m_options["number-of-retries"]);
                     if (x < 0)
+                    {
                         throw new UserInformationException("Invalid count for number-of-retries", "NumberOfRetriesInvalid");
+                    }
 
                     return x;
                 }
@@ -872,9 +933,13 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("retry-delay") || string.IsNullOrEmpty(m_options["retry-delay"]))
+                {
                     return new TimeSpan(TimeSpan.TicksPerSecond * 10);
+                }
                 else
+                {
                     return Library.Utility.Timeparser.ParseTimeSpan(m_options["retry-delay"]);
+                }
             }
         }
 
@@ -890,18 +955,28 @@ namespace Duplicati.Library.Main
                     string v;
                     m_options.TryGetValue("throttle-upload", out v);
                     if (string.IsNullOrEmpty(v))
+                    {
                         return 0;
+                    }
                     else
+                    {
                         return Library.Utility.Sizeparser.ParseSize(v, "kb");
+                    }
                 }
             }
             set
             {
                 lock (m_lock)
+                {
                     if (value <= 0)
+                    {
                         m_options["throttle-upload"] = "";
+                    }
                     else
+                    {
                         m_options["throttle-upload"] = value.ToString() + "b";
+                    }
+                }
             }
         }
 
@@ -917,18 +992,26 @@ namespace Duplicati.Library.Main
                     string v;
                     m_options.TryGetValue("throttle-download", out v);
                     if (string.IsNullOrEmpty(v))
+                    {
                         return 0;
+                    }
                     else
+                    {
                         return Library.Utility.Sizeparser.ParseSize(v, "kb");
+                    }
                 }
             }
             set
             {
                 lock (m_lock)
                     if (value <= 0)
+                    {
                         m_options["throttle-download"] = "";
+                    }
                     else
+                    {
                         m_options["throttle-download"] = value.ToString() + "b";
+                    }
             }
         }
 
@@ -955,9 +1038,13 @@ namespace Duplicati.Library.Main
             get
             {
                 if (m_options.ContainsKey("enable-module"))
+                {
                     return m_options["enable-module"].Trim().ToLower(CultureInfo.InvariantCulture).Split(',');
+                }
                 else
+                {
                     return new string[0];
+                }
             }
         }
 
@@ -969,9 +1056,13 @@ namespace Duplicati.Library.Main
             get
             {
                 if (m_options.ContainsKey("disable-module"))
+                {
                     return m_options["disable-module"].Trim().ToLower(CultureInfo.InvariantCulture).Split(',');
+                }
                 else
+                {
                     return new string[0];
+                }
             }
         }
 
@@ -984,18 +1075,30 @@ namespace Duplicati.Library.Main
             {
                 string strategy;
                 if (!m_options.TryGetValue("snapshot-policy", out strategy))
+                {
                     strategy = "";
+                }
 
                 if (string.Equals(strategy, "on", StringComparison.OrdinalIgnoreCase))
+                {
                     return OptimizationStrategy.On;
+                }
                 else if (string.Equals(strategy, "off", StringComparison.OrdinalIgnoreCase))
+                {
                     return OptimizationStrategy.Off;
+                }
                 else if (string.Equals(strategy, "required", StringComparison.OrdinalIgnoreCase))
+                {
                     return OptimizationStrategy.Required;
+                }
                 else if (string.Equals(strategy, "auto", StringComparison.OrdinalIgnoreCase))
+                {
                     return OptimizationStrategy.Auto;
+                }
                 else
+                {
                     return OptimizationStrategy.Off;
+                }
             }
         }
 
@@ -1008,11 +1111,15 @@ namespace Duplicati.Library.Main
             {
                 string policy;
                 if (!m_options.TryGetValue("symlink-policy", out policy))
+                {
                     policy = "";
+                }
 
                 SymlinkStrategy r;
                 if (!Enum.TryParse(policy, true, out r))
+                {
                     r = SymlinkStrategy.Store;
+                }
 
                 return r;
             }
@@ -1027,11 +1134,15 @@ namespace Duplicati.Library.Main
             {
                 string policy;
                 if (!m_options.TryGetValue("hardlink-policy", out policy))
+                {
                     policy = "";
+                }
 
                 HardlinkStrategy r;
                 if (!Enum.TryParse(policy, true, out r))
+                {
                     r = HardlinkStrategy.All;
+                }
 
                 return r;
             }
@@ -1045,18 +1156,30 @@ namespace Duplicati.Library.Main
             {
                 string strategy;
                 if (!m_options.TryGetValue("usn-policy", out strategy))
+                {
                     strategy = "";
+                }
 
                 if (string.Equals(strategy, "on", StringComparison.OrdinalIgnoreCase))
+                {
                     return OptimizationStrategy.On;
+                }
                 else if (string.Equals(strategy, "off", StringComparison.OrdinalIgnoreCase))
+                {
                     return OptimizationStrategy.Off;
+                }
                 else if (string.Equals(strategy, "required", StringComparison.OrdinalIgnoreCase))
+                {
                     return OptimizationStrategy.Required;
+                }
                 else if (string.Equals(strategy, "auto", StringComparison.OrdinalIgnoreCase))
+                {
                     return OptimizationStrategy.Auto;
+                }
                 else
+                {
                     return OptimizationStrategy.Off;
+                }
             }
         }
 
@@ -1068,12 +1191,18 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.TryGetValue("asynchronous-concurrent-upload-limit", out var value))
+                {
                     value = null;
+                }
 
                 if (string.IsNullOrEmpty(value))
+                {
                     return 4;
+                }
                 else
+                {
                     return int.Parse(value);
+                }
             }
         }
 
@@ -1087,12 +1216,18 @@ namespace Duplicati.Library.Main
             {
                 string value;
                 if (!m_options.TryGetValue("asynchronous-upload-limit", out value))
+                {
                     value = null;
+                }
 
                 if (string.IsNullOrEmpty(value))
+                {
                     return 4;
+                }
                 else
+                {
                     return long.Parse(value);
+                }
             }
         }
 
@@ -1105,12 +1240,18 @@ namespace Duplicati.Library.Main
             {
                 string value;
                 if (!m_options.TryGetValue("asynchronous-upload-folder", out value))
+                {
                     value = null;
+                }
 
                 if (string.IsNullOrEmpty(value))
+                {
                     return this.TempDir;
+                }
                 else
+                {
                     return value;
+                }
             }
         }
 
@@ -1123,7 +1264,9 @@ namespace Duplicati.Library.Main
             {
                 string value;
                 if (!m_options.TryGetValue("log-file", out value))
+                {
                     value = null;
+                }
                 return value;
             }
         }
@@ -1137,15 +1280,25 @@ namespace Duplicati.Library.Main
             {
                 string value;
                 if (!m_options.TryGetValue("log-file-log-level", out value))
+                {
                     value = null;
+                }
 
                 if (string.IsNullOrWhiteSpace(value))
+                {
                     if (!m_options.TryGetValue("log-level", out value))
+                    {
                         value = null;
+                    }
+                }
 
                 foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                {
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
-                        return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+                    {
+                        return (Duplicati.Library.Logging.LogMessageType) Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+                    }
+                }
 
                 return Duplicati.Library.Logging.LogMessageType.Warning;
             }
@@ -1163,8 +1316,12 @@ namespace Duplicati.Library.Main
         {
             value = string.IsNullOrWhiteSpace(value) ? backupvalue : value;
             foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+            {
                 if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
+                {
                     return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+                }
+            }
 
             return Duplicati.Library.Logging.LogMessageType.Warning;
         }
@@ -1204,15 +1361,23 @@ namespace Duplicati.Library.Main
             {
                 string value;
                 if (!m_options.TryGetValue("console-log-level", out value))
+                {
                     value = null;
+                }
 
-                if (string.IsNullOrWhiteSpace(value))
+                if (string.IsNullOrWhiteSpace(value)){
                     if (!m_options.TryGetValue("log-level", out value))
+                    {
                         value = null;
+                    }
+                }
 
-                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))) {
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
+                    {
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+                    }
+                }
 
                 return Duplicati.Library.Logging.LogMessageType.Warning;
             }
@@ -1233,13 +1398,17 @@ namespace Duplicati.Library.Main
                 System.IO.FileAttributes res = default(System.IO.FileAttributes);
                 string v;
                 if (!m_options.TryGetValue("exclude-files-attributes", out v))
+                {
                     return res;
+                }
 
                 foreach(string s in v.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries))
                 {
                     System.IO.FileAttributes f;
                     if (Enum.TryParse(s.Trim(), true, out f))
+                    {
                         res |= f;
+                    }
                 }
 
                 return res;
@@ -1274,9 +1443,13 @@ namespace Duplicati.Library.Main
             get
             {
                 if (!m_options.ContainsKey("quota-size") || string.IsNullOrEmpty(m_options["quota-size"]))
+                {
                     return -1;
+                }
                 else
+                {
                     return Library.Utility.Sizeparser.ParseSize(m_options["quota-size"], "mb");
+                }
             }
         }
 
@@ -1313,9 +1486,13 @@ namespace Duplicati.Library.Main
                 string tmp;
                 m_options.TryGetValue("backup-name", out tmp);
                 if (string.IsNullOrEmpty(tmp))
+                {
                     return DefaultBackupName;
+                }
                 else
+                {
                     return tmp;
+                }
             }
             set
             {
@@ -1354,11 +1531,15 @@ namespace Duplicati.Library.Main
             {
                 string tmp;
                 if (!m_options.TryGetValue("blocksize", out tmp))
+                {
                     tmp = DEFAULT_BLOCKSIZE;
+                }
 
                 long blocksize = Library.Utility.Sizeparser.ParseSize(tmp, "kb");
                 if (blocksize > int.MaxValue || blocksize < 1024)
+                {
                     throw new ArgumentOutOfRangeException(nameof(blocksize), string.Format("The blocksize cannot be less than {0}, nor larger than {1}", 1024, int.MaxValue));
+                }
                 
                 return (int)blocksize;
             }
@@ -1409,8 +1590,10 @@ namespace Duplicati.Library.Main
         {
             get
             {
-				if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
-					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
+                if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
+                {
+                    m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
+                }
 				
 				return m_cachedBlockHashSize.Value;
             }
@@ -1425,7 +1608,9 @@ namespace Duplicati.Library.Main
             {
                 string tmp;
                 if (!m_options.TryGetValue("file-read-buffer-size", out tmp))
+                {
                     tmp = DEFAULT_READ_BUFFER_SIZE;
+                }
 
                 long t = Library.Utility.Sizeparser.ParseSize(tmp, "mb");                
                 return (int)t;
@@ -1503,7 +1688,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("threshold", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return DEFAULT_THRESHOLD;
+                }
 
                 return Convert.ToInt64(v);
             }
@@ -1519,7 +1706,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("small-file-size", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return this.VolumeSize / 5;
+                }
 
                 return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
@@ -1535,7 +1724,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("small-file-max-count", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return DEFAULT_SMALL_FILE_MAX_COUNT;
+                }
 
                 return Convert.ToInt64(v);
             }
@@ -1551,7 +1742,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("changed-files", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return null;
+                }
 
                 return v.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
             }
@@ -1567,7 +1760,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("deleted-files", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return null;
+                }
 
                 return v.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
             }
@@ -1583,7 +1778,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("ignore-filenames", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return null;
+                }
 
                 return v.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
             }
@@ -1610,11 +1807,15 @@ namespace Duplicati.Library.Main
             { 
                 string strategy;
                 if (!m_options.TryGetValue("index-file-policy", out strategy))
+                {
                     strategy = "";
+                }
                 
                 IndexFileStrategy res;
                 if (!Enum.TryParse(strategy, true, out res))
+                {
                     res = IndexFileStrategy.Full;
+                }
                     
                 return res;
             }
@@ -1670,7 +1871,9 @@ namespace Duplicati.Library.Main
                 string s;
                 m_options.TryGetValue("backup-test-samples", out s);
                 if (string.IsNullOrEmpty(s))
+                {
                     return 1;
+                }
                 
                 return long.Parse(s);
             }
@@ -1691,10 +1894,15 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("auto-compact-interval") || string.IsNullOrEmpty(m_options["auto-compact-interval"]))
+                if (!m_options.ContainsKey("auto-compact-interval") ||
+                    string.IsNullOrEmpty(m_options["auto-compact-interval"]))
+                {
                     return TimeSpan.Zero;
+                }
                 else
+                {
                     return Library.Utility.Timeparser.ParseTimeSpan(m_options["auto-compact-interval"]);
+                }
             }
         }
 
@@ -1730,9 +1938,13 @@ namespace Duplicati.Library.Main
             get 
             {
                 if (m_options.ContainsKey("dry-run"))
-                    return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); 
+                {
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run");
+                }
                 else
-                    return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
+                {
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun");
+                } 
             }
         }
         
@@ -1771,7 +1983,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("block-hash-algorithm", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return DEFAULT_BLOCK_HASH_ALGORITHM;
+                }
 
                 return v;
             }
@@ -1787,7 +2001,9 @@ namespace Duplicati.Library.Main
                 string v;
                 m_options.TryGetValue("file-hash-algorithm", out v);
                 if (string.IsNullOrEmpty(v))
+                {
                     return DEFAULT_FILE_HASH_ALGORITHM;
+                }
 
                 return v;
             }
@@ -1861,10 +2077,15 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (!m_options.ContainsKey("auto-vacuum-interval") || string.IsNullOrEmpty(m_options["auto-vacuum-interval"]))
+                if (!m_options.ContainsKey("auto-vacuum-interval") ||
+                    string.IsNullOrEmpty(m_options["auto-vacuum-interval"]))
+                {
                     return TimeSpan.Zero;
+                }
                 else
+                {
                     return Library.Utility.Timeparser.ParseTimeSpan(m_options["auto-vacuum-interval"]);
+                }
             }
         }
 
@@ -1912,7 +2133,9 @@ namespace Duplicati.Library.Main
             {
                 string pts;
                 if (!m_options.TryGetValue("log-retention", out pts))
+                {
                     pts = DEFAULT_LOG_RETENTION;
+                }
 
                 return Library.Utility.Timeparser.ParseTimeInterval(pts, DateTime.Now, true);
             }
@@ -1931,9 +2154,13 @@ namespace Duplicati.Library.Main
                     value = null;
 
                 if (string.IsNullOrEmpty(value))
+                {
                     return 0;
+                }
                 else
+                {
                     return int.Parse(value);
+                }
             }
         }
 
@@ -1946,12 +2173,18 @@ namespace Duplicati.Library.Main
             {
                 string value;
                 if (!m_options.TryGetValue("concurrency-block-hashers", out value))
+                {
                     value = null;
+                }
 
                 if (string.IsNullOrEmpty(value))
+                {
                     return DEFAULT_BLOCK_HASHERS;
+                }
                 else
+                {
                     return Math.Max(1, int.Parse(value));
+                }
             }
         }
 
@@ -1964,12 +2197,18 @@ namespace Duplicati.Library.Main
             {
                 string value;
                 if (!m_options.TryGetValue("concurrency-compressors", out value))
+                {
                     value = null;
+                }
 
                 if (string.IsNullOrEmpty(value))
+                {
                     return DEFAULT_COMPRESSORS;
+                }
                 else
+                {
                     return Math.Max(1, int.Parse(value));
+                }
             }
         }
 
@@ -1986,18 +2225,26 @@ namespace Duplicati.Library.Main
 
                     string file;
                     if (!m_options.TryGetValue("compression-extension-file", out file))
+                    {
                         file = DEFAULT_COMPRESSED_EXTENSION_FILE;
+                    }
 
-                    if (!string.IsNullOrEmpty(file) && System.IO.File.Exists(file))
+                    if (!string.IsNullOrEmpty(file) && System.IO.File.Exists(file)){
                         foreach (var _line in Library.Utility.Utility.ReadFileWithDefaultEncoding(file).Split('\n'))
                         {
                             var line = _line.Trim();
                             var lix = line.IndexOf(' ');
                             if (lix > 0)
+                            {
                                 line = line.Substring(0, lix);
+                            }
+
                             if (line.Length >= 2 && line[0] == '.')
+                            {
                                 hints[line] = CompressionHint.Noncompressible;
+                            }
                         }
+                    }
 
                     //Don't try again, if the file does not exist
                     m_compressionHints = hints;
@@ -2016,7 +2263,9 @@ namespace Duplicati.Library.Main
         {
             CompressionHint h;
             if (!CompressionHints.TryGetValue(System.IO.Path.GetExtension(filename), out h))
+            {
                 return CompressionHint.Default;
+            }
             return h;
         }
 
