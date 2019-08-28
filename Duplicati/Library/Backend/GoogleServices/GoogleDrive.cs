@@ -366,8 +366,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
                            {
                                Name = string.IsNullOrEmpty(path) ? n.title : $"{path}/{n.title}",
                                Size = n.fileSize ?? n.fileSize ?? 0,
-                               LastModification = n.modifiedDate ?? n.modifiedDate ?? default,
-                               LastAccess = n.modifiedDate ?? n.modifiedDate ?? default,
+                               LastModification = n.modifiedDate ?? n.modifiedDate ?? default(DateTime),
+                               LastAccess = n.modifiedDate ?? n.modifiedDate ?? default(DateTime),
                                IsFolder = FOLDER_MIMETYPE.Equals(n.mimeType, StringComparison.OrdinalIgnoreCase),
                                Path = path,
                                ID = n.id
