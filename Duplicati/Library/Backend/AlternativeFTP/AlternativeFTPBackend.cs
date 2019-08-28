@@ -239,127 +239,119 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         {
             var items = new List<IFileEntry>();
 
-            try
+            var relativePath = remoteFolderPath.Remove(0, m_rootPath.Length);
+
+            while (relativePath.StartsWith("/"))
             {
-                var relativePath = remoteFolderPath.Remove(0, m_rootPath.Length);
-
-                while (relativePath.StartsWith("/"))
-                {
-                    relativePath = relativePath.Remove(0, 1);
-                }
-
-                foreach (FtpListItem item in ftpClient.GetListing(remoteFolderPath, FtpListOption.Modify | FtpListOption.Size | FtpListOption.DerefLinks))
-                {
-                    string itemFullPath = string.IsNullOrEmpty(remoteFolderPath)
-                        ? item.Name
-                        : $"{remoteFolderPath}/{item.Name}";
-
-                    string itemRelativePath = string.IsNullOrEmpty(relativePath)
-                        ? item.Name
-                        : $"{relativePath}/{item.Name}";
-
-                    switch (item.Type)
-                    {
-                        case FtpFileSystemObjectType.Directory:
-                            {
-                                if (item.Name == "." || item.Name == "..")
-                                {
-                                    continue;
-                                }
-
-                                items.Add(new FileEntry(itemRelativePath, -1, new DateTime(), item.Modified)
-                                {
-                                    IsFolder = true,
-                                });
-
-                                lock (m_folderCache)
-                                {
-                                    m_folderCache.Add(itemRelativePath);
-                                }
-
-                                items.AddRange(GetRemoteList(itemFullPath, ftpClient));
-
-                                break;
-                            }
-
-                        case FtpFileSystemObjectType.File:
-                            {
-                                items.Add(new FileEntry(itemRelativePath,
-                                    item.Size, new DateTime(), item.Modified));
-
-                                lock (m_fileCache)
-                                {
-                                    m_fileCache.Add(itemRelativePath);
-                                }
-
-                                break;
-                            }
-
-                        case FtpFileSystemObjectType.Link:
-                            {
-                                if (item.Name == "." || item.Name == "..")
-                                {
-                                    continue;
-                                }
-
-                                if (item.LinkObject != null)
-                                {
-                                    switch (item.LinkObject.Type)
-                                    {
-                                        case FtpFileSystemObjectType.Directory:
-                                            {
-                                                if (item.Name == "." || item.Name == "..")
-                                                {
-                                                    continue;
-                                                }
-
-                                                items.Add(new FileEntry(itemRelativePath, -1, new DateTime(), item.Modified)
-                                                {
-                                                    IsFolder = true,
-                                                });
-
-                                                lock (m_folderCache)
-                                                {
-                                                    m_folderCache.Add(itemRelativePath);
-                                                }
-
-                                                items.AddRange(GetRemoteList(itemFullPath, ftpClient));
-
-                                                break;
-                                            }
-
-                                        case FtpFileSystemObjectType.File:
-                                            {
-                                                items.Add(new FileEntry(itemRelativePath, item.Size, new DateTime(), item.Modified));
-
-                                                lock (m_fileCache)
-                                                {
-                                                    m_fileCache.Add(itemRelativePath);
-                                                }
-
-                                                break;
-                                            }
-
-                                        case FtpFileSystemObjectType.Link:
-                                            break;
-
-                                        default:
-                                            throw new ArgumentOutOfRangeException();
-                                    }
-                                }
-
-                                break;
-                            }
-
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
-                }
+                relativePath = relativePath.Remove(0, 1);
             }
-            catch (Exception ex)
+
+            foreach (FtpListItem item in ftpClient.GetListing(remoteFolderPath, FtpListOption.Modify | FtpListOption.Size | FtpListOption.DerefLinks))
             {
-                Console.WriteLine(ex);
-                throw;
+                string itemFullPath = string.IsNullOrEmpty(remoteFolderPath)
+                    ? item.Name
+                    : $"{remoteFolderPath}/{item.Name}";
+
+                string itemRelativePath = string.IsNullOrEmpty(relativePath)
+                    ? item.Name
+                    : $"{relativePath}/{item.Name}";
+
+                switch (item.Type)
+                {
+                    case FtpFileSystemObjectType.Directory:
+                        {
+                            if (item.Name == "." || item.Name == "..")
+                            {
+                                continue;
+                            }
+
+                            items.Add(new FileEntry(itemRelativePath, -1, new DateTime(), item.Modified)
+                            {
+                                IsFolder = true,
+                            });
+
+                            lock (m_folderCache)
+                            {
+                                m_folderCache.Add(itemRelativePath);
+                            }
+
+                            items.AddRange(GetRemoteList(itemFullPath, ftpClient));
+
+                            break;
+                        }
+
+                    case FtpFileSystemObjectType.File:
+                        {
+                            items.Add(new FileEntry(itemRelativePath,
+                                item.Size, new DateTime(), item.Modified));
+
+                            lock (m_fileCache)
+                            {
+                                m_fileCache.Add(itemRelativePath);
+                            }
+
+                            break;
+                        }
+
+                    case FtpFileSystemObjectType.Link:
+                        {
+                            if (item.Name == "." || item.Name == "..")
+                            {
+                                continue;
+                            }
+
+                            if (item.LinkObject != null)
+                            {
+                                switch (item.LinkObject.Type)
+                                {
+                                    case FtpFileSystemObjectType.Directory:
+                                        {
+                                            if (item.Name == "." || item.Name == "..")
+                                            {
+                                                continue;
+                                            }
+
+                                            items.Add(new FileEntry(itemRelativePath, -1, new DateTime(), item.Modified)
+                                            {
+                                                IsFolder = true,
+                                            });
+
+                                            lock (m_folderCache)
+                                            {
+                                                m_folderCache.Add(itemRelativePath);
+                                            }
+
+                                            items.AddRange(GetRemoteList(itemFullPath, ftpClient));
+
+                                            break;
+                                        }
+
+                                    case FtpFileSystemObjectType.File:
+                                        {
+                                            items.Add(new FileEntry(itemRelativePath, item.Size, new DateTime(), item.Modified));
+
+                                            lock (m_fileCache)
+                                            {
+                                                m_fileCache.Add(itemRelativePath);
+                                            }
+
+                                            break;
+                                        }
+
+                                    case FtpFileSystemObjectType.Link:
+                                        break;
+
+                                    default:
+                                        throw new ArgumentOutOfRangeException();
+                                }
+                            }
+
+                            break;
+                        }
+
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
 
             return items;
