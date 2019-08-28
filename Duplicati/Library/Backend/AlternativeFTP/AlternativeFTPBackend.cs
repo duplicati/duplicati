@@ -602,7 +602,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             // Get the remote path
             var pathToCreate = $"{m_rootPath}/{folderToCreate}";
 
-            lock (folderToCreate)
+            lock (m_folderCache)
             {
                 if (m_folderCache.Contains(pathToCreate))
                 {
