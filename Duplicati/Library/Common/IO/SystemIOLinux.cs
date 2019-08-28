@@ -265,7 +265,7 @@ namespace Duplicati.Library.Common.IO
             return Directory.GetFiles(path);
         }
 
-        public string[] GetFiles(string path, string searchPattern, SearchOption searchOption = default)
+        public string[] GetFiles(string path, string searchPattern, SearchOption searchOption = default(SearchOption))
         {
             return Directory.GetFiles(path, searchPattern, searchOption);
         }
