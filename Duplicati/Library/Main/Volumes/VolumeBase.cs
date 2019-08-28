@@ -8,8 +8,8 @@ namespace Duplicati.Library.Main.Volumes
     {
         protected class ManifestData
         {
-            public const string ENCODING = "utf8";
-            public const long VERSION = 2;
+            public static readonly string ENCODING = "utf8";
+            public static readonly long VERSION = 2;
             
             public long Version { get; set; }
             public string Created { get; set; }
