@@ -26,9 +26,9 @@
     <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" Platform="$(var.Platform)" InstallScope="perMachine" />
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
-    <PropertyRef Id="NETFRAMEWORK45"/>
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED"/>
     <Condition Message="The .NET Framework 4.6.2 must be installed ([WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED])">
-      <![CDATA[Installed OR NETFRAMEWORK45]]>
+      <![CDATA[Installed OR WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED]]>
     </Condition>
 
     <WixVariable Id="WixUILicenseRtf" Value="Resources/LGPL21.rtf" />
