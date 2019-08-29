@@ -32,7 +32,7 @@ namespace Duplicati.Library.Utility
 
         public override void Flush()
         {
-            m_innerStream.Flush();
+            // NOOP
         }
 
         public override long Length => m_endPosition;
