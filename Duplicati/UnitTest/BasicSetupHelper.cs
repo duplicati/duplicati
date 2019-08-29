@@ -123,6 +123,10 @@ namespace Duplicati.UnitTest
             {
                 File.Delete(this.DBFILE);
             }
+            if (File.Exists($"{this.DBFILE}-journal"))
+            {
+                File.Delete($"{this.DBFILE}-journal");
+            }
         }
 
         protected virtual Dictionary<string, string> TestOptions
