@@ -1039,14 +1039,14 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="fileSetId">Existing file set to update</param>
         /// <param name="transaction">An optional external transaction</param>
-        public void UpdateFilesetAndMarkAsFullBackup(long filesetid, IDbTransaction transaction = null)
+        public void UpdateFilesetAndMarkAsFullBackup(long fileSetId, IDbTransaction transaction = null)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 using (var cmd = m_connection.CreateCommand())
                 {
                     cmd.Transaction = tr.Parent;
-                    cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""IsFullBackup"" = 1 WHERE ""ID"" = ?;", filesetid);
+                    cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""IsFullBackup"" = 1 WHERE ""ID"" = ?;", fileSetId);
                 }
 
                 tr.Commit();
