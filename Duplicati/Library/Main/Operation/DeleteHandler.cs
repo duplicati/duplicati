@@ -181,12 +181,11 @@ namespace Duplicati.Library.Main.Operation
                 return allBackups;
             }
 
-            Logging.Log.WriteDryrunMessage(LOGTAG, "***** FileSets", $"List of backup timestamps: {string.Join(", ", allBackups.Select(x => x.ToString()))}");
+            DateTime[] sortedAllBackups = allBackups.OrderByDescending(x => x.ToUniversalTime()).ToArray();
 
-
-            if (allBackups.Select(x => x.ToUniversalTime()).Distinct().Count() != allBackups.Length)
+            if (sortedAllBackups.Select(x => x.ToUniversalTime()).Distinct().Count() != sortedAllBackups.Length)
             {
-                throw new Exception($"List of backup timestamps contains duplicates: {string.Join(", ", allBackups.Select(x => x.ToString()))}");
+                throw new Exception($"List of backup timestamps contains duplicates: {string.Join(", ", sortedAllBackups.Select(x => x.ToString()))}");
             }
 
             List<DateTime> toDelete = new List<DateTime>();
@@ -197,9 +196,9 @@ namespace Duplicati.Library.Main.Operation
             {
                 foreach (var ix in versions.Distinct())
                 {
-                    if (ix >= 0 && ix < allBackups.Length)
+                    if (ix >= 0 && ix < sortedAllBackups.Length)
                     {
-                        toDelete.Add(allBackups[ix]);
+                        toDelete.Add(sortedAllBackups[ix]);
                     }
                 }
             }
@@ -208,15 +207,15 @@ namespace Duplicati.Library.Main.Operation
             var keepTime = m_options.KeepTime;
             if (keepTime.Ticks > 0)
             {
-                toDelete.AddRange(allBackups.SkipWhile(x => x >= keepTime));
+                toDelete.AddRange(sortedAllBackups.SkipWhile(x => x >= keepTime));
             }
 
             // Remove backups via retention policy option
-            toDelete.AddRange(ApplyRetentionPolicy(db, allBackups));
+            toDelete.AddRange(ApplyRetentionPolicy(db, sortedAllBackups));
 
             // Check how many full backups will be remaining after the previous steps
             // and remove oldest backups while there are still more backups than should be kept as specified via option
-            var backupsRemaining = allBackups.Except(toDelete).ToList();
+            var backupsRemaining = sortedAllBackups.Except(toDelete).ToList();
             var keepVersions = m_options.KeepVersions;
             var versionsKeptCount = 0;
             if (keepVersions > 0 && keepVersions < backupsRemaining.Count)
@@ -254,9 +253,9 @@ namespace Duplicati.Library.Main.Operation
 
             var toDeleteDistinct = toDelete.Distinct().OrderByDescending(x => x.ToUniversalTime()).ToArray();
             var removeCount = toDeleteDistinct.Length;
-            if (removeCount > allBackups.Length)
+            if (removeCount > sortedAllBackups.Length)
             {
-                throw new Exception($"Too many entries {removeCount} vs {allBackups.Length}, lists: {string.Join(", ", toDeleteDistinct.Select(x => x.ToString(CultureInfo.InvariantCulture)))} vs {string.Join(", ", allBackups.Select(x => x.ToString(CultureInfo.InvariantCulture)))}");
+                throw new Exception($"Too many entries {removeCount} vs {sortedAllBackups.Length}, lists: {string.Join(", ", toDeleteDistinct.Select(x => x.ToString(CultureInfo.InvariantCulture)))} vs {string.Join(", ", sortedAllBackups.Select(x => x.ToString(CultureInfo.InvariantCulture)))}");
             }
 
             return toDeleteDistinct;
