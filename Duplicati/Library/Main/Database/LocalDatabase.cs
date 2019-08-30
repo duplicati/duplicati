@@ -1320,24 +1320,7 @@ ORDER BY
                 return id;
             }
         }
-
-        /// <summary>
-        /// Updates a backup operation and marks it as a completed full backup.
-        /// </summary>
-        /// <param name="filesetid">The ID of the fileset to update</param>
-        /// <param name="transaction">An optional external transaction</param>
-        public virtual long SetFilesetFullBackupComplete(long filesetid, System.Data.IDbTransaction transaction = null)
-        {
-            using (var cmd = m_connection.CreateCommand())
-            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-            {
-                cmd.Transaction = tr.Parent;
-                var id = cmd.ExecuteScalarInt64(@"UPDATE ""Fileset"" SET ""IsFullBackup"" = 1 WHERE ""ID"" = ?);", filesetid, 0);
-                tr.Commit();
-                return id;
-            }
-        }
-
+        
         public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
         {
             m_insertIndexBlockLink.Transaction = transaction;
