@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
@@ -40,7 +39,6 @@ namespace Duplicati.Library.Main.Operation
         private byte[] m_blockbuffer;
         private readonly RestoreResults m_result;
         private static readonly string DIRSEP = Util.DirectorySeparatorString;
-        public CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         public RestoreHandler(string backendurl, Options options, RestoreResults result)
         {
