@@ -105,7 +105,8 @@ namespace Duplicati.UnitTest
             using (CancellationTokenSource tokenSource = new CancellationTokenSource())
             {
                 Task task = TestUtils.GrowingFile(growingFilename, tokenSource.Token);
-                using (FileStream growingStream = SystemIO.IO_OS.FileOpenRead(growingFilename))
+                Thread.Sleep(100);
+                using (FileStream growingStream = new FileStream(growingFilename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     Thread.Sleep(100);
                     fixedGrowingStreamLength = growingStream.Length;
@@ -118,6 +119,7 @@ namespace Duplicati.UnitTest
                     }
                 }
             }
+            Console.WriteLine($"fixedGrowingStreamLength:{fixedGrowingStreamLength} limitStreamLength:{limitStreamLength} nextGrowingStreamLength:{nextGrowingStreamLength}");
             Assert.IsTrue(fixedGrowingStreamLength > 0);
             Assert.AreEqual(fixedGrowingStreamLength, limitStreamLength);
             Assert.IsTrue(limitStreamLength < nextGrowingStreamLength);
