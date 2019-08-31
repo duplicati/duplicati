@@ -100,17 +100,20 @@ namespace Duplicati.Library.Utility
         public static void RemoveOldApplicationTempFiles(Action<string, Exception> errorcallback = null)
         {
             var expires = TimeSpan.FromDays(30);
-            foreach(var e in GetApplicationTempFiles())
+            foreach (var e in GetApplicationTempFiles())
+            {
                 try
                 {
                     if (DateTime.UtcNow > (System.IO.File.GetLastWriteTimeUtc(e) + expires))
+                    {
                         System.IO.File.Delete(e);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    if (errorcallback != null)
-                        errorcallback(e, ex);
+                    errorcallback?.Invoke(e, ex);
                 }
+            }
         }
         
         public TempFile()
