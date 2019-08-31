@@ -22,6 +22,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -92,6 +94,35 @@ namespace Duplicati.UnitTest
             {
                 System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
             }
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void ReadLimitLengthStreamWithGrowingFile()
+        {
+            var growingFilename = Path.GetTempFileName();
+            long fixedGrowingStreamLength, limitStreamLength, nextGrowingStreamLength;
+            using (CancellationTokenSource tokenSource = new CancellationTokenSource())
+            {
+                Task task = TestUtils.GrowingFile(growingFilename, tokenSource.Token);
+                Thread.Sleep(100);
+                using (FileStream growingStream = new FileStream(growingFilename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    Thread.Sleep(100);
+                    fixedGrowingStreamLength = growingStream.Length;
+                    Thread.Sleep(100);
+                    using (var limitStream = new ReadLimitLengthStream(growingStream, fixedGrowingStreamLength))
+                    {
+                        Thread.Sleep(100);
+                        nextGrowingStreamLength = growingStream.Length;
+                        limitStreamLength = limitStream.Length;
+                    }
+                }
+            }
+            Console.WriteLine($"fixedGrowingStreamLength:{fixedGrowingStreamLength} limitStreamLength:{limitStreamLength} nextGrowingStreamLength:{nextGrowingStreamLength}");
+            Assert.IsTrue(fixedGrowingStreamLength > 0);
+            Assert.AreEqual(fixedGrowingStreamLength, limitStreamLength);
+            Assert.IsTrue(limitStreamLength < nextGrowingStreamLength);
         }
 
         [Test]

@@ -21,6 +21,8 @@ using Duplicati.Library.Utility;
 using System.Linq;
 using Duplicati.Library.Logging;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.UnitTest
@@ -43,6 +45,30 @@ namespace Duplicati.UnitTest
                     opts["auth-password"] = File.ReadAllText(auth_password).Trim();
                 
                 return opts;
+            }
+        }
+
+        public static async Task GrowingFile(string testFile, CancellationToken token)
+        {
+            try
+            {
+                var str = new string('*', 50);
+                while (true)
+                {
+                    if (token.IsCancellationRequested)
+                    {
+                        continue;
+                    }
+                    File.AppendAllText(testFile, str);
+                    await Task.Delay(18, token).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                if (File.Exists(testFile))
+                {
+                    File.Delete(testFile);
+                }
             }
         }
 
