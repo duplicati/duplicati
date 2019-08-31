@@ -4,19 +4,22 @@ configuration: Debug
 platform: Any CPU
 environment:
     AUTOUPDATER_Duplicati_SKIP_UPDATE: 1
-    UNITTEST_BASEFOLDER: C:\projects\duplicati\testdata
     COVERALLS_REPO_TOKEN:
         secure: szQsrkP5rvra8L60SomD73/dFvRwot0UuyA566zqzI2qmLOr+MhLN0AyC8BTbhYY
 before_build:
+    - ps: $env:UNITTEST_BASEFOLDER = "$Env:APPVEYOR_BUILD_FOLDER" + "\testdata"
+    - ps: if ($env:APPVEYOR_REPO_NAME.Equals("duplicati/duplicati")) {
+        $env:GITTER_NOTIFY_URL = "https://webhooks.gitter.im/e/a2c55bac2b5c38838e0f"
+        }
     - cmd: nuget restore Duplicati.sln
 build:
     project: Duplicati.sln
     verbosity: minimal
 test_script:
     - ps: |
-        nuget install OpenCover -Version 4.6.166 -OutputDirectory packages
-        nuget install coveralls.net -Version 0.6.0 -OutputDirectory packages
-        nuget install NUnit.Runners -Version 3.4.0 -OutputDirectory packages
+        nuget install OpenCover -Version 4.7.922 -OutputDirectory packages
+        nuget install coveralls.net -Version 0.7.0 -OutputDirectory packages
+        nuget install NUnit.Runners -Version 3.10.0 -OutputDirectory packages
 
         $testDir = ".\Duplicati\UnitTest\bin\Debug"
         $tests = @("$testDir\Duplicati.UnitTest.dll")
@@ -25,10 +28,10 @@ test_script:
         foreach ($elem in $tests) {
             $testResultsFile = "$elem" + ".xml"
 
-            .\packages\OpenCover.4.6.166\tools\OpenCover.Console.exe `
+            .\packages\OpenCover.4.7.922\tools\OpenCover.Console.exe `
             -register:user `
-            -target:.\packages\NUnit.ConsoleRunner.3.4.0\tools\nunit3-console.exe `
-            "-targetargs:""$elem"" /framework:net-4.5 /where:cat!=BulkData /result:""$testResultsFile""" `
+            -target:.\packages\NUnit.ConsoleRunner.3.10.0\tools\nunit3-console.exe `
+            "-targetargs:""$elem"" /where:cat!=BulkData /result:""$testResultsFile""" `
             "-filter:+[Duplicati.Library.Main]* -[UnitTest]*" `
             -output:opencover.xml `
             -returntargetcode `
@@ -49,7 +52,7 @@ test_script:
             $commitEmail = git show --quiet --format="%aE" $revision
             $commitMessage = git show --quiet --format="%s" $revision
 
-            .\packages\coveralls.net.0.6.0\tools\csmacnz.Coveralls.exe `
+            .\packages\coveralls.net.0.7.0\tools\csmacnz.Coveralls.exe `
             --opencover -i opencover.xml `
             --repoToken "$Env:COVERALLS_REPO_TOKEN" `
             --commitId "$revision" `
@@ -66,7 +69,7 @@ test_script:
         }
 notifications:
     - provider: Webhook
-      url: https://webhooks.gitter.im/e/a2c55bac2b5c38838e0f
+      url: $Env:GITTER_NOTIFY_URL
       method: POST
       on_build_success: true
       on_build_failure: true

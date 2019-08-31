@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -8,7 +8,7 @@
     <RootNamespace>Duplicati.Library.Localization</RootNamespace>
     <AssemblyName>Duplicati.Library.Localization</AssemblyName>
     <AssemblyOriginatorKeyFile>..\Main\Duplicati.snk</AssemblyOriginatorKeyFile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
@@ -33,10 +33,10 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="NGettext">
-      <HintPath>..\..\..\packages\NGettext.0.6.3\lib\net45\NGettext.dll</HintPath>
+    <Reference Include="NGettext, Version=0.6.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\NGettext.0.6.4\lib\net46\NGettext.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
@@ -48,8 +48,7 @@
     <Compile Include="MoLocalizationService.cs" />
     <Compile Include="LocalizationContext.cs" />
   </ItemGroup>
-  <ItemGroup />
-  <ItemGroup>    
+  <ItemGroup>
     <EmbeddedResource Include="..\..\..\Localizations\duplicati\*.mo" />
   </ItemGroup>
   <ItemGroup>
