@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,7 +10,7 @@
     <RootNamespace>Duplicati.Server</RootNamespace>
     <AssemblyName>Duplicati.Server</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -48,11 +48,14 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.5.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\..\packages\BouncyCastle.1.8.5\lib\BouncyCastle.Crypto.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="BouncyCastle.Crypto, Version=1.8.1.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
-      <HintPath>..\..\packages\BouncyCastle.1.8.1\lib\BouncyCastle.Crypto.dll</HintPath>
-    </Reference>
     <Reference Include="UnixSupport">
       <HintPath>..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
     </Reference>
@@ -61,9 +64,6 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EventPollNotify.cs" />
@@ -139,8 +139,8 @@
     <EmbeddedResource Include="Database\Database schema\2. Add UIStorage.sql" />
     <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
     <EmbeddedResource Include="Database\Database schema\4. Add autoincrement to backup id.sql" />
-    <None Include="packages.config" />
     <EmbeddedResource Include="Database\Database schema\5. Extend notification table.sql" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
@@ -216,7 +216,7 @@
       <Name>Duplicati.Library.DynamicLoader</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Encryption\Duplicati.Library.Encryption.csproj">
-      <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
+      <Project>{2cf2d90e-c25b-47ad-91e0-98451bab8058}</Project>
       <Name>Duplicati.Library.Encryption</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Interface\Duplicati.Library.Interface.csproj">
