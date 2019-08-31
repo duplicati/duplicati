@@ -217,23 +217,23 @@ namespace Duplicati.Library.Main.Operation
             // Check how many full backups will be remaining after the previous steps
             // and remove oldest backups while there are still more backups than should be kept as specified via option
             var backupsRemaining = sortedAllBackups.Except(toDelete).ToList();
-            var keepVersions = m_options.KeepVersions;
-            var versionsKeptCount = 0;
-            if (keepVersions > 0 && keepVersions < backupsRemaining.Count)
+            var fullVersionsToKeep = m_options.KeepVersions;
+            var fullVersionsKeptCount = 0;
+            if (fullVersionsToKeep > 0 && fullVersionsToKeep < backupsRemaining.Count)
             {
-                // skip full versions for the count of keepVersions
+                // skip full versions for the count of fullVersionsToKeep
                 // add the remainder of full and partial backups to toDelete
                 bool foundLastFullBackupToKeep = false;
                 foreach (var backup in backupsRemaining)
                 {
                     bool isFullBackup;
-                    if (versionsKeptCount < keepVersions)
+                    if (fullVersionsKeptCount < fullVersionsToKeep)
                     {
                         isFullBackup = db.IsFilesetFullBackup(backup);
                         // count only a full backup
-                        if (versionsKeptCount < keepVersions && isFullBackup)
+                        if (fullVersionsKeptCount < fullVersionsToKeep && isFullBackup)
                         {
-                            versionsKeptCount++;
+                            fullVersionsKeptCount++;
                         }
                         continue;
                     }
