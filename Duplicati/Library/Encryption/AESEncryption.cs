@@ -1,28 +1,26 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
+﻿#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
+//
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Duplicati.Library.Interface;
 using System.IO;
-using System.Security.Cryptography;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Encryption
 {
@@ -69,7 +67,7 @@ namespace Duplicati.Library.Encryption
         /// </summary>
         public AESEncryption(string passphrase, Dictionary<string, string> options)
         {
-            if(string.IsNullOrEmpty(passphrase))
+            if (string.IsNullOrEmpty(passphrase))
                 throw new ArgumentException(Strings.AESEncryption.EmptyKeyError, nameof(passphrase));
 
             m_key = passphrase;
@@ -120,7 +118,7 @@ namespace Duplicati.Library.Encryption
         {
             if (m_cachedsizeoverhead != -1)
                 return m_cachedsizeoverhead;
-            
+
             //If we use 1, we trigger the blocksize.
             //As the AES algorithm does not alter the size,
             // the results are the same as for the real size,
@@ -162,12 +160,12 @@ namespace Duplicati.Library.Encryption
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(
-                        COMMANDLINE_SET_THREADLEVEL, 
-                        CommandLineArgument.ArgumentType.Enumeration, 
-                        Strings.AESEncryption.AessetthreadlevelShort, 
+                        COMMANDLINE_SET_THREADLEVEL,
+                        CommandLineArgument.ArgumentType.Enumeration,
+                        Strings.AESEncryption.AessetthreadlevelShort,
                         Strings.AESEncryption.AessetthreadlevelLong,
-                        DEFAULT_THREAD_LEVEL, 
-                        null, 
+                        DEFAULT_THREAD_LEVEL,
+                        null,
                         new string[] {"0", "1", "2", "3", "4"}
                         ),
                 });
