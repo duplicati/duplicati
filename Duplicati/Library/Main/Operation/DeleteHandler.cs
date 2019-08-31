@@ -221,7 +221,8 @@ namespace Duplicati.Library.Main.Operation
             var fullVersionsKeptCount = 0;
             if (fullVersionsToKeep > 0 && fullVersionsToKeep < backupsRemaining.Count)
             {
-                // skip full versions for the count of fullVersionsToKeep
+                // keep the number of full backups specified in fullVersionsToKeep.
+                // once the last full backup t okeep is found, also keep the partials immediately after it the full backup.
                 // add the remainder of full and partial backups to toDelete
                 bool foundLastFullBackupToKeep = false;
                 foreach (var backup in backupsRemaining)
