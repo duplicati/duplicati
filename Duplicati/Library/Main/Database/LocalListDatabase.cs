@@ -428,8 +428,8 @@ namespace Duplicati.Library.Main.Database
                                 var isFullBackup = rd.GetInt32(1);
                                 var e = dict[id];
 
-                                var filecount = rd.ConvertValueToInt64(1, -1L);
-                                var filesizes = rd.ConvertValueToInt64(2, -1L);
+                                var filecount = rd.ConvertValueToInt64(2, -1L);
+                                var filesizes = rd.ConvertValueToInt64(3, -1L);
 
                                 yield return new Fileset(e, isFullBackup, m_filesets[e].Value, filecount, filesizes);
                             }
