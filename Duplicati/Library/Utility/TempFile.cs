@@ -94,16 +94,6 @@ namespace Duplicati.Library.Utility
         }
         
         /// <summary>
-        /// Attempts to delete all temporary files for this application
-        /// </summary>
-        public static void RemoveAllApplicationTempFiles()
-        {
-            foreach(var s in GetApplicationTempFiles())
-                try { System.IO.File.Delete(s); }
-                catch { }
-        }
-
-        /// <summary>
         /// Removes all old temporary files for this application.
         /// </summary>
         /// <param name="errorcallback">An optional callback method for logging errors</param>
