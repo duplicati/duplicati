@@ -69,7 +69,8 @@ namespace Duplicati.Library.Main.Operation
                             db.WriteResults();
                             if (m_options.AutoVacuum)
                             {
-                                db.Vacuum();
+                                m_result.VacuumResults = new VacuumResults(m_result);
+                                new VacuumHandler(m_options, (VacuumResults)m_result.VacuumResults).Run();
                             }
                         }
                     }

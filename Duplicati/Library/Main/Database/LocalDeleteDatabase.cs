@@ -64,11 +64,21 @@ namespace Duplicati.Library.Main.Database
             {
                 cmd.Transaction = transaction;
 
-                string q = String.Join(",", Enumerable.Repeat("?", toDelete.Length));
-                        
-                //First we remove unwanted entries
-                var deleted = cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @") ", toDelete.Select(x => NormalizeDateTimeToEpochSeconds(x)).Cast<object>().ToArray());
-    
+                var deleted = 0;
+
+                //Process array in slices to prevent exceeding SQLITE_MAX_VARIABLE_NUMBER (default 999)
+                const int SLICE_SIZE = 128;
+                for (int sliceStart = 0; sliceStart < toDelete.Length; sliceStart += SLICE_SIZE)
+                {
+                    int sliceEnd = Math.Min(toDelete.Length, sliceStart + SLICE_SIZE) - 1;
+                    int sliceLen = sliceEnd - sliceStart + 1;
+
+                    string q = string.Join(",", Enumerable.Repeat("?", sliceLen));
+
+                    //First we remove unwanted entries
+                    deleted += cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @") ", toDelete.Skip(sliceStart).Take(sliceLen).Select(x => NormalizeDateTimeToEpochSeconds(x)).Cast<object>().ToArray());
+                }
+
                 if (deleted != toDelete.Length)
                     throw new Exception(string.Format("Unexpected number of deleted filesets {0} vs {1}", deleted, toDelete.Length));
     

@@ -58,6 +58,7 @@
     <Compile Include="ProgressReportingStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegistryUtility.cs" />
+    <Compile Include="ReadLimitLengthStream.cs" />
     <Compile Include="ShaderStream.cs" />
     <Compile Include="Sizeparser.cs" />
     <Compile Include="SslCertificateValidator.cs" />
