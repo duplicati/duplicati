@@ -249,7 +249,6 @@ namespace Duplicati.Library.Main.Operation
                     }
                     toDelete.Add(backup);
                 }
-                //toDelete.AddRange(backupsRemaining.Skip(keepVersions));
             }
 
             var toDeleteDistinct = toDelete.Distinct().OrderByDescending(x => x.ToUniversalTime()).ToArray();
