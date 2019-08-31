@@ -113,7 +113,7 @@ namespace Duplicati.Library.Utility
             foreach(var e in GetApplicationTempFiles())
                 try
                 {
-                    if (DateTime.Now > (System.IO.File.GetLastWriteTimeUtc(e) + expires))
+                    if (DateTime.UtcNow > (System.IO.File.GetLastWriteTimeUtc(e) + expires))
                         System.IO.File.Delete(e);
                 }
                 catch (Exception ex)
