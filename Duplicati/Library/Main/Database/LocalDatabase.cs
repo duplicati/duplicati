@@ -1315,7 +1315,7 @@ ORDER BY
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 cmd.Transaction = tr.Parent;
-                var id = cmd.ExecuteScalarInt64(@"INSERT INTO ""Fileset"" (""OperationID"", ""IsFullBackup"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();", -1, m_operationid, 0, NormalizeDateTimeToEpochSeconds(timestamp), volumeid);
+                var id = cmd.ExecuteScalarInt64(@"INSERT INTO ""Fileset"" (""OperationID"", ""IsFullBackup"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();", -1, m_operationid, BackupType.PARTIAL_BACKUP, NormalizeDateTimeToEpochSeconds(timestamp), volumeid);
                 tr.Commit();
                 return id;
             }
