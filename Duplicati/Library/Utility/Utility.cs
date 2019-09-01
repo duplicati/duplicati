@@ -942,9 +942,9 @@ namespace Duplicati.Library.Utility
         }
         
         /// <summary>
-        /// Normalizes a DateTime instance floor'ed to seconds and in UTC
+        /// Normalizes a DateTime instance by converting to UTC and flooring to seconds.
         /// </summary>
-        /// <returns>The normalised date time</returns>
+        /// <returns>The normalized date time</returns>
         /// <param name="input">The input time</param>
         public static DateTime NormalizeDateTime(DateTime input)
         {
