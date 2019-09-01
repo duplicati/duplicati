@@ -202,6 +202,19 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
+        public void NormalizeDateTime()
+        {
+            DateTime baseDateTime = new DateTime(2000, 1, 2, 3, 4, 5);
+            DateTime baseDateTimeUTC = baseDateTime.ToUniversalTime();
+            Assert.AreEqual(baseDateTimeUTC, Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(1)));
+            Assert.AreEqual(baseDateTimeUTC, Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(500)));
+            Assert.AreEqual(baseDateTimeUTC, Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(999)));
+            Assert.AreEqual(baseDateTimeUTC.AddSeconds(-1), Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(-1)));
+            Assert.AreEqual(baseDateTimeUTC.AddSeconds(1), Utility.NormalizeDateTime(baseDateTime.AddSeconds(1.9)));
+        }
+
+        [Test]
+        [Category("Utility")]
         public void ParseBool()
         {
             string[] expectTrue = { "1", "on", "true", "yes" };
