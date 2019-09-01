@@ -69,7 +69,8 @@ namespace Duplicati.Library.Main.Operation
                             db.WriteResults();
                             if (m_options.AutoVacuum)
                             {
-                                db.Vacuum();
+                                m_result.VacuumResults = new VacuumResults(m_result);
+                                new VacuumHandler(m_options, (VacuumResults)m_result.VacuumResults).Run();
                             }
                         }
                     }
@@ -110,20 +111,17 @@ namespace Duplicati.Library.Main.Operation
                         newvolindex = new IndexVolumeWriter(m_options);
                         newvolindex.VolumeID = db.RegisterRemoteVolume(newvolindex.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, transaction);
                         db.AddIndexBlockLink(newvolindex.VolumeID, newvol.VolumeID, transaction);
-                        newvolindex.StartVolume(newvol.RemoteFilename);
                     }
-                    
+
                     long blocksInVolume = 0;
-                    long discardedBlocks = 0;
-                    long discardedSize = 0;
                     byte[] buffer = new byte[m_options.Blocksize];
                     var remoteList = db.GetRemoteVolumes().Where(n => n.State == RemoteVolumeState.Uploaded || n.State == RemoteVolumeState.Verified).ToArray();
-                    
+
                     //These are for bookkeeping
                     var uploadedVolumes = new List<KeyValuePair<string, long>>();
                     var deletedVolumes = new List<KeyValuePair<string, long>>();
                     var downloadedVolumes = new List<KeyValuePair<string, long>>();
-                    
+
                     //We start by deleting unused volumes to save space before uploading new stuff
                     var fullyDeleteable = (from v in remoteList
                                            where report.DeleteableVolumes.Contains(v.Name)
@@ -137,10 +135,11 @@ namespace Duplicati.Library.Main.Operation
 
                     if (report.ShouldCompact)
                     {
+                        newvolindex?.StartVolume(newvol.RemoteFilename);
                         var volumesToDownload = (from v in remoteList
                                                  where report.CompactableVolumes.Contains(v.Name)
                                                  select (IRemoteVolume)v).ToList();
-                        
+
                         using(var q = db.CreateBlockQueryHelper(transaction))
                         {
                             foreach (var entry in new AsyncDownloader(volumesToDownload, backend))
@@ -203,11 +202,6 @@ namespace Duplicati.Library.Main.Operation
                                                     deleteableVolumes = new List<IRemoteVolume>();
                                                 }
                                             }
-                                            else
-                                            {
-                                                discardedBlocks++;
-                                                discardedSize += e.Value;
-                                            }
                                         }
                                     }
 
@@ -236,13 +230,18 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                     }
-                    
+                    else
+                    {
+                        newvolindex?.Dispose();
+                        newvol.Dispose();
+                    }
+
                     deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
                                         
                     var downloadSize = downloadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
                     var deletedSize = deletedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
                     var uploadSize = uploadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
-                    
+
                     m_result.DeletedFileCount = deletedVolumes.Count;
                     m_result.DownloadedFileCount = downloadedVolumes.Count;
                     m_result.UploadedFileCount = uploadedVolumes.Count;

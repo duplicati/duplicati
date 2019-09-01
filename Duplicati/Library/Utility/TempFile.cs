@@ -32,7 +32,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The prefix applied to all temporary files
         /// </summary>
-        public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower() + "-";
+        public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower(System.Globalization.CultureInfo.InvariantCulture) + "-";
         
         private string m_path;
         private bool m_protect;
@@ -113,7 +113,7 @@ namespace Duplicati.Library.Utility
             foreach(var e in GetApplicationTempFiles())
                 try
                 {
-                    if (DateTime.Now > (System.IO.File.GetLastWriteTimeUtc(e) + expires))
+                    if (DateTime.UtcNow > (System.IO.File.GetLastWriteTimeUtc(e) + expires))
                         System.IO.File.Delete(e);
                 }
                 catch (Exception ex)

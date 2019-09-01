@@ -17,15 +17,19 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
@@ -161,11 +165,6 @@ namespace Duplicati.Library.Backend
             get { return "file"; }
         }
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public IEnumerable<IFileEntry> List()
         {
             PreAuthenticate();
@@ -173,7 +172,7 @@ namespace Duplicati.Library.Backend
             if (!systemIO.DirectoryExists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            foreach (string s in systemIO.EnumerateFileSystemEntries(m_path))
+            foreach (string s in systemIO.EnumerateFiles(m_path))
             {
                 yield return systemIO.FileEntry(s);
             }
@@ -186,20 +185,20 @@ namespace Duplicati.Library.Backend
 
 #if DEBUG_RETRY
         private static Random random = new Random();
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
             {
                 if (random.NextDouble() > 0.6666)
                     throw new Exception("Random upload failure");
-                Utility.Utility.CopyStream(stream, writestream);
+                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken);
             }
         }
 #else
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
-                Utility.Utility.CopyStream(stream, writestream, true, m_copybuffer);
+            using (System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
+                await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
         }
 #endif
 
@@ -210,7 +209,7 @@ namespace Duplicati.Library.Backend
                 Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             string path = GetRemoteName(remotename);
             if (m_moveFile)
@@ -222,6 +221,8 @@ namespace Duplicati.Library.Backend
             }
             else
                 systemIO.FileCopy(filename, path, true);
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string filename)
@@ -282,11 +283,6 @@ namespace Duplicati.Library.Backend
         }
 
         #endregion
-
-        public static bool PreAuthenticate(string path, string username, string password, bool forceReauth)
-        {
-            return Win32.PreAuthenticate(path, username, password, forceReauth);
-        }
 
         private System.IO.DriveInfo GetDrive()
         {
@@ -370,8 +366,7 @@ namespace Duplicati.Library.Backend
         {
             ulong available;
             ulong total;
-            ulong free;
-            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out free))
+            if (WindowsDriveHelper.GetDiskFreeSpaceEx(directory, out available, out total, out _))
             {
                 return new QuotaInfo((long)total, (long)available);
             }

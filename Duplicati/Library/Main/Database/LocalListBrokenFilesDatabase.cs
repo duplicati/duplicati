@@ -32,9 +32,9 @@ namespace Duplicati.Library.Main.Database
         // However, blocksets with a length of 0 are excluded from this check, as the corresponding blocks for these are not needed.
         private const string BROKEN_FILE_IDS = @"
 SELECT DISTINCT ""ID"" FROM (
-  SELECT ""ID"" AS ""ID"", ""BlocksetID"" AS ""BlocksetID"" FROM ""File"" WHERE ""BlocksetID"" != {0} AND ""BlocksetID"" != {1}
+  SELECT ""ID"" AS ""ID"", ""BlocksetID"" AS ""BlocksetID"" FROM ""FileLookup"" WHERE ""BlocksetID"" != {0} AND ""BlocksetID"" != {1}
 UNION
-  SELECT ""A"".""ID"" AS ""ID"", ""B"".""BlocksetID"" AS ""BlocksetID"" FROM ""File"" A LEFT JOIN ""Metadataset"" B ON ""A"".""MetadataID"" = ""B"".""ID""
+  SELECT ""A"".""ID"" AS ""ID"", ""B"".""BlocksetID"" AS ""BlocksetID"" FROM ""FileLookup"" A LEFT JOIN ""Metadataset"" B ON ""A"".""MetadataID"" = ""B"".""ID""
 )
 WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN 
   (

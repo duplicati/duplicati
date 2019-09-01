@@ -1,11 +1,15 @@
-﻿using System;
+﻿using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class Dropbox : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
@@ -14,10 +18,14 @@ namespace Duplicati.Library.Backend
         private readonly string m_path;
         private readonly DropboxHelper dbx;
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public Dropbox()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public Dropbox(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
@@ -99,15 +107,15 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using(FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename,fs);
+            using(FileStream fs = File.OpenRead(filename))
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
         {
-            using(FileStream fs = System.IO.File.Create(filename))
+            using(FileStream fs = File.Create(filename))
                 Get(remotename, fs);
         }
 
@@ -162,12 +170,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, Stream stream)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                string path = string.Format("{0}/{1}", m_path, remotename);
-                dbx.UploadFile(path, stream);
+                string path = $"{m_path}/{remotename}";
+                await dbx.UploadFileAsync(path, stream, cancelToken);
             }
             catch (DropboxException)
             {

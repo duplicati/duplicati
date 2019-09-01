@@ -111,7 +111,10 @@ namespace Duplicati.Library.Main
             Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
-            
+
+            CheckAutoCompactInterval();
+            CheckAutoVacuumInterval();
+
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
                 using (var h = new Operation.BackupHandler(m_backend, m_options, result))
@@ -128,7 +131,7 @@ namespace Duplicati.Library.Main
             return RunAction(new RestoreResults(), ref paths, ref filter, (result) => {
                 new Operation.RestoreHandler(m_backend, m_options, result).Run(paths, filter);
 
-                Library.UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.FilesRestored);
+                Library.UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.RestoredFiles);
                 Library.UsageReporter.Reporter.Report("RESTORE_FILESIZE", result.SizeOfRestoredFiles);
                 Library.UsageReporter.Reporter.Report("RESTORE_DURATION", (long)result.Duration.TotalSeconds);
             });
@@ -155,9 +158,9 @@ namespace Duplicati.Library.Main
             });
         }
 
-        public Duplicati.Library.Interface.IListResults List(Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults List()
         {
-            return List((IEnumerable<string>)null, filter);
+            return List(null, null);
         }
 
         public Duplicati.Library.Interface.IListResults List(string filterstring)
@@ -165,14 +168,14 @@ namespace Duplicati.Library.Main
             return List(filterstring == null ? null : new string[] { filterstring }, null);
         }
 
-        public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter)
         {
             return RunAction(new ListResults(), ref filter, (result) => {
                 new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
             });
         }
 
-        public Duplicati.Library.Interface.IListResults ListControlFiles(IEnumerable<string> filterstrings = null, Library.Utility.IFilter filter = null)
+        public Duplicati.Library.Interface.IListResults ListControlFiles(IEnumerable<string> filterstrings, Library.Utility.IFilter filter)
         {
             return RunAction(new ListResults(), ref filter, (result) => {
                 new Operation.ListControlFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
@@ -227,20 +230,10 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.ICompactResults Compact()
         {
+            CheckAutoVacuumInterval();
+
             return RunAction(new CompactResults(), (result) => {
                 new Operation.CompactHandler(m_backend, m_options, result).Run();
-            });
-        }
-
-        public Duplicati.Library.Interface.IRecreateDatabaseResults RecreateDatabase(string targetpath, Library.Utility.IFilter filter = null)
-        {
-            var t = new string[] { string.IsNullOrEmpty(targetpath) ? m_options.Dbpath : targetpath };
-
-            var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
-
-            return RunAction(new RecreateDatabaseResults(), ref t, ref filter, (result) => {
-                using(var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
-                    h.Run(t[0], filter, filelistfilter);
             });
         }
 
@@ -368,7 +361,7 @@ namespace Duplicati.Library.Main
 
         public Library.Interface.IVacuumResults Vacuum()
         {
-            return RunAction(new VacuumResult(), result => {
+            return RunAction(new VacuumResults(), result => {
                 new Operation.VacuumHandler(m_options, result).Run();
             });
         }
@@ -805,15 +798,19 @@ namespace Duplicati.Library.Main
             if (string.Equals(m_options.CompressionModule, "7z", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "7zModuleHasIssues", null, "The 7z compression module has known issues and should only be used for experimental purposes");
 
-            //TODO: Based on the action, see if all options are relevant
-        }
+            // Amazon CD is closing August 16th 2019
+			if (string.Equals(new Library.Utility.Uri(m_backend).Scheme, "amzcd", StringComparison.OrdinalIgnoreCase))
+				Logging.Log.WriteWarningMessage(LOGTAG, "AmzCDClosingApi", null, "The Amazon Cloud Drive API is closing down on August 16th 2019, please migrate your backups before this date");
 
-        /// <summary>
-        /// Helper method that expands the users chosen source input paths,
-        /// and removes duplicate paths
-        /// </summary>
-        /// <returns>The expanded and filtered sources.</returns>
-        private string[] ExpandInputSources(string[] inputsources, IFilter filter)
+			//TODO: Based on the action, see if all options are relevant
+		}
+
+		/// <summary>
+		/// Helper method that expands the users chosen source input paths,
+		/// and removes duplicate paths
+		/// </summary>
+		/// <returns>The expanded and filtered sources.</returns>
+		private string[] ExpandInputSources(string[] inputsources, IFilter filter)
         {
             if (inputsources == null || inputsources.Length == 0)
                 throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError, "NoSourceFolders");
@@ -910,7 +907,7 @@ namespace Duplicati.Library.Main
                         {
                             // Try to get attributes. Returns -1 if source doesn't exist, otherwise throws an exception.
                             // In this case, it is irrelevant to use fileinfo or directoryinfo to retrieve attributes.
-                            var attributes = fi.Attributes;
+                            var unused = fi.Attributes;
                         }
                         catch (UnauthorizedAccessException ex)
                         {
@@ -947,10 +944,9 @@ namespace Duplicati.Library.Main
                     {
                         if (filter != null)
                         {
-                            bool includes;
                             bool excludes;
 
-                            FilterExpression.AnalyzeFilters(filter, out includes, out excludes);
+                            FilterExpression.AnalyzeFilters(filter, out _, out excludes);
 
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
@@ -1024,8 +1020,7 @@ namespace Duplicati.Library.Main
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Integer)
             {
-                long l;
-                if (!long.TryParse(value, out l))
+                if (!long.TryParse(value, out _))
                     return Strings.Controller.UnsupportedIntegerValue(optionname, value);
             }
             else if (arg.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path)
@@ -1105,6 +1100,34 @@ namespace Duplicati.Library.Main
         {
             get { return m_options.MaxDownloadPrSecond; }
             set { m_options.MaxDownloadPrSecond = value; }
+        }
+
+        /// <summary>
+        /// Time of last compact operation
+        /// </summary>
+        public DateTime LastCompact { get; set; }
+
+        /// <summary>
+        /// Time of last vacuum operation
+        /// </summary>
+        public DateTime LastVacuum { get; set; }
+
+        private void CheckAutoCompactInterval()
+        {
+            if (!m_options.NoAutoCompact && (LastCompact > DateTime.MinValue) && (LastCompact.Add(m_options.AutoCompactInterval) > DateTime.Now))
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Skipping auto compaction until {0}", LastCompact.Add(m_options.AutoCompactInterval));
+                m_options.RawOptions["no-auto-compact"] = "true";
+            }
+        }
+
+        private void CheckAutoVacuumInterval()
+        {
+            if (m_options.AutoVacuum && (LastVacuum > DateTime.MinValue) && (LastVacuum.Add(m_options.AutoVacuumInterval) > DateTime.Now))
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "VacuumResults", "Skipping auto vacuum until {0}", LastVacuum.Add(m_options.AutoVacuumInterval));
+                m_options.RawOptions["auto-vacuum"] = "false";
+            }
         }
 
         #region IDisposable Members

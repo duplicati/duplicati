@@ -14,17 +14,21 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
-using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
-using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AmazonCloudDrive
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class AmzCD : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
@@ -66,10 +70,14 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             m_waitUntilRemotename = new Dictionary<string, DateTime>();
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AmzCD()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AmzCD(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
@@ -152,7 +160,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             var wait = GetWaitUntil(remotename) - DateTime.Now;
 
             if (wait.Ticks > 0)
-                System.Threading.Thread.Sleep(wait);
+                Thread.Sleep(wait);
         }
 
         private string CacheFilePath { get { return SystemIO.IO_OS.PathCombine(Utility.TempFolder.SystemTempPath, string.Format(CACHE_FILE_NAME_TEMPLATE, m_userid)); } }
@@ -260,7 +268,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
                     );
                     SetWaitUntil(null, DateTime.Now + m_delayTimeSpan);
                 }
-                else if (self != null && self.Count > 1)
+                else if (self.Count > 1)
                     throw new UserInformationException(Strings.AmzCD.MultipleEntries(p, "/" + string.Join("/", curpath)), "AmzCDMultipleEntries");
                 else
                     parent = self.Data.First();
@@ -313,7 +321,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             EnforceConsistencyDelay(remotename);
 
@@ -331,18 +339,16 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
 
             try
             {
-                var item = m_oauth.PostMultipartAndGetJSONData<ResourceModel>(
+                var item = await m_oauth.PostMultipartAndGetJSONDataAsync<ResourceModel>(
                     url,
-
                     req =>
                     {
                         req.Method = overwrite ? "PUT" : "POST";
                     },
-
+                    cancelToken,
                     new MultipartItem(createreq, "metadata"),
                     new MultipartItem(stream, "content", remotename)
-
-                );
+                ).ConfigureAwait(false);
 
                 if (m_filecache != null)
                     m_filecache[item.Name] = item.ID;
@@ -364,7 +370,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public void Get(string remotename, Stream stream)
         {
             EnforceConsistencyDelay(remotename);
 
@@ -428,15 +434,15 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
 
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+            using (FileStream fs = File.OpenRead(filename))
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
         {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
+            using (FileStream fs = File.Create(filename))
                 Get(remotename, fs);
         }
 

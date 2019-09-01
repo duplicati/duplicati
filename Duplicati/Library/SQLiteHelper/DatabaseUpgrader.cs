@@ -255,7 +255,7 @@ namespace Duplicati.Library.SQLiteHelper
                     {
                         backupfile = System.IO.Path.Combine(
                             System.IO.Path.GetDirectoryName(sourcefile),
-                            Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + (DateTime.Now + TimeSpan.FromSeconds(i * 1.5)).ToString("yyyyMMddhhmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
+                            Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + System.IO.Path.GetFileNameWithoutExtension(sourcefile) + " " + (DateTime.Now + TimeSpan.FromSeconds(i * 1.5)).ToString("yyyyMMddhhmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
 
                         if (!System.IO.File.Exists(backupfile))
                             break;

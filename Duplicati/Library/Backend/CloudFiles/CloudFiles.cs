@@ -17,27 +17,23 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Net;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class CloudFiles : IBackend, IStreamingBackend
     {
         public const string AUTH_URL_US = "https://identity.api.rackspacecloud.com/auth";
         public const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
         private const string DUMMY_HOSTNAME = "api.mosso.com";
-
-        public static readonly KeyValuePair<string, string>[] KNOWN_CLOUDFILES_PROVIDERS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("Rackspace US", AUTH_URL_US),
-            new KeyValuePair<string, string>("Rackspace UK", AUTH_URL_UK),
-        };
-
 
         private const int ITEM_LIST_LIMIT = 1000;
         private readonly string m_username;
@@ -50,10 +46,14 @@ namespace Duplicati.Library.Backend
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public CloudFiles()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public CloudFiles(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
@@ -194,10 +194,10 @@ namespace Duplicati.Library.Backend
             } while (repeat);
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -286,11 +286,6 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Members
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public string[] DNSName
         {
             get { return new string[] { new Uri(m_authUrl).Host, string.IsNullOrWhiteSpace(m_storageUrl) ? null : new Uri(m_storageUrl).Host }; }
@@ -314,7 +309,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             HttpWebRequest req = CreateRequest("/" + remotename, "");
             req.Method = "PUT";
@@ -327,7 +322,7 @@ namespace Duplicati.Library.Backend
             /*if (stream.CanSeek)
             {
                 System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
-                req.Headers["ETag"] = Core.Utility.ByteArrayAsHexString(md5.ComputeHash(stream)).ToLower();
+                req.Headers["ETag"] = Core.Utility.ByteArrayAsHexString(md5.ComputeHash(stream)).ToLower(System.Globalization.CultureInfo.InvariantCulture);
                 stream.Seek(0, System.IO.SeekOrigin.Begin);
 
                 using (System.IO.Stream s = req.GetRequestStream())
@@ -352,14 +347,13 @@ namespace Duplicati.Library.Backend
 
                 long streamLen = -1;
                 try { streamLen = stream.Length; }
-                catch {}
-
+                catch { }
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream s = areq.GetRequestStream(streamLen))
                 using (var mds = new Utility.MD5CalculatingStream(s))
                 {
-                    Utility.Utility.CopyStream(stream, mds, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(stream, mds, tryRewindSource: true, cancelToken: cancelToken);
                     fileHash = mds.GetFinalHashString();
                 }
 
@@ -377,7 +371,7 @@ namespace Duplicati.Library.Backend
                 catch (WebException wex)
                 {
                     //Catch 404 and turn it into a FolderNotFound error
-                    if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                    if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                         throw new FolderMissingException(wex);
 
                     //Other error, just re-throw

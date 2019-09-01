@@ -121,6 +121,12 @@ namespace Duplicati.Library.Common.IO
             return Directory.EnumerateFileSystemEntries(path);
         }
 
+        public IEnumerable<string> EnumerateFiles(string path)
+        {
+            return Directory.EnumerateFiles(path);
+        }
+
+
         public string PathGetFileName(string path)
         {
             return Path.GetFileName(path);

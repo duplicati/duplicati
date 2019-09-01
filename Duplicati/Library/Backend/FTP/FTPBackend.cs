@@ -17,15 +17,19 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Duplicati.Library.Interface;
 using System.Linq;
-using Duplicati.Library.Common.IO;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class FTP : IBackend, IStreamingBackend
     {
         private System.Net.NetworkCredential m_userInfo;
@@ -163,11 +167,6 @@ namespace Duplicati.Library.Backend
             get { return "ftp"; }
         }
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         private T HandleListExceptions<T>(Func<T> func, System.Net.FtpWebRequest req)
         {
             T ret = default(T);
@@ -255,7 +254,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, System.IO.Stream input)
+        public async Task PutAsync(string remotename, System.IO.Stream input, CancellationToken cancelToken)
         {
             System.Net.FtpWebRequest req = null;
             try
@@ -270,9 +269,9 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream rs = areq.GetRequestStream(streamLen))
-                    Utility.Utility.CopyStream(input, rs, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(input, rs, true, cancelToken, m_copybuffer).ConfigureAwait(false);
                 
-                if (m_listVerify) 
+                if (m_listVerify)
                 {
                     IEnumerable<IFileEntry> files = List(remotename);
                     foreach(IFileEntry fe in files)
@@ -280,7 +279,7 @@ namespace Duplicati.Library.Backend
                         {
                             if (fe.Size < 0 || streamLen < 0 || fe.Size == streamLen)
                                 return;
-                        
+
                             throw new Exception(Strings.FTPBackend.ListVerifySizeFailure(remotename, fe.Size, streamLen));
                         } 
 
@@ -297,10 +296,10 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string localname)
+        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Put(remotename, fs);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, System.IO.Stream output)

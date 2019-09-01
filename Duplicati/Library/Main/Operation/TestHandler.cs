@@ -103,11 +103,11 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         if (m_options.Dryrun)
                                         {
-                                            Logging.Log.WriteDryrunMessage(LOGTAG, "CaptureHashAndSize", "Sucessfully captured hash and size for {0}, would update database", vol.Name);
+                                            Logging.Log.WriteDryrunMessage(LOGTAG, "CaptureHashAndSize", "Successfully captured hash and size for {0}, would update database", vol.Name);
                                         }
                                         else
                                         {
-                                            Logging.Log.WriteInformationMessage(LOGTAG, "CaptureHashAndSize", "Sucessfully captured hash and size for {0}, updating database", vol.Name);
+                                            Logging.Log.WriteInformationMessage(LOGTAG, "CaptureHashAndSize", "Successfully captured hash and size for {0}, updating database", vol.Name);
                                             db.UpdateRemoteVolume(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash);
                                         }
                                     }
@@ -161,11 +161,11 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (m_options.Dryrun)
                                     {
-                                        Logging.Log.WriteDryrunMessage(LOGTAG, "CapturedHashAndSize", "Sucessfully captured hash and size for {0}, would update database", f.Name);
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "CapturedHashAndSize", "Successfully captured hash and size for {0}, would update database", f.Name);
                                     }
                                     else
                                     {
-                                        Logging.Log.WriteInformationMessage(LOGTAG, "CapturedHashAndSize", "Sucessfully captured hash and size for {0}, updating database", f.Name);
+                                        Logging.Log.WriteInformationMessage(LOGTAG, "CapturedHashAndSize", "Successfully captured hash and size for {0}, updating database", f.Name);
                                         db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash);
                                     }
                                 }

@@ -26,6 +26,8 @@ using Duplicati.Library.Strings;
 using System.Net;
 using System.Text;
 using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.OpenStack
 {
@@ -483,15 +485,16 @@ namespace Duplicati.Library.Backend.OpenStack
         }
 
         #region IStreamingBackend implementation
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var url = JoinUrls(SimpleStorageEndPoint, m_container, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
-            using(m_helper.GetResponse(url, stream, "PUT"))
+            var url = JoinUrls(SimpleStorageEndPoint, m_container, Utility.Uri.UrlPathEncode(m_prefix + remotename));
+            using(await m_helper.GetResponseAsync(url, cancelToken, stream, "PUT"))
             { }
         }
-        public void Get(string remotename, System.IO.Stream stream)
+
+        public void Get(string remotename, Stream stream)
         {
-            var url = JoinUrls(SimpleStorageEndPoint, m_container, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
+            var url = JoinUrls(SimpleStorageEndPoint, m_container, Utility.Uri.UrlPathEncode(m_prefix + remotename));
 
             try
             {
@@ -562,15 +565,15 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+            using (FileStream fs = File.OpenRead(filename))
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
         {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
+            using (FileStream fs = File.Create(filename))
                 Get(remotename, fs);
         }
         public void Delete(string remotename)

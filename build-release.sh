@@ -99,6 +99,7 @@ fi
 RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
 
 git stash save "${GIT_STASH_NAME}"
+git pull
 
 if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 
@@ -128,9 +129,12 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
 "${NUGET}" restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+"${NUGET}" restore "BuildTools/GnupgSigningTool/GnupgSigningTool.sln"
 "${NUGET}" restore "Duplicati.sln"
 
 "${XBUILD}" /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+
+"${XBUILD}" /p:Configuration=Debug "BuildTools/GnupgSigningTool/GnupgSigningTool.sln"
 
 "${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
 find "Duplicati" -type d -name "Release" | xargs rm -rf
@@ -174,12 +178,12 @@ find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Insta
 
 # Clean some unwanted build files
 for FILE in "control_dir" "Duplicati-server.sqlite" "Duplicati.debug.log" "updates"; do
-	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
 done
 
 # Clean the localization spam from Azure
 for FILE in "de" "es" "fr" "it" "ja" "ko" "ru" "zh-Hans" "zh-Hant"; do
-	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
 done
 
 # Clean debug files, if any
@@ -234,14 +238,30 @@ fi
 echo
 echo "Building signed package ..."
 
-"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
+"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" \
+--output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" \
+--manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" \
+--displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" \
+--version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}"
 
 if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
-	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"	
-	
+	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
+
 	echo "Something went wrong while building the package, no output found"
 	exit 5
 fi
+
+"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
+--inputfile=\"${UPDATE_TARGET}/package.zip\" \
+--signaturefile=\"${UPDATE_TARGET}/package.zip.sig\" \
+--armor=false --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
+--keyfile-password="${KEYFILE_PASSWORD}"
+
+"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
+--inputfile=\"${UPDATE_TARGET}/package.zip\" \
+--signaturefile=\"${UPDATE_TARGET}/package.zip.sig.asc\" \
+--armor=true --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
+--keyfile-password="${KEYFILE_PASSWORD}"
 
 echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
 
@@ -354,12 +374,16 @@ ${RELEASE_CHANGEINFO_NEWS}
 	DISCOURSE_APIKEY=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 2)
 
 	curl -X POST "https://forum.duplicati.com/posts" \
+		-H "Content-Type: multipart/form-data" \
+		-H "Accept: application/json" \
 		-F "api_key=${DISCOURSE_APIKEY}" \
 		-F "api_username=${DISCOURSE_USERNAME}" \
-		-F "category=Releases" \
+		-F "category=10" \
 		-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
 		-F "raw=${body}"
 fi
+
+git push
 
 echo
 echo "Built ${RELEASE_TYPE} version: ${RELEASE_VERSION} - ${RELEASE_NAME}"

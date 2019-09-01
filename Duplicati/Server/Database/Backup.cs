@@ -18,7 +18,6 @@
 using System;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Linq;
 
 namespace Duplicati.Server.Database
@@ -26,14 +25,14 @@ namespace Duplicati.Server.Database
     public class Backup : IBackup
     {
         // Sensitive information that may be stored in TargetUrl
-        private readonly string[] UrlPasswords = new[]{
+        private readonly string[] UrlPasswords = {
             "authid",
             "auth-password",
             "sia-password",
         };
 
         // Sensitive information that may be stored in Settings
-        private readonly string[] SettingPasswords = new[]{
+        private readonly string[] SettingPasswords = {
             "passphrase",
             "--authid",
             "--send-mail-password",
@@ -112,7 +111,7 @@ namespace Duplicati.Server.Database
         /// <summary>
         /// Gets a value indicating if this instance is not persisted to the database
         /// </summary>        
-        public bool IsTemporary { get { return ID == null ? false : ID.IndexOf("-", StringComparison.Ordinal) > 0; } }
+        public bool IsTemporary { get { return ID != null && ID.IndexOf("-", StringComparison.Ordinal) > 0; } }
 
         /// <summary>
         /// Sanitizes the backup TargetUrl from any fields in the PasswordFields list.

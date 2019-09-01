@@ -7,6 +7,7 @@ using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Newtonsoft.Json;
 using Duplicati.Library.Localization.Short;
+using System.Threading;
 
 namespace Duplicati.Library.Main
 {
@@ -734,10 +735,10 @@ namespace Duplicati.Library.Main
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                    ((Library.Interface.IStreamingBackend)m_backend).Put(item.RemoteFilename, pgs);
+                    ((Library.Interface.IStreamingBackend)m_backend).PutAsync(item.RemoteFilename, pgs, CancellationToken.None).Wait();
             }
             else
-                m_backend.Put(item.RemoteFilename, item.LocalFilename);
+                m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, CancellationToken.None).Wait();
 
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
@@ -1376,25 +1377,19 @@ namespace Duplicati.Library.Main
 
         public void WaitForComplete(LocalDatabase db, System.Data.IDbTransaction transation)
         {
-            try
-            {
-                m_statwriter.BackendProgressUpdater.SetBlocking(true);
-                m_db.FlushDbMessages(db, transation);
-                if (m_lastException != null)
-                    throw m_lastException;
+            m_statwriter.BackendProgressUpdater.SetBlocking(true);
+            m_db.FlushDbMessages(db, transation);
+            if (m_lastException != null)
+                throw m_lastException;
 
-                var item = new FileEntryItem(OperationType.Terminate, null);
-                if (m_queue.Enqueue(item))
-                    item.WaitForComplete();
+            var item = new FileEntryItem(OperationType.Terminate, null);
+            if (m_queue.Enqueue(item))
+                item.WaitForComplete();
 
-                m_db.FlushDbMessages(db, transation);
+            m_db.FlushDbMessages(db, transation);
 
-                if (m_lastException != null)
-                    throw m_lastException;
-            }
-            finally
-            {
-            }
+            if (m_lastException != null)
+                throw m_lastException;
         }
 
         public void WaitForEmpty(LocalDatabase db, System.Data.IDbTransaction transation)

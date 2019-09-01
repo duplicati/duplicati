@@ -31,6 +31,13 @@ namespace Duplicati.CommandLine.Strings {
         public static string QuietConsoleOptionLong { get { return LC.L(@"If this option is set, progress reports and other messages that would normally go to the console will be redirected to the log."); } }
         public static string QuietConsoleOptionShort { get { return LC.L(@"Disable console output"); } }
         public static string SkippingSourceArgumentsOnNonBackupOperation { get { return @"The --source argument was specified in the parameter file, but the current operation is not a backup operation, so the argument is ignored"; } }
+        
+        
+        // ReSharper disable once UnusedMember.Global
+        // This is a placeholder message that is intended to be used with the code
+        // for each error and log message. The idea is that the commandline will
+        // use the code to provide a link to the forum, searching for the code,
+        // such that it is easy to maintain a list of help links.
         public static string YouMayGetMoreHelpHere(string url) { return LC.L(@"This link may provide additional information: {0}", url); }
     }
 }

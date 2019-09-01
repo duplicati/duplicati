@@ -55,15 +55,15 @@ namespace Duplicati.Library.Interface
 
     public interface IParsedBackendStatistics : IBackendStatstics
     {
-        long UnknownFileSize { get; }
-        long UnknownFileCount { get; }
-        long KnownFileCount { get; }
-        long KnownFileSize { get; }
-        DateTime LastBackupDate { get; }
-        long BackupListCount { get; }
-        long TotalQuotaSpace { get; }
-        long FreeQuotaSpace { get; }
-        long AssignedQuotaSpace { get; }
+        long UnknownFileSize { get; set; }
+        long UnknownFileCount { get; set; }
+        long KnownFileCount { get; set; }
+        long KnownFileSize { get; set; }
+        DateTime LastBackupDate { get; set; }
+        long BackupListCount { get; set; }
+        long TotalQuotaSpace { get; set; }
+        long FreeQuotaSpace { get; set; }
+        long AssignedQuotaSpace { get; set; }
     }
 
     public interface IBackendStatsticsReporter
@@ -142,20 +142,21 @@ namespace Duplicati.Library.Interface
         bool Dryrun { get; }
         
         ICompactResults CompactResults { get; }
+        IVacuumResults VacuumResults { get; }
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
     }
     
     public interface IRestoreResults : IBasicResults
     {
-        long FilesRestored { get; }
+        long RestoredFiles { get; }
         long SizeOfRestoredFiles { get; }
-        long FoldersRestored { get; }
-        long SymlinksRestored { get; }
-        long FilesPatched { get; }
-        long FilesDeleted { get; }
-        long FoldersDeleted { get; }
-        long SymlinksDeleted { get; }
+        long RestoredFolders { get; }
+        long RestoredSymlinks { get; }
+        long PatchedFiles { get; }
+        long DeletedFiles { get; }
+        long DeletedFolders { get; }
+        long DeletedSymlinks { get; }
         
         IRecreateDatabaseResults RecreateDatabaseResults { get; }
     }
@@ -178,6 +179,8 @@ namespace Duplicati.Library.Interface
         long DownloadedFileSize { get; }
         long UploadedFileSize { get; }
         bool Dryrun { get; }
+
+        IVacuumResults VacuumResults { get; }
     }
     
     public interface ICreateLogDatabaseResults : IBasicResults

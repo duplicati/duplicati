@@ -40,7 +40,7 @@ backupApp.controller("ExportController", function($scope, $routeParams, AppServi
                             message = resp.data.Message;
                         }
 
-                        DialogService.dialog(gettextCatalog.getString("Error"), gettextCatalog.getString("Failed to connect: {{message}}", { message }));
+                        DialogService.dialog(gettextCatalog.getString("Error"), gettextCatalog.getString("Failed to connect: {{message}}", { message: message }));
                     }
                 );
             } else {
@@ -53,8 +53,11 @@ backupApp.controller("ExportController", function($scope, $routeParams, AppServi
         // Make checks that do not require user input
         $scope.fileEncrypted = false;
         if ($scope.UseEncryption && $scope.ExportType === "file") {
-            if (($scope.Passphrase || "").trim().length === 0) {
+            if (typeof $scope.Passphrase === "undefined" || $scope.Passphrase.trim().length === 0) {
                 DialogService.dialog(gettextCatalog.getString("No passphrase entered"), gettextCatalog.getString("To export without a passphrase, uncheck the \"Encrypt file\" box"));
+                return;
+            } else if ($scope.Passphrase !== $scope.ConfirmPassphrase) {
+                DialogService.dialog(gettextCatalog.getString("Error"), gettextCatalog.getString("The passwords do not match"));
                 return;
             } else {
                $scope.fileEncrypted = true;

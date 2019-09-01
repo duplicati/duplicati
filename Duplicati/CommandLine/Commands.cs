@@ -69,14 +69,13 @@ namespace Duplicati.CommandLine
 
                 while (true)
                 {
-                    Duplicati.Library.Main.OperationPhase phase;
                     float progress;
                     long filesprocessed;
                     long filesizeprocessed;
                     long filecount;
                     long filesize;
                     bool counting;
-                    m_output.OperationProgress.UpdateOverall(out phase, out progress, out filesprocessed, out filesizeprocessed, out filecount, out filesize, out counting);
+                    m_output.OperationProgress.UpdateOverall(out _, out progress, out filesprocessed, out filesizeprocessed, out filecount, out filesize, out counting);
 
                     var files = Math.Max(0, filecount - filesprocessed);
                     var size = Math.Max(0, filesize - filesizeprocessed);
@@ -508,10 +507,10 @@ namespace Duplicati.CommandLine
                         string restorePath;
                         options.TryGetValue("restore-path", out restorePath);
 
-                        output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.FilesRestored, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), string.IsNullOrEmpty(restorePath) ? "original path" : restorePath));
+                        output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.RestoredFiles, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), string.IsNullOrEmpty(restorePath) ? "original path" : restorePath));
                         output.MessageEvent(string.Format("Duration of restore: {0:hh\\:mm\\:ss}", res.Duration));
 
-                        if (res.FilesRestored > 0 && !Library.Main.Utility.SuppressDonationMessages)
+                        if (res.RestoredFiles > 0 && !Library.Main.Utility.SuppressDonationMessages)
                         {
                             output.MessageEvent("***********************************************");
                             output.MessageEvent("Did we help save your files? If so, please support Duplicati with a donation. We suggest 10€ for private use and 100€ for commercial use.");

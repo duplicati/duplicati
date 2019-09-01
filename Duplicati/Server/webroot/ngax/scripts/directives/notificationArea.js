@@ -2,10 +2,9 @@ backupApp.directive('notificationArea', function() {
   return {
     restrict: 'E',
     templateUrl: 'templates/notificationarea.html',
-    controller: function($scope, $location, $timeout, NotificationService, ServerStatus, AppService, AppUtils, DialogService) {
+    controller: function($scope, $location, $timeout, gettextCatalog, NotificationService, ServerStatus, AppService, AppUtils, DialogService) {
         $scope.Notifications = NotificationService.watch($scope);
         $scope.state = ServerStatus.watch($scope);
-
         $scope.doDismiss = function(id) {
             AppService.delete('/notification/' + id).then(
                 function() { }, // Don't care, the message will be removed
@@ -39,11 +38,11 @@ backupApp.directive('notificationArea', function() {
 
                     if (resp.status == 404) {
                         if ((parseInt(backupid) + '') != backupid)
-                            DialogService.dialog('Error', 'The backup was temporary and does not exist anymore, so the log data is lost');
+                            DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('The backup was temporary and does not exist anymore, so the log data is lost'));
                         else
-                            DialogService.dialog('Error', 'The backup is missing, has it been deleted?');
+                            DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('The backup is missing, has it been deleted?'));
                     } else {
-                        AppUtils.connectionError('Failed to find backup: ', resp);
+                        AppUtils.connectionError(gettextCatalog.getString('Failed to find backup: '), resp);
                     }
 
                 }
@@ -51,8 +50,8 @@ backupApp.directive('notificationArea', function() {
         };
 
         $scope.doRepair = function(backupid) {
-        AppService.post('/backup/' + backupid + '/repair');
-        $location.path('/');
+            AppService.post('/backup/' + backupid + '/repair');
+            $location.path('/');
         };
 
         $scope.doInstallUpdate = function(id) {

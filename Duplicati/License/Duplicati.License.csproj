@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -14,7 +14,7 @@
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
@@ -53,6 +53,12 @@
     <Content Include="..\..\thirdparty\alphavss\License.txt">
       <Link>licenses\alphavss\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
+      <Link>licenses\FluentFTP\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\FluentFTP\License.txt">
+      <Link>licenses\FluentFTP\License.txt</Link>
     </Content>
     <Content Include="..\..\thirdparty\gpg\Homepage.txt">
       <Link>licenses\gpg\Homepage.txt</Link>
@@ -296,18 +302,6 @@
       <Link>licenses\rumps\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\System.Net.FtpClient\Homepage.txt">
-      <Link>licenses\System.Net.FtpClient\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\System.Net.FtpClient\License.txt">
-      <Link>licenses\System.Net.FtpClient\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\System.Net.FtpClient\licensedata.json">
-      <Link>licenses\System.Net.FtpClient\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\..\thirdparty\MailKit\Homepage.txt">
       <Link>licenses\MailKit\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -403,6 +397,9 @@
     <Compile Include="VersionNumbers.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\thirdparty\FluentFTP\licensedata.json">
+      <Link>licenses\FluentFTP\licensedata.json</Link>
+    </None>
     <None Include="Duplicati.snk" />
     <None Include="..\..\thirdparty\SharpCompress\licensedata.json">
       <Link>licenses\SharpCompress\licensedata.json</Link>
@@ -413,19 +410,7 @@
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="licenses\MegaApi\" />
-    <Folder Include="licenses\AngularJS\" />
-    <Folder Include="licenses\jQuery\" />
-    <Folder Include="licenses\CoCoL\" />
-    <Folder Include="licenses\rumps\" />
-    <Folder Include="licenses\System.Net.FtpClient\" />
-    <Folder Include="licenses\MimeKit\" />
-    <Folder Include="licenses\BouncyCastle\" />
-    <Folder Include="licenses\AngularGettext\" />
-    <Folder Include="licenses\mozroots\" />
-    <Folder Include="licenses\TlsTest\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj">
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>

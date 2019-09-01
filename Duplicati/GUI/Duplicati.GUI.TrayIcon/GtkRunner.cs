@@ -145,26 +145,19 @@ namespace Duplicati.GUI.TrayIcon
             }
             */
             
-            public string Text
+            public void SetText(string text)
             {
-                get { return ((Gtk.Label)m_item.Child).Text; }
-                set { ((Gtk.Label)m_item.Child).Text = value; }
+                ((Gtk.Label) m_item.Child).Text = text;
             }
             
-            public MenuIcons Icon
+            public void SetIcon(MenuIcons icon)
             {
-                set { ((ImageMenuItem)m_item).Image = GetIcon(value); }
+                ((ImageMenuItem) m_item).Image = GetIcon(icon);
             }
             
-            public bool Enabled
+            public void SetDefault(bool isDefault)
             {
-                get { return m_item.Sensitive; }
-                set { m_item.Sensitive = value; }
-            }
-
-            public bool Default
-            {
-                set { }
+                // Do nothing.  Implementation needed for TrayIconBase interface.
             }
         }
         
@@ -234,17 +227,6 @@ namespace Duplicati.GUI.TrayIcon
             }
         }    
 
-        public static Gtk.Image ImageToGtk(System.Drawing.Image image)
-        {
-            using (var stream = new System.IO.MemoryStream()) 
-            {
-                image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                stream.Position = 0;
-                Gtk.Image img = new Gtk.Image(stream);
-                return img;
-            }
-        }
-
         protected static string GetTrayIconFilename(TrayIcons icon)
         {
             switch (icon)
@@ -305,15 +287,13 @@ namespace Duplicati.GUI.TrayIcon
             
             return _images[icon];
         }
-        
-        protected override TrayIcons Icon 
+
+        protected override void SetIcon(TrayIcons icon)
         {
-            set 
-            {
-                m_trayIcon.Pixbuf = GetIcon(value);
-            }
+            m_trayIcon.Pixbuf = GetIcon(icon);
         }
-        
+       
+
         protected override void SetMenu (IEnumerable<IMenuItem> items)
         {
             m_popupMenu = new Menu();
@@ -358,7 +338,7 @@ namespace Duplicati.GUI.TrayIcon
                     break;
             }
 
-            var notification = new Notifications.Notification(title, message, Stock.Info);
+            var notification = new Notifications.Notification(title, message, icon);
             notification.Show();
         }
 

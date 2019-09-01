@@ -31,14 +31,24 @@ namespace Duplicati.Library.Main.Operation.Common
             m_bw = bw;
         }
 
-        public Task SendEventAsync(BackendActionType action, BackendEventType type, string path, long size)
+        public Task SendEventAsync(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true)
         {
-            return RunOnMain(() => m_bw.SendEvent(action, type, path, size));
+            return RunOnMain(() => m_bw.SendEvent(action, type, path, size, updateProgress));
+        }
+
+        public void UpdateBackendStart(BackendActionType action, string path, long size)
+        {
+            m_bw.BackendProgressUpdater.StartAction(action, path, size);
         }
 
         public void UpdateBackendProgress(long pg)
         {
             m_bw.BackendProgressUpdater.UpdateProgress(pg);
+        }
+
+        public void UpdateBackendTotal(long size)
+        {
+            m_bw.BackendProgressUpdater.UpdateTotalSize(size);
         }
 
         public void SetBlocking(bool isBlocked)

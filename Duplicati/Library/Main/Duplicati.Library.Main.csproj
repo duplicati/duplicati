@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -12,7 +12,7 @@
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
@@ -36,18 +36,19 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CoCoL, Version=1.5.0.19417, Culture=neutral, PublicKeyToken=0983de3c914beeaa, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\CoCoL.1.6.1\lib\net45\CoCoL.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="CoCoL">
-      <HintPath>..\..\..\packages\CoCoL.1.5.1\lib\net45\CoCoL.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Operation\Backup\FileProgressThrottler.cs" />
     <Compile Include="Operation\VacuumHandler.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -201,6 +202,11 @@
     <EmbeddedResource Include="Database\Database schema\2. Use Lastmodified.sql" />
     <EmbeddedResource Include="Database\Database schema\3. Add grace delete period.sql" />
     <EmbeddedResource Include="Database\Database schema\4. Add index.sql" />
+    <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
+    <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
+    <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
+    <EmbeddedResource Include="Database\Database schema\8. Add volume USN.sql" />
+    <EmbeddedResource Include="Database\Database schema\9. Refactor Paths.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -211,16 +217,9 @@
   </Target>
   -->
   <ItemGroup>
-    <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
-    <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
-    <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
-    <EmbeddedResource Include="Database\Database schema\8. Add volume USN.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Operation\Backup\" />
-    <Folder Include="Operation\Common\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

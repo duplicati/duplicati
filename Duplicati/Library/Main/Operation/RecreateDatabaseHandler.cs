@@ -227,11 +227,14 @@ namespace Duplicati.Library.Main.Operation
                                             if (expectedmetablocks <= 1) expectedmetablocklisthashes = 0;
 
                                             var metadataid = long.MinValue;
+                                            var split = Database.LocalDatabase.SplitIntoPrefixAndName(fe.Path);
+                                            var prefixid = restoredb.GetOrCreatePathPrefix(split.Key, tr);
+
                                             switch (fe.Type)
                                             {
                                                 case FilelistEntryType.Folder:
                                                     metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
-                                                    restoredb.AddDirectoryEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
+                                                    restoredb.AddDirectoryEntry(filesetid, prefixid, split.Value, fe.Time, metadataid, tr);
                                                     break;
                                                 case FilelistEntryType.File:
                                                     var expectedblocks = (fe.Size + blocksize - 1) / blocksize;
@@ -240,7 +243,7 @@ namespace Duplicati.Library.Main.Operation
 
                                                     var blocksetid = restoredb.AddBlockset(fe.Hash, fe.Size, fe.BlocklistHashes, expectedblocklisthashes, tr);
                                                     metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
-                                                    restoredb.AddFileEntry(filesetid, fe.Path, fe.Time, blocksetid, metadataid, tr);
+                                                    restoredb.AddFileEntry(filesetid, prefixid, split.Value, fe.Time, blocksetid, metadataid, tr);
 
                                                     if (fe.Size <= blocksize)
                                                     {
@@ -255,7 +258,7 @@ namespace Duplicati.Library.Main.Operation
                                                     break;
                                                 case FilelistEntryType.Symlink:
                                                     metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
-                                                    restoredb.AddSymlinkEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
+                                                    restoredb.AddSymlinkEntry(filesetid, prefixid, split.Value, fe.Time, metadataid, tr);
                                                     break;
                                                 default:
                                                         Logging.Log.WriteWarningMessage(LOGTAG, "SkippingUnknownFileEntry", null, "Skipping file-entry with unknown type {0}: {1} ", fe.Type, fe.Path);

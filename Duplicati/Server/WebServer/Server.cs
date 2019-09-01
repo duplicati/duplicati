@@ -75,14 +75,13 @@ namespace Duplicati.Server.WebServer
         /// <param name="options">A set of options</param>
         public Server(IDictionary<string, string> options)
         {
-            int port;
             string portstring;
             IEnumerable<int> ports = null;
             options.TryGetValue(OPTION_PORT, out portstring);
             if (!string.IsNullOrEmpty(portstring))
                 ports = 
                     from n in portstring.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                where int.TryParse(n, out port)
+                                where int.TryParse(n, out _)
                                 select int.Parse(n);
 
             if (ports == null || !ports.Any())

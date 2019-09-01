@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2010
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
@@ -12,8 +12,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.FTP", "Duplicati\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj", "{F61679A9-E5DE-468A-B5A4-05F92D0143D2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Compression", "Duplicati\Library\Compression\Duplicati.Library.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Logging", "Duplicati\Library\Logging\Duplicati.Library.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
 EndProject
@@ -101,6 +99,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Common", "Duplicati\Library\Common\Duplicati.Library.Common.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ConfigurationImporter", "Duplicati\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{B93E3BF0-DAA7-49B7-B07D-0559C5816735}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{2CF2D90E-C25B-47AD-91E0-98451BAB8058}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,10 +129,6 @@ Global
 		{19ECCE09-B5EB-406C-8C57-BAC66997D469}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19ECCE09-B5EB-406C-8C57-BAC66997D469}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19ECCE09-B5EB-406C-8C57-BAC66997D469}.Release|Any CPU.Build.0 = Release|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -303,6 +301,14 @@ Global
 		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D63E53E4-A458-4C2F-914D-92F715F58ACF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B93E3BF0-DAA7-49B7-B07D-0559C5816735}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

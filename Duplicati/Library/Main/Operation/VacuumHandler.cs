@@ -9,9 +9,9 @@ namespace Duplicati.Library.Main.Operation
     internal class VacuumHandler
     {
         private readonly Options m_options;
-        private readonly VacuumResult m_result;
+        private readonly VacuumResults m_result;
 
-        public VacuumHandler(Options options, VacuumResult result)
+        public VacuumHandler(Options options, VacuumResults result)
         {
             m_options = options;
             m_result = result;
@@ -22,7 +22,9 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false))
             {
                 m_result.SetDatabase(db);
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
                 db.Vacuum();
+                m_result.EndTime = DateTime.UtcNow;
             }
         }
     }
