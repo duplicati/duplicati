@@ -940,7 +940,19 @@ namespace Duplicati.Library.Utility
 
                 ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value)));
         }
-
+        
+        /// <summary>
+        /// Normalizes a DateTime instance floor'ed to seconds and in UTC
+        /// </summary>
+        /// <returns>The normalised date time</returns>
+        /// <param name="input">The input time</param>
+        public static DateTime NormalizeDateTime(DateTime input)
+        {
+            var ticks = input.ToUniversalTime().Ticks;
+            ticks -= ticks % TimeSpan.TicksPerSecond;
+            return new DateTime(ticks, DateTimeKind.Utc);
+        }
+        
         /// <summary>
         /// The format string for a DateTime
         /// </summary>

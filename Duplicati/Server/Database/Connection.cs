@@ -941,18 +941,6 @@ namespace Duplicati.Server.Database
             return tempfile.ID;
         }
 
-        /// <summary>
-        /// Normalizes a DateTime instance floor'ed to seconds and in UTC
-        /// </summary>
-        /// <returns>The normalised date time</returns>
-        /// <param name="input">The input time</param>
-        public static DateTime NormalizeDateTime(DateTime input)
-        {
-            var ticks = input.ToUniversalTime().Ticks;
-            ticks -= ticks % TimeSpan.TicksPerSecond;
-            return new DateTime(ticks, DateTimeKind.Utc);
-        }
-
         public void PurgeLogData(DateTime purgeDate)
         {
             var t = NormalizeDateTimeToEpochSeconds(purgeDate);
@@ -972,7 +960,7 @@ namespace Duplicati.Server.Database
         
         private static long NormalizeDateTimeToEpochSeconds(DateTime input)
         {
-            return (long)Math.Floor((NormalizeDateTime(input) - Library.Utility.Utility.EPOCH).TotalSeconds);
+            return (long)Math.Floor((Library.Utility.Utility.NormalizeDateTime(input) - Library.Utility.Utility.EPOCH).TotalSeconds);
         }
         
         private static DateTime ConvertToDateTime(System.Data.IDataReader rd, int index)
