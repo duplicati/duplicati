@@ -15,8 +15,10 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.ComponentModel;
 using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -123,7 +125,9 @@ namespace Duplicati.Library.Main.Operation
                                 break;
                         }
 
-                        var ts = filesets[ix].Value.AddSeconds(secs);
+                        var tsOriginal = filesets[ix].Value;
+                        var ts = tsOriginal.AddSeconds(secs);
+
                         var prevfilename = db.GetRemoteVolumeNameForFileset(filesets[ix].Key, tr);
 
                         if (secs >= 60)
@@ -151,7 +155,8 @@ namespace Duplicati.Library.Main.Operation
                                 using (var tf = new Library.Utility.TempFile())
                                 using (var vol = new Volumes.FilesetVolumeWriter(m_options, ts))
                                 {
-                                    var newids = tempset.ConvertToPermanentFileset(vol.RemoteFilename, ts);
+                                    var isOriginalFilesetFullBackup = db.IsFilesetFullBackup(tsOriginal);
+                                    var newids = tempset.ConvertToPermanentFileset(vol.RemoteFilename, ts, isOriginalFilesetFullBackup);
                                     vol.VolumeID = newids.Item1;
 
                                     Logging.Log.WriteInformationMessage(LOGTAG, "ReplacingFileset", "Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize));
