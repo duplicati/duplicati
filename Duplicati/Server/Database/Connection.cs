@@ -52,7 +52,7 @@ namespace Duplicati.Server.Database
                 ((System.Data.IDbDataParameter)m_errorcmd.Parameters[0]).Value = id;
                 ((System.Data.IDbDataParameter)m_errorcmd.Parameters[1]).Value = message;
                 ((System.Data.IDbDataParameter)m_errorcmd.Parameters[2]).Value = ex?.ToString();
-                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[3]).Value = NormalizeDateTimeToEpochSeconds(DateTime.UtcNow);
+                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[3]).Value = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow);
                 m_errorcmd.ExecuteNonQuery();
             }
         }
@@ -626,9 +626,9 @@ namespace Duplicati.Server.Database
                         @"INSERT INTO ""Schedule"" (""Tags"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"") VALUES (?,?,?,?,?)",
                     (n) => new object[] {
                         string.Join(",", n.Tags),
-                        NormalizeDateTimeToEpochSeconds(n.Time),
+                        Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(n.Time),
                         n.Repeat,
-                        NormalizeDateTimeToEpochSeconds(n.LastRun),
+                        Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(n.LastRun),
                         n.Rule ?? "",
                         update ? (object)item.ID : null
                     });
@@ -943,7 +943,7 @@ namespace Duplicati.Server.Database
 
         public void PurgeLogData(DateTime purgeDate)
         {
-            var t = NormalizeDateTimeToEpochSeconds(purgeDate);
+            var t = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(purgeDate);
 
             using(var tr = m_connection.BeginTransaction())
             using(var cmd = m_connection.CreateCommand())
@@ -956,11 +956,6 @@ namespace Duplicati.Server.Database
 
                 tr.Commit();
             }
-        }
-        
-        private static long NormalizeDateTimeToEpochSeconds(DateTime input)
-        {
-            return (long)Math.Floor((Library.Utility.Utility.NormalizeDateTime(input) - Library.Utility.Utility.EPOCH).TotalSeconds);
         }
         
         private static DateTime ConvertToDateTime(System.Data.IDataReader rd, int index)
@@ -1162,7 +1157,7 @@ namespace Duplicati.Server.Database
                     if (x.PropertyType.IsEnum)
                         val = val.ToString();
                     else if (x.PropertyType == typeof(DateTime))
-                        val = NormalizeDateTimeToEpochSeconds((DateTime)val);
+                        val = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds((DateTime)val);
 
                     return val;                    
                 }).ToArray();

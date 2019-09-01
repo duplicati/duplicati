@@ -953,6 +953,11 @@ namespace Duplicati.Library.Utility
             return new DateTime(ticks, DateTimeKind.Utc);
         }
         
+        public static long NormalizeDateTimeToEpochSeconds(DateTime input)
+        {
+            return (long) Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
+        }
+        
         /// <summary>
         /// The format string for a DateTime
         /// </summary>
