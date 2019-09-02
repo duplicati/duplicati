@@ -217,6 +217,10 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Create timestamped operations based on the file timestamp
                                 var filesetid = restoredb.CreateFileset(volumeIds[entry.Name], parsed.Time, tr);
+
+                                // all re-created filesets set as full backups since we don't know the original state
+                                restoredb.UpdateFilesetAndMarkAsFullBackup(filesetid);
+
                                 using(var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, tmpfile, m_options))
                                     foreach(var fe in filelistreader.Files.Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path)))
                                     {
