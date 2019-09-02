@@ -1,4 +1,4 @@
-backupApp.controller('SystemSettingsController', function($rootScope, $scope, $location, $cookies, AppService, DialogService, AppUtils, SystemInfo, gettextCatalog) {
+backupApp.controller('SystemSettingsController', function($rootScope, $scope, $route, $cookies, AppService, DialogService, AppUtils, SystemInfo, gettextCatalog) {
 
     $scope.SystemInfo = SystemInfo.watch($scope);    
     $scope.theme = $scope.$parent.$parent.saved_theme;
@@ -111,7 +111,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $l
                 if ($scope.updateChannel != $scope.originalUpdateChannel)
                     AppService.post('/updates/check');
 
-                $location.path('/');
+                $route.reload();
             },
             AppUtils.connectionError(gettextCatalog.getString('Failed to save:') + ' ')
         );
