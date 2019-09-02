@@ -71,7 +71,7 @@ namespace Duplicati.Library.Main.Operation
                 if (db.RepairInProgress && filtercommand == null)
                     throw new UserInformationException(string.Format("The purge command does not work on an incomplete database, try the {0} operation.", "purge-broken-files"), "PurgeNotAllowedOnIncompleteDatabase");
 
-                var versions = db.GetFilesetIDs(m_options.Time, m_options.Version).ToArray();
+                var versions = db.GetFilesetIDs(m_options.Time, m_options.Version).OrderByDescending(x => x).ToArray();
                 if (versions.Length <= 0)
                     throw new UserInformationException("No filesets matched the supplied time or versions", "NoFilesetFoundForTimeOrVersion");
 
@@ -92,7 +92,7 @@ namespace Duplicati.Library.Main.Operation
                         FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, null);
                 }
 
-                var filesets = db.FilesetTimes.ToArray();
+                var filesets = db.FilesetTimes.OrderByDescending(x => x.Value).ToArray();
 
                 var versionprogress = ((doCompactStep ? 0.75f : 1.0f) / versions.Length) * pgspan;
                 var currentprogress = pgoffset;
