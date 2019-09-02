@@ -260,10 +260,8 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
         this['oauth-base'].apply(this, arguments);
     };
 
-
     // Parsers take a decomposed uri input and sets up the scope variables
     EditUriBackendConfig.parsers['file'] = function(scope, module, server, port, path, options) {
-        var dirsep = '/';
         if (scope.Path == null && scope.Server == null)    {
             var ix = scope.uri.indexOf('?');
             if (ix < 0)
@@ -274,16 +272,21 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
             if (ix < 0)
                 ix = scope.uri.location;
             scope.Path = scope.uri.substr(scope.uri.indexOf('://') + 3, ix);
-
         } else {
-            if (scope.Path != null && scope.Path.indexOf('\\') >= 0)
-                dirsep = '\\';
-
-            if (scope.Server != null && dirsep == '/')
-                scope.Path = scope.Server + '/' + scope.Path;
+            var dirsep = '/';
+            var newScopePath = scope.Server;
+            if (scope.Path.indexOf('\\') >= 0 || scope.Server.indexOf('\\') >= 0) {
+                dirsep = '\\';                
+            }
+            if (scope.Server.substr(scope.Server.length - 1) != dirsep) {
+                newScopePath += dirsep;
+            }
+            if (scope.Path.length > 0) {
+                newScopePath += scope.Path;
+            }
+            scope.Path = newScopePath;
         }
     };
-
 
     EditUriBackendConfig.parsers['s3'] = function(scope, module, server, port, path, options) {
         if (options['--aws_access_key_id'])
