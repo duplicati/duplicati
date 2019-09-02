@@ -4,7 +4,7 @@
     <div translate translate-params-versionname="systeminfo.ServerVersionName" translate-params-versionnumber="systeminfo.ServerVersion">Current version is {{versionname}} ({{versionnumber}})</div>
 
     <div class="prewrapped-text fixed-width-font" ng-show="ChangeLog">{{ChangeLog}}</div>
-    <div class="prewrapped-text fixed-width-font" ng-hide="ChangeLog" translate>Loading ...</div>
+    <div class="prewrapped-text fixed-width-font" ng-hide="ChangeLog" translate>Loading …</div>
 
     <div class="buttons">
         <a href class="button" ng-show="serverstate.UpdaterState == 'Waiting' &amp;&amp; serverstate.UpdatedVersion != null" ng-click="doInstall()" translate>Install</a>
