@@ -1,3 +1,9 @@
+2019-09-03 - 2.0.4.27_canary_2019-09-03
+==========
+* Fixed issues with the MSI packages not upgrading correctly, thanks @BlueBlock
+* Fixed some assembly redirects and package references, thanks @BlueBlock
+* Code cleanup for EPOCH times, thanks @warwickmm
+
 2019-09-02 - 2.0.4.26_canary_2019-09-02
 ==========
 == This is a rebuild of 2.0.4.24 with MSI packages and **new** assembly redirect fixes ==
