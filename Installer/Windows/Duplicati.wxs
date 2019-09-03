@@ -84,7 +84,7 @@
 
     <!-- Remove old versions -->
     <InstallExecuteSequence>
-      <RemoveExistingProducts Before='InstallInitialize' />
+      <RemoveExistingProducts After="InstallFinalize" />
     </InstallExecuteSequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
