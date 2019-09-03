@@ -64,7 +64,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
     $scope.fetchBackupTimes = function() {
         $scope.connecting = true;
-        $scope.ConnectionProgress = gettextCatalog.getString('Getting file versions ...');
+        $scope.ConnectionProgress = gettextCatalog.getString('Getting file versions …');
 
         var qp = '';
         if ($scope.IsBackupTemporary)
@@ -118,7 +118,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         if (filesetsBuilt[version] == null) {
             if ($scope.IsBackupTemporary && filesetsRepaired[version] == null) {
                 $scope.connecting = true;
-                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information …');
                 inProgress[version] = true;
 
                 AppService.post('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'time': filesetStamps[version + '']}).then(
@@ -157,7 +157,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                     return;
 
                 $scope.connecting = true;
-                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information …');
                 inProgress[version] = true;
 
                 AppService.get('/backup/' + $scope.BackupID + '/files/*?prefix-only=true&folder-contents=false&time=' + encodeURIComponent(stamp)).then(
@@ -355,22 +355,22 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         if ($scope.IsBackupTemporary) {
 
             $scope.connecting = true;
-            $scope.ConnectionProgress = gettextCatalog.getString('Creating temporary backup ...');
+            $scope.ConnectionProgress = gettextCatalog.getString('Creating temporary backup …');
 
             AppService.post('/backup/' + $scope.BackupID + '/copytotemp').then(function(resp) {
                 var backupid = resp.data.ID;
 
-                $scope.ConnectionProgress = gettextCatalog.getString('Building partial temporary database ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Building partial temporary database …');
                 AppService.post('/backup/' + backupid + '/repair', p).then(function(resp) {
                     var taskid = $scope.taskid = resp.data.ID;
                     ServerStatus.callWhenTaskCompletes(taskid, function() {
                         AppService.get('/task/' + taskid).then(function(resp) {
 
-                            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process ...');
+                            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process …');
                             if (resp.data.Status == 'Completed')
                             {
                                 AppService.post('/backup/' + backupid + '/restore', p).then(function(resp) {
-                                    $scope.ConnectionProgress = gettextCatalog.getString('Restoring files ...');
+                                    $scope.ConnectionProgress = gettextCatalog.getString('Restoring files …');
                                     var t2 = $scope.taskid = resp.data.TaskID;
                                     ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
                                 }, handleError);
@@ -390,9 +390,9 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
         } else {
             $scope.connecting = true;
-            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process ...');
+            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process …');
             AppService.post('/backup/' + $scope.BackupID + '/restore', p).then(function(resp) {
-                $scope.ConnectionProgress = gettextCatalog.getString('Restoring files ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Restoring files …');
                 var t2 = $scope.taskid = resp.data.TaskID;
                 ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
             }, handleError);
