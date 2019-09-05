@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NGettext" Version="0.6.3" />
+    <PackageReference Include="NGettext" Version="0.6.4" />
   </ItemGroup>
   
   <ItemGroup>    
