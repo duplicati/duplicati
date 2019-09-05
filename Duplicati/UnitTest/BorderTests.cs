@@ -24,19 +24,22 @@ namespace Duplicati.UnitTest
 {
     public class BorderTests : BasicSetupHelper
     {
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
+        private readonly string recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
 
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
+        public override void TearDown()
+        {
+            base.TearDown();
+
+            if (File.Exists(this.recreatedDatabaseFile))
+            {
+                File.Delete(this.recreatedDatabaseFile);
+            }
         }
 
         [Test]
         [Category("Border")]
         public void Run10kNoProgress()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => { 
                 opts["disable-file-scanner"] = "true"; 
             });
@@ -46,7 +49,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run10k()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10);
         }
 
@@ -54,7 +56,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run10mb()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => { 
                 opts["blocksize"] = "10mb";
             });
@@ -64,7 +65,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run100k()
         {
-            PrepareSourceData();
             RunCommands(1024 * 100);
         }
 
@@ -72,7 +72,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run12345_1()
         {
-            PrepareSourceData();
             RunCommands(12345);
         }
 
@@ -80,7 +79,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run12345_2()
         {
-            PrepareSourceData();
             RunCommands(12345, 1024 * 1024 * 10);
         }
 
@@ -88,7 +86,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunNoMetadata()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["skip-metadata"] = "true";
             });
@@ -99,7 +96,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunMD5()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["block-hash-algorithm"] = "MD5";
                 opts["file-hash-algorithm"] = "MD5";
@@ -110,7 +106,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunSHA384()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["block-hash-algorithm"] = "SHA384";
                 opts["file-hash-algorithm"] = "SHA384";
@@ -121,7 +116,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunMixedBlockFile_1()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["block-hash-algorithm"] = "MD5";
                 opts["file-hash-algorithm"] = "SHA1";
@@ -132,7 +126,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunMixedBlockFile_2()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["block-hash-algorithm"] = "MD5";
                 opts["file-hash-algorithm"] = "SHA256";
@@ -143,7 +136,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunNoIndexFiles()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["index-file-policy"] = "None";
             });
@@ -153,7 +145,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunSlimIndexFiles()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts => {
                 opts["index-file-policy"] = "Lookup";
             });
@@ -163,7 +154,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunQuickTimestamps()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts =>
             {
                 opts["check-filetime-only"] = "true";
@@ -174,7 +164,6 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunFullScan()
         {
-            PrepareSourceData();
             RunCommands(1024 * 10, modifyOptions: opts =>
             {
                 opts["disable-filetime-check"] = "true";
@@ -287,11 +276,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
-            var newdb = Path.Combine(Path.GetDirectoryName(DBFILE), Path.ChangeExtension(Path.GetFileNameWithoutExtension(DBFILE) + "-recreated", Path.GetExtension(DBFILE)));
-            if (File.Exists(newdb))
-                File.Delete(newdb);
-
-            testopts["dbpath"] = newdb;
+            testopts["dbpath"] = this.recreatedDatabaseFile;
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 c.Repair();
@@ -322,10 +307,6 @@ namespace Duplicati.UnitTest
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
-
-            if (Directory.Exists(RESTOREFOLDER))
-                Directory.Delete(RESTOREFOLDER, true);
-            Directory.CreateDirectory(RESTOREFOLDER);
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER, no_local_blocks = true }), null))
             {

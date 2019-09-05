@@ -1,16 +1,40 @@
+﻿#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+#endregion
 using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Encryption.Strings {
-    internal static class AESEncryption {
+
+namespace Duplicati.Library.Encryption.Strings
+{
+    internal static class AESEncryption
+    {
         public static string Description_v2 { get { return LC.L(@"This module encrypts all files in the same way that AESCrypt does, using 256 bit AES encryption."); } }
         public static string DisplayName { get { return LC.L(@"AES-256 encryption, built in"); } }
         public static string EmptyKeyError { get { return LC.L(@"Empty passphrase not allowed"); } }
         public static string AessetthreadlevelLong { get { return LC.L(@"Use this option to set the thread level allowed for AES crypt operations. Valid values are 0 (uses default), or from 1 (no multithreading) to 4 (max. multithreading)"); } }
         public static string AessetthreadlevelShort { get { return LC.L(@"Set thread level utilized for crypting (0-4)"); } }
     }
-    internal static class EncryptionBase {
+    internal static class EncryptionBase
+    {
         public static string DecryptionError(string message) { return LC.L(@"Failed to decrypt data (invalid passphrase?): {0}", message); }
     }
-    internal static class GPGEncryption {
+    internal static class GPGEncryption
+    {
         public static string Description { get { return LC.L(@"The GPG encryption module uses the GNU Privacy Guard program to encrypt and decrypt files. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch."); } }
         public static string DisplayName { get { return LC.L(@"GNU Privacy Guard, external"); } }
         public static string GpgencryptiondecryptionswitchesLong { get { return LC.L(@"Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --decrypt option is always specified."); } }
@@ -30,7 +54,8 @@ namespace Duplicati.Library.Encryption.Strings {
         public static string GpgencryptionencryptioncommandLong(string commandname, string optionvalue) { return LC.L(@"Overrides the default GPG encryption command ""{0}"", normal usage is to request asymetric encryption with the setting {1}", commandname, optionvalue); }
         public static string GpgencryptionencryptioncommandShort { get { return LC.L(@"The GPG encryption command"); } }
     }
-    internal static class GPGStreamWrapper {
+    internal static class GPGStreamWrapper
+    {
         public static string DecryptionError(string message) { return LC.L(@"Decryption failed: {0}", message); }
         public static string GPGFlushError { get { return LC.L(@"Failure while invoking GnuPG, program won't flush output"); } }
         public static string GPGTerminateError { get { return LC.L(@"Failure while invoking GnuPG, program won't terminate"); } }

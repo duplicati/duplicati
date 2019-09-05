@@ -941,7 +941,24 @@ namespace Duplicati.Library.Utility
 
                 ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value)));
         }
-
+        
+        /// <summary>
+        /// Normalizes a DateTime instance by converting to UTC and flooring to seconds.
+        /// </summary>
+        /// <returns>The normalized date time</returns>
+        /// <param name="input">The input time</param>
+        public static DateTime NormalizeDateTime(DateTime input)
+        {
+            var ticks = input.ToUniversalTime().Ticks;
+            ticks -= ticks % TimeSpan.TicksPerSecond;
+            return new DateTime(ticks, DateTimeKind.Utc);
+        }
+        
+        public static long NormalizeDateTimeToEpochSeconds(DateTime input)
+        {
+            return (long) Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
+        }
+        
         /// <summary>
         /// The format string for a DateTime
         /// </summary>

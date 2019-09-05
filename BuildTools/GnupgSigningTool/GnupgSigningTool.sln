@@ -1,11 +1,12 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29123.88
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GnupgSigningTool", "GnupgSigningTool.csproj", "{72B910F2-8E80-4955-A0D6-ED4C35CEE665}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "..\..\Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "..\..\Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{2CF2D90E-C25B-47AD-91E0-98451BAB8058}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Interface", "..\..\Duplicati\Library\Interface\Duplicati.Library.Interface.csproj", "{C5899F45-B0FF-483C-9D38-24A9FCAAB237}"
 EndProject
@@ -23,13 +24,19 @@ Global
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Debug|x86.Build.0 = Debug|Any CPU
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Release|x86.ActiveCfg = Release|Any CPU
 		{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}.Release|x86.Build.0 = Release|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Debug|x86.Build.0 = Debug|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|x86.ActiveCfg = Release|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|x86.Build.0 = Release|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|x86.Build.0 = Debug|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|x86.ActiveCfg = Release|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|x86.Build.0 = Release|Any CPU
 		{C5899F45-B0FF-483C-9D38-24A9FCAAB237}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{C5899F45-B0FF-483C-9D38-24A9FCAAB237}.Debug|x86.Build.0 = Debug|Any CPU
 		{C5899F45-B0FF-483C-9D38-24A9FCAAB237}.Release|x86.ActiveCfg = Release|Any CPU
 		{C5899F45-B0FF-483C-9D38-24A9FCAAB237}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {71CC6B1F-7F52-4059-8761-30B3D0501ECC}
 	EndGlobalSection
 EndGlobal

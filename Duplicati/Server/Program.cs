@@ -244,9 +244,9 @@ namespace Duplicati.Server
                 {
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
-
-                UpdatePoller = new UpdatePollThread();
                 
+                UpdatePoller = new UpdatePollThread();
+
                 SetPurgeTempFilesTimer(commandlineOptions);
 
                 SetLiveControls();
@@ -379,8 +379,17 @@ namespace Duplicati.Server
             {
                 try
                 {
-                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
+#if DEBUG
+                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 1)
+                    {
                         return;
+                    }
+#else
+                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
+                    {
+                        return;
+                    }
+#endif
 
                     lastPurge = DateTime.Now;
 
@@ -420,8 +429,13 @@ namespace Duplicati.Server
 
             try
             {
+#if DEBUG
+                PurgeTempFilesTimer =
+                    new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromSeconds(10), TimeSpan.FromHours(1));
+#else
                 PurgeTempFilesTimer =
                     new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
+#endif
             }
             catch (ArgumentOutOfRangeException)
             {
