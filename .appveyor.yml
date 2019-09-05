@@ -23,7 +23,7 @@ test_script:
         mkdir .\testData\data
 
         nuget install OpenCover -Version 4.7.922 -OutputDirectory packages
-        nuget install coveralls.net -Version 0.7.0 -OutputDirectory packages
+        nuget install coveralls.net -Version 1.0.0 -OutputDirectory packages
         nuget install NUnit.Runners -Version 3.10.0 -OutputDirectory packages
 
         $testDir = ".\Duplicati\UnitTest\bin\Debug"
