@@ -1,3 +1,7 @@
+2019-09-05 - 2.0.4.28_canary_2019-09-05
+==========
+* Updated CoCoL and WiX to fix rollback and upgrade errors, thanks @BlueBlock
+
 2019-09-03 - 2.0.4.27_canary_2019-09-03
 ==========
 * Fixed issues with the MSI packages not upgrading correctly, thanks @BlueBlock
