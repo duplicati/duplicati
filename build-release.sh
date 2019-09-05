@@ -125,7 +125,8 @@ fi
 
 rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
-"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
+"${NUGET}" restore "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
+"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
 "${NUGET}" restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"

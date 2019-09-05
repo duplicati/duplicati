@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -18,8 +18,6 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace Duplicati.Library.Encryption
