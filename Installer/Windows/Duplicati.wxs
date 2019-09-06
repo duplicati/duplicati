@@ -59,7 +59,7 @@
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
 
     <!-- TODO: Make expanded -->
-    <Feature Id="ProductFeature" Title="Duplicati core files" Level="1" Description="Installs the required files for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
+    <Feature Id="DuplicatiCore" Title="Duplicati core files" Level="1" Description="Installs the required files for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
       <Feature Id="DuplicatiDesktopShortCutFeature" Title="Desktop Shortcut" Level="1" Description ="Installs a shortcut to Duplicati on the desktop" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
         <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
       </Feature>
