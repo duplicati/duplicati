@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -73,10 +74,10 @@ namespace Duplicati.Library.AutoUpdater
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
         private const string BASEINSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
         private const string UPDATEINSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_UPDATE_ROOT";
-        internal const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
+        public const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
         private const string RUN_UPDATED_FOLDER_PATH = "AUTOUPDATER_LOAD_UPDATE";
         private const string SLEEP_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SLEEP";
-        internal const string UPDATE_STRATEGY_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_POLICY";
+        public const string UPDATE_STRATEGY_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_POLICY";
         private const string UPDATE_MANIFEST_FILENAME = "autoupdate.manifest";
         private const string README_FILE = "README.txt";
         private const string INSTALL_FILE = "installation.txt";
