@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <Version>2.0.0.7</Version>
-    
-    <Copyright>LGPL, Copyright ? Duplicati Team 2015</Copyright>
+    <OutputType>Exe</OutputType>
+    <Copyright>LGPL, Copyright ? Duplicati Team 2019</Copyright>
     <Product>Duplicati.Service</Product>
     <Company>Duplicati Team</Company>
     <Authors>Duplicati Team</Authors>
@@ -15,7 +15,6 @@
   </PropertyGroup>
   
   <ItemGroup>	
-    <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />	
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\Server\Duplicati.Server.csproj" />
   </ItemGroup>

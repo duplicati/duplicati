@@ -3,13 +3,15 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Version>2.0.0.7</Version>
-    <OutputType>Exe</OutputType>
-    <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
+    <OutputType>Library</OutputType>
+    <Copyright>LGPL, Copyright © Duplicati Team 2019</Copyright>
     <Product>Duplicati.Library.AutoUpdater</Product>
     <Company>Duplicati Team</Company>
     <Authors>Duplicati Team</Authors>
-    <Description>AutoUpdater for Duplicati</Description>
+    <Description>AutoUpdater library for Duplicati</Description>
     <PackageId>AutoUpdater</PackageId>
+    <AssemblyName>Duplicati.Backend.AutoUpdater</AssemblyName>
+    <RootNamespace>Duplicati.Backend.AutoUpdater</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>

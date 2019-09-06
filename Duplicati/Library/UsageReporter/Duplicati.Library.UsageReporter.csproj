@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
 

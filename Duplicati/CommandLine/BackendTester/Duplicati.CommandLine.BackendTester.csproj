@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>2.0.0.7</Version>
     <OutputType>Exe</OutputType>
-    <Copyright>LGPL, Copyright ? Duplicati Team 2015</Copyright>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Version>2.0.0.7</Version>
+    <Copyright>LGPL, Copyright ? Duplicati Team 2019</Copyright>
     <Product>Duplicati.CommandLine.BackendTester</Product>
     <Company>Duplicati Team</Company>
     <Authors>Duplicati Team</Authors>

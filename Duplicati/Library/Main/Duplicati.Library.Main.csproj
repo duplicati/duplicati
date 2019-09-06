@@ -19,6 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>	
+    <ProjectReference Include="..\..\License\Duplicati.License.csproj" />	
+    <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj" />	
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
     </ProjectReference>
     <ProjectReference Include="..\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
@@ -32,8 +34,6 @@
     <ProjectReference Include="..\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
     </ProjectReference>
     <ProjectReference Include="..\UsageReporter\Duplicati.Library.UsageReporter.csproj">
     </ProjectReference>
