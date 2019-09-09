@@ -274,7 +274,7 @@ namespace Duplicati.Library.Main.Database
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteErrorMessage(LOGTAG, "BlocksetInsertFailed", ex, "Blockset insert failed, comitting temporary tables for trace purposes");
+                    Logging.Log.WriteErrorMessage(LOGTAG, "BlocksetInsertFailed", ex, "Blockset insert failed, commiting temporary tables for trace purposes");
 
                     using (var fixcmd = m_connection.CreateCommand())
                     {
