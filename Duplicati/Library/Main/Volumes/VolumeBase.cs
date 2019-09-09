@@ -9,16 +9,14 @@ namespace Duplicati.Library.Main.Volumes
         protected class FilesetData
         {
             [JsonProperty("IsFullBackup")]
-            public bool IsFullBackup { get; set; } = true;
+            public bool? IsFullBackup { get; set; }
 
             public static string GetFilesetInstance(bool isFullBackup = true)
             {
-                var j = JsonConvert.SerializeObject(new FilesetData
+                return JsonConvert.SerializeObject(new FilesetData
                 {
                     IsFullBackup = isFullBackup
                 });
-
-                return j;
             }
         }
 
