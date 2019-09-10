@@ -6,10 +6,10 @@ namespace Duplicati.Library.Main.Volumes
 {
     public abstract class VolumeBase
     {
-        protected class FilesetData
+        public class FilesetData
         {
             [JsonProperty("IsFullBackup")]
-            public bool? IsFullBackup { get; set; }
+            public bool IsFullBackup { get; set; } = true;
 
             public static string GetFilesetInstance(bool isFullBackup = true)
             {
