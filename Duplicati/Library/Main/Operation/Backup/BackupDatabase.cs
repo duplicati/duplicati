@@ -250,7 +250,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task UpdateFilesetAndMarkAsFullBackupAsync(long filesetid)
         {
-            return RunOnMain(() => m_database.UpdateFilesetAndMarkAsFullBackup(filesetid, m_transaction));
+            return RunOnMain(() => m_database.UpdateFullBackupStateInFileset(filesetid, true, m_transaction));
         }
 
         public Task<string[]> GetMissingIndexFilesAsync()
