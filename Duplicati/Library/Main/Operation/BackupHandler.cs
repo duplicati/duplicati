@@ -30,6 +30,8 @@ using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
+using Duplicati.Library.Main.Operation.Backup;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -241,11 +243,11 @@ namespace Duplicati.Library.Main.Operation
 
                 if (token.IsCancellationRequested)
                 {
-
                     result.PartialBackup = true;
                 }
                 else
                 {
+                    result.PartialBackup = false;
                     await database.UpdateFilesetAndMarkAsFullBackupAsync(filesetid);
                 }
 
@@ -499,8 +501,11 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
+                        // Add the fileset file to the dlist file
+                        filesetvolume.CreateFilesetFile(!token.IsCancellationRequested);
+
                         // Ensure the database is in a sane state after adding data
-                        using(new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
+                        using (new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
                             await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, false);
 
                         // Send the actual filelist
