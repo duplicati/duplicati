@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
@@ -10,6 +8,7 @@ namespace Duplicati.Library.Main.Volumes
 {
     public class FilesetVolumeWriter : VolumeWriterBase
     {
+        private MemoryStream m_memorystream;
         private StreamWriter m_streamwriter;
         private readonly JsonWriter m_writer;
         private long m_filecount;
@@ -20,7 +19,8 @@ namespace Duplicati.Library.Main.Volumes
         public FilesetVolumeWriter(Options options, DateTime timestamp)
             : base(options, timestamp)
         {
-            m_streamwriter = new StreamWriter(m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow));
+            m_memorystream = new MemoryStream();
+            m_streamwriter = new StreamWriter(m_memorystream, ENCODING);
             m_writer = new JsonTextWriter(m_streamwriter);
             m_writer.WriteStartArray();
         }
@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main.Volumes
 
             if (blocklisthashes != null)
             {
-                //Slightly akward, but we avoid writing if there are no entries 
+                //Slightly awkward, but we avoid writing if there are no entries 
                 using (var en = blocklisthashes.GetEnumerator())
                 {
                     if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
@@ -132,13 +132,29 @@ namespace Duplicati.Library.Main.Volumes
         {
             if (m_streamwriter != null)
             {
-                m_writer.WriteEndArray();
                 m_writer.Close();
                 m_streamwriter.Dispose();
                 m_streamwriter = null;
             }
 
             base.Close();
+        }
+
+        public void AddFilelistFile()
+        {
+            if (m_streamwriter != null)
+            {
+                m_writer.WriteEndArray();
+                m_writer.Flush();
+                m_streamwriter.Flush();
+            }
+
+            using (Stream sr = m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow))
+            {
+                m_memorystream.Seek(0, SeekOrigin.Begin);
+                m_memorystream.CopyTo(sr);
+                sr.Flush();
+            }
         }
 
         public void AddControlFile(string localfile, CompressionHint hint, string filename = null)
