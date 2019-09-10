@@ -18,7 +18,6 @@ using System;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Volumes;
-using System.IO;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -63,6 +62,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                             return;
 
                         await db.WriteFilesetAsync(filesetvolume, filesetid);
+
+                        filesetvolume.AddFilelistFile();
+
                         filesetvolume.Close();
 
                         if (!await taskreader.ProgressAsync)
