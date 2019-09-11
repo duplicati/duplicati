@@ -1099,7 +1099,7 @@ namespace Duplicati.Library.Main
 
                 try
                 {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "RepairFileUsingParity", $"***** attempting to repair file: {item.RemoteFilename}");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RepairFileUsingParity", $"Attempting to repair file: {item.RemoteFilename}");
                     var remoteParityZipFile = $"{item.RemoteFilename}.par2.zip";
                     var tempParityZipFile =
                         $"{Path.Combine(Path.GetTempPath(), Path.GetFileName(dlParityTarget.Name) ?? throw new InvalidOperationException())}";
