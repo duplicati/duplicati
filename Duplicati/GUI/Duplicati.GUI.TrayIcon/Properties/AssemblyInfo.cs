@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.GUI.TrayIcon")]
-[assembly: AssemblyCopyright("LGPL, Copyright © Duplicati Team 2015")]
+[assembly: AssemblyCopyright("LGPL, Copyright © Duplicati Team 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
