@@ -572,7 +572,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A value indicating if a parity file is to be created for a remote file
         /// </summary>
-        public bool EnableParityFile { get { return GetBool("enable-parity-file"); } }
+        public bool EnableParityFile => ParityFileRedundancy > 0;
 
         /// <summary>
         /// A value indicating the percentage of redundancy for the parity file, if enabled.
