@@ -189,7 +189,7 @@ namespace Duplicati.Library.Main.Database
 
             using(var cmd = m_connection.CreateCommand())
             {
-                var filesetIds = GetFilesetIDs(NormalizeDateTime(restoretime), versions).ToList();
+                var filesetIds = GetFilesetIDs(Library.Utility.Utility.NormalizeDateTime(restoretime), versions).ToList();
                 while(filesetIds.Count > 0)
                 {
                     var filesetId = filesetIds[0];

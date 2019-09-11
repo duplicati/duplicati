@@ -98,7 +98,7 @@ namespace Duplicati.Library.Main.Database
                 m_connection.Open();
 
             using (var cmd = m_connection.CreateCommand())
-                m_operationid = cmd.ExecuteScalarInt64( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", -1, operation, NormalizeDateTimeToEpochSeconds(OperationTimestamp));
+                m_operationid = cmd.ExecuteScalarInt64( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", -1, operation, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(OperationTimestamp));
         }
         
         private LocalDatabase(System.Data.IDbConnection connection)
@@ -153,23 +153,6 @@ namespace Duplicati.Library.Main.Database
         internal void SetResult(BasicResults result)
         {
             m_result = result;
-        }
-        
-        /// <summary>
-        /// Normalizes a DateTime instance floor'ed to seconds and in UTC
-        /// </summary>
-        /// <returns>The normalised date time</returns>
-        /// <param name="input">The input time</param>
-        public static DateTime NormalizeDateTime(DateTime input)
-        {
-            var ticks = input.ToUniversalTime().Ticks;
-            ticks -= ticks % TimeSpan.TicksPerSecond;
-            return new DateTime(ticks, DateTimeKind.Utc);
-        }
-        
-        public static long NormalizeDateTimeToEpochSeconds(DateTime input)
-        {
-            return (long)Math.Floor((NormalizeDateTime(input) - Library.Utility.Utility.EPOCH).TotalSeconds);
         }
         
         /// <summary>
@@ -238,7 +221,7 @@ namespace Duplicati.Library.Main.Database
 
                     query.Append(singleTimeMatch ? @" ""Timestamp"" = ?" : @" ""Timestamp"" <= ?");
                     // Make sure the resolution is the same (i.e. no milliseconds)
-                    args.Add(NormalizeDateTimeToEpochSeconds(time));
+                    args.Add(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(time));
                     hasTime = true;
                 }
 
@@ -358,7 +341,7 @@ namespace Duplicati.Library.Main.Database
         {
             m_insertremotelogCommand.Transaction = transaction;
             m_insertremotelogCommand.SetParameterValue(0, m_operationid);
-            m_insertremotelogCommand.SetParameterValue(1, NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+            m_insertremotelogCommand.SetParameterValue(1, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             m_insertremotelogCommand.SetParameterValue(2, operation);
             m_insertremotelogCommand.SetParameterValue(3, path);
             m_insertremotelogCommand.SetParameterValue(4, data);
@@ -375,7 +358,7 @@ namespace Duplicati.Library.Main.Database
         {
             m_insertlogCommand.Transaction = transaction;
             m_insertlogCommand.SetParameterValue(0, m_operationid);
-            m_insertlogCommand.SetParameterValue(1, NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+            m_insertlogCommand.SetParameterValue(1, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             m_insertlogCommand.SetParameterValue(2, type);
             m_insertlogCommand.SetParameterValue(3, message);
             m_insertlogCommand.SetParameterValue(4, exception == null ? null : exception.ToString());
@@ -1303,7 +1286,7 @@ ORDER BY
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 cmd.Transaction = tr.Parent;                
-                var id = cmd.ExecuteScalarInt64(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", -1, m_operationid, NormalizeDateTimeToEpochSeconds(timestamp), volumeid);
+                var id = cmd.ExecuteScalarInt64(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"") VALUES (?, ?, ?); SELECT last_insert_rowid();", -1, m_operationid, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(timestamp), volumeid);
                 tr.Commit();
                 return id;
             }
@@ -1360,7 +1343,7 @@ ORDER BY
             using(var tr = m_connection.BeginTransaction())
             using(var cmd = m_connection.CreateCommand(tr))
             {
-                var t = NormalizeDateTimeToEpochSeconds(threshold);
+                var t = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(threshold);
                 cmd.ExecuteNonQuery(@"DELETE FROM ""LogData"" WHERE ""Timestamp"" < ?", t);
                 cmd.ExecuteNonQuery(@"DELETE FROM ""RemoteOperation"" WHERE ""Timestamp"" < ?", t);
 

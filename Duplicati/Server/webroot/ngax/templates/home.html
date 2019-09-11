@@ -53,7 +53,7 @@
                     <dt translate>Last successful backup:</dt>
                     <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"
                         title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}"
-                        translate translate-params-time="item.Backup.Metadata.LastBackupFinished | moment: 'calendar'"
+                        translate translate-params-time="item.Backup.Metadata.LastBackupFinished | parseDate:forceActualDate"
                         translate-params-duration="formatDuration(item.Backup.Metadata.LastBackupDuration || item.Backup.Metadata.LastDuration)">{{time}} (took {{duration}})
                     </dd>
                     <dd>
@@ -62,7 +62,7 @@
 
                     <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.NextScheduledRun == null">
                         <dt translate>Next scheduled run:</dt>
-                        <dd title="{{item.Backup.Metadata.NextScheduledRun | parsetimestamp }}">{{item.Backup.Metadata.NextScheduledRun | moment: 'calendar'}}</dd>
+                        <dd title="{{item.Backup.Metadata.NextScheduledRun | parsetimestamp }}">{{item.Backup.Metadata.NextScheduledRun | parseDate:forceActualDate }}</dd>
                     </div>
                     <div ng-hide="item.Backup.Metadata == null">
                         <div ng-hide="item.Backup.Metadata.SourceSizeString == null">

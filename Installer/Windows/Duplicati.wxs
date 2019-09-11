@@ -27,7 +27,7 @@
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
     <PropertyRef Id="WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED"/>
-    <Condition Message="The .NET Framework 4.6.2 must be installed ([WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED])">
+    <Condition Message="The .NET Framework 4.6.2 must be installed">
       <![CDATA[Installed OR WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED]]>
     </Condition>
 
@@ -84,13 +84,13 @@
 
     <!-- Remove old versions -->
     <InstallExecuteSequence>
-      <RemoveExistingProducts Before='InstallInitialize' />
+      <RemoveExistingProducts After="InstallInitialize" />
     </InstallExecuteSequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
     <Upgrade Id="$(var.UpgradeCode)">
       <UpgradeVersion Minimum="2.0.0.0" Property="PREVIOUSVERSIONSINSTALLED"  Maximum="99.0.0.0" IncludeMinimum="yes" IncludeMaximum="no" />
     </Upgrade>
-    
+
   </Product>
 </Wix>
