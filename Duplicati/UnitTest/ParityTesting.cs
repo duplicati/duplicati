@@ -34,7 +34,7 @@ namespace Duplicati.UnitTest
             var basedatasize = 0;
 
             var testopts = TestOptions;
-            testopts["enable-parity-file"] = "true";
+            testopts["parity-file-redundancy"] = "5";
             testopts["blocksize"] = $"{blocksize}b";
 
             var filenames = BorderTests.WriteTestFilesToFolder(DATAFOLDER, blocksize, basedatasize).Select(x => "a" + x.Key).ToList();
