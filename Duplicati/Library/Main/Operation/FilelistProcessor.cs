@@ -19,6 +19,7 @@ using System;
 using Duplicati.Library.Main.Database;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -130,6 +131,7 @@ namespace Duplicati.Library.Main.Operation
         public struct RemoteAnalysisResult
         {
             public IEnumerable<Volumes.IParsedVolume> ParsedVolumes;
+            public IEnumerable<Volumes.IParsedVolume> ParityVolumes { get; set; }
             public IEnumerable<Volumes.IParsedVolume> ExtraVolumes;
             public IEnumerable<Volumes.IParsedVolume> OtherVolumes;
             public IEnumerable<RemoteVolumeEntry> MissingVolumes;
@@ -191,7 +193,12 @@ namespace Duplicati.Library.Main.Operation
         {
             var rawlist = backend.List();
 
-            // ignore/remove par2 files from list
+            var paritylist = (from n in rawlist
+                let p = Volumes.VolumeBase.ParseFilename(n)
+                where p != null && p.Prefix == options.Prefix && p.EncryptionModule == "par2.zip"
+                select p).ToList();
+
+            // ignore/remove par2 files from list for remaining operations
             rawlist = rawlist.Where(x => !x.Name.EndsWith("par2.zip")).ToList();
 
             var lookup = new Dictionary<string, Volumes.IParsedVolume>();
@@ -217,7 +224,7 @@ namespace Duplicati.Library.Main.Operation
                                      select n).ToList();
 
             log.KnownFileCount = remotelist.Count;
-            long knownFileSize = remotelist.Select(x => Math.Max(0, x.File.Size)).Sum();
+            long knownFileSize = remotelist.Select(x => Math.Max(0, x.File.Size)).Sum() + paritylist.Select(x => Math.Max(0, x.File.Size)).Sum();
             log.KnownFileSize = knownFileSize;
             log.UnknownFileCount = unknownlist.Count;
             log.UnknownFileSize = unknownlist.Select(x => Math.Max(0, x.Size)).Sum();
@@ -326,7 +333,6 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (!remoteFound)
                         {
-
                             if (string.Equals(i.Name, protectedfile))
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
@@ -386,7 +392,8 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteWarningMessage(LOGTAG, "MissingRemoteHash", null, "remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.Item2.State, i.Item2.Name, i.Item1, i.Item2.Size, i.Item2.Hash);
             
             return new RemoteAnalysisResult() { 
-                ParsedVolumes = remotelist, 
+                ParsedVolumes = remotelist,
+                ParityVolumes = paritylist,
                 OtherVolumes = otherlist,
                 ExtraVolumes = lookup.Values, 
                 MissingVolumes = missing, 
