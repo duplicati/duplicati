@@ -455,6 +455,6 @@ copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' 
     <Error Condition="!Exists('..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets'))" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>:: view this project config file for cusotm postbuildevent entries</PostBuildEvent>
+    <PostBuildEvent></PostBuildEvent>
   </PropertyGroup>
 </Project>
