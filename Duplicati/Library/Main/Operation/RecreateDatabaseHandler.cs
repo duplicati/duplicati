@@ -462,7 +462,7 @@ namespace Duplicati.Library.Main.Operation
 
                                     progress++;
                                     m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingBlocklistVolumes", "Phase {0} of 3, processing blocklist volume {1} of {2}", (i + 1), progress, lst.Count);
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingBlocklistVolumes", "Pass {0} of 3, processing blocklist volume {1} of {2}", (i + 1), progress, lst.Count);
 
                                     var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
 
