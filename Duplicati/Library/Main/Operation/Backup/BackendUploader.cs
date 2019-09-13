@@ -265,7 +265,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
         }
-        
+
         private async Task<bool> UploadFileAsync(FileEntryItem item, Worker worker, CancellationToken cancelToken)
         {
             if (cancelToken.IsCancellationRequested)
@@ -446,6 +446,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 await backend.PutAsync(item.RemoteFilename, item.LocalFilename, cancelToken).ConfigureAwait(false);
 
             var duration = DateTime.Now - begin;
+
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
 
             if (m_options.EnableParityFile)
