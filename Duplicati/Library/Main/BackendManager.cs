@@ -654,37 +654,40 @@ namespace Duplicati.Library.Main
             // If there is an index file attached to the block file, 
             // it references the block filename, so we create a new index file
             // which is a copy of the current, but with the new name
-            if (item.Indexfile != null)
+            if (item.Indexfile == null) return;
+
+            if (!item.IndexfileUpdated)
             {
-                if (!item.IndexfileUpdated)
-                {
-                    item.Indexfile.Item1.FinishVolume(item.Hash, item.Size);
-                    item.Indexfile.Item1.Close();
-                    item.IndexfileUpdated = true;
-                }
+                item.Indexfile.Item1.FinishVolume(item.Hash, item.Size);
+                item.Indexfile.Item1.Close();
+                item.IndexfileUpdated = true;
+            }
 
-                IndexVolumeWriter wr = null;
-                try
-                {
-                    var hashsize = HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm).HashSize / 8;
-                    wr = new IndexVolumeWriter(m_options);
-                    using (var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
-                        wr.CopyFrom(rd, x => x == oldname ? newname : x);
-                    item.Indexfile.Item1.Dispose();
-                    item.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(wr, item.Indexfile.Item2);
-                    item.Indexfile.Item2.LocalTempfile.Dispose();
-                    item.Indexfile.Item2.LocalTempfile = wr.TempFile;
-                    wr.Close();
-                }
-                catch
-                {
-                    if (wr != null)
-                        try { wr.Dispose(); }
-                        catch { }
-                        finally { wr = null; }
+            IndexVolumeWriter wr = null;
 
-                    throw;
+            try
+            {
+                var hashsize = HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm).HashSize / 8;
+                wr = new IndexVolumeWriter(m_options);
+                using (var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
+                {
+                    wr.CopyFrom(rd, x => x == oldname ? newname : x);
                 }
+                item.Indexfile.Item1.Dispose();
+                item.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(wr, item.Indexfile.Item2);
+                item.Indexfile.Item2.LocalTempfile.Dispose();
+                item.Indexfile.Item2.LocalTempfile = wr.TempFile;
+                wr.Close();
+            }
+            catch
+            {
+                if (wr == null) throw;
+
+                try { wr.Dispose(); }
+                catch { }
+                finally { wr = null; }
+
+                throw;
             }
         }
 
