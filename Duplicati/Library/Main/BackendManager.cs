@@ -451,185 +451,187 @@ namespace Duplicati.Library.Main
             };
             return retHasherStream;
         }
-
-
+        
         private void ThreadRun()
         {
             var uploadSuccess = false;
             while (!m_queue.Completed)
             {
                 var item = m_queue.Dequeue();
-                if (item != null)
+                if (item == null) continue;
+
+                if (item.RemoteFilename != null)
                 {
-                    int retries = 0;
-                    Exception lastException = null;
+                    var rfn = item.RemoteFilename;
+                }
+                int retries = 0;
+                Exception lastException = null;
 
-                    do
+                do
+                {
+                    try
                     {
-                        try
+                        if (m_taskControl != null)
+                            m_taskControl.TaskControlRendevouz();
+
+                        if (m_options.NoConnectionReuse && m_backend != null)
                         {
-                            if (m_taskControl != null)
-                                m_taskControl.TaskControlRendevouz();
-
-                            if (m_options.NoConnectionReuse && m_backend != null)
-                            {
-                                m_backend.Dispose();
-                                m_backend = null;
-                            }
-
-                            if (m_backend == null)
-                                m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
-                            if (m_backend == null)
-                                throw new Exception("Backend failed to re-load");
-
-                            using (new Logging.Timer(LOGTAG, string.Format("RemoteOperation{0}", item.Operation), string.Format("RemoteOperation{0}", item.Operation)))
-                                switch (item.Operation)
-                                {
-                                    case OperationType.Put:
-                                        DoPut(item);
-                                        // We do not auto create folders,
-                                        // because we know the folder exists
-                                        uploadSuccess = true;
-                                        break;
-                                    case OperationType.Get:
-                                        DoGet(item);
-                                        break;
-                                    case OperationType.List:
-                                        DoList(item);
-                                        break;
-                                    case OperationType.Delete:
-                                        DoDelete(item);
-                                        break;
-                                    case OperationType.CreateFolder:
-                                        DoCreateFolder(item);
-                                        break;
-                                    case OperationType.Terminate:
-                                        m_queue.SetCompleted();
-                                        break;
-                                    case OperationType.Nothing:
-                                        item.SignalComplete();
-                                        break;
-                                }
-
-                            lastException = null;
-                            retries = m_numberofretries;
+                            m_backend.Dispose();
+                            m_backend = null;
                         }
-                        catch (Exception ex)
+
+                        if (m_backend == null)
+                            m_backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+                        if (m_backend == null)
+                            throw new Exception("Backend failed to re-load");
+
+                        using (new Logging.Timer(LOGTAG, string.Format("RemoteOperation{0}", item.Operation), string.Format("RemoteOperation{0}", item.Operation)))
+                            switch (item.Operation)
+                            {
+                                case OperationType.Put:
+                                    DoPut(item);
+                                    // We do not auto create folders,
+                                    // because we know the folder exists
+                                    uploadSuccess = true;
+                                    break;
+                                case OperationType.Get:
+                                    DoGet(item);
+                                    break;
+                                case OperationType.List:
+                                    DoList(item);
+                                    break;
+                                case OperationType.Delete:
+                                    DoDelete(item);
+                                    break;
+                                case OperationType.CreateFolder:
+                                    DoCreateFolder(item);
+                                    break;
+                                case OperationType.Terminate:
+                                    m_queue.SetCompleted();
+                                    break;
+                                case OperationType.Nothing:
+                                    item.SignalComplete();
+                                    break;
+                            }
+
+                        lastException = null;
+                        retries = m_numberofretries;
+                    }
+                    catch (Exception ex)
+                    {
+                        retries++;
+                        lastException = ex;
+                        Logging.Log.WriteRetryMessage(LOGTAG, $"Retry{item.Operation}", ex, "Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_numberofretries, ex.Message);
+
+                        // If the thread is aborted, we exit here
+                        if (ex is System.Threading.ThreadAbortException)
                         {
-                            retries++;
-                            lastException = ex;
-                            Logging.Log.WriteRetryMessage(LOGTAG, $"Retry{item.Operation}", ex, "Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retries, m_numberofretries, ex.Message);
+                            m_queue.SetCompleted();
+                            item.Exception = ex;
+                            item.SignalComplete();
+                            throw;
+                        }
 
-                            // If the thread is aborted, we exit here
-                            if (ex is System.Threading.ThreadAbortException)
-                            {
-                                m_queue.SetCompleted();
-                                item.Exception = ex;
-                                item.SignalComplete();
-                                throw;
-                            }
-
-                            if (ex is System.Net.WebException)
-                            {
-                                // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
-                                if (((System.Net.WebException)ex).Status == System.Net.WebExceptionStatus.NameResolutionFailure)
-                                {
-                                    try
-                                    {
-                                        var names = m_backend.DNSName ?? new string[0];
-                                        foreach (var name in names)
-                                            if (!string.IsNullOrWhiteSpace(name))
-                                                System.Net.Dns.GetHostEntry(name);
-                                    }
-                                    catch
-                                    {
-                                    }
-                                }
-                            }
-
-                            m_statwriter.SendEvent(item.BackendActionType, retries < m_numberofretries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
-
-                            bool recovered = false;
-                            if (!uploadSuccess && ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
+                        if (ex is System.Net.WebException)
+                        {
+                            // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
+                            if (((System.Net.WebException)ex).Status == System.Net.WebExceptionStatus.NameResolutionFailure)
                             {
                                 try
                                 {
-                                    // If we successfully create the folder, we can re-use the connection
-                                    m_backend.CreateFolder();
-                                    recovered = true;
+                                    var names = m_backend.DNSName ?? new string[0];
+                                    foreach (var name in names)
+                                        if (!string.IsNullOrWhiteSpace(name))
+                                            System.Net.Dns.GetHostEntry(name);
                                 }
-                                catch (Exception dex)
+                                catch
                                 {
-                                    Logging.Log.WriteWarningMessage(LOGTAG, "FolderCreateError", dex, "Failed to create folder: {0}", ex.Message);
-                                }
-                            }
-
-                            // To work around the Apache WEBDAV issue, we rename the file here
-                            if (item.Operation == OperationType.Put && retries < m_numberofretries && !item.NotTrackedInDb)
-                                RenameFileAfterError(item);
-
-                            if (!recovered)
-                            {
-                                try { m_backend.Dispose(); }
-                                catch (Exception dex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeError", dex, "Failed to dispose backend instance: {0}", ex.Message); }
-
-                                m_backend = null;
-
-                                if (retries < m_numberofretries && m_retrydelay.Ticks != 0)
-                                {
-                                    var target = DateTime.Now.AddTicks(m_retrydelay.Ticks);
-                                    while (target > DateTime.Now)
-                                    {
-                                        if (m_taskControl != null && m_taskControl.IsAbortRequested())
-                                            break;
-
-                                        System.Threading.Thread.Sleep(500);
-                                    }
                                 }
                             }
                         }
 
+                        m_statwriter.SendEvent(item.BackendActionType, retries < m_numberofretries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
-                    } while (retries < m_numberofretries);
-
-                    if (lastException != null && !(lastException is Duplicati.Library.Interface.FileMissingException) && item.Operation == OperationType.Delete)
-                    {
-                        Logging.Log.WriteInformationMessage(LOGTAG, "DeleteFileFailed", LC.L("Failed to delete file {0}, testing if file exists", item.RemoteFilename));
-                        try
+                        bool recovered = false;
+                        if (!uploadSuccess && ex is Duplicati.Library.Interface.FolderMissingException && m_options.AutocreateFolders)
                         {
-                            if (!m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename))
+                            try
                             {
-                                lastException = null;
-                                Logging.Log.WriteInformationMessage(LOGTAG, "DeleteFileFailureRecovered", LC.L("Recovered from problem with attempting to delete non-existing file {0}", item.RemoteFilename));
+                                // If we successfully create the folder, we can re-use the connection
+                                m_backend.CreateFolder();
+                                recovered = true;
+                            }
+                            catch (Exception dex)
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "FolderCreateError", dex, "Failed to create folder: {0}", ex.Message);
                             }
                         }
-                        catch (Exception ex)
+
+                        // To work around the Apache WEBDAV issue, we rename the file here
+                        if (item.Operation == OperationType.Put && retries < m_numberofretries && !item.NotTrackedInDb)
+                            RenameFileAfterError(item);
+
+                        if (!recovered)
                         {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "DeleteFileFailure", ex, LC.L("Failed to recover from error deleting file {0}", item.RemoteFilename), ex);
+                            try { m_backend.Dispose(); }
+                            catch (Exception dex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeError", dex, "Failed to dispose backend instance: {0}", ex.Message); }
+
+                            m_backend = null;
+
+                            if (retries < m_numberofretries && m_retrydelay.Ticks != 0)
+                            {
+                                var target = DateTime.Now.AddTicks(m_retrydelay.Ticks);
+                                while (target > DateTime.Now)
+                                {
+                                    if (m_taskControl != null && m_taskControl.IsAbortRequested())
+                                        break;
+
+                                    System.Threading.Thread.Sleep(500);
+                                }
+                            }
                         }
                     }
 
-                    if (lastException != null)
+
+                } while (retries < m_numberofretries);
+
+                if (lastException != null && !(lastException is Duplicati.Library.Interface.FileMissingException) && item.Operation == OperationType.Delete)
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DeleteFileFailed", LC.L("Failed to delete file {0}, testing if file exists", item.RemoteFilename));
+                    try
                     {
-                        item.Exception = lastException;
-                        if (item.Operation == OperationType.Put)
-                            item.DeleteLocalFile(m_statwriter);
-
-                        if (item.ExceptionKillsHandler)
+                        if (!m_backend.List().Select(x => x.Name).Contains(item.RemoteFilename))
                         {
-                            m_lastException = lastException;
-
-                            //TODO: If there are temp files in the queue, we must delete them
-                            m_queue.SetCompleted();
+                            lastException = null;
+                            Logging.Log.WriteInformationMessage(LOGTAG, "DeleteFileFailureRecovered", LC.L("Recovered from problem with attempting to delete non-existing file {0}", item.RemoteFilename));
                         }
-
                     }
-
-                    item.SignalComplete();
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DeleteFileFailure", ex, LC.L("Failed to recover from error deleting file {0}", item.RemoteFilename), ex);
+                    }
                 }
+
+                if (lastException != null)
+                {
+                    item.Exception = lastException;
+                    if (item.Operation == OperationType.Put)
+                        item.DeleteLocalFile(m_statwriter);
+
+                    if (item.ExceptionKillsHandler)
+                    {
+                        m_lastException = lastException;
+
+                        //TODO: If there are temp files in the queue, we must delete them
+                        m_queue.SetCompleted();
+                    }
+
+                }
+
+                item.SignalComplete();
             }
 
-            //Make sure everything in the queue is signalled
+            //Make sure everything in the queue is signaled
             FileEntryItem i;
             while ((i = m_queue.Dequeue()) != null)
                 i.SignalComplete();
@@ -807,12 +809,14 @@ namespace Duplicati.Library.Main
                     decryptTarget = new TempFile();
                     decryptToStream = System.IO.File.OpenWrite(decryptTarget);
                     taskDecrypter = new System.Threading.Tasks.Task(() =>
-                    {
-                        using (var input = linkForkDecryptor.ReaderStream)
-                        using (var output = decryptToStream)
-                            lock (m_encryptionLock) { useDecrypter.Decrypt(input, output); }
-                    }
-                        );
+                        {
+                            using (var input = linkForkDecryptor.ReaderStream)
+                            using (var output = decryptToStream)
+                                lock (m_encryptionLock)
+                                {
+                                    useDecrypter.Decrypt(input, output);
+                                }
+                        });
                 }
 
                 // setup hashing: fork off a StreamLink from stack, then task computes hash
@@ -822,8 +826,7 @@ namespace Duplicati.Library.Main
                 {
                     using (var input = linkForkHasher.ReaderStream)
                         return CalculateFileHash(input);
-                }
-                    );
+                });
 
                 // OK, forks with tasks are set up, so let's do the download which is performed in main thread.
                 bool hadException = false;
@@ -885,20 +888,17 @@ namespace Duplicati.Library.Main
                     }
                 }
 
-                if (retHashcode == item.Hash)
+                if (useDecrypter != null) // return decrypted temp file
                 {
-                    if (useDecrypter != null) // return decrypted temp file
-                    {
-                        retTarget = decryptTarget;
-                        decryptTarget = null;
-                    }
-                    else // return downloaded file
-                    {
-                        retTarget = dlTarget;
-                        dlTarget = null;
-                    }
+                    retTarget = decryptTarget;
+                    decryptTarget = null;
                 }
-            }
+                else // return downloaded file
+                {
+                    retTarget = dlTarget;
+                    dlTarget = null;
+                }
+            } 
             finally
             {
                 // Be tidy: manually do some cleanup to temp files, as we could not use using's.
@@ -1007,10 +1007,6 @@ namespace Duplicati.Library.Main
                 RedirectStandardOutput = true,
                 Arguments = args
             };
-
-#if DEBUG
-            //Console.Error.WriteLine($"command executing: {exePath} {args}");
-#endif
 
             try
             {
@@ -1585,10 +1581,10 @@ namespace Duplicati.Library.Main
             return (IList<Library.Interface.IFileEntry>)req.Result;
         }
 
-        public void WaitForComplete(LocalDatabase db, System.Data.IDbTransaction transation)
+        public void WaitForComplete(LocalDatabase db, System.Data.IDbTransaction transaction)
         {
             m_statwriter.BackendProgressUpdater.SetBlocking(true);
-            m_db.FlushDbMessages(db, transation);
+            m_db.FlushDbMessages(db, transaction);
             if (m_lastException != null)
                 throw m_lastException;
 
@@ -1596,18 +1592,18 @@ namespace Duplicati.Library.Main
             if (m_queue.Enqueue(item))
                 item.WaitForComplete();
 
-            m_db.FlushDbMessages(db, transation);
+            m_db.FlushDbMessages(db, transaction);
 
             if (m_lastException != null)
                 throw m_lastException;
         }
 
-        public void WaitForEmpty(LocalDatabase db, System.Data.IDbTransaction transation)
+        public void WaitForEmpty(LocalDatabase db, System.Data.IDbTransaction transaction)
         {
             try
             {
                 m_statwriter.BackendProgressUpdater.SetBlocking(true);
-                m_db.FlushDbMessages(db, transation);
+                m_db.FlushDbMessages(db, transaction);
                 if (m_lastException != null)
                     throw m_lastException;
 
@@ -1615,7 +1611,7 @@ namespace Duplicati.Library.Main
                 if (m_queue.Enqueue(item))
                     item.WaitForComplete();
 
-                m_db.FlushDbMessages(db, transation);
+                m_db.FlushDbMessages(db, transaction);
 
                 if (m_lastException != null)
                     throw m_lastException;
