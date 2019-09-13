@@ -392,8 +392,7 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteWarningMessage(LOGTAG, "MissingRemoteHash", null, "remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.Item2.State, i.Item2.Name, i.Item1, i.Item2.Size, i.Item2.Hash);
             
             return new RemoteAnalysisResult() { 
-                ParsedVolumes = remotelist,
-                ParityVolumes = paritylist,
+                ParsedVolumes = remotelist, 
                 OtherVolumes = otherlist,
                 ExtraVolumes = lookup.Values, 
                 MissingVolumes = missing, 
