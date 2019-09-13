@@ -241,58 +241,6 @@ namespace Duplicati.Library.Compression
             }
         }
 
-        //public FileArchiveZip(string fileMask, string zipFilename, ArchiveMode mode, IDictionary<string, string> options)
-        //{
-        //    try
-        //    {
-        //        m_mode = mode;
-        //        if (mode != ArchiveMode.Write) return;
-
-        //        var compression = new ZipWriterOptions(CompressionType.Deflate);
-
-        //        compression.CompressionType = DEFAULT_COMPRESSION_METHOD;
-        //        compression.DeflateCompressionLevel = DEFAULT_COMPRESSION_LEVEL;
-
-        //        m_usingZip64 = compression.UseZip64 = options.ContainsKey(COMPRESSION_ZIP64_OPTION) && Utility.Utility.ParseBoolOption(options, COMPRESSION_ZIP64_OPTION);
-
-        //        if (options.TryGetValue(COMPRESSION_METHOD_OPTION, out var cpmethod) && Enum.TryParse<CompressionType>(cpmethod, true, out var tmptype))
-        //            compression.CompressionType = tmptype;
-
-        //        if (options.TryGetValue(COMPRESSION_LEVEL_OPTION, out var cplvl) && int.TryParse(cplvl, out var tmplvl))
-        //        {
-        //            compression.DeflateCompressionLevel = (CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
-        //        }
-        //        else if (options.TryGetValue(COMPRESSION_LEVEL_OPTION_ALIAS, out cplvl) && int.TryParse(cplvl, out tmplvl))
-        //        {
-        //            compression.DeflateCompressionLevel = (CompressionLevel)Math.Max(Math.Min(9, tmplvl), 0);
-        //        }
-
-        //        m_defaultCompressionLevel = compression.DeflateCompressionLevel;
-        //        m_compressionType = compression.CompressionType;
-
-        //        var files = SystemIO.IO_OS.EnumerateFiles(fileMask);
-
-        //        using (var archive = ZipArchive.Create())
-        //        {
-        //            foreach (var file in files)
-        //            {
-        //                using (var fileStream = File.Open("foo"))
-        //                using (var reader = new StreamReader(fileStream))
-        //                {
-        //                    archive.AddEntry(SystemIO.IO_OS.PathGetFileName(file))
-        //                }
-        //            }
-
-        //            archive.SaveTo(zipFilename, CompressionType.Deflate);
-        //        }
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        Console.WriteLine(e);
-        //        throw;
-        //    }
-        //}
-
         #region IFileArchive Members
         /// <summary>
         /// Gets the filename extension used by the compression module
