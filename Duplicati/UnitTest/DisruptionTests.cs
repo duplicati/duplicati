@@ -15,10 +15,12 @@ namespace Duplicati.UnitTest
 {
     public class DisruptionTests : BasicSetupHelper
     {
+        // Files to create in MB.
+        private readonly int[] fileSizes = {10, 20, 30};
+
         private void ModifySourceFiles()
         {
-            int[] fileSizes = {10, 20, 30};
-            foreach (int size in fileSizes)
+            foreach (int size in this.fileSizes)
             {
                 byte[] data = new byte[size * 1024 * 1024];
                 Random rng = new Random();
