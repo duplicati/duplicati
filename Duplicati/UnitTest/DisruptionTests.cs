@@ -54,6 +54,7 @@ namespace Duplicati.UnitTest
             this.ModifySourceFiles();
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
+                // ReSharper disable once AccessToDisposedClosure
                 Task<IBackupResults> backupTask = Task.Run(() => c.Backup(new[] {this.DATAFOLDER}));
 
                 // Block for a small amount of time to allow the ITaskControl to be associated
