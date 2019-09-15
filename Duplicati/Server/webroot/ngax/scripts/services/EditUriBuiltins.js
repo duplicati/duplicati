@@ -271,7 +271,7 @@ backupApp.service('EditUriBuiltins', function(AppService, AppUtils, SystemInfo, 
             var ix = scope.uri.indexOf('?');
             if (ix < 0)
                 ix = scope.uri.location;
-            scope.Path = scope.uri.substr(scope.uri.indexOf('://') + 3, ix);
+            scope.Path = scope.uri.substring(scope.uri.indexOf('://') + 3, ix);
         } else {
             var dirsep = '/';
             var newScopePath = scope.Server;
