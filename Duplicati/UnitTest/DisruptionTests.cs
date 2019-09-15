@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
+using Duplicati.Library.Main.Database;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -42,7 +43,7 @@ namespace Duplicati.UnitTest
             {
                 c.Backup(new[] {this.DATAFOLDER});
                 Assert.AreEqual(1, c.List().Filesets.Count());
-                Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
+                Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
 
             // Modify the source files and interrupt a backup.
@@ -59,8 +60,8 @@ namespace Duplicati.UnitTest
                 c.Stop(true);
                 await backupTask;
                 Assert.AreEqual(2, c.List().Filesets.Count());
-                Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
-                Assert.AreEqual(0, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
+                Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
 
             // Recreating the database should preserve the backup types.
@@ -69,8 +70,8 @@ namespace Duplicati.UnitTest
             {
                 c.Repair();
                 Assert.AreEqual(2, c.List().Filesets.Count());
-                Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
-                Assert.AreEqual(0, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
+                Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
 
             // Run a complete backup.  Listing the Filesets should omit the previous partial backup.
@@ -78,8 +79,8 @@ namespace Duplicati.UnitTest
             {
                 c.Backup(new[] {this.DATAFOLDER});
                 Assert.AreEqual(2, c.List().Filesets.Count());
-                Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
-                Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
+                Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
+                Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
         }
     }

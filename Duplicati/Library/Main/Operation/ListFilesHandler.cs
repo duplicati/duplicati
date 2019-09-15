@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main.Operation
 
         public static IEnumerable<Library.Interface.IListResultFileset> CreateResultSequence(IEnumerable<KeyValuePair<long, Volumes.IParsedVolume>> filteredList)
         {
-            return (from n in filteredList select (Library.Interface.IListResultFileset)(new ListResultFileset(n.Key, LocalDatabase.BackupType.PARTIAL_BACKUP, n.Value.Time.ToLocalTime(), -1, -1))).ToArray();
+            return (from n in filteredList select (Library.Interface.IListResultFileset)(new ListResultFileset(n.Key, BackupType.PARTIAL_BACKUP, n.Value.Time.ToLocalTime(), -1, -1))).ToArray();
         }
     }
 }
