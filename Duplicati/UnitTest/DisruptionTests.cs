@@ -74,6 +74,7 @@ namespace Duplicati.UnitTest
             {
                 IListResults lastResults = c.List("*");
                 string[] partialVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
+                Assert.GreaterOrEqual(partialVersionFiles.Length, 1);
                 c.Restore(partialVersionFiles);
 
                 foreach (string filepath in partialVersionFiles)
