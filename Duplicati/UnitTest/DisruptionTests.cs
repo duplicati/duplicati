@@ -39,7 +39,7 @@ namespace Duplicati.UnitTest
         public async Task StopAfterCurrentFile()
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "1mb"};
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
 
             // Run a complete backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
