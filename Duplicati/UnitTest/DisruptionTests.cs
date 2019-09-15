@@ -23,40 +23,53 @@ namespace Duplicati.UnitTest
                 File.WriteAllBytes(Path.Combine(this.DATAFOLDER, size + "MB"), data);
             }
         }
-        
+
         public override void SetUp()
         {
             base.SetUp();
             this.ModifySourceFiles();
         }
-        
+
         [Test]
         [Category("Disruption")]
         public async Task StopAfterCurrentFile()
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "1mb"};
-            
+
+            // Run a complete backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                // If we allow the backup to complete, the Fileset should be marked as a full.
                 c.Backup(new[] {this.DATAFOLDER});
                 Assert.AreEqual(1, c.List().Filesets.Count());
                 Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
+            }
 
-                this.ModifySourceFiles();
+            // Modify the source files and interrupt a backup.
+            this.ModifySourceFiles();
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
                 Task<IBackupResults> backupTask = Task.Run(() => c.Backup(new[] {this.DATAFOLDER}));
-                
+
                 // Block for a small amount of time to allow the ITaskControl to be associated
                 // with the Controller.  Otherwise, the call to Stop will simply be a no-op.
                 Thread.Sleep(1000);
-                
+
                 // If we interrupt the backup, the most recent Fileset should be marked as partial.
                 c.Stop(true);
                 await backupTask;
                 Assert.AreEqual(2, c.List().Filesets.Count());
                 Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
                 Assert.AreEqual(0, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
+            }
+
+            // Run a complete backup.  Listing the Filesets should omit the previous partial backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(2, c.List().Filesets.Count());
+                Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
+                Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
         }
     }
