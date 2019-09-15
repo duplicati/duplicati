@@ -73,16 +73,13 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
                 IListResults lastResults = c.List("*");
-                string[] partialVersionFiles = lastResults.Files.Select(x => x.Path).ToArray();
+                string[] partialVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
                 c.Restore(partialVersionFiles);
 
                 foreach (string filepath in partialVersionFiles)
                 {
-                    if (!Utility.IsFolder(filepath, File.GetAttributes))
-                    {
-                        string filename = Path.GetFileName(filepath);
-                        Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), filename, true));
-                    }
+                    string filename = Path.GetFileName(filepath);
+                    Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), filename, true));
                 }
             }
 
