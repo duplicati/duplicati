@@ -4,10 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using NUnit.Framework;
+using Utility = Duplicati.Library.Utility.Utility;
 
 namespace Duplicati.UnitTest
 {
@@ -62,6 +64,24 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(2, c.List().Filesets.Count());
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
+            }
+
+            // Restore files from the partial backup set.
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(options) {["restore-path"] = this.RESTOREFOLDER};
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IListResults lastResults = c.List("*");
+                string[] partialVersionFiles = lastResults.Files.Select(x => x.Path).ToArray();
+                c.Restore(partialVersionFiles);
+
+                foreach (string filepath in partialVersionFiles)
+                {
+                    if (!Utility.IsFolder(filepath, File.GetAttributes))
+                    {
+                        string filename = Path.GetFileName(filepath);
+                        Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), filename, true));
+                    }
+                }
             }
 
             // Recreating the database should preserve the backup types.
