@@ -63,6 +63,16 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
 
+            // Recreating the database should preserve the backup types.
+            File.Delete(this.DBFILE);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Repair();
+                Assert.AreEqual(2, c.List().Filesets.Count());
+                Assert.AreEqual(1, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
+                Assert.AreEqual(0, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
+            }
+
             // Run a complete backup.  Listing the Filesets should omit the previous partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
