@@ -102,6 +102,22 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
+
+            // Restore files from the full backup set.
+            restoreOptions["overwrite"] = "true";
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IListResults lastResults = c.List("*");
+                string[] fullVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
+                Assert.AreEqual(this.fileSizes.Length, fullVersionFiles.Length);
+                c.Restore(fullVersionFiles);
+
+                foreach (string filepath in fullVersionFiles)
+                {
+                    string filename = Path.GetFileName(filepath);
+                    Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), filename, true));
+                }
+            }
         }
     }
 }
