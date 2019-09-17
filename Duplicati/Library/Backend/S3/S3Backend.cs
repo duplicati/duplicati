@@ -68,6 +68,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("US West (Northern California)", "us-west-1"),
             new KeyValuePair<string, string>("US West (Oregon)", "us-west-2"),
             new KeyValuePair<string, string>("Canada (Central)", "ca-central-1"),
+            new KeyValuePair<string, string>("Asia Pacific (Hong Kong)", "ap-east-1"),
             new KeyValuePair<string, string>("Asia Pacific (Mumbai)", "ap-south-1"),
             new KeyValuePair<string, string>("Asia Pacific (Singapore)", "ap-southeast-1"),
             new KeyValuePair<string, string>("Asia Pacific (Sydney)", "ap-southeast-2"),
@@ -77,6 +78,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("South America (São Paulo)", "sa-east-1"),
             new KeyValuePair<string, string>("China (Beijing)", "cn-north-1"),
             new KeyValuePair<string, string>("China (Ningxia)", "cn-northwest-1"),
+            new KeyValuePair<string, string>("Middle East (Bahrain)", "me-south-1"),
         };
 
         public static readonly KeyValuePair<string, string>[] DEFAULT_S3_LOCATION_BASED_HOSTS = new KeyValuePair<string, string>[] {
@@ -91,6 +93,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("us-east-2", "s3.us-east-2.amazonaws.com"),
             new KeyValuePair<string, string>("us-west-1", "s3-us-west-1.amazonaws.com"),
             new KeyValuePair<string, string>("us-west-2", "s3-us-west-2.amazonaws.com"),
+            new KeyValuePair<string, string>("ap-east-1", "s3-ap-east-1.amazonaws.com"),
             new KeyValuePair<string, string>("ap-south-1", "s3-ap-south-1.amazonaws.com"),
             new KeyValuePair<string, string>("ap-southeast-1", "s3-ap-southeast-1.amazonaws.com"),
             new KeyValuePair<string, string>("ap-southeast-2", "s3-ap-southeast-2.amazonaws.com"),
@@ -100,6 +103,7 @@ namespace Duplicati.Library.Backend
             new KeyValuePair<string, string>("sa-east-1", "s3-sa-east-1.amazonaws.com"),
             new KeyValuePair<string, string>("cn-north-1", "s3.cn-north-1.amazonaws.com.cn"),
             new KeyValuePair<string, string>("cn-northwest-1", "s3.cn-northwest-1.amazonaws.com.cn"),
+            new KeyValuePair<string, string>("me-south-1", "s3.me-south-1.amazonaws.com.cn"),
         };
 
         public static readonly KeyValuePair<string, string>[] KNOWN_S3_STORAGE_CLASSES;
@@ -110,7 +114,9 @@ namespace Duplicati.Library.Backend
                 new KeyValuePair<string, string>("(default)", ""),
                 new KeyValuePair<string, string>("Standard", "STANDARD"),
                 new KeyValuePair<string, string>("Infrequent Access (IA)", "STANDARD_IA"),
+                new KeyValuePair<string, string>("One Zone Infrequent Access (One Zone IA)", "ONEZONE_IA"),
                 new KeyValuePair<string, string>("Glacier", "GLACIER"),
+                new KeyValuePair<string, string>("Deep Archive", "DEEP_ARCHIVE"),
                 new KeyValuePair<string, string>("Reduced Redundancy Storage (RRS)", "REDUCED_REDUNDANCY"),
             };
 
