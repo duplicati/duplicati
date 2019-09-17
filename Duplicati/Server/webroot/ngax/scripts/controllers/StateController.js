@@ -34,9 +34,10 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
                     text = gettextCatalog.getString('Counting ({{files}} files found, {{size}})', { files: $scope.state.lastPgEvent.TotalFileCount, size: AppUtils.formatSizeString($scope.state.lastPgEvent.TotalFileSize) });
                     pg = 0;
                 } else {
+                    var unaccountedbytes = ($scope.state.lastPgEvent.CurrentFilecomplete) ? 0 : $scope.state.lastPgEvent.CurrentFileoffset;
                     var filesleft = $scope.state.lastPgEvent.TotalFileCount - $scope.state.lastPgEvent.ProcessedFileCount;
-                    var sizeleft = $scope.state.lastPgEvent.TotalFileSize - $scope.state.lastPgEvent.ProcessedFileSize - $scope.state.lastPgEvent.CurrentFileoffset;
-                    pg = ($scope.state.lastPgEvent.ProcessedFileSize + $scope.state.lastPgEvent.CurrentFileoffset) / $scope.state.lastPgEvent.TotalFileSize;
+                    var sizeleft = $scope.state.lastPgEvent.TotalFileSize - $scope.state.lastPgEvent.ProcessedFileSize - unaccountedbytes;
+                    pg = ($scope.state.lastPgEvent.ProcessedFileSize + unaccountedbytes) / $scope.state.lastPgEvent.TotalFileSize;
 
                     if ($scope.state.lastPgEvent.ProcessedFileCount == 0)
                         pg = 0;

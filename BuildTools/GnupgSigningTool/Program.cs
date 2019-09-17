@@ -21,6 +21,7 @@ namespace GnupgSigningTool
         {
 
             var armorOption = useArmor ? "--armor" : "";
+
             var gpgArgument = string.Format("--pinentry-mode loopback --passphrase-fd 0 --batch --yes {0} -u \"{1}\" --output \"{2}\" --detach-sig \"{3}\"",
                                             armorOption,
                                             gpgkeyid,
@@ -36,6 +37,7 @@ namespace GnupgSigningTool
             });
 
             proc.StandardInput.WriteLine(gpgkeypassphrase);
+
             proc.WaitForExit();
         }
 
@@ -45,18 +47,20 @@ namespace GnupgSigningTool
             using (var ms = new System.IO.MemoryStream())
             using (var fs = System.IO.File.OpenRead(gpgkeyfile))
             {
-
                 try
                 {
                     enc.Decrypt(fs, ms);
-                } catch (System.Security.Cryptography.CryptographicException e) {
+                }
+                catch (System.Security.Cryptography.CryptographicException e)
+                {
                     throw new ArgumentException("Failed to decrypt gpg secret credentials file: {0}\n", e.Message);
                 }
+
                 ms.Position = 0;
 
                 using (var sr = new System.IO.StreamReader(ms))
                 {
-                    var lines = sr.ReadToEnd().Split(new [] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                    var lines = sr.ReadToEnd().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                     gpgkeyid = lines[0];
                     gpgkeypassphrase = lines[1];
                 }
@@ -64,7 +68,7 @@ namespace GnupgSigningTool
         }
 
 
-        public static void Main(string [] _args)
+        public static void Main(string[] _args)
         {
             var args = new List<string>(_args);
             var opts = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
@@ -95,7 +99,8 @@ namespace GnupgSigningTool
                 throw new ArgumentException("Could not fetch gpg key id or gpg passphrase.");
             }
 
-            gpgpath = gpgpath ?? "gpg";
+            gpgpath = gpgpath ?? Duplicati.Library.Encryption.GPGEncryption.GetGpgExePath();
+
             SpawnGPG();
         }
     }
