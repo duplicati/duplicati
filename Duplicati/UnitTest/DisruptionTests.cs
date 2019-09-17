@@ -62,7 +62,7 @@ namespace Duplicati.UnitTest
 
                 // If we interrupt the backup, the most recent Fileset should be marked as partial.
                 c.Stop(true);
-                await backupTask;
+                await backupTask.ConfigureAwait(false);
                 Assert.AreEqual(2, c.List().Filesets.Count());
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
