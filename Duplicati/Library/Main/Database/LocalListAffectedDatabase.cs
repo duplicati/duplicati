@@ -32,6 +32,7 @@ namespace Duplicati.Library.Main.Database
         private class ListResultFileset : Duplicati.Library.Interface.IListResultFileset
         {
             public long Version { get; set; }
+            public int IsFullBackup { get; set; }
             public DateTime Time { get; set; }
             public long FileCount { get; set; }
             public long FileSizes { get; set; }
