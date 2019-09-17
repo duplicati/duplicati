@@ -224,12 +224,10 @@ namespace Duplicati.Library.Backend
 
                 //Change in S3, now requires that you use location specific endpoint
                 if (!string.IsNullOrEmpty(locationConstraint))
-                    foreach (var kvp in DEFAULT_S3_LOCATION_BASED_HOSTS)
-                        if (kvp.Key.Equals(locationConstraint, StringComparison.OrdinalIgnoreCase))
-                        {
-                            s3host = kvp.Value;
-                            break;
-                        }
+                {
+                    if (DEFAULT_S3_LOCATION_BASED_HOSTS.TryGetValue(locationConstraint, out var s3hostmatch))
+                        s3host = s3hostmatch;
+                }
             }
 
             //Fallback to previous formats
