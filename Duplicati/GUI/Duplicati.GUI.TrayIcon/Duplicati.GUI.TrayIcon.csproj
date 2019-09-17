@@ -69,8 +69,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CoCoL, Version=1.6.2.0, Culture=neutral, PublicKeyToken=0983de3c914beeaa, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\CoCoL.1.6.2\lib\net45\CoCoL.dll</HintPath>
+    <Reference Include="CoCoL, Version=1.7.0.0, Culture=neutral, PublicKeyToken=0983de3c914beeaa, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\CoCoL.1.7.0\lib\net45\CoCoL.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -443,8 +443,9 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent Condition="' $(OS)'=='Windows_NT' AND $(ConfigurationName) == Debug ">copy /Y  '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\build\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
+copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
+</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -453,4 +454,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets'))" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent></PostBuildEvent>
+  </PropertyGroup>
 </Project>

@@ -53,6 +53,10 @@
     <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj">
+      <Project>{d63e53e4-a458-4c2f-914d-92f715f58acf}</Project>
+      <Name>Duplicati.Library.Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
       <Project>{c5899f45-b0ff-483c-9d38-24a9fcaab237}</Project>
       <Name>Duplicati.Library.Interface</Name>

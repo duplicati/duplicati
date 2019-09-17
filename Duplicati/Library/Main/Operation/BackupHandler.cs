@@ -543,6 +543,8 @@ namespace Duplicati.Library.Main.Operation
                         
                         m_database.WriteResults();                    
                         m_database.PurgeLogData(m_options.LogRetention);
+                        m_database.PurgeDeletedVolumes(DateTime.UtcNow);
+
                         if (m_options.AutoVacuum)
                         {
                             m_result.VacuumResults = new VacuumResults(m_result);

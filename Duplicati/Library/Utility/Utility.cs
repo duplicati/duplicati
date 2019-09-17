@@ -785,14 +785,11 @@ namespace Duplicati.Library.Utility
         /// <returns>The string as byte array.</returns>
         /// <param name="hex">The hex string</param>
         /// <param name="data">The parsed data</param>
-        public static byte[] HexStringAsByteArray(string hex, byte[] data)
+        public static void HexStringAsByteArray(string hex, byte[] data)
         {
             for (var i = 0; i < hex.Length; i += 2)
                 data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-
-            return data;
         }
-
 
         public static bool Which(string appname)
         {

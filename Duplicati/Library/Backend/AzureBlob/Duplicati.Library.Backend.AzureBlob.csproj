@@ -42,17 +42,17 @@
     <Reference Include="Microsoft.Azure.KeyVault.WebKey, Version=3.0.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\packages\Microsoft.Azure.KeyVault.WebKey.3.0.4\lib\net461\Microsoft.Azure.KeyVault.WebKey.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.Blob, Version=11.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\Microsoft.Azure.Storage.Blob.11.0.0\lib\net452\Microsoft.Azure.Storage.Blob.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.Blob, Version=11.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Microsoft.Azure.Storage.Blob.11.0.1\lib\net452\Microsoft.Azure.Storage.Blob.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.Common, Version=11.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\Microsoft.Azure.Storage.Common.11.0.0\lib\net452\Microsoft.Azure.Storage.Common.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.Common, Version=11.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Microsoft.Azure.Storage.Common.11.0.1\lib\net452\Microsoft.Azure.Storage.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.File, Version=11.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\Microsoft.Azure.Storage.File.11.0.0\lib\net452\Microsoft.Azure.Storage.File.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.File, Version=11.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Microsoft.Azure.Storage.File.11.0.1\lib\net452\Microsoft.Azure.Storage.File.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.Queue, Version=11.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\Microsoft.Azure.Storage.Queue.11.0.0\lib\net452\Microsoft.Azure.Storage.Queue.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.Queue, Version=11.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Microsoft.Azure.Storage.Queue.11.0.1\lib\net452\Microsoft.Azure.Storage.Queue.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Rest.ClientRuntime, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\packages\Microsoft.Rest.ClientRuntime.2.3.20\lib\net461\Microsoft.Rest.ClientRuntime.dll</HintPath>

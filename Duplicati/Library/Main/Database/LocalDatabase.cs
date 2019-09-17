@@ -24,6 +24,7 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_selectremotevolumesCommand;
         private readonly System.Data.IDbCommand m_selectremotevolumeCommand;
         private readonly System.Data.IDbCommand m_removeremotevolumeCommand;
+        private readonly System.Data.IDbCommand m_removedeletedremotevolumeCommand;
         private readonly System.Data.IDbCommand m_selectremotevolumeIdCommand;
         private readonly System.Data.IDbCommand m_createremotevolumeCommand;
         private readonly System.Data.IDbCommand m_selectduplicateRemoteVolumesCommand;
@@ -110,6 +111,7 @@ namespace Duplicati.Library.Main.Database
             m_insertlogCommand = connection.CreateCommand();
             m_insertremotelogCommand = connection.CreateCommand();
             m_removeremotevolumeCommand = connection.CreateCommand();
+            m_removedeletedremotevolumeCommand = connection.CreateCommand();
             m_selectremotevolumeIdCommand = connection.CreateCommand();
             m_createremotevolumeCommand = connection.CreateCommand();
             m_insertIndexBlockLink = connection.CreateCommand();
@@ -134,6 +136,9 @@ namespace Duplicati.Library.Main.Database
 
             m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ? AND (""DeleteGraceTime"" < ? OR ""State"" != ?)";
             m_removeremotevolumeCommand.AddParameters(3);
+
+            m_removedeletedremotevolumeCommand.CommandText = $@"DELETE FROM ""Remotevolume"" WHERE ""DeleteGraceTime"" < ? AND ""State"" == ""{RemoteVolumeState.Deleted.ToString()}""";
+            m_removedeletedremotevolumeCommand.AddParameter();
 
             m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
 
@@ -181,18 +186,32 @@ namespace Duplicati.Library.Main.Database
             m_updateremotevolumeCommand.SetParameterValue(2, hash);
             m_updateremotevolumeCommand.SetParameterValue(3, size);
             m_updateremotevolumeCommand.SetParameterValue(4, name);
+
             var c = m_updateremotevolumeCommand.ExecuteNonQuery();
+
             if (c != 1)
-                throw new Exception(string.Format("Unexpected number of remote volumes detected: {0}!", c));
+            {
+                throw new Exception($"Unexpected number of remote volumes detected: {c}!");
+            }
 
             if (deleteGraceTime.Ticks > 0)
-                using(var cmd = m_connection.CreateCommand(transaction))
-                    if ((c = cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""DeleteGraceTime"" = ? WHERE ""Name"" = ? ", (DateTime.UtcNow + deleteGraceTime).Ticks, name)) != 1)
-                        throw new Exception(string.Format("Unexpected number of updates when recording remote volume updates: {0}!", c));
-
+            {
+                using (var cmd = m_connection.CreateCommand(transaction))
+                {
+                    if ((c = cmd.ExecuteNonQuery(
+                            @"UPDATE ""RemoteVolume"" SET ""DeleteGraceTime"" = ? WHERE ""Name"" = ? ",
+                            Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow + deleteGraceTime),
+                            name)) != 1)
+                    {
+                        throw new Exception($"Unexpected number of updates when recording remote volume updates: {c}!");
+                    }
+                }
+            }
 
             if (!suppressCleanup && state == RemoteVolumeState.Deleted)
-                   RemoveRemoteVolume(name, transaction);
+            {
+                RemoveRemoteVolume(name, transaction);
+            }
         }
         
         public IEnumerable<KeyValuePair<long, DateTime>> FilesetTimes
@@ -455,14 +474,15 @@ namespace Duplicati.Library.Main.Database
                 }
                 catch { /* Ignore, will be deleted on close anyway. */ }
 
-				m_removeremotevolumeCommand.Transaction = tr.Parent;
-                m_removeremotevolumeCommand.SetParameterValue(1, DateTime.UtcNow.Ticks);
-				m_removeremotevolumeCommand.SetParameterValue(2, RemoteVolumeState.Deleted.ToString());
-				foreach (var name in names)
+                m_removeremotevolumeCommand.Transaction = tr.Parent;
+                m_removeremotevolumeCommand.SetParameterValue(1, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+                m_removeremotevolumeCommand.SetParameterValue(2, RemoteVolumeState.Deleted.ToString());
+                foreach (var name in names)
                 {
                     m_removeremotevolumeCommand.SetParameterValue(0, name);
                     m_removeremotevolumeCommand.ExecuteNonQuery();
                 }
+
                 tr.Commit();
             }
         }
@@ -1158,7 +1178,7 @@ ORDER BY
         }
         
         /// <summary>
-        /// Keeps a list of filenames in a temporary table with a single columne Path
+        /// Keeps a list of filenames in a temporary table with a single column Path
         ///</summary>
         public class FilteredFilenameTable : IDisposable
         {
@@ -1350,7 +1370,19 @@ ORDER BY
                 tr.Commit();
             }
         }
-        
+
+        public void PurgeDeletedVolumes(DateTime threshold)
+        {
+            using (var tr = m_connection.BeginTransaction())
+            using (var cmd = m_connection.CreateCommand(tr))
+            {
+                m_removedeletedremotevolumeCommand.Transaction = tr;
+                m_removedeletedremotevolumeCommand.SetParameterValue(0, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(threshold));
+                m_removedeletedremotevolumeCommand.ExecuteNonQuery();
+                tr.Commit();
+            }
+        }
+
         public virtual void Dispose()
         {
             if (IsDisposed)

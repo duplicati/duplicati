@@ -35,8 +35,8 @@
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FluentFTP, Version=27.0.3.0, Culture=neutral, PublicKeyToken=f4af092b1d8df44f, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\FluentFTP.27.0.3\lib\net45\FluentFTP.dll</HintPath>
+    <Reference Include="FluentFTP, Version=27.1.1.0, Culture=neutral, PublicKeyToken=f4af092b1d8df44f, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\FluentFTP.27.1.1\lib\net45\FluentFTP.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
