@@ -31,6 +31,19 @@ namespace Duplicati.Library
 
         private readonly OAuthHttpMessageHandler m_authenticator;
 
+        static OAuthHttpClient()
+        {
+            // There is a regression in some versions of Mono (6.0) where an HttpClient
+            // with a BaseAddress cannot make requests to URLs that begin with '/'.
+            // https://github.com/mono/mono/issues/14630
+            // https://www.mono-project.com/docs/faq/known-issues/urikind-relativeorabsolute/.
+            if (Utility.Utility.IsMono)
+            {
+                FieldInfo field = typeof(System.Uri).GetField("useDotNetRelativeOrAbsolute", BindingFlags.Static | BindingFlags.GetField | BindingFlags.NonPublic);
+                field?.SetValue(null, true);
+            }
+        }
+
         public OAuthHttpClient(string authid, string protocolKey)
             : this(CreateMessageHandler(authid, protocolKey))
         {
