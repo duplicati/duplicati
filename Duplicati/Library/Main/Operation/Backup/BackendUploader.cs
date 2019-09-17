@@ -298,7 +298,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             SystemIO.IO_OS.FileMove(item.LocalFilename, $"{tempPath}/{item.RemoteFilename}");
 
             bool output = BackendManager.ParityLaunchCommandLineApp(
-                @"win-tools/par2.exe", 
                 $@"create -q -r{parityRedundancy} -n{parityNumberOfRecoveryFiles} ""{tempPath}/{parFilename}"" ""{tempPath}/{item.RemoteFilename}"" ");
 
             Logging.Log.WriteProfilingMessage(LOGTAG, "CreateParityFile", $"Source file: {item.RemoteFilename} output:{output}");

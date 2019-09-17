@@ -11,6 +11,7 @@ using Duplicati.Library.Main.Volumes;
 using Newtonsoft.Json;
 using Duplicati.Library.Localization.Short;
 using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Compression;
 
 namespace Duplicati.Library.Main
@@ -23,6 +24,8 @@ namespace Duplicati.Library.Main
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
 
         public const string VOLUME_HASH = "SHA256";
+
+        private static readonly string PAR2_EXE_PATH = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? throw new InvalidOperationException(), "win-tools", "par2.exe");
 
         private static readonly object m_RepairRemoteFileUsingParity_lock = new object();
 
@@ -795,7 +798,9 @@ namespace Duplicati.Library.Main
             {
                 System.IO.Stream nextTierWriter = null; // target of our stacked streams
                 if (!enableStreaming) // we will always need dlTarget if not streaming...
+                {
                     dlTarget = new TempFile();
+                }
                 else if (enableStreaming && useDecrypter == null)
                 {
                     dlTarget = new TempFile();
@@ -812,14 +817,14 @@ namespace Duplicati.Library.Main
                     decryptTarget = new TempFile();
                     decryptToStream = System.IO.File.OpenWrite(decryptTarget);
                     taskDecrypter = new System.Threading.Tasks.Task(() =>
-                        {
-                            using (var input = linkForkDecryptor.ReaderStream)
-                            using (var output = decryptToStream)
-                                lock (m_encryptionLock)
-                                {
-                                    useDecrypter.Decrypt(input, output);
-                                }
-                        });
+                    {
+                        using (var input = linkForkDecryptor.ReaderStream)
+                        using (var output = decryptToStream)
+                            lock (m_encryptionLock)
+                            {
+                                useDecrypter.Decrypt(input, output);
+                            }
+                    });
                 }
 
                 // setup hashing: fork off a StreamLink from stack, then task computes hash
@@ -950,6 +955,7 @@ namespace Duplicati.Library.Main
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "coreDoGetSequential", null,
                         $"Remote file hash is incorrect and indicates file corruption. File repair using the parity file will be attempted. File:{item.RemoteFilename}");
+
                     dlTarget = RepairRemoteFileUsingParity(item, dlTarget, out retHashcode, out retDownloadSize);
 
                     if (retHashcode == item.Hash)
@@ -995,7 +1001,7 @@ namespace Duplicati.Library.Main
             return retTarget;
         }
         
-        public static bool ParityLaunchCommandLineApp(string exePath, string args)
+        public static bool ParityLaunchCommandLineApp(string args)
         {
             StringBuilder outputBuilder = new StringBuilder();
             StringBuilder errorBuilder = new StringBuilder();
@@ -1005,7 +1011,7 @@ namespace Duplicati.Library.Main
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
-                FileName = exePath,
+                FileName = PAR2_EXE_PATH,
                 WindowStyle = ProcessWindowStyle.Hidden,
                 RedirectStandardOutput = true,
                 Arguments = args
@@ -1013,6 +1019,8 @@ namespace Duplicati.Library.Main
 
             try
             {
+                Logging.Log.WriteProfilingMessage(LOGTAG, "ParityLaunchCommandLineApp", $"{PAR2_EXE_PATH}{Environment.NewLine}{args}{Environment.NewLine}");
+
                 // Start the process with the info we specified.
                 // Call WaitForExit and then the using-statement will close.
                 using (process = Process.Start(psi))
@@ -1020,7 +1028,7 @@ namespace Duplicati.Library.Main
                     StreamReader reader = process.StandardOutput;
                     string output = reader.ReadToEnd();
                     process.WaitForExit();
-                    Logging.Log.WriteProfilingMessage(LOGTAG, "ParityLaunchCommandLineApp", $"{exePath}{Environment.NewLine}{Regex.Replace(output, @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline)}");
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "ParityLaunchCommandLineApp", $"{PAR2_EXE_PATH}{Environment.NewLine}{Regex.Replace(output, @"^\s+$[\r\n]*", string.Empty, RegexOptions.Multiline)}");
                     if (process.ExitCode != 0)
                     {
                         throw new Exception("Failed to create parity file.");
@@ -1030,7 +1038,7 @@ namespace Duplicati.Library.Main
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteErrorMessage(LOGTAG, "ParityLaunchCommandLineApp", ex, $"{exePath} Failed to create parity file. {ex.Message}");
+                Logging.Log.WriteErrorMessage(LOGTAG, "ParityLaunchCommandLineApp", ex, $"{PAR2_EXE_PATH} Failed to create parity file. {ex.Message}");
             }
             finally
             {
@@ -1040,16 +1048,7 @@ namespace Duplicati.Library.Main
 
             return false;
         }
-
-        public static void ReplaceData(string filename, int position, byte[] data)
-        {
-            using (Stream stream = File.Open(filename, FileMode.Open))
-            {
-                stream.Position = position;
-                stream.Write(data, 0, data.Length);
-            }
-        }
-
+        
         private static IDisposable AcquireLock(int repoId, string itemKey)
         {
             return new ItemLock(repoId, itemKey);
@@ -1117,11 +1116,10 @@ namespace Duplicati.Library.Main
 
                     File.Move(repairTarget.Name, parTargetFile);
 
-                    //ReplaceData(parTargetFile, 10, BitConverter.GetBytes((UInt32)0xDEADBEEF));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RepairRemoteFileUsingParity",
+                        $"repairTarget.Name: {repairTarget.Name} parTargetFile: {parTargetFile}");
 
-                    bool output = ParityLaunchCommandLineApp(
-                        @"win-tools/par2.exe",
-                        $@"repair -q ""{parMainFile}"" ""{parTargetFile}"" ");
+                    bool output = ParityLaunchCommandLineApp($@"repair -q ""{parMainFile}"" ""{parTargetFile}"" ");
 
                     retHashcode = CalculateFileHash(parTargetFile);
                     retDownloadSize = new FileInfo(parTargetFile).Length;
