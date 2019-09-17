@@ -553,10 +553,14 @@ namespace Duplicati.Library.Common.IO
             if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
                 throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
 
-            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile),
-                                                                 target,
-                                                                 asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File,
-                                                                 AlphaFS.PathFormat.LongFullPath);
+            if (asDir)
+            {
+                Alphaleonis.Win32.Filesystem.Directory.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+            }
+            else
+            {
+                Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+            }
 
             //Sadly we do not get a notification if the creation fails :(
             System.IO.FileAttributes attr = 0;
