@@ -228,7 +228,7 @@ namespace Duplicati.Library.Main.Operation
             log.KnownFileSize = knownFileSize;
             log.UnknownFileCount = unknownlist.Count;
             log.UnknownFileSize = unknownlist.Select(x => Math.Max(0, x.Size)).Sum();
-            log.BackupListCount = filesets.Count;
+            log.BackupListCount = database.FilesetTimes.Count();
             log.LastBackupDate = filesets.Count == 0 ? new DateTime(0) : filesets[0].Time.ToLocalTime();
 
             // TODO: We should query through the backendmanager

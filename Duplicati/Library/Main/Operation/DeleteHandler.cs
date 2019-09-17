@@ -1,24 +1,26 @@
-//  Copyright (C) 2013, The Duplicati Team
-
-//  http://www.duplicati.com, opensource@duplicati.com
+#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 //
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
 //
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+#endregion
 using System;
 using System.Linq;
-using System.Text;
 using System.Collections.Generic;
+using System.Globalization;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation
@@ -44,7 +46,7 @@ namespace Duplicati.Library.Main.Operation
             m_options = options;
             m_result = result;
         }
-
+        
         public void Run()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
@@ -94,7 +96,7 @@ namespace Duplicati.Library.Main.Operation
                 
                 var filesetNumbers = db.FilesetTimes.Zip(Enumerable.Range(0, db.FilesetTimes.Count()), (a, b) => new Tuple<long, DateTime>(b, a.Value)).ToList();
                 var sets = db.FilesetTimes.Select(x => x.Value).ToArray();
-                var toDelete = GetFilesetsToDelete(sets);
+                var toDelete = GetFilesetsToDelete(db, sets);
 
                 if (!m_options.AllowFullRemoval && sets.Length == toDelete.Length)
                 {
@@ -173,45 +175,91 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <returns>The filesets to delete</returns>
         /// <param name="allBackups">The list of backups that can be deleted</param>
-        private DateTime[] GetFilesetsToDelete(DateTime[] allBackups)
+        private DateTime[] GetFilesetsToDelete(Database.LocalDeleteDatabase db, DateTime[] allBackups)
         {
             if (allBackups.Length == 0)
+            {
                 return allBackups;
+            }
 
-            if (allBackups.Select(x => x.ToUniversalTime()).Distinct().Count() != allBackups.Length)
-                throw new Exception(string.Format("List of backup timestamps contains duplicates: {0}", string.Join(", ", allBackups.Select(x => x.ToString()))));
+            DateTime[] sortedAllBackups = allBackups.OrderByDescending(x => x.ToUniversalTime()).ToArray();
+
+            if (sortedAllBackups.Select(x => x.ToUniversalTime()).Distinct().Count() != sortedAllBackups.Length)
+            {
+                throw new Exception($"List of backup timestamps contains duplicates: {string.Join(", ", sortedAllBackups.Select(x => x.ToString()))}");
+            }
 
             List<DateTime> toDelete = new List<DateTime>();
 
-            // Remove backups explicitely specified via option
+            // Remove backups explicitly specified via option
             var versions = m_options.Version;
             if (versions != null && versions.Length > 0)
+            {
                 foreach (var ix in versions.Distinct())
-                    if (ix >= 0 && ix < allBackups.Length)
-                        toDelete.Add(allBackups[ix]);
+                {
+                    if (ix >= 0 && ix < sortedAllBackups.Length)
+                    {
+                        toDelete.Add(sortedAllBackups[ix]);
+                    }
+                }
+            }
 
             // Remove backups that are older than date specified via option
             var keepTime = m_options.KeepTime;
             if (keepTime.Ticks > 0)
-                toDelete.AddRange(allBackups.SkipWhile(x => x >= keepTime));
+            {
+                toDelete.AddRange(sortedAllBackups.SkipWhile(x => x >= keepTime));
+            }
 
-            // Remove backups via rentention policy option
-            toDelete.AddRange(ApplyRetentionPolicy(allBackups));
+            // Remove backups via retention policy option
+            toDelete.AddRange(ApplyRetentionPolicy(db, sortedAllBackups));
 
-            // Check how many backups will be remaining after the previous steps
+            // Check how many full backups will be remaining after the previous steps
             // and remove oldest backups while there are still more backups than should be kept as specified via option
-            var backupsRemaining = allBackups.Except(toDelete).ToList();
-            var keepVersions = m_options.KeepVersions;
-            if (keepVersions > 0 && keepVersions < backupsRemaining.Count())
-                toDelete.AddRange(backupsRemaining.Skip(keepVersions));
+            var backupsRemaining = sortedAllBackups.Except(toDelete).ToList();
+            var fullVersionsToKeep = m_options.KeepVersions;
+            var fullVersionsKeptCount = 0;
+            if (fullVersionsToKeep > 0 && fullVersionsToKeep < backupsRemaining.Count)
+            {
+                // keep the number of full backups specified in fullVersionsToKeep.
+                // once the last full backup t okeep is found, also keep the partials immediately after it the full backup.
+                // add the remainder of full and partial backups to toDelete
+                bool foundLastFullBackupToKeep = false;
+                foreach (var backup in backupsRemaining)
+                {
+                    bool isFullBackup;
+                    if (fullVersionsKeptCount < fullVersionsToKeep)
+                    {
+                        isFullBackup = db.IsFilesetFullBackup(backup);
+                        // count only a full backup
+                        if (fullVersionsKeptCount < fullVersionsToKeep && isFullBackup)
+                        {
+                            fullVersionsKeptCount++;
+                        }
+                        continue;
+                    }
+                    // do not include any partial backup that precedes the last full backup
+                    if (!foundLastFullBackupToKeep)
+                    {
+                        isFullBackup = db.IsFilesetFullBackup(backup);
+                        if (!isFullBackup)
+                        {
+                            continue;
+                        }
+                        foundLastFullBackupToKeep = true;
+                    }
+                    toDelete.Add(backup);
+                }
+            }
 
-            var toDeleteDistinct = toDelete.Distinct().OrderByDescending(x => x.ToUniversalTime()).AsEnumerable();
+            var toDeleteDistinct = toDelete.Distinct().OrderByDescending(x => x.ToUniversalTime()).ToArray();
+            var removeCount = toDeleteDistinct.Length;
+            if (removeCount > sortedAllBackups.Length)
+            {
+                throw new Exception($"Too many entries {removeCount} vs {sortedAllBackups.Length}, lists: {string.Join(", ", toDeleteDistinct.Select(x => x.ToString(CultureInfo.InvariantCulture)))} vs {string.Join(", ", sortedAllBackups.Select(x => x.ToString(CultureInfo.InvariantCulture)))}");
+            }
 
-            var removeCount = toDeleteDistinct.Count();
-            if (removeCount > allBackups.Length)
-                throw new Exception(string.Format("Too many entries {0} vs {1}, lists: {2} vs {3}", removeCount, allBackups.Length, string.Join(", ", toDeleteDistinct.Select(x => x.ToString())), string.Join(", ", allBackups.Select(x => x.ToString()))));
-
-            return toDeleteDistinct.ToArray();
+            return toDeleteDistinct;
         }
 
         /// <summary>
@@ -220,7 +268,7 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <returns>The filesets to delete</returns>
         /// <param name="backups">The list of backups that can be deleted</param>
-        private List<DateTime> ApplyRetentionPolicy(DateTime[] backups)
+        private List<DateTime> ApplyRetentionPolicy(Database.LocalDeleteDatabase db, DateTime[] backups)
         {
             // Any work to do?
             var retentionPolicyOptionValues = m_options.RetentionPolicy;
@@ -238,7 +286,7 @@ namespace Duplicati.Library.Main.Operation
             clonedBackupList = clonedBackupList.OrderByDescending(x => x).ToList();
 
             // Most recent backup usually should never get deleted in this process, so exclude it for now,
-            // but keep a reference to potentiall delete it when allow-full-removal is set
+            // but keep a reference to potential delete it when allow-full-removal is set
             var mostRecentBackup = clonedBackupList.ElementAt(0);
             clonedBackupList.RemoveAt(0);
             var deleteMostRecentBackup = m_options.AllowFullRemoval;
@@ -264,7 +312,7 @@ namespace Duplicati.Library.Main.Operation
                 List<DateTime> backupsInTimeFrame = new List<DateTime>();
                 while (clonedBackupList.Count > 0 && clonedBackupList[0] >= timeFrame)
                 {
-                    backupsInTimeFrame.Insert(0, clonedBackupList[0]); // Insert at begining to reverse order, which is nessecary for next step
+                    backupsInTimeFrame.Insert(0, clonedBackupList[0]); // Insert at beginning to reverse order, which is necessary for next step
                     clonedBackupList.RemoveAt(0); // remove from here to not handle the same backup in two time frames
                 }
 
@@ -275,18 +323,31 @@ namespace Duplicati.Library.Main.Operation
                 DateTime? lastKept = null;
                 foreach (DateTime backup in backupsInTimeFrame)
                 {
+                    var isFullBackup = db.IsFilesetFullBackup(backup);
+
                     // Keep this backup if
                     // - no backup has yet been added to the time frame (keeps at least the oldest backup in a time frame)
                     // - difference between last added backup and this backup is bigger than the specified interval
                     if (lastKept == null || singleRetentionPolicyOptionValue.IsKeepAllVersions() || (backup - lastKept.Value) >= singleRetentionPolicyOptionValue.Interval)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "KeepBackups", string.Format("Keeping backup: {0}", backup), Logging.LogMessageType.Profiling);
-                        lastKept = backup;
+                        Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "KeepBackups", $"Keeping {(isFullBackup ? "" : "partial")} backup: {backup}", Logging.LogMessageType.Profiling);
+                        if (isFullBackup)
+                        {
+                            lastKept = backup;
+                        }
                     }
                     else
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "DeletingBackups", "Deleting backup: {0}", backup);
-                        backupsToDelete.Add(backup);
+                        if (isFullBackup)
+                        {
+                            Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "DeletingBackups",
+                                "Deleting backup: {0}", backup);
+                            backupsToDelete.Add(backup);
+                        }
+                        else
+                        {
+                            Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "KeepBackups", $"Keeping partial backup: {backup}", Logging.LogMessageType.Profiling);
+                        }
                     }
                 }
 

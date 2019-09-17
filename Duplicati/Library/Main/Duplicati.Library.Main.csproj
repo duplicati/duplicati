@@ -226,6 +226,7 @@
   </Target>
   -->
   <ItemGroup>
+    <EmbeddedResource Include="Database\Database schema\10. Add IsFullBackup to Fileset table.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
