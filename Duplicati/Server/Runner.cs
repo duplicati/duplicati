@@ -219,6 +219,7 @@ namespace Duplicati.Server
                 internal string m_currentFilename;
                 internal long m_currentFilesize;
                 internal long m_currentFileoffset;
+                internal bool m_currentFilecomplete;
 
                 internal Duplicati.Library.Main.OperationPhase m_phase;
                 internal float m_overallProgress;
@@ -251,6 +252,7 @@ namespace Duplicati.Server
                 public string CurrentFilename { get { return m_currentFilename; } }
                 public long CurrentFilesize { get { return m_currentFilesize; } }
                 public long CurrentFileoffset { get { return m_currentFileoffset; } }
+                public bool CurrentFilecomplete { get { return m_currentFilecomplete; } }
                 public string Phase { get { return  m_phase.ToString(); } }
                 public float OverallProgress { get { return m_overallProgress; } }
                 public long ProcessedFileCount { get { return m_processedFileCount; } }
@@ -279,7 +281,7 @@ namespace Duplicati.Server
                         m_backendProgress.Update(out m_state.m_backendAction, out m_state.m_backendPath, out m_state.m_backendFileSize, out m_state.m_backendFileProgress, out m_state.m_backendSpeed, out m_state.m_backendIsBlocking);
                     if (m_operationProgress != null)
                     {
-                        m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset);
+                        m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset, out m_state.m_currentFilecomplete);
                         m_operationProgress.UpdateOverall(out m_state.m_phase, out m_state.m_overallProgress, out m_state.m_processedFileCount, out m_state.m_processedFileSize, out m_state.m_totalFileCount, out m_state.m_totalFileSize, out m_state.m_stillCounting);
                     }
 
