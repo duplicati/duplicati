@@ -1,6 +1,6 @@
-﻿using Duplicati.Library.Interface;
-using System;
+﻿using System;
 using System.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -67,13 +67,21 @@ namespace Duplicati.Library.Main.Volumes
             if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && m_compression is Library.Interface.ICompressionHinting)
                 ((Library.Interface.ICompressionHinting)m_compression).LowOverheadMode = true;
 
-            AddManifestfile();
+            AddManifestFile();
         }
 
-        protected void AddManifestfile()
+        protected void AddManifestFile()
         {
             using (var sr = new StreamWriter(m_compression.CreateFile(MANIFEST_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
                 sr.Write(ManifestData.GetManifestInstance(m_blocksize, m_blockhash, m_filehash));
+        }
+
+        public void CreateFilesetFile(bool isFullBackup)
+        {
+            using (var sr = new StreamWriter(m_compression.CreateFile(FILESET_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
+            {
+                sr.Write(FilesetData.GetFilesetInstance(isFullBackup));
+            }
         }
 
         public virtual void Dispose()

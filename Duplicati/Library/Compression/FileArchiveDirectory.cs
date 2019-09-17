@@ -22,7 +22,6 @@ using System.Linq;
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 
@@ -117,7 +116,7 @@ namespace Duplicati.Library.Compression
             System.IO.File.SetLastWriteTime(path, lastWrite);
             return res;
         }
-
+        
         /// <summary>
         /// Returns a value that indicates if the file exists
         /// </summary>

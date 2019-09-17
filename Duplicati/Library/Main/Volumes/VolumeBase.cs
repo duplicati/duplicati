@@ -6,6 +6,20 @@ namespace Duplicati.Library.Main.Volumes
 {
     public abstract class VolumeBase
     {
+        public class FilesetData
+        {
+            [JsonProperty("IsFullBackup")]
+            public bool IsFullBackup { get; set; } = true;
+
+            public static string GetFilesetInstance(bool isFullBackup = true)
+            {
+                return JsonConvert.SerializeObject(new FilesetData
+                {
+                    IsFullBackup = isFullBackup
+                });
+            }
+        }
+
         protected class ManifestData
         {
             public static readonly string ENCODING = "utf8";
@@ -36,6 +50,7 @@ namespace Duplicati.Library.Main.Volumes
             public static void VerifyManifest(string manifest, long blocksize, string blockhash, string filehash)
             {
                 var d = JsonConvert.DeserializeObject<ManifestData>(manifest);
+
                 if (d.Version > VERSION)
                     throw new InvalidManifestException("Version", d.Version.ToString(), VERSION.ToString());
                 if (d.Encoding != ENCODING)
@@ -153,7 +168,8 @@ namespace Duplicati.Library.Main.Volumes
         {
             return ParsedVolume.Parse(filename);
         }
-        
+
+        protected const string FILESET_FILENAME = "fileset";
         protected const string MANIFEST_FILENAME = "manifest";
         protected const string FILELIST = "filelist.json";
 

@@ -60,6 +60,7 @@ CREATE TABLE "Fileset" (
 	"ID" INTEGER PRIMARY KEY,
 	"OperationID" INTEGER NOT NULL,
 	"VolumeID" INTEGER NOT NULL,
+	"IsFullBackup" INTEGER NOT NULL,
 	"Timestamp" INTEGER NOT NULL
 );
 
@@ -274,4 +275,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (9);
+INSERT INTO "Version" ("Version") VALUES (10);
