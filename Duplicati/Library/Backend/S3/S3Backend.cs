@@ -41,90 +41,96 @@ namespace Duplicati.Library.Backend
         public const string LOCATION_OPTION = "s3-location-constraint";
         public const string SSL_OPTION = "use-ssl";
 
-        public static readonly KeyValuePair<string, string>[] KNOWN_S3_PROVIDERS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("Amazon S3", "s3.amazonaws.com"),
-            new KeyValuePair<string, string>("Hosteurope", "cs.hosteurope.de"),
-            new KeyValuePair<string, string>("Dunkel", "dcs.dunkel.de"),
-            new KeyValuePair<string, string>("DreamHost", "objects.dreamhost.com"),
-            new KeyValuePair<string, string>("dinCloud - Chicago", "d3-ord.dincloud.com"),
-            new KeyValuePair<string, string>("dinCloud - Los Angeles", "d3-lax.dincloud.com"),
-            new KeyValuePair<string, string>("IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net"),
-            new KeyValuePair<string, string>("Wasabi Hot Storage", "s3.wasabisys.com"),
-            new KeyValuePair<string, string>("Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com"),
-            new KeyValuePair<string, string>("Wasabi Hot Storage (EU Central)", "s3.eu-central-1.wasabisys.com"),
+        public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            { "Amazon S3", "s3.amazonaws.com" },
+            { "Hosteurope", "cs.hosteurope.de" },
+            { "Dunkel", "dcs.dunkel.de" },
+            { "DreamHost", "objects.dreamhost.com" },
+            { "dinCloud - Chicago", "d3-ord.dincloud.com" },
+            { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
+            { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
+            { "Wasabi Hot Storage", "s3.wasabisys.com" },
+            { "Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com" },
+            { "Wasabi Hot Storage (EU Central)", "s3.eu-central-1.wasabisys.com" },
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
-        public static readonly KeyValuePair<string, string>[] KNOWN_S3_LOCATIONS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("(default)", ""),
-            new KeyValuePair<string, string>("Europe (EU)", "EU"),
-            new KeyValuePair<string, string>("Europe (EU, Frankfurt)", "eu-central-1"),
-            new KeyValuePair<string, string>("Europe (EU, Ireland)", "eu-west-1"),
-            new KeyValuePair<string, string>("Europe (EU, London)", "eu-west-2"),
-            new KeyValuePair<string, string>("Europe (EU, Paris)", "eu-west-3"),
-            new KeyValuePair<string, string>("Europe (EU, Stockholm)", "eu-north-1"),
-            new KeyValuePair<string, string>("US East (Northern Virginia)", "us-east-1"),
-            new KeyValuePair<string, string>("US East (Ohio)", "us-east-2"),
-            new KeyValuePair<string, string>("US West (Northern California)", "us-west-1"),
-            new KeyValuePair<string, string>("US West (Oregon)", "us-west-2"),
-            new KeyValuePair<string, string>("Canada (Central)", "ca-central-1"),
-            new KeyValuePair<string, string>("Asia Pacific (Mumbai)", "ap-south-1"),
-            new KeyValuePair<string, string>("Asia Pacific (Singapore)", "ap-southeast-1"),
-            new KeyValuePair<string, string>("Asia Pacific (Sydney)", "ap-southeast-2"),
-            new KeyValuePair<string, string>("Asia Pacific (Tokyo)", "ap-northeast-1"),
-            new KeyValuePair<string, string>("Asia Pacific (Seoul)", "ap-northeast-2"),
-            new KeyValuePair<string, string>("Asia Pacific (Osaka-Local)", "ap-northeast-3"),
-            new KeyValuePair<string, string>("South America (São Paulo)", "sa-east-1"),
-            new KeyValuePair<string, string>("China (Beijing)", "cn-north-1"),
-            new KeyValuePair<string, string>("China (Ningxia)", "cn-northwest-1"),
+        public static readonly Dictionary<string, string> KNOWN_S3_LOCATIONS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+            { "(default)", "" },
+            { "Europe (EU)", "EU" },
+            { "Europe (EU, Frankfurt)", "eu-central-1" },
+            { "Europe (EU, Ireland)", "eu-west-1" },
+            { "Europe (EU, London)", "eu-west-2" },
+            { "Europe (EU, Paris)", "eu-west-3" },
+            { "Europe (EU, Stockholm)", "eu-north-1" },
+            { "US East (Northern Virginia)", "us-east-1" },
+            { "US East (Ohio)", "us-east-2" },
+            { "US West (Northern California)", "us-west-1" },
+            { "US West (Oregon)", "us-west-2" },
+            { "Canada (Central)", "ca-central-1" },
+            { "Asia Pacific (Hong Kong)", "ap-east-1" },
+            { "Asia Pacific (Mumbai)", "ap-south-1" },
+            { "Asia Pacific (Singapore)", "ap-southeast-1" },
+            { "Asia Pacific (Sydney)", "ap-southeast-2" },
+            { "Asia Pacific (Tokyo)", "ap-northeast-1" },
+            { "Asia Pacific (Seoul)", "ap-northeast-2" },
+            { "Asia Pacific (Osaka-Local)", "ap-northeast-3" },
+            { "South America (São Paulo)", "sa-east-1" },
+            { "China (Beijing)", "cn-north-1" },
+            { "China (Ningxia)", "cn-northwest-1" },
+            { "Middle East (Bahrain)", "me-south-1" },
         };
 
-        public static readonly KeyValuePair<string, string>[] DEFAULT_S3_LOCATION_BASED_HOSTS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("EU", "s3-eu-west-1.amazonaws.com"),
-            new KeyValuePair<string, string>("ca-central-1", "s3-ca-central-1.amazonaws.com"),
-            new KeyValuePair<string, string>("eu-west-1", "s3-eu-west-1.amazonaws.com"),
-            new KeyValuePair<string, string>("eu-west-2", "s3-eu-west-2.amazonaws.com"),
-            new KeyValuePair<string, string>("eu-west-3", "s3-eu-west-3.amazonaws.com"),
-            new KeyValuePair<string, string>("eu-north-1", "s3-eu-north-1.amazonaws.com"),
-            new KeyValuePair<string, string>("eu-central-1", "s3-eu-central-1.amazonaws.com"),
-            new KeyValuePair<string, string>("us-east-1", "s3.amazonaws.com"),
-            new KeyValuePair<string, string>("us-east-2", "s3.us-east-2.amazonaws.com"),
-            new KeyValuePair<string, string>("us-west-1", "s3-us-west-1.amazonaws.com"),
-            new KeyValuePair<string, string>("us-west-2", "s3-us-west-2.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-south-1", "s3-ap-south-1.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-southeast-1", "s3-ap-southeast-1.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-southeast-2", "s3-ap-southeast-2.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-northeast-1", "s3-ap-northeast-1.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-northeast-2", "s3-ap-northeast-2.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-northeast-3", "s3-ap-northeast-3.amazonaws.com"),
-            new KeyValuePair<string, string>("sa-east-1", "s3-sa-east-1.amazonaws.com"),
-            new KeyValuePair<string, string>("cn-north-1", "s3.cn-north-1.amazonaws.com.cn"),
-            new KeyValuePair<string, string>("cn-northwest-1", "s3.cn-northwest-1.amazonaws.com.cn"),
+        public static readonly Dictionary<string, string> DEFAULT_S3_LOCATION_BASED_HOSTS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+            { "EU", "s3.eu-west-1.amazonaws.com" },
+            { "ca-central-1", "s3.ca-central-1.amazonaws.com" },
+            { "eu-west-1", "s3.eu-west-1.amazonaws.com" },
+            { "eu-west-2", "s3.eu-west-2.amazonaws.com" },
+            { "eu-west-3", "s3.eu-west-3.amazonaws.com" },
+            { "eu-north-1", "s3.eu-north-1.amazonaws.com" },
+            { "eu-central-1", "s3.eu-central-1.amazonaws.com" },
+            { "us-east-1", "s3.amazonaws.com" },
+            { "us-east-2", "s3.us-east-2.amazonaws.com" },
+            { "us-west-1", "s3.us-west-1.amazonaws.com" },
+            { "us-west-2", "s3.us-west-2.amazonaws.com" },
+            { "ap-east-1", "s3.ap-east-1.amazonaws.com" },
+            { "ap-south-1", "s3.ap-south-1.amazonaws.com" },
+            { "ap-southeast-1", "s3.ap-southeast-1.amazonaws.com" },
+            { "ap-southeast-2", "s3.ap-southeast-2.amazonaws.com" },
+            { "ap-northeast-1", "s3.ap-northeast-1.amazonaws.com" },
+            { "ap-northeast-2", "s3.ap-northeast-2.amazonaws.com" },
+            { "ap-northeast-3", "s3.ap-northeast-3.amazonaws.com" },
+            { "sa-east-1", "s3.sa-east-1.amazonaws.com" },
+            { "cn-north-1", "s3.cn-north-1.amazonaws.com.cn" },
+            { "cn-northwest-1", "s3.cn-northwest-1.amazonaws.com.cn" },
+            { "me-south-1", "s3.me-south-1.amazonaws.com.cn" },
         };
 
-        public static readonly KeyValuePair<string, string>[] KNOWN_S3_STORAGE_CLASSES;
+        public static readonly Dictionary<string, string> KNOWN_S3_STORAGE_CLASSES;
 
         static S3()
         {
-            var ns = new List<KeyValuePair<string, string>> {
-                new KeyValuePair<string, string>("(default)", ""),
-                new KeyValuePair<string, string>("Standard", "STANDARD"),
-                new KeyValuePair<string, string>("Infrequent Access (IA)", "STANDARD_IA"),
-                new KeyValuePair<string, string>("Glacier", "GLACIER"),
-                new KeyValuePair<string, string>("Reduced Redundancy Storage (RRS)", "REDUCED_REDUNDANCY"),
+            var ns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+                { "(default)", "" },
+                { "Standard", "STANDARD" },
+                { "Infrequent Access (IA)", "STANDARD_IA" },
+                { "One Zone Infrequent Access (One Zone IA)", "ONEZONE_IA" },
+                { "Glacier", "GLACIER" },
+                { "Deep Archive", "DEEP_ARCHIVE" },
+                { "Reduced Redundancy Storage (RRS)", "REDUCED_REDUNDANCY" },
             };
 
             try
             {
                 foreach (var sc in ReadStorageClasses())
-                    if (!ns.Select(x => x.Value).Contains(sc.Value))
-                        ns.Add(sc);
+                    if (!ns.Select(x => x.Value).Contains(sc.Value, StringComparer.OrdinalIgnoreCase))
+                        ns.Add(sc.Key, sc.Value);
             }
             catch
             {
             }
 
-            KNOWN_S3_STORAGE_CLASSES = ns.ToArray();
+            KNOWN_S3_STORAGE_CLASSES = ns;
         }
 
         /// <summary>
@@ -218,12 +224,10 @@ namespace Duplicati.Library.Backend
 
                 //Change in S3, now requires that you use location specific endpoint
                 if (!string.IsNullOrEmpty(locationConstraint))
-                    foreach (KeyValuePair<string, string> kvp in DEFAULT_S3_LOCATION_BASED_HOSTS)
-                        if (kvp.Key.Equals(locationConstraint, StringComparison.OrdinalIgnoreCase))
-                        {
-                            s3host = kvp.Value;
-                            break;
-                        }
+                {
+                    if (DEFAULT_S3_LOCATION_BASED_HOSTS.TryGetValue(locationConstraint, out var s3hostmatch))
+                        s3host = s3hostmatch;
+                }
             }
 
             //Fallback to previous formats
@@ -406,10 +410,10 @@ namespace Duplicati.Library.Backend
             {
                 StringBuilder hostnames = new StringBuilder();
                 StringBuilder locations = new StringBuilder();
-                foreach (KeyValuePair<string, string> s in KNOWN_S3_PROVIDERS)
+                foreach (var s in KNOWN_S3_PROVIDERS)
                     hostnames.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
-                foreach (KeyValuePair<string, string> s in KNOWN_S3_LOCATIONS)
+                foreach (var s in KNOWN_S3_LOCATIONS)
                     locations.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
                 var defaults = new Amazon.S3.AmazonS3Config();
