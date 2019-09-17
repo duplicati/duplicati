@@ -48,6 +48,15 @@ namespace Duplicati.UnitTest
             }
         }
 
+        public static void ReplaceFileData(string filename, int position, byte[] data)
+        {
+            using (Stream stream = File.Open(filename, FileMode.Open))
+            {
+                stream.Position = position;
+                stream.Write(data, 0, data.Length);
+            }
+        }
+
         public static async Task GrowingFile(string testFile, CancellationToken token)
         {
             try
