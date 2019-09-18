@@ -1369,22 +1369,6 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the size the read-ahead buffer
-        /// </summary>
-        public long FileReadBufferSize
-        {
-            get
-            {
-                string tmp;
-                if (!m_options.TryGetValue("file-read-buffer-size", out tmp))
-                    tmp = DEFAULT_READ_BUFFER_SIZE;
-
-                long t = Library.Utility.Sizeparser.ParseSize(tmp, "mb");                
-                return (int)t;
-            }
-        }
-
-        /// <summary>
         /// Gets a flag indicating if metadata for files and folders should be ignored
         /// </summary>
         public bool SkipMetadata
