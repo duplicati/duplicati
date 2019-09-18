@@ -528,11 +528,6 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public long GetFilesetID(DateTime restoretime, long[] versions)
-        {
-            return GetFilesetIDs(restoretime, versions).First();
-        }
-
         public IEnumerable<long> GetFilesetIDs(DateTime restoretime, long[] versions)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
