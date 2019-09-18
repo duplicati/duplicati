@@ -1,3 +1,18 @@
+2019-09-17 - 2.0.4.29_canary_2019-09-17
+==========
+* Added workaround for bug in Mono 6.0, thanks @warwickmm
+* Extra logging during database recreates, thanks @drwtsn32x
+* Added options to MSI installer for parameterized installs, thanks @BlueBlock
+* Improved debug building, thanks @BlueBlock
+* Updated packages: FluentFTP, CoCoL, Microsoft.Azure, AWSSDK, MailKit, MimeKit, thanks @BlueBlock
+* Improved progress bar status, thanks @drwtsn32x
+* Fixed a parsing issue when reading the server path in the UI, thanks @FlyingFox333
+* Code quality improvements, thanks @warwickmm
+* Added code to actually remove purged volumes, thanks @BlueBlock
+* Updated bundled GPG and checking for user-installed GPG on Windows, thanks @BlueBlock
+* Improved handling of the "Stop after current file" method, thnaks @BlueBlock
+* Updated list of S3 locations and storage classes, thanks @kenkendk
+
 2019-09-05 - 2.0.4.28_canary_2019-09-05
 ==========
 * Updated CoCoL and WiX to fix rollback and upgrade errors, thanks @BlueBlock
