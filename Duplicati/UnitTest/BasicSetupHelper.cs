@@ -93,7 +93,7 @@ namespace Duplicati.UnitTest
         }
 
         [SetUp]
-        public void SetUp()
+        public virtual void SetUp()
         {
             Directory.CreateDirectory(this.DATAFOLDER);
             Directory.CreateDirectory(this.TARGETFOLDER);

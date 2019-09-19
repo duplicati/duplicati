@@ -1566,14 +1566,14 @@ ORDER BY
 
             return new KeyValuePair<string, string>(string.Empty, path);
         }
+    }
 
-        /// <summary>
-        /// Defines the backups types
-        /// </summary>
-        public static class BackupType
-        {
-            public const int PARTIAL_BACKUP = 0;
-            public const int FULL_BACKUP = 1;
-        }
+    /// <summary>
+    /// Defines the backups types
+    /// </summary>
+    public static class BackupType
+    {
+        public const int PARTIAL_BACKUP = 0;
+        public const int FULL_BACKUP = 1;
     }
 }

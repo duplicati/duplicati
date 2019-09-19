@@ -64,6 +64,7 @@ jobs:
     - env: CATEGORY=WebApi
     - env: CATEGORY=IO
     - env: CATEGORY=ImportExport
+    - env: CATEGORY=Disruption
 
     - env: CATEGORY=GUI
       addons:
