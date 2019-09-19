@@ -1385,7 +1385,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Special characters that needs to be escaped on Linux
         /// </summary>
-        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""|$|`|\\|!]");
+        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""$`\\!]");
 
         /// <summary>
         /// Wraps a single argument in quotes suitable for the passing on the commandline
