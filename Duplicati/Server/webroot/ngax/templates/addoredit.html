@@ -152,7 +152,7 @@
                     <div class="input text overlayButton">
                         <input type="text" name="sourcePath" id="sourcePath" placeholder="{{'Add a path directly' | translate}}" ng-model="manualSourcePath" ng-disabled="validatingSourcePath" />
                         <a href id="sourceFolderPathAdd" class="button"  ng-disabled="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" ng-click="addManualSourcePath()">
-                            <span ng-show="validatingSourcePath" translate>Validating ...</span>
+                            <span ng-show="validatingSourcePath" translate>Validating …</span>
                             <span ng-hide="validatingSourcePath" translate>Add path</span>
                         </a>
                     </div>

@@ -5,7 +5,7 @@
 # 
 # Translators:
 # Dxball <toby0520@gmail.com>, 2017
-# Jason Cheng <sanyu3u@gmail.com>, 2018
+# Jason Cheng <sanyu3u@gmail.com>, 2019
 # 
 #, fuzzy
 msgid ""
@@ -14,7 +14,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-12-11 12:26+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Jason Cheng <sanyu3u@gmail.com>, 2018\n"
+"Last-Translator: Jason Cheng <sanyu3u@gmail.com>, 2019\n"
 "Language-Team: Chinese (Taiwan) (https://www.transifex.com/duplicati/teams/67655/zh_TW/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -44,6 +44,8 @@ msgid ""
 "Supported commandline arguments:\n"
 "\n"
 msgstr ""
+"支援的命令列參數：\n"
+"\n"
 
 #: Server/Strings.cs:14
 #, csharp-format
@@ -206,7 +208,7 @@ msgstr ""
 
 #: Server/Strings.cs:43 Library/Main/Strings.cs:74
 msgid "Temporary storage folder"
-msgstr ""
+msgstr "暫存儲存資料夾"
 
 #: Server/Strings.cs:44 Library/Main/Strings.cs:75
 msgid ""
@@ -251,7 +253,7 @@ msgstr "內建 AES-256 加密演算法"
 
 #: Library/Encryption/Strings.cs:6
 msgid "Empty passphrase not allowed"
-msgstr ""
+msgstr "不允許空密碼"
 
 #: Library/Encryption/Strings.cs:7
 msgid ""
@@ -361,7 +363,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:31
 msgid "The GPG encryption command"
-msgstr ""
+msgstr "GPG 加密指令"
 
 #: Library/Encryption/Strings.cs:34
 #, csharp-format
@@ -465,7 +467,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:29
 msgid "You must enter the name of the server"
-msgstr ""
+msgstr "您必需輸入伺服器的名稱"
 
 #: Library/Interface/Strings.cs:30
 msgid "You must enter a username"
@@ -572,7 +574,7 @@ msgstr ""
 
 #: Library/Snapshots/Strings.cs:18
 msgid "USN is not supported on Linux"
-msgstr ""
+msgstr "USN 在 Linux 上不支援"
 
 #: Library/Snapshots/Strings.cs:19
 msgid ""
@@ -605,7 +607,7 @@ msgstr ""
 #: Library/Backend/OpenStack/Strings.cs:25
 #, csharp-format
 msgid "Missing required option: {0}"
-msgstr ""
+msgstr "缺少必要選項：{0}"
 
 #: Library/Backend/OpenStack/Strings.cs:26
 #, csharp-format
@@ -694,11 +696,11 @@ msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:38
 msgid "The keystone API version to use, valid values are 'v2' and 'v3'."
-msgstr ""
+msgstr "keystone API 版本使用，提供 'v2' 與 'v3' 可選擇。"
 
 #: Library/Backend/OpenStack/Strings.cs:39
 msgid "The keystone API version to use"
-msgstr ""
+msgstr "keystone API 版本使用"
 
 #: Library/Backend/OpenStack/Strings.cs:40
 msgid ""
@@ -787,7 +789,7 @@ msgstr ""
 #: Library/Backend/FTP/Strings.cs:22
 #: Library/Backend/AlternativeFTP/Strings.cs:18
 msgid "Disable upload verification"
-msgstr ""
+msgstr "停用上傳驗證"
 
 #: Library/Backend/FTP/Strings.cs:23
 msgid ""
@@ -2505,11 +2507,11 @@ msgstr ""
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
-msgstr ""
+msgstr "當您做檔案搜尋時，只會在最新的備份裡搜尋。可以透過此選項來顯示與搜尋所有先前的版本。"
 
 #: Library/Main/Strings.cs:61
 msgid "Show all versions"
-msgstr ""
+msgstr "顯示所有版本"
 
 #: Library/Main/Strings.cs:62
 msgid ""
@@ -2544,11 +2546,11 @@ msgstr ""
 
 #: Library/Main/Strings.cs:68
 msgid "Use this option to attach extra files to the newly uploaded filelists."
-msgstr ""
+msgstr "此選項可以將額外的檔案附加到新上載檔案清單。"
 
 #: Library/Main/Strings.cs:69
 msgid "Set control files"
-msgstr ""
+msgstr "設定控制檔案"
 
 #: Library/Main/Strings.cs:70
 msgid ""
@@ -2599,7 +2601,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:81
 msgid "Disables use of the streaming transfer method"
-msgstr ""
+msgstr "停用串流傳輸方式"
 
 #: Library/Main/Strings.cs:82
 msgid ""
@@ -2706,11 +2708,11 @@ msgstr ""
 
 #: Library/Main/Strings.cs:100
 msgid "Log internal information to a file"
-msgstr ""
+msgstr "記錄內部資訊到檔案"
 
 #: Library/Main/Strings.cs:101
 msgid "Logs information to the file specified"
-msgstr ""
+msgstr "記錄資訊至指定檔案"
 
 #: Library/Main/Strings.cs:102 Library/Main/Strings.cs:253
 msgid ""
@@ -2720,7 +2722,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:103
 msgid "Log information level"
-msgstr ""
+msgstr "記錄資訊等級"
 
 #: Library/Main/Strings.cs:104
 #, csharp-format
@@ -2997,11 +2999,11 @@ msgstr ""
 msgid ""
 "This option can be used to supply a list of deleted files. This option will "
 "be ignored unless the option --{0} is also set."
-msgstr ""
+msgstr "提供已刪除檔案的清單。若已設定 --{0} ，則此選項將被忽略。"
 
 #: Library/Main/Strings.cs:149
 msgid "List of deleted files"
-msgstr ""
+msgstr "已刪除檔案清單"
 
 #: Library/Main/Strings.cs:151
 msgid "Memory used by the file hash"
@@ -3146,7 +3148,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:178
 msgid "Disables the local database"
-msgstr ""
+msgstr "停用本機資料庫"
 
 #: Library/Main/Strings.cs:179
 msgid ""
@@ -3521,7 +3523,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:250
 msgid "Disable the backup when on battery power"
-msgstr ""
+msgstr "在低電量時停用備份作業"
 
 #: Library/Main/Strings.cs:251
 msgid ""
@@ -3533,7 +3535,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:254
 msgid "Log file information level"
-msgstr ""
+msgstr "記錄檔案資訊等級"
 
 #: Library/Main/Strings.cs:255
 msgid "Applies filters to the file log data"
@@ -3551,7 +3553,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:257
 msgid "Specifies the amount of log information to write as console output"
-msgstr ""
+msgstr "指定要輸出到主控台的記錄資訊數量"
 
 #: Library/Main/Strings.cs:258
 msgid "Console information level"
@@ -3699,7 +3701,7 @@ msgstr "允許所有伺服器憑證"
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash (SHA1) to approve it "
+"certificates), you can supply the certificate hash (SHA256) to approve it "
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
@@ -3717,7 +3719,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:27
 msgid "Disable the expect header"
-msgstr ""
+msgstr "停用 expect header"
 
 #: Library/Modules/Builtin/Strings.cs:28
 msgid ""
@@ -3778,14 +3780,14 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:39
 msgid "Sets HTTP buffering"
-msgstr ""
+msgstr "設定 HTTP 緩衝處理"
 
 #: Library/Modules/Builtin/Strings.cs:40
 #, csharp-format
 msgid ""
 "This option sets the HTTP buffering. Setting this to \"{0}\" can cause "
 "memory leaks, but can also improve performance in some cases."
-msgstr ""
+msgstr "此選項用於設置 HTTP 緩衝處理。設定為 \"{0}\" 將會導致記憶體洩漏，但在某些情況下會提高效能。"
 
 #: Library/Modules/Builtin/Strings.cs:43
 msgid ""
@@ -3928,11 +3930,11 @@ msgstr "訊息內容"
 
 #: Library/Modules/Builtin/Strings.cs:84
 msgid "The password used to authenticate with the SMTP server if required."
-msgstr ""
+msgstr "若 SMTP 伺服器要求驗證，請輸入密碼。"
 
 #: Library/Modules/Builtin/Strings.cs:85
 msgid "SMTP Password"
-msgstr ""
+msgstr "SMTP 密碼"
 
 #: Library/Modules/Builtin/Strings.cs:86
 msgid ""
@@ -3968,7 +3970,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:99
 msgid "Email sender"
-msgstr ""
+msgstr "Email 寄件人"
 
 #: Library/Modules/Builtin/Strings.cs:100
 #, csharp-format
@@ -3992,10 +3994,13 @@ msgid ""
 "\n"
 "To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
 msgstr ""
+"SMTP 伺服器的位址，例如 smtp://example.com:25。可以在列表中提供多的伺服器，並依據順序決定優先權，若連接伺服器失敗，會往下重試直到訊息發送完畢。\n"
+"如果沒有設定伺服器，那麼將會由 DNS 反解來找尋郵件接收者的 MX 記錄，並依據優先權嘗試所有 SMTP 伺服器，直到訊息發送完畢為止。\n"
+"要啟用 SMTP over SSL，請使用格式 smtps://example.com。要啟用 SMTP STARTTLS，請使用格式 smtp://example.com:25/?starttls=when-available 或 smtp://example.com:25/?starttls=always。如果沒有指定連接埠，25 將用於非 SSL，465 用於 SSL 連線。若要強制不用 STARTTLS，請使用 smtp://example.com:25/?starttls=never。"
 
 #: Library/Modules/Builtin/Strings.cs:106
 msgid "SMTP Url"
-msgstr ""
+msgstr "SMTP 位址"
 
 #: Library/Modules/Builtin/Strings.cs:107
 #, csharp-format
@@ -4010,11 +4015,11 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:109
 msgid "The username used to authenticate with the SMTP server if required."
-msgstr ""
+msgstr "若 SMTP 伺服器要求驗證，請輸入使用者名稱。"
 
 #: Library/Modules/Builtin/Strings.cs:110
 msgid "SMTP Username"
-msgstr ""
+msgstr "SMTP 使用者名稱"
 
 #: Library/Modules/Builtin/Strings.cs:111
 #, csharp-format
@@ -4049,7 +4054,7 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:119
 #: Library/Modules/Builtin/Strings.cs:149
 msgid "The message template"
-msgstr "訊息樣板"
+msgstr "訊息範本"
 
 #: Library/Modules/Builtin/Strings.cs:120
 #: Library/Modules/Builtin/Strings.cs:150
@@ -4201,7 +4206,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:181
 msgid "Limits log lines"
-msgstr ""
+msgstr "限制記錄行數"
 
 #: Library/Modules/Builtin/Strings.cs:182
 msgid ""

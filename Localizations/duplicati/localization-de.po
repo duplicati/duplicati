@@ -37,6 +37,8 @@
 # Manfred Mueller <manfred.mueller@fluxflux.net>, 2018
 # Philip De, 2018
 # sfahrenholz, 2018
+# RiseT, 2019
+# Martin Posselt <nekomajin@gmx.de>, 2019
 # 
 #, fuzzy
 msgid ""
@@ -45,7 +47,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-12-11 12:26+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: sfahrenholz, 2018\n"
+"Last-Translator: Martin Posselt <nekomajin@gmx.de>, 2019\n"
 "Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -97,15 +99,15 @@ msgid ""
 "parameter file. Each filter must be prefixed with either a + or a -, and "
 "multiple filters must be joined with {5} "
 msgstr ""
-"Diese Option kann genutzt werden um einige oder alle Optionen des "
+"Diese Option kann genutzt werden, um einige oder alle Optionen des "
 "Kommandozeilen Clients zu speichern. Bei der Datei muss es sich um eine "
 "einfache Textdatei handeln, bestenfalls UTF-8 kodiert. Jede Zeile in der "
 "Datei sollte folgendes Format haben: --option=Wert. Die speziellen Optionen "
-"--{0} und --{1} können verwendet werden um die lokale URL, bzw. die remote "
+"--{0} und --{1} können verwendet werden, um die lokale URL, bzw. die remote "
 "URL zu überschreiben. Die Optionen in der Datei haben Vorrang vor den "
 "Optionen der Kommandozeile. Es ist nicht möglich Filter in der Datei und auf"
 " der Kommandozeile anzugeben. Stattdessen gibt es die Spezialoptionen --{2},"
-" --{3} oder --{4} um die Filter innerhalb der Parameterdatei anzugeben. "
+" --{3} oder --{4}, um die Filter innerhalb der Parameterdatei anzugeben. "
 "Jeder Filter muss als Präfix entweder ein + oder ein - enthalten und mehrere"
 " Filter müssen mit {5} verknüpft werden."
 
@@ -123,7 +125,7 @@ msgid ""
 msgstr ""
 "Filter können nicht in der Kommandozeile angegeben werden, wenn bereits "
 "Filter in der Parameterdatei enthalten sind. Verwende die Spezialoptionen "
-"--{0}, --{1} oder --{2} um Filter innerhalb der Parameterdatei anzugeben. "
+"--{0}, --{1} oder --{2}, um Filter innerhalb der Parameterdatei anzugeben. "
 "Jeder Filter muss als Präfix entweder ein + oder ein - enthalten und mehrere"
 " Filter müssen mit {3} verknüpft werden."
 
@@ -145,7 +147,7 @@ msgid ""
 "Activates portable mode where the database is placed below the program "
 "executable"
 msgstr ""
-"Aktivierten den Portable Mode bei dem die Datenbank neben dem ausführbaren "
+"Aktiviert den Portable Mode bei dem die Datenbank neben dem ausführbaren "
 "Programm abgelegt wird."
 
 #: Server/Strings.cs:23
@@ -199,7 +201,7 @@ msgstr ""
 
 #: Server/Strings.cs:31
 msgid "The password for decryption of certificate PKCS #12 file."
-msgstr "Passwort für die Entschlüsselung der Zertifikat-PKCS #12 Datei."
+msgstr "Passwort für die Entschlüsselung der Zertifikat-PKCS #12-Datei."
 
 #: Server/Strings.cs:32
 msgid ""
@@ -281,10 +283,10 @@ msgid ""
 "database. This option can also be set with the environment variable {0}. Use"
 " the option --{1} to disable the database scrambling."
 msgstr ""
-"Diese Option setzt den Schlüssel um die Lokale Einstellungsdatenbank zu "
+"Diese Option setzt den Schlüssel, um die lokale Einstellungsdatenbank zu "
 "verschlüsseln. Diese kann ebenso durch die Umgebungsvariable {0} gesetzt "
-"werden. Benutzen Sie die Option --{1} um das verschlüsseln der Datenbank zu "
-"deaktivieren."
+"werden. Benutzen Sie die Option --{1}, um das Verschlüsseln der Datenbank zu"
+" deaktivieren."
 
 #: Server/Strings.cs:43 Library/Main/Strings.cs:74
 msgid "Temporary storage folder"
@@ -307,8 +309,8 @@ msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr ""
-"Konnte kein gültiges Datum finden, das Anfangsdatum {0}, das "
-"Wiederholungsintervall {1} und die erlaubten Tage {2}"
+"Mit den Eingaben zu Anfangsdatum {0}, Wiederholungsintervall {1} und "
+"erlaubte Tage {2} konnte kein gültiges Datum gefunden werden."
 
 #: Server/Strings.cs:52
 #, csharp-format
@@ -327,7 +329,7 @@ msgstr ""
 #: Server/Strings.cs:54
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
-msgstr "Öffnen von Socket nicht möglich, versuchte Ports: {0}"
+msgstr "Öffnen von Socket nicht möglich, geprüfte Ports: {0}"
 
 #: Library/Encryption/Strings.cs:4
 msgid ""
@@ -351,7 +353,7 @@ msgid ""
 "Valid values are 0 (uses default), or from 1 (no multithreading) to 4 (max. "
 "multithreading)"
 msgstr ""
-"Verwende diese Option um das erlaubte Threadlevel für AES "
+"Verwende diese Option, um das erlaubte Threadlevel für AES-"
 "Verschlüsselungsoperationen anzugeben. Mögliche Werte sind 0 "
 "(Standardverhalten), 1 (kein Multithreading) bis 4 (max. Multithreading)"
 
@@ -374,12 +376,12 @@ msgid ""
 "supply the path to GPG using the --gpg-program-path switch."
 msgstr ""
 "Das GPG-Verschlüsselungsmodul verwendet das GNU Privacy Guard-Programm zum "
-"verschlüsseln und entschlüsseln von Dateien. Dazu muss eine GPG-Ausführbare "
-"Datei auf dem System verfügbar sein. Unter Windows wird davon ausgegangen, "
-"dass diese im Standardinstallationsordner unter Programme befindet, unter "
-"Linux und OSX wird davon ausgegangen, dass das Programm über die "
-"Umgebungsvariable PATH verfügbar ist. Es ist möglich, den Pfad zu GPG mit "
-"dem --gpg-program-path zu ändern."
+"Ver- und Entschlüsseln von Dateien. Dazu muss eine ausfühbare GPG-Datei auf "
+"dem System verfügbar sein. Unter Windows wird davon ausgegangen, dass sich "
+"diese im Standardinstallationsordner unter Programme befindet, unter Linux "
+"und OSX wird davon ausgegangen, dass das Programm über die Umgebungsvariable"
+" PATH verfügbar ist. Es ist möglich, den Pfad zu GPG mit der Option --gpg-"
+"program-path zu ändern."
 
 #: Library/Encryption/Strings.cs:15
 msgid "GNU Privacy Guard, external"
@@ -403,8 +405,8 @@ msgid ""
 "The GPG encryption/decryption will use the --armor option for GPG to protect"
 " the files with armor. Specify this switch to remove the --armor option."
 msgstr ""
-"Die GPG Ver- und Entschlüsselung verwendet die --armor Option, um die "
-"Dateien zu schützen. Nutze diesen Schalter um die --armor Option zu "
+"Die GPG-Ver- und Entschlüsselung verwendet die --armor-Option, um die "
+"Dateien zu schützen. Nutze diesen Schalter, um die --armor-Option zu "
 "entfernen."
 
 #: Library/Encryption/Strings.cs:19
@@ -446,16 +448,16 @@ msgstr "Pfad zu GnuPG"
 msgid ""
 "This option has non-standard handling, please use the --{0} option instead."
 msgstr ""
-"Diese Option hat eine nicht standardmäßige Bearbeitung. Verwende anstelledie"
-" Option --{0}."
+"Diese Option hat keine Standardbehandlung. Verwende stattdessen die Option "
+"--{0}."
 
 #: Library/Encryption/Strings.cs:26
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
 msgstr ""
-"Nutze diese Option um die --armor Option in GPG zu aktivieren. Die Dateien "
-"werden größer können aber als reine Textdateien verschickt werden."
+"Nutze diese Option, um die --armor-Option in GPG zu aktivieren. Die Dateien "
+"werden größer, können aber als reine Textdateien verschickt werden."
 
 #: Library/Encryption/Strings.cs:27
 msgid "Use GPG Armor"
@@ -475,8 +477,8 @@ msgid ""
 "Overrides the default GPG encryption command \"{0}\", normal usage is to "
 "request asymetric encryption with the setting {1}"
 msgstr ""
-"Überschreibt den vorgegebenen GPG Verschlüsselungsbefehl \"{0}\", wird "
-"genutzt um asymetrische Verschlüsselung anzufordern mit der Einstellung {1}"
+"Überschreibt den vorgegebenen GPG-Verschlüsselungsbefehl \"{0}\", wird "
+"genutzt, um asymetrische Verschlüsselung mit der Einstellung {1} anzufordern"
 
 #: Library/Encryption/Strings.cs:31
 msgid "The GPG encryption command"
@@ -489,11 +491,12 @@ msgstr "Entschlüsselung fehlgeschlagen: {0}"
 
 #: Library/Encryption/Strings.cs:35
 msgid "Failure while invoking GnuPG, program won't flush output"
-msgstr "Fehler beim Aufrufen von GnuPG, Programm leert seinen Ausgang nicht."
+msgstr ""
+"Fehler beim Aufrufen von GnuPG, das Programm leert seine Ausgabe nicht."
 
 #: Library/Encryption/Strings.cs:36
 msgid "Failure while invoking GnuPG, program won't terminate"
-msgstr "Fehler beim Aufrufen von GnuPG, Programm beendet sich nicht."
+msgstr "Fehler beim Aufrufen von GnuPG, das Programm beendet sich nicht."
 
 #: Library/Interface/Strings.cs:4
 msgid "aliases"
@@ -551,7 +554,7 @@ msgstr "Unbekannt"
 #, csharp-format
 msgid ""
 "The configuration for the backend is not valid, it is missing the {0} field"
-msgstr "Backend-Konfiguration ist nicht gültig. es fehlt das {0} Feld"
+msgstr "Backend-Konfiguration ist nicht gültig. es fehlt das {0}-Feld"
 
 #: Library/Interface/Strings.cs:22
 msgid "Do you want to test the connection?"
@@ -583,8 +586,8 @@ msgid ""
 "You have not entered a password.\n"
 "Proceed without a password?"
 msgstr ""
-"You have not entered a password.\n"
-"Proceed without a password?"
+"Du hast kein Passwort eingegeben.\n"
+"Ohne Passwort fortfahren?"
 
 #: Library/Interface/Strings.cs:29
 msgid "You must enter the name of the server"
@@ -602,7 +605,7 @@ msgid ""
 msgstr ""
 "Es wurde kein Benutzername eingegeben.\n"
 "Es ist in Ordnung, wenn der Server anonymes hochladen erlaubt, jedoch ist es wahrscheinlich, dass ein Benutzername erforderlich ist.\n"
-"Ohne Benutzernahme fortfahren?"
+"Ohne Benutzername fortfahren?"
 
 #: Library/Interface/Strings.cs:34
 msgid ""
@@ -620,7 +623,7 @@ msgstr "Ordner kann nicht erstellt werden, weil dieser bereits existiert"
 
 #: Library/Interface/Strings.cs:38
 msgid "Folder created!"
-msgstr "Order erstellt!"
+msgstr "Ordner erstellt!"
 
 #: Library/Interface/Strings.cs:39
 msgid "The requested folder does not exist"
@@ -629,7 +632,7 @@ msgstr "Der angeforderte Ordner existiert nicht"
 #: Library/Interface/Strings.cs:40
 #, csharp-format
 msgid "The server name \"{0}\" is not valid"
-msgstr "Der Server Name \"{0}\" ist nicht gültig"
+msgstr "Der Server-Name \"{0}\" ist nicht gültig"
 
 #: Library/Interface/Strings.cs:41
 msgid "Cancelled"
@@ -662,7 +665,7 @@ msgstr ""
 #: Library/Snapshots/Strings.cs:8
 #, csharp-format
 msgid "Unable to match local path {0} with any snapshot path: {1}"
-msgstr "Lokale Pfad {0} stimmt mit keinem Snapshot-Pfad überein: {1}"
+msgstr "Lokaler Pfad {0} stimmt mit keinem Snapshot-Pfad überein: {1}"
 
 #: Library/Snapshots/Strings.cs:9
 #, csharp-format
@@ -699,7 +702,7 @@ msgstr ""
 #: Library/Snapshots/Strings.cs:15
 msgid "Unable to determine full file path for USN entry"
 msgstr ""
-"Der vollständige Dateipfad für den USN Eintrag konnte nicht ermittelt werden"
+"Der vollständige Dateipfad für den USN-Eintrag konnte nicht ermittelt werden"
 
 #: Library/Snapshots/Strings.cs:16
 msgid "USN journal entries were purged since last scan"
@@ -727,11 +730,11 @@ msgstr "Unerwartetes Pfadformat gefunden"
 
 #: Library/Snapshots/Strings.cs:21
 msgid "Unsupported USN journal version."
-msgstr "NIcht unterstützte USN Journalversion."
+msgstr "NIcht unterstützte USN-Journalversion."
 
 #: Library/Snapshots/Strings.cs:25
 msgid "Calling process does not have the backup privilege"
-msgstr "Dem aufrufenden Prozess fehlt das backup Recht."
+msgstr "Dem aufrufenden Prozess fehlt das Backup-Recht."
 
 #: Library/Backend/OpenStack/Strings.cs:23
 msgid ""
@@ -757,9 +760,9 @@ msgid ""
 " environment variable \"AUTH_PASSWORD\". If the password is supplied, --{0} "
 "must also be set"
 msgstr ""
-"Das Passwort wird verwendet um sich mit dem Server zu verbinden. Es kann "
+"Das Passwort wird verwendet, um sich mit dem Server zu verbinden. Es kann "
 "auch über die Umgebungsvariable \"AUTH_PASSWORD\" gesetzt werden. Wenn das "
-"Passwort angegeben wurde muss --{0} auch gesetzt sein."
+"Passwort angegeben wurde, muss --{0} auch gesetzt sein."
 
 #: Library/Backend/OpenStack/Strings.cs:27 Library/Backend/FTP/Strings.cs:13
 #: Library/Backend/CloudFiles/Strings.cs:7 Library/Backend/S3/Strings.cs:10
@@ -770,7 +773,7 @@ msgstr ""
 #: Library/Backend/Jottacloud/Strings.cs:14 Library/Backend/Mega/Strings.cs:6
 #: Library/Backend/SharePoint/Strings.cs:9 Library/Backend/WEBDAV/Strings.cs:8
 msgid "Supplies the password used to connect to the server"
-msgstr "Liefert das Passwort um sich mit dem Server zu verbinden."
+msgstr "Liefert das Passwort, um sich mit dem Server zu verbinden."
 
 #: Library/Backend/OpenStack/Strings.cs:28
 msgid "The domain name of the user used to connect to the server."
@@ -809,7 +812,7 @@ msgstr ""
 #: Library/Backend/SharePoint/Strings.cs:11
 #: Library/Backend/WEBDAV/Strings.cs:10
 msgid "Supplies the username used to connect to the server"
-msgstr "Liefert den Benutzernamen, für die Serververbindung"
+msgstr "Liefert den Benutzernamen für die Serververbindung"
 
 #: Library/Backend/OpenStack/Strings.cs:32
 msgid ""
@@ -832,8 +835,8 @@ msgid ""
 "The API key can be used to connect without supplying a password and tenant "
 "ID with some providers."
 msgstr ""
-"Der API-Schlüssel kann bei einigen Provider zur Verbindung anstelle von "
-"Passwort und Tenant ID verwendet werden."
+"Der API-Schlüssel kann bei einigen Providern zur Verbindung anstelle von "
+"Passwort und Tenant-ID verwendet werden."
 
 #: Library/Backend/OpenStack/Strings.cs:35
 msgid "Supplies the API key used to connect to the server"
@@ -857,11 +860,11 @@ msgstr "Liefert die Authentifizierungs-URL"
 #: Library/Backend/OpenStack/Strings.cs:38
 msgid "The keystone API version to use, valid values are 'v2' and 'v3'."
 msgstr ""
-"Die zu verwendende Keystone API Version, gültige Angaben sind 'v2' und 'v3'."
+"Die zu verwendende Keystone API-Version, gültige Angaben sind 'v2' und 'v3'."
 
 #: Library/Backend/OpenStack/Strings.cs:39
 msgid "The keystone API version to use"
-msgstr "Die zu verwendende Keystone API Version"
+msgstr "Die zu verwendende Keystone API-Version"
 
 #: Library/Backend/OpenStack/Strings.cs:40
 msgid ""
@@ -876,7 +879,7 @@ msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:41
 msgid "Supplies the region used for creating a container"
-msgstr "Angabe der verwendeten Region für die Container Erstellung"
+msgstr "Angabe der verwendeten Region für die Container-Erstellung"
 
 #: Library/Backend/FTP/Strings.cs:7
 msgid ""
@@ -3086,7 +3089,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:61
 msgid "Show all versions"
-msgstr "Zeige alle Versionen"
+msgstr "Alle Versionen anzeigen"
 
 #: Library/Main/Strings.cs:62
 msgid ""
@@ -3099,7 +3102,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:63
 msgid "Show largest prefix"
-msgstr "Zeigen größte Präfix"
+msgstr "Größten Präfix anzeigen"
 
 #: Library/Main/Strings.cs:64
 msgid ""
@@ -3112,7 +3115,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:65
 msgid "Show folder contents"
-msgstr "Zeige Ordnerinhalt"
+msgstr "Ordnerinhalte anzeigen"
 
 #: Library/Main/Strings.cs:66
 msgid ""
@@ -3524,7 +3527,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:121
 msgid "Show error messages when a retry is performed"
-msgstr "Zeige Fehlermeldungen wenn ein erneuter Versuch gestartet wurde"
+msgstr "Fehlermeldungen bei erneutem Versuch anzeigen"
 
 #: Library/Main/Strings.cs:122
 msgid ""
@@ -4667,7 +4670,7 @@ msgstr "Jedes Serverzertifikat akzeptieren"
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash (SHA1) to approve it "
+"certificates), you can supply the certificate hash (SHA256) to approve it "
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
