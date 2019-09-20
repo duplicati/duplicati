@@ -346,7 +346,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
-                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb"),
+                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb", null, null, @"The ""file-read-buffer-size"" option is no longer used and has been deprecated."),
                     new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipmetadataShort, Strings.Options.SkipmetadataLong, "false"),
                     new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
                     new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
@@ -1365,22 +1365,6 @@ namespace Duplicati.Library.Main
 					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
 				
 				return m_cachedBlockHashSize.Value;
-            }
-        }
-
-        /// <summary>
-        /// Gets the size the read-ahead buffer
-        /// </summary>
-        public long FileReadBufferSize
-        {
-            get
-            {
-                string tmp;
-                if (!m_options.TryGetValue("file-read-buffer-size", out tmp))
-                    tmp = DEFAULT_READ_BUFFER_SIZE;
-
-                long t = Library.Utility.Sizeparser.ParseSize(tmp, "mb");                
-                return (int)t;
             }
         }
 
