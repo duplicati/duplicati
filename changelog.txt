@@ -1,3 +1,13 @@
+2019-09-20 - 2.0.4.30_canary_2019-09-20
+==========
+* Updated builds scripts to automatically notarize all packages for MacOS
+* Updated all string using ... to us the ellipsis character, thanks @leela52452
+* Code quality improvements and more tests, thanks @warwickmm
+* Removed escaping of pipe characters on Linux, thanks @kenkendk
+* Updated CoCoL to avoid excessive CPU usage, thanks @kenkendk
+* Updated translations, thanks to all translators!
+* Fixed a crash when connecting to a password protected server instance from the trayicon, thanks @kenkendk
+
 2019-09-17 - 2.0.4.29_canary_2019-09-17
 ==========
 * Added workaround for bug in Mono 6.0, thanks @warwickmm
