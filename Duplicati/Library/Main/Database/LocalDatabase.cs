@@ -135,7 +135,7 @@ namespace Duplicati.Library.Main.Database
             m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ? AND (""DeleteGraceTime"" < ? OR ""State"" != ?)";
             m_removeremotevolumeCommand.AddParameters(3);
 
-            m_removedeletedremotevolumeCommand.CommandText = $@"DELETE FROM ""Remotevolume"" WHERE ""DeleteGraceTime"" < ? AND ""State"" == ""{RemoteVolumeState.Deleted.ToString()}""";
+            m_removedeletedremotevolumeCommand.CommandText = $@"DELETE FROM ""Remotevolume"" WHERE ""State"" == ""{RemoteVolumeState.Deleted.ToString()}"" AND ""DeleteGraceTime"" < ? OR LENGTH(""DeleteGraceTime"") > 12 ";
             m_removedeletedremotevolumeCommand.AddParameter();
 
             m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
