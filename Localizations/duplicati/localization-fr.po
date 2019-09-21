@@ -18,8 +18,9 @@
 # François TERROT <fterrot@april.org>, 2017
 # Fida Ben Hassine <fida.1982@hotmail.com>, 2018
 # c2d8fff08ea91a3e49f9105aca49898d, 2018
-# Josse du PLESSIS <josse@du-plessis.fr>, 2018
 # Léonard Gagnon <leonard.gagnon@gmail.com>, 2019
+# Buggi, 2019
+# Josse du PLESSIS <josse@du-plessis.fr>, 2019
 # 
 #, fuzzy
 msgid ""
@@ -28,7 +29,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-12-11 12:26+0100\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Léonard Gagnon <leonard.gagnon@gmail.com>, 2019\n"
+"Last-Translator: Josse du PLESSIS <josse@du-plessis.fr>, 2019\n"
 "Language-Team: French (https://www.transifex.com/duplicati/teams/67655/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -298,7 +299,7 @@ msgstr ""
 #: Server/Strings.cs:52
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
-msgstr "Le serveur a démarré et écoute sur {0}, le port {1}"
+msgstr "Le serveur a démarré et écoute sur {0}, port {1}"
 
 #: Server/Strings.cs:53
 #, csharp-format
@@ -312,14 +313,15 @@ msgstr ""
 #: Server/Strings.cs:54
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
-msgstr "Impossible d'ouvrir une socket pour l'écoute, les ports essayés: {0}"
+msgstr ""
+"Impossible d'ouvrir un socket pour l'écoute, les ports essayés sont : {0}"
 
 #: Library/Encryption/Strings.cs:4
 msgid ""
 "This module encrypts all files in the same way that AESCrypt does, using 256"
 " bit AES encryption."
 msgstr ""
-"Ce module crypte tous les fichiers de la même manière que AESCrypt, en "
+"Ce module chiffre tous les fichiers de la même manière que AESCrypt, en "
 "utilisant le cryptage AES 256 bits."
 
 #: Library/Encryption/Strings.cs:5
@@ -591,7 +593,7 @@ msgid ""
 "Proceed without a username?"
 msgstr ""
 "Vous n'avez pas entré de nom d'utilisateur.\n"
-"C'est possible si le serveur autorise les téléchargements anonymes, mais il est probable qu'un nom d'utilisateur est requis\n"
+"C'est possible si le serveur autorise les téléchargements anonymes, mais il est probable qu'un nom d'utilisateur soit requis\n"
 "Continuer sans nom d'utilisateur ?"
 
 #: Library/Interface/Strings.cs:34
@@ -824,7 +826,7 @@ msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:35
 msgid "Supplies the API key used to connect to the server"
-msgstr "Fourni la clé API utilisée pour se connecter au serveur"
+msgstr "Fournit la clé API utilisée pour se connecter au serveur"
 
 #: Library/Backend/OpenStack/Strings.cs:36
 #, csharp-format
@@ -832,7 +834,7 @@ msgid ""
 "The authentication URL is used to authenticate the user and find the storage"
 " service. The URL commonly ends with \"/v2.0\". Known providers are: {0}{1}"
 msgstr ""
-"L'URL d'authentification est utilisé pour authentifier les utilisateurs et "
+"L'URL d'authentification est utilisée pour authentifier les utilisateurs et "
 "trouver le service de stockage. L'URL finit communément par \"/v2.0\". Les "
 "fournisseurs connus sont : {0}{1}"
 
@@ -1073,7 +1075,7 @@ msgid ""
 "This option is only used when creating new buckets. Use this option to change what storage type the bucket has. Charges and functionality vary with bucket storage class. Known storage classes:\n"
 "{0}"
 msgstr ""
-"Cette option est utilisé uniquement quand de nouvelles collections sont crées. Utiliser cet option pour changer le type de stockage où est la collection. Les charges et fonctionnalités varient selon la classe de stockage de la collection. Classes de stockage connues :\n"
+"Cette option est utilisée uniquement quand de nouvelles collections sont crées. Utilisez cette option pour changer le type de stockage où est la collection. Les charges et fonctionnalités varient selon la classe de stockage de la collection. Classes de stockage connues :\n"
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:34
@@ -1090,7 +1092,7 @@ msgid ""
 "supply the project ID that the bucket is attached to. The project determines"
 " where usage charges are applied"
 msgstr ""
-"Cette option est utilisé uniquement quand de nouvelles collections sont "
+"Cette option est utilisée uniquement quand de nouvelles collections sont "
 "créées. Utilisez cette option pour indiquer l'ID du projet sur lequel la "
 "collection est attaché. Le projet détermine où les charges d'utilisation "
 "sont appliquées. "
@@ -4675,12 +4677,12 @@ msgstr "Accepter n'importe quel certificat de serveur"
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
 "If your server certificate is reported as invalid (eg. with self-signed "
-"certificates), you can supply the certificate hash (SHA1) to approve it "
+"certificates), you can supply the certificate hash (SHA256) to approve it "
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
 "Si votre certificat est reporté comme invalide (ex. certificats auto-"
-"signés), vous pouvez fournir la valeur de hachage (SHA1) du certificat "
+"signés), vous pouvez fournir la valeur de hachage (SHA256) du certificat "
 "pour l'approuver tout de même. La valeur de hachage doit être au format "
 "hexadécimal sans espaces ou deux-points. Vous pouvez entrez plusieurs valeur"
 " de hachage séparées par une virgule."

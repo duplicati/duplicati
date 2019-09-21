@@ -383,15 +383,16 @@ namespace Duplicati.GUI.TrayIcon
                         switch (m_passwordSource)
                         {
                             case Program.PasswordSource.Database:
-                                Program.databaseConnection.ApplicationSettings.ReloadSettings();
+                                if (Program.databaseConnection != null)
+                                    Program.databaseConnection.ApplicationSettings.ReloadSettings();
                                 
-                                if (Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon != m_password)
+                                if (Program.databaseConnection != null && Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon != m_password)
                                     m_password = Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                                 else
                                     hasTriedPassword = true;
                                 break;
                             case Program.PasswordSource.HostedServer:
-                                if (Server.Program.DataConnection.ApplicationSettings.WebserverPassword != m_password)
+                                if (Server.Program.DataConnection != null && Server.Program.DataConnection.ApplicationSettings.WebserverPassword != m_password)
                                     m_password = Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
                                 else
                                     hasTriedPassword = true;

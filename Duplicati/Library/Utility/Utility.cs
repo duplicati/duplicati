@@ -950,9 +950,14 @@ namespace Duplicati.Library.Utility
             return new DateTime(ticks, DateTimeKind.Utc);
         }
         
+	/// <summary>
+	/// Given a DateTime instance, return the number of elapsed seconds since the Unix epoch
+	/// </summary>
+	/// <returns>The number of elapsed seconds since the Unix epoch</returns>
+	/// <param name="input">The input time</param>
         public static long NormalizeDateTimeToEpochSeconds(DateTime input)
         {
-            return (long) Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
+            return (new DateTimeOffset(input)).ToUnixTimeSeconds(); 
         }
         
         /// <summary>
@@ -1385,7 +1390,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Special characters that needs to be escaped on Linux
         /// </summary>
-        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""|$|`|\\|!]");
+        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""$`\\!]");
 
         /// <summary>
         /// Wraps a single argument in quotes suitable for the passing on the commandline

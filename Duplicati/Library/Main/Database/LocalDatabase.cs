@@ -547,11 +547,6 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public long GetFilesetID(DateTime restoretime, long[] versions)
-        {
-            return GetFilesetIDs(restoretime, versions).First();
-        }
-
         public IEnumerable<long> GetFilesetIDs(DateTime restoretime, long[] versions)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
@@ -1590,14 +1585,14 @@ ORDER BY
 
             return new KeyValuePair<string, string>(string.Empty, path);
         }
+    }
 
-        /// <summary>
-        /// Defines the backups types
-        /// </summary>
-        public static class BackupType
-        {
-            public const int PARTIAL_BACKUP = 0;
-            public const int FULL_BACKUP = 1;
-        }
+    /// <summary>
+    /// Defines the backups types
+    /// </summary>
+    public static class BackupType
+    {
+        public const int PARTIAL_BACKUP = 0;
+        public const int FULL_BACKUP = 1;
     }
 }

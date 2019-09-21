@@ -22,7 +22,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
     };
 
     function updateStateDisplay() {
-        var text = gettextCatalog.getString('Running ...');
+        var text = gettextCatalog.getString('Running …');
         var pg = -1;
         if ($scope.state.lastPgEvent != null && $scope.state.activeTask != null)
         {
