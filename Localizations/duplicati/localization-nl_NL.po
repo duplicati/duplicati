@@ -4,16 +4,16 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# Kees Zaaijer, 2018
+# Kees Zaaijer, 2019
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-12-11 12:26+0100\n"
+"POT-Creation-Date: 2019-09-20 12:36+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Kees Zaaijer, 2018\n"
+"Last-Translator: Kees Zaaijer, 2019\n"
 "Language-Team: Dutch (Netherlands) (https://www.transifex.com/duplicati/teams/67655/nl_NL/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -216,11 +216,11 @@ msgstr ""
 "proces reageert. Als deze optie wordt ingeschakeld, leest de server stdin en"
 " schrijft een antwoord op iedere gelezen regel"
 
-#: Server/Strings.cs:37 Library/Main/Strings.cs:220
+#: Server/Strings.cs:37 Library/Main/Strings.cs:224
 msgid "Clean up old log data"
 msgstr "Schoon oude log-gegevens op"
 
-#: Server/Strings.cs:38 Library/Main/Strings.cs:221
+#: Server/Strings.cs:38 Library/Main/Strings.cs:225
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Stel de tijd in waarna log-gegevens worden gewist uit de database."
 
@@ -298,7 +298,7 @@ msgstr ""
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Kan geen socket openen om te luisteren, geprobeerd op poorten: {0}"
 
-#: Library/Encryption/Strings.cs:4
+#: Library/Encryption/Strings.cs:26
 msgid ""
 "This module encrypts all files in the same way that AESCrypt does, using 256"
 " bit AES encryption."
@@ -306,15 +306,15 @@ msgstr ""
 "Deze module versleutelt alle bestanden op dezelfde manier als AESCrypt dit "
 "doet, door middel van 256 bit AES encryptie."
 
-#: Library/Encryption/Strings.cs:5
+#: Library/Encryption/Strings.cs:27
 msgid "AES-256 encryption, built in"
 msgstr "AES-256 encryptie, ingebouwd"
 
-#: Library/Encryption/Strings.cs:6
+#: Library/Encryption/Strings.cs:28
 msgid "Empty passphrase not allowed"
 msgstr "Lege wachtwoordzin niet toegestaan"
 
-#: Library/Encryption/Strings.cs:7
+#: Library/Encryption/Strings.cs:29
 msgid ""
 "Use this option to set the thread level allowed for AES crypt operations. "
 "Valid values are 0 (uses default), or from 1 (no multithreading) to 4 (max. "
@@ -324,16 +324,16 @@ msgstr ""
 " AES crypt bewerkingen. Geldige waarden zijn 0 (gebruikt standaard), of van "
 "1 (geen multithreading) tot 4 (max. multithreading)"
 
-#: Library/Encryption/Strings.cs:8
+#: Library/Encryption/Strings.cs:30
 msgid "Set thread level utilized for crypting (0-4)"
 msgstr "Stel thread niveau in voor versleuteling (0-4)"
 
-#: Library/Encryption/Strings.cs:11
+#: Library/Encryption/Strings.cs:34
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr "Ontsleutelen van gegevens mislukt (ongeldige wachtwoordzin?): {0}"
 
-#: Library/Encryption/Strings.cs:14
+#: Library/Encryption/Strings.cs:38
 msgid ""
 "The GPG encryption module uses the GNU Privacy Guard program to encrypt and "
 "decrypt files. It requires that the gpg executable is available on the "
@@ -350,11 +350,11 @@ msgstr ""
 "beschikbaar is via de PATH omgevingsvariabele. Het is mogelijk op het pad "
 "naar GPG op te geven door middel van de --gpg-program-path switch."
 
-#: Library/Encryption/Strings.cs:15
+#: Library/Encryption/Strings.cs:39
 msgid "GNU Privacy Guard, external"
 msgstr "GNU Privacy Guard, extern"
 
-#: Library/Encryption/Strings.cs:16
+#: Library/Encryption/Strings.cs:40
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
@@ -363,11 +363,11 @@ msgstr ""
 "fd optie kan hier niet opgegeven worden. De --decrypt optie is altijd "
 "opgegeven."
 
-#: Library/Encryption/Strings.cs:17
+#: Library/Encryption/Strings.cs:41
 msgid "Extra GPG commandline options for decryption"
 msgstr "Extra GPG opdrachtregel opties voor ontsleuteling"
 
-#: Library/Encryption/Strings.cs:18
+#: Library/Encryption/Strings.cs:42
 msgid ""
 "The GPG encryption/decryption will use the --armor option for GPG to protect"
 " the files with armor. Specify this switch to remove the --armor option."
@@ -376,11 +376,11 @@ msgstr ""
 "om de bestanden te beschermen met armor. Gebruik deze switch om de --armor "
 "optie te verwijderen."
 
-#: Library/Encryption/Strings.cs:19
+#: Library/Encryption/Strings.cs:43
 msgid "Don't use GPG Armor"
 msgstr "Gebruik GPG Armor niet"
 
-#: Library/Encryption/Strings.cs:20
+#: Library/Encryption/Strings.cs:44
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
@@ -389,16 +389,16 @@ msgstr ""
 "fd optie kan hier niet worden opgegeven. De --encrypt optie is altijd "
 "opgegeven."
 
-#: Library/Encryption/Strings.cs:21
+#: Library/Encryption/Strings.cs:45
 msgid "Extra GPG commandline options for encryption"
 msgstr "Extra GPG opdrachtregel opties voor versleuteling"
 
-#: Library/Encryption/Strings.cs:22
+#: Library/Encryption/Strings.cs:46
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr "Uitvoeren GPG mislukt met \"{0} {1}\": {2}"
 
-#: Library/Encryption/Strings.cs:23
+#: Library/Encryption/Strings.cs:47
 msgid ""
 "The path to the GNU Privacy Guard program. If not supplied, Duplicati will "
 "assume that the program \"gpg\" is available in the system path."
@@ -407,11 +407,11 @@ msgstr ""
 "veronderstelt Duplicati dat het programma \"gpg\" beschikbaar is in het "
 "systeempad."
 
-#: Library/Encryption/Strings.cs:24
+#: Library/Encryption/Strings.cs:48
 msgid "The path to GnuPG"
 msgstr "Het pad naar GnuPG"
 
-#: Library/Encryption/Strings.cs:25
+#: Library/Encryption/Strings.cs:49
 #, csharp-format
 msgid ""
 "This option has non-standard handling, please use the --{0} option instead."
@@ -419,7 +419,7 @@ msgstr ""
 "Deze optie heeft niet-standaard afhandeling, gebruik in plaats hiervan de "
 "--{0} optie."
 
-#: Library/Encryption/Strings.cs:26
+#: Library/Encryption/Strings.cs:50
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
@@ -427,19 +427,19 @@ msgstr ""
 "Gebruik deze optie om de --armor optie voor GPG op te geven. De bestanden "
 "zullen groter zijn maar kunnen verzonden worden als alleen tekstbestanden."
 
-#: Library/Encryption/Strings.cs:27
+#: Library/Encryption/Strings.cs:51
 msgid "Use GPG Armor"
 msgstr "Gebruik GPG Armor"
 
-#: Library/Encryption/Strings.cs:28
+#: Library/Encryption/Strings.cs:52
 msgid "Overrides the GPG command supplied for decryption"
 msgstr "Overschrijft het GPG commando die is opgegeven voor ontsleuteling"
 
-#: Library/Encryption/Strings.cs:29
+#: Library/Encryption/Strings.cs:53
 msgid "The GPG decryption command"
 msgstr "Het GPG ontsleutelings commando"
 
-#: Library/Encryption/Strings.cs:30
+#: Library/Encryption/Strings.cs:54
 #, csharp-format
 msgid ""
 "Overrides the default GPG encryption command \"{0}\", normal usage is to "
@@ -448,21 +448,21 @@ msgstr ""
 "Overschrijft het standaard GPG encryptie commando \"{0}\", normaal gebruik "
 "is om asymmetrische versleuteling aan te vragen met de instelling {1}"
 
-#: Library/Encryption/Strings.cs:31
+#: Library/Encryption/Strings.cs:55
 msgid "The GPG encryption command"
 msgstr "Het GPG versleutelings commando"
 
-#: Library/Encryption/Strings.cs:34
+#: Library/Encryption/Strings.cs:59
 #, csharp-format
 msgid "Decryption failed: {0}"
 msgstr "Ontsleutelen mislukt: {0}"
 
-#: Library/Encryption/Strings.cs:35
+#: Library/Encryption/Strings.cs:60
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr ""
 "Fout bij het uitvoeren van GnuPG, programma wil uitvoer niet leegmaken"
 
-#: Library/Encryption/Strings.cs:36
+#: Library/Encryption/Strings.cs:61
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Fout bij het uitvoeren van GnuPG, programma wil niet beëindigen"
 
@@ -606,6 +606,7 @@ msgstr "Afgebroken"
 
 #: Library/Interface/CustomExceptions.cs:82
 #: Library/Interface/CustomExceptions.cs:90
+#: Library/Backend/Jottacloud/Jottacloud.cs:300
 msgid "The requested file does not exist"
 msgstr "Het opgevraagde bestand bestaat niet"
 
@@ -964,18 +965,18 @@ msgstr ""
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:24
 #: Library/Backend/GoogleServices/Strings.cs:26
-#: Library/Backend/GoogleServices/Strings.cs:43
-#: Library/Backend/Box/Strings.cs:24 Library/Backend/OneDrive/Strings.cs:6
-#: Library/Backend/HubiC/Strings.cs:24 Library/Backend/Dropbox/Strings.cs:24
+#: Library/Backend/GoogleServices/Strings.cs:42
+#: Library/Backend/Box/Strings.cs:23 Library/Backend/OneDrive/Strings.cs:6
+#: Library/Backend/HubiC/Strings.cs:23 Library/Backend/Dropbox/Strings.cs:24
 #: Library/Backend/OAuthHelper/Strings.cs:9
 msgid "The authorization code"
 msgstr "De authorisatiecode"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:25
 #: Library/Backend/GoogleServices/Strings.cs:27
-#: Library/Backend/GoogleServices/Strings.cs:44
-#: Library/Backend/Box/Strings.cs:25 Library/Backend/OneDrive/Strings.cs:7
-#: Library/Backend/HubiC/Strings.cs:25 Library/Backend/Dropbox/Strings.cs:25
+#: Library/Backend/GoogleServices/Strings.cs:43
+#: Library/Backend/Box/Strings.cs:24 Library/Backend/OneDrive/Strings.cs:7
+#: Library/Backend/HubiC/Strings.cs:24 Library/Backend/Dropbox/Strings.cs:25
 #: Library/Backend/OAuthHelper/Strings.cs:10
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
@@ -986,35 +987,26 @@ msgid "Amazon Cloud Drive"
 msgstr "Amazon Cloud Drive"
 
 #: Library/Backend/AmazonCloudDrive/Strings.cs:27
-#: Library/Backend/GoogleServices/Strings.cs:24
-#: Library/Backend/GoogleServices/Strings.cs:46
-#: Library/Backend/Box/Strings.cs:23 Library/Backend/HubiC/Strings.cs:23
-#: Library/Backend/OAuthHelper/Strings.cs:6
-#, csharp-format
-msgid "You need an AuthID, you can get it from: {0}"
-msgstr "Een AuthID is nodig, deze kan verkregen worden van: {0}"
-
-#: Library/Backend/AmazonCloudDrive/Strings.cs:28
 msgid "The labels to set"
 msgstr "De labels die ingesteld moeten worden"
 
-#: Library/Backend/AmazonCloudDrive/Strings.cs:29
+#: Library/Backend/AmazonCloudDrive/Strings.cs:28
 msgid "Use this option to set labels on the files and folders created"
 msgstr ""
 "Gebruik deze optie om labels in te stellen voor bestanden en mappen die "
 "aangemaakt worden"
 
-#: Library/Backend/AmazonCloudDrive/Strings.cs:30
-#: Library/Backend/GoogleServices/Strings.cs:47
+#: Library/Backend/AmazonCloudDrive/Strings.cs:29
+#: Library/Backend/GoogleServices/Strings.cs:45
 #, csharp-format
 msgid "There is more than one item named \"{0}\" in the folder \"{1}\""
 msgstr "Er is meer dan één item met de naam \"{0}\" in de map \"{1}\""
 
-#: Library/Backend/AmazonCloudDrive/Strings.cs:31
+#: Library/Backend/AmazonCloudDrive/Strings.cs:30
 msgid "The consistency delay"
 msgstr "De consistentie vertraging"
 
-#: Library/Backend/AmazonCloudDrive/Strings.cs:32
+#: Library/Backend/AmazonCloudDrive/Strings.cs:31
 msgid "Amazon Cloud drive needs a small delay for results to stay consistent."
 msgstr ""
 "Amazon Cloud Drive heeft een kleine vertraging nodig voor resultaten om "
@@ -1031,6 +1023,12 @@ msgstr ""
 #: Library/Backend/GoogleServices/Strings.cs:23
 msgid "Google Cloud Storage"
 msgstr "Google Cloud Storage"
+
+#: Library/Backend/GoogleServices/Strings.cs:24
+#: Library/Backend/OAuthHelper/Strings.cs:6
+#, csharp-format
+msgid "You need an AuthID, you can get it from: {0}"
+msgstr "Een AuthID is nodig, deze kan verkregen worden van: {0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:25
 #, csharp-format
@@ -1079,15 +1077,6 @@ msgstr ""
 "gekoppeld is. Het project bepaalt waar gebruikskosten worden berekend"
 
 #: Library/Backend/GoogleServices/Strings.cs:41
-#, csharp-format
-msgid ""
-"The account access has been blocked by Google, please visit this URL and "
-"unlock it: {0}"
-msgstr ""
-"De account-toegang is geblokkeerd door Google, bezoek deze URL om de account"
-" te ontgrendelen: {0}"
-
-#: Library/Backend/GoogleServices/Strings.cs:42
 msgid ""
 "This backend can read and write data to Google Drive. Supported format is "
 "\"googledrive://folder/subfolder\"."
@@ -1095,21 +1084,21 @@ msgstr ""
 "Deze backend kan gegevens lezen en schrijven naar Google Drive. Ondersteunde"
 " indeling is \"googledrive://folder/subfolder\"."
 
-#: Library/Backend/GoogleServices/Strings.cs:45
+#: Library/Backend/GoogleServices/Strings.cs:44
 msgid "Google Drive"
 msgstr "Google Drive"
 
-#: Library/Backend/GoogleServices/Strings.cs:48
-msgid "Hide team drives"
-msgstr "Verberg team drives"
+#: Library/Backend/GoogleServices/Strings.cs:46
+msgid "Team drive ID"
+msgstr "Team Drive ID"
 
-#: Library/Backend/GoogleServices/Strings.cs:49
+#: Library/Backend/GoogleServices/Strings.cs:47
 msgid ""
-"This option disables the team drives, showing only files and folders "
-"accessible with the account itself"
+"This option sets the team drive to use. Leaving it empty uses the personal "
+"drive"
 msgstr ""
-"Deze optie schakelt de team drives uit, zodat alleen bestanden en mappen "
-"worden weergegeven die met het account zelf toegankelijk zijn."
+"Deze optie stelt de team drive in die gebruikt moet worden. Als dit wordt "
+"leeggelaten, wordt de persoonlijke drive gebruikt"
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -1662,11 +1651,11 @@ msgstr ""
 msgid "Box.com"
 msgstr "Box.com"
 
-#: Library/Backend/Box/Strings.cs:26
+#: Library/Backend/Box/Strings.cs:25
 msgid "Force delete files"
 msgstr "Forceer verwijderen bestanden"
 
-#: Library/Backend/Box/Strings.cs:27
+#: Library/Backend/Box/Strings.cs:26
 msgid ""
 "After deleting a file, it may end up in the trash folder where it will be "
 "deleted after a grace period. Use this command to force immediate removal of"
@@ -1922,6 +1911,22 @@ msgid "The size of file-listing pages"
 msgstr "De grootte van pagina's met bestandsvermeldingen"
 
 #: Library/Backend/Backblaze/Strings.cs:20
+msgid ""
+"Change this if you want to use your custom domain to download files, and "
+"uploading will not be affected. The default download url depends on your "
+"account and looks like \"https://f00X.backblazeb2.com\""
+msgstr ""
+"Verander dit als u een zelf ingesteld domein wilt gebruiken voor het "
+"downloaden van bestanden, dit heeft geen invloed op het uploaden. De "
+"standaard download-url is afhankelijk van uw account en ziet er ongeveer uit"
+" als \"https://f00X.backblazeb2.com\""
+
+#: Library/Backend/Backblaze/Strings.cs:21
+msgid "The base URL to use for downloading files"
+msgstr ""
+"De basis-URL die gebruikt moet worden voor het downloaden van bestanden"
+
+#: Library/Backend/Backblaze/Strings.cs:22
 #, csharp-format
 msgid ""
 "The setting \"{0}\" is invalid for \"{1}\", it must be an integer larger "
@@ -1939,30 +1944,22 @@ msgid "This backend can read and write data to Sia."
 msgstr "Deze backend kan gegevens lezen en schrijven naar Sia."
 
 #: Library/Backend/Sia/Strings.cs:8
-msgid "Sia address"
-msgstr "Sia adres"
-
-#: Library/Backend/Sia/Strings.cs:9
-msgid "Sia address, ie 127.0.0.1:9980"
-msgstr "Sia adres, bijvoorbeeld 127.0.0.1:9980"
-
-#: Library/Backend/Sia/Strings.cs:10
 msgid "Backup path"
 msgstr "Back-up pad"
 
-#: Library/Backend/Sia/Strings.cs:11
+#: Library/Backend/Sia/Strings.cs:9
 msgid "Target path, ie /backup"
 msgstr "Doelpad, bijvoorbeeld /backup"
 
-#: Library/Backend/Sia/Strings.cs:12 Library/Backend/Sia/Strings.cs:13
+#: Library/Backend/Sia/Strings.cs:10 Library/Backend/Sia/Strings.cs:11
 msgid "Sia password"
 msgstr "Sia wachtwoord"
 
-#: Library/Backend/Sia/Strings.cs:14
+#: Library/Backend/Sia/Strings.cs:12
 msgid "3"
 msgstr "3"
 
-#: Library/Backend/Sia/Strings.cs:15
+#: Library/Backend/Sia/Strings.cs:13
 msgid "Minimum value is 3."
 msgstr "Minimum waarde is 3."
 
@@ -2217,7 +2214,7 @@ msgstr "Geen gebruikersnaam opgegeven"
 msgid "No password given"
 msgstr "Geen wachtwoord opgegeven"
 
-#: Library/Backend/Jottacloud/Strings.cs:9 Library/Backend/Mega/Strings.cs:11
+#: Library/Backend/Jottacloud/Strings.cs:9
 msgid "No path given, cannot upload files to the root folder"
 msgstr "Geen pad opgegeven, kan geen bestanden uploaden naar de hoofdmap"
 
@@ -2262,11 +2259,38 @@ msgstr ""
 " koppelpunt te gebruiken, of als een aangepast apparaat werd opgegeven met "
 "de optie \"{0}\" kan de naam van ieder gewenst koppelpunt worden opgegeven."
 
+#: Library/Backend/Jottacloud/Strings.cs:20
+msgid "Number of threads for restore operations."
+msgstr "Aantal threads voor herstelbewerkingen"
+
+#: Library/Backend/Jottacloud/Strings.cs:21
+msgid ""
+"Number of threads for restore operations. In some cases the download rate is"
+" limited to 18.5 Mbps per stream. Use multiple threads to increase "
+"throughput."
+msgstr ""
+"Aantal threads voor herstelbewerkingen. In sommige gevallen is de "
+"downloadsnelheid beperkt tot 18,5 Mbps per stream. Gebruik meerdere threads "
+"om de doorvoer te verhogen. "
+
+#: Library/Backend/Jottacloud/Strings.cs:22
+msgid "The chunk size for simultaneous downloading."
+msgstr "De grootte van gegevensbrokken voor het gelijktijdig downloaden."
+
+#: Library/Backend/Jottacloud/Strings.cs:23
+msgid ""
+"The chunk size for simultaneous downloading. These chunks will be held in "
+"memory, so keep it as low as possible."
+msgstr ""
+"De grootte van gegevensbrokken voor het gelijktijdig downloaden. Deze "
+"brokken zullen in het interne geheugen gehouden worden, dus houd dit zo laag"
+" mogelijk."
+
 #: Library/Backend/Mega/Strings.cs:4
 msgid "mega.nz"
 msgstr "mega.nz"
 
-#: Library/Backend/Mega/Strings.cs:12
+#: Library/Backend/Mega/Strings.cs:11
 msgid ""
 "This backend can read and write data to Mega.co.nz. Allowed formats are: "
 "\"mega://folder/subfolder\""
@@ -2700,16 +2724,16 @@ msgstr ""
 "Fout: {1}\n"
 "Database NIET geüpgraded."
 
-#: Library/Main/Operation/Common/BackendHandler.cs:540
-#: Library/Main/BackendManager.cs:1107
+#: Library/Main/Operation/Common/BackendHandler.cs:385
+#: Library/Main/BackendManager.cs:1108
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
 "Verwijder-bewerking mislukt voor {0} met BestandNietGevonden, inhoud "
 "weergeven"
 
-#: Library/Main/Operation/Common/BackendHandler.cs:553
-#: Library/Main/BackendManager.cs:1120
+#: Library/Main/Operation/Common/BackendHandler.cs:398
+#: Library/Main/BackendManager.cs:1121
 #, csharp-format
 msgid "Listing indicates file {0} is deleted correctly"
 msgstr "Lijstweergave geeft aan dat bestand {0} correct is verwijderd."
@@ -3309,25 +3333,37 @@ msgstr "Het aantal volumes dat van tevoren aangemaakt mag worden"
 
 #: Library/Main/Strings.cs:98
 msgid ""
+"When performing asynchronous uploads, the maximum number of concurrent "
+"uploads allowed. Set to zero to disable the limit."
+msgstr ""
+"Als asynchrone uploads worden uitgevoerd, het maximum aantal toegestane "
+"gelijktijdige uploads. Stel in op nul om de beperking uit te schakelen."
+
+#: Library/Main/Strings.cs:99
+msgid "The number of concurrent uploads allowed"
+msgstr "Het aantal toegestane gelijktijdige uploads"
+
+#: Library/Main/Strings.cs:100
+msgid ""
 "Activating this option will make some error messages more verbose, which may"
 " help you track down a particular issue"
 msgstr ""
 "Door deze optie te activeren zullen sommige foutmeldingen uitgebreider "
 "worden, wat kan helpen bij het oplossen van een specifiek probleem"
 
-#: Library/Main/Strings.cs:99
+#: Library/Main/Strings.cs:101
 msgid "Enables debugging output"
 msgstr "Schakelt debug-uitvoer in"
 
-#: Library/Main/Strings.cs:100
+#: Library/Main/Strings.cs:102
 msgid "Log internal information to a file"
 msgstr "Log interne informatie naar een bestand"
 
-#: Library/Main/Strings.cs:101
+#: Library/Main/Strings.cs:103
 msgid "Logs information to the file specified"
 msgstr "Logt informatie naar het opgegeven bestand"
 
-#: Library/Main/Strings.cs:102 Library/Main/Strings.cs:253
+#: Library/Main/Strings.cs:104 Library/Main/Strings.cs:259
 msgid ""
 "Specifies the amount of log information to write into the file specified by "
 "--log-file"
@@ -3335,16 +3371,16 @@ msgstr ""
 "Geeft de hoeveelheid log-informatie om te schrijven naar het bestand dat is "
 "aangegeven met --log-file"
 
-#: Library/Main/Strings.cs:103
+#: Library/Main/Strings.cs:105
 msgid "Log information level"
 msgstr "Log informatie niveau"
 
-#: Library/Main/Strings.cs:104
+#: Library/Main/Strings.cs:106
 #, csharp-format
 msgid "Use the {0} and {1} options instead"
 msgstr "Gebruik in plaats hiervan de {0} en {1} opties"
 
-#: Library/Main/Strings.cs:105
+#: Library/Main/Strings.cs:107
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
@@ -3353,11 +3389,11 @@ msgstr ""
 "aangemaakt worden. Activeer deze optie om het automatisch aanmaken van "
 "mappen te voorkomen."
 
-#: Library/Main/Strings.cs:106
+#: Library/Main/Strings.cs:108
 msgid "Disables automatic folder creation"
 msgstr "Schakelt het automatisch aanmaken van mappen uit"
 
-#: Library/Main/Strings.cs:107
+#: Library/Main/Strings.cs:109
 msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
@@ -3372,14 +3408,14 @@ msgstr ""
 " en de meeste vormen van GUID's zijn toegestaan, inclusief met en zonder "
 "accolades."
 
-#: Library/Main/Strings.cs:108
+#: Library/Main/Strings.cs:110
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr ""
 "Een door puntkomma's gescheiden lijst met guid's van VSS writers die "
 "uitgesloten moeten worden (alleen Windows)"
 
-#: Library/Main/Strings.cs:109
+#: Library/Main/Strings.cs:111
 msgid ""
 "This setting controls the usage of NTFS USN numbers, which allows Duplicati "
 "to obtain a list of files and folders much faster. If this is set to "
@@ -3402,11 +3438,11 @@ msgstr ""
 " als het gebruik van USN mislukt. Deze functie wordt alleen ondersteund door"
 " Windows en vereist beheerdersrechten."
 
-#: Library/Main/Strings.cs:110
+#: Library/Main/Strings.cs:112
 msgid "Controls the use of NTFS Update Sequence Numbers"
 msgstr "Bepaalt het gebruik van NTFS Update Sequence Numbers"
 
-#: Library/Main/Strings.cs:111
+#: Library/Main/Strings.cs:113
 msgid ""
 "If USN is enabled the USN numbers are used to find all changed files since "
 "last backup. Use this option to disable the use of USN numbers, which will "
@@ -3422,11 +3458,11 @@ msgstr ""
 "productieomgeving. Als USN niet is ingeschakeld, heeft deze optie geen "
 "effect."
 
-#: Library/Main/Strings.cs:112
+#: Library/Main/Strings.cs:114
 msgid "Disables changelist by USN numbers"
 msgstr "Schakelt de aanpassingslijst van USN nummers uit"
 
-#: Library/Main/Strings.cs:113
+#: Library/Main/Strings.cs:115
 #, csharp-format
 msgid ""
 "When matching timestamps, Duplicati will adjust the times by a small "
@@ -3448,15 +3484,15 @@ msgstr ""
 "van 1% (max 1 uur) aanhouden. Gebruik deze optie om deze tolerantie uit te "
 "schakelen, en het strikt controleren van tijden hanteren."
 
-#: Library/Main/Strings.cs:114
+#: Library/Main/Strings.cs:116
 msgid "Deactivates tolerance when comparing times"
 msgstr "Deactiveert tolerantie bij het vergelijken van tijden."
 
-#: Library/Main/Strings.cs:115
+#: Library/Main/Strings.cs:117
 msgid "Verify uploads by listing contents"
 msgstr "Controleer uploads door het opvragen van de inhoud"
 
-#: Library/Main/Strings.cs:116
+#: Library/Main/Strings.cs:118
 msgid ""
 "Duplicati will upload files while scanning the disk and producing volumes, "
 "which usually makes the backup faster. Use this flag to turn the behavior "
@@ -3467,11 +3503,11 @@ msgstr ""
 "verlopen. Gebruik deze vlag om dit gedrag uit te schakelen, zodat Duplicati "
 "voor ieder volume zal wachten tot het voltooid is."
 
-#: Library/Main/Strings.cs:117
+#: Library/Main/Strings.cs:119
 msgid "Upload files synchronously"
 msgstr "Upload bestanden synchroon"
 
-#: Library/Main/Strings.cs:118
+#: Library/Main/Strings.cs:120
 msgid ""
 "Duplicati will attempt to perform multiple operations on a single "
 "connection, as this avoids repeated login attempts, and thus speeds up the "
@@ -3483,11 +3519,11 @@ msgstr ""
 "een dus het proces versnelt. Deze optie kan gebruikt worden om te verzekeren"
 " dat iedere bewerking uitgevoerd wordt in een aparte verbinding."
 
-#: Library/Main/Strings.cs:119
+#: Library/Main/Strings.cs:121
 msgid "Do not re-use connections"
 msgstr "Hergebruik geen verbindingen"
 
-#: Library/Main/Strings.cs:120
+#: Library/Main/Strings.cs:122
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -3498,11 +3534,11 @@ msgstr ""
 " in om foutmeldingen weer te geven zodra een bewerking opnieuw wordt "
 "uitgevoerd."
 
-#: Library/Main/Strings.cs:121
+#: Library/Main/Strings.cs:123
 msgid "Show error messages when a retry is performed"
 msgstr "Toon foutmeldingen zodra een bewerking opnieuw wordt uitgevoerd"
 
-#: Library/Main/Strings.cs:122
+#: Library/Main/Strings.cs:124
 msgid ""
 "If no files have changed, Duplicati will not upload a backup set. If the "
 "backup data is used to verify that a backup was executed, this option will "
@@ -3513,11 +3549,11 @@ msgstr ""
 "back-up was uitgevoerd, zorgt deze optie ervoor dat Duplicati altijd een "
 "back-up set uploadt, zelfs als die leeg is."
 
-#: Library/Main/Strings.cs:123
+#: Library/Main/Strings.cs:125
 msgid "Upload empty backup files"
 msgstr "Upload lege back-upbestanden"
 
-#: Library/Main/Strings.cs:124
+#: Library/Main/Strings.cs:126
 msgid ""
 "This value can be used to set a known upper limit on the amount of space a "
 "backend has. If the backend reports the size itself, this value is ignored"
@@ -3526,33 +3562,33 @@ msgstr ""
 "backend heeft. Als de backend deze grootte zelf opgeeft, wordt deze waarde "
 "genegeerd"
 
-#: Library/Main/Strings.cs:125
+#: Library/Main/Strings.cs:127
 msgid "A reported maximum storage"
 msgstr "Een gerapporteerde maximum opslagcapaciteit"
 
-#: Library/Main/Strings.cs:126
+#: Library/Main/Strings.cs:128
 msgid ""
 "Sets a threshold for when to warn about the backend quota being nearly "
 "exceeded. It is given as a percentage, and a warning is generated if the "
-"amount of available quota is less that this percentage of the total backup "
+"amount of available quota is less than this percentage of the total backup "
 "size. If the backend does not report the quota information, this value will "
 "be ignored"
 msgstr ""
-"Stelt de drempelwaarde in wanneer gewaarschuwd moet worden als de backend "
-"quota bijna overschreven wordt. Het wordt opgegeven als een percentage, en "
-"een waarschuwing wordt gegenereerd als de hoeveelheid beschikbare quota "
-"minder is dan dit percentage van de totale back-upgrootte. Als de backend "
-"deze quota-informatie niet ondersteunt, zal deze waarde worden genegeerd."
+"Stelt een drempel in voor wanneer te waarschuwen over backend quota die "
+"bijna overschreden wordt. Dit wordt opgegeven als een percentage, en een "
+"waarschuwing wordt gegenereerd als de hoeveelheid beschikbare quota minder "
+"is dan dit percentage van de totale back-upgrootte. Als de backend geen "
+"quota-informatie rapporteert, zal deze waarde worden genegeerd."
 
-#: Library/Main/Strings.cs:127
+#: Library/Main/Strings.cs:129
 msgid "Threshold for warning about low quota"
 msgstr "Drempelwaarde voor waarschuwing voor lage quota"
 
-#: Library/Main/Strings.cs:128
+#: Library/Main/Strings.cs:130
 msgid "Symlink handling"
 msgstr "Symlink afhandeling"
 
-#: Library/Main/Strings.cs:129
+#: Library/Main/Strings.cs:131
 #, csharp-format
 msgid ""
 "Use this option to handle symlinks differently. The \"{0}\" option will "
@@ -3570,11 +3606,11 @@ msgstr ""
 "ervoor zal zorgen dat symlink bestanden aan de back-up worden toegevoegd en "
 "hersteld als normale bestanden."
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:132
 msgid "Hardlink handling"
 msgstr "Hardlink afhandeling"
 
-#: Library/Main/Strings.cs:131
+#: Library/Main/Strings.cs:133
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -3590,11 +3626,11 @@ msgstr ""
 "hardlink behandelen als een uniek pad. De optie \"{2}\" zal alle hardlinks "
 "negeren met meer dan één link."
 
-#: Library/Main/Strings.cs:132
+#: Library/Main/Strings.cs:134
 msgid "Exclude files by attribute"
 msgstr "Sluit bestanden uit op basis van attribuut"
 
-#: Library/Main/Strings.cs:133
+#: Library/Main/Strings.cs:135
 #, csharp-format
 msgid ""
 "Use this option to exclude files with certain attributes. Use a comma "
@@ -3605,7 +3641,7 @@ msgstr ""
 "Gebruik een door komma's gescheiden lijst met attribuutnamen om er meer dan "
 "één op te geven. Mogelijke waarden zijn: {0}"
 
-#: Library/Main/Strings.cs:134
+#: Library/Main/Strings.cs:136
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -3618,11 +3654,11 @@ msgstr ""
 "tot de inhoud van een momentopname. Deze workaround kan bestandstoegang "
 "versnellen onder Windows XP."
 
-#: Library/Main/Strings.cs:135
+#: Library/Main/Strings.cs:137
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Wijs momentopnames toe aan een schijf (alleen Windows)"
 
-#: Library/Main/Strings.cs:136
+#: Library/Main/Strings.cs:138
 msgid ""
 "A display name that is attached to this backup. Can be used to identify the "
 "backup when sending mail or running scripts."
@@ -3631,11 +3667,11 @@ msgstr ""
 "de back-up te identificeren bij het verzenden van email of het uitvoeren van"
 " scripts."
 
-#: Library/Main/Strings.cs:137
+#: Library/Main/Strings.cs:139
 msgid "Name of the backup"
 msgstr "Naam van de back-up"
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:140
 #, csharp-format
 msgid ""
 "This property can be used to point to a text file where each line contains a"
@@ -3655,12 +3691,12 @@ msgstr ""
 "standaard bestand wordt meegeleverd, dat eveneens dient als voorbeeld. Het "
 "standaard bestand is opgeslagen in {0}."
 
-#: Library/Main/Strings.cs:139
+#: Library/Main/Strings.cs:141
 msgid "Manage non-compressible file extensions"
 msgstr "Beheer niet-comprimeerbare bestandsextensies"
 
-#: Library/Main/Strings.cs:140 Library/Main/Strings.cs:150
-#: Library/Main/Strings.cs:156
+#: Library/Main/Strings.cs:142 Library/Main/Strings.cs:152
+#: Library/Main/Strings.cs:158
 msgid ""
 "A fragment of memory is used to reduce database lookups. You should not "
 "change this value unless you get warnings in the log."
@@ -3669,11 +3705,11 @@ msgstr ""
 "verminderen. Verander deze waarde niet tenzij er waarschuwingen verschijnen "
 "in het log."
 
-#: Library/Main/Strings.cs:141
+#: Library/Main/Strings.cs:143
 msgid "Memory used by the block hash"
 msgstr "Geheugen dat gebruikt wordt door de blok hash"
 
-#: Library/Main/Strings.cs:142
+#: Library/Main/Strings.cs:144
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -3686,11 +3722,11 @@ msgstr ""
 "bestandslijsten. Merk op dat de waarde niet kan worden veranderd nadat "
 "remote bestanden zijn aangemaakt."
 
-#: Library/Main/Strings.cs:143
+#: Library/Main/Strings.cs:145
 msgid "Block size used in hashing"
 msgstr "Blokgrootte gebruikt in hashing"
 
-#: Library/Main/Strings.cs:144
+#: Library/Main/Strings.cs:146
 msgid ""
 "This option can be used to limit the scan to only files that are known to "
 "have changed. This is usually only activated in combination with a "
@@ -3701,22 +3737,22 @@ msgstr ""
 "alleen geactiveerd in combinatie met een bestandssysteem bewaker die "
 "bestandswijzigingen bijhoudt."
 
-#: Library/Main/Strings.cs:145
+#: Library/Main/Strings.cs:147
 msgid "List of files to examine for changes"
 msgstr "Lijst met bestanden om na te kijken op wijzigingen"
 
-#: Library/Main/Strings.cs:146
+#: Library/Main/Strings.cs:148
 msgid ""
 "Path to the file containing the local cache of the remote file database"
 msgstr ""
 "Pad naar het bestand dat de lokale cache bevat van de remote "
 "bestandsdatabase"
 
-#: Library/Main/Strings.cs:147
+#: Library/Main/Strings.cs:149
 msgid "Path to the local state database"
 msgstr "Pad naar de lokale status database"
 
-#: Library/Main/Strings.cs:148
+#: Library/Main/Strings.cs:150
 #, csharp-format
 msgid ""
 "This option can be used to supply a list of deleted files. This option will "
@@ -3726,15 +3762,15 @@ msgstr ""
 "geven. Deze optie zal worden genegeerd tenzij de optie --{0} eveneens is "
 "ingesteld."
 
-#: Library/Main/Strings.cs:149
+#: Library/Main/Strings.cs:151
 msgid "List of deleted files"
 msgstr "Lijst met verwijderde bestanden"
 
-#: Library/Main/Strings.cs:151
+#: Library/Main/Strings.cs:153
 msgid "Memory used by the file hash"
 msgstr "Geheugen gebruikt door de bestands hash"
 
-#: Library/Main/Strings.cs:152
+#: Library/Main/Strings.cs:154
 msgid ""
 "This option can be used to reduce the memory footprint by not keeping paths "
 "and modification timestamps in memory"
@@ -3742,27 +3778,27 @@ msgstr ""
 "Deze optie kan worden gebruikt om het geheugengebruik te verminderen door "
 "paden en tijdstempels van wijzigingen niet in het geheugen te houden"
 
-#: Library/Main/Strings.cs:153
+#: Library/Main/Strings.cs:155
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr ""
 "Verminder geheugengebruik door zoekacties in het geheugen uit te schakelen"
 
-#: Library/Main/Strings.cs:154
+#: Library/Main/Strings.cs:156
 msgid ""
 "This option can be used to increase speed in exchange for extra memory use."
 msgstr ""
 "Deze optie kan worden gebruikt om de snelheid te verhogen ten koste van een "
 "hoger geheugengebruik."
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:157
 msgid "Store an in-memory block cache"
 msgstr "Sla een blok cache op die zich in het geheugen bevindt"
 
-#: Library/Main/Strings.cs:157
+#: Library/Main/Strings.cs:159
 msgid "Memory used by the metadata hash"
 msgstr "Geheugen gebruikt voor de metadata hash"
 
-#: Library/Main/Strings.cs:158
+#: Library/Main/Strings.cs:160
 msgid ""
 "If this flag is set, the local database is not compared to the remote "
 "filelist on startup. The intended usage for this option is to work correctly"
@@ -3773,11 +3809,11 @@ msgstr ""
 " correct te werken in omstandigheden waar het opvragen van bestandenlijsten "
 "niet meer werkt of niet beschikbaar is."
 
-#: Library/Main/Strings.cs:159
+#: Library/Main/Strings.cs:161
 msgid "Do not query backend at startup"
 msgstr "Vraag geen gegevens van de backend op bij het opstarten"
 
-#: Library/Main/Strings.cs:160
+#: Library/Main/Strings.cs:162
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -3792,11 +3828,11 @@ msgstr ""
 "indexbestanden meer ruimte aan de remote zijde innemen die wellicht nooit "
 "gebruikt wordt."
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:163
 msgid "Determines usage of index files"
 msgstr "Bepaalt het gebruik van indexbestanden"
 
-#: Library/Main/Strings.cs:162
+#: Library/Main/Strings.cs:164
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -3808,11 +3844,11 @@ msgstr ""
 "ruimte de doellocatie kan bevatten voordat het weer opgeëist wordt. Deze "
 "waarde is een percentage gebruikt op ieder volume en de totale opslag."
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:165
 msgid "The maximum wasted space in percent"
 msgstr "De maximum hoeveelheid onnodige ruimte in procenten"
 
-#: Library/Main/Strings.cs:164
+#: Library/Main/Strings.cs:166
 msgid ""
 "This option can be used to experiment with different settings and observe "
 "the outcome without changing actual files."
@@ -3821,11 +3857,11 @@ msgstr ""
 "instellingen om te zien wat de uitkomst is zonder daadwerkelijk bestanden te"
 " wijzigen."
 
-#: Library/Main/Strings.cs:165
+#: Library/Main/Strings.cs:167
 msgid "Does not perform any modifications"
-msgstr "Voert een enkele aanpassing uit"
+msgstr "Voert geen enkele wijziging uit"
 
-#: Library/Main/Strings.cs:166
+#: Library/Main/Strings.cs:168
 msgid ""
 "This is a very advanced option! This option can be used to select a block "
 "hash algorithm with smaller or larger hash size, for performance or storage "
@@ -3835,11 +3871,11 @@ msgstr ""
 "blok hash algoritme te selecteren met een kleinere of grotere hash-grootte, "
 "voor prestatie- of opslag-gerelateerde redenen."
 
-#: Library/Main/Strings.cs:167
+#: Library/Main/Strings.cs:169
 msgid "The hash algorithm used on blocks"
 msgstr "Het hash-algoritme dat gebruikt wordt voor blokken"
 
-#: Library/Main/Strings.cs:168
+#: Library/Main/Strings.cs:170
 msgid ""
 "This is a very advanced option! This option can be used to select a file "
 "hash algorithm with smaller or larger hash size, for performance or storage "
@@ -3849,11 +3885,11 @@ msgstr ""
 "bestands-hash algoritme te selecteren met een kleinere of grotere grootte, "
 "voor prestatie- of opslag-gerelateerde redenen."
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:171
 msgid "The hash algorithm used on files"
 msgstr "Het hash-algoritme dat gebruikt wordt voor bestanden"
 
-#: Library/Main/Strings.cs:170
+#: Library/Main/Strings.cs:172
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -3866,11 +3902,11 @@ msgstr ""
 "automatische opruimacties uit te schakelen en alleen op te ruimen als het "
 "opruimcommando wordt uitgevoerd."
 
-#: Library/Main/Strings.cs:171
+#: Library/Main/Strings.cs:173
 msgid "Disable automatic compacting"
 msgstr "Schakel automatisch opruimen uit"
 
-#: Library/Main/Strings.cs:172
+#: Library/Main/Strings.cs:174
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -3883,11 +3919,11 @@ msgstr ""
 "die een klein aantal bytes onnodige ruimte bevatten niet worden gedownload "
 "en opnieuw weggeschreven."
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:175
 msgid "Volume size threshold"
 msgstr "Volumegrootte drempelwaarde"
 
-#: Library/Main/Strings.cs:174
+#: Library/Main/Strings.cs:176
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -3897,11 +3933,11 @@ msgstr ""
 "deze waarde het groeperen van kleine bestanden forceren. De kleine volumes "
 "zullen altijd gecombineerd worden als ze een volledig volume kunnen vullen."
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:177
 msgid "Maximum number of small volumes"
 msgstr "Maximum aantal kleine volumes"
 
-#: Library/Main/Strings.cs:176
+#: Library/Main/Strings.cs:178
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -3911,15 +3947,15 @@ msgstr ""
 "het vinden van bestaande blokken. Dit is een vrij trage bewerking maar het "
 "kan de grootte van downloads beperken."
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:179
 msgid "Use local file data when restoring"
 msgstr "Gebruik lokale bestandsdata bij het herstellen"
 
-#: Library/Main/Strings.cs:178
+#: Library/Main/Strings.cs:180
 msgid "Disables the local database"
 msgstr "Schakelt de lokale database uit"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:181
 msgid ""
 "When listing contents or when restoring files, the local database can be "
 "skipped. This is usually slower, but can be used to verify the actual "
@@ -3930,11 +3966,11 @@ msgstr ""
 "maar kan gebruikt worden om de daadwerkelijke inhoud van remote opslag te "
 "controleren"
 
-#: Library/Main/Strings.cs:180
+#: Library/Main/Strings.cs:182
 msgid "Keep a number of versions"
 msgstr "Behoud een bepaald aantal versies"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:183
 msgid ""
 "Use this option to set number of versions to keep, supply -1 to keep all "
 "versions"
@@ -3942,23 +3978,23 @@ msgstr ""
 "Gebruik deze optie om het aantal versies in te stellen die behouden moet "
 "worden, geef -1 op om alle versies te behouden"
 
-#: Library/Main/Strings.cs:182
+#: Library/Main/Strings.cs:184
 msgid "Keep all versions within a timespan"
 msgstr "Behoud alle versies binnen een bepaalde tijdspanne"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:185
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr ""
 "Gebruik deze optie om de tijdspanne in te stellen waarbinnen back-ups "
 "behouden moeten worden."
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:186
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr ""
 "Verminder het aantal versies door oude tussenliggende back-ups te "
 "verwijderen"
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:187
 msgid ""
 "Use this option to reduce the number of versions that are kept with "
 "increasing version age by deleting most of the old backups. The expected "
@@ -3979,20 +4015,20 @@ msgstr ""
 "Deze optie ondersteunt eveneens de aanduiding \"U\" om een onbeperkt "
 "tijdsinterval aan te geven."
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:188
 msgid "Ignore missing source elements"
 msgstr "Negeer ontbrekende bronelementen"
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:189
 msgid "Use this option to continue even if some source entries are missing."
 msgstr ""
 "Gebruik deze optie om door te gaan als een aantal bronelementen ontbreken."
 
-#: Library/Main/Strings.cs:188
+#: Library/Main/Strings.cs:190
 msgid "Overwrite files when restoring"
 msgstr "Overschrijf bestanden bij het herstellen"
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:191
 msgid ""
 "Use this option to overwrite target files when restoring, if this option is "
 "not set the files will be restored with a timestamp and a number appended."
@@ -4001,11 +4037,11 @@ msgstr ""
 " deze optie niet is ingesteld zullen de bestanden worden hersteld met een "
 "tijdstempel en een nummer eraan toegevoegd."
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:192
 msgid "Output more progress information"
 msgstr "Voer meer voortgangsinformatie uit"
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:193
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
@@ -4014,16 +4050,16 @@ msgstr ""
 "wordt als een optie wordt uitgevoerd. In het algemeen zal deze optie een "
 "regel aanmaken voor ieder verwerkt bestand."
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:194
 msgid "Set a log-level for the desired output method instead"
 msgstr ""
 "Stel in plaats hiervan het log-niveau in voor de gewenste uitvoermethode"
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:195
 msgid "Output full results"
 msgstr "Uitvoer volledige resultaten"
 
-#: Library/Main/Strings.cs:194
+#: Library/Main/Strings.cs:196
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -4031,11 +4067,11 @@ msgstr ""
 "Gebruik deze optie om de hoeveelheid uitvoer te vergroten die gegenereerd "
 "wordt als het resultaat van een bewerking, inclusief alle bestandsnamen."
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:197
 msgid "Determine if verification files are uploaded"
 msgstr "Bepaal of controlebestanden geüpload zijn"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:198
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -4047,60 +4083,88 @@ msgstr ""
 "SHA256 hashes van alle remote bestanden en kan gebruikt worden om de "
 "integriteit van de bestanden te controleren."
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:199
 msgid "The number of samples to test after a backup"
 msgstr "Het aantal samples die getest moeten worden na een back-up"
-
-#: Library/Main/Strings.cs:198
-#, csharp-format
-msgid ""
-"After a backup is completed, some files are selected for verification on the"
-" remote backend. Use this option to change how many. If this value is set to"
-" 0 or the option --{0} is set, no remote files are verified"
-msgstr ""
-"Nadat een back-up is voltooid, worden een aantal bestanden geselecteerd voor"
-" controle op de remote backend. Gebruik deze optie om aan te geven hoeveel. "
-"Als deze waarde wordt ingesteld op 0 of als de optie --{0} is geselecteerd, "
-"worden remote bestanden niet gecontroleerd."
-
-#: Library/Main/Strings.cs:199
-msgid "Activates in-depth verification of files"
-msgstr "Activeert diepgaande controle van bestanden"
 
 #: Library/Main/Strings.cs:200
 #, csharp-format
 msgid ""
-"After a backup is completed, some files are selected for verification on the"
-" remote backend. Use this option to turn on full verification, which will "
-"decrypt the files and examine the insides of each volume, instead of simply "
-"verifying the external hash, If the option --{0} is set, no remote files are"
-" verified. This option is automatically set when then verification is "
-"performed directly."
+"After a backup is completed, some (dblock, dindex, dlist) files from the "
+"remote backend are selected for verification. Use this option to change how "
+"many. If the backup-test-percentage option is also provided, the number of "
+"samples tested is the maximum implied by the two options. If this value is "
+"set to 0 or the option --{0} is set, no remote files are verified"
 msgstr ""
-"Nadat een back-up is voltooid, worden een aantal bestanden geselecteerd voor"
-" controle op de remote backend. Gebruik deze optie om volledige controle in "
-"te schakelen, wat de bestanden zal ontsleutelen en de inhoud van ieder "
-"volume zal onderzoeken, in plaats van simpelweg de externe hash te "
-"controleren, als de optie --{0} is ingesteld, worden remote bestanden niet "
-"gecontroleerd. Deze optie is automatisch ingesteld als de controle "
-"rechtstreeks wordt uitgevoerd."
+"Nadat een back-up is voltooid, worden sommige (dblock, dindex, dlist) "
+"bestanden van de remote backend geselecteerd voor controle. Gebruik deze "
+"optie om aan te geven hoeveel. Als de backup-test percentage optie eveneens "
+"wordt opgegeven, is het aantal te controleren bestanden het maximum dat "
+"wordt geïmpliceerd door de twee opties. Als deze waarde wordt ingesteld op 0"
+" of de optie --{0} is ingesteld, dan worden geen remote bestanden "
+"gecontroleerd."
 
 #: Library/Main/Strings.cs:201
-msgid "Size of the file read buffer"
-msgstr "Groote van de bestands leesbuffer"
+msgid "The percentage of samples to test after a backup"
+msgstr "Het percentage van te controleren bestanden na een back-upbewerking"
 
 #: Library/Main/Strings.cs:202
 msgid ""
-"Use this size to control how many bytes a read from a file before processing"
+"After a backup is completed, some (dblock, dindex, dlist) files from the "
+"remote backend are selected for verification. Use this option to specify the"
+" percentage (between 0 and 100) of files to test. If the backup-test-samples"
+" option is also provided, the number of samples tested is the maximum "
+"implied by the two options. If the no-backend-verification option is "
+"provided, no remote files are verified."
 msgstr ""
-"Gebruik deze grootte om te beheren hoe veel bytes van een bestand gelezen "
-"worden voordat het verwerkt wordt"
+"Nadat een back-up is voltooid, worden sommige (dblock, dindex, dlist) "
+"bestanden van de remote backend geselecteerd voor controle. Gebruik deze "
+"optie om het percentage (tussen 0 en 100) van de te testen bestanden op te "
+"geven. als de backup-test-samples optie eveneens is opgegeven, is het aantal"
+" te controleren bestanden het maximum dat wordt geïmpliceerd door te twee "
+"opties. Als de no-backend-verification optie is opgegeven, worden geen "
+"remote bestanden gecontroleerd."
 
 #: Library/Main/Strings.cs:203
+msgid "Activates in-depth verification of files"
+msgstr "Activeert diepgaande controle van bestanden"
+
+#: Library/Main/Strings.cs:204
+#, csharp-format
+msgid ""
+"After a backup is completed, some (dblock, dindex, dlist) files from the "
+"remote backend are selected for verification. Use this option to turn on "
+"full verification, which will decrypt the files and examine the insides of "
+"each volume, instead of simply verifying the external hash, If the option "
+"--{0} is set, no remote files are verified. This option is automatically set"
+" when then verification is performed directly."
+msgstr ""
+"Nadat een back-up is voltooid, worden sommige (dblock, dindex, dlist) "
+"bestanden van de remote backend geselecteerd voor controle. Gebruik deze "
+"optie om een volledige controle in te schakelen, waardoor de bestanden "
+"ontsleuteld worden en de gegevens die het volume bevat onderzocht worden, in"
+" plaats van simpelweg de externe hash-waarde te controleren. Als de optie "
+"--{0} is ingesteld, worden geen remote bestanden gecontroleerd. Deze optie "
+"wordt automatisch ingesteld als een verificatie-bewerking rechtstreeks wordt"
+" uitgevoerd."
+
+#: Library/Main/Strings.cs:205
+msgid "Size of the file read buffer"
+msgstr "Groote van de bestands leesbuffer"
+
+#: Library/Main/Strings.cs:206
+msgid ""
+"Use this size to control how many bytes are read from a file before "
+"processing"
+msgstr ""
+"Gebruik deze grootte om te bepalen hoeveel bytes uit een bestand worden "
+"gelezen voordat deze worden bewerkt"
+
+#: Library/Main/Strings.cs:207
 msgid "Allow the passphrase to change"
 msgstr "Sta toe dat een wachtwoordzin veranderd wordt"
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:208
 msgid ""
 "Use this option to allow the passphrase to change, note that this option is "
 "not permitted for a backup or repair operation"
@@ -4109,11 +4173,11 @@ msgstr ""
 "merk op dat deze optie niet is toegestaan voor een back-up of "
 "herstelbewerking"
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:209
 msgid "List only filesets"
 msgstr "Geef enkel bestandsverzamelingen weer"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:210
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process"
@@ -4121,11 +4185,11 @@ msgstr ""
 "Gebruik deze optie om enkel bestandsverzamelingen weer te geven om te "
 "voorkomen dat bestanden andere metadata doorkruisen wat het proces vertraagt"
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:212
 msgid "Don't store metadata"
 msgstr "Sla geen metadata op"
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:213
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -4136,11 +4200,11 @@ msgstr ""
 "en herstelbewerkingen versnellen, maar heeft niet veel effect op de "
 "bestandsgrootte."
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:214
 msgid "Restore file permissions"
 msgstr "Herstel bestandspermissies"
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:215
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -4149,11 +4213,11 @@ msgstr ""
 "zou kunnen hebben tot uw bestanden. Gebruik deze optie om ook "
 "bestandspermissies te herstellen."
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:216
 msgid "Skip restored file check"
 msgstr "Sla het controleren van herstelde bestanden over"
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:217
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -4164,20 +4228,20 @@ msgstr ""
 "succesvol was. Gebruik deze optie om de controle uit te schakelen en het "
 "wachten op het controleproces te vermijden."
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:218
 msgid "Activate caches"
 msgstr "Activeer caches"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:219
 msgid "Activate in-memory caches, which are now off by default"
 msgstr ""
 "Activeer caches in het geheugen, dit is tegenwoordig standaard uitgeschakeld"
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:220
 msgid "Do not use local data"
 msgstr "Gebruik geen lokale gegevens"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:221
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -4188,11 +4252,11 @@ msgstr ""
 "optie op deze optimalisatie over te slaan en alleen remote gegevens te "
 "gebruiken."
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:222
 msgid "Check block hashes"
 msgstr "Controleer blok hashes"
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:223
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -4201,11 +4265,11 @@ msgstr ""
 "controleren die gelezen worden van een volume voordat herstelde bestanden "
 "worden bijgewerkt met de gegevens."
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:226
 msgid "Repair database with paths"
 msgstr "Repareer database met paden"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:227
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -4218,11 +4282,11 @@ msgstr ""
 "informatie te reconstrueren. De resulterende database kan worden doorzocht, "
 "maar kan niet worden gebruikt om er gegevens mee te herstellen."
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:228
 msgid "Force the locale setting"
 msgstr "forceer de plaatsinstelling"
 
-#: Library/Main/Strings.cs:225
+#: Library/Main/Strings.cs:229
 msgid ""
 "By default, your system locale and culture settings will be used. In some "
 "cases you may prefer to run with another locale, for example to get messages"
@@ -4235,12 +4299,28 @@ msgstr ""
 "optie kan worden gebruikt om de plaatsinstelling te selecteren. Geef een "
 "blanco regel op om te kiezen voor de \"Onveranderlijke Cultuur\""
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:230
+msgid "Forces the display of the actual date instead of calendar date"
+msgstr ""
+"Forceert de weergave van de actuele datum in plaats van de kalenderdatum"
+
+#: Library/Main/Strings.cs:231
+msgid ""
+"By default, dates are displayed in the calendar format, meaning \"Today\" or"
+" \"Last Thursday\". By setting this option, only the actual dates are "
+"displayed, \"Nov 12, 2018, 8:01 AM\" for example."
+msgstr ""
+"Standaard worden datums weergegeven in de kalenderindeling, zoals "
+"\"Vandaag\" of \"Afgelopen donderdag\". Door deze optie in te stellen, "
+"worden alleen de werkelijke datums weergegeven, bijvoorbeeld \"12 november "
+"2018, 8:01 AM\"."
+
+#: Library/Main/Strings.cs:232
 msgid "Handle file communication with backend using threaded pipes"
 msgstr ""
 "Handel bestandscommunicatie met de backend af door middel van threaded pipes"
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:233
 msgid ""
 "Use this option to disable multithreaded handling of up- and downloads, that"
 " can significantly speed up backend operations depending on the hardware "
@@ -4250,11 +4330,11 @@ msgstr ""
 "schakelen, dat kan backend bewerkingen aanzienlijk versnellen afhankelijk "
 "van de hardware die gebruikt wordt en de doorvoersnelheid van de backend."
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:234
 msgid "Limit number of concurrent threads"
 msgstr "Beperk het aantal gelijktijdige threads"
 
-#: Library/Main/Strings.cs:229
+#: Library/Main/Strings.cs:235
 msgid ""
 "Use this option to set the maximum number of threads used. Setting this "
 "value to zero or less will dynamically balance the number of active threads "
@@ -4264,22 +4344,22 @@ msgstr ""
 " te stellen. Als u deze waarde instelt op nul of lager, wordt het aantal "
 "actieve threads dynamisch afgestemd op de hardware."
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:236
 msgid "Specify the number of concurrent hashing processes"
 msgstr "Geef het aantal gelijktijdige hash-processen op"
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:237
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
 "Gebruik deze optie om het aantal processen in te stellen dat hashing van "
 "gegevens uitvoert."
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:238
 msgid "Specify the number of concurrent compression processes"
 msgstr "Geef het aantal gelijktijdige compressieprocessen op"
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:239
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
@@ -4287,11 +4367,11 @@ msgstr ""
 "Gebruik deze optie om het aantal processen in te stellen die de compressie "
 "van uitvoergegevens uitvoert."
 
-#: Library/Main/Strings.cs:234
+#: Library/Main/Strings.cs:240
 msgid "Perform backup of Hyper-V machines (Windows only)"
 msgstr "Voer back-up uit van Hyper-V machines (alleen Windows)"
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:241
 msgid ""
 "Use this option to specify the IDs of machines to include in the backup. "
 "Specify multiple machine IDs with a semicolon separator. (You can use this "
@@ -4302,7 +4382,7 @@ msgstr ""
 "scheidingsteken. (U kunt dit PowerShell commando geven om de ID's op te "
 "vragen: 'Get-VM | ft VMName, ID')"
 
-#: Library/Main/Strings.cs:236
+#: Library/Main/Strings.cs:242
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -4312,11 +4392,11 @@ msgstr ""
 "bestandslijst samenstellen die een samenvoeging is van de laatste afgeronde "
 "back-up en de inhoud die werd geüpload tijdens de incomplete back-up sessie."
 
-#: Library/Main/Strings.cs:237
+#: Library/Main/Strings.cs:243
 msgid "Disables synthetic filelist"
 msgstr "Schakelt synthetische bestandenlijst uit"
 
-#: Library/Main/Strings.cs:238
+#: Library/Main/Strings.cs:244
 msgid ""
 "This flag instructs Duplicati to not look at metadata or filesize when "
 "deciding to scan a file for changes. Use this option if you have a large "
@@ -4328,15 +4408,15 @@ msgstr ""
 "een groot aantal bestanden hebt en opmerkt dat het scannen een lange tijd "
 "duurt met ongewijzigde bestanden."
 
-#: Library/Main/Strings.cs:239
+#: Library/Main/Strings.cs:245
 msgid "Checks only file lastmodified"
 msgstr "Controleert alleen laatst bewerkte bestand"
 
-#: Library/Main/Strings.cs:240
-msgid "Disables path compresion on restore"
-msgstr "Schakelt pad compressie uit bij terugzetten"
+#: Library/Main/Strings.cs:246
+msgid "Disables path compression on restore"
+msgstr "Schakelt pad-compressie uit bij een herstelbewerking"
 
-#: Library/Main/Strings.cs:241
+#: Library/Main/Strings.cs:247
 msgid ""
 "When restore a subset of a backup into a new folder, the shortest possible "
 "path is used to avoid generating deep paths with empty folders. Use this "
@@ -4349,11 +4429,11 @@ msgstr ""
 "originele mapstructuur in zijn geheel behouden blijft, inclusief hoger "
 "gelegen lege mappen."
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:248
 msgid "Allow removing all filesets"
 msgstr "Sta verwijderen van alle bestandsverzamelingen toe"
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:249
 msgid ""
 "By default, the last fileset cannot be removed. This is a safeguard to make "
 "sure that all remote data is not deleted by a configuration mistake. Use "
@@ -4365,13 +4445,13 @@ msgstr ""
 "beveiliging uit te schakelen, zodat alle bestandsverzamelingen kunnen worden"
 " verwijderd."
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:250
 msgid "Allow automatic rebuilding of local database to save space."
 msgstr ""
 "Sta het automatisch opnieuw opbouwen van de lokale database toe om ruimte te"
 " besparen."
 
-#: Library/Main/Strings.cs:245
+#: Library/Main/Strings.cs:251
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -4387,11 +4467,11 @@ msgstr ""
 "velden in de database. Door dit aan te zetten zal Duplicati VACUUM "
 "bewerkingen naar eigen goeddunken uitvoeren."
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:252
 msgid "Disable the read-ahead scanner"
 msgstr "Schakel de vooruit lees-scanner uit"
 
-#: Library/Main/Strings.cs:247
+#: Library/Main/Strings.cs:253
 msgid ""
 "When this flag is enabled, the scanner that computes the size of source "
 "files is disabled, and instead the reported size is read from the database. "
@@ -4404,11 +4484,11 @@ msgstr ""
 "kan het back-up proces versnellen door het verminderen van schijftoegang, "
 "maar zak een minder accurate voortgangsindicator tot gevolg hebben."
 
-#: Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:254
 msgid "Disable filelist consistency checks"
 msgstr "Consistentiecontroles voor bestandslijsten uitschakelen"
 
-#: Library/Main/Strings.cs:249
+#: Library/Main/Strings.cs:255
 msgid ""
 "In backups with a large number of filesets, the verification can take up a "
 "large part of the backup time. If you disable the checks, make sure you run "
@@ -4419,11 +4499,11 @@ msgstr ""
 "controlecommando's uit als deze automatische controles worden uitgeschakeld,"
 " om u ervan te verzekeren dat alles naar behoren werkt."
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:256
 msgid "Disable the backup when on battery power"
 msgstr "Schakel de back-up uit als op batterijstroom wordt gewerkt"
 
-#: Library/Main/Strings.cs:251
+#: Library/Main/Strings.cs:257
 msgid ""
 "When this flag is enabled, a scheduled backup will not run if the system is "
 "detected to be running on battery power (manual or command line backups will"
@@ -4436,15 +4516,15 @@ msgstr ""
 "werken). Als netstroom de gedetecteerde stroombron is, of bij een onbekende "
 "stroombron, zullen de beplande back-ups zoals gebruikelijk doorgaan."
 
-#: Library/Main/Strings.cs:254
+#: Library/Main/Strings.cs:260
 msgid "Log file information level"
 msgstr "Logbestand informatieniveau"
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:261
 msgid "Applies filters to the file log data"
 msgstr "Past filters toe op de gegevens in het logbestand"
 
-#: Library/Main/Strings.cs:256
+#: Library/Main/Strings.cs:262
 #, csharp-format
 msgid ""
 "This option accepts filters that removes or includes messages regardless of "
@@ -4456,25 +4536,25 @@ msgstr ""
 "Deze optie staat filters toe die meldingen opnemen of uitsluiten, ongeacht het logniveau hiervan. Meerdere filters worden ondersteund door ze te scheiden met {0}. Filters worden vergeleken met de log-tag en verondersteld inclusief te zijn, tenzij ze beginnen met '-'. Reguliere expressies worden ondersteund binnen teksthaken.\n"
 "Voorbeeld: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:263
 msgid "Specifies the amount of log information to write as console output"
 msgstr ""
 "Geeft de hoeveelheid log-informatie op die geschreven wordt als console-"
 "uitvoer"
 
-#: Library/Main/Strings.cs:258
+#: Library/Main/Strings.cs:264
 msgid "Console information level"
 msgstr "Console informatie-niveau"
 
-#: Library/Main/Strings.cs:259
+#: Library/Main/Strings.cs:265
 msgid "Applies filters to the console log data"
 msgstr "Past filters toe op de console log-gegevens"
 
-#: Library/Main/Strings.cs:262
+#: Library/Main/Strings.cs:268
 msgid "Sets the process to use low IO priority"
 msgstr "Stelt het proces in voor laag IO gebruik"
 
-#: Library/Main/Strings.cs:263
+#: Library/Main/Strings.cs:269
 msgid ""
 "This option instructions the operating system to set the current process to "
 "use the lowest IO priority level, which can make operations run slower but "
@@ -4485,11 +4565,11 @@ msgstr ""
 "bewerkingen langzamer uitgevoerd kunnen worden maar andere bewerkingen die "
 "op hetzelfde moment uitgevoerd worden minder verstoord zullen worden"
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:273
 msgid "List of filenames that exclude folders"
 msgstr "Lijst met bestandsnamen die mappen uitsluit"
 
-#: Library/Main/Strings.cs:268
+#: Library/Main/Strings.cs:274
 msgid ""
 "Use this option to set a filename, or list of filenames, that indicate "
 "exclusion of a folder which contains it. A common use would be to have a "
@@ -4502,11 +4582,11 @@ msgstr ""
 "\".nobackup\" te hebben en dit bestand te plaatsen in mappen waarvan geen "
 "back-up zou moeten worden gemaakt."
 
-#: Library/Main/Strings.cs:274
+#: Library/Main/Strings.cs:280
 msgid "Activates logging of all database queries"
 msgstr "Activeert logboekregistratie van alle databasequery's"
 
-#: Library/Main/Strings.cs:275
+#: Library/Main/Strings.cs:281
 #, csharp-format
 msgid ""
 "To improve performance of the backups, frequent database queries are not "
@@ -4519,7 +4599,7 @@ msgstr ""
 " in om alle databasequery's vast te leggen, en vergeet niet om ofwel "
 "--{0}={2} of --{1}={2} in te stellen om de extra loggegevens te rapporteren."
 
-#: Library/Main/Strings.cs:282
+#: Library/Main/Strings.cs:293
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -4528,34 +4608,34 @@ msgstr ""
 "De cryptobibliotheek ondersteunt geen herbruikbare transformaties voor het "
 "hash algoritme {0}"
 
-#: Library/Main/Strings.cs:283
+#: Library/Main/Strings.cs:294
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "De cryptobibliotheek ondersteunt het hash algoritme {0} niet"
 
-#: Library/Main/Strings.cs:284
+#: Library/Main/Strings.cs:295
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "De wachtwoordzin kan niet veranderd worden voor een al bestaande back-up"
 
-#: Library/Main/Strings.cs:285
+#: Library/Main/Strings.cs:296
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Het maken van een momentopname is mislukt: {0}"
 
-#: Library/Main/BackendManager.cs:590
+#: Library/Main/BackendManager.cs:591
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
 msgstr "Verwijderen bestand {0} mislukt, testen of bestand bestaat"
 
-#: Library/Main/BackendManager.cs:596
+#: Library/Main/BackendManager.cs:597
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
 msgstr ""
 "Hersteld van problemen bij een poging om niet-bestaand bestand te "
 "verwijderen {0}"
 
-#: Library/Main/BackendManager.cs:601
+#: Library/Main/BackendManager.cs:602
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
 msgstr "Herstellen van fout bij verwijderen bestand mislukt: {0}"
@@ -4646,11 +4726,11 @@ msgid ""
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
-"Als uw servercertificaat is gerapporteerd als ongeldig (bijvoorbeeld met "
-"zelfondertekende certificaten), kan de certificaat hash (SHA 256) worden "
-"opgegeven om het toch goed te keuren. De hash-waarde moet worden ingegeven "
-"in hex formaat zonder spaties of dubbele punten. Meerdere hashes kunnen "
-"gescheiden door komma's worden ingegeven. "
+"Als uw servercertificaat wordt gerapporteerd als onveilig (bijv. bij zelf-"
+"ondertekende certificaten), kan de certificaat-hash (SHA1) opgegeven worden "
+"om het toch goed te keuren. De hash-waarde moet in hexadecimale indeling "
+"worden ingevoerd, zonder spaties of dubbele punten. U kunt meerdere hashes "
+"invoeren, gescheiden door komma's."
 
 #: Library/Modules/Builtin/Strings.cs:25
 msgid "Optionally accept a known SSL certificate"
@@ -5607,16 +5687,16 @@ msgstr ""
 msgid "Disable console output"
 msgstr "Uitvoer naar het scherm uitschakelen"
 
-#: CommandLine/Strings.cs:34
+#: CommandLine/Strings.cs:41
 #, csharp-format
 msgid "This link may provide additional information: {0}"
 msgstr "Deze link kan aanvullende informatie weergeven: {0}"
 
-#: CommandLine/Program.cs:294
+#: CommandLine/Program.cs:279
 msgid "Toggle automatic updates"
 msgstr "Automatische updates inschakelen"
 
-#: CommandLine/Program.cs:294
+#: CommandLine/Program.cs:279
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
