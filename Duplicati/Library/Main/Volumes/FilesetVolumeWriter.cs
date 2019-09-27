@@ -132,6 +132,7 @@ namespace Duplicati.Library.Main.Volumes
         {
             if (m_streamwriter != null)
             {
+                this.AddFilelistFile();
                 m_writer.Close();
                 m_streamwriter.Dispose();
                 m_streamwriter = null;
@@ -140,14 +141,11 @@ namespace Duplicati.Library.Main.Volumes
             base.Close();
         }
 
-        public void AddFilelistFile()
+        private void AddFilelistFile()
         {
-            if (m_streamwriter != null)
-            {
-                m_writer.WriteEndArray();
-                m_writer.Flush();
-                m_streamwriter.Flush();
-            }
+            m_writer.WriteEndArray();
+            m_writer.Flush();
+            m_streamwriter.Flush();
 
             using (Stream sr = m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow))
             {
