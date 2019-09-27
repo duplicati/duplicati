@@ -1,21 +1,21 @@
 #region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
+//
 #endregion
 using System;
 using System.Collections.Generic;
@@ -29,6 +29,8 @@ namespace Duplicati.CommandLine
 {
     public class Program
     {
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
+
         public static bool FROM_COMMANDLINE = false;
 
         /// <summary>
@@ -111,149 +113,138 @@ namespace Duplicati.CommandLine
 
         public static IEnumerable<string> SupportedCommands { get { return CommandMap.Keys; } }
 
-        public static int RunCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, string[] args)
-        {
+        private static int ShowChangeLog(TextWriter outwriter) {
+            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
+            outwriter.WriteLine(System.IO.File.ReadAllText(path));
+            return 0;
+        }
 
-            bool verboseErrors = false;
-            bool verbose = false;
-            try
+        private static void CheckForUpdates(TextWriter outwriter){
+            var update = Library.AutoUpdater.UpdaterManager.LastUpdateCheckVersion;
+            if (update == null)
+                update = Library.AutoUpdater.UpdaterManager.CheckForUpdate();
+
+            if (update != null && update.Version != Library.AutoUpdater.UpdaterManager.SelfVersion.Version)
             {
-                List<string> cargs = new List<string>(args);
-
-                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
-                var options = tmpparsed.Item1;
-                var filter = tmpparsed.Item2;
-
-                verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
-                verbose = Library.Utility.Utility.ParseBoolOption(options, "verbose");
-
-                if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.OrdinalIgnoreCase))
+                outwriter.WriteLine("Found update \"{0}\", downloading ...", update.Displayname);
+                long lastpg = 0;
+                Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(update, f =>
                 {
-                    var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
-                    outwriter.WriteLine(System.IO.File.ReadAllText(path));
-                    return 0;
+                    var npg = (long)(f * 100);
+                    if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
+                    {
+                        lastpg = npg;
+                        outwriter.WriteLine("Downloading {0}% ...", npg);
+                    }
+                });
+                outwriter.WriteLine("Update \"{0}\" ({1}) installed, using on next launch", update.Displayname, update.Version);
+            }
+        }
+
+        private static int ParseCommandLine(TextWriter outwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args) {
+            List<string> cargs = new List<string>(args);
+
+            var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
+            var options = tmpparsed.Item1;
+            var filter = tmpparsed.Item2;
+
+            verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
+
+            if (cargs.Count == 1 && string.Equals(cargs[0], "changelog", StringComparison.OrdinalIgnoreCase))
+            {
+                return ShowChangeLog(outwriter);
+            }
+
+            foreach (string internaloption in Library.Main.Options.InternalOptions)
+                if (options.ContainsKey(internaloption))
+                {
+                    outwriter.WriteLine(Strings.Program.InternalOptionUsedError(internaloption));
+                    return 200;
                 }
 
-                foreach (string internaloption in Library.Main.Options.InternalOptions)
-                    if (options.ContainsKey(internaloption))
-                    {
-                        outwriter.WriteLine(Strings.Program.InternalOptionUsedError(internaloption));
-                        return 200;
-                    }
+            // Probe for "help" to avoid extra processing
+            if (cargs.Count == 0 || (string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase)))
+            {
+                return Commands.Help(outwriter, setup, cargs, options, filter);
+            }
 
-                // Probe for "help" to avoid extra processing
-                bool isHelp = cargs.Count == 0 || (cargs.Count >= 1 && string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase));
-                if (!isHelp && ((options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file")) || (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file")) || (options.ContainsKey("parameterfile") && !string.IsNullOrEmpty("parameterfile"))))
+            // try and parse all parameter file aliases
+            foreach (string parameterOption in new []{ "parameters-file", "parameters-file", "parameterfile"} )
+            {
+                if (options.ContainsKey(parameterOption) && !string.IsNullOrEmpty(options[parameterOption]))
                 {
-                    string filename;
-                    if (options.ContainsKey("parameters-file") && !string.IsNullOrEmpty("parameters-file"))
-                    {
-                        filename = options["parameters-file"];
-                        options.Remove("parameters-file");
-                    }
-                    else if (options.ContainsKey("parameter-file") && !string.IsNullOrEmpty("parameter-file"))
-                    {
-                        filename = options["parameter-file"];
-                        options.Remove("parameter-file");
-                    }
-                    else
-                    {
-                        filename = options["parameterfile"];
-                        options.Remove("parameterfile");
-                    }
-
+                    string filename = options[parameterOption];
+                    options.Remove(parameterOption);
                     if (!ReadOptionsFromFile(outwriter, filename, ref filter, cargs, options))
                         return 100;
+                    break;
                 }
+            }
 
-                string command;
-                if (cargs.Count > 0)
-                {
-                    command = cargs[0];
-                    cargs.RemoveAt(0);
-                }
-                else
-                    command = "help";
+            if (!options.ContainsKey("passphrase"))
+                if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
+                    options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
 
-                // Update probe for help
-                isHelp = string.Equals(command, "help", StringComparison.OrdinalIgnoreCase);
+            if (!options.ContainsKey("auth-password"))
+                if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
+                    options["auth-password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
 
-                // Skip the env read if the command is help, otherwise we may report weirdness
-                if (!isHelp)
-                {
-                    if (!options.ContainsKey("passphrase"))
-                        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
-                            options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
+            if (!options.ContainsKey("auth-username"))
+                if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
+                    options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
-                    if (!options.ContainsKey("auth-password"))
-                        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
-                            options["auth-password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
+            var showDeletionErrors = verboseErrors;
+            Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
+            {
+                if (showDeletionErrors)
+                    outwriter.WriteLine(string.Format("Failed to delete temp file: {0}", path));
+            });
 
-                    if (!options.ContainsKey("auth-username"))
-                        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
-                            options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
-                }
+            string command = cargs[0];
+            cargs.RemoveAt(0);
 
-                var knownCommands = CommandMap;
+            if (verboseErrors)
+            {
+                outwriter.WriteLine("Input command: {0}", command);
+                outwriter.WriteLine("Input arguments: ");
+                foreach (var a in cargs)
+                    outwriter.WriteLine("\t{0}", a);
+                outwriter.WriteLine();
 
-                if (!isHelp && verbose)
-                {
-                    outwriter.WriteLine("Input command: {0}", command);
+                outwriter.WriteLine("Input options: ");
+                foreach (var n in options)
+                    outwriter.WriteLine("{0}: {1}", n.Key, n.Value);
+                outwriter.WriteLine();
+            }
 
-                    outwriter.WriteLine("Input arguments: ");
-                    foreach (var a in cargs)
-                        outwriter.WriteLine("\t{0}", a);
-                    outwriter.WriteLine();
 
-                    outwriter.WriteLine("Input options: ");
-                    foreach (var n in options)
-                        outwriter.WriteLine("{0}: {1}", n.Key, n.Value);
-                    outwriter.WriteLine();
-                }
-
-                Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
-                {
-                    if (verbose)
-                        outwriter.WriteLine(string.Format("Failed to delete temp file: {0}", path));
-                });
-
+            if (CommandMap.ContainsKey(command))
+            {
                 var autoupdate = Library.Utility.Utility.ParseBoolOption(options, "auto-update");
                 options.Remove("auto-update");
 
-                if (knownCommands.ContainsKey(command))
+                var res = CommandMap[command](outwriter, setup, cargs, options, filter);
+
+                if (autoupdate && FROM_COMMANDLINE)
                 {
-                    var res = knownCommands[command](outwriter, setup, cargs, options, filter);
-
-                    if (autoupdate && FROM_COMMANDLINE)
-                    {
-                        var update = Library.AutoUpdater.UpdaterManager.LastUpdateCheckVersion;
-                        if (update == null)
-                            update = Library.AutoUpdater.UpdaterManager.CheckForUpdate();
-
-                        if (update != null && update.Version != Library.AutoUpdater.UpdaterManager.SelfVersion.Version)
-                        {
-                            outwriter.WriteLine("Found update \"{0}\", downloading ...", update.Displayname);
-                            long lastpg = 0;
-                            Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(update, f =>
-                            {
-                                var npg = (long)(f * 100);
-                                if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
-                                {
-                                    lastpg = npg;
-                                    outwriter.WriteLine("Downloading {0}% ...", npg);
-                                }
-                            });
-                            outwriter.WriteLine("Update \"{0}\" ({1}) installed, using on next launch", update.Displayname, update.Version);
-                        }
-                    }
-
-                    return res;
+                    CheckForUpdates(outwriter);
                 }
-                else
-                {
-                    Commands.PrintInvalidCommand(outwriter, command, cargs);
-                    return 200;
-                }
+
+                return res;
+            }
+            else
+            {
+                Commands.PrintInvalidCommand(outwriter, command);
+                return 200;
+            }
+        }
+
+        public static int RunCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, string[] args)
+        {
+            bool verboseErrors = false;
+            try
+            {
+                return ParseCommandLine(outwriter, setup, ref verboseErrors, args);
             }
             catch (Exception ex)
             {
@@ -265,6 +256,7 @@ namespace Duplicati.CommandLine
                 if (ex is Duplicati.Library.Interface.UserInformationException && !verboseErrors)
                 {
                     errwriter.WriteLine();
+                    errwriter.WriteLine("ErrorID: {0}", ((Duplicati.Library.Interface.UserInformationException)ex).HelpID);
                     errwriter.WriteLine(ex.Message);
                 }
                 else if (!(ex is Library.Interface.CancelException))
@@ -284,11 +276,10 @@ namespace Duplicati.CommandLine
                     }
                 }
 
-                //Error = 100
                 return 100;
             }
         }
-            
+
         public static IList<Library.Interface.ICommandLineArgument> SupportedOptions
         {
             get
@@ -308,7 +299,7 @@ namespace Duplicati.CommandLine
         {
             try
             {
-                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Environment.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
                 var newsource = new List<string>();
                 string newtarget = null;
                 string prependfilter = null;
@@ -344,14 +335,14 @@ namespace Duplicati.CommandLine
 
                     return true;
                 });
-                
+
                 var opt = tmpparsed.Item1;
                 var newfilter = tmpparsed.Item2;
 
                 // If the user specifies parameters-file, all filters must be in the file.
                 // Allowing to specify some filters on the command line could result in wrong filter ordering
                 if (!filter.Empty && !newfilter.Empty)
-                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Program.FiltersCannotBeUsedWithFileError2);
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.Program.FiltersCannotBeUsedWithFileError2, "FiltersCannotBeUsedOnCommandLineAndInParameterFile");
 
                 if (!newfilter.Empty)
                     filter = newfilter;
@@ -367,7 +358,7 @@ namespace Duplicati.CommandLine
 
                 foreach (KeyValuePair<String, String> keyvalue in opt)
                     options[keyvalue.Key] = keyvalue.Value;
-                    
+
                 if (!string.IsNullOrEmpty(newtarget))
                    {
                        if (cargs.Count <= 1)
@@ -378,8 +369,8 @@ namespace Duplicati.CommandLine
 
                 if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
                        cargs.AddRange(newsource);
-                else if (newsource.Count > 0 && Library.Utility.Utility.ParseBoolOption(options, "verbose"))
-                    outwriter.WriteLine(Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
+                else if (newsource.Count > 0)
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "NotUsingBackupSources", Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
 
                 return true;
             }

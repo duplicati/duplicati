@@ -44,7 +44,7 @@ namespace Duplicati.Library
 		/// <param name="serverurl">The url to use for the server.</param>
 		public static IDisposable StartSession(string serverurl)
 		{
-			return CallContextSettings<OAuthSettings>.StartContext(new OAuthSettings() { ServerURL = serverurl });
+            return CallContextSettings<OAuthSettings>.StartContext(new OAuthSettings { ServerURL = serverurl });
 		}
 
 		/// <summary>
@@ -67,7 +67,6 @@ namespace Duplicati.Library
         private DateTime m_tokenExpires = DateTime.UtcNow;
 
         public const string DUPLICATI_OAUTH_SERVICE = "https://duplicati-oauth-handler.appspot.com/refresh";
-        private const string OAUTH_LOGIN_URL_TEMPLATE = "https://duplicati-oauth-handler.appspot.com/?type={0}";
 
         public static string OAUTH_LOGIN_URL(string modulename) 
         {
@@ -92,7 +91,7 @@ namespace Duplicati.Library
             OAuthLoginUrl = OAUTH_LOGIN_URL(servicename);
 
             if (string.IsNullOrEmpty(authid))
-                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl));
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl), "MissingAuthID");
         }
 
         public T GetTokenResponse<T>()
@@ -150,9 +149,9 @@ namespace Duplicati.Library
                                     if (resp.StatusCode == HttpStatusCode.ServiceUnavailable)
                                     {
                                         if (msg == resp.StatusDescription)
-                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError);
+                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError, "OAuthOverQuotaError");
                                         else
-                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
+                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", ex);
                                     }
 
                                     //Fail faster on client errors
@@ -161,7 +160,7 @@ namespace Duplicati.Library
                             }
 
                             if (retries >= (clienterror ? 1 : 5))
-                                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
+                                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", ex);
 
                             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
                             retries++;
@@ -175,15 +174,15 @@ namespace Duplicati.Library
 
         public void ThrowOverQuotaError()
         {
-            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError);
+            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError, "OAuthOverQuotaError");
         }
 
         public void ThrowAuthException(string msg, Exception ex)
         {
             if (ex == null)
-                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl));
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError");
             else
-                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), ex);
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", ex);
         }
 
 

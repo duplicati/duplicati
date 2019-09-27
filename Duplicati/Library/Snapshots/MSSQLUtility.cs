@@ -64,6 +64,10 @@ namespace Duplicati.Library.Snapshots
     public class MSSQLUtility
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<MSSQLUtility>();
+        /// <summary>
         /// The MS SQL VSS Writer Guid
         /// </summary>
         public static readonly Guid MSSQLWriterGuid = new Guid("a65faa63-5ea8-4ebc-9dbd-a0c4db26912a");
@@ -75,7 +79,7 @@ namespace Duplicati.Library.Snapshots
         /// Enumerated MS SQL DBs
         /// </summary>
         public List<MSSQLDB> DBs { get { return m_DBs; } }
-        private List<MSSQLDB> m_DBs;
+        private readonly List<MSSQLDB> m_DBs;
 
         public MSSQLUtility()
         {
@@ -101,10 +105,25 @@ namespace Duplicati.Library.Snapshots
                 try { arrInstalledInstances = (string[])installed; }
                 catch { }
 
+            if(Environment.Is64BitOperatingSystem && arrInstalledInstances == null)
+            {
+                var installed32on64 = Microsoft.Win32.Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Microsoft SQL Server", "InstalledInstances", "");
+                if (installed32on64 is string)
+                {
+                    if (!string.IsNullOrWhiteSpace(installed32on64 as string))
+                        arrInstalledInstances = new string[] { installed32on64 as string };
+                }         
+                else if (installed32on64 is string[])
+                    arrInstalledInstances = (string[])installed32on64;
+                else if (installed32on64 != null)
+                    try { arrInstalledInstances = (string[])installed32on64; }
+                    catch { }
+             }
+            
             IsMSSQLInstalled = arrInstalledInstances == null ? false : arrInstalledInstances.Length > 0;
 
             if (!IsMSSQLInstalled)
-                Logging.Log.WriteMessage("Cannot find any MS SQL Server instance. MS SQL Server is probably not installed.", Logging.LogMessageType.Information);
+                Logging.Log.WriteInformationMessage(LOGTAG, "NoMSSQLInstance", "Cannot find any MS SQL Server instance. MS SQL Server is probably not installed.");
         }
 
         /// <summary>
@@ -136,7 +155,7 @@ namespace Duplicati.Library.Snapshots
                     var writerMetaData = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(MSSQLWriterGuid));
 
                     if (writerMetaData == null)
-                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.");
+                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft SQL Server VSS Writer not found - cannot backup SQL databases.", "NoMsSqlVssWriter");
 
                     foreach (var component in writerMetaData.Components)
                     {
@@ -154,7 +173,8 @@ namespace Duplicati.Library.Snapshots
                                     paths.Add(Path.Combine(file.Path, file.FileSpecification));
                             }
 
-                        m_DBs.Add(new MSSQLDB(component.ComponentName, component.LogicalPath + "\\" + component.ComponentName, paths.Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList()));
+                        m_DBs.Add(new MSSQLDB(component.ComponentName, component.LogicalPath + "\\" + component.ComponentName, 
+                            paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1)).Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList()));
                     }
                 }
                 finally

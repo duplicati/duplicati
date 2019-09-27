@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Duplicati.WindowsService
 {
     [RunInstaller(true)]
-    public partial class ProjectInstaller : Installer
+    public class ProjectInstaller : Installer
     {
         public ProjectInstaller()
         {

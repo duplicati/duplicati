@@ -38,8 +38,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
         }
 
-        private static object m_lock = new object();
-        private static Dictionary<string, CaptchaEntry> m_captchas = new Dictionary<string, CaptchaEntry>();
+        private static readonly object m_lock = new object();
+        private static readonly Dictionary<string, CaptchaEntry> m_captchas = new Dictionary<string, CaptchaEntry>();
 
         public static bool SolvedCaptcha(string token, string target, string answer)
         {
@@ -61,7 +61,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             if (string.IsNullOrWhiteSpace(key))
             {
-                info.ReportClientError("Missing token value");
+                info.ReportClientError("Missing token value", System.Net.HttpStatusCode.Unauthorized);
                 return;
             }
             else
@@ -105,7 +105,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 var target = info.Request.Param["target"].Value;
                 if (string.IsNullOrWhiteSpace(target))
                 {
-                    info.ReportClientError("Missing target parameter");
+                    info.ReportClientError("Missing target parameter", System.Net.HttpStatusCode.BadRequest);
                     return;
                 }
 
@@ -147,19 +147,19 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 var target = info.Request.Param["target"].Value;
                 if (string.IsNullOrWhiteSpace(answer))
                 {
-                    info.ReportClientError("Missing answer parameter");
+                    info.ReportClientError("Missing answer parameter", System.Net.HttpStatusCode.BadRequest);
                     return;
                 }
                 if (string.IsNullOrWhiteSpace(target))
                 {
-                    info.ReportClientError("Missing target parameter");
+                    info.ReportClientError("Missing target parameter", System.Net.HttpStatusCode.BadRequest);
                     return;
                 }
 
                 if (SolvedCaptcha(key, target, answer))
                     info.OutputOK();
                 else
-                    info.ReportClientError("Incorrect");
+                    info.ReportClientError("Incorrect", System.Net.HttpStatusCode.Forbidden);
             }
         }
     }

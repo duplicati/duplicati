@@ -54,11 +54,11 @@
     <script type="text/javascript" src="scripts/libs/clipboard.min.js"></script>
     <script type="text/javascript" src="scripts/libs/ngclipboard.min.js"></script>
 
-    <script type="text/javascript" src="scripts/libs/angular-gettext.min.js"></script>    
+    <script type="text/javascript" src="scripts/libs/angular-gettext.min.js"></script>
 
     <script type="text/javascript" src="scripts/app.js"></script>
     <script type="text/javascript" src="scripts/menu.js"></script>
-    
+
     <script type="text/javascript" src="scripts/angular-gettext-cli_compiled_js_output.js"></script>
 
     <script type="text/javascript" src="scripts/services/AppUtils.js"></script>
@@ -115,6 +115,7 @@
     <script type="text/javascript" src="scripts/directives/progressBar.js"></script>
     <script type="text/javascript" src="scripts/directives/advancedOptionsEditor.js"></script>
     <script type="text/javascript" src="scripts/directives/timeFormatFixer.js"></script>
+    <script type="text/javascript" src="scripts/directives/externalLink.js"></script>
 
     <script type="text/javascript" src="../package/ngax/package.js"></script>
     <script type="text/javascript" src="../oem/ngax/scripts/oem.js"></script>
@@ -122,32 +123,25 @@
 
 </head>
 <body class="theme-{{active_theme}}">
-     
+
     <div class="container">
         <div class="header">
             <div class="logo">
                 <a href="#/">
                     <img class="mainlogo" ng-src="{{brandingService.appLogoPath}}"/>
                 </a>
-                
+
                 <div class="logotext">
                     <a href="#/" class="home">{{brandingService.appName}}</a>
                     <div class="build-suffix" ng-hide="systemInfo.ServerVersionType == 'stable' || systemInfo.ServerVersionType == ''">{{systemInfo.ServerVersionType}}</div>
-                    <div class="powered-by">{{brandingService.appSubtitle}}</div>                
-                </div>          
+                    <div class="powered-by">{{brandingService.appSubtitle}}</div>
+                </div>
             </div>
 
             <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
-                <span translate>Donate</span>
-                <ul>
-                    <li>
-                        <a href="bitcoin:1L74qa1n5SFKwwyHhECTHBJgcf6WT2rJKf" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | translate}}" title="{{'Donate with Bitcoins' | translate}}" /></a>
-                    </li>
-                    <li>
-                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | translate}}" title="{{'Donate with PayPal' | translate}}" /></a>
-                    </li>
-                </ul>
+                <external-link link="'https://www.duplicati.com/donate'">{{'Donate' | translate }}</external-link>
             </div>
+
 
             <a href class="menubutton hidden" data-target="mainmenu" translate>Menu</a>
 
@@ -162,18 +156,26 @@
                         <div ng-hide="state.activeTask == null">
                             <span ng-hide="activeBackup == null">
                                 <span ng-hide="StopReqId == activeTaskID">
-                                    <strong>{{activeBackup.Backup.Name}}:</strong> {{StateText}}
+                                    <div class="task-state-info">
+                                      <div class="task-name" title="{{activeBackup.Backup.Name}}">
+                                        <strong>{{activeBackup.Backup.Name}}</strong>
+                                      </div>
+                                      <strong>: </strong>
+                                      <div>
+                                        {{StateText}}
+                                      </div>
+                                    </div>
                                 </span>
                                 <span ng-show="StopReqId == activeTaskID">
                                     <strong translate>Stopping after upload:</strong> {{activeBackup.Backup.Name}}
                                 </span>
                             </span>
                             <span ng-show="activeBackup == null">
-                                <strong ng-hide="StopReqId == activeTaskID" translate>Running task:</strong> 
-                                <strong ng-show="StopReqId == activeTaskID" translate>Stopping task:</strong> 
+                                <strong ng-hide="StopReqId == activeTaskID" translate>Running task:</strong>
+                                <strong ng-show="StopReqId == activeTaskID" translate>Stopping task:</strong>
                                 {{StateText}}
                             </span>
-                            
+
                         </div>
 
                         <div ng-show="state.activeTask == null &amp;&amp; nextTask != null">
@@ -198,7 +200,7 @@
                     <div class="pause" ng-class="{'active': state.programState != 'Running'}" ng-click="pauseOptions()" title="{{state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></div>
                     <div class="throttle {{throttle_active ? 'active' : 'inactive'}}" ng-click="throttleOptions()" title="{{'Click to set throttle options' | translate}}" alt="{{'Click to set throttle options' | translate}}"></div>
                 </div>
-            </div>            
+            </div>
         </div>
 
         <div class="body">
@@ -220,9 +222,6 @@
                         <a href="#/settings" class="settings"  ng-class="{active: current_page == 'settings'}" translate>Settings</a>
                     </li>
                     <li>
-                        <a href="#/log" class="log" ng-class="{active: current_page == 'log'}" translate>Show log</a>
-                    </li>
-                    <li>
                         <a href="#/about" class="about" ng-class="{active: current_page == 'about'}" translate>About</a>
                     </li>
                     <li ng-show="isLoggedIn">
@@ -230,11 +229,11 @@
                     </li>
                 </ul>
             </div>
-            
+
             <div ng-view class="content">
             </div>
         </div>
-        
+
         <div class="footer">
             <div class="about-footer">
                 <ul>
@@ -243,39 +242,34 @@
                     </li>
                 </ul>
             </div>
-            
+
+            <div class="donate">
+                <ul>
+                    <li ng-hide="systemInfo.SuppressDonationMessages">
+                        <external-link link="'https://www.duplicati.com/donate'">{{'Donate' | translate}}</external-link>
+                    </li>
+                </ul>
+            </div>
             <div class="social">
-                {{'Visit us on' | translate}}
+                {{'Visit us on' | translate}}<div class="external-link-image"></div>
                 <ul>
                     <li>
-                        <a href="https://forum.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="{{'Duplicati forum' | translate}}" title="{{'Duplicati forum' | translate}}" width="28" /></a>
+                        <a href="https://forum.duplicati.com" target="_blank" rel="external"><img src="img/social/duplicati.png" alt="{{'Duplicati forum' | translate}}" title="{{'Duplicati forum' | translate}}" width="28" /></a>
                     </li>
                     <li>
-                        <a href="https://github.com/duplicati" target="_blank"><img src="img/social/github.png" alt="Github" title="Github" /></a>
+                        <a href="https://github.com/duplicati" target="_blank" rel="external"><img src="img/social/github.png" alt="Github" title="Github" /></a>
                     </li>
                     <li>
-                        <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank"><img src="img/social/facebook.png" alt="Facebook" title="Facebook" /></a>
+                        <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank" rel="external"><img src="img/social/facebook.png" alt="Facebook" title="Facebook" /></a>
                     </li>
                     <li>
-                        <a href="https://plus.google.com/105271984558189185842" target="_blank"><img src="img/social/google.png" alt="Google Plus" title="Google Plus" /></a>
+                        <a href="https://plus.google.com/105271984558189185842" target="_blank" rel="external"><img src="img/social/google.png" alt="Google Plus" title="Google Plus" /></a>
                     </li>
                     <!-- <li>
-                        <a href="http://www.duplicati.com" target="_blank"><img src="img/social/duplicati.png" alt="{{'Duplicati Website' | translate}}" title="{{'Duplicati Website' | translate}}" /></a>
+                        <a href="http://www.duplicati.com" target="_blank" rel="external"><img src="img/social/duplicati.png" alt="{{'Duplicati Website' | translate}}" title="{{'Duplicati Website' | translate}}" /></a>
                     </li> -->
                 </ul>
             </div>
-            
-            <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
-                <span translate>Donate</span>
-                <ul>
-                    <li>
-                        <a href="bitcoin:1NVFTyj9NRA4pbrEPa5VkNqjviqVoKhBMt" target="_blank"><img src="img/donate/bitcoin.png" alt="{{'Donate with Bitcoins' | translate}}" title="{{'Donate with Bitcoins' | translate}}" /></a>
-                    </li>
-                    <li>
-                        <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal%40hexad%2edk&item_name=Duplicati%20Donation&no_shipping=2&no_note=1&tax=0&currency_code=EUR&bn=PP%2dDonationsBF&charset=UTF%2d8&lc=US" target="_blank"><img src="img/donate/paypal.png" alt="{{'Donate with PayPal' | translate}}" title="{{'Donate with PayPal' | translate}}" /></a>
-                    </li>
-                </ul>
-            </div>    
         </div>
     </div>
 
@@ -300,7 +294,7 @@
                         <li ng-repeat="btn in state.CurrentItem.buttons track by $index" style="display: inline-block"><a href class="button" ng-click="onButtonClick($index)">{{btn}}</a></li>
                     </ul>
                 </div>
-            </div>            
+            </div>
         </div>
     </div>
 

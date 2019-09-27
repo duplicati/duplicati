@@ -16,7 +16,6 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using System.Text;
 using System.Collections.Generic;
 using Alphaleonis.Win32.Filesystem;
 
@@ -25,96 +24,82 @@ namespace Duplicati.Library.Snapshots
     /// <summary>
     /// Handler for providing a snapshot like access to files and folders
     /// </summary>
-    public class NoSnapshotWindows : NoSnapshot
+    public sealed class NoSnapshotWindows : SnapshotBase
     {
-        private SystemIOWindows m_sysIO = new SystemIOWindows();
-
-        public NoSnapshotWindows(string[] sources)
-            : base(sources)
-        {
-        }
-
-        public NoSnapshotWindows(string[] sources, Dictionary<string, string> options)
-            : base(sources, options)
-        {
-        }
+        private static SystemIOWindows IO_WIN = new SystemIOWindows();
 
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
         /// </summary>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="localPath">The file or folder to examine</param>
         /// <returns>The symlink target</returns>
-        public override string GetSymlinkTarget(string file)
+        public override string GetSymlinkTarget(string localPath)
         {
-            try { return File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(file)).PrintName; }
-            catch (NotAReparsePointException) { }
-            catch (UnrecognizedReparsePointException) { }
-
-            return null;
+            return IO_WIN.GetSymlinkTarget(localPath);
         }
 
         /// <summary>
         /// Gets the attributes for the given file or folder
         /// </summary>
         /// <returns>The file attributes</returns>
-        /// <param name="file">The file or folder to examine</param>
-        public override System.IO.FileAttributes GetAttributes (string file)
+        /// <param name="localPath">The file or folder to examine</param>
+        public override System.IO.FileAttributes GetAttributes (string localPath)
         {
-            return m_sysIO.GetFileAttributes(file);
+            return IO_WIN.GetFileAttributes(localPath);
         }
 
         /// <summary>
         /// Returns the size of a file
         /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The lenth of the file</returns>
-        public override long GetFileSize (string file)
+        public override long GetFileSize (string localPath)
         {
-            return m_sysIO.FileLength(file);
+            return IO_WIN.FileLength(localPath);
         }
 
         /// <summary>
         /// Gets the last write time of a given file in UTC
         /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
-        public override DateTime GetLastWriteTimeUtc (string file)
+        public override DateTime GetLastWriteTimeUtc (string localPath)
         {
-            return m_sysIO.FileGetLastWriteTimeUtc(file);
+            return IO_WIN.FileGetLastWriteTimeUtc(localPath);
         }
 
         /// <summary>
         /// Gets the last write time of a given file in UTC
         /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
-        public override DateTime GetCreationTimeUtc (string file)
+        public override DateTime GetCreationTimeUtc (string localPath)
         {
-            return m_sysIO.FileGetCreationTimeUtc(file);
+            return IO_WIN.FileGetCreationTimeUtc(localPath);
         }
 
         /// <summary>
         /// Opens a file for reading
         /// </summary>
-        /// <param name="file">The full path to the file in non-snapshot format</param>
+        /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>An open filestream that can be read</returns>
-        public override System.IO.Stream OpenRead (string file)
+        public override System.IO.Stream OpenRead (string localPath)
         {
-            return m_sysIO.FileOpenRead(file);
+            return IO_WIN.FileOpenRead(localPath);
         }
 
         /// <summary>
         /// Lists all files in the given folder
         /// </summary>
         /// <returns>All folders found in the folder</returns>
-        /// <param name='folder'>The folder to examinate</param>
-        protected override string[] ListFiles (string folder)
+        /// <param name='localFolderPath'>The folder to examinate</param>
+        protected override string[] ListFiles (string localFolderPath)
         {
-            if (!SystemIOWindows.IsPathTooLong(folder))
-                try { return base.ListFiles(folder); }
+            if (!SystemIOWindows.IsPathTooLong(localFolderPath))
+                try { return base.ListFiles(localFolderPath); }
                 catch (System.IO.PathTooLongException) { }
 
-            string[] tmp = Directory.GetFiles(SystemIOWindows.PrefixWithUNC(folder));
+            string[] tmp = Directory.GetFiles(SystemIOWindows.PrefixWithUNC(localFolderPath));
             string[] res = new string[tmp.Length];
             for(int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);
@@ -122,55 +107,48 @@ namespace Duplicati.Library.Snapshots
             return res;
         }
 
+        
         /// <summary>
         /// Lists all folders in the given folder
         /// </summary>
         /// <returns>All folders found in the folder</returns>
-        /// <param name='folder'>The folder to examinate</param>
-        protected override string[] ListFolders (string folder)
+        /// <param name='localFolderPath'>The folder to examinate</param>
+        protected override string[] ListFolders (string localFolderPath)
         {
-            if (!SystemIOWindows.IsPathTooLong(folder))
-                try { return base.ListFolders(folder); }
+            if (!SystemIOWindows.IsPathTooLong(localFolderPath))
+                try { return base.ListFolders(localFolderPath); }
                 catch (System.IO.PathTooLongException) { }
 
-            string[] tmp = Directory.GetDirectories(SystemIOWindows.PrefixWithUNC(folder));
+            string[] tmp = Directory.GetDirectories(SystemIOWindows.PrefixWithUNC(localFolderPath));
             string[] res = new string[tmp.Length];
             for (int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);
 
             return res;
         }
-        
+
         /// <summary>
         /// Gets the metadata for the given file or folder
         /// </summary>
         /// <returns>The metadata for the given file or folder</returns>
-        /// <param name="file">The file or folder to examine</param>
+        /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
-        public override Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)
+        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return m_sysIO.GetMetadata(file, isSymlink, followSymlink);
+            return IO_WIN.GetMetadata(localPath, isSymlink, followSymlink);
         }
-        
-        /// <summary>
-        /// Gets a value indicating if the path points to a block device
-        /// </summary>
-        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
-        /// <param name="file">The file or folder to examine</param>
-        public override bool IsBlockDevice(string file)
+
+        /// <inheritdoc />
+        public override string ConvertToLocalPath(string snapshotPath)
         {
-            return false;
+            return snapshotPath;
         }
-        
-        /// <summary>
-        /// Gets a unique hardlink target ID
-        /// </summary>
-        /// <returns>The hardlink ID</returns>
-        /// <param name="path">The file or folder to examine</param>
-        public override string HardlinkTargetID(string path)
+
+        /// <inheritdoc />
+        public override string ConvertToSnapshotPath(string localPath)
         {
-            return null;
+            return localPath;
         }
     }
 }

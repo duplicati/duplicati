@@ -28,6 +28,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <OutputPath>bin\Debug</OutputPath>
@@ -62,6 +63,9 @@
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -72,10 +76,10 @@
       <HintPath>..\..\..\thirdparty\appindicator-sharp\appindicator-sharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="gdk-sharp">
+    <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
       <HintPath>..\..\..\thirdparty\appindicator-sharp\gdk-sharp.dll</HintPath>
     </Reference>
-    <Reference Include="gtk-sharp">
+    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
       <HintPath>..\..\..\thirdparty\appindicator-sharp\gtk-sharp.dll</HintPath>
     </Reference>
     <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
@@ -102,6 +106,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="HttpServerConnection.cs" />
     <None Include="app.config" />
+    <None Include="app.manifest" />
     <None Include="Duplicati.snk" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -168,6 +173,10 @@
     <ProjectReference Include="..\..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
       <Project>{d4c37c33-5e73-4b56-b2c3-dc4a6baa36bb}</Project>
       <Name>Duplicati.Library.OAuthHelper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj">
+      <Project>{851a1cb8-3ceb-41b4-956f-34d760d2a8e5}</Project>
+      <Name>Duplicati.Library.Backend.Rclone</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
@@ -316,7 +325,7 @@
     <ProjectReference Include="..\..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
       <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
       <Name>Duplicati.Library.Backend.Sia</Name>
-    </ProjectReference>   
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
       <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
       <Name>Duplicati.Library.Backend.Dropbox</Name>

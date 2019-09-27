@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -48,10 +49,10 @@ namespace Duplicati.Library.AutoUpdater
 
         public static readonly string INSTALLDIR;
 
-        private static readonly string INSTALLED_BASE_DIR = 
-            string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME))) 
+        private static readonly string INSTALLED_BASE_DIR =
+            string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)))
             ? System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
-            : Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+            : Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
 
         private static readonly bool DISABLE_UPDATE_DOMAIN = !string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)));
 
@@ -88,7 +89,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// Gets the last version found from an update
         /// </summary>
-        public static UpdateInfo LastUpdateCheckVersion { get; private set; }       
+        public static UpdateInfo LastUpdateCheckVersion { get; private set; }
 
         static UpdaterManager()
         {
@@ -119,7 +120,7 @@ namespace Duplicati.Library.AutoUpdater
                 var programfiles = System.Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
 
                 // The user can override updates by having a local updates folder
-                var overrides = new List<string>(new string [] {
+                var overrides = new List<string>(new string[] {
                         System.IO.Path.Combine(InstalledBaseDir, "updates"),
                     });
 
@@ -132,7 +133,7 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     if (Library.Utility.Utility.IsClientOSX)
                         overrides.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME, "updates"));
-                
+
                     overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
                 }
 
@@ -169,12 +170,12 @@ namespace Duplicati.Library.AutoUpdater
 
                 if (string.IsNullOrWhiteSpace(installdir))
                     foreach (var p in legacypaths)
-                        if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Count() > 0 && TestDirectoryIsWriteable(p))
+                        if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Any() && TestDirectoryIsWriteable(p))
                         {
                             installdir = p;
                             break;
                         }
-            
+
                 if (string.IsNullOrWhiteSpace(installdir))
                     foreach (var p in attempts)
                         if (!string.IsNullOrWhiteSpace(p) && TestDirectoryIsWriteable(p))
@@ -182,12 +183,12 @@ namespace Duplicati.Library.AutoUpdater
                             installdir = p;
                             break;
                         }
-            
+
                 INSTALLDIR = installdir;
             }
             else
             {
-                INSTALLDIR = Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+                INSTALLDIR = Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
             }
 
 
@@ -223,7 +224,7 @@ namespace Duplicati.Library.AutoUpdater
                     Displayname = string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG) ? "Current" : Duplicati.License.VersionNumbers.TAG,
                     Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
                     ReleaseTime = new DateTime(0),
-                    ReleaseType = 
+                    ReleaseType =
 #if DEBUG
                         "Debug"
 #else
@@ -261,13 +262,13 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     var selfversion = TryParseVersion(SelfVersion.Version);
 
-                    m_hasUpdateInstalled = 
+                    m_hasUpdateInstalled =
                         (from n in FindInstalledVersions()
-                            let nversion = TryParseVersion(n.Value.Version)
-                            let newerVersion = selfversion < nversion
-                            where newerVersion && VerifyUnpackedFolder(n.Key, n.Value)
-                            orderby nversion descending
-                            select n)
+                         let nversion = TryParseVersion(n.Value.Version)
+                         let newerVersion = selfversion < nversion
+                         where newerVersion && VerifyUnpackedFolder(n.Key, n.Value)
+                         orderby nversion descending
+                         select n)
                             .FirstOrDefault();
                 }
 
@@ -282,11 +283,11 @@ namespace Duplicati.Library.AutoUpdater
 
             if (!System.IO.Directory.Exists(probe))
             {
-                try 
+                try
                 {
                     System.IO.Directory.CreateDirectory(probe);
                     if (probe != path)
-                        System.IO.Directory.Delete(probe);       
+                        System.IO.Directory.Delete(probe);
                     return true;
                 }
                 catch
@@ -300,20 +301,20 @@ namespace Duplicati.Library.AutoUpdater
         public static string InstallID
         {
             get
-            { 
-                try { return System.IO.File.ReadAllText(System.IO.Path.Combine(INSTALLDIR, INSTALL_FILE)).Replace('\r', '\n').Split(new char[] { '\n' }).FirstOrDefault().Trim() ?? ""; } 
+            {
+                try { return System.IO.File.ReadAllText(System.IO.Path.Combine(INSTALLDIR, INSTALL_FILE)).Replace('\r', '\n').Split(new char[] { '\n' }).FirstOrDefault().Trim() ?? ""; }
                 catch { }
 
                 return "";
             }
         }
-            
+
         public static UpdateInfo CheckForUpdate(ReleaseType channel = ReleaseType.Unknown)
         {
             if (channel == ReleaseType.Unknown)
                 channel = AutoUpdateSettings.DefaultUpdateChannel;
 
-            foreach(var rawurl in MANIFEST_URLS)
+            foreach (var rawurl in MANIFEST_URLS)
             {
                 var url = rawurl;
 
@@ -336,17 +337,17 @@ namespace Duplicati.Library.AutoUpdater
 
                 try
                 {
-                    using(var tmpfile = new Library.Utility.TempFile())
+                    using (var tmpfile = new Library.Utility.TempFile())
                     {
                         System.Net.WebClient wc = new System.Net.WebClient();
                         wc.Headers.Add(System.Net.HttpRequestHeader.UserAgent, string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(InstallID) ? "" : " -" + InstallID));
                         wc.Headers.Add("X-Install-ID", InstallID);
                         wc.DownloadFile(url, tmpfile);
 
-                        using(var fs = System.IO.File.OpenRead(tmpfile))
-                        using(var ss = new SignatureReadingStream(fs, SIGN_KEY))
-                        using(var tr = new System.IO.StreamReader(ss))
-                        using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
+                        using (var fs = System.IO.File.OpenRead(tmpfile))
+                        using (var ss = new SignatureReadingStream(fs, SIGN_KEY))
+                        using (var tr = new System.IO.StreamReader(ss))
+                        using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         {
                             var update = new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
 
@@ -388,10 +389,10 @@ namespace Duplicati.Library.AutoUpdater
             {
                 try
                 {
-                    using(var fs = System.IO.File.OpenRead(manifest))
-                    using(var ss = new SignatureReadingStream(fs, SIGN_KEY))
-                    using(var tr = new System.IO.StreamReader(ss))
-                    using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
+                    using (var fs = System.IO.File.OpenRead(manifest))
+                    using (var ss = new SignatureReadingStream(fs, SIGN_KEY))
+                    using (var tr = new System.IO.StreamReader(ss))
+                    using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         return new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
                 }
                 catch (Exception ex)
@@ -408,7 +409,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             var res = new List<KeyValuePair<string, UpdateInfo>>();
             if (INSTALLDIR != null)
-                foreach(var folder in System.IO.Directory.GetDirectories(INSTALLDIR))
+                foreach (var folder in System.IO.Directory.GetDirectories(INSTALLDIR))
                 {
                     var r = ReadInstalledManifest(folder);
                     if (r != null)
@@ -426,149 +427,152 @@ namespace Duplicati.Library.AutoUpdater
 
             var updates = version.RemoteURLS.ToList();
 
-            // If alternate update URLs are specified, 
+            // If alternate update URLs are specified,
             // we look for packages there as well
             if (AutoUpdateSettings.UsesAlternateURLs)
             {
                 var packagepath = new Library.Utility.Uri(updates[0]).Path;
                 var packagename = packagepath.Split('/').Last();
 
-                foreach(var alt_url in AutoUpdateSettings.URLs.Reverse())
+                foreach (var alt_url in AutoUpdateSettings.URLs.Reverse())
                 {
                     var alt_uri = new Library.Utility.Uri(alt_url);
                     var path_components = alt_uri.Path.Split('/');
-                    var path = string.Join("/", path_components.Take(path_components.Count() - 1).Union(new string[] { packagename}));
+                    var path = string.Join("/", path_components.Take(path_components.Count() - 1).Union(new string[] { packagename }));
 
                     var new_path = alt_uri.SetPath(path);
                     updates.Insert(0, new_path.ToString());
                 }
             }
 
-            using(var tempfile = new Library.Utility.TempFile())
+            using (var tempfilename = new Library.Utility.TempFile())
             {
-                foreach(var url in updates)
+                foreach (var url in updates)
                 {
                     try
                     {
-                        Action<long> cb = null;
-                        if (progress != null)
-                            cb = (s) => { progress(Math.Min(1.0, Math.Max(0.0, (double)s / version.CompressedSize))); };
-
-                        var wreq = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
-                        wreq.UserAgent = string.Format("{0} v{1}", APPNAME, SelfVersion.Version);
-                        wreq.Headers.Add("X-Install-ID", InstallID);
-
-                        var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
-                        using(var resp = areq.GetResponse())
-                        using(var rss = areq.GetResponseStream())
-                        using(var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
-                        using(var fs = System.IO.File.Open(tempfile, System.IO.FileMode.Create))
-                            Duplicati.Library.Utility.Utility.CopyStream(pgs, fs);
-
-                        var sha256 = System.Security.Cryptography.SHA256.Create();
-                        var md5 =  System.Security.Cryptography.MD5.Create();
-
-                        using(var s = System.IO.File.OpenRead(tempfile))
+                        using (var tempfile = System.IO.File.Open(tempfilename, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
                         {
-                            if (s.Length != version.CompressedSize)
-                                throw new Exception(string.Format("Invalid file size {0}, expected {1} for {2}", s.Length, version.CompressedSize, url));
-                            
-                            var sha256hash = Convert.ToBase64String(sha256.ComputeHash(s));
+                            Action<long> cb = null;
+                            if (progress != null)
+                                cb = (s) => { progress(Math.Min(1.0, Math.Max(0.0, (double)s / version.CompressedSize))); };
+
+                            var wreq = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
+                            wreq.UserAgent = string.Format("{0} v{1}", APPNAME, SelfVersion.Version);
+                            wreq.Headers.Add("X-Install-ID", InstallID);
+
+                            var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
+                            using (var resp = areq.GetResponse())
+                            using (var rss = areq.GetResponseStream())
+                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, cb))
+                            {
+                                Duplicati.Library.Utility.Utility.CopyStream(pgs, tempfile);
+                            }
+
+                            var sha256 = System.Security.Cryptography.SHA256.Create();
+                            var md5 = System.Security.Cryptography.MD5.Create();
+
+                            if (tempfile.Length != version.CompressedSize)
+                                throw new Exception(string.Format("Invalid file size {0}, expected {1} for {2}", tempfile.Length, version.CompressedSize, url));
+
+                            tempfile.Position = 0;
+                            var sha256hash = Convert.ToBase64String(sha256.ComputeHash(tempfile));
                             if (sha256hash != version.SHA256)
                                 throw new Exception(string.Format("Damaged or corrupted file, sha256 mismatch for {0}", url));
-                        }
 
-                        using(var s = System.IO.File.OpenRead(tempfile))
-                        {
-                            var md5hash = Convert.ToBase64String(md5.ComputeHash(s));
+
+                            tempfile.Position = 0;
+                            var md5hash = Convert.ToBase64String(md5.ComputeHash(tempfile));
                             if (md5hash != version.MD5)
                                 throw new Exception(string.Format("Damaged or corrupted file, md5 mismatch for {0}", url));
-                        }
-                        
-                        using(var tempfolder = new Duplicati.Library.Utility.TempFolder())
-                        using(var zip = new Duplicati.Library.Compression.FileArchiveZip(tempfile, new Dictionary<string, string>()))
-                        {
-                            foreach(var file in zip.ListFilesWithSize(""))
-                            {
-                                if (System.IO.Path.IsPathRooted(file.Key) || file.Key.Trim().StartsWith("..", StringComparison.OrdinalIgnoreCase))
-                                    throw new Exception(string.Format("Out-of-place file path detected: {0}", file.Key));
 
-                                var targetpath = System.IO.Path.Combine(tempfolder, file.Key);
-                                var targetfolder = System.IO.Path.GetDirectoryName(targetpath);
-                                if (!System.IO.Directory.Exists(targetfolder))
+                            tempfile.Position = 0;
+                            using (var tempfolder = new Duplicati.Library.Utility.TempFolder())
+                            using (ICompression zip = new Duplicati.Library.Compression.FileArchiveZip(tempfile, ArchiveMode.Read, new Dictionary<string, string>()))
+                            {
+                                foreach (var file in zip.ListFilesWithSize(""))
+                                {
+                                    if (System.IO.Path.IsPathRooted(file.Key) || file.Key.Trim().StartsWith("..", StringComparison.OrdinalIgnoreCase))
+                                        throw new Exception(string.Format("Out-of-place file path detected: {0}", file.Key));
+
+                                    var targetpath = System.IO.Path.Combine(tempfolder, file.Key);
+                                    var targetfolder = System.IO.Path.GetDirectoryName(targetpath);
+                                    if (!System.IO.Directory.Exists(targetfolder))
+                                        System.IO.Directory.CreateDirectory(targetfolder);
+
+                                    using (var zs = zip.OpenRead(file.Key))
+                                    using (var fs = System.IO.File.Create(targetpath))
+                                        zs.CopyTo(fs);
+                                }
+
+                                if (VerifyUnpackedFolder(tempfolder, version))
+                                {
+                                    var versionstring = TryParseVersion(version.Version).ToString();
+                                    UpdateLogger.Log($"Install directory {versionstring} verified.");
+                                    var targetfolder = System.IO.Path.Combine(INSTALLDIR, versionstring);
+                                    if (System.IO.Directory.Exists(targetfolder))
+                                    {
+                                        UpdateLogger.Log($"Install directory {versionstring} exists. Try deleting it.");
+                                        TryDeleteFolder(targetfolder, true);
+                                    }
+
                                     System.IO.Directory.CreateDirectory(targetfolder);
 
-                                using(var zs = zip.OpenRead(file.Key))
-                                using(var fs = System.IO.File.Create(targetpath))
-                                    zs.CopyTo(fs);
-                            }
+                                    var tempfolderpath = Duplicati.Library.Utility.Utility.AppendDirSeparator(tempfolder);
+                                    var tempfolderlength = tempfolderpath.Length;
 
-                            if (VerifyUnpackedFolder(tempfolder, version))
-                            {
-                                var versionstring = TryParseVersion(version.Version).ToString();
-                                UpdateLogger.Log($"Install directory {versionstring} verified.");
-                                var targetfolder = System.IO.Path.Combine(INSTALLDIR, versionstring);
-                                if (System.IO.Directory.Exists(targetfolder))
-                                {
-                                    UpdateLogger.Log($"Install directory {versionstring} exists. Try deleting it.");
-                                    TryDeleteFolder(targetfolder, true);
-                                }
-                                
-                                System.IO.Directory.CreateDirectory(targetfolder);
+                                    // Would be nice, but does not work :(
+                                    //System.IO.Directory.Move(tempfolder, targetfolder);
 
-                                var tempfolderpath = Duplicati.Library.Utility.Utility.AppendDirSeparator(tempfolder);
-                                var tempfolderlength = tempfolderpath.Length;
-
-                                // Would be nice, but does not work :(
-                                //System.IO.Directory.Move(tempfolder, targetfolder);
-
-                                foreach(var e in Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(tempfolder))
-                                {
-                                    var relpath = e.Substring(tempfolderlength);
-                                    if (string.IsNullOrWhiteSpace(relpath))
-                                        continue;
-
-                                    var fullpath = System.IO.Path.Combine(targetfolder, relpath);
-                                    if (relpath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
-                                        System.IO.Directory.CreateDirectory(fullpath);
-                                    else
-                                        System.IO.File.Copy(e, fullpath);
-                                }
-                                UpdateLogger.Log($"Directory {versionstring} contents copied to install directory.");
-
-                                // Verification will kick in when we list the installed updates
-                                //VerifyUnpackedFolder(targetfolder, version);
-                                System.IO.File.WriteAllText(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE), versionstring);
-                                 
-                                m_hasUpdateInstalled = null;
-
-                                UpdateLogger.Log($"Current version {SelfVersion.Version}, installing {versionstring}");
-                                var obsolete = (from n in FindInstalledVersions()
-                                    where n.Value.Version != versionstring && n.Value.Version != SelfVersion.Version
-                                    let x = TryParseVersion(n.Value.Version) 
-                                    orderby x descending
-                                    select n).Skip(3).ToArray();
-
-                                if(obsolete.Any())
-                                    UpdateLogger.Log($"Deleting old versions: {string.Join(",",obsolete.Select(p=>p.Key).ToArray())}.");
-                                else
-                                    UpdateLogger.Log("No old versions to delete.");
-                                foreach(var f in obsolete)
-                                    if (!f.Key.Contains(versionstring) && !f.Key.Contains(SelfVersion.Version))
+                                    foreach (var e in Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(tempfolder))
                                     {
-                                        UpdateLogger.Log($"Trying to delete directory {f.Key}");
-                                        try { TryDeleteFolder(f.Key, true); }
-                                        catch { }
+                                        var relpath = e.Substring(tempfolderlength);
+                                        if (string.IsNullOrWhiteSpace(relpath))
+                                            continue;
+
+                                        var fullpath = System.IO.Path.Combine(targetfolder, relpath);
+                                        if (relpath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                                            System.IO.Directory.CreateDirectory(fullpath);
+                                        else
+                                            System.IO.File.Copy(e, fullpath);
                                     }
-                                return true;
-                            }
-                            else
-                            {
-                                throw new Exception(string.Format("Unable to verify unpacked folder for url: {0}", url));
+                                    UpdateLogger.Log($"Directory {versionstring} contents copied to install directory.");
+
+                                    // Verification will kick in when we list the installed updates
+                                    //VerifyUnpackedFolder(targetfolder, version);
+                                    System.IO.File.WriteAllText(System.IO.Path.Combine(INSTALLDIR, CURRENT_FILE), versionstring);
+
+                                    m_hasUpdateInstalled = null;
+
+                                    UpdateLogger.Log($"Current version {SelfVersion.Version}, installing {versionstring}");
+                                    var obsolete = (from n in FindInstalledVersions()
+                                                    where n.Value.Version != versionstring && n.Value.Version != SelfVersion.Version
+                                                    let x = TryParseVersion(n.Value.Version)
+                                                    orderby x descending
+                                                    select n).Skip(3).ToArray();
+
+                                    if (obsolete.Any())
+                                        UpdateLogger.Log($"Deleting old versions: {string.Join(",", obsolete.Select(p => p.Key).ToArray())}.");
+                                    else
+                                        UpdateLogger.Log("No old versions to delete.");
+                                    foreach (var f in obsolete)
+                                        if (!f.Key.Contains(versionstring) && !f.Key.Contains(SelfVersion.Version))
+                                        {
+                                            UpdateLogger.Log($"Trying to delete directory {f.Key}");
+                                            try { TryDeleteFolder(f.Key, true); }
+                                            catch { }
+                                        }
+
+                                    return true;
+                                }
+                                else
+                                {
+                                    throw new Exception(string.Format("Unable to verify unpacked folder for url: {0}", url));
+                                }
                             }
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         if (OnError != null)
                             OnError(ex);
@@ -578,6 +582,7 @@ namespace Duplicati.Library.AutoUpdater
 
             return false;
         }
+
         private static void TryDeleteFolder(string appDirectory, bool recursive)
         {
             bool done = false;
@@ -616,11 +621,11 @@ namespace Duplicati.Library.AutoUpdater
                 var sha256 = System.Security.Cryptography.SHA256.Create();
                 var md5 = System.Security.Cryptography.MD5.Create();
 
-                using(var fs = System.IO.File.OpenRead(System.IO.Path.Combine(folder, UPDATE_MANIFEST_FILENAME)))
+                using (var fs = System.IO.File.OpenRead(System.IO.Path.Combine(folder, UPDATE_MANIFEST_FILENAME)))
                 {
-                    using(var ss = new SignatureReadingStream(fs, SIGN_KEY))
-                    using(var tr = new System.IO.StreamReader(ss))
-                    using(var jr = new Newtonsoft.Json.JsonTextReader(tr))
+                    using (var ss = new SignatureReadingStream(fs, SIGN_KEY))
+                    using (var tr = new System.IO.StreamReader(ss))
+                    using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         update = new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
 
                     sha256.Initialize();
@@ -651,21 +656,21 @@ namespace Duplicati.Library.AutoUpdater
                 folder = Library.Utility.Utility.AppendDirSeparator(folder);
                 var baselen = folder.Length;
 
-                foreach(var file in Library.Utility.Utility.EnumerateFileSystemEntries(folder))
+                foreach (var file in Library.Utility.Utility.EnumerateFileSystemEntries(folder))
                 {
                     var relpath = file.Substring(baselen);
                     if (string.IsNullOrWhiteSpace(relpath))
                         continue;
 
-                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    if (IgnoreWebrootFolder && relpath.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparison))
                         continue;
 
                     FileEntry fe;
                     if (!paths.TryGetValue(relpath, out fe))
                     {
                         var ignore = false;
-                        foreach(var c in ignores)
-                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparision))
+                        foreach (var c in ignores)
+                            if (ignore = relpath.StartsWith(c, Library.Utility.Utility.ClientFilenameStringComparison))
                                 break;
 
                         if (ignore)
@@ -682,7 +687,7 @@ namespace Duplicati.Library.AutoUpdater
                     sha256.Initialize();
                     md5.Initialize();
 
-                    using(var fs = System.IO.File.OpenRead(file))
+                    using (var fs = System.IO.File.OpenRead(file))
                     {
                         if (Convert.ToBase64String(sha256.ComputeHash(fs)) != fe.SHA256)
                             throw new Exception(string.Format("Invalid sha256 hash for file: {0}", file));
@@ -695,7 +700,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 var filteredpaths = paths
                     .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal) && !p.Key.EndsWith("\\", StringComparison.Ordinal))
-                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparision))
+                    .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparison))
                     .Select(p => p.Key)
                     .ToList();
 
@@ -734,11 +739,11 @@ namespace Duplicati.Library.AutoUpdater
 
             var manifestpath = manifest ?? System.IO.Path.Combine(inputfolder, UPDATE_MANIFEST_FILENAME);
 
-            using(var s = System.IO.File.OpenRead(manifestpath))
-            using(var sr = new System.IO.StreamReader(s))
-            using(var jr = new Newtonsoft.Json.JsonTextReader(sr))
+            using (var s = System.IO.File.OpenRead(manifestpath))
+            using (var sr = new System.IO.StreamReader(s))
+            using (var jr = new Newtonsoft.Json.JsonTextReader(sr))
                 remoteManifest = new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
-            
+
             if (remoteManifest.Files == null)
                 remoteManifest.Files = new FileEntry[0];
 
@@ -746,8 +751,8 @@ namespace Duplicati.Library.AutoUpdater
                 remoteManifest.ReleaseTime = DateTime.UtcNow;
 
             var ignoreFiles = (from n in remoteManifest.Files
-                                        where n.Ignore
-                                        select n).ToArray();
+                               where n.Ignore
+                               select n).ToArray();
 
             var ignoreMap = ignoreFiles.ToDictionary(k => k.Path, k => "", Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
 
@@ -767,60 +772,73 @@ namespace Duplicati.Library.AutoUpdater
             var md5 = System.Security.Cryptography.MD5.Create();
             var sha256 = System.Security.Cryptography.SHA256.Create();
 
-            Func<string, string> computeMD5 = (path) =>
+            Func<Stream, string> computeStreamMD5 = (stream) =>
             {
                 md5.Initialize();
-                using(var fs = System.IO.File.OpenRead(path))
-                    return Convert.ToBase64String(md5.ComputeHash(fs));
+                return Convert.ToBase64String(md5.ComputeHash(stream));
+            };
+
+            Func<Stream, string> computeStreamSHA256 = (stream) =>
+            {
+                sha256.Initialize();
+                return Convert.ToBase64String(sha256.ComputeHash(stream));
+            };
+
+            Func<string, string> computeMD5 = (path) =>
+            {
+                using (Stream fs = System.IO.File.OpenRead(path))
+                    return computeStreamMD5(fs);
             };
 
             Func<string, string> computeSHA256 = (path) =>
             {
-                sha256.Initialize();
-                using(var fs = System.IO.File.OpenRead(path))
-                    return Convert.ToBase64String(sha256.ComputeHash(fs));
+                using (Stream fs = System.IO.File.OpenRead(path))
+                    return computeStreamSHA256(fs);
             };
 
             // Build a zip
-            using (var archive_temp = new Duplicati.Library.Utility.TempFile())
+            using (var archive_temp_file = new Duplicati.Library.Utility.TempFile())
             {
-                using (var zipfile = new Duplicati.Library.Compression.FileArchiveZip(archive_temp, new Dictionary<string, string>()))
+                using (var archive_temp = System.IO.File.Open(archive_temp_file, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
                 {
-                    Func<string, string, bool> addToArchive = (path, relpath) =>
+                    using (ICompression zipfile = new Duplicati.Library.Compression.FileArchiveZip(archive_temp, ArchiveMode.Write, new Dictionary<string, string>()))
                     {
-                        if (ignoreMap.ContainsKey(relpath))
-                            return false;
-                    
-                        if (path.EndsWith(dirsep, StringComparison.Ordinal))
-                            return true;
-
-                        using (var source = System.IO.File.OpenRead(path))
-                        using (var target = zipfile.CreateFile(relpath, 
-                                           Duplicati.Library.Interface.CompressionHint.Compressible,
-                                           System.IO.File.GetLastAccessTimeUtc(path)))
+                        Func<string, string, bool> addToArchive = (path, relpath) =>
                         {
-                            source.CopyTo(target);
-                            remoteManifest.UncompressedSize += source.Length;
-                        }
+                            if (ignoreMap.ContainsKey(relpath))
+                                return false;
 
-                        return true;
-                    };
-                        
-                    // Build the update manifest
-                    localManifest.Files =
-                (from fse in Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(inputfolder)
-                                let relpath = fse.Substring(baselen)
-                                where addToArchive(fse, relpath)
-                                select new FileEntry() {
-                        Path = relpath,
-                        LastWriteTime = System.IO.File.GetLastAccessTimeUtc(fse),
-                        MD5 = fse.EndsWith(dirsep, StringComparison.Ordinal) ? null : computeMD5(fse),
-                        SHA256 = fse.EndsWith(dirsep, StringComparison.Ordinal) ? null : computeSHA256(fse)
-                    })
-                .Union(ignoreFiles).ToArray();
+                            if (path.EndsWith(dirsep, StringComparison.Ordinal))
+                                return true;
 
-                    // Write a signed manifest with the files
-                
+                            using (var source = System.IO.File.OpenRead(path))
+                            using (var target = zipfile.CreateFile(relpath,
+                                               Duplicati.Library.Interface.CompressionHint.Compressible,
+                                               System.IO.File.GetLastAccessTimeUtc(path)))
+                            {
+                                source.CopyTo(target);
+                                remoteManifest.UncompressedSize += source.Length;
+                            }
+
+                            return true;
+                        };
+
+                        // Build the update manifest
+                        localManifest.Files =
+                    (from fse in Duplicati.Library.Utility.Utility.EnumerateFileSystemEntries(inputfolder)
+                     let relpath = fse.Substring(baselen)
+                     where addToArchive(fse, relpath)
+                     select new FileEntry()
+                     {
+                         Path = relpath,
+                         LastWriteTime = System.IO.File.GetLastAccessTimeUtc(fse),
+                         MD5 = fse.EndsWith(dirsep, StringComparison.Ordinal) ? null : computeMD5(fse),
+                         SHA256 = fse.EndsWith(dirsep, StringComparison.Ordinal) ? null : computeSHA256(fse)
+                     })
+                    .Union(ignoreFiles).ToArray();
+
+                        // Write a signed manifest with the files
+
                         using (var ms = new System.IO.MemoryStream())
                         using (var sw = new System.IO.StreamWriter(ms))
                         {
@@ -831,26 +849,29 @@ namespace Duplicati.Library.AutoUpdater
                             {
                                 SignatureReadingStream.CreateSignedStream(ms, ms2, key);
                                 ms2.Position = 0;
-                                using (var sigfile = zipfile.CreateFile(UPDATE_MANIFEST_FILENAME, 
+                                using (var sigfile = zipfile.CreateFile(UPDATE_MANIFEST_FILENAME,
                                     Duplicati.Library.Interface.CompressionHint.Compressible,
                                     DateTime.UtcNow))
                                     ms2.CopyTo(sigfile);
 
                             }
                         }
+                    }
+
+                    remoteManifest.CompressedSize = archive_temp.Length;
+
+                    archive_temp.Position = 0;
+                    remoteManifest.MD5 = computeStreamMD5(archive_temp);
+
+                    archive_temp.Position = 0;
+                    remoteManifest.SHA256 = computeStreamSHA256(archive_temp);
                 }
-
-                remoteManifest.CompressedSize = new System.IO.FileInfo(archive_temp).Length;
-                remoteManifest.MD5 = computeMD5(archive_temp);
-                remoteManifest.SHA256 = computeSHA256(archive_temp);
-
-                System.IO.File.Move(archive_temp, System.IO.Path.Combine(outputfolder, "package.zip"));
-
+                System.IO.File.Move(archive_temp_file, System.IO.Path.Combine(outputfolder, "package.zip"));
             }
 
             // Write a signed manifest for upload
 
-            using(var tf = new Duplicati.Library.Utility.TempFile())
+            using (var tf = new Duplicati.Library.Utility.TempFile())
             {
                 using (var ms = new System.IO.MemoryStream())
                 using (var sw = new System.IO.StreamWriter(ms))
@@ -1040,7 +1061,7 @@ namespace Duplicati.Library.AutoUpdater
                         string.Format("{0}-crashlog.txt", AutoUpdateSettings.AppName)
                      );
 
-                     System.IO.File.WriteAllText(report_file, tex.ToString());
+                    System.IO.File.WriteAllText(report_file, tex.ToString());
                 }
                 catch
                 {
@@ -1091,9 +1112,9 @@ namespace Duplicati.Library.AutoUpdater
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
             if (Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("AUTOUPDATER_USE_APPDOMAIN"), true))
-                return RunFromMostRecentAppDomain(method, cmdargs, defaultstrategy);
-            else
-                return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
+                    return RunFromMostRecentAppDomain(method, cmdargs, defaultstrategy);
+
+            return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
         }
 
         public static int RunFromMostRecentSpawn(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
@@ -1105,6 +1126,10 @@ namespace Duplicati.Library.AutoUpdater
             // If we are not the primary entry, just execute
             if (IsRunningInUpdateEnvironment)
             {
+                // For some reason this does not work
+                //if (Library.Utility.Utility.IsClientWindows)
+                    //Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+
                 int r = 0;
                 WrapWithUpdater(defaultstrategy, () => {
                     r = RunMethod(method, cmdargs);
@@ -1130,10 +1155,7 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    ErrorDialog = false,                    
+                    ErrorDialog = false,
                 };
                 pi.EnvironmentVariables.Clear();
 
@@ -1145,15 +1167,36 @@ namespace Duplicati.Library.AutoUpdater
                 pi.EnvironmentVariables[string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)] = InstalledBaseDir;
                 pi.EnvironmentVariables["LOCALIZATION_FOLDER"] = InstalledBaseDir;
 
+                // On Windows, we manually redirect the streams
+                if (Library.Utility.Utility.IsClientWindows)
+                {
+                    pi.RedirectStandardError = true;
+                    pi.RedirectStandardInput = true;
+                    pi.RedirectStandardOutput = true;
+                }
+
                 var proc = System.Diagnostics.Process.Start(pi);
-                var tasks = Task.WhenAll(
-                    Console.OpenStandardInput().CopyToAsync(proc.StandardInput.BaseStream),
-                    proc.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput()),
-                    proc.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError())
-                );
+                Task tasks = null;
+                if (Library.Utility.Utility.IsClientWindows)
+                {
+                    // On Windows, we manually redirect the streams
+                    tasks = Task.WhenAll(
+                        // This does some unwanted buffering that breaks things
+                        //Console.OpenStandardInput().CopyToAsync(proc.StandardInput.BaseStream),
+                        Task.Run(async () => {
+                            var stdin = new StreamReader(Console.OpenStandardInput());
+                            var line = string.Empty;
+                            while ((line = await stdin.ReadLineAsync().ConfigureAwait(false)) != null)
+                                await proc.StandardInput.WriteLineAsync(line);
+                        }),
+                        proc.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput()),
+                        proc.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError())
+                    );
+                }
 
                 proc.WaitForExit();
-                tasks.Wait(1000);
+                if (tasks != null)
+                    tasks.Wait(1000);
 
                 if (proc.ExitCode != MAGIC_EXIT_CODE)
                     return proc.ExitCode;
@@ -1215,7 +1258,7 @@ namespace Duplicati.Library.AutoUpdater
 
             var folder = best.Key;
 
-            // Basic idea with the loop is that the running AppDomain can use 
+            // Basic idea with the loop is that the running AppDomain can use
             // RUN_UPDATED_ENVNAME_TEMPLATE to signal that a new version is ready
             // when the caller exits, the new update is executed
             //
@@ -1243,7 +1286,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 try { AppDomain.Unload(domain); }
                 catch (Exception ex)
-                { 
+                {
                     Console.WriteLine("Appdomain unload error: {0}", ex);
                 }
 
@@ -1263,9 +1306,9 @@ namespace Duplicati.Library.AutoUpdater
 
                             if (!System.IO.Path.IsPathRooted(app))
                                 app = System.IO.Path.Combine(InstalledBaseDir, app);
-                            
 
-                            // Re-launch but give the OS a little time to fully unload all open handles, etc.                        
+
+                            // Re-launch but give the OS a little time to fully unload all open handles, etc.
                             var si = new System.Diagnostics.ProcessStartInfo(app, args);
                             si.UseShellExecute = false;
                             si.EnvironmentVariables.Add(string.Format(SLEEP_ENVNAME_TEMPLATE, APPNAME), "1");

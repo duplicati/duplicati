@@ -14,11 +14,17 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using MailKit.Net.Smtp;
 using MimeKit;
+using Duplicati.Library.Modules.Builtin.ResultSerialization;
 
 namespace Duplicati.Library.Modules.Builtin
 {
-    public class SendMail : Interface.IGenericCallbackModule
+    public class SendMail : ReportHelper
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<SendMail>();
+
         #region Option names
 
         /// <summary>
@@ -57,22 +63,25 @@ namespace Duplicati.Library.Modules.Builtin
         /// Option used to specify if reports are sent for other operations than backups
         /// </summary>
         private const string OPTION_SENDALL = "send-mail-any-operation";
-
+        /// <summary>
+        /// Option used to specify what format the result is sent in.
+        /// </summary>
+        private const string OPTION_RESULT_FORMAT = "send-mail-result-output-format";
+        /// <summary>
+        /// Option used to set the log level for mail reports
+        /// </summary>
+        private const string OPTION_LOG_LEVEL = "send-mail-log-level";
+        /// <summary>
+        /// Option used to set the log filters for mail reports
+        /// </summary>
+        private const string OPTION_LOG_FILTER = "send-mail-log-filter";
+        /// <summary>
+        /// Option used to set the maximum number of log lines
+        /// </summary>
+        private const string OPTION_MAX_LOG_LINES = "send-mail-max-log-lines";
         #endregion
 
         #region Option defaults
-        /// <summary>
-        /// The default subject
-        /// </summary>
-        private const string DEFAULT_SUBJECT = "Duplicati %OPERATIONNAME% report for %backup-name%";
-        /// <summary>
-        /// The default mail level
-        /// </summary>
-        private const string DEFAULT_LEVEL = "all";
-        /// <summary>
-        /// The default mail body
-        /// </summary>
-        private const string DEFAULT_BODY = "%RESULT%";
         /// <summary>
         /// The default mail sender
         /// </summary>
@@ -80,27 +89,6 @@ namespace Duplicati.Library.Modules.Builtin
         #endregion
 
         #region Private variables
-        /// <summary>
-        /// The cached name of the operation
-        /// </summary>
-        private string m_operationname;
-        /// <summary>
-        /// The cached remote url
-        /// </summary>
-        private string m_remoteurl;
-        /// <summary>
-        /// The cached local path
-        /// </summary>
-        private string[] m_localpath;
-        /// <summary>
-        /// The cached set of options
-        /// </summary>
-        private IDictionary<string, string> m_options;
-        /// <summary>
-        /// The parsed result level
-        /// </summary>
-        private string m_parsedresultlevel = string.Empty;
-
         /// <summary>
         /// The server url to use
         /// </summary>
@@ -121,54 +109,36 @@ namespace Duplicati.Library.Modules.Builtin
         /// The mail recipient
         /// </summary>
         private string m_to;
-        /// <summary>
-        /// The mail subject
-        /// </summary>
-        private string m_subject;
-        /// <summary>
-        /// The mail body
-        /// </summary>
-        private string m_body;
-        /// <summary>
-        /// The mail send level
-        /// </summary>
-        private string[] m_levels;
-        /// <summary>
-        /// True to send all operations
-        /// </summary>
-        private bool m_sendAll;
-
         #endregion
 
 
         #region Implementation of IGenericModule
-
         /// <summary>
         /// The module key, used to activate or deactivate the module on the commandline
         /// </summary>
-        public string Key { get { return "sendmail"; } }
+        public override string Key { get { return "sendmail"; } }
 
         /// <summary>
         /// A localized string describing the module with a friendly name
         /// </summary>
-        public string DisplayName { get { return Strings.SendMail.Displayname;} }
+        public override string DisplayName { get { return Strings.SendMail.Displayname;} }
 
         /// <summary>
         /// A localized description of the module
         /// </summary>
-        public string Description { get { return Strings.SendMail.Description; } }
+        public override string Description { get { return Strings.SendMail.Description; } }
 
         /// <summary>
         /// A boolean value that indicates if the module should always be loaded.
         /// If true, the  user can choose to not load the module by entering the appropriate commandline option.
         /// If false, the user can choose to load the module by entering the appropriate commandline option.
         /// </summary>
-        public bool LoadAsDefault { get { return true; } }
+        public override bool LoadAsDefault { get { return true; } }
 
         /// <summary>
         /// Gets a list of supported commandline arguments
         /// </summary>
-        public IList<ICommandLineArgument> SupportedCommands
+        public override IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
@@ -181,56 +151,46 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
                     new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
                     new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string [] { "All" }).ToArray()),
-                    new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionSendallShort, Strings.SendMail.OptionSendallLong),
+                    new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
+
+                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
+                    new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
+                    new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
+
+                    new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
                 });
             }
         }
 
-        /// <summary>
-        /// This method is the interception where the module can interact with the execution environment and modify the settings.
-        /// </summary>
-        /// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
-        public void Configure(IDictionary<string, string> commandlineOptions)
+        protected override string SubjectOptionName => OPTION_SUBJECT;
+        protected override string BodyOptionName => OPTION_BODY;
+        protected override string ActionLevelOptionName => OPTION_SENDLEVEL;
+        protected override string ActionOnAnyOperationOptionName => OPTION_SENDALL;
+        protected override string LogLevelOptionName => OPTION_LOG_LEVEL;
+        protected override string LogFilterOptionName => OPTION_LOG_FILTER;
+        protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
+        protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
+
+		/// <summary>
+		/// This method is the interception where the module can interact with the execution environment and modify the settings.
+		/// </summary>
+		/// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
+		protected override bool ConfigureModule(IDictionary<string, string> commandlineOptions)
         {
             //We need at least a recipient
             commandlineOptions.TryGetValue(OPTION_RECIPIENT, out m_to);
             if (string.IsNullOrEmpty(m_to))
-                return;
+                return false;
 
             commandlineOptions.TryGetValue(OPTION_SERVER, out m_server);
             commandlineOptions.TryGetValue(OPTION_USERNAME, out m_username);
             commandlineOptions.TryGetValue(OPTION_PASSWORD, out m_password);
             commandlineOptions.TryGetValue(OPTION_SENDER, out m_from);
-            commandlineOptions.TryGetValue(OPTION_SUBJECT, out m_subject);
-            commandlineOptions.TryGetValue(OPTION_BODY, out m_body);
-            m_options = commandlineOptions;
 
-            string tmp;
-            commandlineOptions.TryGetValue(OPTION_SENDLEVEL, out tmp);
-            if (!string.IsNullOrEmpty(tmp))
-                m_levels = 
-                    tmp
-                    .Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Select(x => x.Trim())
-                    .ToArray();
-
-            if (m_levels == null || m_levels.Length == 0)
-                m_levels = 
-                    DEFAULT_LEVEL
-                    .Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Select(x => x.Trim())
-                    .ToArray();
-                   
-            m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_SENDALL);
-
-            if (string.IsNullOrEmpty(m_subject))
-                m_subject = DEFAULT_SUBJECT;
-            if (string.IsNullOrEmpty(m_body))
-                m_body = DEFAULT_BODY;
             if (string.IsNullOrEmpty(m_from))
                 m_from = DEFAULT_SENDER;
+
+            return true;
         }
 
         #endregion
@@ -238,236 +198,141 @@ namespace Duplicati.Library.Modules.Builtin
         #region Implementation of IGenericCallbackModule
 
         /// <summary>
-        /// Called when the operation starts
+        /// Sends the email message
         /// </summary>
-        /// <param name="operationname">The full name of the operation</param>
-        /// <param name="remoteurl">The remote backend url</param>
-        /// <param name="localpath">The local path, if required</param>
-        public void OnStart(string operationname, ref string remoteurl, ref string[] localpath)
+        /// <param name="subject">The subject line.</param>
+        /// <param name="body">The message body.</param>
+        protected override void SendMessage(string subject, string body)
         {
-            m_operationname = operationname;
-            m_remoteurl = remoteurl;
-            m_localpath = localpath;
-        }
+            var message = new MimeMessage();
+            MailboxAddress mailbox;
+            foreach (string s in m_to.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries))
+                if (MailboxAddress.TryParse(s.Replace("\"", ""), out mailbox))
+                    message.To.Add(mailbox);
 
-        /// <summary>
-        /// Called when the operation finishes
-        /// </summary>
-        /// <param name="result">The result object, if this derives from an exception, the operation failed</param>
-        public void OnFinish(object result)
-        {
-            //If no email is supplied, then skip
-            if (string.IsNullOrEmpty(m_to))
-                return;
+            var mailboxToFirst = (MailboxAddress)message.To.First();
+            string toMailDomain = mailboxToFirst.Address.Substring(mailboxToFirst.Address.LastIndexOf("@", StringComparison.Ordinal) + 1);
 
-            //If we do not report this action, then skip
-            if (!m_sendAll && !string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
-                return;
-
-            ParsedResultType level;
-            if (result is Exception)
-                level = ParsedResultType.Fatal;
-            else if (result != null && result is Library.Interface.IBasicResults)
-                level = ((IBasicResults)result).ParsedResult;
-            else
-                level = ParsedResultType.Error;
-
-            m_parsedresultlevel = level.ToString();
-
-            if (string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
+            string from = m_from.Trim().Replace("\"", "");
+            if (from.IndexOf('@') < 0)
             {
-                if (!m_levels.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase)))
-                {
-                    //Check if this level should send mail
-                    if (!m_levels.Any(x => string.Equals(x, level.ToString(), StringComparison.OrdinalIgnoreCase)))
-                        return;
-                }
+                if (from.EndsWith(">", StringComparison.Ordinal))
+                    from = from.Insert(from.Length - 1, "@" + toMailDomain);
+                else
+                    from = string.Format("No Reply - Backup report <{0}@{1}>", from, toMailDomain);
             }
 
-            try
+            if (MailboxAddress.TryParse(from, out mailbox))
+                message.From.Add(mailbox);
+
+            message.Subject = subject;
+            message.Body = new TextPart("plain") { Text = body, ContentTransferEncoding = ContentEncoding.EightBit };
+
+            List<string> servers = null;
+            if (string.IsNullOrEmpty(m_server))
             {
-                string body = m_body;
-                string subject = m_subject;
-                if (body != DEFAULT_BODY && System.IO.Path.IsPathRooted(body) && System.IO.File.Exists(body))
-                    body = System.IO.File.ReadAllText(body);
+                var dnslite = new DnsLib.DnsLite();
+                var dnslist = new List<string>();
 
-                body = ReplaceTemplate(body, result, false);
-                subject = ReplaceTemplate(subject, result, true);
-
-                var message = new MimeMessage();
-                MailboxAddress mailbox;
-                foreach (string s in m_to.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries))
-                    if(MailboxAddress.TryParse(s.Replace("\"", ""), out mailbox))
-                        message.To.Add(mailbox);
-
-                var mailboxToFirst = (MailboxAddress) message.To.First();
-                string toMailDomain = mailboxToFirst.Address.Substring(mailboxToFirst.Address.LastIndexOf("@", StringComparison.Ordinal) + 1);
-                                
-                string from = m_from.Trim().Replace("\"", "");
-                if (from.IndexOf('@') < 0)
-                {
-                    if (from.EndsWith(">", StringComparison.Ordinal))
-                        from = from.Insert(from.Length - 1, "@" + toMailDomain);
-                    else
-                        from = string.Format("No Reply - Backup report <{0}@{1}>", from, toMailDomain);
-                }
-
-                if (MailboxAddress.TryParse(from, out mailbox))
-                    message.From.Add(mailbox);
-                
-                message.Subject = subject;
-                message.Body = new TextPart("plain") { Text = body, ContentTransferEncoding = ContentEncoding.EightBit };
-
-                List<string> servers = null;
-                if (string.IsNullOrEmpty(m_server))
-                {
-                    var dnslite = new DnsLib.DnsLite();
-                    var dnslist = new List<string>();
-
-                    //Grab all IPv4 addresses
-                    foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
-                        try 
-                        {
-                            foreach (IPAddress dnsAddress in networkInterface.GetIPProperties().DnsAddresses)
-                                if (dnsAddress.AddressFamily == AddressFamily.InterNetwork)
-                                    dnslist.Add(dnsAddress.ToString());
-                        }
-                        catch { }
-                    
-                    dnslist = dnslist.Distinct().ToList();
-                    
-                    // If we have no DNS servers, try Google and OpenDNS
-                    if (dnslist.Count == 0) 
-                    {
-                        // https://developers.google.com/speed/public-dns/
-                        dnslist.Add("8.8.8.8");
-                        dnslist.Add("8.8.4.4");
-                        
-                        //http://www.opendns.com/opendns-ip-addresses/
-                        dnslist.Add("208.67.222.222");
-                        dnslist.Add("208.67.220.220");
-                    }
-
-                    var records = new List<MXRecord>();
-                    foreach (var s in dnslist)
-                    {
-                        var res = dnslite.getMXRecords(toMailDomain, s);
-                        if (res != null)
-                            records.AddRange(res.OfType<MXRecord>());
-                    }
-
-                    servers = records.OrderBy(record => record.preference).Select(x => "smtp://" + x.exchange).Distinct().ToList();
-                    if (servers.Count == 0)
-                        throw new IOException(Strings.SendMail.FailedToLookupMXServer(OPTION_SERVER));
-                }
-                else 
-                {
-                    servers = (from n in m_server.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
-                               let srv = (n == null || n.IndexOf("://", StringComparison.OrdinalIgnoreCase) > 0) ? n : "smtp://" + n
-                               where !string.IsNullOrEmpty(srv)
-                               select srv).Distinct().ToList();
-                }
-                
-                Exception lastEx = null;
-                string lastServer = null;
-
-                foreach(var server in servers)
-                {
-                    if (lastEx != null)
-                        Logging.Log.WriteMessage(Strings.SendMail.SendMailFailedRetryError(lastServer, lastEx.Message, server), LogMessageType.Warning, lastEx);
-                
-                    lastServer = server;
+                //Grab all IPv4 addresses
+                foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
                     try
                     {
-                        using (MemoryStream ms = new MemoryStream())
+                        foreach (IPAddress dnsAddress in networkInterface.GetIPProperties().DnsAddresses)
+                            if (dnsAddress.AddressFamily == AddressFamily.InterNetwork)
+                                dnslist.Add(dnsAddress.ToString());
+                    }
+                    catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "DNSServerLookupFailure", ex, "Failed to get DNS servers from network interface"); }
+
+                dnslist = dnslist.Distinct().ToList();
+
+                // If we have no DNS servers, try Google and OpenDNS
+                if (dnslist.Count == 0)
+                {
+                    // https://developers.google.com/speed/public-dns/
+                    dnslist.Add("8.8.8.8");
+                    dnslist.Add("8.8.4.4");
+
+                    //http://www.opendns.com/opendns-ip-addresses/
+                    dnslist.Add("208.67.222.222");
+                    dnslist.Add("208.67.220.220");
+                }
+
+                var records = new List<MXRecord>();
+                foreach (var s in dnslist)
+                {
+                    var res = dnslite.getMXRecords(toMailDomain, s);
+                    if (res != null)
+                        records.AddRange(res.OfType<MXRecord>());
+                }
+
+                servers = records.OrderBy(record => record.preference).Select(x => "smtp://" + x.exchange).Distinct().ToList();
+                if (servers.Count == 0)
+                    throw new IOException(Strings.SendMail.FailedToLookupMXServer(OPTION_SERVER));
+            }
+            else
+            {
+                servers = (from n in m_server.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
+                           let srv = (n == null || n.IndexOf("://", StringComparison.OrdinalIgnoreCase) > 0) ? n : "smtp://" + n
+                           where !string.IsNullOrEmpty(srv)
+                           select srv).Distinct().ToList();
+            }
+
+            Exception lastEx = null;
+            string lastServer = null;
+
+            foreach (var server in servers)
+            {
+                if (lastEx != null)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SendMailFailedWillRetry", lastEx, Strings.SendMail.SendMailFailedRetryError(lastServer, lastEx.Message, server));
+
+                lastServer = server;
+                try
+                {
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        try
                         {
-                            try
+                            using (var client = new SmtpClient(new MailKit.ProtocolLogger(ms)))
                             {
-                                using (var client = new SmtpClient(new MailKit.ProtocolLogger(ms)))
-                                {
-                                    client.Timeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+                                client.Timeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
 
-                                    // Backward compatibility fix for setup prior to using MailKit
-                                    var uri = new System.Uri(server);
-                                    if (uri.Scheme.ToLowerInvariant() == "tls")
-                                        uri = new System.Uri("smtp://" + uri.Host + ":" + (uri.Port <= 0 ? 587 : uri.Port) + "/?starttls=always");
+                                // Backward compatibility fix for setup prior to using MailKit
+                                var uri = new System.Uri(server);
+                                if (uri.Scheme.ToLowerInvariant() == "tls")
+                                    uri = new System.Uri("smtp://" + uri.Host + ":" + (uri.Port <= 0 ? 587 : uri.Port) + "/?starttls=always");
 
-                                    client.Connect(uri);
+                                client.Connect(uri);
 
-                                    if (!string.IsNullOrEmpty(m_username) && !string.IsNullOrEmpty(m_password))
-                                        client.Authenticate(m_username, m_password);
+                                if (!string.IsNullOrEmpty(m_username) && !string.IsNullOrEmpty(m_password))
+                                    client.Authenticate(m_username, m_password);
 
-                                    client.Send(message);
-                                    client.Disconnect(true);
-                                }
-                            }
-                            finally
-                            {
-                                var log = Encoding.UTF8.GetString(ms.GetBuffer());
-                                if (!string.IsNullOrWhiteSpace(log))
-                                    Logging.Log.WriteMessage(Strings.SendMail.SendMailLog(log), LogMessageType.Profiling);
+                                client.Send(message);
+                                client.Disconnect(true);
                             }
                         }
-                        
-                        lastEx = null;
-                        Logging.Log.WriteMessage(Strings.SendMail.SendMailSuccess(server), LogMessageType.Information);
-                        break;
+                        finally
+                        {
+                            var log = Encoding.UTF8.GetString(ms.GetBuffer());
+                            if (!string.IsNullOrWhiteSpace(log))
+                                Logging.Log.WriteProfilingMessage(LOGTAG, "SendMailResult", Strings.SendMail.SendMailLog(log));
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        lastEx = ex;                        
-                    }
-                }
-                
-                if (lastEx != null)
-                    throw lastEx;
-            }
-            catch (Exception ex)
-            {
-                Exception top = ex;
-                var sb = new StringBuilder();
-                while (top != null)
-                {
-                    if (sb.Length != 0)
-                        sb.Append("--> ");
-                    sb.AppendFormat("{0}: {1}{2}", top.GetType().FullName, top.Message, Environment.NewLine);
-                    top = top.InnerException;
-                }
 
-                Logging.Log.WriteMessage(Strings.SendMail.SendMailFailedError(sb.ToString()), LogMessageType.Warning, ex);
+                    lastEx = null;
+                    Logging.Log.WriteInformationMessage(LOGTAG, "SendMailComplete", Strings.SendMail.SendMailSuccess(server));
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    lastEx = ex;
+                }
             }
+
+            if (lastEx != null)
+                throw lastEx;
         }
 
         #endregion
-
-        private string ReplaceTemplate(string input, object result, bool subjectline)
-        {
-            input = Regex.Replace(input, "\\%OPERATIONNAME\\%", m_operationname ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            if (subjectline)
-            {
-                input = Regex.Replace(input, "\\%RESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            }
-            else
-            {
-                if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    using(TempFile tf = new TempFile())
-                    {
-                        RunScript.SerializeResult(tf, result);
-                        input = Regex.Replace(input, "\\%RESULT\\%", System.IO.File.ReadAllText(tf), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                    }
-            }
-
-            foreach (KeyValuePair<string, string> kv in m_options)
-                input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-            if (!m_options.ContainsKey("backup-name"))
-                input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-            input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
-            return input;
-        }
     }
 }

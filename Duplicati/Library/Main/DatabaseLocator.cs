@@ -88,10 +88,9 @@ namespace Duplicati.Library.Main
             string type = uri.Scheme;
             int port = uri.Port;
             string username = uri.Username;
-            string password = uri.Password;
             string prefix = options.Prefix;
             
-            if (username == null || password == null)
+            if (username == null || uri.Password == null)
             {
                 var sopts = DynamicLoader.BackendLoader.GetSupportedCommands(backend);
                 var ropts = new Dictionary<string, string>(options.RawOptions);
@@ -104,23 +103,16 @@ namespace Duplicati.Library.Main
                     {
                         if (username == null && o.Aliases != null && o.Aliases.Contains("auth-username", StringComparer.OrdinalIgnoreCase) && ropts.ContainsKey(o.Name))
                             username = ropts[o.Name];
-                        if (password == null && o.Aliases != null && o.Aliases.Contains("auth-password", StringComparer.OrdinalIgnoreCase) && ropts.ContainsKey(o.Name))
-                            password = ropts[o.Name];
                     }
                 
                     foreach(var o in sopts)
                     {
                         if (username == null && o.Name.Equals("auth-username", StringComparison.OrdinalIgnoreCase) && ropts.ContainsKey("auth-username"))
                             username = ropts["auth-username"];
-                        if (password == null && o.Name.Equals("auth-password", StringComparison.OrdinalIgnoreCase) && ropts.ContainsKey("auth-password"))
-                            password = ropts["auth-password"];
                     }
                 }
             }
             
-            if (password != null)
-                password = Library.Utility.Utility.ByteArrayAsHexString(System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(password + "!" + uri.Scheme + "!" + uri.HostAndPath)));
-                
             //Now find the one that matches :)
             var matches = (from n in configs
                 where 
@@ -134,7 +126,7 @@ namespace Duplicati.Library.Main
                 select n).ToList();
             
             if (matches.Count > 1)
-                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Multiple sources found for: {0}", backend));
+                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Multiple sources found for: {0}", backend), "MultipleLocalDatabaseSourcesFound");
             
             // Re-select
             if (matches.Count == 0 && anyUsername && string.IsNullOrEmpty(username))
@@ -149,7 +141,7 @@ namespace Duplicati.Library.Main
                     select n).ToList();
                     
                 if (matches.Count > 1)
-                    throw new Duplicati.Library.Interface.UserInformationException(String.Format("Multiple sources found for \"{0}\", try supplying --{1}", backend, "auth-username"));
+                    throw new Duplicati.Library.Interface.UserInformationException(String.Format("Multiple sources found for \"{0}\", try supplying --{1}", backend, "auth-username"), "MultipleLocalDatabaseSourcesFound");
             }
             
             if (matches.Count == 0 && !autoCreate)
@@ -172,7 +164,7 @@ namespace Duplicati.Library.Main
                     newpath = System.IO.Path.Combine(folder, GenerateRandomName());
                 
                 if (System.IO.File.Exists(newpath))
-                    throw new Duplicati.Library.Interface.UserInformationException("Unable to find a unique name for the database, please use --dbpath");
+                    throw new Duplicati.Library.Interface.UserInformationException("Unable to find a unique name for the database, please use --dbpath", "CannotCreateRandomName");
                 
                 //Create a new one, add it to the list, and save it
                 configs.Add(new BackendEntry() {
@@ -202,12 +194,13 @@ namespace Duplicati.Library.Main
         
         public static string GenerateRandomName()
         {
-            var backupname = "";
             var rnd = new Random();
-            for(var i = 0; i < 10; i++)
-                backupname += (char)rnd.Next('A', 'Z' + 1);
-                
-            return backupname;
+
+            System.Text.StringBuilder backupName = new System.Text.StringBuilder();
+            for (var i = 0; i < 10; i++)
+                backupName.Append(rnd.Next('A', 'Z' + 1));
+
+            return backupName.ToString();
         }
 
         public static bool IsDatabasePathInUse(string path)
@@ -217,11 +210,10 @@ namespace Duplicati.Library.Main
                 return false;
 
             var file = System.IO.Path.Combine(folder, "dbconfig.json");
-            List<BackendEntry> configs;
             if (!System.IO.File.Exists(file))
                 return false;
 
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8)).Any(x => string.Equals(path, x.Databasepath, Library.Utility.Utility.ClientFilenameStringComparision));
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8)).Any(x => string.Equals(path, x.Databasepath, Library.Utility.Utility.ClientFilenameStringComparison));
         }
     }
 }

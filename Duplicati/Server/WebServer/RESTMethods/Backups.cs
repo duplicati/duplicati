@@ -55,6 +55,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 var input = info.Request.Form;
                 var cmdline = Library.Utility.Utility.ParseBool(input["cmdline"].Value, false);
+                var import_metadata = Library.Utility.Utility.ParseBool(input["import_metadata"].Value, false);
                 var direct = Library.Utility.Utility.ParseBool(input["direct"].Value, false);
                 output_template = output_template.Replace("CBM", input["callback"].Value);
                 if (cmdline)
@@ -73,7 +74,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     var buf = new byte[3];
                     using(var fs = System.IO.File.OpenRead(file.Filename))
                     {
-                        fs.Read(buf, 0, buf.Length);
+                        Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
 
                         fs.Position = 0;
                         if (buf[0] == 'A' && buf[1] == 'E' && buf[2] == 'S')
@@ -91,6 +92,15 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         }
                     }
 
+                    if (ipx.Backup == null)
+                        throw new Exception("No backup found in document");
+
+                    if (ipx.Backup.Metadata == null)
+                        ipx.Backup.Metadata = new Dictionary<string, string>();
+
+                    if (!import_metadata) 
+                        ipx.Backup.Metadata.Clear();
+
                     ipx.Backup.ID = null;
                     ((Database.Backup)ipx.Backup).DBPath = null;
 
@@ -103,10 +113,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         {
                             var basename = ipx.Backup.Name;
                             var c = 0;
-                            while (c++ < 100 && Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
+                            while (c++ < 100 && Program.DataConnection.Backups.Any(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)))
                                 ipx.Backup.Name = basename + " (" + c.ToString() + ")";
 
-                            if (Program.DataConnection.Backups.Where(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
+                            if (Program.DataConnection.Backups.Any(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)))
                             {
                                 info.BodyWriter.SetOK();
                                 info.Response.ContentType = "text/html";
@@ -116,7 +126,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             var err = Program.DataConnection.ValidateBackup(ipx.Backup, ipx.Schedule);
                             if (!string.IsNullOrWhiteSpace(err))
                             {
-                                info.ReportClientError(err);
+                                info.ReportClientError(err, System.Net.HttpStatusCode.BadRequest);
                                 return;
                             }
 
@@ -164,7 +174,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
                 if (data.Backup == null)
                 {
-                    info.ReportClientError("Data object had no backup entry");
+                    info.ReportClientError("Data object had no backup entry", System.Net.HttpStatusCode.BadRequest);
                     return;
                 }
 
@@ -194,16 +204,16 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                     lock(Program.DataConnection.m_lock)
                     {
-                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase)).Any())
+                        if (Program.DataConnection.Backups.Any(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase)))
                         {
-                            info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name);
+                            info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name, System.Net.HttpStatusCode.Conflict);
                             return;
                         }
 
                         var err = Program.DataConnection.ValidateBackup(data.Backup, data.Schedule);
                         if (!string.IsNullOrWhiteSpace(err))
                         {
-                            info.ReportClientError(err);
+                            info.ReportClientError(err, System.Net.HttpStatusCode.BadRequest);
                             return;
                         }
 
@@ -216,9 +226,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
             catch (Exception ex)
             {
                 if (data == null)
-                    info.ReportClientError(string.Format("Unable to parse backup or schedule object: {0}", ex.Message));
+                    info.ReportClientError(string.Format("Unable to parse backup or schedule object: {0}", ex.Message), System.Net.HttpStatusCode.BadRequest);
                 else
-                    info.ReportClientError(string.Format("Unable to save schedule or backup object: {0}", ex.Message));
+                    info.ReportClientError(string.Format("Unable to save schedule or backup object: {0}", ex.Message), System.Net.HttpStatusCode.InternalServerError);
             }
         }
 

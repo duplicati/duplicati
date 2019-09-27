@@ -17,7 +17,7 @@ namespace Duplicati.Library.Main
         {
             private class AsyncDownloadedFile : IAsyncDownloadedFile
             {
-                private Exception m_exception;
+                private readonly Exception m_exception;
                 private Library.Utility.TempFile m_file;
                 
                 public string Name { get; private set; }
@@ -53,9 +53,9 @@ namespace Duplicati.Library.Main
                 }
             }
         
-            private IList<IRemoteVolume> m_volumes;
+            private readonly IList<IRemoteVolume> m_volumes;
             private BackendManager.IDownloadWaitHandle m_handle;
-            private BackendManager m_backend;
+            private readonly BackendManager m_backend;
             private int m_index;
             private AsyncDownloadedFile m_current;
 
@@ -129,8 +129,8 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private IList<IRemoteVolume> m_volumes;
-        private BackendManager m_backend;
+        private readonly IList<IRemoteVolume> m_volumes;
+        private readonly BackendManager m_backend;
 
         public AsyncDownloader(IList<IRemoteVolume> volumes, BackendManager backend)
         {

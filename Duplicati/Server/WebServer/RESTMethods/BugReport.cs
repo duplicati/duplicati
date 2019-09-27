@@ -26,16 +26,16 @@ namespace Duplicati.Server.WebServer.RESTMethods
             long id;
             long.TryParse(key, out id);
 
-            var tf = Program.DataConnection.GetTempFiles().Where(x => x.ID == id).FirstOrDefault();
+            var tf = Program.DataConnection.GetTempFiles().FirstOrDefault(x => x.ID == id);
             if (tf == null)
             {
-                info.ReportClientError("Invalid or missing bugreport id");
+                info.ReportClientError("Invalid or missing bugreport id", System.Net.HttpStatusCode.NotFound);
                 return;
             }
 
             if (!System.IO.File.Exists(tf.Path))
             {
-                info.ReportClientError("File is missing");
+                info.ReportClientError("File is missing", System.Net.HttpStatusCode.NotFound);
                 return;
             }
 

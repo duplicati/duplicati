@@ -5,10 +5,10 @@ if [ ! -f "$1" ]; then
 	exit
 fi
 
-FILENAME=`basename $1`
-DIRNAME=`echo "${FILENAME}" | cut -d "_" -f 1`
-VERSION=`echo "${DIRNAME}" | cut -d "-" -f 2`
-DATE_STAMP=`LANG=C date -R`
+FILENAME=$(basename $1)
+DIRNAME=$(echo "${FILENAME}" | cut -d "_" -f 1)
+VERSION=$(echo "${DIRNAME}" | cut -d "-" -f 2)
+DATE_STAMP=$(LANG=C date -R)
 BASE_FILE_NAME="${FILENAME%.*}"
 TMPDIRNAME="${BASE_FILE_NAME}-extract"
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
@@ -85,7 +85,7 @@ rm -rf ./licenses/gpg
 cp -R ../web-extra/* webroot/
 cp ../dsm.duplicati.conf .
 
-DIRSIZE_KB=`BLOCKSIZE=1024 du -s | cut -d '.' -f 1`
+DIRSIZE_KB=$(BLOCKSIZE=1024 du -s | cut -d '.' -f 1)
 let "DIRSIZE=DIRSIZE_KB*1024"
 
 tar cf ../package.tgz ./*
@@ -98,9 +98,9 @@ ICON_256=$(openssl base64 -A -in PACKAGE_ICON_256.PNG)
 
 git checkout INFO
 echo "version=\"${VERSION}\"" >> "INFO"
-MD5=`md5 "package.tgz" | awk -F ' ' '{print $NF}'` 
+MD5=$(md5 "package.tgz" | awk -F ' ' '{print $NF}')
 echo "checksum=\"${MD5}\"" >> "INFO"
-echo "extractsize=\"${DIRSIZE}\"" >> "INFO"
+echo "extractsize=\"${DIRSIZE_KB}\"" >> "INFO"
 echo "package_icon=\"${ICON_72}\"" >> "INFO"
 echo "package_icon_256=\"${ICON_256}\"" >> "INFO"
 
@@ -118,13 +118,13 @@ if [ -f "${GPG_KEYFILE}" ]; then
         echo
     fi
 
-    GPGDATA=`"${MONO}" "../../BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}"`
+    GPGDATA=$("${MONO}" "../../BuildTools/AutoUpdateBuilder/bin/Debug/SharpAESCrypt.exe" d "${KEYFILE_PASSWORD}" "${GPG_KEYFILE}")
     if [ ! $? -eq 0 ]; then
         echo "Decrypting GPG keyfile failed"
         exit 1
     fi
-    GPGID=`echo "${GPGDATA}" | head -n 1`
-    GPGKEY=`echo "${GPGDATA}" | head -n 2 | tail -n 1`
+    GPGID=$(echo "${GPGDATA}" | head -n 1)
+    GPGKEY=$(echo "${GPGDATA}" | head -n 2 | tail -n 1)
 else
     echo "No GPG keyfile found, skipping gpg signing"
 fi
@@ -142,7 +142,7 @@ if [ "z${GPGID}" != "z" ]; then
     rm "${BASE_FILE_NAME}.signature"
 
     rm "${BASE_FILE_NAME}.spk"
-    tar cf "${BASE_FILE_NAME}.spk" -C "${TMPDIRNAME}" `ls -1 ${TMPDIRNAME}`
+    tar cf "${BASE_FILE_NAME}.spk" -C "${TMPDIRNAME}" $(ls -1 ${TMPDIRNAME})
 
     rm -rf "${TMPDIRNAME}"
 fi

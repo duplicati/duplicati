@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Compression
 {
-    public class SevenZipCompression: ICompressionHinting
+    public class SevenZipCompression : ICompressionHinting
     {
         // next file starts a new stream if the previous stream is larger than this
         private const int kStreamThreshold = 1 << 20; // 1 MB
 
-        private FileStream m_file;
+        private Stream m_stream;
         private ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter m_writer;
         private ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.PlainEncoder m_copyEncoder;
         private ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.ThreadedEncoder m_lzma2Encoder;
@@ -33,9 +33,9 @@ namespace Duplicati.Library.Compression
             get { return m_lowOverheadMode; }
             set
             {
-                if(m_lowOverheadMode != value)
+                if (m_lowOverheadMode != value)
                 {
-                    if(m_lzma2Encoder != null)
+                    if (m_lzma2Encoder != null)
                         throw new NotSupportedException("Cannot change LowOverheadMode after writing has started.");
 
                     m_lowOverheadMode = value;
@@ -50,29 +50,46 @@ namespace Duplicati.Library.Compression
 
         /// <summary>
         /// Constructs a new zip instance.
-        /// If the file exists and has a non-zero length we read it,
-        /// otherwise we create a new archive.
+        /// Access mode is specified by mode parameter.
+        /// Note that stream would not be disposed by FileArchiveZip instance so
+        /// you may reuse it and have to dispose it yourself.
         /// </summary>
-        /// <param name="filename">The name of the file to read or write</param>
+        /// <param name="stream">The stream to read or write depending access mode</param>
+        /// <param name="mode">The archive acces mode</param>
         /// <param name="options">The options passed on the commandline</param>
-        public SevenZipCompression(string filename, Dictionary<string, string> options)
+        public SevenZipCompression(Stream stream, ArchiveMode mode, IDictionary<string, string> options)
+        {
+            InitializeCompression(options);
+            // Preventing the stream being closed by ArchiveWriter so it could be reused.
+            // Required for using with MemoryStream.
+            m_stream = new ShaderStream(stream, true);
+            if (mode == ArchiveMode.Write)
+                InitializeArchiveWriter();
+            else
+            {
+                stream.Position = 0;
+                InitializeArchiveReader();
+            }
+        }
+
+        private void InitializeCompression(IDictionary<string, string> options)
         {
             m_threadCount = DEFAULT_THREAD_COUNT;
 
             string threadCountSetting;
             int threadCountValue;
-            if(options != null
+            if (options != null
                 && options.TryGetValue(THREAD_COUNT_OPTION, out threadCountSetting)
                 && Int32.TryParse(threadCountSetting, out threadCountValue)
                 && threadCountValue > 0)
             {
                 // arbitrary limit to avoid stupid mistakes
-                if(threadCountValue > MAX_THREAD_COUNT)
+                if (threadCountValue > MAX_THREAD_COUNT)
                     threadCountValue = MAX_THREAD_COUNT;
 
                 m_threadCount = threadCountValue;
             }
-                
+
             string cplvl;
             int tmplvl;
             if (options.TryGetValue(COMPRESSION_LEVEL_OPTION, out cplvl) && int.TryParse(cplvl, out tmplvl))
@@ -85,67 +102,59 @@ namespace Duplicati.Library.Compression
 
             m_encoderProps.mLzmaProps.mLevel = tmplvl;
             m_encoderProps.mLzmaProps.mAlgo = Library.Utility.Utility.ParseBoolOption(options, COMPRESSION_FASTALGO_OPTION) ? 0 : 1;
-                
-            var file = new FileInfo(filename);
-            if(file.Exists && file.Length > 0)
-                InitializeArchiveReader(filename);
-            else
-                InitializeArchiveWriter(filename);
         }
 
-        private void InitializeArchiveReader(string file)
+        private void InitializeArchiveReader()
         {
-            m_file = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
             m_archive = new master._7zip.Legacy.CArchiveDatabaseEx();
             m_reader = new master._7zip.Legacy.ArchiveReader();
-            m_reader.Open(m_file);
+            m_reader.Open(m_stream);
             m_reader.ReadDatabase(m_archive, null);
             m_archive.Fill();
         }
 
-        private void InitializeArchiveWriter(string file)
+        private void InitializeArchiveWriter()
         {
-            m_file = new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.Delete);
-            m_writer = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter(m_file);
+            m_writer = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter(m_stream);
         }
 
         public void Dispose()
         {
-            if(m_archive != null)
+            if (m_archive != null)
                 m_archive = null;
 
-            if(m_reader != null)
+            if (m_reader != null)
                 try { m_reader.Close(); }
                 finally { m_reader = null; }
 
-            if(m_writer != null)
+            if (m_writer != null)
             {
                 try
                 {
-                    if(m_copyEncoder != null)
+                    if (m_copyEncoder != null)
                         try
                         {
                             m_writer.ConnectEncoder(m_copyEncoder);
                             m_copyEncoder.Dispose();
                         }
                         finally { m_copyEncoder = null; }
-    
-                    if(m_lzma2Encoder != null)
+
+                    if (m_lzma2Encoder != null)
                         try
                         {
                             m_writer.ConnectEncoder(m_lzma2Encoder);
                             m_lzma2Encoder.Dispose();
                         }
                         finally { m_lzma2Encoder = null; }
-    
+
                     m_writer.WriteFinalHeader();
                 }
                 finally { m_writer = null; }
             }
 
-            if(m_file != null)
-                try { m_file.Dispose(); }
-                finally { m_file = null; }
+            if (m_stream != null)
+                try { m_stream.Dispose(); }
+                finally { m_stream = null; }
         }
 
         #region ICompression - Reader Methods
@@ -162,26 +171,26 @@ namespace Duplicati.Library.Compression
 
         public IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix)
         {
-            if(m_reader == null)
+            if (m_reader == null)
                 throw new InvalidOperationException(Strings.SevenZipCompression.NoReaderError);
 
-            StringComparison sc = Library.Utility.Utility.ClientFilenameStringComparision;
+            StringComparison sc = Library.Utility.Utility.ClientFilenameStringComparison;
 
-            return 
+            return
                 from n in m_reader.GetFiles(m_archive)
-                    where 
-                        !n.IsDir &&
-                        (prefix == null || n.Name.StartsWith(prefix, sc))
-                        select new KeyValuePair<string, long>(n.Name, n.Size);
+                where
+                    !n.IsDir &&
+                    (prefix == null || n.Name.StartsWith(prefix, sc))
+                select new KeyValuePair<string, long>(n.Name, n.Size);
         }
-        
+
         public DateTime GetLastWriteTime(string file)
         {
             var item = m_reader.GetFiles(m_archive).FirstOrDefault(x => x.Name == file);
-            if(item == null)
+            if (item == null)
                 throw new FileNotFoundException(Strings.SevenZipCompression.FileNotFoundError, file);
 
-            if(!item.MTime.HasValue)
+            if (!item.MTime.HasValue)
                 return new DateTime(0);
 
             return item.MTime.Value;
@@ -189,14 +198,14 @@ namespace Duplicati.Library.Compression
 
         public Stream OpenRead(string file)
         {
-            if(string.IsNullOrEmpty(file))
-                throw new ArgumentNullException("file");
+            if (string.IsNullOrEmpty(file))
+                throw new ArgumentNullException(nameof(file));
 
-            if(m_reader == null)
+            if (m_reader == null)
                 throw new InvalidOperationException(Strings.SevenZipCompression.NoReaderError);
 
             var item = m_reader.GetFiles(m_archive).FirstOrDefault(x => x.Name == file);
-            if(item == null)
+            if (item == null)
                 throw new FileNotFoundException(Strings.SevenZipCompression.FileNotFoundError, file);
 
             return m_reader.OpenStream(m_archive, m_reader.GetFileIndex(m_archive, item), null);
@@ -211,10 +220,10 @@ namespace Duplicati.Library.Compression
             m_writer.ConnectEncoder(m_lzma2Encoder);
         }
 
-        private sealed class WriterEntry: ManagedLzma.LZMA.Master.SevenZip.IArchiveWriterEntry
+        private sealed class WriterEntry : ManagedLzma.LZMA.Master.SevenZip.IArchiveWriterEntry
         {
-            private string mName;
-            private DateTime? mTimestamp;
+            private readonly string mName;
+            private readonly DateTime? mTimestamp;
 
             internal WriterEntry(string name, DateTime? timestamp)
             {
@@ -254,19 +263,19 @@ namespace Duplicati.Library.Compression
 
         public Stream CreateFile(string file, CompressionHint hint, DateTime lastWrite)
         {
-            if(string.IsNullOrEmpty(file))
-                throw new ArgumentNullException("file");
+            if (string.IsNullOrEmpty(file))
+                throw new ArgumentNullException(nameof(file));
 
-            if(m_writer == null)
+            if (m_writer == null)
                 throw new InvalidOperationException(Strings.SevenZipCompression.NoWriterError);
 
             var entry = new WriterEntry(file, lastWrite);
 
-            if(hint != CompressionHint.Noncompressible)
+            if (hint != CompressionHint.Noncompressible)
             {
-                if(m_lzma2Encoder == null)
+                if (m_lzma2Encoder == null)
                 {
-                    if(m_lowOverheadMode)
+                    if (m_lowOverheadMode)
                         m_lzma2Encoder = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.LzmaEncoder();
                     else
                         m_lzma2Encoder = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.Lzma2Encoder(m_threadCount, m_encoderProps);
@@ -279,13 +288,13 @@ namespace Duplicati.Library.Compression
             }
             else
             {
-                if(m_copyEncoder == null)
+                if (m_copyEncoder == null)
                     m_copyEncoder = new ManagedLzma.LZMA.Master.SevenZip.ArchiveWriter.PlainEncoder();
 
-                if(m_lzma2Encoder != null && m_lzma2Encoder == m_writer.CurrentEncoder)
+                if (m_lzma2Encoder != null && m_lzma2Encoder == m_writer.CurrentEncoder)
                     m_lzma2Encoder.SetOutputThreshold(kStreamThreshold); // rearm threshold so we can switch back
 
-                if(m_writer.CurrentEncoder != m_copyEncoder)
+                if (m_writer.CurrentEncoder != m_copyEncoder)
                     m_writer.ConnectEncoder(m_copyEncoder);
 
                 return m_copyEncoder.BeginWriteFile(entry);
@@ -296,10 +305,10 @@ namespace Duplicati.Library.Compression
         {
             get
             {
-                if(m_writer != null)
+                if (m_writer != null)
                     return m_writer.WrittenSize;
-                else if(m_reader != null)
-                    return m_file.Length;
+                else if (m_reader != null)
+                    return m_stream.Length;
                 else
                     throw new InvalidOperationException();
             }
@@ -309,17 +318,17 @@ namespace Duplicati.Library.Compression
         {
             get
             {
-                if(m_writer != null)
+                if (m_writer != null)
                 {
                     long remaining = m_writer.CurrentSizeLimit - m_writer.WrittenSize;
-                    if(m_copyEncoder != null && m_copyEncoder != m_writer.CurrentEncoder)
+                    if (m_copyEncoder != null && m_copyEncoder != m_writer.CurrentEncoder)
                         remaining += m_copyEncoder.UpperBound;
-                    if(m_lzma2Encoder != null && m_lzma2Encoder != m_writer.CurrentEncoder)
+                    if (m_lzma2Encoder != null && m_lzma2Encoder != m_writer.CurrentEncoder)
                         remaining += m_lzma2Encoder.UpperBound;
                     return remaining;
                 }
-                else if(m_reader != null)
-                    return m_file.Length;
+                else if (m_reader != null)
+                    return m_stream.Length;
                 else
                     throw new InvalidOperationException();
             }
@@ -392,12 +401,12 @@ namespace Duplicati.Library.Compression
                         DEFAULT_THREAD_COUNT.ToString()),
 
                     new CommandLineArgument(
-                        COMPRESSION_LEVEL_OPTION, 
-                        CommandLineArgument.ArgumentType.Enumeration, 
-                        Strings.SevenZipCompression.CompressionlevelShort, 
+                        COMPRESSION_LEVEL_OPTION,
+                        CommandLineArgument.ArgumentType.Enumeration,
+                        Strings.SevenZipCompression.CompressionlevelShort,
                         Strings.SevenZipCompression.CompressionlevelLong,
-                        DEFAULT_COMPRESSION_LEVEL.ToString(), 
-                        null, 
+                        DEFAULT_COMPRESSION_LEVEL.ToString(),
+                        null,
                         new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}),
 
                     new CommandLineArgument(

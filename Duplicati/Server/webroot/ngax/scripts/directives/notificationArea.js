@@ -16,6 +16,19 @@ backupApp.directive('notificationArea', function() {
             );
         };
 
+        $scope.doDismissAll = function() {
+            angular.forEach($scope.Notifications, function(value, key){
+                id = value['ID'];
+                AppService.delete('/notification/' + id).then(
+                    function() { }, // Don't care, the message will be removed
+                    function(resp) {
+                        // Most likely there was a sync problem, so attempt to reload
+                        NotificationService.refresh_notifications();
+                    }
+                );
+            });
+        };
+
         $scope.doShowLog = function(backupid) {
             AppService.get('/backup/' + backupid + '/isactive').then(
                 function() {
@@ -35,6 +48,11 @@ backupApp.directive('notificationArea', function() {
 
                 }
             );
+        };
+
+        $scope.doRepair = function(backupid) {
+        AppService.post('/backup/' + backupid + '/repair');
+        $location.path('/');
         };
 
         $scope.doInstallUpdate = function(id) {

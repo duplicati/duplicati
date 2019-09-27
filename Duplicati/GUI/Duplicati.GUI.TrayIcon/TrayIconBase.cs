@@ -134,7 +134,7 @@ namespace Duplicati.GUI.TrayIcon
         public virtual IBrowserWindow ShowUrlInWindow(string url)
         {
             //Fallback is to just show the window in a browser
-            Duplicati.Library.Utility.UrlUtillity.OpenURL(url, Program.BrowserCommand);
+            Duplicati.Library.Utility.UrlUtility.OpenURL(url, Program.BrowserCommand);
 
             return null;
         }
@@ -165,25 +165,9 @@ namespace Duplicati.GUI.TrayIcon
             ShowStatusWindow();
         }
 
-        protected void OnWizardClicked()
-        {
-        }
-        
-        protected void OnOptionsClicked()
-        {
-        }
-        
-        protected void OnStopClicked()
-        {
-        }
-
         protected void OnQuitClicked()
         {
             Exit();
-        }
-
-        protected void OnThrottleClicked()
-        {
         }
 
         protected void OnPauseClicked()

@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Duplicati.Library.Interface;
 
@@ -56,20 +57,21 @@ namespace Duplicati.Library.DynamicLoader
             /// Instanciates a specific compression module, given the file extension and options
             /// </summary>
             /// <param name="fileExtension">The file extension to create the instance for</param>
-            /// <param name="filename">The filename used to compress/decompress contents</param>
+            /// <param name="stream">The stream of the file used to compress/decompress contents</param>
+            /// <param name="mode">The mode for compression/decompression</param>
             /// <param name="options">The options to pass to the instance constructor</param>
             /// <returns>The instanciated encryption module or null if the file extension is not supported</returns>
-            public ICompression GetModule(string fileExtension, string filename, Dictionary<string, string> options)
+            public ICompression GetModule(string fileExtension, Stream stream, ArchiveMode mode, Dictionary<string, string> options)
             {
                 if (string.IsNullOrEmpty(fileExtension))
-                    throw new ArgumentNullException("fileExtension");
+                    throw new ArgumentNullException(nameof(fileExtension));
 
                 LoadInterfaces();
-                
+
                 lock (m_lock)
                 {
                     if (m_interfaces.ContainsKey(fileExtension))
-                        return (ICompression)Activator.CreateInstance(m_interfaces[fileExtension].GetType(), filename, options);
+                        return (ICompression)Activator.CreateInstance(m_interfaces[fileExtension].GetType(), stream, mode, options);
                     else
                         return null;
                 }
@@ -83,7 +85,7 @@ namespace Duplicati.Library.DynamicLoader
             public IList<ICommandLineArgument> GetSupportedCommands(string key)
             {
                 if (string.IsNullOrEmpty(key))
-                    throw new ArgumentNullException("key");
+                    throw new ArgumentNullException(nameof(key));
 
                 LoadInterfaces();
 
@@ -101,7 +103,7 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// The static instance used to access compression module information
         /// </summary>
-        private static CompressionLoaderSub _compressionLoader = new CompressionLoaderSub();
+        private static readonly CompressionLoaderSub _compressionLoader = new CompressionLoaderSub();
 
         #region Public static API
 
@@ -125,17 +127,17 @@ namespace Duplicati.Library.DynamicLoader
             return _compressionLoader.GetSupportedCommands(key);
         }
 
-
         /// <summary>
         /// Instanciates a specific compression module, given the file extension and options
         /// </summary>
         /// <param name="fileextension">The file extension to create the instance for</param>
-        /// <param name="filename">The filename of the file used to compress/decompress contents</param>
+        /// <param name="stream">The stream of the file used to compress/decompress contents</param>
+        /// <param name="mode">The mode for compression/decompression</param>
         /// <param name="options">The options to pass to the instance constructor</param>
         /// <returns>The instanciated compression module or null if the file extension is not supported</returns>
-        public static ICompression GetModule(string fileextension, string filename, Dictionary<string, string> options)
+        public static ICompression GetModule(string fileextension, Stream stream, ArchiveMode mode, Dictionary<string, string> options)
         {
-            return _compressionLoader.GetModule(fileextension, filename, options);
+            return _compressionLoader.GetModule(fileextension, stream, mode, options);
         }
         #endregion
 

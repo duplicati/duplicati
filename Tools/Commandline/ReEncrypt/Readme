@@ -1,0 +1,17 @@
+
+A Python script to change the encryption from Duplicati. You can go from aes to gpg or vice versa. It is also possible to remove encryption. 
+
+Usage:
+0) Take a backup of your data.
+
+1) Confirm that your Duplicati data is on disk in .zip or .zip.aes or .zip.gpg format..
+
+2) Install Python 3 if it is not already installed. pyAesCrypt, gnupg and joblib packages need to be installed in python as well.
+
+3) Prepare a config file (see example config.txt). 
+
+3) Run ReEncrypt.py -c config.txt.
+
+4) Update your backup settings to the changed encryption settings. 
+
+5) Take a backup of your database and do a delete & recreate. Don't forget to delete, a simple "repair" may delete the whole backup!

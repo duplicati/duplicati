@@ -1,3 +1,365 @@
+2018-11-28 - 2.0.4.5_beta_2018-11-28
+==========
+The major changes in this version are:
+
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
+2018-11-28 - 2.0.4.3_beta_2018-11-28
+==========
+The major changes in this version are:
+
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
+2018-11-12 - 2.0.4.2_experimental_2018-11-12
+==========
+* Rebuild of 2.0.4.1 due to errors in the Docker images
+
+2018-11-08 - 2.0.4.1_experimental_2018-11-08
+==========
+This is a collection release that is based on the 2.0.3.14 canary build.
+
+The major changes in this version are:
+
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
+2018-11-08 - 2.0.3.14_canary_2018-11-08
+==========
+* Removed unused icons, thanks @Pectojin
+* Updated AWS libraries, thanks @Pectojin
+* Removed the WindowsService restart fix as it did not work as expected
+
+2018-10-31 - 2.0.3.13_canary_2018-10-31
+==========
+* Added more tests, thanks @warwickmm
+* Fixed duration display in restore, thanks @verhoek
+* Refactored Dropbox backend, thanks @verhoek
+* Fixed a typo in the filter for excluding Firefox data, thanks @warwickmm
+* Fixed problem with OneDrive "eating" leading slashes, thanks @warwickmm
+* Improved Windows version detection for HyperV, thanks @mnaiman
+* Added code to allow the Windows Service to correctly autoupdate
+
+2018-10-23 - 2.0.3.12_canary_2018-10-23
+==========
+* Fixed translations not working for sub-cultures, thanks @LacunaSoftware
+* Improved error detection and reporting
+* Fixed progress bar not updating, thanks @LacunaSoftware
+* Improved LVM handling, thanks @jkellerer
+* Fixed issues with long paths and USN, thanks @dgehri
+* Numerous code quality improvements, thanks @warwickmm
+* Removal of unused code, thanks @Pectojin
+* Added backup description field to UI, thanks @sffetlio
+* Updated MegaApiClient to 1.6.3, thanks @Pectojin
+* Normalize paths by forcing Windows drive letters to upper case, thanks @mnaiman
+* Fixed progress stats gammar and consistency, thanks @lucascosti
+* Fixed server errors with empty form changes, thanks @LacunaSoftware
+* Improved error messages, thanks @warwickmm
+* Added US-West to Wasabi, thanks @gzzengwei
+* Added app manifest files for Windows, thanks @LacunaSoftware
+
+2018-09-05 - 2.0.3.11_canary_2018-09-05
+==========
+* Cleanup of async methods and naming, thanks @warwickmm
+* Added more non-compressible file extensions, thanks @ravisorg
+* Login password field is now auto-focused, thanks @ltGuillaume
+* Added more pause time options, thanks @bmendonca
+* Fixed filename comparer to support correct filename encoding, thanks @warwickmm
+* Changed the default filename query to fix reported slowdowns
+* Added additional experimental queries to possible speed things up even more with 
+
+2018-08-30 - 2.0.3.10_canary_2018-08-30
+==========
+* Updated the help text for no certificates found, thanks @jonmikeiv
+* Fixed logging details, thanks @mnaiman
+* Fixed error messages on repair, thanks @mnaiman
+* Refactored the FTP backend, thanks @verhoek
+* Rewrote the lock on database queries to be simpler and less CPU intensive
+* Removed some logging details in core performance areas (can be re-enabled with `--profile-all-database-queries`)
+* Removed automatic attempts to rebuild `dblock` files as it is slow and rarely finds all the missing pieces (can be enabled with `--rebuild-missing-dblock-files`).
+* Fixed the version number on MacOS builds
+* Updated the signing certificate for executables and Windows installers
+* Added a hostname check for the webserver
+* Fixed an issue where the number of remaining files would be negative
+* Updated localization files
+* Now emits a warning if the option is missing a suffix on sizes (b, kb, mb, gb, tb)
+* Added partially translated Romanian, Swedish, Thai, Hungarian, Slovakian, Catalan, Japanese, Bengali, and Korean to langauges
+* Fixed a number of issues with `--check-filetime-only`
+* Removed the `--store-metadata` option
+* Rewrote the query that fetches the previous information for a file or folder. Set the environment variable `TEST_QUERY_VERSION=1` to revert to the old version for speed comparison, or `TEST_QUERY_VERSION=2` for an alternate version.
+* Improved UI status messages, thanks @lucascosti
+* Failing to add a file will now give a warning instead of stopping the backup
+* Removed a hot-item cache for VSS
+* Added option `--disable-filelist-consistency-checks` to allow speeding up large backups
+* Now ignoring `ENODATA` error message when reading metadata on Linux/BSD
+* Added additional support for exit codes in `--run-script-before` to allow stopping the backup or emitting a warning 
+* Fixed an issue with Google Cloud Storage, thanks @warwickmm
+* Improved the B2 username field description, thanks @xfakt-pj
+* Removed some unused code, thanks @warwickmm
+* Improved source code documentation, thanks @mikaelmello
+
+2018-06-30 - 2.0.3.9_canary_2018-06-30
+==========
+* Fixed an issue with dectection HyperV, thanks @mnaiman
+* Default to exclude the System State VSS writers, thanks @mnaiman
+* Fixed an issue where restores from the GUI would not autodetect blocksize and other parameters
+* Fixed an issue with VSS failing to map the paths
+
+2018-06-28 - 2.0.3.8_canary_2018-06-28
+==========
+* Fixed MSI version number
+* Un-hid the Google GCS backend
+* Fixed file sizes reported as zero
+* Fixed a wrong display of sizes less than 1kb, thanks @fyndecano
+* Improvements to the build process, thanks @verhoek
+* Fixed a problem with the Amazon Cloud Drive delay, thanks @snamds
+* Fixed a potential deadlock/performance issue, thanks @warwickmm
+* Improved metadata reporting and UI, thanks @verhoek
+* Improved Hyper-V detection, thanks @mnaiman
+* Improved ways to handle the temporary folder, thanks @verhoek
+* Added logic to remove privileges from the database files, thanks @verhoek
+* Fixed a problem with USN support, thanks @dgehri
+* Fixed temporary files not being removed
+* Fixed no output from commandline on Windows
+* Enabled password input from console again
+
+2018-06-17 - 2.0.3.7_canary_2018-06-17
+==========
+* Added option to exclude empty folders
+* Added option to exclude folders based on the existence of a marker file
+* Changed the generation of index files to avoid pulling them from a database query
+* Fixed an issue that would create large index files
+* Improved the recreate logic to work if some files are missing, but the data exists in other files
+* Fixed spacing in the status bar UI, thanks @SanduRajapakse
+* Optimized unittests for serialization, thanks @warwickmm
+* Improved commandline parsing, thanks @verhoek
+* Added support for using the USN numbers for faster backups on NTFS drives, thanks @dgehri
+* Added Duplicati program version in status results, thanks @drwtsn32x
+* Added thread safe collections to the Synology auth handler, thanks @warwickmm
+* Improved code readability, thanks @warwickmm
+* Removed all calls to `Console.WriteLine` as it could lock up the console on Windows
+* Added Memset Cloud Storage to OpenStack providers, thanks @tnwhitwell
+* Refactored GoogleDrive backend, thanks @verhoek
+* Improved unittest scripts, thanks @verhoek
+* Optimized some string operations, thanks @warwickmm
+* Fixed a few issues with the commandline interface, thanks @verhoek
+* Updated built-in help for the new `--log-level` options, thanks @tygill
+* Code cleanup and standardization, thanks @warwickmm
+* Fixed issue on OneDrive (MSGraph) that would fail when trying to delete a missing file, thanks @tygill
+* Added additional help text for the dblock size picker UI
+* Added UI validation for B2 paths
+* No longer restoring metadata on symlinks by default, as that updated the targets
+* Fixed an issue with OAuth timeouts, thanks @tygill
+* Fixed an issue with overriding the temporary folder, thanks @verhoek
+* Fixed an issue with clearing callcontext settings, thanks @verhoek
+* Fixed an issue with shared buffers causing validation errors when running multiple index file generators
+* Improved the repair and broken file detection, thanks @tygill
+* Refactored the Google Cloud Storage backend, thanks @verhoek
+* Improved error message and handling for source folders with permission issues, thanks @verhoek
+* Fixed a problem with recreating symlinks on Windows, thanks @snamds
+* Improved handling of the console input/output, thanks @verhoek
+* Fixed a race in the webserver when decoding locale, thanks @verhoek
+* Added an option to disable automatic login from the tray icon
+* Fixed some incorrect status reports being generated during backup
+* Fixed an null-error in the box.com backend, thanks @warwickmm
+
+2018-04-23 - 2.0.3.6_canary_2018-04-23
+==========
+This update adds concurrent processing for the backup. With this update, the backup will now use multiple cores to perform checking and compressing.
+Use the advanced option `--concurrency-max-threads` to toggle how many threads to use.
+The options `--concurrency-block-hashers` and `--concurrency-compressors` can be used to adjust the number of hashers and compressors to use.
+
+Beware that this update contains a lot of new code, and should only be used in test environments.
+
+Other fixes in this build:
+* Fixes for filter groups, thanks @tygill
+* Fixed a backup import issue with empty metadata
+* Added upper bound to password checker, thanks @pectojin
+
+2018-04-13 - 2.0.3.5_canary_2018-04-13
+==========
+* Improved progress bar messsages and layout, thanks @SanduRajapakse
+* Improved icon status images, thanks @dbddhkpde
+* Code and test cleanups, thanks @warwickmm
+* Fixed an issue with rclone backend ignoring options, thanks @Bruceforce
+* Added a fix for browsers with scripting disabled, thanks @Pectojin
+* Added a button to dismiss all messages, thanks @Pectojin
+* Added KeyStone v3 support to OpenStack backend, thanks @epol
+* Updated translations, thanks to all translators!
+* Fixed an issue that caused large log data to accumulate and break sending report/email status
+* Added support for fine-grained control over how log data is reported via email, http and Jabber/XMPP
+* Added support for sending JSON formatted data with the http report module
+* Fixed an issue with MS Graph authentication, thanks @tygill
+* Fixed a performance issue during file scanning, thanks @ltfish
+* Added support for serializing results into json for all report modules and the run-script module as well, thanks @StephenGregory
+* Added filter groups and a UI for it, thanks @tygill
+* Fixed an issue where some paths were not reported via test-filters
+* Fixed some issues with handling internal server settings, thanks @warwickmm
+
+2018-04-02 - 2.0.3.4_canary_2018-04-02
+==========
+* Added support for setting low IO priority during backups
+* Changed order of throttling arguments to fix incorrect throtling
+* Added an option to disable backups when running on battery, thanks @warwickmm
+* Fixed a crash on the CLI help page, thanks @tygill
+* Added new Graph-API based backends for SharePoint and Office 365, thanks @tygill
+* Added new UI status badges, thanks @dbddhkpde
+
+2018-04-02 - 2.0.3.3_beta_2018-04-02
+==========
+This beta release contains many changes, a quick summary of changes:
+
+* Fixed not running the slow VACUUM command after each operation
+* Fixed a problem with SSL certificates periodically failing
+* Added Sia and rclone backends
+* Updated the hashing library to use faster native libraries where available
+* Added a new retention policy and UI which allows backup versions to decrease over time
+* Updated the auto-updater, such that new installs will spawn an extra process instead of using the AppDomain method as previously done.
+* Faster browsing of files to restore
+* Removed automatic tilde expansions as it created numerous problems
+* Multiple new languages added to the UI
+* Fixed a number of browser cache issues, which should fix the XSRF errors
+* Fixed not attempting to read non-symlink reparse points on Windows
+* Fixed some crashes that were caused by the usage reporter filling up reports
+
+Thanks to the many contributors who worked hard to get this release ready!
+
+2018-03-16 - 2.0.3.2_canary_2018-03-16
+==========
+* Added a new logging system with filters
+* Source code documentation fixes and code quality fixes, thanks @warwickmm
+* Improved the speed of the re-encrypt python script, thanks @piegamesde
+* Added username and started-by information in the WebUI, thanks @Pectojin
+
+2018-03-16 - 2.0.3.1_experimental_2018-03-16
+==========
+This experimental release is mostly the same as the canary build v2.0.2.20.
+Some of the major changes from the experimental build 2.0.2.15 are:
+
+* A new UI for setting the retention policy
+* Added an rclone backend
+* External links in the UI are now marked
+* Fixed a number of browser cache issues, which should fix the XSRF errors
+* Optional warnings when reaching the quota limit
+* Fixed not attempting to read non-symlink reparse points on Windows
+* Fixed a problem with the box.com backend
+* Fixed some crashes that were caused by the usage reporter filling up reports
+* Option to disable the file-size read-ahead scanner
+
+2018-03-06 - 2.0.2.21_canary_2018-03-06
+==========
+* Rebuilt the style.css file
+* Added support in all backends for reloading DNS names when the error indicates a DNS error
+* Removed some default filters (still disabled by default), thanks @tygill
+* Fixed a parsing case for the 'U' parameter, thanks @TekkiWuff
+* Fixed a problem with IE not loading the page correctly, thanks @TekkiWuff
+* Fixed a problem with setting the initial password on the server and some change-password issues, thanks @mnaiman
+
+2018-02-27 - 2.0.2.20_canary_2018-02-27
+==========
+* Added Docker images, thanks @fkrull
+* Fixed log entries being cut in UI, thanks @Pectojin
+* Improved the webserver status codes, thanks @Pectojin
+* Fixed the Mono download link for the OSX package, thanks @aranaur
+* Improved the log UI to not load excessive results, thanks @Pectojin
+* Fixed an issue where retention options would not clear in the UI, thanks @TekkiWuff
+* Not applying default filters, unless explicitly enabled by the user
+* Automatically reloading DNS entries for WebDAV if there is a name lookup error, thanks @Pectojin
+* Improved rentention policy syntax and functionality, thanks @TekkiWuff
+* Added script to re-encrypt remote files, thanks @wjansenw
+* Fixed a number of incorrect HTTP status codes, thanks @Pectojin
+
+2018-02-12 - 2.0.2.19_canary_2018-02-12
+==========
+* Updated translations
+* Rebuilt stylesheet
+
+2018-02-11 - 2.0.2.18_canary_2018-02-11
+==========
+* Fixes to the "advanced options" list in the GUI, thanks @pectojin
+* Fixed OpenStack URI selector in the GUI, thanks @pectojin
+* Added workaround to broken OneDrive file listing, thanks @osmogar
+* Improvements to the log page, thanks @pectojin
+* Fixed a scheduler issue with clock drift, thanks @pectojin
+* Added option to ignore metadata when importing a backup, thanks @pectojin
+* Improvements to backup retention, thanks @TekkiWuff
+* Added `--parameters-file` to the server, thanks @pectojin
+* Fixed incorrect size requirements for Synology package
+* Fixes to the DuplicatiVerify.ps script, thanks @mnaiman
+* Fixed showing backup durations longer than 24 hours, thanks @pectojin
+* Fixed leaving orphan data in the settings database after deleting a backup job, thanks @pectojin
+* Fixed many caching issues, which should also fix the XSRF error message
+* Fixed sending "run now" commands in front of the backup queue, thanks @pectojin
+* Added warnings when the backup is nearing the quota limit, thanks @tygill
+* Fixed all reparse points were treated as symlinks, which fixes backup of OneDrive folders, thanks @tygill
+* Fixed a crash on very fast copy operations, thanks @TekkiWuff
+* Added .m2ts (BlueRay container) to the list of non-compressible extensions, thanks @pectojin
+* Fixed a bug in the box.com backend that prevented backups
+* Fixed a weird "0 warnings" message
+* Made the GUI menu stay in place instead of scroll away, thanks @pectojin
+* Fixed a problem where default filters were not applied when running from the server, thanks @tygill
+* Added limitations to the usage reporter, so it does not attempt to submit a large backlog of data
+* Fixed two cases where commandline arguments were not correctly formatted when sent to new processes
+* Added support for disabling the file-size read-ahead scanner
+
+2018-01-23 - 2.0.2.17_canary_2018-01-23
+==========
+- Fixed a bug with the update packages having an invalid hash
+- Updated external links in the UI to be clearly marked
+- Experimental support for Google Team Drives
+- Fixed WEBDAV Test function, thanks @inat3k
+- Added an rclone backend, thanks @wjansenw
+- Fixed some broken error messages, thanks @JonMikeIV
+- Added a simple UI for exposing the `--retention-policy` option
+
+2018-01-18 - 2.0.2.16_canary_2018-01-18
+==========
+* Reworked some internal compression code, thanks @vnau
+* Updated commandline documentation, thanks @mr-flibble
+* Improved 64bit OS detection, thanks @warwickmm
+* Fixed a problem with the progress bar hiding under the top bar, thanks @pectojin
+* Fixed a problem displaying more than 10 advanced options, thanks @pectojin
+* Improved detection of 32bit MSSQL on 64bit Windows, thanks @inat3k
+* Changed load order of modules to allow `run-script` to change setup, thanks @BrianLakstins
+* Added a `UserAgent` header to OD4B requests
+
 2018-01-03 - 2.0.2.15_experimental_2018-01-03
 ==========
 This is the same as build 2.0.2.14 canary

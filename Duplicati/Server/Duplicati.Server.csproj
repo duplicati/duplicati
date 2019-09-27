@@ -13,6 +13,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -42,6 +43,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -127,6 +131,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="app.manifest" />
     <None Include="Duplicati.snk" />
     <EmbeddedResource Include="newbackup.json" />
     <EmbeddedResource Include="Database\Database schema\Schema.sql" />
@@ -135,6 +140,7 @@
     <EmbeddedResource Include="Database\Database schema\3. Add temp file storage.sql" />
     <EmbeddedResource Include="Database\Database schema\4. Add autoincrement to backup id.sql" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="Database\Database schema\5. Extend notification table.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
@@ -172,6 +178,10 @@
     <ProjectReference Include="..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
       <Project>{d4c37c33-5e73-4b56-b2c3-dc4a6baa36bb}</Project>
       <Name>Duplicati.Library.OAuthHelper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj">
+      <Project>{851a1cb8-3ceb-41b4-956f-34d760d2a8e5}</Project>
+      <Name>Duplicati.Library.Backend.Rclone</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
       <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
@@ -312,6 +322,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="webroot\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Database\Database schema\6. Add Description to Backup.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

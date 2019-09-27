@@ -15,9 +15,11 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using HttpServer.HttpModules;
-using System.Collections.Generic;
+
 using Duplicati.Server.WebServer.RESTMethods;
 
 namespace Duplicati.Server.WebServer
@@ -55,16 +57,16 @@ namespace Duplicati.Server.WebServer
             }
         }
 
-        public static void HandleControlCGI(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, BodyWriter bw, Type module)
+        public static void HandleControlCGI(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session, Type module)
         {
             var method = request.Method;
             if (!string.IsNullOrWhiteSpace(request.Headers["X-HTTP-Method-Override"]))
                 method = request.Headers["X-HTTP-Method-Override"];
             
-            DoProcess(request, response, session, method, module.Name.ToLowerInvariant(), (request.Method.ToUpper() == "POST" ? request.Form : request.QueryString)["id"].Value);
+            DoProcess(request, response, session, method, module.Name.ToLowerInvariant(), (String.Equals(request.Method, "POST", StringComparison.OrdinalIgnoreCase) ? request.Form : request.QueryString)["id"].Value);
         }
 
-        private static Dictionary<string, System.Globalization.CultureInfo> _cultureCache = new Dictionary<string, System.Globalization.CultureInfo>(StringComparer.OrdinalIgnoreCase);
+        private static ConcurrentDictionary<string, System.Globalization.CultureInfo> _cultureCache = new ConcurrentDictionary<string, System.Globalization.CultureInfo>(StringComparer.OrdinalIgnoreCase);
 
         private static System.Globalization.CultureInfo ParseRequestCulture(RequestInfo info)
         {
@@ -162,7 +164,7 @@ namespace Duplicati.Server.WebServer
                     ((IRESTMethodPUT)mod).PUT(key, info);
                 else if (method == HttpServer.Method.Post && mod is IRESTMethodPOST)
                 {
-                    if (info.Request.Form == HttpServer.HttpForm.EmptyForm)
+                    if (info.Request.Form == HttpServer.HttpForm.EmptyForm || info.Request.Form == HttpServer.HttpInput.Empty)
                     {
                         var r = info.Request.GetType().GetMethod("AssignForm", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(HttpServer.HttpForm) }, null);
                         r.Invoke(info.Request, new object[] { new HttpServer.HttpForm(info.Request.QueryString) });

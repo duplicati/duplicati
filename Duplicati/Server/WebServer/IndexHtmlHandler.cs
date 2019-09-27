@@ -25,7 +25,7 @@ namespace Duplicati.Server.WebServer
 {
     internal class IndexHtmlHandler : HttpModule
     {
-        private string m_webroot;
+        private readonly string m_webroot;
 
         private static readonly string[] ForbiddenChars = new string[] {"\\", "..", ":"}.Union(from n in System.IO.Path.GetInvalidPathChars() select n.ToString()).Distinct().ToArray();
         private static readonly string DirSep = System.IO.Path.DirectorySeparatorChar.ToString();
@@ -49,6 +49,7 @@ namespace Duplicati.Server.WebServer
                 response.Status = System.Net.HttpStatusCode.OK;
                 response.Reason = "OK";
                 response.ContentType = "text/html; charset=utf-8";
+                response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
 
                 using (var fs = System.IO.File.OpenRead(System.IO.File.Exists(html) ? html : htm))
                 {
@@ -65,7 +66,7 @@ namespace Duplicati.Server.WebServer
 
         private string GetPath(Uri uri)
         {
-            if (ForbiddenChars.Where(x => uri.AbsolutePath.Contains(x)).Any())
+            if (ForbiddenChars.Any(x => uri.AbsolutePath.Contains(x)))
                 throw new BadRequestException("Illegal path");
             var uripath = Uri.UnescapeDataString(uri.AbsolutePath);
             while(uripath.Length > 0 && (uripath.StartsWith("/", StringComparison.Ordinal) || uripath.StartsWith(DirSep, StringComparison.Ordinal)))

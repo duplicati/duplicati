@@ -50,10 +50,12 @@ namespace Duplicati.Library.Snapshots
         FileAttributes GetFileAttributes(string path);
         void SetFileAttributes(string path, FileAttributes attributes);
         void CreateSymlink(string symlinkfile, string target, bool asDir);
+        string GetSymlinkTarget(string path);
         string PathGetDirectoryName(string path);
         string PathGetFileName(string path);
         string PathGetExtension(string path);
         string PathChangeExtension(string path, string extension);
+        string PathCombine(string path1, string path2);
         IEnumerable<string> EnumerateFileSystemEntries(string path);
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);

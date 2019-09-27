@@ -24,7 +24,7 @@ using System.Text;
 namespace Duplicati.Library.Utility
 {
     /// <summary>
-    /// Class for wrapping a <see cref="Duplicati.Library.Utility.BlockingQueue"/> as an <see cref="System.Collections.Generic.IEnumerable"/>
+    /// Class for wrapping a <see cref="Duplicati.Library.Utility.BlockingQueue{T}"/> as an <see cref="System.Collections.Generic.IEnumerable{T}"/>
     /// </summary>
     public class BlockingQueueAsEnumerable<T> : IEnumerable<T>
     {
@@ -56,8 +56,8 @@ namespace Duplicati.Library.Utility
 
         private class BlockingQueueEnumerator : IEnumerator<T>
         {
-            private BlockingQueue<T> m_queue;
-            private bool m_first = true;
+            private readonly BlockingQueue<T> m_queue;
+            private readonly bool m_first = true;
             private T m_current;
 
             public BlockingQueueEnumerator(BlockingQueue<T> queue)
@@ -115,11 +115,11 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The lock that protects the data structures
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         /// <summary>
         /// The queue storing the elements produced
         /// </summary>
-        private Queue<T> m_queue = new Queue<T>();
+        private readonly Queue<T> m_queue = new Queue<T>();
         /// <summary>
         /// A flag indicating if the queue is now empty forever
         /// </summary>
@@ -127,30 +127,30 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The event that signals that items have been produced (consumers wait for this)
         /// </summary>
-        private System.Threading.ManualResetEvent m_itemsProduced = new System.Threading.ManualResetEvent(false);
+        private readonly System.Threading.ManualResetEvent m_itemsProduced = new System.Threading.ManualResetEvent(false);
         /// <summary>
         /// The event that signals that items have been consumed (producers wait for this)
         /// </summary>
-        private System.Threading.ManualResetEvent m_itemsConsumed = new System.Threading.ManualResetEvent(false);
+        private readonly System.Threading.ManualResetEvent m_itemsConsumed = new System.Threading.ManualResetEvent(false);
         /// <summary>
         /// The maximum capacity of the queue, the producers will be blocked if more elements are put into the queue
         /// </summary>
-        private long m_maxCapacity = 100;
+        private readonly long m_maxCapacity = 100;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.BlockingQueue"/> class with the default capacity
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.BlockingQueue{T}"/> class with the default capacity
         /// </summary>
         public BlockingQueue()
         {
         }
 
         /// <summary>
-        /// Gets a value indicating whether this <see cref="Duplicati.Library.Utility.BlockingQueue"/> is completed
+        /// Gets a value indicating whether this <see cref="Duplicati.Library.Utility.BlockingQueue{T}"/> is completed
         /// </summary>
         public bool Completed { get { return m_completed; } }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.BlockingQueue"/> class
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.BlockingQueue{T}"/> class
         /// </summary>
         /// <param name='maxCapacity'>The maximum capacity of the queue, the producers will be blocked if more elements are put into the queue</param>
         public BlockingQueue(long maxCapacity)

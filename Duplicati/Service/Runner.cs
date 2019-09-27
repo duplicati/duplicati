@@ -16,20 +16,21 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Linq;
 
 namespace Duplicati.Service
 {
     public class Runner : IDisposable
     {
-        private System.Threading.Thread m_thread;
+        private readonly System.Threading.Thread m_thread;
         private volatile bool m_terminate = false;
         private volatile bool m_softstop = false;
         private System.Diagnostics.Process m_process;
-        private Action m_onStartedAction;
-        private Action m_onStoppedAction;
-        private Action<string, bool> m_reportMessage;
+        private readonly Action m_onStartedAction;
+        private readonly Action m_onStoppedAction;
+        private readonly Action<string, bool> m_reportMessage;
 
-        private object m_writelock = new object();
+        private readonly object m_writelock = new object();
         private readonly string[] m_cmdargs;
 
 
@@ -52,12 +53,11 @@ namespace Duplicati.Service
 
         private void Run()
         {
-            var self_exec = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             var exec = System.IO.Path.Combine(path, "TrustBackup.Server.exe");
             var cmdargs = "--ping-pong-keepalive=true";
             if (m_cmdargs != null && m_cmdargs.Length > 0)
-                cmdargs = cmdargs + " " + string.Join(" ", m_cmdargs);
+                cmdargs = Duplicati.Library.Utility.Utility.WrapAsCommandLine(new string[] { cmdargs }.Concat(m_cmdargs));
 
             var firstRun = true;
             var startAttempts = 0;
@@ -79,11 +79,14 @@ namespace Duplicati.Service
 
                         m_reportMessage(string.Format("Starting process {0} with cmd args {1}", exec, cmdargs), false);
 
-                        var pr = new System.Diagnostics.ProcessStartInfo(exec, cmdargs);
-                        pr.UseShellExecute = false;
-                        pr.RedirectStandardInput = true;
-                        pr.RedirectStandardOutput = true;
-                        pr.WorkingDirectory = path;
+                        var pr = new System.Diagnostics.ProcessStartInfo(exec, cmdargs)
+                        {
+                            UseShellExecute = false,
+                            RedirectStandardInput = true,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = false,
+                            WorkingDirectory = path
+                        };
 
                         if (!m_terminate)
                             m_process = System.Diagnostics.Process.Start(pr);
@@ -92,8 +95,8 @@ namespace Duplicati.Service
                         {
                             PingProcess();
                             m_onStartedAction();
-                            firstRun = false;
                         }
+                        firstRun = false;
 
                         while (!m_process.HasExited)
                         {

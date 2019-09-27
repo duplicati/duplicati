@@ -22,43 +22,34 @@ namespace Duplicati.Library.Utility
 {
     public class FilterCollector
     {
-        private List<Library.Utility.IFilter> m_filters = new List<Library.Utility.IFilter>();
-        private Library.Utility.IFilter Filter 
-        { 
-            get 
-            { 
+        private readonly List<Library.Utility.IFilter> m_filters = new List<Library.Utility.IFilter>();
+        private Library.Utility.IFilter Filter
+        {
+            get
+            {
                 if (m_filters.Count == 0)
                     return new Library.Utility.FilterExpression();
                 else if (m_filters.Count == 1)
                     return m_filters[0];
-                else 
-                    return m_filters.Aggregate((a,b) => Library.Utility.JoinedFilterExpression.Join(a, b)); 
+                else
+                    return m_filters.Aggregate(Library.Utility.JoinedFilterExpression.Join);
             }
         }
 
         private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
         {
-            return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) => {
-                if (key.Equals("include", StringComparison.OrdinalIgnoreCase))
+            return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) =>
+            {
+                if (!string.IsNullOrEmpty(value))
                 {
-                    if (!string.IsNullOrEmpty(value))
+                    bool include = key.Equals("include", StringComparison.OrdinalIgnoreCase);
+                    bool exclude = key.Equals("exclude", StringComparison.OrdinalIgnoreCase);
+
+                    if (include || exclude)
                     {
-                        m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), true));
+                        m_filters.Add(new Library.Utility.FilterExpression(Environment.ExpandEnvironmentVariables(value), include));
                         return false;
                     }
-                }
-                else if (key.Equals("exclude", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        m_filters.Add(new Library.Utility.FilterExpression(Library.Utility.Utility.ExpandEnvironmentVariables(value), false));
-                        return false;
-                    }
-                }
-                else if (key.Equals("default-filters", StringComparison.OrdinalIgnoreCase) || key.Equals("default-filter", StringComparison.OrdinalIgnoreCase))
-                {
-                    m_filters.AddRange(DefaultFilters.GetFilters(Library.Utility.Utility.ExpandEnvironmentVariables(value ?? string.Empty)));
-                    return false;
                 }
 
                 if (callbackHandler != null)
@@ -67,7 +58,7 @@ namespace Duplicati.Library.Utility
                 return true;
             });
         }
-        
+
         public static Tuple<Dictionary<string, string>, Library.Utility.IFilter> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
         {
             var fc = new FilterCollector();

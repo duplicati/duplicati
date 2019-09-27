@@ -1,0 +1,12 @@
+<div class="input text">
+    <label for="sharepoint_path" translate>Destination path</label>
+    <input type="text" name="sharepoint_path" id="sharepoint_path" ng-model="$parent.Path" placeholder="{{'Enter the full destination path, including the server name, but without https' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="sharepoint_authid">
+        <a ng-show="oauth_in_progress" href="{{oauth_start_link}}" target="_blank" translate>AuthID</a> 
+        <a ng-hide="oauth_in_progress" href ng-click="oauth_start_token_creation()" translate>AuthID</a>
+    </label>
+    <input type="text" name="sharepoint_authid" id="sharepoint_authid" ng-model="$parent.AuthID" placeholder="{{'Click the AuthID link to create an AuthID' | translate}}" />
+</div>

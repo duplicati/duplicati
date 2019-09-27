@@ -32,11 +32,14 @@ namespace Duplicati.Library.Backend
     /// </summary>
     public class S3Wrapper : IDisposable
     {
+        private static string LOGTAG = Logging.Log.LogTagFromType<S3Wrapper>();
         private const int ITEM_LIST_LIMIT = 1000;
 
         protected string m_locationConstraint;
         protected string m_storageClass;
         protected AmazonS3Client m_client;
+
+        public readonly string DNSHost;
 
         public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
         {
@@ -49,7 +52,7 @@ namespace Duplicati.Library.Backend
 
             foreach(var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
             {
-                var prop = cfg.GetType().GetProperties().Where(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var prop = cfg.GetType().GetProperties().FirstOrDefault(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
                 if (prop != null && prop.CanWrite)
                 {
                     if (prop.PropertyType == typeof(bool))
@@ -65,14 +68,14 @@ namespace Duplicati.Library.Backend
                 }
 
                 if (prop == null)
-                    try { Console.Error.WriteLine("Unsupported option: {0}", opt); }
-                    catch { }
+                    Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedOption", null, "Unsupported option: {0}", opt);
             }
 
             m_client = new Amazon.S3.AmazonS3Client(awsID, awsKey, cfg);
 
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
+            DNSHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
         }
 
         public void AddBucket(string bucketName)

@@ -28,12 +28,12 @@ namespace Duplicati.Server
     /// </summary>
     public class UpdatePollThread
     {
-        private Thread m_thread;
+        private readonly Thread m_thread;
         private volatile bool m_terminated = false;
         private volatile bool m_download = false;
         private volatile bool m_forceCheck = false;
-        private object m_lock = new object();
-        private AutoResetEvent m_waitSignal;
+        private readonly object m_lock = new object();
+        private readonly AutoResetEvent m_waitSignal;
         private double m_downloadProgress;
 
         public bool IsUpdateRequested { get; private set; } = false;
@@ -152,7 +152,7 @@ namespace Duplicati.Server
             else
             {
                 UpdateLogger.Log("Stop activating updates. Update has not been installed");
-            return false;
+                return false;
             }
         }
 
@@ -209,6 +209,7 @@ namespace Duplicati.Server
 
             return operationResult;
         }
+
 
         public void Terminate()
         {
@@ -309,8 +310,11 @@ namespace Duplicati.Server
                                     null,
                                     null,
                                     "update:new",
+                                    null,
+                                    "NewUpdateFound",
+                                    null,
                                     (self, all) => {
-                                        return all.Where(x => x.Action == "update:new").FirstOrDefault() ?? self;
+                                        return all.FirstOrDefault(x => x.Action == "update:new") ?? self;
                                     }
                                 );
                         UpdateLogger.Log($"Updates {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname} found.");
@@ -320,8 +324,9 @@ namespace Duplicati.Server
                 bool autoDownloadUpdate = autoUpdateCheck && Program.DataConnection.ApplicationSettings.AutoInstallUpdate && updatePrepareForDownload;
                 bool downloadAndUnpackUpdateFinished = false;
 
-                if(autoDownloadUpdate)
+                if (autoDownloadUpdate)
                     UpdateLogger.Log($"Auto install update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
+
 
                 if (m_download)
                     UpdateLogger.Log($"Manual install update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
@@ -357,6 +362,7 @@ namespace Duplicati.Server
                     TryExecuteOperation(ActivateUpdate);
                 }
 
+
                 var waitTime = nextCheck - DateTime.UtcNow;
 
                 // Guard against spin-loop
@@ -369,6 +375,7 @@ namespace Duplicati.Server
                     waitTime = TimeSpan.FromDays(1);
 
                 UpdateLogger.Log($"Update pool next running time: {waitTime}.");
+
                 m_waitSignal.WaitOne(waitTime, true);
             }   
         }

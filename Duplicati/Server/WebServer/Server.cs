@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using HttpServer.HttpModules;
-using System.IO;
-using Duplicati.Server.Serialization;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Server.WebServer
 {
     public class Server
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Server>();
+
         /// <summary>
         /// Option for changing the webroot folder
         /// </summary>
@@ -54,7 +56,7 @@ namespace Duplicati.Server.WebServer
         /// <summary>
         /// The single webserver instance
         /// </summary>
-        private HttpServer.HttpServer m_server;
+        private readonly HttpServer.HttpServer m_server;
         
         /// <summary>
         /// The webserver listening port
@@ -65,19 +67,6 @@ namespace Duplicati.Server.WebServer
         /// A string that is sent out instead of password values
         /// </summary>
         public const string PASSWORD_PLACEHOLDER = "**********";
-
-        /// <summary>
-        /// Writes a log message to Console, Service-hook and normal log
-        /// </summary>
-        /// <param name="message">The message to write.</param>
-        /// <param name="type">The message type.</param>
-        /// <param name="ex">The exception, if any.</param>
-        public static void WriteLogMessage(string message, Library.Logging.LogMessageType type, Exception ex)
-        {
-            System.Console.WriteLine(message);
-            Library.Logging.Log.WriteMessage(message, type, ex);
-            Program.LogHandler.WriteMessage(message, type, ex);
-        }
 
         /// <summary>
         /// Sets up the webserver and starts it
@@ -134,7 +123,7 @@ namespace Duplicati.Server.WebServer
                 }
                 catch (Exception ex)
                 {
-                    WriteLogMessage(Strings.Server.DefectSSLCertInDatabase, Duplicati.Library.Logging.LogMessageType.Warning, ex);
+                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "DefectStoredSSLCert", ex, Strings.Server.DefectSSLCertInDatabase);
                 }
             }
             else if (certificateFile.Length == 0)
@@ -184,7 +173,7 @@ namespace Duplicati.Server.WebServer
                     if (certValid && !cert.Equals(Program.DataConnection.ApplicationSettings.ServerSSLCertificate))
                         Program.DataConnection.ApplicationSettings.ServerSSLCertificate = cert;
 
-                    WriteLogMessage(Strings.Server.StartedServer(listenInterface.ToString(), p), Library.Logging.LogMessageType.Information, null);
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerListening", Strings.Server.StartedServer(listenInterface.ToString(), p));
                     
                     return;
                 }
@@ -211,6 +200,8 @@ namespace Duplicati.Server.WebServer
         private static HttpServer.HttpServer CreateServer(IDictionary<string, string> options)
         {
             HttpServer.HttpServer server = new HttpServer.HttpServer();
+
+            server.Add(new HostHeaderChecker());
 
             if (string.Equals(Environment.GetEnvironmentVariable("SYNO_DSM_AUTH") ?? string.Empty, "1"))
                 server.Add(new SynologyAuthenticationHandler());
@@ -257,9 +248,9 @@ namespace Duplicati.Server.WebServer
                 if (!string.IsNullOrWhiteSpace(userroot)
                     &&
                     (
-                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparision)
+                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison)
                         ||
-                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparision)
+                        userroot.StartsWith(Library.Utility.Utility.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparison)
                     )
                 )
 #endif
@@ -271,26 +262,26 @@ namespace Duplicati.Server.WebServer
 
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "customized")))
             {
-                var customized_files = new FileModule("/customized/", System.IO.Path.Combine(install_webroot, "customized"));
+                var customized_files = new CacheControlFileHandler("/customized/", System.IO.Path.Combine(install_webroot, "customized"));
                 AddMimeTypes(customized_files);
                 server.Add(customized_files);
             }
 
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "oem")))
             {
-                var oem_files = new FileModule("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
+                var oem_files = new CacheControlFileHandler("/oem/", System.IO.Path.Combine(install_webroot, "oem"));
                 AddMimeTypes(oem_files);
                 server.Add(oem_files);
             }
 
             if (install_webroot != webroot && System.IO.Directory.Exists(System.IO.Path.Combine(install_webroot, "package")))
             {
-                var proxy_files = new FileModule("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
+                var proxy_files = new CacheControlFileHandler("/proxy/", System.IO.Path.Combine(install_webroot, "package"));
                 AddMimeTypes(proxy_files);
                 server.Add(proxy_files);
             }
 
-            var fh = new FileModule("/", webroot, true);
+            var fh = new CacheControlFileHandler("/", webroot, true);
             AddMimeTypes(fh);
             server.Add(fh);
 
@@ -308,6 +299,142 @@ namespace Duplicati.Server.WebServer
             {
                 System.Diagnostics.Trace.WriteLine(string.Format("Rejecting request for {0}", request.Uri));
                 return false;
+            }
+        }
+
+        private class CacheControlFileHandler : FileModule
+        {
+            public CacheControlFileHandler(string baseUri, string basePath, bool useLastModifiedHeader = false)
+                : base(baseUri, basePath, useLastModifiedHeader)
+            {
+
+            }
+
+            public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
+            {
+                if (!this.CanHandle(request.Uri))
+                    return false;
+
+                if (request.Uri.AbsolutePath.EndsWith("index.html", StringComparison.Ordinal) || request.Uri.AbsolutePath.EndsWith("index.htm", StringComparison.Ordinal))
+                    response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+                else
+                    response.AddHeader("Cache-Control", "max-age=" + (60 * 60 * 24));
+                return base.Process(request, response, session);
+            }
+        }
+
+        /// <summary>
+        /// Module for injecting host header verification
+        /// </summary>
+        private class HostHeaderChecker : HttpModule
+        {
+            /// <summary>
+            /// The hostnames that we allow
+            /// </summary>
+            private string[] m_lastSplitNames;
+
+            /// <summary>
+            /// The string used to generate m_lastSplitNames;
+            /// </summary>
+            private string m_lastAllowed;
+
+            /// <summary>
+            /// A regex to detect potential IPv4 addresses.
+            /// Note that this also detects things that are not valid IPv4.
+            /// </summary>
+            private static readonly System.Text.RegularExpressions.Regex IPV4 = new System.Text.RegularExpressions.Regex(@"((\d){1,3}\.){3}(\d){1,3}");
+            /// <summary>
+            /// A regex to detect potential IPv6 addresses.
+            /// Note that this also detects things that are not valid IPv6.
+            /// </summary>
+            private static readonly System.Text.RegularExpressions.Regex IPV6 = new System.Text.RegularExpressions.Regex(@"(\:)?(\:?[A-Fa-f0-9]{1,4}\:?){1,8}(\:)?");
+
+            /// <summary>
+            /// The hostnames that are always allowed
+            /// </summary>
+            private static string[] DEFAULT_ALLOWED = new string[] { "localhost", "127.0.0.1", "::1", "localhost.localdomain" };
+
+            /// <summary>
+            /// Process the received request
+            /// </summary>
+            /// <returns>A flag indicating if the request is handled.</returns>
+            /// <param name="request">The received request.</param>
+            /// <param name="response">The response object.</param>
+            /// <param name="session">The session state.</param>
+            public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
+            {
+                string[] h = null;
+                var hstring = Program.DataConnection.ApplicationSettings.AllowedHostnames;
+
+                if (!string.IsNullOrWhiteSpace(hstring))
+                {
+                    h = m_lastSplitNames;
+                    if (hstring != m_lastAllowed)
+                    {
+                        m_lastAllowed = hstring;
+                        h = m_lastSplitNames = (hstring ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                    }
+
+                    if (h == null || h.Length == 0)
+                        h = null;
+                }
+
+                // For some reason, the web server strips out the host header
+                var host = request.Headers["Host"];
+                if (string.IsNullOrWhiteSpace(host))
+                    host = request.Uri.Host;
+
+                // This should not happen
+                if (string.IsNullOrWhiteSpace(host))
+                {
+                    response.Reason = "Invalid request, missing host header";
+                    response.Status = System.Net.HttpStatusCode.Forbidden;
+                    var msg = System.Text.Encoding.ASCII.GetBytes(response.Reason);
+                    response.ContentType = "text/plain";
+                    response.ContentLength = msg.Length;
+                    response.Body.Write(msg, 0, msg.Length);
+                    response.Send();
+                    return true;
+                }
+
+                // Check the hostnames we always allow
+                if (Array.IndexOf(DEFAULT_ALLOWED, host) >= 0)
+                    return false;
+
+                // Then the user specified ones
+                if (h != null && Array.IndexOf(h, host) >= 0)
+                    return false;
+
+                // Disable checks if we have an asterisk
+                if (h != null && Array.IndexOf(h, "*") >= 0)
+                    return false;
+
+                // Finally, check if we have a potential IP address
+                var v4 = IPV4.Match(host);
+                var v6 = IPV6.Match(host);
+
+                if ((v4.Success && v4.Length == host.Length) || (v6.Success && v6.Length == host.Length))
+                {
+                    try
+                    {
+                        // Verify that the hostname is indeed a valid IP address
+                        System.Net.IPAddress.Parse(host);
+                        return false;
+                    }
+                    catch
+                    { }
+                }
+
+                // Failed to find a valid header
+                response.Reason = $"The host header sent by the client is not allowed";
+                response.Status = System.Net.HttpStatusCode.Forbidden;
+                var txt = System.Text.Encoding.ASCII.GetBytes(response.Reason);
+                response.ContentType = "text/plain";
+                response.ContentLength = txt.Length;
+                response.Body.Write(txt, 0, txt.Length);
+                response.Send();
+                return true;
+
             }
         }
     }

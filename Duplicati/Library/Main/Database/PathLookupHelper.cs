@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Database
         private readonly List<KeyValuePair<string, FolderEntry>> m_lookup;
         
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Database.PathLookupHelper`1"/> class.
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Database.PathLookupHelper{T}"/> class.
         /// </summary>
         /// <param name="useHotPath">If set to <c>true</c> use hotpath optimization</param>
         public PathLookupHelper(bool useHotPath = true)
@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Database
             var hotIx = Math.Min(m_lookup.Count, paths.Length) - 1;
             while (hotIx >= 0)
             {
-                if (path.StartsWith(m_lookup[hotIx].Key, Duplicati.Library.Utility.Utility.ClientFilenameStringComparision))
+                if (path.StartsWith(m_lookup[hotIx].Key, Duplicati.Library.Utility.Utility.ClientFilenameStringComparison))
                 {
                     c = m_lookup[hotIx].Value;
                     

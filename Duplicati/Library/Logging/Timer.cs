@@ -18,8 +18,6 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Duplicati.Library.Logging
 {
@@ -28,20 +26,29 @@ namespace Duplicati.Library.Logging
     /// </summary>
     public class Timer : IDisposable
     {
-        private DateTime m_begin;
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = "Timer";
+
+        private readonly DateTime m_begin;
         private string m_operation;
+        private readonly string m_logtag;
+        private readonly string m_logid;
 
         /// <summary>
         /// Constructs a new timer, and starts timing
         /// </summary>
         /// <param name="operation">The name of the operation being performed</param>
-        public Timer(string operation)
+        /// <param name="logtag">The log tag addition to use</param>
+        /// <param name="logid">The ID for this log message</param>
+        public Timer(string logtag, string logid, string operation)
         {
             m_operation = operation;
             m_begin = DateTime.Now;
-            if (Log.LogLevel == LogMessageType.Profiling)
-                Log.WriteMessage(string.Format("Starting - {0}", m_operation), LogMessageType.Profiling);
-
+            m_logtag = logtag;
+            m_logid = logid;
+            Log.WriteProfilingMessage(LOGTAG + ".Begin-" + m_logtag, m_logid, "Starting - {0}", m_operation);
         }
 
         #region IDisposable Members
@@ -54,8 +61,7 @@ namespace Duplicati.Library.Logging
             if (m_operation == null)
                 return;
 
-            if (Log.LogLevel == LogMessageType.Profiling)
-                Log.WriteMessage(string.Format("{0} took {1:hh\\:mm\\:ss\\.fff}", m_operation, DateTime.Now - m_begin), LogMessageType.Profiling);
+            Log.WriteProfilingMessage(LOGTAG + ".Finished-" + m_logtag, m_logid, "{0} took {1:d\\:hh\\:mm\\:ss\\.fff}", m_operation, DateTime.Now - m_begin);
             m_operation = null;
         }
 

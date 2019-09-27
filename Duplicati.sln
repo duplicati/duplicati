@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
@@ -96,6 +96,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Jottacloud", "Duplicati\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj", "{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Sia", "Duplicati\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj", "{32A74526-3E5F-413A-8CB4-1EFDAD4C8B91}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Rclone", "Duplicati\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj", "{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -291,6 +293,10 @@ Global
 		{32A74526-3E5F-413A-8CB4-1EFDAD4C8B91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32A74526-3E5F-413A-8CB4-1EFDAD4C8B91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32A74526-3E5F-413A-8CB4-1EFDAD4C8B91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -304,7 +310,6 @@ Global
 		$1.Text = @ Copyright (C) ${Year}, The Duplicati Team\n http://www.duplicati.com, info@duplicati.com\n \n This library is free software; you can redistribute it and/or modify\n it under the terms of the GNU Lesser General Public License as\n published by the Free Software Foundation; either version 2.1 of the\n License, or (at your option) any later version.\n\n This library is distributed in the hope that it will be useful, but\n WITHOUT ANY WARRANTY; without even the implied warranty of\n MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n Lesser General Public License for more details.\n\n You should have received a copy of the GNU Lesser General Public\n License along with this library; if not, write to the Free Software\n Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 		$0.DotNetNamingPolicy = $2
 		$2.DirectoryNamespaceAssociation = PrefixedHierarchical
-		$0.TextStylePolicy = $4
 		$0.TextStylePolicy = $5
 		$5.FileWidth = 80
 		$5.TabsToSpaces = True

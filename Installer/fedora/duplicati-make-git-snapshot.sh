@@ -6,25 +6,25 @@
 # Point env var REF to a local duplicati repo to reduce clone time.
 
 if [ -z $2 ]; then
-  DATE=`date +%Y%m%d`
+  DATE=$(date +%Y%m%d)
 else
   DATE=$2
 fi
 
 if [ -z $3 ]; then
-  VERSION=`git describe --tags | cut -d '-' -f 1 | cut -d 'v' -f 2`
+  VERSION=$(git describe --tags | cut -d '-' -f 1 | cut -d 'v' -f 2)
 else
   VERSION=$3
 fi
 
 if [ -z $4 ]; then
-  RELEASETYPE=`git describe --tags | cut -d '_' -f 2`
+  RELEASETYPE=$(git describe --tags | cut -d '_' -f 2)
 else
   RELEASETYPE=$4
 fi
 
 if [ -z $5 ]; then
-  BUILDTAG=`git describe --tags | cut -d '-' -f 2-4`
+  BUILDTAG=$(git describe --tags | cut -d '-' -f 2-4)
 else
   BUILDTAG=$5
 fi
@@ -42,7 +42,7 @@ echo BUILDTAG ${BUILDTAG}
 rm -rf $DIRNAME
 
 git clone ${REF:+--reference $REF} \
-	`git config --get remote.origin.url` $DIRNAME
+	$(git config --get remote.origin.url) $DIRNAME
 
 cd "$DIRNAME"
 git checkout -b fedora-build ${1:-HEAD}

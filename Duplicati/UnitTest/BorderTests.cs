@@ -22,7 +22,6 @@ using System.Collections.Generic;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture]
     public class BorderTests : BasicSetupHelper
     {
         public override void PrepareSourceData()
@@ -31,6 +30,16 @@ namespace Duplicati.UnitTest
 
             Directory.CreateDirectory(DATAFOLDER);
             Directory.CreateDirectory(TARGETFOLDER);
+        }
+
+        [Test]
+        [Category("Border")]
+        public void Run10kNoProgress()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts => { 
+                opts["disable-file-scanner"] = "true"; 
+            });
         }
 
         [Test]
@@ -160,6 +169,18 @@ namespace Duplicati.UnitTest
                 opts["check-filetime-only"] = "true";
             });
         }
+
+        [Test]
+        [Category("Border")]
+        public void RunFullScan()
+        {
+            PrepareSourceData();
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
+                opts["disable-filetime-check"] = "true";
+            });
+        }
+
         public static Dictionary<string, int> WriteTestFilesToFolder(string targetfolder, int blocksize, int basedatasize = 0)
         {
             if (basedatasize <= 0)
@@ -197,7 +218,6 @@ namespace Duplicati.UnitTest
         private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
         {
             var testopts = TestOptions;
-            testopts["verbose"] = "true";
             testopts["blocksize"] = blocksize.ToString() + "b";
             if (modifyOptions != null)
                 modifyOptions(testopts);
@@ -214,18 +234,32 @@ namespace Duplicati.UnitTest
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                c.List("*");
                 //Console.WriteLine("In first backup:");
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
             }
+
+            // Do a "touch" on files to trigger a re-scan, which should do nothing
+            //foreach (var k in filenames)
+                //if (File.Exists(Path.Combine(DATAFOLDER, "a" + k.Key)))
+                    //File.SetLastWriteTime(Path.Combine(DATAFOLDER, "a" + k.Key), DateTime.Now.AddSeconds(5));
 
             var data = new byte[filenames.Select(x => x.Value).Max()];
             new Random().NextBytes(data);
             foreach(var k in filenames)
                 File.WriteAllBytes(Path.Combine(DATAFOLDER, "b" + k.Key), data.Take(k.Value).ToArray());
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                c.Backup(new string[] { DATAFOLDER });
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var r = c.Backup(new string[] { DATAFOLDER });
+                if (!Library.Utility.Utility.ParseBoolOption(testopts, "disable-filetime-check"))
+                {
+                    if (r.OpenedFiles != filenames.Count)
+                        throw new Exception($"Opened {r.OpenedFiles}, but should open {filenames.Count}");
+                    if (r.ExaminedFiles != filenames.Count * 2)
+                        throw new Exception($"Examined {r.ExaminedFiles}, but should examine open {filenames.Count * 2}");
+                }
+            }
 
             var rn = new Random();
             foreach(var k in filenames)

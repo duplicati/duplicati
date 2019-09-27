@@ -13,7 +13,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The lock that grants exclusive access to control structures
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
         /// <summary>
         /// The current eventID
         /// </summary>
@@ -21,7 +21,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The list of subscribed waiting threads
         /// </summary>
-        private Queue<System.Threading.ManualResetEvent> m_waitQueue = new Queue<System.Threading.ManualResetEvent>();
+        private readonly Queue<System.Threading.ManualResetEvent> m_waitQueue = new Queue<System.Threading.ManualResetEvent>();
 
         /// <summary>
         /// An eventhandler for subscribing to event updates without blocking

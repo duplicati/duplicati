@@ -19,9 +19,91 @@ using System;
 namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class RequestInfo : IDisposable
-    {        public HttpServer.IHttpRequest Request { get; private set; }        public HttpServer.IHttpResponse Response { get; private set; }        public HttpServer.Sessions.IHttpSession Session { get; private set; }        public BodyWriter BodyWriter { get; private set; }
+    {
+        public HttpServer.IHttpRequest Request { get; private set; }
+        public HttpServer.IHttpResponse Response { get; private set; }
+        public HttpServer.Sessions.IHttpSession Session { get; private set; }
+        public BodyWriter BodyWriter { get; private set; }
         public RequestInfo(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
-        {            Request = request;            Response = response;            Session = session;            BodyWriter = new BodyWriter(response, request);
-        }        public void ReportServerError(string message, System.Net.HttpStatusCode code = System.Net.HttpStatusCode.InternalServerError)        {            Response.Status = code;            Response.Reason = message;            BodyWriter.WriteJsonObject(new { Error = message });        }        public void ReportClientError(string message, System.Net.HttpStatusCode code = System.Net.HttpStatusCode.BadRequest)        {            ReportServerError(message, code);        }        public bool LongPollCheck(EventPollNotify poller, ref long id, out bool isError)        {            HttpServer.HttpInput input = Request.Method.ToUpper() == "POST" ? Request.Form : Request.QueryString;            if (Library.Utility.Utility.ParseBool(input["longpoll"].Value, false))            {                long lastEventId;                if (!long.TryParse(input["lasteventid"].Value, out lastEventId))                {                    ReportClientError("When activating long poll, the request must include the last event id");                    isError = true;                    return false;                }                TimeSpan ts;                try { ts = Library.Utility.Timeparser.ParseTimeSpan(input["duration"].Value); }                catch (Exception ex)                {                    ReportClientError("Invalid duration: " + ex.Message);                    isError = true;                    return false;                }                if (ts <= TimeSpan.FromSeconds(10) || ts.TotalMilliseconds > int.MaxValue)                {                    ReportClientError("Invalid duration, must be at least 10 seconds, and less than " + int.MaxValue + " milliseconds");                    isError = true;                    return false;                }                isError = false;                id = poller.Wait(lastEventId, (int)ts.TotalMilliseconds);                return true;            }            isError = false;            return false;        }        public void OutputOK(object item = null)        {            BodyWriter.OutputOK(item);        }        public void OutputError(object item = null, System.Net.HttpStatusCode code = System.Net.HttpStatusCode.InternalServerError, string reason = null)        {            Response.Status = code;            Response.Reason = reason ?? "Error";            BodyWriter.WriteJsonObject(item);        }        public void Dispose()        {            if (BodyWriter != null)            {                var bw = BodyWriter;                BodyWriter = null;                bw.Dispose();            }        }    }
+        {
+            Request = request;
+            Response = response;
+            Session = session;
+            BodyWriter = new BodyWriter(response, request);
+        }
+
+        public void ReportServerError(string message, System.Net.HttpStatusCode code = System.Net.HttpStatusCode.InternalServerError)
+        {
+            Response.Status = code;
+            Response.Reason = message;
+
+            BodyWriter.WriteJsonObject(new { Error = message });
+        }
+
+        public void ReportClientError(string message, System.Net.HttpStatusCode code = System.Net.HttpStatusCode.BadRequest)
+        {
+            ReportServerError(message, code);
+        }
+
+        public bool LongPollCheck(EventPollNotify poller, ref long id, out bool isError)
+        {
+            HttpServer.HttpInput input = String.Equals(Request.Method, "POST", StringComparison.OrdinalIgnoreCase) ? Request.Form : Request.QueryString;
+            if (Library.Utility.Utility.ParseBool(input["longpoll"].Value, false))
+            {
+                long lastEventId;
+                if (!long.TryParse(input["lasteventid"].Value, out lastEventId))
+                {
+                    ReportClientError("When activating long poll, the request must include the last event id", System.Net.HttpStatusCode.BadRequest);
+                    isError = true;
+                    return false;
+                }
+
+                TimeSpan ts;
+                try { ts = Library.Utility.Timeparser.ParseTimeSpan(input["duration"].Value); }
+                catch (Exception ex)
+                {
+                    ReportClientError("Invalid duration: " + ex.Message, System.Net.HttpStatusCode.BadRequest);
+                    isError = true;
+                    return false;
+                }
+
+                if (ts <= TimeSpan.FromSeconds(10) || ts.TotalMilliseconds > int.MaxValue)
+                {
+                    ReportClientError("Invalid duration, must be at least 10 seconds, and less than " + int.MaxValue + " milliseconds", System.Net.HttpStatusCode.BadRequest);
+                    isError = true;
+                    return false;
+                }
+
+                isError = false;
+                id = poller.Wait(lastEventId, (int)ts.TotalMilliseconds);
+                return true;
+            }
+
+            isError = false;
+            return false;
+        }
+
+        public void OutputOK(object item = null)
+        {
+            BodyWriter.OutputOK(item);
+        }
+
+        public void OutputError(object item = null, System.Net.HttpStatusCode code = System.Net.HttpStatusCode.InternalServerError, string reason = null)
+        {
+            Response.Status = code;
+            Response.Reason = reason ?? "Error";
+            BodyWriter.WriteJsonObject(item);
+        }
+
+        public void Dispose()
+        {
+            if (BodyWriter != null)
+            {
+                var bw = BodyWriter;
+                BodyWriter = null;
+                bw.Dispose();
+            }
+        }
+    }
 }
 

@@ -23,6 +23,11 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalRepairDatabase : LocalDatabase
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRepairDatabase));
+
         public LocalRepairDatabase(string path)
             : base(path, "Repair", true)
         {
@@ -66,8 +71,8 @@ namespace Duplicati.Library.Main.Database
                     
                 }
             }
-        
-            private System.Data.IDataReader m_rd;
+
+            private readonly System.Data.IDataReader m_rd;
             public bool Done { get; private set; }
             
             public BlockWithSources(System.Data.IDataReader rd)
@@ -130,11 +135,11 @@ namespace Duplicati.Library.Main.Database
         
         private class MissingBlockList : IMissingBlockList
         {
-            private System.Data.IDbConnection m_connection;
-            private TemporaryTransactionWrapper m_transaction;
+            private readonly System.Data.IDbConnection m_connection;
+            private readonly TemporaryTransactionWrapper m_transaction;
             private System.Data.IDbCommand m_insertCommand;
             private string m_tablename;
-            private string m_volumename;
+            private readonly string m_volumename;
             
             public MissingBlockList(string volumename, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
             {
@@ -250,7 +255,7 @@ namespace Duplicati.Library.Main.Database
                 var x = cmd.ExecuteScalarInt64(sql_count, 0);
                 if (x > 1)
                 {
-                    m_result.AddMessage("Found duplicate metadatahashes, repairing");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateMetadataHashes", "Found duplicate metadatahashes, repairing");
 
                     var tablename = "TmpFile-" + Guid.NewGuid().ToString("N");
 
@@ -288,9 +293,9 @@ namespace Duplicati.Library.Main.Database
                     cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalarInt64(0);
                     if (x > 1)
-                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate metadatahashes!");
+                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate metadatahashes!", "DuplicateHashesRepairFailed");
 
-                    m_result.AddMessage("Duplicate metadatahashes repaired succesfully");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateMetadataHashesFixed", "Duplicate metadatahashes repaired succesfully");
                     tr.Commit();
                 }
             }
@@ -306,7 +311,7 @@ namespace Duplicati.Library.Main.Database
                 var x = cmd.ExecuteScalarInt64(sql_count, 0);
                 if (x > 0)
                 {
-                    m_result.AddMessage("Found duplicate file entries, repairing");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateFileEntries", "Found duplicate file entries, repairing");
 
                     var sql = @"SELECT ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""Entries"" FROM (
                             SELECT MIN(""ID"") AS ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Entries"" FROM ""File"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") 
@@ -323,9 +328,9 @@ namespace Duplicati.Library.Main.Database
                     cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalarInt64(0);
                     if (x > 1)
-                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate file entries!");
+                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate file entries!", "DuplicateFilesRepairFailed");
 
-                    m_result.AddMessage("Duplicate file entries repaired succesfully");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateFileEntriesFixed", "Duplicate file entries repaired succesfully");
                     tr.Commit();
                 }
             }
@@ -350,7 +355,7 @@ namespace Duplicati.Library.Main.Database
                 var itemswithnoblocklisthash = cmd.ExecuteScalarInt64(countsql, 0);
                 if (itemswithnoblocklisthash != 0)
                 {
-                    m_result.AddMessage(string.Format("Found {0} missing blocklisthash entries, repairing", itemswithnoblocklisthash));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "MissingBlocklistHashes", "Found {0} missing blocklisthash entries, repairing", itemswithnoblocklisthash);
                     using(var c2 = m_connection.CreateCommand(tr))
                     using(var c3 = m_connection.CreateCommand(tr))
                     using(var c4 = m_connection.CreateCommand(tr))
@@ -421,7 +426,6 @@ namespace Duplicati.Library.Main.Database
 
                                 // Add to table
                                 c3.ExecuteNonQuery(null, blocksetid, ix, blkeyfinal);
-                                ix++;
                             }
                         }
                     }
@@ -429,9 +433,9 @@ namespace Duplicati.Library.Main.Database
 
                     itemswithnoblocklisthash = cmd.ExecuteScalarInt64(countsql, 0);
                     if (itemswithnoblocklisthash != 0)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Failed to repair, after repair {0} blocklisthashes were missing", itemswithnoblocklisthash));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Failed to repair, after repair {0} blocklisthashes were missing", itemswithnoblocklisthash), "MissingBlocklistHashesRepairFailed");
 
-                    m_result.AddMessage("Missing blocklisthashes repaired succesfully");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "MissingBlocklisthashesRepaired", "Missing blocklisthashes repaired succesfully");
                     tr.Commit();
                 }
             }
@@ -450,7 +454,7 @@ namespace Duplicati.Library.Main.Database
                 var x = cmd.ExecuteScalarInt64(sql_count, 0);
                 if (x > 0)
                 {
-                    m_result.AddMessage("Found duplicate blocklisthash entries, repairing");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateBlocklistHashes", "Found duplicate blocklisthash entries, repairing");
 
                     var unique_count = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")", 0);
 
@@ -474,18 +478,18 @@ namespace Duplicati.Library.Main.Database
                     var real_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM ""BlocklistHash""", 0);
 
                     if (real_count != unique_count)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count, real_count));
+                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Failed to repair, result should have been {0} blocklist hashes, but result was {1} blocklist hashes", unique_count, real_count), "DuplicateBlocklistHashesRepairFailed");
 
                     try
                     {
-                        VerifyConsistency(tr, blocksize, hashsize, true);
+                        VerifyConsistency(blocksize, hashsize, true, tr);
                     }
                     catch(Exception ex)
                     {
-                        throw new Duplicati.Library.Interface.UserInformationException("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", ex);
+                        throw new Duplicati.Library.Interface.UserInformationException("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", "DuplicateBlocklistHashesRepairFailed", ex);
                     }
 
-                    m_result.AddMessage("Duplicate blocklisthashes repaired succesfully");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateBlocklistHashesRepaired", "Duplicate blocklisthashes repaired succesfully");
                     tr.Commit();
                 }
             }

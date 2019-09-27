@@ -23,13 +23,12 @@ using System.Reflection;
 
 namespace Duplicati.UnitTest
 {
-    [TestFixture]
     public class GeneralBlackBoxTesting
     {
         private static readonly string SOURCE_FOLDERS =
             Path.Combine(
                 string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
-                ? Path.Combine(Library.Utility.Utility.HOME_PATH, "testdata")
+                ? Path.Combine(Library.Utility.Utility.HOME_PATH, "duplicati_testdata")
                 : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER")
             , "DSMCBE");
 

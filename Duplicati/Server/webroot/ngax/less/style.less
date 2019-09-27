@@ -65,6 +65,32 @@ textarea {
     max-width: 94%;
 }
 
+.external-link-image {
+    display: inline-block;
+    margin-left: 8px;
+    margin-right: 8px;
+    height: 16px;
+    width: 16px;
+    background: url('../img/external-link-hover.png');
+    background-size: 16px;
+}
+
+a {
+    .external-link-image {
+        background: url('../img/external-link.png');
+        background-size: 16px;
+    }
+}
+
+.header {
+    a:hover {
+        .external-link-image {
+            background: url('../img/external-link-hover.png');
+            background-size: 16px;
+        }
+    }
+}
+
 .button {
     display: block;
     background: @lColor;
@@ -178,20 +204,14 @@ ul.tabs {
     }
 
     .entries {
-        div.entryline {
+        div.entryline.clickable {
             cursor: pointer;
         }
     }
 
     .entries.livedata {
-        li {
-            height: 1.2em;
-            overflow: hidden;
-        }
-
         li.expanded {
             height: auto;
-            overflow: auto;
         }
     }
 
@@ -476,7 +496,7 @@ body {
             .state {
                 float: left;
                 color: darken(@hColor, 10%);
-                width: 580px;
+                width: 595px;
                 padding: 13px 15px;
                 margin: 10px 20px;
                 border: 1px darken(@hColor, 10%) solid;
@@ -495,7 +515,7 @@ body {
                     margin-right: 10px;
                 }
 
-                span { 
+                span {
                     display: inline;
                 }
 
@@ -548,6 +568,16 @@ body {
                     left: 0px;
                     background: fade(@hColor, 25%);
                     z-index: 5;
+                }
+
+                .task-name {
+                    overflow:hidden;
+                    text-overflow:ellipsis;
+                    cursor: help;
+                }
+
+                .task-state-info {
+                    display: flex;
                 }
             }
 
@@ -633,6 +663,7 @@ body {
                 img:hover {
                     opacity: 1;
                 }
+
             }
         }
 
@@ -651,6 +682,7 @@ body {
                 width: 260px;
                 padding-left: 40px;
                 float: left;
+                position: fixed;
 
                 > ul {
                     > li {
@@ -750,7 +782,7 @@ body {
                             > span {
                                 background: url('../img/mainmenu/over/arrow_down.png') right center no-repeat;
                             }
-                        }                        
+                        }
 
                         > a.add:hover {
                             background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
@@ -857,7 +889,7 @@ body {
 
             .content {
                 float: left;
-                padding-left: 50px;
+                padding-left: 350px;
                 padding-bottom: 50px;
                 max-width: 700px;
 
@@ -884,10 +916,19 @@ body {
                             border-top: 0px none;
                         }
 
+			.progress-small {
+                            text-align: center;
+                            height: 18px;
+                            background: rgba(164, 209,235, 0.50);
+                        }
+
+                        .progress-small-bg {
+                            border: 1px #65b1dd solid;
+                            width: 200px;
+                        }
+
                         a {
                             font-size: 30px;
-                            padding-left: 55px;
-                            background: url('../img/backup.png') no-repeat 5px 6px;
                             font-weight: 300;
                             display: inline-block;
 
@@ -1153,6 +1194,19 @@ body {
                                 width: 60px;
                             }
 
+                            .hint, .retention-options {
+                                clear: both;
+                                margin-left: 190px;
+                                margin-top: 50px;
+                                font-style: italic;
+                            }
+
+                            .retention-options {
+                                input {
+                                    margin-bottom: 10px;
+                                }
+                            }
+
                             .advancedoptions {
                                 padding-top: 15px;
                                 clear: both;
@@ -1356,7 +1410,7 @@ body {
                             width: @step-width;
                         }
                     }
-                }                
+                }
 
                 div.restore.restore-direct {
                     @legends-steps: 4;
@@ -1452,7 +1506,7 @@ body {
 
                     ul.entries {
                         li {
-                            padding-top: 15px;
+                            padding-top: 10px;
                         }
                     }
                 }
@@ -1481,6 +1535,7 @@ body {
                 float: left;
                 overflow: hidden;
                 padding-right: 20px;
+                display: none;
 
                 span {
                     display: block;
@@ -1499,6 +1554,7 @@ body {
             }
 
             .donate {
+                display: none;
                 float: right;
                 padding-right: 40px;
                 overflow: hidden;
@@ -1509,7 +1565,7 @@ body {
 
                     li {
                         float: left;
-                        margin-left: 20px;
+                        margin-left: 10px;
 
                         a {
                             img {
@@ -1778,6 +1834,15 @@ div.modal-dialog {
     }
 }
 
+.importpage {
+    form.styled {
+        input {
+            margin-top: 11px;
+            margin-bottom: 11px;
+        }
+    }
+}
+
 .restorewizard,
 .addwizard {
     form.styled {
@@ -1847,7 +1912,6 @@ div.modal-dialog {
     min-height: 25px;
 
     > span {
-        position: absolute;
         vertical-align: middle;
         display: block;
         width: 100%;
@@ -1881,6 +1945,7 @@ div.modal-dialog {
         transition: width .6s ease;
         height: 100%;
         position: absolute;
+        top:0;
 
         &.active {
             -webkit-animation: progress-bar-stripes 2s linear infinite;
@@ -2005,7 +2070,7 @@ div.modal-dialog {
                 &.x-tree-icon-hypervmachine {
                     background-position: -96px 0px;
                 }
-				
+
 				&.x-tree-icon-mssql {
                     background-position: -96px -32px;
                 }
@@ -2123,14 +2188,13 @@ div.modal-dialog {
         .container {
             .header {
                 .donate {
-                    display: none;
                 }
             }
         }
     }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1150px) {
     body {
         .container {
             .header {
@@ -2179,6 +2243,10 @@ div.modal-dialog {
                     background-image: url('../img/menu_active.png');
                     color: @lColor;
                 }
+
+                .donate {
+                    display: none;
+                }
             }
 
             .body {
@@ -2219,12 +2287,6 @@ div.modal-dialog {
                 }
             }
 
-            .footer {
-                .donate {
-                    display: block;
-                }
-            }
-
             .mobileOpen {
                 display: block !important;
             }
@@ -2258,7 +2320,7 @@ div.modal-dialog {
 
     body {
         .container {
-            
+
             .header {
                 .logo {
                     padding-left: 10px;
@@ -2469,6 +2531,7 @@ div.modal-dialog {
 
                 .about-footer {
                     padding-right: 0;
+                    display: block;
 
                     span {
                         padding-left: 0;
@@ -2517,6 +2580,7 @@ div.modal-dialog {
                 }
 
                 .donate {
+                    display: block;
                     ul {
                         li {
                             display: inline-block;

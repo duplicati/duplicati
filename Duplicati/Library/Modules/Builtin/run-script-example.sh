@@ -16,6 +16,15 @@
 # Duplicati will run the script before the backup job and waits for its 
 # completion for 60 seconds (default timeout value). After a timeout a 
 # warning is logged and the backup is started.
+# The following exit codes are supported:
+#
+# - 0: OK, run operation
+# - 1: OK, don't run operation
+# - 2: Warning, run operation
+# - 3: Warning, don't run operation
+# - 4: Error, run operation
+# - 5: Error don't run operation
+# - other: Error don't run operation
 #
 # --run-script-before-required = <filename>
 # Duplicati will run the script before the backup job and wait for its 
@@ -32,6 +41,9 @@
 # Duplicati will run the script after the backup job and wait for its 
 # completion for 60 seconds (default timeout value). After a timeout a 
 # warning is logged.
+# The same exit codes as in --run-script-before are supported, but
+# the operation will always continue (i.e. 1 => 0, 3 => 2, 5 => 4)
+# as it has already completed so stopping it during stop is useless.
 
 
 ###############################################################################

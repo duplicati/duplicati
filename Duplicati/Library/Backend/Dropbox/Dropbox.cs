@@ -8,10 +8,10 @@ namespace Duplicati.Library.Backend
     public class Dropbox : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
-        private const int MAX_FILE_LIST = 10000;
 
-        private string m_path,m_accesToken;
-        private DropboxHelper dbx;
+        private readonly string m_accesToken;
+        private readonly string m_path;
+        private readonly DropboxHelper dbx;
 
         public Dropbox()
         {
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Backend
                 string path = String.Format("{0}/{1}", m_path, remotename);
                 dbx.Delete(path);
             }
-            catch (DropboxException de)
+            catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;
@@ -135,6 +135,11 @@ namespace Duplicati.Library.Backend
         }
 
         public string Description { get { return Strings.Dropbox.Description; } }
+
+        public string[] DNSName
+        {
+            get { return WebApi.Dropbox.Hosts(); }
+        }
 
         public void Test()
         {
@@ -163,7 +168,7 @@ namespace Duplicati.Library.Backend
                 string path = string.Format("{0}/{1}", m_path, remotename);
                 dbx.UploadFile(path, stream);
             }
-            catch (DropboxException de)
+            catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;
@@ -177,7 +182,7 @@ namespace Duplicati.Library.Backend
                 string path = string.Format("{0}/{1}", m_path, remotename);
                 dbx.DownloadFile(path, stream);
             }
-            catch (DropboxException de)
+            catch (DropboxException)
             {
                 // we can catch some events here and convert them to Duplicati exceptions
                 throw;

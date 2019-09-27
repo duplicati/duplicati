@@ -64,6 +64,11 @@ namespace Duplicati.Library.Snapshots
 
     public class HyperVUtility
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<HyperVUtility>();
+
         private readonly ManagementScope _wmiScope;
         private readonly string _vmIdField;
         private readonly string _wmiHost = "localhost";
@@ -83,12 +88,11 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Enumerated Hyper-V guests
         /// </summary>
-        public List<HyperVGuest> Guests { get { return m_Guests; } }
-        private List<HyperVGuest> m_Guests;
+        public List<HyperVGuest> Guests { get; }
 
         public HyperVUtility()
         {
-            m_Guests = new List<HyperVGuest>();
+            Guests = new List<HyperVGuest>();
 
             if (!Utility.Utility.IsClientWindows)
             {
@@ -98,7 +102,7 @@ namespace Duplicati.Library.Snapshots
             }
 
             //Set the namespace depending off host OS
-            _wmiv2Namespace = Environment.OSVersion.Version.Major >= 6 && Environment.OSVersion.Version.Minor >= 2;
+            _wmiv2Namespace = Environment.OSVersion.Version.Major > 6 || (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor >= 2);
 
             //Set the scope to use in WMI. V2 for Server 2012 or newer.
             _wmiScope = _wmiv2Namespace
@@ -107,23 +111,23 @@ namespace Duplicati.Library.Snapshots
             //Set the VM ID Selector Field for the WMI Query
             _vmIdField = _wmiv2Namespace ? "VirtualSystemIdentifier" : "SystemName";
 
-            Logging.Log.WriteMessage(string.Format("Using WMI provider {0}", _wmiScope.Path), Logging.LogMessageType.Profiling);
+            Logging.Log.WriteProfilingMessage(LOGTAG, "WMISelect", "Using WMI provider {0}", _wmiScope.Path);
 
             IsVSSWriterSupported = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem")
                     .Get().OfType<ManagementObject>()
-                    .Select(o => (uint)o.GetPropertyValue("ProductType")).First() != 1;
+                    .Select(o => (uint)o.GetPropertyValue("ProductType"))
+                    .First() != 1;
 
             try
             {
-                var classesCount = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(
-                        "SELECT * FROM meta_class")).Get().OfType<ManagementObject>().Count();
-
-                IsHyperVInstalled = classesCount > 0;
+                IsHyperVInstalled = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(
+                    "SELECT * FROM meta_class")).Get().OfType<ManagementObject>()
+                    .Any(o => ((ManagementClass)o).ClassPath.ClassName.StartsWith("Msvm_"));
             }
             catch { IsHyperVInstalled = false; }
 
             if (!IsHyperVInstalled)
-                Logging.Log.WriteMessage(string.Format("Cannot open WMI provider {0}. Hyper-V is probably not installed.", _wmiScope.Path), Logging.LogMessageType.Information);
+                Logging.Log.WriteInformationMessage(LOGTAG, "NoHyperVFound", "Cannot open WMI provider {0}. Hyper-V is probably not installed.", _wmiScope.Path);
         }
 
         /// <summary>
@@ -136,7 +140,7 @@ namespace Duplicati.Library.Snapshots
             if (!IsHyperVInstalled)
                 return;
 
-            m_Guests.Clear();
+            Guests.Clear();
             var wmiQuery = _wmiv2Namespace
                 ? "SELECT * FROM Msvm_VirtualSystemSettingData WHERE VirtualSystemType = 'Microsoft:Hyper-V:System:Realized'"
                 : "SELECT * FROM Msvm_VirtualSystemSettingData WHERE SettingType = 3";
@@ -144,13 +148,15 @@ namespace Duplicati.Library.Snapshots
             if (IsVSSWriterSupported)
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
-                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ? GetAllVMsPathsVSS()[(string)mObject[_vmIdField]] : null));
+                        Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ? GetAllVMsPathsVSS()[(string)mObject[_vmIdField]] : null));
             else
                 using (var moCollection = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get())
                     foreach (var mObject in moCollection)
-                        m_Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ?
+                        Guests.Add(new HyperVGuest((string)mObject["ElementName"], new Guid((string)mObject[_vmIdField]), bIncludePaths ?
                             GetVMVhdPathsWMI((string)mObject[_vmIdField])
                                 .Union(GetVMConfigPathsWMI((string)mObject[_vmIdField]))
+                                .ToList()
+                                .ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1))
                                 .Distinct(Utility.Utility.ClientFilenameStringComparer)
                                 .OrderBy(a => a).ToList() : null));
         }
@@ -181,7 +187,7 @@ namespace Duplicati.Library.Snapshots
                     var writerMetaData = m_backup.WriterMetadata.FirstOrDefault(o => o.WriterId.Equals(HyperVWriterGuid));
 
                     if (writerMetaData == null)
-                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.");
+                        throw new Duplicati.Library.Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.", "NoHyperVVssWriter");
 
                     foreach (var component in writerMetaData.Components)
                     {
@@ -199,7 +205,7 @@ namespace Duplicati.Library.Snapshots
                                     paths.Add(Path.Combine(file.Path, file.FileSpecification));
                             }
 
-                        ret.Add(component.ComponentName, paths.Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList());
+                        ret.Add(component.ComponentName, paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1)).Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToList());
                     }
                 }
                 finally

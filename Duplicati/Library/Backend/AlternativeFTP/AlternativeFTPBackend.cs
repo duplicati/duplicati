@@ -147,11 +147,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 _userInfo.Domain = "";
 
             _url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            if (!_url.EndsWith("/", StringComparison.Ordinal))
-            {
-                _url += "/";
-            }
-
+            _url = Duplicati.Library.Utility.Utility.AppendDirSeparator(_url, "/");
             _listVerify = !CoreUtility.ParseBoolOption(options, "disable-upload-verify");
 
             // Process the aftp-data-connection-type option
@@ -361,11 +357,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                                 return;
                             }
 
-                            throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, fileEntry.Size, streamLen));
+                            throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, fileEntry.Size, streamLen), "AftpListVerifySizeFailure");
                         }
                     }
 
-                    throw new UserInformationException(Strings.ListVerifyFailure(remotename, fileEntries.Select(n => n.Name)));
+                    throw new UserInformationException(Strings.ListVerifyFailure(remotename, fileEntries.Select(n => n.Name)), "AftpListVerifySizeFailure");
                 }
             }
             catch (FtpCommandException ex)
@@ -448,6 +444,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 return Strings.Description;
             }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(_url).Host }; }
         }
 
         private static System.IO.Stream StringToStream(string str)

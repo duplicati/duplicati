@@ -29,8 +29,8 @@ namespace Duplicati.Library.Backend
 {
     public class TahoeBackend : IBackend, IStreamingBackend
     {
-        private string m_url;
-        private bool m_useSSL = false;
+        private readonly string m_url;
+        private readonly bool m_useSSL = false;
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         private class TahoeEl
@@ -100,13 +100,12 @@ namespace Duplicati.Library.Backend
             u.RequireHost();
             
             if (!u.Path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !u.Path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
-                throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError);
+                throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError, "TahoeInvalidUri");
 
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             m_url = u.SetScheme(m_useSSL ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
-            if (!m_url.EndsWith("/", StringComparison.Ordinal))
-                m_url += "/";
+            m_url = Duplicati.Library.Utility.Utility.AppendDirSeparator(m_url, "/");
         }
 
         private System.Net.HttpWebRequest CreateRequest(string remotename, string queryparams)
@@ -252,6 +251,11 @@ namespace Duplicati.Library.Backend
         public string Description
         {
             get { return Strings.TahoeBackend.Description; }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new Uri(m_url).Host }; }
         }
 
         #endregion

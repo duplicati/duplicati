@@ -35,12 +35,12 @@ namespace Duplicati.Library.Backend.Backblaze
 
         private const int DEFAULT_PAGE_SIZE = 500;
 
-        private string m_bucketname;
-        private string m_prefix;
-        private string m_urlencodedprefix;
-        private string m_bucketType;
-        private int m_pagesize;
-        private B2AuthHelper m_helper;
+        private readonly string m_bucketname;
+        private readonly string m_prefix;
+        private readonly string m_urlencodedprefix;
+        private readonly string m_bucketType;
+        private readonly int m_pagesize;
+        private readonly B2AuthHelper m_helper;
         private UploadUrlResponse m_uploadUrl;
 
         private Dictionary<string, List<FileEntity>> m_filecache;
@@ -56,9 +56,7 @@ namespace Duplicati.Library.Backend.Backblaze
             var uri = new Utility.Uri(url);
 
             m_bucketname = uri.Host;
-            m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            m_prefix = Duplicati.Library.Utility.Utility.AppendDirSeparator("/" + uri.Path, "/");
 
             // For B2 we do not use a leading slash
             while(m_prefix.StartsWith("/", StringComparison.Ordinal))
@@ -88,9 +86,9 @@ namespace Duplicati.Library.Backend.Backblaze
                 accountKey = uri.Password;
 
             if (string.IsNullOrEmpty(accountId))
-                throw new UserInformationException(Strings.B2.NoB2UserIDError);
+                throw new UserInformationException(Strings.B2.NoB2UserIDError, "B2MissingUserID");
             if (string.IsNullOrEmpty(accountKey))
-                throw new UserInformationException(Strings.B2.NoB2KeyError);
+                throw new UserInformationException(Strings.B2.NoB2KeyError, "B2MissingKey");
             
             m_helper = new B2AuthHelper(accountId, accountKey);
 
@@ -100,7 +98,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 int.TryParse(options[B2_PAGESIZE_OPTION], out m_pagesize);
 
                 if (m_pagesize <= 0)
-                    throw new UserInformationException(Strings.B2.InvalidPageSizeError(B2_PAGESIZE_OPTION, options[B2_PAGESIZE_OPTION]));
+                    throw new UserInformationException(Strings.B2.InvalidPageSizeError(B2_PAGESIZE_OPTION, options[B2_PAGESIZE_OPTION]), "B2InvalidPageSize");
             }
 		}
 
@@ -118,7 +116,7 @@ namespace Duplicati.Library.Backend.Backblaze
                     );
 
                     if (buckets != null && buckets.Buckets != null)
-                        m_bucket = buckets.Buckets.Where(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                        m_bucket = buckets.Buckets.FirstOrDefault(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase));
 
                     if (m_bucket == null)
                         throw new FolderMissingException();
@@ -420,6 +418,11 @@ namespace Duplicati.Library.Backend.Backblaze
         public string Description
         {
             get { return Strings.B2.Description; }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new System.Uri(B2AuthHelper.AUTH_URL).Host, m_helper?.APIDnsName, m_helper?.DownloadDnsName} ; }
         }
 
         public void Dispose()

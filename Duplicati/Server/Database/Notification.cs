@@ -30,6 +30,9 @@ namespace Duplicati.Server.Database
         public string BackupID { get; set; }
         public string Action { get; set; }
         public DateTime Timestamp  { get; set; }
+        public string LogEntryID { get; set; }
+        public string MessageID { get; set; }
+        public string MessageLogTag { get; set; }
         #endregion
     }
 }

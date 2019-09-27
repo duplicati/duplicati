@@ -17,7 +17,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The <see cref="System.Net.HttpWebRequest"/> method being wrapped
         /// </summary>
-        private WebRequest m_request;
+        private readonly WebRequest m_request;
         /// <summary>
         /// The current internal state of the object
         /// </summary>
@@ -37,7 +37,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The activity timeout value
         /// </summary>
-        private int m_activity_timeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
+        private readonly int m_activity_timeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
 
         /// <summary>
         /// List of valid states
@@ -79,7 +79,7 @@ namespace Duplicati.Library.Utility
         public AsyncHttpRequest(WebRequest request)
         {
             if (request == null)
-                throw new ArgumentNullException("request");
+                throw new ArgumentNullException(nameof(request));
             m_request = request;
             m_timeout = m_request.Timeout;
             if (m_timeout != System.Threading.Timeout.Infinite)
@@ -186,13 +186,13 @@ namespace Duplicati.Library.Utility
         /// </summary>
         private class AsyncWrapper
         {
-            private IAsyncResult m_async = null;
+            private readonly IAsyncResult m_async = null;
             private Stream m_stream = null;
             private WebResponse m_response = null;
-            private AsyncHttpRequest m_owner;
+            private readonly AsyncHttpRequest m_owner;
             private Exception m_exception = null;
-            private ManualResetEvent m_event = new ManualResetEvent(false);
-            private bool m_isRequest;
+            private readonly ManualResetEvent m_event = new ManualResetEvent(false);
+            private readonly bool m_isRequest;
             private bool m_timedout = false;
 
             public AsyncWrapper(AsyncHttpRequest owner, bool isRequest)

@@ -41,7 +41,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         public void POST(string key, RequestInfo info)
         {
-            var input = info.Request.Form;
             switch ((key ?? "").ToLowerInvariant())
             {
                 case "suppressdonationmessages":
@@ -71,6 +70,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 ServerVersion = Duplicati.Library.Utility.Utility.getExecutingAssembly().GetName().Version.ToString(),
                 ServerVersionName = Duplicati.License.VersionNumbers.Version,
                 ServerVersionType = Duplicati.Library.AutoUpdater.UpdaterManager.SelfVersion.ReleaseType,
+                StartedBy = Duplicati.Server.Program.Origin,
                 BaseVersionName = Duplicati.Library.AutoUpdater.UpdaterManager.BaseVersion.Displayname,
                 DefaultUpdateChannel = Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel,
                 DefaultUsageReportLevel = Duplicati.Library.UsageReporter.Reporter.DefaultReportLevel,
@@ -81,6 +81,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,
                 MonoVersion = Duplicati.Library.Utility.Utility.IsMono ? Duplicati.Library.Utility.Utility.MonoVersion.ToString() : null,
                 MachineName = System.Environment.MachineName,
+                UserName = System.Environment.UserName,
                 NewLine = System.Environment.NewLine,
                 CLRVersion = System.Environment.Version.ToString(),
                 CLROSInfo = new

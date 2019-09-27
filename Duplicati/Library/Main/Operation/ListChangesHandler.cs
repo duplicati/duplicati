@@ -24,9 +24,14 @@ namespace Duplicati.Library.Main.Operation
 {
     internal class ListChangesHandler
     {
-        private string m_backendurl;
-        private Options m_options;
-        private ListChangesResults m_result;
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ListChangesHandler));
+
+        private readonly string m_backendurl;
+        private readonly Options m_options;
+        private readonly ListChangesResults m_result;
 
         public ListChangesHandler(string backend, Options options, ListChangesResults result)
         {
@@ -62,12 +67,12 @@ namespace Duplicati.Library.Main.Operation
             var useLocalDb = !m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath);
             baseVersion = string.IsNullOrEmpty(baseVersion) ? "1" : baseVersion;
             compareVersion = string.IsNullOrEmpty(compareVersion) ? "0" : compareVersion;
-            
-            long baseVersionIndex = -1;
-            long compareVersionIndex = -1;
-            
-            DateTime baseVersionTime = new DateTime(0);
-            DateTime compareVersionTime = new DateTime(0);
+
+            long baseVersionIndex;
+            long compareVersionIndex;
+
+            DateTime baseVersionTime;
+            DateTime compareVersionTime;
             
             using(var tmpdb = useLocalDb ? null : new Library.Utility.TempFile())
             using(var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb))
@@ -80,7 +85,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var dbtimes = db.FilesetTimes.ToList();
                     if (dbtimes.Count < 2)
-                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", dbtimes.Count));
+                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", dbtimes.Count), "NeedTwoBackupsToStartDiff");
                     
                     long baseVersionId;
                     long compareVersionId;
@@ -95,7 +100,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    m_result.AddMessage("No local database, accessing remote store");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");
                     
                     var parsedlist = (from n in backend.List()
                                 let p = Volumes.VolumeBase.ParseFilename(n)
@@ -105,7 +110,7 @@ namespace Duplicati.Library.Main.Operation
                                 
                     var numberedList = parsedlist.Zip(Enumerable.Range(0, parsedlist.Length), (a, b) => new Tuple<long, DateTime, Volumes.IParsedVolume>(b, a.Time, a)).ToList();
                     if (numberedList.Count < 2)
-                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", numberedList.Count));
+                        throw new UserInformationException(string.Format("Need at least two backups to show differences, database contains {0} backups", numberedList.Count), "NeedTwoBackupsToStartDiff");
 
                     Volumes.IParsedVolume baseFile;
                     Volumes.IParsedVolume compareFile;
@@ -150,7 +155,7 @@ namespace Duplicati.Library.Main.Operation
                 var changes = storageKeeper.CreateChangeCountReport();
                 var sizes = storageKeeper.CreateChangeSizeReport();
 
-                var lst = (m_options.Verbose || m_options.FullResult || callback != null) ?
+                var lst = (m_options.FullResult || callback != null) ?
                         (from n in storageKeeper.CreateChangedFileReport()
                          select n) : null;
 

@@ -32,12 +32,12 @@ namespace Duplicati.Library.Backend
         private const string OPTION_MOVE_FILE = "use-move-for-put";
         private const string OPTION_FORCE_REAUTH = "force-smb-authentication";
 
-        private string m_path;
+        private readonly string m_path;
         private string m_username;
         private string m_password;
-        private bool m_moveFile;
+        private readonly bool m_moveFile;
         private bool m_hasAutenticated;
-        private bool m_forceReauth;
+        private readonly bool m_forceReauth;
 
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
@@ -113,7 +113,7 @@ namespace Duplicati.Library.Backend
                 }
 
                 if (m_path == null)
-                    throw new UserInformationException(Strings.FileBackend.NoDestinationWithMarkerFileError(markerfile, paths.ToArray()));
+                    throw new UserInformationException(Strings.FileBackend.NoDestinationWithMarkerFileError(markerfile, paths.ToArray()), "NoDestinationWithMarker");
             }
 
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
@@ -349,6 +349,11 @@ namespace Duplicati.Library.Backend
                     return null;
                 }
             }
+        }
+
+        public string[] DNSName
+        {
+            get { return null; }
         }
 
         public void Rename(string oldname, string newname)

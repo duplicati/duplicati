@@ -83,10 +83,10 @@ namespace Duplicati.Library.DynamicLoader
                             if (m_interfaces.ContainsKey(tmpscheme))
                             {
                                 var commands = m_interfaces[tmpscheme].SupportedCommands;
-                                if (commands != null && (commands.Where(x =>
+                                if (commands != null && (commands.Any(x =>
                                 x.Name.Equals("use-ssl", StringComparison.OrdinalIgnoreCase) ||
-                                (x.Aliases != null && x.Aliases.Where(y => y.Equals("use-ssl", StringComparison.OrdinalIgnoreCase)).Any())
-                                ).Any()))
+                                (x.Aliases != null && x.Aliases.Any(y => y.Equals("use-ssl", StringComparison.OrdinalIgnoreCase)))
+                                )))
                                 {
                                     newOpts["use-ssl"] = "true";
                                     return (IBackend)Activator.CreateInstance(m_interfaces[tmpscheme].GetType(), url, newOpts);
@@ -98,7 +98,7 @@ namespace Duplicati.Library.DynamicLoader
                     {
                         // Unwrap exceptions for nicer display
                         if (tex.InnerException != null)
-                            throw tex.InnerException;
+                            throw new Exception("Unwrapped TargetInvocationException", tex.InnerException);
 
                         throw;
                     }
@@ -138,10 +138,10 @@ namespace Duplicati.Library.DynamicLoader
         /// <summary>
         /// The static instance used to access backend information
         /// </summary>
-        private static BackendLoaderSub _backendLoader = new BackendLoaderSub();
+        private static readonly BackendLoaderSub _backendLoader = new BackendLoaderSub();
 
         #region Public static API
-        
+
         /// <summary>
         /// Gets a list of loaded backends, the instances can be used to extract interface information, not used to interact with the backend.
         /// </summary>
@@ -160,7 +160,7 @@ namespace Duplicati.Library.DynamicLoader
         public static IList<ICommandLineArgument> GetSupportedCommands(string url)
         {
             if (string.IsNullOrEmpty(url))
-                throw new ArgumentNullException("url");
+                throw new ArgumentNullException(nameof(url));
 
             return _backendLoader.GetSupportedCommands(url);
         }

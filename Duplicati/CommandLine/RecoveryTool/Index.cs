@@ -49,7 +49,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             ixfile = Path.GetFullPath(ixfile);
             if (!File.Exists(ixfile))
             {
-                using(File.Create(ixfile))
+                using (File.Create(ixfile))
                 {
                 }
             }
@@ -67,7 +67,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             var errors = 0;
             var totalblocks = 0L;
             var files = 0;
-            foreach(var file in Directory.EnumerateFiles(folder))
+            foreach (var file in Directory.EnumerateFiles(folder))
             {
                 Console.Write("{0}: {1}", i, file);
 
@@ -95,11 +95,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                     var filekey = Path.GetFileName(file);
 
                     var blocks = 0;
-                    using(var cp = Library.DynamicLoader.CompressionLoader.GetModule(p.CompressionModule, file, options))
-                    using(var tf = new Library.Utility.TempFile())
+                    using (var stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (var cp = Library.DynamicLoader.CompressionLoader.GetModule(p.CompressionModule, stream, Library.Interface.ArchiveMode.Read, options))
+                    using (var tf = new Library.Utility.TempFile())
                     {
-                        using(var sw = new StreamWriter(tf))
-                            foreach(var f in cp.ListFiles(null))
+                        using (var sw = new StreamWriter(tf))
+                            foreach (var f in cp.ListFiles(null))
                             {
                                 sw.WriteLine("{0}, {1}", Library.Utility.Utility.Base64UrlToBase64Plain(f), filekey);
                                 blocks++;
@@ -121,7 +122,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         Console.WriteLine(" done!");
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine(" error: {0}", ex);
                     errors++;
@@ -142,7 +143,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             try
             {
                 // If the file can fit into memory, this is MUCH faster
-                using(var tfout = new Library.Utility.TempFile())
+                using (var tfout = new Library.Utility.TempFile())
                 {
                     var data = File.ReadAllLines(filein);
                     Array.Sort(data, StringComparer.Ordinal);
@@ -156,8 +157,8 @@ namespace Duplicati.CommandLine.RecoveryTool
             {
             }
 
-            using(var tfin = new Library.Utility.TempFile())
-            using(var tfout = new Library.Utility.TempFile())
+            using (var tfin = new Library.Utility.TempFile())
+            using (var tfout = new Library.Utility.TempFile())
             {
                 long swaps;
 
@@ -167,8 +168,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                 {
                     swaps = 0L;
 
-                    using(var sw = new System.IO.StreamWriter(tfout))
-                    using(var sr = new System.IO.StreamReader(tfin))
+                    using (var sw = new System.IO.StreamWriter(tfout))
+                    using (var sr = new System.IO.StreamReader(tfin))
                     {
                         var c1 = sr.ReadLine();
                         var c2 = sr.ReadLine();
@@ -198,7 +199,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                     File.Copy(tfout, tfin, true);
 
-                } while(swaps > 0);
+                } while (swaps > 0);
 
                 File.Copy(tfout, fileout, true);
             }
@@ -206,16 +207,16 @@ namespace Duplicati.CommandLine.RecoveryTool
 
         private static void MergeFiles(string file1, string file2, string fileout)
         {
-            using(var tf = new Library.Utility.TempFile())
+            using (var tf = new Library.Utility.TempFile())
             {
-                using(var sw = new System.IO.StreamWriter(tf))
-                using(var sr1 = new System.IO.StreamReader(file1))
-                using(var sr2 = new System.IO.StreamReader(file2))
+                using (var sw = new System.IO.StreamWriter(tf))
+                using (var sr1 = new System.IO.StreamReader(file1))
+                using (var sr2 = new System.IO.StreamReader(file2))
                 {
                     var c1 = sr1.ReadLine();
                     var c2 = sr2.ReadLine();
 
-                    while(c1 != null || c2 != null)
+                    while (c1 != null || c2 != null)
                     {
                         var cmp = StringComparer.Ordinal.Compare(c1, c2);
 

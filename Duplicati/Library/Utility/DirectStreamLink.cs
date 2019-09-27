@@ -41,12 +41,12 @@ namespace Duplicati.Library.Utility
         /// Used to protect accesses to all state vars and making decisions
         /// on blocking thereon.
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
 
         /// <summary> An event to wake reader. </summary>
-        private ManualResetEventSlim m_signalDataAvailable = new ManualResetEventSlim(false);
+        private readonly ManualResetEventSlim m_signalDataAvailable = new ManualResetEventSlim(false);
         /// <summary> An event to wake writer. </summary>
-        private ManualResetEventSlim m_signalBufferAvailable = new ManualResetEventSlim(true);
+        private readonly ManualResetEventSlim m_signalBufferAvailable = new ManualResetEventSlim(true);
         /// <summary> Track closes and enable threadsafe self dispose. </summary>
         private int m_autoDisposeCounter = 2;
 
@@ -60,10 +60,10 @@ namespace Duplicati.Library.Utility
         private volatile bool m_readerClosed = false;
 
         /// <summary> The buffer for piping. </summary>
-        private byte[] m_buf;
+        private readonly byte[] m_buf;
 
         /// <summary> A stream to pass writes to. For stream stacking. </summary>
-        private Stream m_passWriteThrough;
+        private readonly Stream m_passWriteThrough;
 
         /// <summary> Allows to set a length for SubStreams Length property. </summary>
         private long m_knownLength = -1;
@@ -78,14 +78,14 @@ namespace Duplicati.Library.Utility
         /// Forces to wait until reader has consumed all bytes from buffer
         /// on a Flush operation. Set via constructor.
         /// </summary>
-        private bool m_blockOnFlush = true;
+        private readonly bool m_blockOnFlush = true;
 
         /// <summary>
         /// Forces to wait until reader has closed its stream
         /// on writer's Close operation. This may be used to 
         /// synchronize worker threads. Set via constructor.
         /// </summary>
-        private bool m_blockOnClose = true;
+        private readonly bool m_blockOnClose = true;
 
         /// <summary> The helper stream for reader from pipe. </summary>
         private LinkedReaderStream m_readerStream;
@@ -309,14 +309,11 @@ namespace Duplicati.Library.Utility
         private abstract class LinkedSubStream : Stream
         {
             protected DirectStreamLink m_linkStream;
-            protected long m_knownLength = -1;
-            public LinkedSubStream(DirectStreamLink linkStream)
+            protected LinkedSubStream(DirectStreamLink linkStream)
             { this.m_linkStream = linkStream; }
 
             public override bool CanSeek { get { return false; } }
             public override void SetLength(long value) { throw new NotSupportedException(); }
-            public void SetFakeLength(long value) { m_knownLength = value; }
-
             public override long Length { get { if (m_linkStream.m_knownLength >= 0) return m_linkStream.m_knownLength; else throw new NotSupportedException(); } }
 
             // We fake Seek and Position to at least support dummy operations.
@@ -399,12 +396,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         public class DataPump
         {
-            /// <summary> Minimum buffer size for pumping </summary>
-            public const int MINBUFSIZE = 1 << 10; // 1K
             /// <summary> Default buffer size for pumping </summary>
             public const int DEFAULTBUFSIZE = 1 << 14; // 16K
 
-            private readonly  int m_bufsize;
             private readonly bool m_closeInputWhenDone, m_closeOutputWhenDone;
             private readonly Action<DataPump> m_callbackFinalizePumping = null;
             private Stream m_input, m_output;
@@ -415,17 +409,14 @@ namespace Duplicati.Library.Utility
             /// <summary> Creates and configures a new DataPump instance. </summary>
             /// <param name="input"> The stream to read data from. </param>
             /// <param name="output"> The stream to write data to. </param>
-            /// <param name="bufsize"> The internal buffer size for reading/writing. </param>
             /// <param name="callbackFinalizePumping"> A callback to issue when pumping is done but before streams are closed. e.g. Can add data to output. </param>
             /// <param name="dontCloseInputWhenDone"> Disable auto close of input stream when pumping is done. </param>
             /// <param name="dontCloseOutputWhenDone"> Disable auto close of output stream when pumping is done. </param>
-            public DataPump(Stream input, Stream output, int bufsize = DEFAULTBUFSIZE
-                , Action<DataPump> callbackFinalizePumping = null
+            public DataPump(Stream input, Stream output, Action<DataPump> callbackFinalizePumping = null
                 , bool dontCloseInputWhenDone = false, bool dontCloseOutputWhenDone = false)
             {
                 this.m_input = input;
                 this.m_output = output;
-                this.m_bufsize = Math.Max(MINBUFSIZE, bufsize);
                 this.m_callbackFinalizePumping = callbackFinalizePumping;
                 this.m_closeInputWhenDone = !dontCloseInputWhenDone;
                 this.m_closeOutputWhenDone = !dontCloseOutputWhenDone;
@@ -453,7 +444,6 @@ namespace Duplicati.Library.Utility
             /// <summary> Actually transfers stream data. </summary>
             private long doRun(bool rethrowException)
             {
-                Exception hadException = null;
                 byte[] buf = new byte[1 << 14]; int c;
                 try
                 {
@@ -469,9 +459,8 @@ namespace Duplicati.Library.Utility
                         catch { }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    hadException = ex;
                     if (rethrowException) throw;
                 }
                 finally

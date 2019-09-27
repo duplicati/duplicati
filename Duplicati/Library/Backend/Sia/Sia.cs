@@ -15,11 +15,11 @@ namespace Duplicati.Library.Backend.Sia
         private const string SIA_TARGETPATH = "sia-targetpath";
         private const string SIA_REDUNDANCY = "sia-redundancy";
 
-        private string m_apihost;
-        private int m_apiport;
-        private string m_targetpath;
-        private float m_redundancy;
-        private System.Net.NetworkCredential m_user;
+        private readonly string m_apihost;
+        private readonly int m_apiport;
+        private readonly string m_targetpath;
+        private readonly float m_redundancy;
+        private readonly System.Net.NetworkCredential m_user;
 
         public Sia() {
 
@@ -135,7 +135,7 @@ namespace Duplicati.Library.Backend.Sia
         private SiaFileList GetFiles()
         {
             var fl = new SiaFileList();
-            string endpoint = string.Format("/renter/files");
+            string endpoint = "/renter/files";
 
             try
             {
@@ -189,7 +189,7 @@ namespace Duplicati.Library.Backend.Sia
         private SiaDownloadList GetDownloads()
         {
             var fl = new SiaDownloadList();
-            string endpoint = string.Format("/renter/downloads");
+            string endpoint = "/renter/downloads";
 
             try
             {
@@ -438,6 +438,11 @@ namespace Duplicati.Library.Backend.Sia
             {
                 return Strings.Sia.Description;
             }
+        }
+
+        public string[] DNSName
+        {
+            get { return new string[] { new System.Uri(m_apihost).Host }; }
         }
 
         #endregion

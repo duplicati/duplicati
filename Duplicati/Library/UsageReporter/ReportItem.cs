@@ -42,7 +42,7 @@ namespace Duplicati.Library.UsageReporter
             this.TimeStamp = (long)(DateTime.UtcNow - Library.Utility.Utility.EPOCH).TotalSeconds;
         }
 
-        public ReportItem(ReportType type = ReportType.Information, long? count = null, string eventname = null, string data = null)
+        public ReportItem(ReportType type, long? count, string eventname, string data)
             : this()
         {
             this.Type = type;

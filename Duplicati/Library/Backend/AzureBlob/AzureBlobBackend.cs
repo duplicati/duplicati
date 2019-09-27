@@ -57,11 +57,11 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             if (string.IsNullOrWhiteSpace(storageAccountName))
             {
-                throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName);
+                throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName, "AzureNoAccountName");
             }
             if (string.IsNullOrWhiteSpace(accessKey))
             {
-                throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKey);
+                throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKey, "AzureNoAccessKey");
             }
 
             _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, containerName);
@@ -157,6 +157,11 @@ namespace Duplicati.Library.Backend.AzureBlob
             {
                 return Strings.AzureBlobBackend.Description_v2;
             }
+        }
+
+        public string[] DNSName
+        {
+            get { return _azureBlob.DnsNames; }
         }
 
         public void Test()

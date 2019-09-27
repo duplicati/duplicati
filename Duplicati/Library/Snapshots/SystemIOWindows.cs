@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.IO;
 
+using AlphaFS = Alphaleonis.Win32.Filesystem;
+
 
 namespace Duplicati.Library.Snapshots
 {
@@ -249,7 +251,7 @@ namespace Duplicati.Library.Snapshots
         {
             if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
                 throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
-            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(target, PrefixWithUNC(symlinkfile), asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File);
+            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File, AlphaFS.PathFormat.LongFullPath);
 
             //Sadly we do not get a notification if the creation fails :(
             System.IO.FileAttributes attr = 0;
@@ -259,6 +261,32 @@ namespace Duplicati.Library.Snapshots
 
             if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
                 throw new System.IO.IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
+        }
+
+        /// <summary>
+        /// Returns the symlink target if the entry is a symlink, and null otherwise
+        /// </summary>
+        /// <param name="file">The file or folder to examine</param>
+        /// <returns>The symlink target</returns>
+        public string GetSymlinkTarget(string file)
+        {
+            try
+            {
+                try
+                {
+                    return AlphaFS.File.GetLinkTargetInfo(file).PrintName;
+                }
+                catch (PathTooLongException) { }
+
+                return AlphaFS.File.GetLinkTargetInfo(SystemIOWindows.PrefixWithUNC(file)).PrintName;
+            }
+            catch (AlphaFS.NotAReparsePointException) { }
+            catch (AlphaFS.UnrecognizedReparsePointException) { }
+
+            // This path looks like it isn't actually a symlink
+            // (Note that some reparse points aren't actually symlinks -
+            // things like the OneDrive folder in the Windows 10 Fall Creator's Update for example)
+            return null;
         }
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
@@ -313,6 +341,16 @@ namespace Duplicati.Library.Snapshots
                 catch (System.ArgumentException) { }
 
             return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.ChangeExtension(PrefixWithUNC(path), extension));
+        }
+
+        public string PathCombine(string path1, string path2)
+        {
+            if (!IsPathTooLong(path1 + "\\" + path2))
+                try { return System.IO.Path.Combine(path1, path2); }
+                catch (System.IO.PathTooLongException) { }
+                catch (System.ArgumentException) { }
+
+            return StripUNCPrefix(Alphaleonis.Win32.Filesystem.Path.Combine(PrefixWithUNC(path1), path2));
         }
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)

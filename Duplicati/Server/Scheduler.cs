@@ -34,10 +34,12 @@ namespace Duplicati.Server
     /// </summary>
     public class Scheduler
     {
+        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Scheduler>();
+
         /// <summary>
         /// The thread that runs the scheduler
         /// </summary>
-        private Thread m_thread;
+        private readonly Thread m_thread;
         /// <summary>
         /// A termination flag
         /// </summary>
@@ -45,15 +47,15 @@ namespace Duplicati.Server
         /// <summary>
         /// The worker thread that is invoked to do work
         /// </summary>
-        private WorkerThread<Runner.IRunnerData> m_worker;
+        private readonly WorkerThread<Runner.IRunnerData> m_worker;
         /// <summary>
         /// The wait event
         /// </summary>
-        private AutoResetEvent m_event;
+        private readonly AutoResetEvent m_event;
         /// <summary>
         /// The data syncronization lock
         /// </summary>
-        private object m_lock = new object();
+        private readonly object m_lock = new object();
 
         /// <summary>
         /// An event that is raised when the schedule changes
@@ -68,7 +70,7 @@ namespace Duplicati.Server
         /// <summary>
         /// List of update tasks, used to set the timestamp on the schedule once completed
         /// </summary>
-        private Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
+        private readonly Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
 
         /// <summary>
         /// Constructs a new scheduler
@@ -245,6 +247,12 @@ namespace Duplicati.Server
                         
                         try
                         {
+                            // Recover from timedrift issues by overriding the dates if the last run date is in the future.
+                            if (last > DateTime.UtcNow)
+                            {
+                                start = DateTime.UtcNow;
+                                last = DateTime.UtcNow;
+                            }
                             start = GetNextValidTime(start, last, sc.Repeat, sc.AllowedDays);
                         }
                         catch (Exception ex)
@@ -272,7 +280,18 @@ namespace Duplicati.Server
                                 {
                                     var entry = Program.DataConnection.GetBackup(id);
                                     if (entry != null)
-                                        jobsToRun.Add(Server.Runner.CreateTask(Duplicati.Server.Serialization.DuplicatiOperation.Backup, entry));
+                                    {
+                                        Dictionary<string, string> options = Duplicati.Server.Runner.GetCommonOptions();
+                                        Duplicati.Server.Runner.ApplyOptions(entry, options);
+                                        if ((new Duplicati.Library.Main.Options(options)).DisableOnBattery && (Duplicati.Library.Utility.Power.PowerSupply.GetSource() == Duplicati.Library.Utility.Power.PowerSupply.Source.Battery))
+                                        {
+                                            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "BackupDisabledOnBattery", "Scheduled backup disabled while on battery power.");
+                                        }
+                                        else
+                                        {
+                                            jobsToRun.Add(Server.Runner.CreateTask(Duplicati.Server.Serialization.DuplicatiOperation.Backup, entry));
+                                        }
+                                    }
                                 }
                             }
 
@@ -288,7 +307,7 @@ namespace Duplicati.Server
                             }
                             
                             Server.Runner.IRunnerData lastJob = jobsToRun.LastOrDefault();
-                            if (lastJob != null && lastJob != null)
+                            if (lastJob != null)
                                 lock(m_lock)
                                     m_updateTasks[lastJob] = new Tuple<ISchedule, DateTime, DateTime>(sc, start, DateTime.UtcNow);
                             
