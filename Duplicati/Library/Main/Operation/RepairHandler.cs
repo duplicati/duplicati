@@ -292,7 +292,7 @@ namespace Duplicati.Library.Main.Operation
                                 w.SetRemoteFilename(n.Name);
 
                                 db.WriteFileset(w, filesetId, null);
-	
+
                                 w.Close();
                                 if (m_options.Dryrun)
                                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
@@ -304,41 +304,43 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else if (n.Type == RemoteVolumeType.Index)
                             {
-                                var w = new IndexVolumeWriter(m_options);
-                                newEntry = w;
-                                w.SetRemoteFilename(n.Name);
-
-                                var h = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
-                                
-                                foreach(var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
-                                {                               
-                                    w.StartVolume(blockvolume.Name);
-                                    var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
-                                    
-                                    foreach(var b in db.GetBlocks(volumeid))
-                                        w.AddBlock(b.Hash, b.Size);
-                                        
-                                    w.FinishVolume(blockvolume.Hash, blockvolume.Size);
-                                    
-                                    if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                                        foreach(var b in db.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
-                                        {
-                                            var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
-                                            if (bh != b.Item1)
-                                                throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
-                                            
-                                            w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
-                                        }
-                                }
-                                
-                                w.Close();
-                                
-                                if (m_options.Dryrun)
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadIndexFile", "would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
-                                else
+                                using (IndexVolumeWriter w = new IndexVolumeWriter(m_options))
                                 {
-                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    backend.Put(w);
+                                    newEntry = w;
+                                    w.SetRemoteFilename(n.Name);
+
+                                    var h = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
+
+                                    foreach (var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
+                                    {
+                                        w.StartVolume(blockvolume.Name);
+                                        var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
+
+                                        foreach (var b in db.GetBlocks(volumeid))
+                                            w.AddBlock(b.Hash, b.Size);
+
+                                        w.FinishVolume(blockvolume.Hash, blockvolume.Size);
+
+                                        if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                                            foreach (var b in db.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
+                                            {
+                                                var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
+                                                if (bh != b.Item1)
+                                                    throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
+
+                                                w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+                                            }
+                                    }
+
+                                    w.Close();
+
+                                    if (m_options.Dryrun)
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadIndexFile", "would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
+                                    else
+                                    {
+                                        db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                                        backend.Put(w);
+                                    }
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Blocks)
