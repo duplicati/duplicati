@@ -391,7 +391,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
-        private static System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){2,4,6,8}))", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){4}))", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Decodes a URL, like System.Web.HttpUtility.UrlDecode
