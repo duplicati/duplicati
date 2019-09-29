@@ -123,7 +123,7 @@ namespace Duplicati.Library.Main.Database
                             cmd.ExecuteNonQuery();
                         }
 
-                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" NOT IN ""{1}""", m_tablename, filenamestable), ParentID);
+                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" IN ""{1}""", m_tablename, filenamestable), ParentID);
                         cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", filenamestable));
                     }
                 }
