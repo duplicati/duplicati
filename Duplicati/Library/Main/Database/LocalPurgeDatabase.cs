@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Database
                 if (Library.Utility.Utility.IsFSCaseSensitive && filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
                 {
                     // File list based
-                    // unfortunately we cannot do this if the filesystem is case sensitive as
+                    // unfortunately we cannot do this if the filesystem is not case-sensitive as
                     // SQLite only supports ASCII compares
                     var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
                     var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
