@@ -96,6 +96,7 @@ namespace Duplicati.Library.Main.Operation
 
                 var versionprogress = ((doCompactStep ? 0.75f : 1.0f) / versions.Length) * pgspan;
                 var currentprogress = pgoffset;
+                var progress = 0;
 
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Process);
                 m_result.OperationProgressUpdater.UpdateProgress(currentprogress);
@@ -103,6 +104,9 @@ namespace Duplicati.Library.Main.Operation
                 // Reverse makes sure we re-write the old versions first
                 foreach (var versionid in versions.Reverse())
                 {
+                    progress++;
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingFilelistVolumes", "Processing filelist volume {0} of {1}", progress, versions.Length);
+
                     using (var tr = db.BeginTransaction())
                     {
                         var ix = -1;
