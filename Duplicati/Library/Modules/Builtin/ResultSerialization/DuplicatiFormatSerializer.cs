@@ -27,9 +27,8 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
             {
                 sb.Append("null?");
             }
-            else if (result is IEnumerable)
+            else if (result is IEnumerable resultEnumerable)
             {
-                IEnumerable resultEnumerable = (IEnumerable)result;
                 IEnumerator resultEnumerator = resultEnumerable.GetEnumerator();
                 resultEnumerator.Reset();
 
@@ -78,10 +77,9 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                     }
                 }
             }
-            else if (result is Exception)
+            else if (result is Exception exception)
             {
                 //No localization, must be parseable by script
-                Exception exception = (Exception)result;
                 sb.AppendFormat("Failed: {0}", exception.Message).AppendLine();
                 sb.AppendFormat("Details: {0}", exception).AppendLine();
             }

@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Xml.Linq;
 using Duplicati.Library.Common;
 
 using Duplicati.Library.Localization.Short;
@@ -627,8 +627,8 @@ namespace Duplicati.Library.Utility
                     {
                         if (new string[] { "PathsExcluded", "ContentsExcluded", "FileContentsExcluded" }.Contains(n.Value, StringComparer.Ordinal))
                         {
-                            if (n.NextNode is System.Xml.Linq.XContainer)
-                                foreach (var p in ((System.Xml.Linq.XContainer)n.NextNode).Elements("string"))
+                            if (n.NextNode is XContainer container)
+                                foreach (var p in container.Elements("string"))
                                 {
                                     if (System.IO.File.Exists(p.Value))
                                         res.Add(p.Value);
@@ -708,10 +708,10 @@ namespace Duplicati.Library.Utility
                  .SelectMany(x =>
                  {
                      var v = sk.GetValue(x);
-                     if (v is string)
-                         return new string[] { (string)v };
-                     else if (v is string[])
-                         return (string[])v;
+                     if (v is string s)
+                         return new string[] { s };
+                     else if (v is string[] strings)
+                         return strings;
                      else
                          return new string[0];
                  })

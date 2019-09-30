@@ -212,9 +212,9 @@ namespace Duplicati.Library.Backend.GoogleServices
                     var retry = false;
 
                     // If we get a 5xx error, or some network issue, we retry
-                    if (ex is WebException && ((WebException)ex).Response is HttpWebResponse)
+                    if (ex is WebException exception && exception.Response is HttpWebResponse response)
                     {
-                        var code = (int)((HttpWebResponse)((WebException)ex).Response).StatusCode;
+                        var code = (int)response.StatusCode;
                         retry = code >= 500 && code <= 599;
                     }
                     else if (ex is System.Net.Sockets.SocketException || ex is System.IO.IOException || ex.InnerException is System.Net.Sockets.SocketException || ex.InnerException is System.IO.IOException)

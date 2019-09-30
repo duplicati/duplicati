@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -1197,8 +1198,8 @@ ORDER BY
                 m_connection = connection;
                 Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var type = Library.Utility.FilterType.Regexp;
-                if (filter is Library.Utility.FilterExpression)
-                    type = ((Library.Utility.FilterExpression)filter).Type;
+                if (filter is FilterExpression expression)
+                    type = expression.Type;
 
                 // Bugfix: SQLite does not handle case-insensitive LIKE with non-ascii characters
                 if (type != Library.Utility.FilterType.Regexp && !Library.Utility.Utility.IsFSCaseSensitive && filter.ToString().Any(x => x > 127))

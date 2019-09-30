@@ -1118,11 +1118,11 @@ namespace Duplicati.Library.Utility
 
             if (IsPrimitiveTypeForSerialization(item.GetType()))
             {
-                if (item is DateTime)
+                if (item is DateTime time)
                 {
-                    writer.Write(((DateTime)item).ToLocalTime());
+                    writer.Write(time.ToLocalTime());
                     writer.Write(" (");
-                    writer.Write(ToUnixTimestamp((DateTime)item));
+                    writer.Write(ToUnixTimestamp(time));
                     writer.Write(")");
                 }
                 else

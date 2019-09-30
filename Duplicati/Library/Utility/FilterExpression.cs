@@ -519,17 +519,17 @@ namespace Duplicati.Library.Utility
                     var p = q.Dequeue();
                     if (p == null || p.Empty)
                         continue;
-                    else if (p is FilterExpression)
+                    else if (p is FilterExpression expression)
                     {
-                        if (((FilterExpression)p).Result)
+                        if (expression.Result)
                             includes = true;
                         else
                             excludes = true;
                     }
-                    else if (p is JoinedFilterExpression)
+                    else if (p is JoinedFilterExpression filterExpression)
                     {
-                        q.Enqueue(((JoinedFilterExpression)p).First);
-                        q.Enqueue(((JoinedFilterExpression)p).Second);
+                        q.Enqueue(filterExpression.First);
+                        q.Enqueue(filterExpression.Second);
                     }
                 }
 
@@ -609,8 +609,8 @@ namespace Duplicati.Library.Utility
             if (first == null || first.Empty)
                 return second;
 
-            if (first is FilterExpression && second is FilterExpression && ((FilterExpression)first).Result == ((FilterExpression)second).Result)
-                return Combine((FilterExpression)first, (FilterExpression)second);
+            if (first is FilterExpression expression && second is FilterExpression filterExpression && expression.Result == filterExpression.Result)
+                return Combine(expression, filterExpression);
 
             return new JoinedFilterExpression(first, second);
         }
@@ -665,12 +665,12 @@ namespace Duplicati.Library.Utility
             {
                 var f = work.Pop();
 
-                if (f is FilterExpression)
-                    res = res.Union(((FilterExpression)f).Serialize());
-                else if (f is JoinedFilterExpression)
+                if (f is FilterExpression expression)
+                    res = res.Union(expression.Serialize());
+                else if (f is JoinedFilterExpression filterExpression)
                 {
-                    work.Push(((JoinedFilterExpression)f).Second);
-                    work.Push(((JoinedFilterExpression)f).First);
+                    work.Push(filterExpression.Second);
+                    work.Push(filterExpression.First);
                 }
                 else
                     throw new Exception(string.Format("Cannot serialize filter instance of type: {0}", f.GetType()));

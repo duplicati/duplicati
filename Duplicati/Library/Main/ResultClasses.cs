@@ -755,15 +755,15 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (m_parent != null && m_parent is BackupResults)
-                    return ((BackupResults)m_parent).CompactResults;
+                if (m_parent != null && this.m_parent is BackupResults results)
+                    return results.CompactResults;
 
                 return m_compactResults;
             }
             internal set
             {
-                if (m_parent != null && m_parent is BackupResults)
-                    ((BackupResults)m_parent).CompactResults = value;
+                if (m_parent != null && this.m_parent is BackupResults results)
+                    results.CompactResults = value;
 
                 m_compactResults = value;
             }

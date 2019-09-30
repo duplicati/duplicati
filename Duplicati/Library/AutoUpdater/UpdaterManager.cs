@@ -1123,8 +1123,8 @@ namespace Duplicati.Library.AutoUpdater
 
                 var cur = Environment.GetEnvironmentVariables();
                 foreach (var e in cur.Keys)
-                    if (e is string)
-                        pi.EnvironmentVariables[(string)e] = cur[(string)e] as string;
+                    if (e is string s)
+                        pi.EnvironmentVariables[s] = cur[s] as string;
 
                 pi.EnvironmentVariables[string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)] = InstalledBaseDir;
                 pi.EnvironmentVariables["LOCALIZATION_FOLDER"] = InstalledBaseDir;

@@ -329,8 +329,8 @@ namespace Duplicati.Library.Compression
             if (ze == null)
                 return null;
 
-            if (ze is IArchiveEntry)
-                return ((IArchiveEntry)ze).OpenEntryStream();
+            if (ze is IArchiveEntry entry)
+                return entry.OpenEntryStream();
             else if (ze is SharpCompress.Common.Zip.ZipEntry)
                 return GetStreamFromReader(ze);
 

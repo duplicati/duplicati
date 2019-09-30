@@ -388,7 +388,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw new Exception(getResponseBodyOnError(endpoint, wex));
@@ -419,7 +419,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw new Exception(getResponseBodyOnError(endpoint, wex));

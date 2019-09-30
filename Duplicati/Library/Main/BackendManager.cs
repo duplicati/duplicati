@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Main.Database;
@@ -325,17 +326,17 @@ namespace Duplicati.Library.Main
 
                 //As we replace the list, we can now freely access the elements without locking
                 foreach (var e in entries)
-                    if (e is DbOperation)
-                        db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
-                    else if (e is DbUpdate && ((DbUpdate)e).State == RemoteVolumeState.Deleted)
+                    if (e is DbOperation operation)
+                        db.LogRemoteOperation(operation.Action, operation.File, operation.Result, transaction);
+                    else if (e is DbUpdate update && update.State == RemoteVolumeState.Deleted)
                     {
-                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, RemoteVolumeState.Deleted, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, true, TimeSpan.FromHours(2), transaction);
-                        volsRemoved.Add(((DbUpdate)e).Remotename);
+                        db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), transaction);
+                        volsRemoved.Add(update.Remotename);
                     }
-                    else if (e is DbUpdate)
-                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, ((DbUpdate)e).State, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, transaction);
-                    else if (e is DbRename)
-                        db.RenameRemoteFile(((DbRename)e).Oldname, ((DbRename)e).Newname, transaction);
+                    else if (e is DbUpdate dbUpdate)
+                        db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash, transaction);
+                    else if (e is DbRename rename)
+                        db.RenameRemoteFile(rename.Oldname, rename.Newname, transaction);
                     else if (e != null)
                         Logging.Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
 
@@ -523,10 +524,10 @@ namespace Duplicati.Library.Main
                                 throw;
                             }
 
-                            if (ex is System.Net.WebException)
+                            if (ex is WebException exception)
                             {
                                 // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
-                                if (((System.Net.WebException)ex).Status == System.Net.WebExceptionStatus.NameResolutionFailure)
+                                if (exception.Status == System.Net.WebExceptionStatus.NameResolutionFailure)
                                 {
                                     try
                                     {

@@ -24,6 +24,7 @@ using System.Threading;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main
 {
@@ -104,8 +105,8 @@ namespace Duplicati.Library.Main
         /// <param name="sink">The sink to use.</param>
         public void AppendSink(IMessageSink sink)
         {
-            if (m_messageSink is MultiMessageSink)
-                ((MultiMessageSink)m_messageSink).Append(sink);
+            if (this.m_messageSink is MultiMessageSink messageSink)
+                messageSink.Append(sink);
             else
                 m_messageSink = new MultiMessageSink(m_messageSink, sink);
         }
@@ -488,13 +489,13 @@ namespace Duplicati.Library.Main
             if (m_options != null && m_options.LoadedModules != null)
             {
                 foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
-                    if (mx.Key && mx.Value is Duplicati.Library.Interface.IGenericCallbackModule)
-                        try { ((Duplicati.Library.Interface.IGenericCallbackModule)mx.Value).OnFinish(result); }
+                    if (mx.Key && mx.Value is IGenericCallbackModule module)
+                        try { module.OnFinish(result); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
 
                 foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
-                    if (mx.Key && mx.Value is IDisposable)
-                        try { ((IDisposable)mx.Value).Dispose(); }
+                    if (mx.Key && mx.Value is IDisposable disposable)
+                        try { disposable.Dispose(); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"DisposeError{mx.Key}", ex, "Dispose for {0} failed: {1}", mx.Key, ex.Message); }
 
                 m_options.LoadedModules.Clear();
@@ -575,10 +576,8 @@ namespace Duplicati.Library.Main
                     else
                         mx.Value.Configure(m_options.RawOptions);
 
-                    if (mx.Value is Library.Interface.IGenericSourceModule)
+                    if (mx.Value is IGenericSourceModule sourcemodule)
                     {
-                        var sourcemodule = (Library.Interface.IGenericSourceModule)mx.Value;
-
                         if (sourcemodule.ContainFilesForBackup(paths))
                         {
                             var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
@@ -588,8 +587,8 @@ namespace Duplicati.Library.Main
                         }
                     }
 
-                    if (mx.Value is Library.Interface.IGenericCallbackModule)
-                        ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
+                    if (mx.Value is IGenericCallbackModule module)
+                        module.OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
 
             // If the filters were changed by a module, read them back in

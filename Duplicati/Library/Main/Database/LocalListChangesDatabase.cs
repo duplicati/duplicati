@@ -17,6 +17,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -143,12 +144,12 @@ namespace Duplicati.Library.Main.Database
                         // Simple case, select everything
                         cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {1} A WHERE ""A"".""FilesetID"" = ? ", tablename, combined), filesetId);
                     }
-                    else if (Library.Utility.Utility.IsFSCaseSensitive && filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
+                    else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
                     {
                         // File list based
                         // unfortunately we cannot do this if the filesystem is case sensitive as
                         // SQLite only supports ASCII compares
-                        var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
+                        var p = expression.GetSimpleList();
                         var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", filenamestable));
                         cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", filenamestable);

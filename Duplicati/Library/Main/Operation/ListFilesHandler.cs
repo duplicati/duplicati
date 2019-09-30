@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -29,7 +30,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var parsedfilter = new Library.Utility.FilterExpression(filterstrings);
             var filter = Library.Utility.JoinedFilterExpression.Join(parsedfilter, compositefilter);
-            var simpleList = !((filter is Library.Utility.FilterExpression && ((Library.Utility.FilterExpression)filter).Type == Library.Utility.FilterType.Simple) || m_options.AllVersions);
+            var simpleList = !((filter is FilterExpression expression && expression.Type == Library.Utility.FilterType.Simple) || m_options.AllVersions);
 
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))

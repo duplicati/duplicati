@@ -319,9 +319,9 @@ namespace Duplicati.Library.Main.Operation
                 // TODO: If we have a BackendManager, we should query through that
                 using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
                 {
-                    if (backend is Library.Interface.IQuotaEnabledBackend)
+                    if (backend is IQuotaEnabledBackend enabledBackend)
                     {
-                        Library.Interface.IQuotaInfo quota = ((Library.Interface.IQuotaEnabledBackend)backend).Quota;
+                        Library.Interface.IQuotaInfo quota = enabledBackend.Quota;
                         if (quota != null)
                         {
                             m_result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
