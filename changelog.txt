@@ -1,5 +1,5 @@
 2019-09-20 - 2.0.4.30_canary_2019-09-20
-==========
+======================================================================
 * Updated builds scripts to automatically notarize all packages for MacOS
 * Updated all string using ... to us the ellipsis character, thanks @leela52452
 * Code quality improvements and more tests, thanks @warwickmm
@@ -9,7 +9,7 @@
 * Fixed a crash when connecting to a password protected server instance from the trayicon, thanks @kenkendk
 
 2019-09-17 - 2.0.4.29_canary_2019-09-17
-==========
+====================================================================================================================
 * Added workaround for bug in Mono 6.0, thanks @warwickmm
 * Extra logging during database recreates, thanks @drwtsn32x
 * Added options to MSI installer for parameterized installs, thanks @BlueBlock
@@ -24,17 +24,17 @@
 * Updated list of S3 locations and storage classes, thanks @kenkendk
 
 2019-09-05 - 2.0.4.28_canary_2019-09-05
-==========
+============================================================================================
 * Updated CoCoL and WiX to fix rollback and upgrade errors, thanks @BlueBlock
 
 2019-09-03 - 2.0.4.27_canary_2019-09-03
-==========
+=====================================================================================
 * Fixed issues with the MSI packages not upgrading correctly, thanks @BlueBlock
 * Fixed some assembly redirects and package references, thanks @BlueBlock
 * Code cleanup for EPOCH times, thanks @warwickmm
 
 2019-09-02 - 2.0.4.26_canary_2019-09-02
-==========
+==========================================================================================
 == This is a rebuild of 2.0.4.24 with MSI packages and **new** assembly redirect fixes ==
 
 Change list from 2.0.4.24:
@@ -63,7 +63,7 @@ Change list from 2.0.4.24:
 * Support for forcing calendar dates in time pickers, thanks @LacunaSoftware
 
 2019-09-02 - 2.0.4.25_canary_2019-09-02
-==========
+============================================================================================================
 == This is a rebuild of 2.0.4.24 with MSI packages and assembly redirect fixes ==
 
 Change list from 2.0.4.24:
@@ -92,7 +92,7 @@ Change list from 2.0.4.24:
 * Support for forcing calendar dates in time pickers, thanks @LacunaSoftware
 
 2019-09-02 - 2.0.4.24_canary_2019-09-02
-==========
+=====================================================================================================================
 * Code cleanup, thanks @warwickmm
 * Removed extra console output, thanks @wjansenw
 * Fixed disposing backends after job completion, thanks @warwickmm
@@ -118,7 +118,7 @@ Change list from 2.0.4.24:
 * Support for forcing calendar dates in time pickers, thanks @LacunaSoftware
 
 2019-07-14 - 2.0.4.23_beta_2019-07-14
-==========
+=============================================================================================================================
 This update only contains warnings to inform users on Amazon Cloud Drive that the service is discontinued.
 The update will warn users running or configuring a backup stored on Amazon Cloud Drive.
 
