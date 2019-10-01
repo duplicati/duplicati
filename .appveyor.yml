@@ -64,7 +64,7 @@ test_script:
             --basePath .\Duplicati\UnitTest\bin\Debug
         }
 
-        if (!$testsPassed) {
+       else(!$testsPassed) {
             throw "Tests failed."
         }
 notifications:
