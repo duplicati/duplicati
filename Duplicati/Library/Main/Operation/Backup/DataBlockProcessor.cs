@@ -98,14 +98,14 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
-                                FileEntryItem blockEntry = CreateFileEntryForUpload(blockvolume, options);
+                                FileEntryItem blockEntry = blockvolume.CreateFileEntryForUpload(options);
 
                                 IndexVolumeWriter indexVolumeWriter = null;
                                 FileEntryItem indexEntry = null;
                                 if (indexvolume != null)
                                 {
                                     indexVolumeWriter = await indexvolume.CreateVolume(blockvolume.RemoteFilename, blockEntry.Hash, blockEntry.Size, options, database);
-                                    indexEntry = CreateFileEntryForUpload(indexVolumeWriter, options);
+                                    indexEntry = indexVolumeWriter.CreateFileEntryForUpload(options);
                                 }
 
                                 var uploadRequest = new VolumeUploadRequest(blockvolume, blockEntry, indexVolumeWriter, indexEntry);
@@ -135,15 +135,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                     throw;
                 }
             });
-        }
-
-        private static FileEntryItem CreateFileEntryForUpload(VolumeWriterBase volume, Options options)
-        {
-            var fileEntry = new FileEntryItem(BackendActionType.Put, volume.RemoteFilename);
-            fileEntry.SetLocalfilename(volume.LocalFilename);
-            fileEntry.Encrypt(options);
-            fileEntry.UpdateHashAndSize(options);
-            return fileEntry;
         }
     }
 }
