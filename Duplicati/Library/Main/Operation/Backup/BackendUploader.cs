@@ -79,9 +79,9 @@ namespace Duplicati.Library.Main.Operation.Backup
         public Options Options { get; }
         public BackupDatabase Database { get; }
 
-        public VolumeUploadRequest(BlockVolumeWriter blockvolume, FileEntryItem blockEntry, TemporaryIndexVolume indexVolume, Options options, BackupDatabase database)
+        public VolumeUploadRequest(BlockVolumeWriter blockVolume, FileEntryItem blockEntry, TemporaryIndexVolume indexVolume, Options options, BackupDatabase database)
         {
-            BlockVolume = blockvolume;
+            BlockVolume = blockVolume;
             BlockEntry = blockEntry;
             IndexVolume = indexVolume;
             Options = options;
