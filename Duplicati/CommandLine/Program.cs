@@ -179,6 +179,9 @@ namespace Duplicati.CommandLine
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
                     options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
+            if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
+                Library.Utility.SystemContextSettings.DefaultTempPath = options["tempdir"];
+
             var showDeletionErrors = verboseErrors;
             Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
             {
