@@ -153,15 +153,14 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             var blockEntry = target.BlockVolume.CreateFileEntryForUpload(options);
 
-            IndexVolumeWriter indexVolume = null;
-            FileEntryItem indexEntry = null;
+            TemporaryIndexVolume indexVolumeCopy = null;
             if (target.IndexVolume != null)
             {
-                indexVolume = await target.IndexVolume.CreateVolume(target.BlockVolume.RemoteFilename, blockEntry.Hash, blockEntry.Size, options, database).ConfigureAwait(false);
-                indexEntry = indexVolume.CreateFileEntryForUpload(options);
+                indexVolumeCopy = new TemporaryIndexVolume(options);
+                target.IndexVolume.CopyTo(indexVolumeCopy, false);
             }
 
-            var uploadRequest = new VolumeUploadRequest(target.BlockVolume, blockEntry, indexVolume, indexEntry);
+            var uploadRequest = new VolumeUploadRequest(target.BlockVolume, blockEntry, indexVolumeCopy, options, database);
             await outputChannel.WriteAsync(uploadRequest).ConfigureAwait(false);
         }
     }

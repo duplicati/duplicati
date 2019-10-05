@@ -75,15 +75,17 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         public FileEntryItem BlockEntry { get; }
         public BlockVolumeWriter BlockVolume { get; }
-        public FileEntryItem IndexEntry { get; }
-        public IndexVolumeWriter IndexVolume { get; }
+        public TemporaryIndexVolume IndexVolume { get; }
+        public Options Options { get; }
+        public BackupDatabase Database { get; }
 
-        public VolumeUploadRequest(BlockVolumeWriter blockvolume, FileEntryItem blockEntry, IndexVolumeWriter indexVolume, FileEntryItem indexEntry)
+        public VolumeUploadRequest(BlockVolumeWriter blockvolume, FileEntryItem blockEntry, TemporaryIndexVolume indexVolume, Options options, BackupDatabase database)
         {
             BlockVolume = blockvolume;
             BlockEntry = blockEntry;
             IndexVolume = indexVolume;
-            IndexEntry = indexEntry;
+            Options = options;
+            Database = database;
         }
     }
 
@@ -247,9 +249,17 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload, Worker worker, CancellationToken cancelToken)
         {
-            var blockUploaded = await UploadFileAsync(upload.BlockEntry, worker, cancelToken).ConfigureAwait(false);
-            if (blockUploaded && await UploadFileAsync(upload.IndexEntry, worker, cancelToken).ConfigureAwait(false))
-                await m_database.AddIndexBlockLinkAsync(upload.IndexVolume.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
+            if (await UploadFileAsync(upload.BlockEntry, worker, cancelToken).ConfigureAwait(false))
+            {
+                // We must use the BlockEntry's RemoteFilename and not the BlockVolume's since the
+                // BlockEntry's' RemoteFilename reflects renamed files due to retries after errors.
+                IndexVolumeWriter indexVolumeWriter = await upload.IndexVolume.CreateVolume(upload.BlockEntry.RemoteFilename, upload.BlockEntry.Hash, upload.BlockEntry.Size, upload.Options, upload.Database);
+                FileEntryItem indexEntry = indexVolumeWriter.CreateFileEntryForUpload(upload.Options);
+                if (await UploadFileAsync(indexEntry, worker, cancelToken).ConfigureAwait(false))
+                {
+                    await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
+                }
+            }
         }
 
         private async Task UploadVolumeWriter(VolumeWriterBase volumeWriter, Worker worker, CancellationToken cancelToken)

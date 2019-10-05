@@ -100,15 +100,14 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 FileEntryItem blockEntry = blockvolume.CreateFileEntryForUpload(options);
 
-                                IndexVolumeWriter indexVolumeWriter = null;
-                                FileEntryItem indexEntry = null;
+                                TemporaryIndexVolume indexVolumeCopy = null;
                                 if (indexvolume != null)
                                 {
-                                    indexVolumeWriter = await indexvolume.CreateVolume(blockvolume.RemoteFilename, blockEntry.Hash, blockEntry.Size, options, database);
-                                    indexEntry = indexVolumeWriter.CreateFileEntryForUpload(options);
+                                    indexVolumeCopy = new TemporaryIndexVolume(options);
+                                    indexvolume.CopyTo(indexVolumeCopy, false);
                                 }
 
-                                var uploadRequest = new VolumeUploadRequest(blockvolume, blockEntry, indexVolumeWriter, indexEntry);
+                                var uploadRequest = new VolumeUploadRequest(blockvolume, blockEntry, indexVolumeCopy, options, database);
                                 await self.Output.WriteAsync(uploadRequest);
 
                                 blockvolume = null;
