@@ -19,7 +19,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
