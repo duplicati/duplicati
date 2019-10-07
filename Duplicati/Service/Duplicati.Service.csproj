@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <Prefer32Bit>False</Prefer32Bit>
     <RootNamespace>Duplicati.Service</RootNamespace>
-    <AssemblyName>TrustBackup.Service</AssemblyName>
+    <AssemblyName>Duplicati.Service</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
