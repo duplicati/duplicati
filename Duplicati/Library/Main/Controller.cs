@@ -808,15 +808,19 @@ namespace Duplicati.Library.Main
             if (string.Equals(m_options.CompressionModule, "7z", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "7zModuleHasIssues", null, "The 7z compression module has known issues and should only be used for experimental purposes");
 
-            //TODO: Based on the action, see if all options are relevant
-        }
+            // Amazon CD is closing August 16th 2019
+			if (string.Equals(new Library.Utility.Uri(m_backend).Scheme, "amzcd", StringComparison.OrdinalIgnoreCase))
+				Logging.Log.WriteWarningMessage(LOGTAG, "AmzCDClosingApi", null, "The Amazon Cloud Drive API is closing down on August 16th 2019, please migrate your backups before this date");
 
-        /// <summary>
-        /// Helper method that expands the users chosen source input paths,
-        /// and removes duplicate paths
-        /// </summary>
-        /// <returns>The expanded and filtered sources.</returns>
-        private string[] ExpandInputSources(string[] inputsources, IFilter filter)
+			//TODO: Based on the action, see if all options are relevant
+		}
+
+		/// <summary>
+		/// Helper method that expands the users chosen source input paths,
+		/// and removes duplicate paths
+		/// </summary>
+		/// <returns>The expanded and filtered sources.</returns>
+		private string[] ExpandInputSources(string[] inputsources, IFilter filter)
         {
             if (inputsources == null || inputsources.Length == 0)
                 throw new Duplicati.Library.Interface.UserInformationException(Strings.Controller.NoSourceFoldersError, "NoSourceFolders");
