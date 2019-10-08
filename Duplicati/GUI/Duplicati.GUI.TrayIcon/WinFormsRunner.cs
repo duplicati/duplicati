@@ -204,6 +204,9 @@ namespace Duplicati.GUI.TrayIcon.Windows
                 case TrayIcons.IdleError:
                     m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.ErrorIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                     break;
+                case TrayIcons.IdleWarning:
+                    m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.WarningIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
+                    break;
                 case TrayIcons.Paused:
                     m_trayIcon.Icon = ImageLoader.LoadIcon(ImageLoader.PauseIcon, System.Windows.Forms.SystemInformation.SmallIconSize);
                     break;
