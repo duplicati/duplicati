@@ -101,7 +101,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The default export format
         /// </summary>
-        protected virtual ResultExportFormat DEFAULT_EXPORT_FORMAT { get; } = ResultExportFormat.Duplicati;
+        protected virtual ResultExportFormat DEFAULT_EXPORT_FORMAT { get; } = ResultExportFormat.Json;
 
         /// <summary>
         /// The module key
