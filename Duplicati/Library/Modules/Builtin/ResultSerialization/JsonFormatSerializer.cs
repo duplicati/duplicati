@@ -70,9 +70,9 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                 {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                     ContractResolver = new DynamicContractResolver(
-                            nameof(IBasicResults.Warnings),
-                            nameof(IBasicResults.Errors),
-                            nameof(IBasicResults.Messages),
+                            //nameof(IBasicResults.Warnings),
+                            //nameof(IBasicResults.Errors),
+                            //nameof(IBasicResults.Messages),
                             "TaskReader"
                     ),
                     Converters = new List<JsonConverter>()
