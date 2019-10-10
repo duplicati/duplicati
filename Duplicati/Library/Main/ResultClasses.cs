@@ -325,7 +325,7 @@ namespace Duplicati.Library.Main
                         if (type == BackendEventType.Started)
                             this.BackendProgressUpdater.StartAction(action, path, size);
 
-                        Logging.Log.WriteInformationMessage(LOGTAG, "BackendEvent", "Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size));
+                        //Logging.Log.WriteInformationMessage(LOGTAG, "BackendEvent", "Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size));
 
                         if (MessageSink != null)
                             MessageSink.BackendEvent(action, type, path, size);
