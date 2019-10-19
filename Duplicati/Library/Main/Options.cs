@@ -1385,7 +1385,8 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if empty folders should be ignored
+        /// Gets a flag indicating if during restores metadata should be applied to the symlink target.
+        /// Setting this to true can result in errors if the target no longer exists.
         /// </summary>
         public bool RestoreSymlinkMetadata
         {
