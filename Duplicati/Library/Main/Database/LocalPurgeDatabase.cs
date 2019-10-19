@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Database
                 if (Library.Utility.Utility.IsFSCaseSensitive && filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
                 {
                     // File list based
-                    // unfortunately we cannot do this if the filesystem is case sensitive as
+                    // unfortunately we cannot do this if the filesystem is not case-sensitive as
                     // SQLite only supports ASCII compares
                     var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
                     var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -123,7 +123,7 @@ namespace Duplicati.Library.Main.Database
                             cmd.ExecuteNonQuery();
                         }
 
-                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" NOT IN ""{1}""", m_tablename, filenamestable), ParentID);
+                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" IN ""{1}""", m_tablename, filenamestable), ParentID);
                         cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", filenamestable));
                     }
                 }
