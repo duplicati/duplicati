@@ -140,6 +140,7 @@
     <None Include="Info.plist" />
     <Compile Include="TrayIconBase.cs" />
     <EmbeddedResource Include="Resources\TrayNormal.ico" />
+    <EmbeddedResource Include="Resources\TrayNormalWarning.ico" />
     <EmbeddedResource Include="Resources\TrayNormalError.ico" />
     <EmbeddedResource Include="Resources\TrayNormalPause.ico" />
     <EmbeddedResource Include="Resources\TrayWorking.ico" />
@@ -382,6 +383,12 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ItemGroup />
   <ItemGroup>
+    <Content Include="Resources\TrayNormalWarning.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="SVGIcons\dark\normal-warning.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="SVGIcons\light\normal-error.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -389,6 +396,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="SVGIcons\light\normal-running.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="SVGIcons\light\normal-warning.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="SVGIcons\light\normal.svg">
