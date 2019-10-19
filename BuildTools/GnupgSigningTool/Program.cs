@@ -99,7 +99,7 @@ namespace GnupgSigningTool
                 throw new ArgumentException("Could not fetch gpg key id or gpg passphrase.");
             }
 
-            gpgpath = gpgpath ?? Duplicati.Library.Encryption.GPGEncryption.GetGpgExePath();
+            gpgpath = gpgpath ?? Duplicati.Library.Encryption.GPGEncryption.GetGpgProgramPath();
 
             SpawnGPG();
         }
