@@ -155,7 +155,7 @@ namespace Duplicati.CommandLine
             }
 
             // try and parse all parameter file aliases
-            foreach (string parameterOption in new[] { "parameters-file", "parameters-file", "parameterfile" })
+            foreach (string parameterOption in new[] { "parameters-file", "parameter-file", "parameterfile" })
             {
                 if (options.ContainsKey(parameterOption) && !string.IsNullOrEmpty(options[parameterOption]))
                 {
