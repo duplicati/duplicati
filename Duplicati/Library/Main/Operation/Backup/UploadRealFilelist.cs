@@ -62,9 +62,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                             return;
 
                         await db.WriteFilesetAsync(filesetvolume, filesetid);
-
-                        filesetvolume.AddFilelistFile();
-
                         filesetvolume.Close();
 
                         if (!await taskreader.ProgressAsync)
