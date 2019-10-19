@@ -11,7 +11,7 @@ namespace Duplicati.Library.Main.Volumes
     {
         public bool IsFullBackup { get; set; }
 
-        protected bool m_disposeCompression = false;
+        protected readonly bool m_disposeCompression = false;
         protected ICompression m_compression;
         protected Stream m_stream;
         

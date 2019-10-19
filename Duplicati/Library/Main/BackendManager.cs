@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main
             /// <summary>
             /// The current operation this entry represents
             /// </summary>
-            public OperationType Operation;
+            public readonly OperationType Operation;
             /// <summary>
             /// The name of the remote file
             /// </summary>
@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main
             /// True if an exception ultimately kills the handler,
             /// false if the item is returned with an exception
             /// </summary>
-            public bool ExceptionKillsHandler;
+            public readonly bool ExceptionKillsHandler;
             /// <summary>
             /// A flag indicating if the file is a extra metadata file
             /// that has no entry in the database

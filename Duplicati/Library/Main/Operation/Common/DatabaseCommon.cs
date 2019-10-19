@@ -34,9 +34,9 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<DatabaseCommon>();
 
-        protected LocalDatabase m_db;
+        protected readonly LocalDatabase m_db;
         protected System.Data.IDbTransaction m_transaction;
-        protected Options m_options;
+        protected readonly Options m_options;
 
         public DatabaseCommon(LocalDatabase db, Options options)
             : base()

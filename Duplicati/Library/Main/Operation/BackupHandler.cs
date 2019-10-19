@@ -58,7 +58,7 @@ namespace Duplicati.Library.Main.Operation
 
         private readonly BackupResults m_result;
 
-        public CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        public readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {

@@ -24,7 +24,7 @@ namespace Duplicati.Library.Main.Operation.Common
     /// </summary>
     internal class StatsCollector : SingleRunner, IDisposable
     {
-        protected IBackendWriter m_bw;
+        protected readonly IBackendWriter m_bw;
 
         public StatsCollector(IBackendWriter bw)
         {

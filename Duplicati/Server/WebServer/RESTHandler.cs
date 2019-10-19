@@ -66,7 +66,7 @@ namespace Duplicati.Server.WebServer
             DoProcess(request, response, session, method, module.Name.ToLowerInvariant(), (String.Equals(request.Method, "POST", StringComparison.OrdinalIgnoreCase) ? request.Form : request.QueryString)["id"].Value);
         }
 
-        private static ConcurrentDictionary<string, System.Globalization.CultureInfo> _cultureCache = new ConcurrentDictionary<string, System.Globalization.CultureInfo>(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, System.Globalization.CultureInfo> _cultureCache = new ConcurrentDictionary<string, System.Globalization.CultureInfo>(StringComparer.OrdinalIgnoreCase);
 
         private static System.Globalization.CultureInfo ParseRequestCulture(RequestInfo info)
         {

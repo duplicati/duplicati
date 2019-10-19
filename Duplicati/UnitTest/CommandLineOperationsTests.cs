@@ -25,7 +25,7 @@ namespace Duplicati.UnitTest
 {
     public class CommandLineOperationsTests : BasicSetupHelper
     {
-        private static string S3_URL = $"https://s3.amazonaws.com/duplicati-test-file-hosting/";
+        private static readonly string S3_URL = $"https://s3.amazonaws.com/duplicati-test-file-hosting/";
 
         /// <summary>
         /// The log tag

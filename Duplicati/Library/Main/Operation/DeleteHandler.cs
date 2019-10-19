@@ -37,8 +37,8 @@ namespace Duplicati.Library.Main.Operation
         private static readonly string LOGTAG_RETENTION = LOGTAG + ":RetentionPolicy";
 
         private readonly DeleteResults m_result;
-        protected string m_backendurl;
-        protected Options m_options;
+        protected readonly string m_backendurl;
+        protected readonly Options m_options;
     
         public DeleteHandler(string backend, Options options, DeleteResults result)
         {

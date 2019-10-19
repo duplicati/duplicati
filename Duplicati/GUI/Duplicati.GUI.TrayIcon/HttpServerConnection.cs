@@ -23,9 +23,9 @@ namespace Duplicati.GUI.TrayIcon
 
         private class BackgroundRequest
         {
-            public string Method;
-            public string Endpoint;
-            public Dictionary<string, string> Query;
+            public readonly string Method;
+            public readonly string Endpoint;
+            public readonly Dictionary<string, string> Query;
 
             public BackgroundRequest(string method, string endpoint, Dictionary<string, string> query)
             {
@@ -226,8 +226,8 @@ namespace Duplicati.GUI.TrayIcon
 
         private class SaltAndNonce
         {
-            public string Salt = null;
-            public string Nonce = null;
+            public readonly string Salt = null;
+            public readonly string Nonce = null;
         }
 
         private SaltAndNonce GetSaltAndNonce()

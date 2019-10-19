@@ -8,7 +8,7 @@ namespace Duplicati.Library.Main.Volumes
 {
     public class FilesetVolumeWriter : VolumeWriterBase
     {
-        private MemoryStream m_memorystream;
+        private readonly MemoryStream m_memorystream;
         private StreamWriter m_streamwriter;
         private readonly JsonWriter m_writer;
         private long m_filecount;

@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend
 {
     public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
-        private static string LOGTAG = Logging.Log.LogTagFromType<S3>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
 
         public const string RRS_OPTION = "s3-use-rrs";
         public const string STORAGECLASS_OPTION = "s3-storage-class";

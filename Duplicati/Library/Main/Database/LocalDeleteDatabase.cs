@@ -109,10 +109,10 @@ namespace Duplicati.Library.Main.Database
 
         private struct VolumeUsage
         {
-            public string Name;
-            public long DataSize;
-            public long WastedSize;
-            public long CompressedSize;
+            public readonly string Name;
+            public readonly long DataSize;
+            public readonly long WastedSize;
+            public readonly long CompressedSize;
             
             public VolumeUsage(string name, long datasize, long wastedsize, long compressedsize)
             {

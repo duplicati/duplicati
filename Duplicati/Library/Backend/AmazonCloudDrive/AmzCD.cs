@@ -60,7 +60,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
         private readonly TimeSpan m_delayTimeSpan;
 
         private static readonly object m_waitUntilLock;
-        private static Dictionary<string, DateTime> m_waitUntilAuthId;
+        private static readonly Dictionary<string, DateTime> m_waitUntilAuthId;
         private static Dictionary<string, DateTime> m_waitUntilRemotename;
 
         static AmzCD()
@@ -310,7 +310,7 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             throw new FileMissingException();
         }
         
-        private static System.Text.RegularExpressions.Regex FILTERS_VALUE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[+\-&|!(){}\[\]^'""~*?:\\ ]", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex FILTERS_VALUE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[+\-&|!(){}\[\]^'""~*?:\\ ]", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         public static string EscapeFiltersValue(string value)
         {

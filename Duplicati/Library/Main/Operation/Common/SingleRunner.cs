@@ -27,8 +27,8 @@ namespace Duplicati.Library.Main.Operation.Common
     /// </summary>
     internal abstract class SingleRunner : IDisposable
     {
-        protected AsyncLock m_lock = new AsyncLock();
-        protected CancellationTokenSource m_workerSource = new CancellationTokenSource();
+        protected readonly AsyncLock m_lock = new AsyncLock();
+        protected readonly CancellationTokenSource m_workerSource = new CancellationTokenSource();
 
         protected async Task<T> DoRunOnMain<T>(Func<Task<T>> method)
         {
