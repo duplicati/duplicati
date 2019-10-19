@@ -1,3 +1,20 @@
+2019-10-19 - 2.0.4.31_canary_2019-10-19
+==========
+* Updated translations, thanks all translators!
+* Improved computing EPOCH style timestamps, thanks @kylestanfield
+* Cleanup for removing deleted volumes with incorrect timestamps, thanks @BlueBlock
+* Improved progress when deleting volumes, thanks @drwtsn32x
+* Fixed an issue with ignoring the `--tempdir` option, thanks @drwtsn32x
+* Fixed an issue restoring from a single-file backup, thanks @drwtsn32x
+* Fixed filename color in dark theme, thanks @mithileshz
+* Improved documentation and help texts, thanks @warwickmm
+* Fixed parsing `%u`-style encoded unicode in URLs, thanks @warwickmm
+* Fixed cases where a filelists could be omitted from `dindex` files, thanks @warwickmm
+* Added a new tray-icon for the warning state, thanks @drwtsn32x
+* Fixed a retry error where uploaded `dindex`-files would reference non-existing `dblock` files, thanks @warwickmm
+* Code quality improvements, thanks @warwickmm
+* Fixed a case where purging a single file would purge all *other* files, if the filesystem is case-sensitive, thanks @warwickmm
+
 2019-09-20 - 2.0.4.30_canary_2019-09-20
 ==========
 * Updated builds scripts to automatically notarize all packages for MacOS
