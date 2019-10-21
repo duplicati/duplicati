@@ -58,12 +58,12 @@ namespace Duplicati.Library.Common.IO
 
         private class FileSystemAccess
         {
-            public FileSystemRights Rights;
-            public AccessControlType ControlType;
-            public string SID;
-            public bool Inherited;
-            public InheritanceFlags Inheritance;
-            public PropagationFlags Propagation;
+            public readonly FileSystemRights Rights;
+            public readonly AccessControlType ControlType;
+            public readonly string SID;
+            public readonly bool Inherited;
+            public readonly InheritanceFlags Inheritance;
+            public readonly PropagationFlags Propagation;
 
             public FileSystemAccess()
             {

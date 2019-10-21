@@ -198,9 +198,9 @@ namespace Duplicati.Library.Main
         /// </summary>
         protected readonly object m_lock = new object();
 
-        protected Dictionary<string, string> m_options;
+        protected readonly Dictionary<string, string> m_options;
 
-        protected List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
+        protected readonly List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
 
         /// <summary>
         /// Lookup table for compression hints

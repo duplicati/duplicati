@@ -429,8 +429,8 @@ namespace Duplicati.Library
 
         protected class HeaderPart
         {
-            public byte[] Header;
-            public MultipartItem Part;
+            public readonly byte[] Header;
+            public readonly MultipartItem Part;
 
             public HeaderPart(byte[] header, MultipartItem part)
             {

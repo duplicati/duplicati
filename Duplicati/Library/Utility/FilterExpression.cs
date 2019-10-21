@@ -93,7 +93,7 @@ namespace Duplicati.Library.Utility
             // Since we might need to get the regex for a particular filter group multiple times
             // (e.g., when combining multiple FilterExpressions together, which discards the existing FilterEntries and recreates them from the Filter representations),
             // and since they don't change (and compiling them isn't a super cheap operation), we keep a cache of the ones we've built for re-use.
-            private static Dictionary<FilterGroup, Regex> filterGroupRegexCache = new Dictionary<FilterGroup, Regex>();
+            private static readonly Dictionary<FilterGroup, Regex> filterGroupRegexCache = new Dictionary<FilterGroup, Regex>();
 
             /// <summary>
             /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.FilterExpression.FilterEntry"/> struct.
@@ -469,7 +469,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A cache for computing the fallback strategy for a filter
         /// </summary>
-        private static Dictionary<IFilter, Tuple<bool, bool>> _matchFallbackLookup = new Dictionary<IFilter, Tuple<bool, bool>>();
+        private static readonly Dictionary<IFilter, Tuple<bool, bool>> _matchFallbackLookup = new Dictionary<IFilter, Tuple<bool, bool>>();
 
         /// <summary>
         /// The lock object for protecting access to the lookup table

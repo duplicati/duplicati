@@ -196,7 +196,7 @@ namespace Duplicati.Library.Main
         protected readonly BasicResults m_parent;
         protected System.Threading.Thread m_callerThread;
         protected readonly object m_lock = new object();
-        protected Queue<DbMessage> m_dbqueue;
+        protected readonly Queue<DbMessage> m_dbqueue;
 
         private TaskControlState m_controlState = TaskControlState.Run;
         private readonly System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
@@ -221,9 +221,9 @@ namespace Duplicati.Library.Main
 
         public abstract OperationMode MainOperation { get; }
 
-        protected Library.Utility.FileBackedStringList m_messages;
-        protected Library.Utility.FileBackedStringList m_warnings;
-        protected Library.Utility.FileBackedStringList m_errors;
+        protected readonly Library.Utility.FileBackedStringList m_messages;
+        protected readonly Library.Utility.FileBackedStringList m_warnings;
+        protected readonly Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
         
         protected IMessageSink m_messageSink;
@@ -243,7 +243,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        protected internal IOperationProgressUpdaterAndReporter m_operationProgressUpdater;
+        protected internal readonly IOperationProgressUpdaterAndReporter m_operationProgressUpdater;
         internal IOperationProgressUpdaterAndReporter OperationProgressUpdater
         {
             get
@@ -255,7 +255,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        protected internal IBackendProgressUpdaterAndReporter m_backendProgressUpdater;
+        protected internal readonly IBackendProgressUpdaterAndReporter m_backendProgressUpdater;
         internal IBackendProgressUpdaterAndReporter BackendProgressUpdater
         {
             get
@@ -353,7 +353,7 @@ namespace Duplicati.Library.Main
         [JsonProperty(PropertyName = "Errors")]
         public IEnumerable<string> LimitedErrors { get { return Errors?.Take(SERIALIZATION_LIMIT); } }
 
-        protected Operation.Common.TaskControl m_taskController;
+        protected readonly Operation.Common.TaskControl m_taskController;
         public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
 
         protected BasicResults()
@@ -378,7 +378,7 @@ namespace Duplicati.Library.Main
             this.m_parent = p;
         }
 
-        protected IBackendStatstics m_backendStatistics;
+        protected readonly IBackendStatstics m_backendStatistics;
         public IBackendStatstics BackendStatistics
         {
             get

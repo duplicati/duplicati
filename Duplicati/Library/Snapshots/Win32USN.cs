@@ -45,17 +45,17 @@ namespace Duplicati.Library.Snapshots
             /// stamped with a new identifier in the course of its existence. 
             /// The NTFS file system uses this identifier for an integrity check.
             /// </summary>
-            public long UsnJournalID;
+            public readonly long UsnJournalID;
 
             /// <summary>
             /// The number of first record that can be read from the journal.
             /// </summary>
-            public long FirstUsn;
+            public readonly long FirstUsn;
 
             /// <summary>
             /// The number of next record to be written to the journal.
             /// </summary>
-            public long NextUsn;
+            public readonly long NextUsn;
 
             /// <summary>
             /// The first record that was written into the journal for this journal instance. 
@@ -65,26 +65,26 @@ namespace Duplicati.Library.Snapshots
             /// In this case, LowestValidUsn may indicate a discontinuity in the journal, in which changes 
             /// to some or all files or directories on the volume may have occurred that are not recorded in the change journal.
             /// </summary>
-            public long LowestValidUsn;
+            public readonly long LowestValidUsn;
 
             /// <summary>
             /// The largest USN that the change journal supports. An administrator must delete 
             /// the change journal as the value of NextUsn approaches this value.
             /// </summary>
-            public long MaxUsn;
+            public readonly long MaxUsn;
 
             /// <summary>
             /// The target maximum size for the change journal, in bytes. The change journal can grow larger 
             /// than this value, but it is then truncated at the next NTFS file system checkpoint to less than this value.
             /// </summary>
-            public long MaximumSize;
+            public readonly long MaximumSize;
 
             /// <summary>
             /// The number of bytes of disk memory added to the end and removed from the beginning of the change 
             /// journal each time memory is allocated or deallocated. In other words, allocation and deallocation
             /// take place in units of this size. An integer multiple of a cluster size is a reasonable value for this member.
             /// </summary>
-            public long AllocationDelta;    //DWORDLONG AllocationDelta
+            public readonly long AllocationDelta;    //DWORDLONG AllocationDelta
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -101,19 +101,19 @@ namespace Duplicati.Library.Snapshots
         [StructLayout(LayoutKind.Sequential)]
         public struct USN_RECORD_V2
         {
-            public uint RecordLength;
-            public ushort MajorVersion;
-            public ushort MinorVersion;
-            public ulong FileReferenceNumber;
-            public ulong ParentFileReferenceNumber;
-            public long Usn;
-            public long TimeStamp;  // strictly, this is a LARGE_INTEGER in C
-            public USNReason Reason;
-            public uint SourceInfo;
-            public uint SecurityId;
-            public FileAttributes FileAttributes;
-            public ushort FileNameLength;
-            public ushort FileNameOffset;
+            public readonly uint RecordLength;
+            public readonly ushort MajorVersion;
+            public readonly ushort MinorVersion;
+            public readonly ulong FileReferenceNumber;
+            public readonly ulong ParentFileReferenceNumber;
+            public readonly long Usn;
+            public readonly long TimeStamp;  // strictly, this is a LARGE_INTEGER in C
+            public readonly USNReason Reason;
+            public readonly uint SourceInfo;
+            public readonly uint SecurityId;
+            public readonly FileAttributes FileAttributes;
+            public readonly ushort FileNameLength;
+            public readonly ushort FileNameOffset;
             // immediately after the FileNameOffset comes an array of WCHARs containing the FileName
         }
 
@@ -128,16 +128,16 @@ namespace Duplicati.Library.Snapshots
         [StructLayout(LayoutKind.Sequential)]
         public struct BY_HANDLE_FILE_INFORMATION
         {
-            public uint FileAttributes;
+            public readonly uint FileAttributes;
             public System.Runtime.InteropServices.ComTypes.FILETIME CreationTime;
             public System.Runtime.InteropServices.ComTypes.FILETIME LastAccessTime;
             public System.Runtime.InteropServices.ComTypes.FILETIME LastWriteTime;
-            public uint VolumeSerialNumber;
-            public uint FileSizeHigh;
-            public uint FileSizeLow;
-            public uint NumberOfLinks;
-            public uint FileIndexHigh;
-            public uint FileIndexLow;
+            public readonly uint VolumeSerialNumber;
+            public readonly uint FileSizeHigh;
+            public readonly uint FileSizeLow;
+            public readonly uint NumberOfLinks;
+            public readonly uint FileIndexHigh;
+            public readonly uint FileIndexLow;
         }
         #endregion
 

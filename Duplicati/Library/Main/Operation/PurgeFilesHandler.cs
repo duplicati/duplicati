@@ -28,9 +28,9 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<PurgeFilesHandler>();
-        protected string m_backendurl;
-        protected Options m_options;
-        protected PurgeFilesResults m_result;
+        protected readonly string m_backendurl;
+        protected readonly Options m_options;
+        protected readonly PurgeFilesResults m_result;
 
         public PurgeFilesHandler(string backend, Options options, PurgeFilesResults result)
         {

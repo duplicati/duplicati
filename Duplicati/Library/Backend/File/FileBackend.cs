@@ -46,7 +46,7 @@ namespace Duplicati.Library.Backend
 
         private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
-        private static ISystemIO systemIO = SystemIO.IO_OS;
+        private static readonly ISystemIO systemIO = SystemIO.IO_OS;
 
         public File()
         {
