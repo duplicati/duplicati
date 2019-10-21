@@ -337,6 +337,8 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                     throw new UserInformationException(string.Format(Strings.ErrorWriteFile, remotename), "AftpPutFailure");
                 }
 
+                if (_listVerify)
+                {
                 // check remote file size; matching file size indicates completion
                 var sleepTime = 250;
                 var maxVerifyMilliseconds = 5000;
@@ -354,6 +356,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 }
 
                 throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "AftpListVerifySizeFailure");
+            }
             }
             catch (FtpCommandException ex)
             {
