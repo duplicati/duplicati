@@ -49,7 +49,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         private const string CONFIG_KEY_AFTP_SSL_PROTOCOLS = "aftp-ssl-protocols";
 
         private const string TEST_FILE_NAME = "duplicati-access-privileges-test.tmp";
-        private const string TEST_FILE_CONTENT = "This file used by Duplicati to test access permissions and could be safely deleted.";
+        private const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
 
         // ReSharper disable InconsistentNaming
         private static readonly string DEFAULT_DATA_CONNECTION_TYPE_STRING = DEFAULT_DATA_CONNECTION_TYPE.ToString();
