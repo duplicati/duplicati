@@ -115,8 +115,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
             finally
             {
                 foreach (var n in modules)
-                    if (n is IDisposable)
-                        ((IDisposable)n).Dispose();
+                    if (n is IDisposable disposable)
+                        disposable.Dispose();
             }
         }
 

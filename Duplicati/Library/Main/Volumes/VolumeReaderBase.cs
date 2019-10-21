@@ -21,8 +21,8 @@ namespace Duplicati.Library.Main.Volumes
             if (tmp == null)
             {
                 var name = "[stream]";
-                if (stream is FileStream)
-                    name = ((FileStream)stream).Name;
+                if (stream is FileStream fileStream)
+                    name = fileStream.Name;
 
                 throw new Exception(string.Format("Unable to create {0} decompressor on file {1}", compressor, name));
             }

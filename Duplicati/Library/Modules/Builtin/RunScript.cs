@@ -181,8 +181,8 @@ namespace Duplicati.Library.Modules.Builtin
             ParsedResultType level;
             if (result is Exception)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is Library.Interface.IBasicResults)
-                level = ((IBasicResults)result).ParsedResult;
+            else if (result != null && result is IBasicResults results)
+                level = results.ParsedResult;
             else
                 level = ParsedResultType.Error;
 

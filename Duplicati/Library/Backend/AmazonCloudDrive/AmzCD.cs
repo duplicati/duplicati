@@ -356,8 +356,8 @@ namespace Duplicati.Library.Backend.AmazonCloudDrive
             catch(Exception ex)
             {
                 #if DEBUG
-                if (ex is WebException)
-                    using(var sr = new StreamReader((ex as WebException).Response.GetResponseStream()))
+                if (ex is WebException exception)
+                    using(var sr = new StreamReader(exception.Response.GetResponseStream()))
                         Console.WriteLine(sr.ReadToEnd());
                 #endif
 

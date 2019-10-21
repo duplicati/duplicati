@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Localization.Short;
 using System.IO;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.CommandLine
@@ -242,10 +243,10 @@ namespace Duplicati.CommandLine
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
 
-                if (ex is Duplicati.Library.Interface.UserInformationException && !verboseErrors)
+                if (ex is UserInformationException exception && !verboseErrors)
                 {
                     errwriter.WriteLine();
-                    errwriter.WriteLine("ErrorID: {0}", ((Duplicati.Library.Interface.UserInformationException)ex).HelpID);
+                    errwriter.WriteLine("ErrorID: {0}", exception.HelpID);
                     errwriter.WriteLine(ex.Message);
                 }
                 else if (!(ex is Library.Interface.CancelException))

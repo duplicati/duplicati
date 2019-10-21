@@ -60,8 +60,8 @@ namespace Duplicati.Library.Main.Volumes
             if (m_compression == null)
                 throw new UserInformationException(string.Format("Unsupported compression module: {0}", options.CompressionModule), "UnsupportedCompressionModule");
 
-            if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && m_compression is Library.Interface.ICompressionHinting)
-                ((Library.Interface.ICompressionHinting)m_compression).LowOverheadMode = true;
+            if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && this.m_compression is ICompressionHinting hinting)
+                hinting.LowOverheadMode = true;
 
             AddManifestFile();
         }

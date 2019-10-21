@@ -20,6 +20,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server
@@ -424,15 +425,15 @@ namespace Duplicati.Server
 
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
-            if (data is CustomRunnerTask)
+            if (data is CustomRunnerTask task)
             {
                 try
                 {
-                    var sink = new MessageSink(data.TaskID, null);
+                    var sink = new MessageSink(task.TaskID, null);
                     Program.GenerateProgressState = sink.Copy;
                     Program.StatusEventNotifyer.SignalNewEvent();
 
-                    ((CustomRunnerTask)data).Run(sink);
+                    task.Run(sink);
                 }
                 catch(Exception ex)
                 {
@@ -687,8 +688,8 @@ namespace Duplicati.Server
                 Program.DataConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
 
             string messageid = null;
-            if (ex is Library.Interface.UserInformationException)
-                messageid = ((Library.Interface.UserInformationException)ex).HelpID;
+            if (ex is UserInformationException exception)
+                messageid = exception.HelpID;
 
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.DataConnection.RegisterNotification(
@@ -746,50 +747,44 @@ namespace Duplicati.Server
 
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IBasicResults result)
         {
-            if (result is Duplicati.Library.Interface.IRestoreResults)
+            if (result is IRestoreResults r1)
             {
-                var r = (Duplicati.Library.Interface.IRestoreResults)result;
-                backup.Metadata["LastRestoreDuration"] = r.Duration.ToString();
+                backup.Metadata["LastRestoreDuration"] = r1.Duration.ToString();
                 backup.Metadata["LastRestoreStarted"] = Library.Utility.Utility.SerializeDateTime(result.BeginTime.ToUniversalTime());
                 backup.Metadata["LastRestoreFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
             }
 
-            if (result is Duplicati.Library.Interface.IParsedBackendStatistics)
+            if (result is IParsedBackendStatistics r2)
             {
-                var r = (Duplicati.Library.Interface.IParsedBackendStatistics)result;
-                UpdateMetadata(backup, r);
+                UpdateMetadata(backup, r2);
             }
 
-            if (result is Duplicati.Library.Interface.IBackendStatsticsReporter)
+            if (result is IBackendStatsticsReporter r3)
             {
-                var r = (Duplicati.Library.Interface.IBackendStatsticsReporter)result;
-                if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
-                    UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
+                if (r3.BackendStatistics is IParsedBackendStatistics statistics)
+                    UpdateMetadata(backup, statistics);
             }
 
-            if (result is Duplicati.Library.Interface.ICompactResults)
+            if (result is ICompactResults r4)
             {
-                var r = (Duplicati.Library.Interface.ICompactResults)result;
-                UpdateMetadataLastCompact(backup, r);
+                UpdateMetadataLastCompact(backup, r4);
 
-                if (r.VacuumResults != null)
-                    UpdateMetadataLastVacuum(backup, r.VacuumResults);
+                if (r4.VacuumResults != null)
+                    UpdateMetadataLastVacuum(backup, r4.VacuumResults);
             }
 
-            if (result is Duplicati.Library.Interface.IVacuumResults)
+            if (result is IVacuumResults r5)
             {
-                var r = (Duplicati.Library.Interface.IVacuumResults)result;
-                UpdateMetadataLastVacuum(backup, r);
+                UpdateMetadataLastVacuum(backup, r5);
             }
 
-            if (result is Duplicati.Library.Interface.IBackupResults)
+            if (result is IBackupResults r)
             {
-                var r = (Duplicati.Library.Interface.IBackupResults)result;
                 backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
                 backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
-                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(result.BeginTime.ToUniversalTime());
-                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
+                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
                 backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
 
                 if (r.CompactResults != null)

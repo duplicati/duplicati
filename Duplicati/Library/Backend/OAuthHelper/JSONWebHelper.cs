@@ -17,6 +17,7 @@
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -321,8 +322,8 @@ namespace Duplicati.Library
             }
             catch(WebException wex)
             {
-                if (wex.Response is HttpWebResponse)
-                    return (HttpWebResponse)wex.Response;
+                if (wex.Response is HttpWebResponse response)
+                    return response;
 
                 throw;
             }
@@ -350,9 +351,8 @@ namespace Duplicati.Library
             {
                 if (requestdata != null)
                 {
-                    if (requestdata is System.IO.Stream)
+                    if (requestdata is Stream stream)
                     {
-                        var stream = requestdata as System.IO.Stream;
                         req.Request.ContentLength = stream.Length;
                         if (string.IsNullOrEmpty(req.Request.ContentType))
                             req.Request.ContentType = "application/octet-stream";
