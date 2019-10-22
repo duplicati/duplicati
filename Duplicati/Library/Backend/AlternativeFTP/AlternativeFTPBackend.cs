@@ -352,22 +352,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 if (_listVerify)
                 {
                     // check remote file size; matching file size indicates completion
-                    var sleepTime = 250;
-                    var maxVerifyMilliseconds = 5000;
-                    var m = maxVerifyMilliseconds;
-                    long remoteSize = 0;
-                    while (m > 0)
+                    var remoteSize = ftpClient.GetFileSize(remotePath);
+                    if (streamLen != remoteSize)
                     {
-                        remoteSize = ftpClient.GetFileSize(remotePath);
-                        if (streamLen == remoteSize)
-                        {
-                            return;
-                        }
-                        m -= sleepTime;
-                        Thread.Sleep(sleepTime);
+                        throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "AftpListVerifySizeFailure");
                     }
-
-                    throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "AftpListVerifySizeFailure");
                 }
             }
             catch (FtpCommandException ex)
@@ -559,7 +548,9 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                     EncryptionMode = _encryptionMode,
                     DataConnectionType = _dataConnectionType,
                     SslProtocols = _sslProtocols,
-                    EnableThreadSafeDataConnections = true, // Required to work properly but can result in up to 3 connections being used even when you expect just one..
+
+                    // We do not support parallel uploads, and the feature is buggy
+                    EnableThreadSafeDataConnections = false,
                 };
 
                 ftpClient.ValidateCertificate += HandleValidateCertificate;
