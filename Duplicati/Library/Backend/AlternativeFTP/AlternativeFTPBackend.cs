@@ -352,7 +352,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 if (_listVerify)
                 {
                     // check remote file size; matching file size indicates completion
-                    var remoteSize = ftpClient.GetFileSize(remotePath);
+                    var remoteSize = await ftpClient.GetFileSizeAsync(remotePath, cancelToken);
                     if (streamLen != remoteSize)
                     {
                         throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "AftpListVerifySizeFailure");
