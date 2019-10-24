@@ -957,7 +957,12 @@ namespace Duplicati.Library.Utility
 	/// <param name="input">The input time</param>
         public static long NormalizeDateTimeToEpochSeconds(DateTime input)
         {
-            return (new DateTimeOffset(input)).ToUnixTimeSeconds(); 
+            // Note that we cannot return (new DateTimeOffset(input)).ToUnixTimeSeconds() here.
+            // The DateTimeOffset constructor will convert the provided DateTime to the UTC
+            // equivalent.  However, if DateTime.MinValue is provided (for example, when creating
+            // a new backup), this can result in values that fall outside the DateTimeOffset.MinValue
+            // and DateTimeOffset.MaxValue bounds.
+            return (long) Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
         }
         
         /// <summary>
