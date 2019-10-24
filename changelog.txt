@@ -1,3 +1,8 @@
+2019-10-24 - 2.0.4.32_canary_2019-10-24
+==========
+* Code quality improvements, thanks @warwickmm
+* Fixes to the `Alternative FTP` backend, thanks @kenkendk
+
 2019-10-19 - 2.0.4.31_canary_2019-10-19
 ==========
 * Updated translations, thanks all translators!
