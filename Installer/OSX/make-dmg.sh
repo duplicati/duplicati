@@ -99,14 +99,17 @@ done
 # Install the LauncAgent if anyone needs it
 cp -R "daemon" "Duplicati.app/Contents/Resources"
 
-# Install executables
-cp "run-with-mono.sh" "Duplicati.app/Contents/MacOS/"
-cp "Duplicati-trayicon-launcher" "Duplicati.app/Contents/MacOS/duplicati"
-cp "Duplicati-commandline-launcher" "Duplicati.app/Contents/MacOS/duplicati-cli"
-cp "Duplicati-server-launcher" "Duplicati.app/Contents/MacOS/duplicati-server"
+# Build launchers
+cd "launchers"
+bash "compile.sh"
+cd ..
+
+# Install launchers
+mv "launchers/bin/duplicati" "Duplicati.app/Contents/MacOS/duplicati"
+mv "launchers/bin/duplicati-cli" "Duplicati.app/Contents/MacOS/duplicati-cli"
+mv "launchers/bin/duplicati-server" "Duplicati.app/Contents/MacOS/duplicati-server"
 cp "uninstall.sh" "Duplicati.app/Contents/MacOS/"
 
-chmod +x "Duplicati.app/Contents/MacOS/run-with-mono.sh"
 chmod +x "Duplicati.app/Contents/MacOS/duplicati"
 chmod +x "Duplicati.app/Contents/MacOS/duplicati-cli"
 chmod +x "Duplicati.app/Contents/MacOS/duplicati-server"
