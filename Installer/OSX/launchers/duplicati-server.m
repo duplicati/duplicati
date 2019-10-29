@@ -2,7 +2,7 @@
 
 NSString * const ASSEMBLY = @"Duplicati.Server.exe";
 NSString * const APP_NAME = @"Duplicati.Server";
-int const MONO_VERSION_MAJOR = 4;
+int const MONO_VERSION_MAJOR = 5;
 int const MONO_VERSION_MINOR = 0;
 
 int main() {
