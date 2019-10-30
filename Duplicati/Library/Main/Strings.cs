@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Strings
         public static string EncryptionmoduleLong { get { return LC.L(@"Duplicati supports pluggable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module."); } }
         public static string EncryptionmoduleShort { get { return LC.L(@"Select what module to use for encryption"); } }
         public static string DisablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to unload them"); } }
-        public static string DisablemoduleShort { get { return LC.L(@"Disabled one or more modules"); } }
+        public static string DisablemoduleShort { get { return LC.L(@"Disables one or more modules"); } }
         public static string EnablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to load them"); } }
         public static string EnablemoduleShort { get { return LC.L(@"Enables one or more modules"); } }
         public static string SnapshotpolicyLong { get { return LC.L(@"This setting controls the usage of snapshots, which allows Duplicati to backup files that are locked by other programs. If this is set to ""off"", Duplicati will not attempt to create a disk snapshot. Setting this to ""auto"" makes Duplicati attempt to create a snapshot, and fail silently if that was not allowed or supported (note that the OS may still log system warnings). A setting of ""on"" will also make Duplicati attempt to create a snapshot, but will produce a warning message in the log if it fails. Setting it to ""required"" will make Duplicati abort the backup if the snapshot creation fails. On windows this uses the Volume Shadow Copy Services (VSS) and requires administrative privileges. On Linux this uses Logical Volume Management (LVM) and requires root privileges."); } }
@@ -97,6 +97,8 @@ namespace Duplicati.Library.Main.Strings
         public static string AsynchronousuploadlimitShort { get { return LC.L(@"The number of volumes to create ahead of time"); } }
         public static string AsynchronousconcurrentuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, the maximum number of concurrent uploads allowed. Set to zero to disable the limit."); } }
         public static string AsynchronousconcurrentuploadlimitShort { get { return LC.L(@"The number of concurrent uploads allowed"); } }
+        public static string CachefilesetondiskLong { get { return LC.L(@"Causes fileset writer to hold data on the disk instead of holding it in memory. May be useful on devices with limited memory."); } }
+        public static string CachefilesetondiskShort { get { return LC.L(@"Hold fileset data on disk instead of in memory"); } }
         public static string DebugoutputLong { get { return LC.L(@"Activating this option will make some error messages more verbose, which may help you track down a particular issue"); } }
         public static string DebugoutputShort { get { return LC.L(@"Enables debugging output"); } }
         public static string LogfileShort { get { return LC.L(@"Log internal information to a file"); } }
