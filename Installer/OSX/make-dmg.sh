@@ -136,7 +136,7 @@ if [ "x${CODESIGN_IDENTITY}" != "x" ]; then
     find "Duplicati.app/Contents/Resources" -type f -print0 | xargs -0 codesign -s "${CODESIGN_IDENTITY}"
 
     # These files have dependencies, so we need to sign them in the correct order
-    for file in "duplicati-cli" "duplicati-server" "run-with-mono.sh" "uninstall.sh"; do
+    for file in "duplicati-cli" "duplicati-server" "uninstall.sh"; do
         codesign -s "${CODESIGN_IDENTITY}" "Duplicati.app/Contents/MacOS/${file}"
     done
 
